@@ -33,3 +33,5 @@ import NetMechanics.Tournament
 import NetMechanics.Gehennom
 import NetMechanics.Quest
 import NetMechanics.Genocide
+import NetMechanics.Affliction
+import NetMechanics.Skills
