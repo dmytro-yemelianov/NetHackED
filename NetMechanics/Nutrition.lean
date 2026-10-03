@@ -119,3 +119,65 @@ theorem metabolic_tick_zero_fixed_point :
   dsimp [metabolicTick]
 
 end NetMechanics
+
+namespace NetMechanics
+
+structure Corpse where
+  species : String
+  race : String
+  nutrition : Nat
+  age : Nat
+  rotThreshold : Nat
+
+structure Hero where
+  race : String
+  nutrition : Nat
+  poisoned : Bool
+  cannibalism_violation : Bool
+  fire_resistance : Bool
+  telepathy : Bool
+
+inductive Intrinsic where
+  | FireResistance
+  | Telepathy
+  deriving Repr, BEq
+
+def isTainted (c : Corpse) : Bool :=
+  c.age > c.rotThreshold
+
+def grantsIntrinsic (p : Nat) : Bool :=
+  p > 0
+
+def eatCorpse (h : Hero) (c : Corpse) (p : Nat) (intr : Intrinsic) : Hero :=
+  let tainted := isTainted c
+  let cannibal := c.race == h.race
+  let gets_intrinsic := grantsIntrinsic p
+  { h with
+    nutrition := if tainted then h.nutrition else h.nutrition + c.nutrition,
+    poisoned := if tainted then true else h.poisoned,
+    cannibalism_violation := if cannibal then true else h.cannibalism_violation,
+    fire_resistance := if gets_intrinsic && intr == Intrinsic.FireResistance then true else h.fire_resistance,
+    telepathy := if gets_intrinsic && intr == Intrinsic.Telepathy then true else h.telepathy
+  }
+
+theorem fresh_corpse_provides_nutrition (h : Hero) (c : Corpse) (p : Nat) (intr : Intrinsic) (h_fresh : c.age ≤ c.rotThreshold) :
+    (eatCorpse h c p intr).nutrition = h.nutrition + c.nutrition := by
+  dsimp [eatCorpse, isTainted]
+  have h_tainted : (c.age > c.rotThreshold) = false := by
+    simp
+    omega
+  simp [h_tainted]
+
+theorem tainted_corpse_causes_poisoning (h : Hero) (c : Corpse) (p : Nat) (intr : Intrinsic) (h_tainted : c.age > c.rotThreshold) :
+    (eatCorpse h c p intr).poisoned = true := by
+  dsimp [eatCorpse, isTainted]
+  simp [h_tainted]
+
+theorem cannibalism_detects_same_race (h : Hero) (c : Corpse) (p : Nat) (intr : Intrinsic) (h_race : c.race = h.race) :
+    (eatCorpse h c p intr).cannibalism_violation = true := by
+  dsimp [eatCorpse]
+  have h_eq : (c.race == h.race) = true := by
+    simp [h_race]
+  simp [h_eq]
+
+end NetMechanics
