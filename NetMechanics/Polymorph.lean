@@ -85,4 +85,89 @@ theorem poly_damage_preserves_base_max_hp (e : PolyEntity) (damage : Nat) :
     simp [applyPolyDamage, he]
     split <;> rfl
 
+
+theorem poly_reversion_preserves_base_stats (e : PolyEntity) (poly : FormStats) (damage : Nat)
+  (he : e.polyForm = some poly)
+  (hdam : damage ≥ poly.hp)
+  (hsurvives : damage - poly.hp < e.baseForm.hp) :
+  let res := applyPolyDamage e damage
+  res.1.polyForm = none ∧
+  res.1.baseForm.maxHp = e.baseForm.maxHp ∧
+  res.1.baseForm.name = e.baseForm.name ∧
+  res.2 = false := by
+  dsimp [applyPolyDamage]
+  simp [he]
+  have hnot : ¬ (damage < poly.hp) := Nat.not_lt.mpr hdam
+  simp [hnot]
+  have hgt : e.baseForm.hp - (damage - poly.hp) > 0 := Nat.sub_pos_of_lt hsurvives
+  have hneq : e.baseForm.hp - (damage - poly.hp) ≠ 0 := Nat.ne_of_gt hgt
+  exact hneq
+
+-- 2. Unique Entities
+structure Monster where
+  name : String
+  isUnique : Bool
+deriving Repr, DecidableEq
+
+def tryPolymorph (m : Monster) (targetSpecies : String) : Monster :=
+  if m.isUnique then m
+  else { m with name := targetSpecies }
+
+theorem unique_entities_poly_invariant (m : Monster) (target : String)
+  (h : m.isUnique = true) : tryPolymorph m target = m := by
+  simp [tryPolymorph, h]
+
+-- 3. Polypiling
+structure ItemStack where
+  category : String
+  count : Nat
+deriving Repr, DecidableEq
+
+def polypile (stack : ItemStack) (shockFactor : Nat) : ItemStack :=
+  if shockFactor == 0 then
+    { stack with count := 0 }
+  else if shockFactor == 1 then
+    { stack with count := stack.count / 2 }
+  else
+    stack
+
+theorem polypile_preserves_or_reduces_count (stack : ItemStack) (shock : Nat) :
+  (polypile stack shock).count ≤ stack.count := by
+  unfold polypile
+  split
+  · exact Nat.zero_le _
+  · split
+    · exact Nat.div_le_self _ _
+    · exact Nat.le_refl _
+
+-- 4. Lycanthropy
+inductive LycanthropyState
+  | clean
+  | infected (species : String)
+deriving Repr, DecidableEq
+
+inductive CureItem
+  | wolfsbane
+  | holyWater
+  | regularFood
+deriving Repr, DecidableEq
+
+def consumeItem (state : LycanthropyState) (item : CureItem) : LycanthropyState :=
+  match state with
+  | .clean => .clean
+  | .infected s =>
+    match item with
+    | .wolfsbane => .clean
+    | .holyWater => .clean
+    | .regularFood => .infected s
+
+theorem lycanthropy_cure_restores_clean_state (state : LycanthropyState) (item : CureItem) (s : String)
+  (h_inf : state = .infected s)
+  (h_cure : item = .wolfsbane ∨ item = .holyWater) :
+  consumeItem state item = .clean := by
+  cases h_cure with
+  | inl h1 => simp [consumeItem, h_inf, h1]
+  | inr h2 => simp [consumeItem, h_inf, h2]
+
+
 end NetMechanics
