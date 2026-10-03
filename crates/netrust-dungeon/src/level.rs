@@ -15,6 +15,8 @@ pub struct DungeonLevel {
     pub stairs_up: Coord,
     pub stairs_down: Coord,
     pub engravings: HashMap<Coord, Engraving>,
+    #[serde(default)]
+    pub is_dark: bool,
 }
 
 impl Default for DungeonLevel {
@@ -39,6 +41,7 @@ impl DungeonLevel {
             stairs_up: Coord::new_unchecked(1, 1),
             stairs_down: Coord::new_unchecked(1, 1),
             engravings: HashMap::new(),
+            is_dark: false,
         }
     }
 
@@ -97,5 +100,18 @@ impl DungeonLevel {
     /// Returns the room containing the coordinate within its inner floor bounds, if any.
     pub fn room_at(&self, c: Coord) -> Option<&Room> {
         self.rooms.iter().find(|r| r.contains_inner(c))
+    }
+
+    /// Returns true if the coordinate is in darkness (either whole level is dark, or within a dark room).
+    pub fn is_dark_at(&self, c: Coord) -> bool {
+        if self.is_dark {
+            return true;
+        }
+        for r in &self.rooms {
+            if c.x >= r.x1 && c.x <= r.x2 && c.y >= r.y1 && c.y <= r.y2 {
+                return r.is_dark;
+            }
+        }
+        false
     }
 }

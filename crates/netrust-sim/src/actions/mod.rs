@@ -58,6 +58,7 @@ impl SimulationWorld {
             ActionAst::Rub(idx) => events.extend(self.handle_rub(idx)),
             ActionAst::PriceCheck(idx) => events.extend(self.handle_price_check(idx)),
             ActionAst::Donate(amt) => events.extend(self.handle_donate(amt)),
+            ActionAst::Apply(idx) => events.extend(self.handle_apply(idx)),
             ActionAst::Wait => {
                 self.scheduler.hero_act(NORMAL_SPEED);
             }

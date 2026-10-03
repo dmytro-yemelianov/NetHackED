@@ -67,3 +67,16 @@ fn cast_ray(level: &DungeonLevel, from: Coord, to: Coord, visible: &mut HashSet<
         }
     }
 }
+
+/// Compute illuminated tiles from multiple light sources.
+/// Each light source provides an origin coordinate and luminescence radius.
+pub fn compute_illumination(level: &DungeonLevel, light_sources: &[(Coord, u32)]) -> HashSet<Coord> {
+    let mut illuminated = HashSet::new();
+    for &(origin, radius) in light_sources {
+        if radius > 0 {
+            let fov = compute_fov(level, origin, radius as usize);
+            illuminated.extend(fov);
+        }
+    }
+    illuminated
+}

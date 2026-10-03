@@ -48,6 +48,7 @@ pub enum RoomType {
 pub struct Room {
     pub rect: Rect,
     pub room_type: RoomType,
+    pub is_dark: bool,
 }
 
 impl std::ops::Deref for Room {
@@ -59,6 +60,15 @@ impl std::ops::Deref for Room {
 
 impl Room {
     pub fn new(rect: Rect, room_type: RoomType) -> Self {
-        Self { rect, room_type }
+        Self {
+            rect,
+            room_type,
+            is_dark: false,
+        }
+    }
+
+    pub fn with_dark(mut self, is_dark: bool) -> Self {
+        self.is_dark = is_dark;
+        self
     }
 }

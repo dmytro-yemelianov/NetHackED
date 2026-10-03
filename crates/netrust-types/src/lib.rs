@@ -493,6 +493,7 @@ pub struct Intrinsics {
     pub fast: bool,
     pub very_fast: bool,
     pub levitation: bool,
+    pub blind: bool,
 }
 
 impl Intrinsics {
@@ -513,7 +514,13 @@ impl Intrinsics {
             fast: false,
             very_fast: false,
             levitation: false,
+            blind: false,
         }
+    }
+
+    pub const fn with_blind(mut self) -> Self {
+        self.blind = true;
+        self
     }
 
     pub const fn with_fire_resistance(mut self) -> Self {

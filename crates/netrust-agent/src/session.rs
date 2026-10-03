@@ -1,8 +1,6 @@
 //! Interactive agent session managing game state, stepping, and inspections.
 
-use std::collections::HashSet;
 use netrust_data::roles::CharacterConfig;
-use netrust_dungeon::compute_fov;
 use netrust_sim::{ActionAst, Coord, GameEvent, SimulationWorld};
 
 use crate::ascii::render_ascii_map;
@@ -37,11 +35,11 @@ impl AgentSession {
         let player_ac = player.map(|p| p.ac).unwrap_or(10);
         let is_game_over = player.map(|p| p.is_dead).unwrap_or(true);
 
-        let visible: HashSet<Coord> = compute_fov(&self.world.level, player_coord, 8);
+        let (_visible, detected_monsters) = self.world.compute_perception();
 
         let mut visible_actors = Vec::new();
         for (id, actor) in self.world.arena.actors.iter() {
-            if !actor.is_dead && visible.contains(&actor.coord) {
+            if !actor.is_dead && (id == self.world.player_id || detected_monsters.contains(&id)) {
                 visible_actors.push(ActorObservation {
                     name: actor.name.clone(),
                     coord: actor.coord,

@@ -9,7 +9,7 @@ pub mod sokoban;
 pub mod endgame;
 pub mod mines;
 
-pub use fov::compute_fov;
+pub use fov::{compute_fov, compute_illumination};
 pub use generator::{
     carve_h_corr, carve_room, carve_v_corr, generate_dungeon_level, validate_stair_connectivity,
 };

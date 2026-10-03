@@ -132,6 +132,8 @@ impl WasmGameSession {
             "pay" => ActionAst::Pay,
             "pray" => ActionAst::Pray,
             "sacrifice" => ActionAst::Sacrifice(arg.and_then(|s| s.parse().ok()).unwrap_or(0)),
+            "donate" => ActionAst::Donate(arg.and_then(|s| s.parse().ok()).unwrap_or(0)),
+            "apply" | "light" => ActionAst::Apply(arg.and_then(|s| s.parse().ok()).unwrap_or(0)),
             "descend" => ActionAst::Descend,
             "ascend" => ActionAst::Ascend,
             "wait" => ActionAst::Wait,

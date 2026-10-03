@@ -42,6 +42,7 @@ pub enum ActionAst {
     Rub(usize),
     PriceCheck(usize),
     Donate(u32),
+    Apply(usize),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

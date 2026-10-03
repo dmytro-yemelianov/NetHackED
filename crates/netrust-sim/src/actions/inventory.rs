@@ -153,4 +153,38 @@ impl SimulationWorld {
 
         events
     }
+
+    pub(crate) fn handle_apply(&mut self, idx: usize) -> Vec<GameEvent> {
+        let mut events = Vec::new();
+        let carried = self.arena.items_carried_by(self.player_id);
+        if idx < carried.len() {
+            let item_id = carried[idx];
+            if let Some(item) = self.arena.items.get_mut(item_id) {
+                let name = item.name.to_lowercase();
+                if name.contains("lamp") || name.contains("lantern") || name.contains("candle") {
+                    if item.enchantment <= 0 {
+                        item.enchantment = 1;
+                        events.push(GameEvent::LogMessage {
+                            text: format!("You light the {}. It casts a bright illumination.", item.name),
+                        });
+                    } else {
+                        item.enchantment = 0;
+                        events.push(GameEvent::LogMessage {
+                            text: format!("You extinguish the {}.", item.name),
+                        });
+                    }
+                    self.scheduler.hero_act(NORMAL_SPEED);
+                } else {
+                    events.push(GameEvent::LogMessage {
+                        text: format!("You don't know how to apply the {}.", item.name),
+                    });
+                }
+            }
+        } else {
+            events.push(GameEvent::LogMessage {
+                text: "You don't have that item in your pack.".into(),
+            });
+        }
+        events
+    }
 }

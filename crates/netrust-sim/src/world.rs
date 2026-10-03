@@ -227,4 +227,74 @@ impl SimulationWorld {
         };
         self.player_luck = netrust_core::mines::step_luck_decay(self.player_luck, stone_status);
     }
+
+    /// Compute tile visibility and monster perception for the hero, taking into account:
+    /// - Field of View (FOV)
+    /// - Light sources (carried lit oil lamps / magic lamps / candles)
+    /// - Room darkness
+    /// - Blindness intrinsic
+    /// - Telepathy intrinsic (sensing minded monsters when blind or in darkness)
+    pub fn compute_perception(&self) -> (std::collections::HashSet<Coord>, std::collections::HashSet<ActorId>) {
+        use std::collections::HashSet;
+
+        let Some(player) = self.arena.actors.get(self.player_id) else {
+            return (HashSet::new(), HashSet::new());
+        };
+        let p_coord = player.coord;
+        let is_blind = player.intrinsics.blind;
+        let has_telepathy = player.intrinsics.telepathy;
+
+        // 1. Gather all active light sources in the level
+        let mut light_sources: Vec<(Coord, u32)> = Vec::new();
+
+        // Check player carried items for lit lamp
+        let carried = self.arena.items_carried_by(self.player_id);
+        for iid in carried {
+            if let Some(it) = self.arena.items.get(iid) {
+                if (it.name.contains("lamp") || it.name.contains("lantern") || it.name.contains("candle"))
+                    && it.enchantment > 0
+                {
+                    let radius = if it.name.contains("lantern") {
+                        netrust_core::lighting::LANTERN_RADIUS
+                    } else if it.name.contains("candle") {
+                        netrust_core::lighting::CANDLE_RADIUS
+                    } else {
+                        netrust_core::lighting::OIL_LAMP_RADIUS
+                    };
+                    light_sources.push((p_coord, radius));
+                }
+            }
+        }
+
+        // Compute standard FOV (radius 8)
+        let fov = netrust_dungeon::compute_fov(&self.level, p_coord, 8);
+        // Compute illumination from light sources
+        let illuminated = netrust_dungeon::compute_illumination(&self.level, &light_sources);
+
+        // Determine visible tiles
+        let mut visible_tiles = HashSet::new();
+        for &c in &fov {
+            let dist = p_coord.chebyshev_distance(c) as u32;
+            let is_dark = self.level.is_dark_at(c);
+            let is_lit = illuminated.contains(&c);
+            if netrust_core::lighting::can_see_tile(is_blind, dist, is_dark, is_lit) {
+                visible_tiles.insert(c);
+            }
+        }
+
+        // Determine detected monsters
+        let mut detected_monsters = HashSet::new();
+        for (aid, actor) in self.arena.actors.iter() {
+            if actor.is_dead {
+                continue;
+            }
+            let tile_vis = visible_tiles.contains(&actor.coord);
+            let has_mind = netrust_core::lighting::monster_has_mind(&actor.name);
+            if netrust_core::lighting::can_detect_monster(is_blind, has_telepathy, has_mind, tile_vis) {
+                detected_monsters.insert(aid);
+            }
+        }
+
+        (visible_tiles, detected_monsters)
+    }
 }

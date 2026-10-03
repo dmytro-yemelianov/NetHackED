@@ -28,3 +28,4 @@ import NetMechanics.Bones
 import NetMechanics.InventoryInteraction
 import NetMechanics.PetCoop
 import NetMechanics.Mines
+import NetMechanics.Lighting

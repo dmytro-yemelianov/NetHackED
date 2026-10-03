@@ -1736,6 +1736,103 @@ fn test_mines_end_luckstone_preservation() {
     assert_eq!(sim.player_luck, 4, "Without luckstone, positive luck decays toward 0");
 }
 
+#[test]
+fn test_dynamic_lighting_oil_lamp_and_dark_room() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+
+    // Mark whole level as dark to simulate a dark cavern
+    sim.level.is_dark = true;
+
+    // Without a lit lamp, in a dark room:
+    let (vis_before, _) = sim.compute_perception();
+    // Only adjacent tiles (dist <= 1) are felt/seen in darkness
+    for &c in &vis_before {
+        assert!(p_coord.chebyshev_distance(c) <= 1, "In darkness without light, only melee distance is visible");
+    }
+
+    // Spawn an oil lamp in player's inventory
+    let lamp = sim.arena.spawn_item(create_item_record(
+        ItemKindId::OilLamp,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Uncursed,
+    ));
+    let carried = sim.arena.items_carried_by(sim.player_id);
+    let lamp_idx = carried.iter().position(|&id| id == lamp).unwrap();
+
+    // Apply (light) the lamp
+    let light_events = sim.step_player_action(ActionAst::Apply(lamp_idx));
+    assert!(light_events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("light the oil lamp"))));
+
+    // With lit lamp, perception expands to luminescence radius (3)
+    let (vis_lit, _) = sim.compute_perception();
+    assert!(vis_lit.len() > vis_before.len(), "Lighting lamp must illuminate more tiles in dark room");
+    assert!(vis_lit.iter().any(|&c| p_coord.chebyshev_distance(c) >= 2), "Lit lamp must illuminate beyond melee reach");
+
+    // Apply (extinguish) the lamp
+    let carried2 = sim.arena.items_carried_by(sim.player_id);
+    let lamp_idx2 = carried2.iter().position(|&id| id == lamp).unwrap();
+    let extinguish_events = sim.step_player_action(ActionAst::Apply(lamp_idx2));
+    assert!(extinguish_events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("extinguish the oil lamp"))));
+
+    let (vis_after, _) = sim.compute_perception();
+    assert_eq!(vis_after.len(), vis_before.len(), "Extinguished lamp reverts to melee darkness vision");
+}
+
+#[test]
+fn test_blindness_and_telepathy_perception() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+
+    // Pick two visible, passable floor tiles in player's field of view
+    let (vis_initial, _) = sim.compute_perception();
+    let mut candidates: Vec<Coord> = vis_initial
+        .into_iter()
+        .filter(|&c| c != p_coord && sim.level.is_passable(c) && p_coord.chebyshev_distance(c) >= 2)
+        .collect();
+    candidates.sort_by_key(|c| (c.x, c.y));
+    assert!(candidates.len() >= 2, "Must find at least 2 open floor tiles in FOV");
+
+    let gnome_coord = candidates[0];
+    let skel_coord = candidates[1];
+
+    // Spawn a Gnome (conscious mind) and a Skeleton (mindless undead construct)
+    let gnome = sim.arena.spawn_actor(netrust_data::create_monster_record(
+        MonsterSpeciesId::Gnome,
+        gnome_coord,
+    ));
+    let skel = sim.arena.spawn_actor(netrust_data::create_monster_record(
+        MonsterSpeciesId::Skeleton,
+        skel_coord,
+    ));
+
+    // Case 1: Normal sight (not blind) -> both monsters visible
+    let (vis_normal, detected_normal) = sim.compute_perception();
+    assert!(vis_normal.contains(&gnome_coord));
+    assert!(vis_normal.contains(&skel_coord));
+    assert!(detected_normal.contains(&gnome));
+    assert!(detected_normal.contains(&skel));
+
+    // Case 2: Blind, but with telepathy -> Gnome detected via ESP, Skeleton undetectable
+    if let Some(player) = sim.arena.actors.get_mut(sim.player_id) {
+        player.intrinsics.blind = true;
+        player.intrinsics.telepathy = true;
+    }
+
+    let (vis_blind, detected_blind) = sim.compute_perception();
+    assert!(vis_blind.is_empty(), "Blindness must extinguish all tile sight");
+    assert!(detected_blind.contains(&gnome), "Telepathy must detect conscious mind (Gnome)");
+    assert!(!detected_blind.contains(&skel), "Telepathy cannot detect mindless construct (Skeleton)");
+
+    // Case 3: Blind, without telepathy -> neither monster detected
+    if let Some(player) = sim.arena.actors.get_mut(sim.player_id) {
+        player.intrinsics.telepathy = false;
+    }
+    let (_, detected_no_esp) = sim.compute_perception();
+    assert!(!detected_no_esp.contains(&gnome), "Without telepathy and blind, cannot detect Gnome");
+    assert!(!detected_no_esp.contains(&skel), "Without telepathy and blind, cannot detect Skeleton");
+}
+
 
 
 

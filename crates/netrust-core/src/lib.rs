@@ -28,6 +28,7 @@ pub mod bones;
 pub mod inventory_interaction;
 pub mod pet_coop;
 pub mod mines;
+pub mod lighting;
 
 pub use ast::{ActionAst, Direction, EffectAst, WorldState};
 pub use buc::{dip_water, uncurse, Buc, WaterType};
@@ -62,6 +63,10 @@ pub use pet_coop::{choose_pet_goal, pet_tile_steppable, promote_pet, PetFamily, 
 pub use mines::{
     apply_priest_donation, clamp_luck, priest_uncurse, protection_donation_cost, step_luck_decay,
     LuckstoneStatus, MAX_DIVINE_PROTECTION,
+};
+pub use lighting::{
+    can_detect_monster, can_see_tile, monster_has_mind, tick_light_fuel, LightSource,
+    CANDLE_RADIUS, DEFAULT_LAMP_FUEL, LANTERN_RADIUS, OIL_LAMP_RADIUS,
 };
 pub use netrust_types::{
     ArtifactKind, AscensionOutcome, BonesData, BonesItem, BranchCoord, BranchId, BreathType, Deity,

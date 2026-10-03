@@ -24,6 +24,7 @@ use netrust_core::{
     choose_pet_goal, pet_tile_steppable, promote_pet, PetFamily, PetGoal, PetSpeciesTier,
     apply_priest_donation, MAX_DIVINE_PROTECTION, protection_donation_cost, priest_uncurse,
     LuckstoneStatus, step_luck_decay,
+    can_see_tile, LightSource, tick_light_fuel, can_detect_monster,
 };
 use proptest::prelude::*;
 
@@ -1026,6 +1027,91 @@ proptest! {
         // Cursed luckstone traps bad luck
         if stone == LuckstoneStatus::Cursed && luck < 0 {
             prop_assert_eq!(next_luck, luck);
+        }
+    }
+
+    // -------------------------------------------------------------
+    // Theorems: blind_blocks_sight & dark_room_requires_light
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_lighting_perception_theorems(
+        dist in 0u32..20,
+        is_dark in proptest::bool::ANY,
+        is_illuminated in proptest::bool::ANY,
+    ) {
+        // Blindness unconditionally extinguishes direct visual sight of tiles
+        prop_assert!(!can_see_tile(true, dist, is_dark, is_illuminated));
+
+        // In dark room, tiles beyond melee radius (1) require illumination
+        if is_dark && dist > 1 && !is_illuminated {
+            prop_assert!(!can_see_tile(false, dist, is_dark, is_illuminated));
+        }
+
+        // In illuminated dark room, tile is visible
+        if is_dark && is_illuminated {
+            prop_assert!(can_see_tile(false, dist, is_dark, is_illuminated));
+        }
+
+        // In standard illuminated room, tile is visible
+        if !is_dark {
+            prop_assert!(can_see_tile(false, dist, is_dark, is_illuminated));
+        }
+    }
+
+    // -------------------------------------------------------------
+    // Theorems: light_radius_bounded & fuel_monotonically_decreases
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_light_source_bounds_and_fuel_theorems(
+        radius in 0u32..10,
+        fuel in 0u32..1000,
+        is_lit in proptest::bool::ANY,
+    ) {
+        let ls = LightSource { radius, fuel, is_lit };
+        // effectiveRadius <= radius
+        prop_assert!(ls.effective_radius() <= ls.radius);
+
+        if !ls.is_active() {
+            prop_assert_eq!(ls.effective_radius(), 0);
+        } else {
+            prop_assert_eq!(ls.effective_radius(), ls.radius);
+        }
+
+        // tick_light_fuel <= fuel
+        let next_fuel = tick_light_fuel(fuel);
+        prop_assert!(next_fuel <= fuel);
+        if fuel == 0 {
+            prop_assert_eq!(next_fuel, 0);
+        } else {
+            prop_assert_eq!(next_fuel, fuel - 1);
+        }
+    }
+
+    // -------------------------------------------------------------
+    // Theorems: telepathy_detects_thinking_monsters & mindless_undetected_when_blind
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_telepathy_theorems(
+        blind in proptest::bool::ANY,
+        telepathy in proptest::bool::ANY,
+        has_mind in proptest::bool::ANY,
+        tile_visible in proptest::bool::ANY,
+    ) {
+        let detected = can_detect_monster(blind, telepathy, has_mind, tile_visible);
+
+        // Visual sight guarantees detection
+        if tile_visible {
+            prop_assert!(detected);
+        }
+
+        // Telepathy detects conscious minds regardless of blindness
+        if telepathy && has_mind {
+            prop_assert!(detected);
+        }
+
+        // Mindless monsters undetected when blind and tile not visible
+        if blind && !tile_visible && !has_mind {
+            prop_assert!(!detected);
         }
     }
 }
