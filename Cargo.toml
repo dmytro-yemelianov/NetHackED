@@ -1,0 +1,13 @@
+[workspace]
+members = [
+    "crates/netrust-types",
+    "crates/netrust-arena",
+    "crates/netrust-dungeon",
+    "crates/netrust-data",
+    "crates/netrust-sim",
+    "crates/netrust-core",
+    "crates/netrust-agent",
+    "crates/netrust-tui",
+    "crates/netrust-wasm",
+]
+resolver = "2"

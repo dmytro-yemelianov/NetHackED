@@ -1,0 +1,12 @@
+[package]
+name = "netrust-core"
+version = "0.1.0"
+edition = "2021"
+description = "Core game mechanics of NetHack formalized in Lean 4 and implemented in safe Rust"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+netrust-types = { path = "../netrust-types" }
+
+[dev-dependencies]
+proptest = "1.5"
