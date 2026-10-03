@@ -431,6 +431,54 @@ impl Messages {
             Locale::Uk => format!("Крижаний холод сковує ваш подих... Мстивий привид героя {} блукає цим могильником!", hero_name),
         }
     }
+
+    pub fn potion_diluted(old_name: &str, new_name: &str, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!("You dip the {} into the water. It becomes a {}!", old_name, new_name),
+            Locale::Uk => format!("Ви занурюєте {} у воду. Зілля розбавляється і стає {}!", old_name, new_name),
+        }
+    }
+
+    pub fn djinni_wishing(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "A majestic Djinni appears in a cloud of fragrant smoke! 'I am in your debt. Speak thy wish!'",
+            Locale::Uk => "Величний Джин з'являється у хмарі запашного диму! 'Я твій боржник. Назви своє бажання!'",
+        }
+    }
+
+    pub fn djinni_peaceful(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "A friendly Djinni emerges from the lamp, bows graciously, and vanishes into the ether.",
+            Locale::Uk => "Дружній Джин виходить із лампи, ґречно вклоняється і розчиняється в ефірі.",
+        }
+    }
+
+    pub fn djinni_hostile(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "An enraged Djinni bursts forth from the cursed lamp! 'Who dares disturb my eternal slumber?!'",
+            Locale::Uk => "Оскаженілий Джин виривається з проклятої лампи! 'Хто посмів порушити мій вічний спокій?!'",
+        }
+    }
+
+    pub fn lamp_smoke(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "A small puff of smoke curls up from the lamp, but nothing happens.",
+            Locale::Uk => "Легкий струмок диму здіймається з лампи, але нічого не відбувається.",
+        }
+    }
+
+    pub fn price_appraisal(item_name: &str, sell_price: u32, buy_price: u32, base: u32, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!(
+                "The shopkeeper appraises your {}: 'I'll give you {} zm for it, or sell it for {} zm.' (Base value: ~{} zm)",
+                item_name, sell_price, buy_price, base
+            ),
+            Locale::Uk => format!(
+                "Крамар оцінює ваш {}: 'Я можу дати вам {} зм, або продати за {} зм.' (Базова вартість: ~{} зм)",
+                item_name, sell_price, buy_price, base
+            ),
+        }
+    }
 }
 
 #[cfg(test)]

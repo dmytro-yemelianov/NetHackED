@@ -25,6 +25,7 @@ pub mod religion;
 pub mod artifacts_wands;
 pub mod monster_abilities;
 pub mod bones;
+pub mod inventory_interaction;
 
 pub use ast::{ActionAst, Direction, EffectAst, WorldState};
 pub use buc::{dip_water, uncurse, Buc, WaterType};
@@ -51,6 +52,10 @@ pub use religion::{clamp_favor, consecrate_water, resolve_sacrifice, tick_prayer
 pub use artifacts_wands::{apply_vorpal_strike, parse_wish, recharge_wand, resolve_artifact_damage, zap_wand};
 pub use monster_abilities::{calculate_summon_count, resolve_breath_damage, resolve_gaze};
 pub use bones::{corrupt_buc_on_death, create_ghost_hp, is_valid_bones_level};
+pub use inventory_interaction::{
+    buy_factor, calculate_buy_price, calculate_sell_price, dilute_potion, reverse_price_id, rub_lamp,
+    sell_factor, DilutionState, RubResult,
+};
 pub use netrust_types::{
     ArtifactKind, AscensionOutcome, BonesData, BonesItem, BranchCoord, BranchId, BreathType, Deity,
     DivineState, DrawbridgeState, DrawbridgeTransition, EndgamePlane, GazeEffect, GazeType, Intrinsics,

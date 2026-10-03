@@ -55,6 +55,8 @@ impl SimulationWorld {
             ActionAst::Sacrifice(idx) => events.extend(self.handle_sacrifice(idx)),
             ActionAst::Pay => events.extend(self.handle_pay()),
             ActionAst::Engrave { text, medium } => events.extend(self.handle_engrave(text, medium)),
+            ActionAst::Rub(idx) => events.extend(self.handle_rub(idx)),
+            ActionAst::PriceCheck(idx) => events.extend(self.handle_price_check(idx)),
             ActionAst::Wait => {
                 self.scheduler.hero_act(NORMAL_SPEED);
             }

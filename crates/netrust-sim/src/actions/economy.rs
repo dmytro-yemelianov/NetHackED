@@ -40,4 +40,42 @@ impl SimulationWorld {
 
         events
     }
+
+    pub fn handle_price_check(&mut self, item_index: usize) -> Vec<GameEvent> {
+        let mut events = Vec::new();
+        let carried = self.arena.items_carried_by(self.player_id);
+        if item_index >= carried.len() {
+            events.push(GameEvent::LogMessage {
+                text: "You don't have that item to appraise.".into(),
+            });
+            return events;
+        }
+
+        let has_shopkeeper = self.arena.actors.values().any(|a| a.name == "shopkeeper" && !a.is_dead);
+        if !has_shopkeeper {
+            events.push(GameEvent::LogMessage {
+                text: "There is no shopkeeper here to appraise your goods.".into(),
+            });
+            return events;
+        }
+
+        let item_id = carried[item_index];
+        if let Some(item) = self.arena.items.get(item_id) {
+            let base_cost = netrust_data::items::ITEM_CATALOG
+                .iter()
+                .find(|it| it.name == item.name)
+                .map(|it| it.cost)
+                .unwrap_or(20);
+            let cha = 12; // default adventurer charisma
+            let buy = netrust_core::calculate_buy_price(base_cost, cha, item.buc);
+            let sell = netrust_core::calculate_sell_price(base_cost, cha, item.buc);
+            events.push(GameEvent::LogMessage {
+                text: netrust_i18n::Messages::price_appraisal(&item.name, sell, buy, base_cost, self.locale),
+            });
+            self.scheduler.hero_act(NORMAL_SPEED);
+        }
+
+        events
+    }
 }
+

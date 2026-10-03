@@ -25,3 +25,4 @@ import NetMechanics.Religion
 import NetMechanics.ArtifactsWands
 import NetMechanics.MonsterAbilities
 import NetMechanics.Bones
+import NetMechanics.InventoryInteraction

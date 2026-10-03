@@ -19,6 +19,30 @@ impl SimulationWorld {
             if let Some(item) = self.arena.items.get_mut(item_id) {
                 let prev_buc = item.buc;
                 item.buc = netrust_core::buc::dip_water(into_water, prev_buc);
+
+                // Handle potion dilution & water transformation
+                if item.class == ItemClass::Potion {
+                    if into_water == WaterType::Plain {
+                        if item.name.contains("extra healing") {
+                            let old = item.name.clone();
+                            item.name = "potion of healing".into();
+                            events.push(GameEvent::LogMessage {
+                                text: netrust_i18n::Messages::potion_diluted(&old, &item.name, self.locale),
+                            });
+                        } else if !item.name.contains("water") {
+                            let old = item.name.clone();
+                            item.name = "potion of water".into();
+                            events.push(GameEvent::LogMessage {
+                                text: netrust_i18n::Messages::potion_diluted(&old, &item.name, self.locale),
+                            });
+                        }
+                    } else if into_water == WaterType::Holy && item.name.contains("water") {
+                        item.name = "potion of holy water".into();
+                    } else if into_water == WaterType::Unholy && item.name.contains("water") {
+                        item.name = "potion of unholy water".into();
+                    }
+                }
+
                 let status_desc = match item.buc {
                     Buc::Blessed => "glows with a pure amber aura (blessed)!",
                     Buc::Uncursed => "glows softly and feels purified (uncursed).",
@@ -32,6 +56,75 @@ impl SimulationWorld {
         } else {
             events.push(GameEvent::LogMessage { text: "You don't have that item to dip.".into() });
         }
+        events
+    }
+
+    pub fn handle_rub(&mut self, item_index: usize) -> Vec<GameEvent> {
+        let mut events = Vec::new();
+        let carried = self.arena.items_carried_by(self.player_id);
+        if item_index >= carried.len() {
+            events.push(GameEvent::LogMessage { text: "You don't have that item to rub.".into() });
+            return events;
+        }
+
+        let item_id = carried[item_index];
+        let item = self.arena.items.get(item_id).cloned();
+        if let Some(item) = item {
+            let is_magic = item.name.contains("magic lamp");
+            let is_oil = item.name.contains("oil lamp");
+
+            if is_magic {
+                let (res, consumed) = netrust_core::rub_lamp(true, true, item.buc, 1000);
+                if consumed {
+                    if let Some(it_mut) = self.arena.items.get_mut(item_id) {
+                        it_mut.name = "oil lamp".into();
+                    }
+                }
+
+                match res {
+                    netrust_core::RubResult::WishGranted => {
+                        events.push(GameEvent::LogMessage {
+                            text: netrust_i18n::Messages::djinni_wishing(self.locale).into(),
+                        });
+                        // Grant an immediate boon / blessed scroll of identify
+                        let player_c = self.arena.actors.get(self.player_id).map(|p| p.coord).unwrap_or(Coord::new_unchecked(1, 1));
+                        let gift = create_item_record(ItemKindId::ScrollOfIdentify, ItemLocation::Floor(player_c), Buc::Blessed);
+                        self.arena.spawn_item(gift);
+                    }
+                    netrust_core::RubResult::PeacefulDjinni => {
+                        events.push(GameEvent::LogMessage {
+                            text: netrust_i18n::Messages::djinni_peaceful(self.locale).into(),
+                        });
+                    }
+                    netrust_core::RubResult::HostileDjinni => {
+                        events.push(GameEvent::LogMessage {
+                            text: netrust_i18n::Messages::djinni_hostile(self.locale).into(),
+                        });
+                        let player_c = self.arena.actors.get(self.player_id).map(|p| p.coord).unwrap_or(Coord::new_unchecked(1, 1));
+                        let spawn_c = player_c.neighbors().into_iter().find(|&c| self.level.is_passable(c) && self.actor_at(c).is_none()).unwrap_or(player_c);
+                        let mut mon = netrust_data::create_monster_record(netrust_data::MonsterSpeciesId::Djinni, spawn_c);
+                        mon.name = "hostile djinni".into();
+                        self.arena.spawn_actor(mon);
+                    }
+                    _ => {
+                        events.push(GameEvent::LogMessage {
+                            text: netrust_i18n::Messages::lamp_smoke(self.locale).into(),
+                        });
+                    }
+                }
+                self.scheduler.hero_act(NORMAL_SPEED);
+            } else if is_oil {
+                events.push(GameEvent::LogMessage {
+                    text: netrust_i18n::Messages::lamp_smoke(self.locale).into(),
+                });
+                self.scheduler.hero_act(NORMAL_SPEED);
+            } else {
+                events.push(GameEvent::LogMessage {
+                    text: format!("Rubbing the {} doesn't seem to do anything.", item.name),
+                });
+            }
+        }
+
         events
     }
 

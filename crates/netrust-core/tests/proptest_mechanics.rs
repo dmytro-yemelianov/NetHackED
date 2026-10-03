@@ -19,6 +19,8 @@ use netrust_core::{
     apply_vorpal_strike, zap_wand, recharge_wand, WandCharges, RechargeResult,
     BreathType, GazeType, GazeEffect, Intrinsics, calculate_summon_count, resolve_breath_damage, resolve_gaze,
     corrupt_buc_on_death, create_ghost_hp, is_valid_bones_level,
+    buy_factor, calculate_buy_price, calculate_sell_price, dilute_potion, rub_lamp, sell_factor,
+    DilutionState, RubResult,
 };
 use proptest::prelude::*;
 
@@ -851,7 +853,61 @@ proptest! {
         let is_valid = is_valid_bones_level(depth);
         prop_assert_eq!(is_valid, depth >= 1);
     }
+
+    // -------------------------------------------------------------
+    // Theorems: dilute_water_idempotent & dilute_eventually_water
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_dilution_theorems(tier in 0u32..10) {
+        prop_assert_eq!(dilute_potion(DilutionState::Water), DilutionState::Water);
+
+        let mut current = DilutionState::Potion(tier);
+        let mut steps = 0;
+        while current != DilutionState::Water && steps <= 15 {
+            current = dilute_potion(current);
+            steps += 1;
+        }
+        prop_assert_eq!(current, DilutionState::Water);
+        prop_assert_eq!(steps, tier + 1);
+    }
+
+    // -------------------------------------------------------------
+    // Theorems: rub_magic_lamp_exhausts_djinni & rub_oil_lamp_never_wishes
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_rub_lamp_theorems(buc in arb_buc(), turns in 0u32..2000) {
+        // Magic lamp with Djinni always consumes Djinni
+        let (_, consumed) = rub_lamp(true, true, buc, turns);
+        prop_assert!(consumed);
+
+        // Ordinary oil lamp never grants wishes
+        let (res, _) = rub_lamp(false, false, buc, turns);
+        prop_assert_ne!(res, RubResult::WishGranted);
+    }
+
+    // -------------------------------------------------------------
+    // Theorems: sell_le_buy_price & charisma factor monotonicity
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_price_identification_theorems(base in 1u32..2000, cha in 1u32..25, buc in arb_buc()) {
+        let buy = calculate_buy_price(base, cha, buc);
+        let sell = calculate_sell_price(base, cha, buc);
+        // Arbitrage prevention: sell price <= buy price
+        prop_assert!(sell <= buy);
+
+        // Charisma monotonicity: higher charisma -> buy factor does not increase, sell factor does not decrease
+        if cha < 25 {
+            let next_buy_fac = buy_factor(cha + 1);
+            let cur_buy_fac = buy_factor(cha);
+            prop_assert!(next_buy_fac <= cur_buy_fac);
+
+            let next_sell_fac = sell_factor(cha + 1);
+            let cur_sell_fac = sell_factor(cha);
+            prop_assert!(next_sell_fac >= cur_sell_fac);
+        }
+    }
 }
+
 
 
 

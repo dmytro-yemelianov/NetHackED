@@ -7,6 +7,7 @@ use netrust_data::{
     MonsterSpeciesId, RaceId, RoleId,
 };
 use netrust_dungeon::RoomType;
+use netrust_core::WaterType;
 use netrust_sim::{
     ActionAst, Alignment, Buc, Coord, Direction, DoorState, GameEvent, Intrinsics, ItemClass,
     SimulationWorld, SpellKind, Tile,
@@ -1463,6 +1464,102 @@ fn test_bones_file_generation_and_ghost_encounter() {
     // Bones consumed
     assert!(sim2.bones_storage.is_empty());
 }
+
+#[test]
+fn test_potion_dilution_and_water_transformation() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    let potion = sim.arena.spawn_item(create_item_record(
+        ItemKindId::PotionOfExtraHealing,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Uncursed,
+    ));
+
+    let carried = sim.arena.items_carried_by(sim.player_id);
+    let idx = carried.iter().position(|&id| id == potion).unwrap();
+
+    // Dilute Extra Healing -> Healing
+    let events1 = sim.step_player_action(ActionAst::Dip {
+        item_index: idx,
+        into_water: WaterType::Plain,
+    });
+    assert!(events1.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("potion of healing"))));
+    assert_eq!(sim.arena.items.get(potion).unwrap().name, "potion of healing");
+
+    // Dilute Healing -> Water
+    let events2 = sim.step_player_action(ActionAst::Dip {
+        item_index: idx,
+        into_water: WaterType::Plain,
+    });
+    assert!(events2.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("potion of water"))));
+    assert_eq!(sim.arena.items.get(potion).unwrap().name, "potion of water");
+
+    // Dip Water into Holy Water -> Holy Water (Blessed)
+    let events3 = sim.step_player_action(ActionAst::Dip {
+        item_index: idx,
+        into_water: WaterType::Holy,
+    });
+    assert_eq!(sim.arena.items.get(potion).unwrap().name, "potion of holy water");
+    assert_eq!(sim.arena.items.get(potion).unwrap().buc, Buc::Blessed);
+}
+
+#[test]
+fn test_magic_lamp_rub_djinni_and_wishing() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    let lamp = sim.arena.spawn_item(create_item_record(
+        ItemKindId::MagicLamp,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Blessed,
+    ));
+
+    let carried = sim.arena.items_carried_by(sim.player_id);
+    let idx = carried.iter().position(|&id| id == lamp).unwrap();
+
+    // Rub blessed magic lamp -> Djinni wish granted, transforms into oil lamp
+    let events = sim.step_player_action(ActionAst::Rub(idx));
+    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("Djinni") && text.contains("wish"))));
+    assert_eq!(sim.arena.items.get(lamp).unwrap().name, "oil lamp");
+
+    // Rub oil lamp -> just smoke
+    let events_smoke = sim.step_player_action(ActionAst::Rub(idx));
+    assert!(events_smoke.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("smoke"))));
+
+    // Rub cursed magic lamp -> Hostile Djinni spawned
+    let cursed_lamp = sim.arena.spawn_item(create_item_record(
+        ItemKindId::MagicLamp,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Cursed,
+    ));
+    let carried2 = sim.arena.items_carried_by(sim.player_id);
+    let idx2 = carried2.iter().position(|&id| id == cursed_lamp).unwrap();
+    let events_hostile = sim.step_player_action(ActionAst::Rub(idx2));
+    assert!(events_hostile.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("enraged Djinni") || text.contains("Who dares"))));
+    assert!(sim.arena.actors.values().any(|a| a.name == "hostile djinni"));
+}
+
+#[test]
+fn test_shopkeeper_price_identification() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    // Ensure shopkeeper exists
+    let sk = netrust_data::create_monster_record(
+        netrust_data::MonsterSpeciesId::Goblin,
+        Coord::new_unchecked(5, 5),
+    );
+    let mut sk = sk;
+    sk.name = "shopkeeper".into();
+    sim.arena.spawn_actor(sk);
+
+    let sword = sim.arena.spawn_item(create_item_record(
+        ItemKindId::LongSword,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Uncursed,
+    ));
+    let carried = sim.arena.items_carried_by(sim.player_id);
+    let idx = carried.iter().position(|&id| id == sword).unwrap();
+
+    let events = sim.step_player_action(ActionAst::PriceCheck(idx));
+    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("shopkeeper appraises your long sword"))));
+}
+
 
 
 

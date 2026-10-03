@@ -26,6 +26,7 @@ pub enum MonsterSpeciesId {
     LittleDog,
     Kitten,
     Ghost,
+    Djinni,
 }
 
 /// Behavioral archetype for autonomous monster decision making.
@@ -325,6 +326,21 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         alignment: Alignment::Neutral,
         intrinsics: Intrinsics::empty().with_cold_resistance().with_see_invisible(),
         damage_dice: (1, 8),
+        ai_behavior: AiBehavior::MeleeHunter,
+        abilities: &[],
+    },
+    MonsterArchetype {
+        id: MonsterSpeciesId::Djinni,
+        name: "djinni",
+        glyph: '&',
+        base_hp: 55,
+        max_hp: 55,
+        ac: 0,
+        level: 7,
+        speed: 12,
+        alignment: Alignment::Neutral,
+        intrinsics: Intrinsics::empty().with_fire_resistance().with_telepathy(),
+        damage_dice: (2, 8),
         ai_behavior: AiBehavior::MeleeHunter,
         abilities: &[],
     },

@@ -39,6 +39,8 @@ pub enum ActionAst {
     Eat(usize),
     Cast { spell_index: usize, dir: Direction },
     Wish(String),
+    Rub(usize),
+    PriceCheck(usize),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
