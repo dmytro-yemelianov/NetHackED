@@ -20,6 +20,9 @@ pub mod sokoban;
 pub mod branch;
 pub mod pet;
 pub mod enchantment;
+pub mod endgame;
+pub mod religion;
+pub mod artifacts_wands;
 
 pub use ast::{ActionAst, Direction, EffectAst, WorldState};
 pub use buc::{dip_water, uncurse, Buc, WaterType};
@@ -41,5 +44,11 @@ pub use sokoban::{push_boulder, PushOutcome};
 pub use branch::{branch_entrance_depth, branch_max_depth, enter_branch, exit_branch};
 pub use pet::{feed_pet, interact_with_occupant, swap_displacement, HeroInteraction};
 pub use enchantment::{apply_erosion, enchant_item, mix_alchemy, EnchantResult, MAX_EROSION, SAFE_ENCHANT_CAP};
-pub use netrust_types::{BranchCoord, BranchId};
+pub use endgame::{destroy_drawbridge, offer_amulet_on_high_altar, toggle_drawbridge};
+pub use religion::{clamp_favor, consecrate_water, resolve_sacrifice, tick_prayer_timeout};
+pub use artifacts_wands::{apply_vorpal_strike, parse_wish, recharge_wand, resolve_artifact_damage, zap_wand};
+pub use netrust_types::{
+    ArtifactKind, AscensionOutcome, BranchCoord, BranchId, Deity, DivineState, DrawbridgeState,
+    DrawbridgeTransition, EndgamePlane, Pantheon, RechargeResult, SacrificeResult, WandCharges,
+};
 

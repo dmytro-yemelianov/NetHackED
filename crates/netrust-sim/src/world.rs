@@ -41,6 +41,7 @@ pub struct SimulationWorld {
     pub player_pw: u32,
     pub player_max_pw: u32,
     pub known_spells: Vec<(SpellKind, u32)>,
+    pub divine_state: netrust_types::DivineState,
     #[serde(skip, default = "default_rng")]
     pub rng: ChaCha8Rng,
     pub seed: u64,
@@ -149,6 +150,7 @@ impl SimulationWorld {
             player_pw,
             player_max_pw,
             known_spells,
+            divine_state: netrust_types::DivineState::default(),
             rng,
             seed,
             event_log: Vec::new(),

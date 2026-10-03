@@ -95,6 +95,13 @@ impl SimulationWorld {
                         });
                         self.scheduler.hero_act(NORMAL_SPEED);
                     }
+                    Tile::Drawbridge { open: false } => {
+                        self.level.set_tile(target_coord, Tile::Drawbridge { open: true });
+                        events.push(GameEvent::LogMessage {
+                            text: "You lower the drawbridge over the moat. The portcullis creaks open.".into(),
+                        });
+                        self.scheduler.hero_act(NORMAL_SPEED);
+                    }
                     _ if tile.is_passable() => {
                         let from = player.coord;
                         if let Some(p) = self.arena.actors.get_mut(self.player_id) {

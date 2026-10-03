@@ -50,6 +50,7 @@ impl SimulationWorld {
             ActionAst::Eat(idx) => events.extend(self.handle_eat(idx)),
             ActionAst::Cast { spell_index, dir } => events.extend(self.handle_cast(spell_index, dir)),
             ActionAst::ZapWand { dir, energy } => events.extend(self.handle_zap_wand(dir, energy)),
+            ActionAst::Wish(wish_str) => events.extend(self.handle_wish(wish_str)),
             ActionAst::Pray => events.extend(self.handle_pray()),
             ActionAst::Sacrifice(idx) => events.extend(self.handle_sacrifice(idx)),
             ActionAst::Pay => events.extend(self.handle_pay()),
@@ -62,6 +63,8 @@ impl SimulationWorld {
         // Process monster actions and turn scheduler ticks
         let sim_events = self.process_turn_ticks();
         events.extend(sim_events);
+
+        self.divine_state.prayer_timeout = netrust_core::religion::tick_prayer_timeout(self.divine_state.prayer_timeout);
 
         self.event_log.extend(events.clone());
         events

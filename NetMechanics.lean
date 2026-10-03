@@ -20,6 +20,6 @@ import NetMechanics.Sokoban
 import NetMechanics.Branch
 import NetMechanics.Pet
 import NetMechanics.Enchantment
-
-
-
+import NetMechanics.Endgame
+import NetMechanics.Religion
+import NetMechanics.ArtifactsWands

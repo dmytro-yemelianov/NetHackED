@@ -117,6 +117,8 @@ pub enum BranchId {
     DungeonsOfDoom,
     GnomishMines,
     Sokoban,
+    Gehennom,
+    AstralPlane,
 }
 
 /// Discrete branch coordinate: (BranchId, LevelWithinBranch).
@@ -126,6 +128,39 @@ pub struct BranchCoord {
     pub depth: usize,
 }
 
+/// The 5 Endgame Planes leading to the Astral Plane.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum EndgamePlane {
+    Earth,
+    Air,
+    Fire,
+    Water,
+    Astral,
+}
+
+/// State of the Castle drawbridge.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum DrawbridgeState {
+    Open,
+    Closed,
+    Destroyed,
+}
+
+/// Result of operating a drawbridge.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DrawbridgeTransition {
+    Lowered,
+    Raised { crushed_damage: u32 },
+    DestroyedAndFellInMoat,
+}
+
+/// Outcome of offering the Amulet of Yendor on a High Altar.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum AscensionOutcome {
+    Ascended(Alignment),
+    Rejected(String),
+}
+
 /// Alignment in NetHack.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Alignment {
@@ -133,6 +168,77 @@ pub enum Alignment {
     Neutral,
     Chaotic,
     Unaligned,
+}
+
+/// A specific deity in the pantheon.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Deity {
+    pub name: String,
+    pub align: Alignment,
+}
+
+/// 3-deity Pantheon for a character role (Lawful, Neutral, Chaotic).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Pantheon {
+    pub lawful: Deity,
+    pub neutral: Deity,
+    pub chaotic: Deity,
+}
+
+/// Character divine state tracking favor, prayer cooldown, and gifts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DivineState {
+    pub favor: i32,
+    pub prayer_timeout: u32,
+    pub gift_count: u32,
+}
+
+impl Default for DivineState {
+    fn default() -> Self {
+        Self {
+            favor: 5,
+            prayer_timeout: 0,
+            gift_count: 0,
+        }
+    }
+}
+
+/// Result of sacrificing a corpse on an altar.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SacrificeResult {
+    AltarConverted(Alignment),
+    FavorIncreased(i32),
+    DivineGift(String),
+}
+
+/// Canonical NetHack signature named artifacts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum ArtifactKind {
+    Excalibur,
+    VorpalBlade,
+    Mjollnir,
+    Magicbane,
+    EyeOfTheAethiopica,
+}
+
+/// Wand charge state tracking current charges and number of recharges.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct WandCharges {
+    pub charges: u32,
+    pub recharges: u32,
+}
+
+impl WandCharges {
+    pub const fn new(charges: u32) -> Self {
+        Self { charges, recharges: 0 }
+    }
+}
+
+/// Wand recharging outcome.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum RechargeResult {
+    Success(WandCharges),
+    Exploded,
 }
 
 /// Door states.
@@ -157,6 +263,9 @@ pub enum Tile {
     BranchStairs { branch: BranchId, level: usize, up: bool },
     Pit { filled: bool },
     Altar { align: Alignment },
+    HighAltar { align: Alignment },
+    Drawbridge { open: bool },
+    Moat,
     Pool { frozen: bool },
     Lava,
 }
@@ -164,7 +273,13 @@ pub enum Tile {
 impl Tile {
     pub fn is_passable(&self) -> bool {
         match self {
-            Tile::Corr | Tile::Room | Tile::Stairs { .. } | Tile::BranchStairs { .. } | Tile::Altar { .. } => true,
+            Tile::Corr
+            | Tile::Room
+            | Tile::Stairs { .. }
+            | Tile::BranchStairs { .. }
+            | Tile::Altar { .. }
+            | Tile::HighAltar { .. } => true,
+            Tile::Drawbridge { open } => *open,
             Tile::Pit { filled } => *filled,
             Tile::Door { state, .. } => matches!(state, DoorState::Open | DoorState::Broken),
             Tile::Pool { frozen } => *frozen,
@@ -174,7 +289,17 @@ impl Tile {
 
     pub fn is_transparent(&self) -> bool {
         match self {
-            Tile::Room | Tile::Corr | Tile::Stairs { .. } | Tile::BranchStairs { .. } | Tile::Pit { .. } | Tile::Altar { .. } | Tile::Pool { .. } | Tile::Lava => true,
+            Tile::Room
+            | Tile::Corr
+            | Tile::Stairs { .. }
+            | Tile::BranchStairs { .. }
+            | Tile::Pit { .. }
+            | Tile::Altar { .. }
+            | Tile::HighAltar { .. }
+            | Tile::Pool { .. }
+            | Tile::Lava
+            | Tile::Moat => true,
+            Tile::Drawbridge { open } => *open,
             Tile::Door { state, .. } => matches!(state, DoorState::Open | DoorState::Broken),
             _ => false,
         }

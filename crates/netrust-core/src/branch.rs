@@ -10,6 +10,8 @@ pub const fn branch_entrance_depth(b: BranchId) -> usize {
         BranchId::DungeonsOfDoom => 1,
         BranchId::GnomishMines => 3,
         BranchId::Sokoban => 4,
+        BranchId::Gehennom => 5,
+        BranchId::AstralPlane => 1,
     }
 }
 
@@ -19,6 +21,8 @@ pub const fn branch_max_depth(b: BranchId) -> usize {
         BranchId::DungeonsOfDoom => 5,
         BranchId::GnomishMines => 4,
         BranchId::Sokoban => 3,
+        BranchId::Gehennom => 20,
+        BranchId::AstralPlane => 5,
     }
 }
 

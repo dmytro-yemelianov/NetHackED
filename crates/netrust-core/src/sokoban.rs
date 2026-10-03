@@ -32,11 +32,18 @@ pub fn push_boulder(
     };
 
     match target_tile {
-        Tile::Wall { .. } | Tile::Stone | Tile::Door { .. } | Tile::SecretDoor { .. } | Tile::Lava => {
+        Tile::Wall { .. } | Tile::Stone | Tile::Door { .. } | Tile::SecretDoor { .. } | Tile::Lava | Tile::Drawbridge { open: false } => {
             PushOutcome::Blocked
         }
-        Tile::Pit { filled: false } => PushOutcome::FilledPit(next_pos),
-        Tile::Room | Tile::Corr | Tile::Pit { filled: true } | Tile::Stairs { .. } | Tile::BranchStairs { .. } | Tile::Altar { .. } => {
+        Tile::Pit { filled: false } | Tile::Moat => PushOutcome::FilledPit(next_pos),
+        Tile::Room
+        | Tile::Corr
+        | Tile::Pit { filled: true }
+        | Tile::Stairs { .. }
+        | Tile::BranchStairs { .. }
+        | Tile::Altar { .. }
+        | Tile::HighAltar { .. }
+        | Tile::Drawbridge { open: true } => {
             PushOutcome::Moved(next_pos)
         }
         Tile::Pool { frozen } => {

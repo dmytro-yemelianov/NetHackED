@@ -373,6 +373,19 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
                 Tile::Altar { .. } => {
                     execute!(stdout, SetForegroundColor(Color::White), Print("_"), ResetColor)?;
                 }
+                Tile::HighAltar { .. } => {
+                    execute!(stdout, SetForegroundColor(Color::Yellow), Print("_"), ResetColor)?;
+                }
+                Tile::Drawbridge { open } => {
+                    if *open {
+                        execute!(stdout, SetForegroundColor(Color::DarkGrey), Print("."), ResetColor)?;
+                    } else {
+                        execute!(stdout, SetForegroundColor(Color::DarkYellow), Print("#"), ResetColor)?;
+                    }
+                }
+                Tile::Moat => {
+                    execute!(stdout, SetForegroundColor(Color::Cyan), Print("}"), ResetColor)?;
+                }
                 Tile::Pool { frozen } => {
                     execute!(stdout, SetForegroundColor(Color::Blue), Print(if *frozen { '=' } else { '}' }), ResetColor)?;
                 }

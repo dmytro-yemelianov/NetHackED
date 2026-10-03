@@ -883,5 +883,362 @@ fn test_alchemy_potion_mixing() {
     assert!(sim.arena.items.get(pot_speed).is_none(), "Reagent potion must be consumed");
 }
 
+#[test]
+fn test_drawbridge_lowering_and_crossing() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+    let bridge_coord = p_coord.step(Direction::East).unwrap();
+
+    // Set closed drawbridge to East
+    sim.level.set_tile(bridge_coord, Tile::Drawbridge { open: false });
+
+    // Step East -> lowers the drawbridge
+    let events = sim.step_player_action(ActionAst::Move(Direction::East));
+    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("lower the drawbridge"))));
+    assert_eq!(sim.level.get_tile(bridge_coord), &Tile::Drawbridge { open: true });
+
+    // Step East again -> crosses over the lowered drawbridge
+    let events2 = sim.step_player_action(ActionAst::Move(Direction::East));
+    assert!(events2.iter().any(|e| matches!(e, GameEvent::ActorMoved { to, .. } if *to == bridge_coord)));
+    assert_eq!(sim.arena.actors.get(sim.player_id).unwrap().coord, bridge_coord);
+}
+
+#[test]
+fn test_astral_plane_ascension_victory() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+    let player_align = sim.arena.actors.get(sim.player_id).unwrap().alignment;
+
+    // Place co-aligned High Altar under player
+    sim.level.set_tile(p_coord, Tile::HighAltar { align: player_align });
+
+    // Spawn Amulet of Yendor in player inventory
+    let amulet = sim.arena.spawn_item(create_item_record(
+        ItemKindId::AmuletOfYendor,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Blessed,
+    ));
+
+    let carried = sim.arena.items_carried_by(sim.player_id);
+    let amulet_idx = carried.iter().position(|&id| id == amulet).unwrap();
+
+    // Sacrifice Amulet on High Altar -> triggers Ascension & Victory!
+    let events = sim.step_player_action(ActionAst::Sacrifice(amulet_idx));
+    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("ascend to immortality"))));
+    assert!(events.iter().any(|e| matches!(e, GameEvent::Victory)));
+}
+
+#[test]
+fn test_astral_plane_ascension_cross_aligned_rejected() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+    let cross_align = Alignment::Chaotic; // Player is Neutral
+
+    // Place cross-aligned High Altar under player
+    sim.level.set_tile(p_coord, Tile::HighAltar { align: cross_align });
+
+    let amulet = sim.arena.spawn_item(create_item_record(
+        ItemKindId::AmuletOfYendor,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Blessed,
+    ));
+
+    let carried = sim.arena.items_carried_by(sim.player_id);
+    let amulet_idx = carried.iter().position(|&id| id == amulet).unwrap();
+
+    let hp_before = sim.arena.actors.get(sim.player_id).unwrap().hp;
+    let events = sim.step_player_action(ActionAst::Sacrifice(amulet_idx));
+    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("Offering rejected!"))));
+    assert!(!events.iter().any(|e| matches!(e, GameEvent::Victory)));
+    assert!(sim.arena.actors.get(sim.player_id).unwrap().hp < hp_before);
+}
+
+#[test]
+fn test_prayer_timeout_and_divine_smite() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+
+    // Initial safe prayer
+    let events1 = sim.step_player_action(ActionAst::Pray);
+    assert!(!events1.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("pray too soon"))));
+    assert_eq!(sim.divine_state.prayer_timeout, 299); // 300 - 1 turn step
+
+    // Praying again immediately -> triggers smite!
+    let hp_before = sim.arena.actors.get(sim.player_id).unwrap().hp;
+    let events2 = sim.step_player_action(ActionAst::Pray);
+    assert!(events2.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("pray too soon"))));
+    assert!(sim.arena.actors.get(sim.player_id).unwrap().hp < hp_before);
+}
+
+#[test]
+fn test_altar_sacrifice_and_divine_crowning() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+    let player_align = sim.arena.actors.get(sim.player_id).unwrap().alignment;
+
+    sim.level.set_tile(p_coord, Tile::Altar { align: player_align });
+    sim.divine_state.favor = 14;
+
+    let corpse = sim.arena.spawn_item(ItemRecord {
+        name: "goblin corpse".into(),
+        class: ItemClass::Food,
+        weight: 50,
+        buc: Buc::Uncursed,
+        is_container: false,
+        is_bag_of_holding: false,
+        enchantment: 0,
+        erosion: 0,
+        proofed: false,
+        location: ItemLocation::CarriedBy(sim.player_id),
+    });
+
+    let carried = sim.arena.items_carried_by(sim.player_id);
+    let corpse_idx = carried.iter().position(|&id| id == corpse).unwrap();
+
+    let events = sim.step_player_action(ActionAst::Sacrifice(corpse_idx));
+    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("crowns you their champion and gifts you Excalibur"))));
+    assert!(sim.arena.items_carried_by(sim.player_id).into_iter().any(|id| {
+        sim.arena.items.get(id).map(|i| i.name == "Excalibur").unwrap_or(false)
+    }));
+}
+
+#[test]
+fn test_altar_holy_water_consecration() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+    let player_align = sim.arena.actors.get(sim.player_id).unwrap().alignment;
+
+    sim.level.set_tile(p_coord, Tile::Altar { align: player_align });
+    sim.divine_state.favor = 8;
+
+    let water = sim.arena.spawn_item(ItemRecord {
+        name: "potion of water".into(),
+        class: ItemClass::Potion,
+        weight: 20,
+        buc: Buc::Uncursed,
+        is_container: false,
+        is_bag_of_holding: false,
+        enchantment: 0,
+        erosion: 0,
+        proofed: false,
+        location: ItemLocation::CarriedBy(sim.player_id),
+    });
+
+    let events = sim.step_player_action(ActionAst::Pray);
+    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("consecrates your water into Holy Water"))));
+    assert_eq!(sim.arena.items.get(water).unwrap().buc, Buc::Blessed);
+}
+
+#[test]
+fn test_wand_of_wishing_spawns_item() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+
+    let wand_id = sim.arena.spawn_item(ItemRecord {
+        name: "wand of wishing".into(),
+        class: ItemClass::Wand,
+        weight: 7,
+        buc: Buc::Blessed,
+        is_container: false,
+        is_bag_of_holding: false,
+        enchantment: 3,
+        erosion: 0,
+        proofed: false,
+        location: ItemLocation::CarriedBy(sim.player_id),
+    });
+
+    let events = sim.step_player_action(ActionAst::Wish("blessed +2 silver dragon scale mail".into()));
+    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("silver dragon scale mail"))));
+
+    // Verify charge depleted
+    let wand = sim.arena.items.get(wand_id).unwrap();
+    assert_eq!(wand.enchantment, 2);
+
+    // Verify item created on floor at player coordinate
+    let spawned = sim.arena.items_at_floor(p_coord).into_iter().find(|&id| {
+        sim.arena.items.get(id).map(|i| i.name == "silver dragon scale mail").unwrap_or(false)
+    });
+    assert!(spawned.is_some());
+    let item = sim.arena.items.get(spawned.unwrap()).unwrap();
+    assert_eq!(item.buc, Buc::Blessed);
+    assert_eq!(item.enchantment, 2);
+}
+
+#[test]
+fn test_wand_of_striking_destroys_drawbridge() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    let p_coord = Coord::new_unchecked(10, 10);
+    let bridge_coord = Coord::new_unchecked(12, 10);
+
+    sim.level.set_tile(p_coord, Tile::Room);
+    sim.level.set_tile(Coord::new_unchecked(11, 10), Tile::Room);
+    sim.level.set_tile(bridge_coord, Tile::Drawbridge { open: false });
+
+    if let Some(p) = sim.arena.actors.get_mut(sim.player_id) {
+        p.coord = p_coord;
+    }
+
+    let _wand = sim.arena.spawn_item(ItemRecord {
+        name: "wand of striking".into(),
+        class: ItemClass::Wand,
+        weight: 7,
+        buc: Buc::Uncursed,
+        is_container: false,
+        is_bag_of_holding: false,
+        enchantment: 5,
+        erosion: 0,
+        proofed: false,
+        location: ItemLocation::CarriedBy(sim.player_id),
+    });
+
+    let events = sim.step_player_action(ActionAst::ZapWand {
+        dir: Direction::East,
+        energy: 5,
+    });
+    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("shatters the drawbridge"))));
+    assert_eq!(*sim.level.get_tile(bridge_coord), Tile::Moat);
+}
+
+#[test]
+fn test_wand_of_cold_freezes_pool() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    let p_coord = Coord::new_unchecked(10, 10);
+    let pool_coord = Coord::new_unchecked(12, 10);
+
+    sim.level.set_tile(p_coord, Tile::Room);
+    sim.level.set_tile(Coord::new_unchecked(11, 10), Tile::Room);
+    sim.level.set_tile(pool_coord, Tile::Pool { frozen: false });
+
+    if let Some(p) = sim.arena.actors.get_mut(sim.player_id) {
+        p.coord = p_coord;
+    }
+
+    let _wand = sim.arena.spawn_item(ItemRecord {
+        name: "wand of cold".into(),
+        class: ItemClass::Wand,
+        weight: 7,
+        buc: Buc::Uncursed,
+        is_container: false,
+        is_bag_of_holding: false,
+        enchantment: 4,
+        erosion: 0,
+        proofed: false,
+        location: ItemLocation::CarriedBy(sim.player_id),
+    });
+
+    let events = sim.step_player_action(ActionAst::ZapWand {
+        dir: Direction::East,
+        energy: 5,
+    });
+    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("solid ice"))));
+    assert_eq!(*sim.level.get_tile(pool_coord), Tile::Pool { frozen: true });
+}
+
+#[test]
+fn test_scroll_of_charging_and_explosion() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+
+    let wand = sim.arena.spawn_item(ItemRecord {
+        name: "wand of striking".into(),
+        class: ItemClass::Wand,
+        weight: 7,
+        buc: Buc::Uncursed,
+        is_container: false,
+        is_bag_of_holding: false,
+        enchantment: 2,
+        erosion: 0,
+        proofed: false,
+        location: ItemLocation::CarriedBy(sim.player_id),
+    });
+
+    let scroll = sim.arena.spawn_item(ItemRecord {
+        name: "scroll of charging".into(),
+        class: ItemClass::Scroll,
+        weight: 5,
+        buc: Buc::Blessed,
+        is_container: false,
+        is_bag_of_holding: false,
+        enchantment: 0,
+        erosion: 0,
+        proofed: false,
+        location: ItemLocation::CarriedBy(sim.player_id),
+    });
+
+    let carried = sim.arena.items_carried_by(sim.player_id);
+    let s_idx = carried.iter().position(|&id| id == scroll).unwrap();
+
+    // Recharging safely
+    let events = sim.step_player_action(ActionAst::Read(s_idx));
+    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("Recharged to (7:1)"))));
+    assert_eq!(sim.arena.items.get(wand).unwrap().enchantment, 7);
+    assert_eq!(sim.arena.items.get(wand).unwrap().erosion, 1);
+
+    // Now test exploding at cap (recharges >= 3)
+    if let Some(w) = sim.arena.items.get_mut(wand) {
+        w.erosion = 3;
+    }
+    let scroll2 = sim.arena.spawn_item(ItemRecord {
+        name: "scroll of charging".into(),
+        class: ItemClass::Scroll,
+        weight: 5,
+        buc: Buc::Blessed,
+        is_container: false,
+        is_bag_of_holding: false,
+        enchantment: 0,
+        erosion: 0,
+        proofed: false,
+        location: ItemLocation::CarriedBy(sim.player_id),
+    });
+    let carried2 = sim.arena.items_carried_by(sim.player_id);
+    let s2_idx = carried2.iter().position(|&id| id == scroll2).unwrap();
+
+    let explode_events = sim.step_player_action(ActionAst::Read(s2_idx));
+    assert!(explode_events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("explodes in a blast of shards"))));
+    assert!(sim.arena.items.get(wand).is_none());
+}
+
+#[test]
+fn test_artifact_combat_bonus_and_vorpal_blade() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    let p_coord = Coord::new_unchecked(10, 10);
+    let mon_coord = Coord::new_unchecked(11, 10);
+
+    if let Some(p) = sim.arena.actors.get_mut(sim.player_id) {
+        p.coord = p_coord;
+    }
+
+    let monster_id = sim.arena.spawn_actor(netrust_arena::ActorRecord {
+        name: "vampire".into(),
+        coord: mon_coord,
+        hp: 50,
+        max_hp: 50,
+        ac: 10,
+        level: 8,
+        speed: 12,
+        alignment: Alignment::Chaotic,
+        intrinsics: Intrinsics::default(),
+        is_player: false,
+        is_dead: false,
+        is_tame: false,
+    });
+
+    let excalibur = sim.arena.spawn_item(ItemRecord {
+        name: "Excalibur".into(),
+        class: ItemClass::Weapon,
+        weight: 30,
+        buc: Buc::Blessed,
+        is_container: false,
+        is_bag_of_holding: false,
+        enchantment: 5,
+        erosion: 0,
+        proofed: true,
+        location: ItemLocation::CarriedBy(sim.player_id),
+    });
+    sim.wielded_item = Some(excalibur);
+
+    let events = sim.step_player_action(ActionAst::MeleeAttack(mon_coord));
+    // Vampire is undead -> Excalibur deals +10 bonus damage!
+    assert!(events.iter().any(|e| matches!(e, GameEvent::AttackLanded { attacker, target, damage, .. } if *attacker == sim.player_id && *target == monster_id && *damage >= 16)));
+}
+
 
 

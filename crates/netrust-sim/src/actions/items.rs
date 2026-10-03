@@ -4,7 +4,7 @@ use netrust_arena::ItemLocation;
 use netrust_core::{buc::WaterType, energy::NORMAL_SPEED, SpellKind};
 use netrust_data::{create_item_record, ItemKindId};
 use netrust_dungeon::trace_beam_path;
-use netrust_types::{Buc, Direction, ItemClass};
+use netrust_types::{Buc, Coord, Direction, ItemClass};
 use rand::RngCore;
 
 use crate::events::GameEvent;
@@ -170,6 +170,42 @@ impl SimulationWorld {
                         } else {
                             events.push(GameEvent::LogMessage { text: "Your skin feels warm for a moment.".into() });
                         }
+                    } else if item.name.contains("charging") {
+                        let wand_id = self.arena.items_carried_by(self.player_id).into_iter().find(|&id| {
+                            self.arena.items.get(id).map(|it| it.class == ItemClass::Wand).unwrap_or(false)
+                        });
+                        if let Some(wid) = wand_id {
+                            let (wand_name, charges, recharges) = {
+                                let w = self.arena.items.get(wid).unwrap();
+                                (w.name.clone(), w.enchantment.max(0) as u32, w.erosion as u32)
+                            };
+                            let wand_state = netrust_types::WandCharges { charges, recharges };
+                            match netrust_core::artifacts_wands::recharge_wand(wand_state, 5) {
+                                netrust_types::RechargeResult::Exploded => {
+                                    self.arena.destroy_item(wid);
+                                    if let Some(p) = self.arena.actors.get_mut(self.player_id) {
+                                        p.hp = p.hp.saturating_sub(20);
+                                        if p.hp == 0 {
+                                            p.is_dead = true;
+                                        }
+                                    }
+                                    events.push(GameEvent::LogMessage {
+                                        text: format!("Your {} vibrates violently and explodes in a blast of shards!", wand_name),
+                                    });
+                                }
+                                netrust_types::RechargeResult::Success(new_w) => {
+                                    if let Some(w_mut) = self.arena.items.get_mut(wid) {
+                                        w_mut.enchantment = new_w.charges as i8;
+                                        w_mut.erosion = new_w.recharges as u8;
+                                        events.push(GameEvent::LogMessage {
+                                            text: format!("Your {} glows with bright light! Recharged to ({}:{})!", wand_name, new_w.charges, new_w.recharges),
+                                        });
+                                    }
+                                }
+                            }
+                        } else {
+                            events.push(GameEvent::LogMessage { text: "You have no wands to recharge.".into() });
+                        }
                     } else {
                         events.push(GameEvent::LogMessage { text: format!("You read the {}. Knowledge fills your mind!", item.name) });
                     }
@@ -306,13 +342,114 @@ impl SimulationWorld {
             return events;
         };
 
+        // Find carried wand (or default)
+        let wand_id = self.arena.items_carried_by(self.player_id).into_iter().find(|&id| {
+            self.arena.items.get(id).map(|it| it.class == ItemClass::Wand).unwrap_or(false)
+        });
+
+        let wand_name = if let Some(wid) = wand_id {
+            if let Some(wand_item) = self.arena.items.get_mut(wid) {
+                let current_charges = netrust_types::WandCharges {
+                    charges: wand_item.enchantment.max(0) as u32,
+                    recharges: wand_item.erosion as u32,
+                };
+                if let Some(new_charges) = netrust_core::artifacts_wands::zap_wand(current_charges) {
+                    wand_item.enchantment = new_charges.charges as i8;
+                    wand_item.name.clone()
+                } else {
+                    events.push(GameEvent::LogMessage {
+                        text: "Nothing happens. The wand is empty!".into(),
+                    });
+                    self.scheduler.hero_act(NORMAL_SPEED);
+                    return events;
+                }
+            } else {
+                "wand of striking".to_string()
+            }
+        } else {
+            "wand of striking".to_string()
+        };
+
+        // If Wand of Secret Door Detection: reveals secret doors in 5x5 radius
+        if wand_name.contains("secret door") {
+            let mut revealed = 0;
+            for dy in -3..=3 {
+                for dx in -3..=3 {
+                    let nx = player.coord.x as i32 + dx;
+                    let ny = player.coord.y as i32 + dy;
+                    if nx >= 0 && nx < netrust_types::COLNO as i32 && ny >= 0 && ny < netrust_types::ROWNO as i32 {
+                        let c = Coord::new_unchecked(nx as usize, ny as usize);
+                        let tile = self.level.get_tile_mut(c);
+                        if matches!(tile, netrust_types::Tile::SecretDoor { .. }) {
+                            tile.reveal_secret_door();
+                            revealed += 1;
+                        }
+                    }
+                }
+            }
+            if revealed > 0 {
+                events.push(GameEvent::LogMessage {
+                    text: format!("The wand tingles! {} hidden door(s) are revealed!", revealed),
+                });
+            } else {
+                events.push(GameEvent::LogMessage {
+                    text: "You feel a tingling sensation, but sense no hidden doors.".into(),
+                });
+            }
+            self.scheduler.hero_act(NORMAL_SPEED);
+            return events;
+        }
+
         let path = trace_beam_path(&self.level, player.coord, dir, energy);
         events.push(GameEvent::BeamPropagated { path: path.clone() });
 
-        for coord in path {
+        let mut hit_coords = path;
+        let (dx, dy) = dir.delta();
+        if dx != 0 || dy != 0 {
+            let last_c = hit_coords.last().copied().unwrap_or(player.coord);
+            let tx = last_c.x as i32 + dx as i32;
+            let ty = last_c.y as i32 + dy as i32;
+            if tx >= 0 && tx < netrust_types::COLNO as i32 && ty >= 0 && ty < netrust_types::ROWNO as i32 {
+                hit_coords.push(Coord::new_unchecked(tx as usize, ty as usize));
+            }
+        }
+
+        for coord in hit_coords {
+            // Environment interactions along ray path
+            let current_tile = self.level.get_tile(coord).clone();
+            if wand_name.contains("striking") {
+                if matches!(current_tile, netrust_types::Tile::Drawbridge { .. }) {
+                    let _ = netrust_core::endgame::destroy_drawbridge();
+                    self.level.set_tile(coord, netrust_types::Tile::Moat);
+                    events.push(GameEvent::LogMessage {
+                        text: "The striking ray shatters the drawbridge! It collapses into the moat!".into(),
+                    });
+                    break;
+                } else if matches!(current_tile, netrust_types::Tile::Door { .. }) {
+                    self.level.get_tile_mut(coord).break_door();
+                    events.push(GameEvent::LogMessage {
+                        text: "The door splinters apart violently!".into(),
+                    });
+                }
+            } else if wand_name.contains("cold") {
+                if matches!(current_tile, netrust_types::Tile::Pool { .. }) {
+                    self.level.set_tile(coord, netrust_types::Tile::Pool { frozen: true });
+                    events.push(GameEvent::LogMessage {
+                        text: "The ray of frost freezes the water into a sheet of solid ice!".into(),
+                    });
+                }
+            }
+
+            // Actor interaction
             if let Some(target_id) = self.actor_at(coord) {
                 if target_id != self.player_id {
-                    let wand_damage = 12u32;
+                    let wand_damage = if wand_name.contains("death") {
+                        100u32
+                    } else if wand_name.contains("cold") {
+                        18u32
+                    } else {
+                        12u32
+                    };
                     if let Some(target) = self.arena.actors.get_mut(target_id) {
                         target.hp = target.hp.saturating_sub(wand_damage);
                         if target.hp == 0 {
@@ -334,6 +471,60 @@ impl SimulationWorld {
                 }
             }
         }
+        self.scheduler.hero_act(NORMAL_SPEED);
+        events
+    }
+
+    pub(crate) fn handle_wish(&mut self, wish_str: String) -> Vec<GameEvent> {
+        let mut events = Vec::new();
+        let Some(player) = self.arena.actors.get(self.player_id).cloned() else {
+            return events;
+        };
+
+        // Find carried wand of wishing
+        let wow_id = self.arena.items_carried_by(self.player_id).into_iter().find(|&id| {
+            self.arena.items.get(id).map(|it| it.name.contains("wishing")).unwrap_or(false)
+        });
+
+        if let Some(wid) = wow_id {
+            let wand_item = self.arena.items.get_mut(wid).unwrap();
+            let charges = wand_item.enchantment.max(0) as u32;
+            let recharges = wand_item.erosion as u32;
+            if let Some(new_w) = netrust_core::artifacts_wands::zap_wand(netrust_types::WandCharges { charges, recharges }) {
+                wand_item.enchantment = new_w.charges as i8;
+            } else {
+                events.push(GameEvent::LogMessage { text: "The wand of wishing is empty! Nothing happens.".into() });
+                self.scheduler.hero_act(NORMAL_SPEED);
+                return events;
+            }
+        }
+
+        if let Some((item_query, ench, buc)) = netrust_core::artifacts_wands::parse_wish(&wish_str) {
+            let matched_arch = netrust_data::ITEM_CATALOG.iter().find(|arch| {
+                arch.name.to_lowercase() == item_query.to_lowercase()
+                    || arch.name.to_lowercase().contains(&item_query.to_lowercase())
+                    || item_query.to_lowercase().contains(arch.name.to_lowercase().as_str())
+            });
+
+            if let Some(arch) = matched_arch {
+                let mut record = create_item_record(arch.id, ItemLocation::Floor(player.coord), buc);
+                record.enchantment = ench;
+                let spawned_id = self.arena.spawn_item(record);
+                let item_name = self.arena.items.get(spawned_id).unwrap().name.clone();
+                events.push(GameEvent::LogMessage {
+                    text: format!("A {} miraculously drops from the heavens at your feet!", item_name),
+                });
+            } else {
+                events.push(GameEvent::LogMessage {
+                    text: format!("You feel a vague sense of loss. You wished for '{}', but received nothing.", wish_str),
+                });
+            }
+        } else {
+            events.push(GameEvent::LogMessage {
+                text: "Your mind draws a blank. Nothing happens.".into(),
+            });
+        }
+
         self.scheduler.hero_act(NORMAL_SPEED);
         events
     }

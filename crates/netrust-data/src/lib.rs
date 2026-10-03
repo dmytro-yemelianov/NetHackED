@@ -5,6 +5,7 @@
 pub mod items;
 pub mod monsters;
 pub mod roles;
+pub mod pantheons;
 
 pub use items::{create_item_record, get_item_archetype, ItemArchetype, ItemKindId, ITEM_CATALOG};
 pub use monsters::{
@@ -15,6 +16,7 @@ pub use roles::{
     get_race, get_role, spawn_player_character, spawn_starting_pet, CharacterConfig, Gender, RaceId,
     RaceSpec, RoleId, RoleSpec, RACES, ROLES,
 };
+pub use pantheons::{get_pantheon_for_role, get_patron_deity};
 
 #[cfg(test)]
 mod tests {

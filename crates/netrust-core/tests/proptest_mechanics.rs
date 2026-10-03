@@ -12,6 +12,11 @@ use netrust_core::{
     BranchCoord, BranchId, Coord, Direction,
     feed_pet, interact_with_occupant, swap_displacement, HeroInteraction,
     apply_erosion, enchant_item, mix_alchemy, SAFE_ENCHANT_CAP,
+    Alignment, AscensionOutcome, DrawbridgeState, DrawbridgeTransition,
+    destroy_drawbridge, offer_amulet_on_high_altar, toggle_drawbridge,
+    clamp_favor, consecrate_water, resolve_sacrifice, tick_prayer_timeout,
+    DivineState,
+    apply_vorpal_strike, zap_wand, recharge_wand, WandCharges, RechargeResult,
 };
 use proptest::prelude::*;
 
@@ -597,6 +602,151 @@ proptest! {
         let mix2 = mix_alchemy("potion of speed", "potion of healing");
         prop_assert_eq!(mix1, mix2);
         prop_assert_eq!(mix1, Some("potion of extra healing"));
+    }
+
+    // -------------------------------------------------------------
+    // Theorems: open_drawbridge_is_passable & raise_crushes_occupant_fatal
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_drawbridge_theorems(has_occupant in proptest::bool::ANY) {
+        // Lowering a closed drawbridge
+        let (opened_state, trans_lowered) = toggle_drawbridge(DrawbridgeState::Closed, has_occupant);
+        prop_assert_eq!(opened_state, DrawbridgeState::Open);
+        prop_assert_eq!(trans_lowered, DrawbridgeTransition::Lowered);
+
+        // Raising an open drawbridge
+        let (closed_state, trans_raised) = toggle_drawbridge(DrawbridgeState::Open, has_occupant);
+        prop_assert_eq!(closed_state, DrawbridgeState::Closed);
+        if has_occupant {
+            prop_assert_eq!(trans_raised, DrawbridgeTransition::Raised { crushed_damage: 9999 });
+        } else {
+            prop_assert_eq!(trans_raised, DrawbridgeTransition::Raised { crushed_damage: 0 });
+        }
+
+        // Destroying drawbridge
+        let (destroyed_state, trans_destroyed) = destroy_drawbridge();
+        prop_assert_eq!(destroyed_state, DrawbridgeState::Destroyed);
+        prop_assert_eq!(trans_destroyed, DrawbridgeTransition::DestroyedAndFellInMoat);
+    }
+
+    // -------------------------------------------------------------
+    // Theorems: ascension_requires_real_amulet & ascension_iff_aligned
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_ascension_theorems(
+        has_real_amulet in proptest::bool::ANY,
+        h_idx in 0usize..3,
+        a_idx in 0usize..3,
+    ) {
+        let aligns = [Alignment::Lawful, Alignment::Neutral, Alignment::Chaotic];
+        let hero_align = aligns[h_idx];
+        let altar_align = aligns[a_idx];
+
+        let outcome = offer_amulet_on_high_altar(has_real_amulet, hero_align, altar_align);
+
+        if !has_real_amulet {
+            prop_assert!(matches!(outcome, AscensionOutcome::Rejected(_)));
+        } else if hero_align == altar_align {
+            prop_assert_eq!(outcome, AscensionOutcome::Ascended(altar_align));
+        } else {
+            prop_assert!(matches!(outcome, AscensionOutcome::Rejected(_)));
+        }
+    }
+
+    // -------------------------------------------------------------
+    // Theorems: clamp_favor_bounded & prayer_cooldown_strictly_decreases
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_clamp_favor_bounded(f in -100i32..100) {
+        let clamped = clamp_favor(f);
+        prop_assert!(clamped >= -20 && clamped <= 20);
+    }
+
+    #[test]
+    fn prop_prayer_cooldown_strictly_decreases(timeout in 1u32..500) {
+        let next_timeout = tick_prayer_timeout(timeout);
+        prop_assert!(next_timeout < timeout);
+    }
+
+    // -------------------------------------------------------------
+    // Theorem: sacrifice_coaligned_increases_favor
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_sacrifice_favor_monotonic(
+        init_favor in -20i32..=17,
+        nutr in 0u32..1000,
+        a_idx in 0usize..3,
+    ) {
+        let aligns = [Alignment::Lawful, Alignment::Neutral, Alignment::Chaotic];
+        let align = aligns[a_idx];
+        let state = DivineState {
+            favor: init_favor,
+            prayer_timeout: 0,
+            gift_count: 0,
+        };
+        let (new_state, _) = resolve_sacrifice(state, align, align, nutr);
+        prop_assert!(new_state.favor > init_favor);
+    }
+
+    // -------------------------------------------------------------
+    // Theorem: consecrate_water_yields_blessed
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_consecrate_water_theorems(
+        favor in -20i32..=20,
+        is_coaligned in proptest::bool::ANY,
+    ) {
+        let res = consecrate_water(Buc::Uncursed, is_coaligned, favor);
+        if is_coaligned && favor > 5 {
+            prop_assert_eq!(res, Buc::Blessed);
+        } else {
+            prop_assert_eq!(res, Buc::Uncursed);
+        }
+    }
+
+    // -------------------------------------------------------------
+    // Theorem: vorpal_decapitation_fatal
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_vorpal_decapitation_fatal(hp in 1u32..500) {
+        let (new_hp, is_dead) = apply_vorpal_strike(hp, true);
+        prop_assert_eq!(new_hp, 0);
+        prop_assert!(is_dead);
+    }
+
+    // -------------------------------------------------------------
+    // Theorems: wand_charge_depletes & empty_wand_cannot_zap
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_wand_charge_depletes(charges in 1u32..50, recharges in 0u32..3) {
+        let w = WandCharges { charges, recharges };
+        let zapped = zap_wand(w);
+        prop_assert!(zapped.is_some());
+        prop_assert_eq!(zapped.unwrap().charges, charges - 1);
+
+        let empty = WandCharges { charges: 0, recharges };
+        prop_assert_eq!(zap_wand(empty), None);
+    }
+
+    // -------------------------------------------------------------
+    // Theorems: recharge_safe_below_cap & recharge_explodes_at_cap
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_recharge_theorems(
+        charges in 0u32..10,
+        recharges in 0u32..10,
+        add in 1u32..5,
+    ) {
+        let w = WandCharges { charges, recharges };
+        let res = recharge_wand(w, add);
+        if recharges >= 3 {
+            prop_assert_eq!(res, RechargeResult::Exploded);
+        } else {
+            prop_assert_eq!(res, RechargeResult::Success(WandCharges {
+                charges: charges + add,
+                recharges: recharges + 1,
+            }));
+        }
     }
 }
 

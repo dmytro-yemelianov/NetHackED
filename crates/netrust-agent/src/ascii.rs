@@ -77,6 +77,15 @@ pub fn render_ascii_map(world: &SimulationWorld) -> String {
                     }
                 }
                 Tile::Altar { .. } => '_',
+                Tile::HighAltar { .. } => '_',
+                Tile::Drawbridge { open } => {
+                    if *open {
+                        '.'
+                    } else {
+                        '#'
+                    }
+                }
+                Tile::Moat => '}',
                 Tile::Pool { frozen } => {
                     if *frozen {
                         '='

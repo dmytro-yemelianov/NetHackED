@@ -128,6 +128,34 @@ def main : IO Unit := do
   IO.println s!"[Erosion] Unproofed armor exposed to acid -> {repr erosion0}"
   IO.println s!"[Alchemy] Dipping healing into gain energy -> {repr alchemyRes}"
 
+  -- 18. Castle Drawbridge & Astral Plane Ascension demonstration
+  let (bridgeAfterRaise, bridgeTransition) := toggleDrawbridge DrawbridgeState.Open true
+  let ascensionRes := offerAmuletOnHighAltar true Alignment.Neutral Alignment.Neutral
+  let rejectedRes := offerAmuletOnHighAltar true Alignment.Neutral Alignment.Chaotic
+  IO.println s!"[Endgame] Open Drawbridge raised with occupant -> {repr bridgeAfterRaise}, Transition: {repr bridgeTransition}"
+  IO.println s!"[Ascension] Amulet offered on co-aligned Neutral High Altar -> {repr ascensionRes}"
+  IO.println s!"[Ascension] Amulet offered on cross-aligned Chaotic High Altar -> {repr rejectedRes}"
+
+  -- 19. Religion, Divine Favor & Holy Water demonstration
+  let div0 : DivineState := { favor := 5, prayerTimeout := 0, giftCount := 0 }
+  let (div1, sacRes) := resolveSacrifice div0 Alignment.Neutral Alignment.Neutral 300
+  let holyWater := consecrateWater BUC.Uncursed true div1.favor
+  IO.println s!"[Religion] Valkyrie Pantheon: {repr valkyriePantheon.neutral}"
+  IO.println s!"[Sacrifice] Offered corpse on co-aligned altar -> New Favor: {div1.favor}, Result: {repr sacRes}"
+  IO.println s!"[HolyWater] Consecrated water on altar with favor {div1.favor} -> {repr holyWater}"
+
+  -- 20. Signature Artifacts, Wishing & Wand Recharging demonstration
+  let excalDmg := resolveArtifactDamage ArtifactKind.Excalibur 8 true
+  let vorpalDefender : Combatant := { hp := 40, maxHp := 40, ac := 2, level := 5, toHitBonus := 0, damageBonus := 0, isDead := false }
+  let vorpalResult := applyVorpalStrike vorpalDefender true
+  let wand0 : WandCharges := { charges := 3, recharges := 0 }
+  let wand1 := zapWand wand0
+  let wandRecharged := rechargeWand (wand1.getD wand0) 5
+  IO.println s!"[Artifact] Excalibur damage vs demon: {excalDmg}"
+  IO.println s!"[Artifact] Vorpal Blade decapitation strike -> Defender HP: {vorpalResult.hp}, Dead: {vorpalResult.isDead}"
+  IO.println s!"[Wand] Zapped wand (3:0) -> Remaining: {repr wand1}, Recharged -> {repr wandRecharged}"
+
+
 
 
 

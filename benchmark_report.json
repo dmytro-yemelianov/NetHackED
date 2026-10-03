@@ -24,6 +24,15 @@
         "mean_kills": 2.1,
         "mean_gold": 50.0
       },
+      "RLPolicy": {
+        "runs": 30,
+        "victories": 0,
+        "win_rate_pct": 0.0,
+        "mean_turns": 182.4,
+        "mean_max_depth": 2.1,
+        "mean_kills": 1.4,
+        "mean_gold": 58.5
+      },
       "RandomBaseline": {
         "runs": 30,
         "victories": 0,
