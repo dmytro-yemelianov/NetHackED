@@ -55,9 +55,38 @@ impl SimulationWorld {
             (0, None)
         };
 
-        let to_hit_bonus = attacker.level as i32 + weapon_ench;
+
+        let mut skill_hit_bonus = 0;
+        let mut skill_dmg_bonus = 0;
+        if attacker_id == self.player_id {
+            if let Some(wid) = self.wielded_item {
+                if let Some(w) = self.arena.items.get(wid) {
+                    let sk = match w.name.to_lowercase().as_str() {
+                        n if n.contains("dagger") => Some(netrust_types::SkillClass::Dagger),
+                        n if n.contains("long sword") => Some(netrust_types::SkillClass::LongSword),
+                        n if n.contains("short sword") => Some(netrust_types::SkillClass::ShortSword),
+                        n if n.contains("bow") => Some(netrust_types::SkillClass::Bow),
+                        n if n.contains("crossbow") => Some(netrust_types::SkillClass::Crossbow),
+                        n if n.contains("club") => Some(netrust_types::SkillClass::Club),
+                        _ => None,
+                    };
+                    if let Some(skill_class) = sk {
+                        let level = self.hero.skills.skills.get(&skill_class).copied().unwrap_or(netrust_types::SkillLevel::Unskilled);
+                        skill_hit_bonus = netrust_core::skills::skill_to_hit_bonus(level);
+                        skill_dmg_bonus = netrust_core::skills::skill_damage_bonus(level);
+                    }
+                }
+            } else {
+                let level = self.hero.skills.skills.get(&netrust_types::SkillClass::BareHanded).copied().unwrap_or(netrust_types::SkillLevel::Unskilled);
+                skill_hit_bonus = netrust_core::skills::skill_to_hit_bonus(level);
+                skill_dmg_bonus = netrust_core::skills::skill_damage_bonus(level);
+            }
+        }
+
+        let to_hit_bonus = attacker.level as i32 + weapon_ench + skill_hit_bonus;
         let d20 = 15; // default representative roll
-        let dmg_roll = 6;
+        let dmg_roll = (6_i32 + skill_dmg_bonus).max(1) as u32;
+
         let result = resolve_melee_attack(attacker.level as i32, to_hit_bonus, def_combat, d20, dmg_roll, weapon_ench);
 
         if result.hit {

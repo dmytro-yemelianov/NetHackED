@@ -189,6 +189,9 @@ impl SimulationWorld {
                             p.max_hp = 20;
                         }
                         events.push(GameEvent::LogMessage { text: "You feel a change coming over you... you polymorph!".into() });
+                    } else if item.name.contains("acid") {
+                        netrust_core::afflictions::cure_petrification(&mut self.hero);
+                        events.push(GameEvent::LogMessage { text: "You quaff the potion of acid. It burns, but you feel less stiff!".into() });
                     } else {
                         events.push(GameEvent::LogMessage { text: format!("You quaff the {}. It tastes like water.", item.name) });
                     }
@@ -425,7 +428,12 @@ impl SimulationWorld {
                     self.player_nutrition = (self.player_nutrition + nut_gain).min(2000);
 
                     if item.name.contains("corpse") {
-                        if item.name.contains("ant") || item.name.contains("kobold") || item.name.contains("orc") {
+                        if item.name.contains("lizard") {
+                            netrust_core::afflictions::cure_petrification(&mut self.hero);
+                            events.push(GameEvent::LogMessage {
+                                text: "You eat the lizard corpse. You feel limber!".into(),
+                            });
+                        } else if item.name.contains("ant") || item.name.contains("kobold") || item.name.contains("orc") {
                             if let Some(p) = self.arena.actors.get_mut(self.player_id) {
                                 p.intrinsics.poison_resistance = true;
                             }

@@ -10,7 +10,7 @@ use crate::grid::{Coord, Tile};
 use crate::engraving::EngravingMedium;
 use serde::{Deserialize, Serialize};
 
-pub use netrust_types::Direction;
+pub use netrust_types::{ActorId, Direction, SlotId};
 
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -43,6 +43,10 @@ pub enum ActionAst {
     PriceCheck(usize),
     Donate(u32),
     Apply(usize),
+    Quiver(SlotId),
+    Fire(Direction),
+    Mount(ActorId),
+    Dismount,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

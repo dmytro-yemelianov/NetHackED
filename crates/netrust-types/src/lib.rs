@@ -1,6 +1,19 @@
 //! Foundational types, coordinates, and ontology enums for NetRust.
 
 use serde::{Deserialize, Serialize};
+use slotmap::new_key_type;
+
+new_key_type! {
+    /// Safe, generational handle for an Item.
+    pub struct ItemId;
+    /// Safe, generational handle for an Actor (Hero or Monster).
+    pub struct ActorId;
+    /// Safe, generational handle for a Dungeon Level.
+    pub struct LevelId;
+}
+
+pub type SlotId = ItemId;
+
 
 pub const COLNO: usize = 80;
 pub const ROWNO: usize = 21;
@@ -678,6 +691,56 @@ mod tests {
     }
 }
 
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PetrificationState {
+    pub turns_remaining: u8,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SlimingState {
+    pub turns_remaining: u8,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TransientAfflictions {
+    pub confused: u32,
+    pub stunned: u32,
+    pub hallucinating: u32,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AfflictionState {
+    pub petrification: Option<PetrificationState>,
+    pub sliming: Option<SlimingState>,
+    pub transient: TransientAfflictions,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum SkillClass {
+    Dagger,
+    LongSword,
+    ShortSword,
+    Bow,
+    Crossbow,
+    Club,
+    BareHanded,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+pub enum SkillLevel {
+    Unskilled,
+    Basic,
+    Skilled,
+    Expert,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SkillTree {
+    pub skills: std::collections::HashMap<SkillClass, SkillLevel>,
+    pub available_slots: u8,
+}
+
 pub type MonsterId = usize;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -695,11 +758,23 @@ pub struct LycanthropyState {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MountState {
+    pub steed_id: ActorId,
+    pub saddle_equipped: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Hero {
     pub base_hp: i32,
     pub base_max_hp: i32,
     pub polymorph: Option<PolymorphForm>,
     pub lycanthropy: Option<LycanthropyState>,
+    #[serde(default)]
+    pub afflictions: AfflictionState,
+    #[serde(default)]
+    pub skills: SkillTree,
+    pub quivered_item: Option<SlotId>,
+    pub mount: Option<MountState>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

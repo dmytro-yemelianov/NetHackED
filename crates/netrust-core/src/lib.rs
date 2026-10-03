@@ -18,6 +18,7 @@ pub mod nutrition;
 pub mod magic;
 pub mod sokoban;
 pub mod branch;
+pub mod ranged;
 pub mod pet;
 pub mod enchantment;
 pub mod endgame;
@@ -94,3 +95,5 @@ pub use netrust_types::{
 pub mod polypile;
 pub mod genocide;
 pub use genocide::*;
+pub mod afflictions;
+pub mod skills;

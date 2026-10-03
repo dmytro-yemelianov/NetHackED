@@ -4,16 +4,10 @@
 
 use netrust_types::{Alignment, Buc, Coord, Intrinsics, ItemClass, MonsterAbility};
 use serde::{Deserialize, Serialize};
-use slotmap::{new_key_type, SlotMap};
+use slotmap::SlotMap;
 
-new_key_type! {
-    /// Safe, generational handle for an Item.
-    pub struct ItemId;
-    /// Safe, generational handle for an Actor (Hero or Monster).
-    pub struct ActorId;
-    /// Safe, generational handle for a Dungeon Level.
-    pub struct LevelId;
-}
+pub use netrust_types::{ActorId, ItemId, LevelId};
+
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ItemLocation {

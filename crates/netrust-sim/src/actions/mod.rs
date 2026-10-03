@@ -8,6 +8,7 @@ pub mod items;
 pub mod movement;
 pub mod religion;
 pub mod stairs;
+pub mod ranged;
 
 use netrust_core::{energy::NORMAL_SPEED, ActionAst};
 
@@ -59,6 +60,10 @@ impl SimulationWorld {
             ActionAst::PriceCheck(idx) => events.extend(self.handle_price_check(idx)),
             ActionAst::Donate(amt) => events.extend(self.handle_donate(amt)),
             ActionAst::Apply(idx) => events.extend(self.handle_apply(idx)),
+            ActionAst::Quiver(idx) => events.extend(self.handle_quiver(idx)),
+            ActionAst::Fire(dir) => events.extend(self.handle_fire(dir)),
+            ActionAst::Mount(actor_id) => events.extend(self.handle_mount(actor_id)),
+            ActionAst::Dismount => events.extend(self.handle_dismount()),
             ActionAst::Wait => {
                 self.scheduler.hero_act(NORMAL_SPEED);
             }

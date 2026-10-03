@@ -14,6 +14,20 @@ impl SimulationWorld {
             return events;
         };
 
+        let move_cost = if true { let pc = &self.hero;
+            let mount_cost = pc.mount.as_ref().and_then(|m| {
+                // Determine mount's movement cost based on its speed
+                // For simplicity, we assume speed acts as cost if it's lower, or we map it. 
+                // The prompt says min(unmounted, mount_cost). 
+                // Let's just use 12 for unmounted, and if mounted, we can derive a cost from steed's speed.
+                // A fast mount (speed > 12) should cost less energy. Energy cost = 12 * 12 / speed.
+                self.arena.actors.get(m.steed_id).map(|s| (NORMAL_SPEED * 12) / s.speed.max(1))
+            });
+            netrust_core::ranged::effective_movement_cost(NORMAL_SPEED, mount_cost)
+        } else {
+            NORMAL_SPEED
+        };
+
         let (dx, dy) = dir.delta();
         let nx = player.coord.x as isize + dx;
         let ny = player.coord.y as isize + dy;
@@ -45,11 +59,11 @@ impl SimulationWorld {
                     events.push(GameEvent::LogMessage {
                         text: format!("You displace {}.", pet_name),
                     });
-                    self.scheduler.hero_act(NORMAL_SPEED);
+                    self.scheduler.hero_act(move_cost);
                 } else {
                     let combat_events = self.resolve_combat(self.player_id, target_id);
                     events.extend(combat_events);
-                    self.scheduler.hero_act(NORMAL_SPEED);
+                    self.scheduler.hero_act(move_cost);
                 }
             } else if let Some(boulder_id) = self.arena.items.iter().find_map(|(id, item)| {
                 if item.location == netrust_arena::ItemLocation::Floor(target_coord) && item.name == "boulder" {
@@ -68,13 +82,13 @@ impl SimulationWorld {
                                 it.location = netrust_arena::ItemLocation::Floor(new_pos);
                             }
                             events.push(GameEvent::LogMessage { text: "You push the boulder.".into() });
-                            self.scheduler.hero_act(NORMAL_SPEED);
+                            self.scheduler.hero_act(move_cost);
                         }
                         netrust_core::sokoban::PushOutcome::FilledPit(pit_pos) => {
                             self.arena.destroy_item(boulder_id);
                             self.level.set_tile(pit_pos, Tile::Pit { filled: true });
                             events.push(GameEvent::LogMessage { text: "The boulder falls into the pit and fills it!".into() });
-                            self.scheduler.hero_act(NORMAL_SPEED);
+                            self.scheduler.hero_act(move_cost);
                         }
                         netrust_core::sokoban::PushOutcome::Blocked => {
                             events.push(GameEvent::LogMessage { text: "You try to move the boulder, but it won't budge.".into() });
@@ -93,14 +107,14 @@ impl SimulationWorld {
                             coord: target_coord,
                             new_state: DoorState::Open,
                         });
-                        self.scheduler.hero_act(NORMAL_SPEED);
+                        self.scheduler.hero_act(move_cost);
                     }
                     Tile::Drawbridge { open: false } => {
                         self.level.set_tile(target_coord, Tile::Drawbridge { open: true });
                         events.push(GameEvent::LogMessage {
                             text: "You lower the drawbridge over the moat. The portcullis creaks open.".into(),
                         });
-                        self.scheduler.hero_act(NORMAL_SPEED);
+                        self.scheduler.hero_act(move_cost);
                     }
                     _ if tile.is_passable() => {
                         let from = player.coord;
@@ -159,7 +173,7 @@ impl SimulationWorld {
                             }
                         }
 
-                        self.scheduler.hero_act(NORMAL_SPEED);
+                        self.scheduler.hero_act(move_cost);
                     }
                     _ => {
                         // Impassable obstacle; do not consume energy

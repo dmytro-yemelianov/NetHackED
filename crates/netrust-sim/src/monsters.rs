@@ -228,6 +228,14 @@ impl SimulationWorld {
                                                 });
                                             }
                                         }
+                                        if breath == netrust_types::BreathType::Fire {
+                                            if self.hero.afflictions.sliming.is_some() {
+                                                netrust_core::afflictions::cure_sliming(&mut self.hero);
+                                                events.push(GameEvent::LogMessage {
+                                                    text: "The fire burns away the slime!".to_string(),
+                                                });
+                                            }
+                                        }
                                     }
                                     acted_special = true;
                                     break;

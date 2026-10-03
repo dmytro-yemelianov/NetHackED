@@ -20,6 +20,22 @@ impl SimulationWorld {
                         turn: self.scheduler.turn,
                     });
 
+                    match netrust_core::afflictions::tick_afflictions(&mut self.hero) {
+                        netrust_core::afflictions::AfflictionTickResult::StoneDeath => {
+                            if let Some(p) = self.arena.actors.get_mut(self.player_id) {
+                                p.is_dead = true;
+                            }
+                            events.push(GameEvent::LogMessage { text: "You turn to stone...".to_string() });
+                        }
+                        netrust_core::afflictions::AfflictionTickResult::SlimeDeath => {
+                            if let Some(p) = self.arena.actors.get_mut(self.player_id) {
+                                p.is_dead = true;
+                            }
+                            events.push(GameEvent::LogMessage { text: "You turn into green slime...".to_string() });
+                        }
+                        _ => {}
+                    }
+
                     // Passive metabolic consumption
                     let old_nut = self.player_nutrition;
                     self.player_nutrition = netrust_core::nutrition::metabolic_tick(self.player_nutrition);

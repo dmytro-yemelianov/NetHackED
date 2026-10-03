@@ -1340,7 +1340,7 @@ proptest! {
         use netrust_types::{Hero, PolymorphForm};
         use netrust_core::polymorph::{apply_poly_damage, PolyDamageResult};
         
-        let mut hero = Hero {
+        let mut hero = Hero { mount: None, quivered_item: None,
             base_hp,
             base_max_hp: base_hp,
             polymorph: Some(PolymorphForm {
@@ -1349,7 +1349,7 @@ proptest! {
                 max_hp: poly_hp,
                 duration: 100,
             }),
-            lycanthropy: None,
+            lycanthropy: None, afflictions: Default::default(), skills: Default::default(),
         };
 
         let result = apply_poly_damage(&mut hero, damage);
@@ -1404,11 +1404,11 @@ proptest! {
     ) {
         use netrust_types::{Hero, LycanthropyState};
         use netrust_core::polymorph::cure_lycanthropy;
-        let mut hero = Hero {
+        let mut hero = Hero { mount: None, quivered_item: None,
             base_hp: 10,
             base_max_hp: 10,
             polymorph: None,
-            lycanthropy: if infected { Some(LycanthropyState { species: 2, turns_infected: 5 }) } else { None },
+            lycanthropy: if infected { Some(LycanthropyState { species: 2, turns_infected: 5 }) } else { None }, afflictions: Default::default(), skills: Default::default(),
         };
         let cured = cure_lycanthropy(&mut hero);
         prop_assert_eq!(cured, infected);
@@ -1460,6 +1460,157 @@ proptest! {
             prop_assert!(res.is_err());
         }
     }
+
+    // -------------------------------------------------------------
+    // Theorems: Status Afflictions
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_petrification_countdown_and_cure(
+        turns in 1u8..10,
+    ) {
+        use netrust_core::afflictions::{tick_afflictions, cure_petrification, AfflictionTickResult};
+        use netrust_types::{Hero, AfflictionState, PetrificationState};
+        let mut hero = Hero { mount: None, quivered_item: None,
+            base_hp: 10,
+            base_max_hp: 10,
+            polymorph: None,
+            lycanthropy: None,
+            afflictions: AfflictionState {
+                petrification: Some(PetrificationState { turns_remaining: turns }),
+                ..Default::default()
+            },
+            skills: Default::default(),
+        };
+
+        // Decrement by ticks
+        for _ in 0..turns - 1 {
+            let res = tick_afflictions(&mut hero);
+            prop_assert_eq!(res, AfflictionTickResult::Survived);
+        }
+        
+        let final_res = tick_afflictions(&mut hero);
+        prop_assert_eq!(final_res, AfflictionTickResult::StoneDeath);
+
+        // Reset and cure
+        hero.afflictions.petrification = Some(PetrificationState { turns_remaining: turns });
+        cure_petrification(&mut hero);
+        prop_assert!(hero.afflictions.petrification.is_none());
+        
+        let cured_res = tick_afflictions(&mut hero);
+        prop_assert_eq!(cured_res, AfflictionTickResult::Survived);
+    }
+
+    #[test]
+    fn prop_sliming_countdown_and_cure(
+        turns in 1u8..10,
+    ) {
+        use netrust_core::afflictions::{tick_afflictions, cure_sliming, AfflictionTickResult};
+        use netrust_types::{Hero, AfflictionState, SlimingState};
+        let mut hero = Hero { mount: None, quivered_item: None,
+            base_hp: 10,
+            base_max_hp: 10,
+            polymorph: None,
+            lycanthropy: None,
+            afflictions: AfflictionState {
+                sliming: Some(SlimingState { turns_remaining: turns }),
+                ..Default::default()
+            },
+            skills: Default::default(),
+        };
+
+        // Decrement by ticks
+        for _ in 0..turns - 1 {
+            let res = tick_afflictions(&mut hero);
+            prop_assert_eq!(res, AfflictionTickResult::Survived);
+        }
+        
+        let final_res = tick_afflictions(&mut hero);
+        prop_assert_eq!(final_res, AfflictionTickResult::SlimeDeath);
+
+        // Reset and cure
+        hero.afflictions.sliming = Some(SlimingState { turns_remaining: turns });
+        cure_sliming(&mut hero);
+        prop_assert!(hero.afflictions.sliming.is_none());
+        
+        let cured_res = tick_afflictions(&mut hero);
+        prop_assert_eq!(cured_res, AfflictionTickResult::Survived);
+    }
+
+    // -------------------------------------------------------------
+    // Theorems: Weapon Skills
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_skill_bonuses_monotonic(
+        _dummy in any::<bool>(),
+    ) {
+        use netrust_core::skills::{skill_to_hit_bonus, skill_damage_bonus};
+        use netrust_types::SkillLevel;
+
+        let levels = [
+            SkillLevel::Unskilled,
+            SkillLevel::Basic,
+            SkillLevel::Skilled,
+            SkillLevel::Expert,
+        ];
+
+        for i in 0..levels.len() {
+            for j in i..levels.len() {
+                let li = levels[i];
+                let lj = levels[j];
+                
+                prop_assert!(li <= lj);
+                prop_assert!(skill_to_hit_bonus(lj) >= skill_to_hit_bonus(li));
+                prop_assert!(skill_damage_bonus(lj) >= skill_damage_bonus(li));
+            }
+        }
+    }
+
+    #[test]
+    fn prop_enhance_skill_slot_conservation(
+        slots in 1u8..10,
+    ) {
+        use netrust_core::skills::enhance_skill;
+        use netrust_types::{SkillTree, SkillClass, SkillLevel};
+        
+        let mut tree = SkillTree {
+            skills: std::collections::HashMap::new(),
+            available_slots: slots,
+        };
+
+        let skill = SkillClass::LongSword;
+        
+        // Unskilled -> Basic
+        let res = enhance_skill(&mut tree, skill);
+        prop_assert!(res.is_ok());
+        prop_assert_eq!(tree.available_slots, slots - 1);
+        prop_assert_eq!(tree.skills.get(&skill), Some(&SkillLevel::Basic));
+        
+        // Basic -> Skilled
+        if tree.available_slots > 0 {
+            let slots_before = tree.available_slots;
+            let res2 = enhance_skill(&mut tree, skill);
+            prop_assert!(res2.is_ok());
+            prop_assert_eq!(tree.available_slots, slots_before - 1);
+            prop_assert_eq!(tree.skills.get(&skill), Some(&SkillLevel::Skilled));
+            
+            // Skilled -> Expert
+            if tree.available_slots > 0 {
+                let slots_before = tree.available_slots;
+                let res3 = enhance_skill(&mut tree, skill);
+                prop_assert!(res3.is_ok());
+                prop_assert_eq!(tree.available_slots, slots_before - 1);
+                prop_assert_eq!(tree.skills.get(&skill), Some(&SkillLevel::Expert));
+                
+                // Expert -> Cannot advance
+                if tree.available_slots > 0 {
+                    let slots_before = tree.available_slots;
+                    let res4 = enhance_skill(&mut tree, skill);
+                    prop_assert!(res4.is_err());
+                    prop_assert_eq!(tree.available_slots, slots_before);
+                }
+            }
+        }
+    }
 }
 
 
@@ -1467,3 +1618,25 @@ proptest! {
 
 
 
+
+use netrust_core::ranged::{can_mount, effective_movement_cost, resolve_projectile_impact};
+
+proptest! {
+    #[test]
+    fn prop_effective_movement_cost_monotonic(unmounted_cost in 1u32..1000, mount_cost in proptest::option::of(1u32..1000)) {
+        let cost = effective_movement_cost(unmounted_cost, mount_cost);
+        prop_assert!(cost <= unmounted_cost);
+    }
+
+    #[test]
+    fn prop_can_mount_requires_both_tame_and_saddle(is_tame in any::<bool>(), has_saddle in any::<bool>()) {
+        let result = can_mount(is_tame, has_saddle);
+        prop_assert_eq!(result, is_tame && has_saddle);
+    }
+
+    #[test]
+    fn prop_projectile_impact_breakage(break_prob in 0u8..=100, roll in 0u8..100) {
+        let result = resolve_projectile_impact(break_prob, roll);
+        prop_assert_eq!(result, roll < break_prob);
+    }
+}
