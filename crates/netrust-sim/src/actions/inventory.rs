@@ -34,7 +34,7 @@ impl SimulationWorld {
                 item.location = ItemLocation::CarriedBy(self.player_id);
                 let name = item.name.clone();
                 events.push(GameEvent::ItemPickedUp { actor: self.player_id, item: item_id });
-                events.push(GameEvent::LogMessage { text: format!("You pick up a {}.", name) });
+                events.push(GameEvent::LogMessage { text: netrust_i18n::Messages::pickup_item(&name, self.locale) });
 
                 let quest_cfg = netrust_core::get_role_quest_config(&self.role_name);
                 if name.eq_ignore_ascii_case(quest_cfg.artifact_name) {
@@ -52,7 +52,7 @@ impl SimulationWorld {
                 self.scheduler.hero_act(NORMAL_SPEED);
             }
         } else {
-            events.push(GameEvent::LogMessage { text: "There is nothing here to pick up.".into() });
+            events.push(GameEvent::LogMessage { text: netrust_i18n::Messages::nothing_to_pickup(self.locale).into() });
         }
 
         events

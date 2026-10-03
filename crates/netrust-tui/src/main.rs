@@ -14,7 +14,7 @@ use crossterm::{
 };
 use netrust_core::skills::{enhance_skill, skill_damage_bonus, skill_to_hit_bonus};
 use netrust_dungeon::compute_fov;
-use netrust_i18n::{t, t_align, t_hunger_str, Locale};
+use netrust_i18n::{t, t_align, t_hunger_str, t_item, Locale};
 use netrust_sim::{
     ActionAst, Alignment, CharacterConfig, Coord, Direction, DoorState, GameEvent, Gender,
     HungerState, RaceId, RoleId, SimulationWorld, Tile, COLNO, ROWNO,
@@ -22,6 +22,78 @@ use netrust_sim::{
 use netrust_types::{ItemId, SkillClass, SkillLevel, TrapState};
 use std::collections::HashSet;
 use std::io::{self, stdout, Stdout};
+
+/// Maps Ukrainian keyboard layout keys to their QWERTY hardware equivalents.
+fn map_ukrainian_key(c: char) -> char {
+    match c {
+        'й' => 'q',
+        'Й' => 'Q',
+        'ц' => 'w',
+        'Ц' => 'W',
+        'у' => 'e',
+        'У' => 'E',
+        'к' => 'r',
+        'К' => 'R',
+        'е' => 't',
+        'Е' => 'T',
+        'н' => 'y',
+        'Н' => 'Y',
+        'г' => 'u',
+        'Г' => 'U',
+        'ш' => 'i',
+        'Ш' => 'I',
+        'щ' => 'o',
+        'Щ' => 'O',
+        'з' => 'p',
+        'З' => 'P',
+        'х' => '[',
+        'Х' => '{',
+        'ї' => ']',
+        'Ї' => '}',
+        'ф' => 'a',
+        'Ф' => 'A',
+        'і' => 's',
+        'І' => 'S',
+        'в' => 'd',
+        'В' => 'D',
+        'а' => 'f',
+        'А' => 'F',
+        'п' => 'g',
+        'П' => 'G',
+        'р' => 'h',
+        'Р' => 'H',
+        'о' => 'j',
+        'О' => 'J',
+        'л' => 'k',
+        'Л' => 'K',
+        'д' => 'l',
+        'Д' => 'L',
+        'ж' => ';',
+        'Ж' => ':',
+        'є' => '\'',
+        'Є' => '"',
+        'я' => 'z',
+        'Я' => 'Z',
+        'ч' => 'x',
+        'Ч' => 'X',
+        'с' => 'c',
+        'С' => 'C',
+        'м' => 'v',
+        'М' => 'V',
+        'и' => 'b',
+        'И' => 'B',
+        'т' => 'n',
+        'Т' => 'N',
+        'ь' => 'm',
+        'Ь' => 'M',
+        'б' => ',',
+        'Б' => '<',
+        'ю' => '.',
+        'Ю' => '>',
+        '№' => '#',
+        other => other,
+    }
+}
 
 struct TerminalGuard;
 
@@ -145,7 +217,11 @@ fn select_character(stdout: &mut Stdout, locale: Locale) -> io::Result<Option<Ch
             if key.kind != KeyEventKind::Press {
                 continue;
             }
-            match key.code {
+            let code = match key.code {
+                KeyCode::Char(c) => KeyCode::Char(map_ukrainian_key(c)),
+                other => other,
+            };
+            match code {
                 KeyCode::Char('q') | KeyCode::Esc => return Ok(None),
                 KeyCode::Char('v') | KeyCode::Enter | KeyCode::Char(' ') => {
                     return Ok(Some(CharacterConfig {
@@ -250,7 +326,11 @@ fn prompt_direction(stdout: &mut Stdout, prompt_msg: &str) -> io::Result<Option<
             if key.kind != KeyEventKind::Press {
                 continue;
             }
-            match key.code {
+            let code = match key.code {
+                KeyCode::Char(c) => KeyCode::Char(map_ukrainian_key(c)),
+                other => other,
+            };
+            match code {
                 KeyCode::Char('h') | KeyCode::Left => return Ok(Some(Direction::West)),
                 KeyCode::Char('l') | KeyCode::Right => return Ok(Some(Direction::East)),
                 KeyCode::Char('k') | KeyCode::Up => return Ok(Some(Direction::North)),
@@ -291,7 +371,9 @@ fn show_inventory_modal(stdout: &mut Stdout, world: &SimulationWorld) -> io::Res
                 } else {
                     ""
                 };
-                let desc = format!("  [{}] {} - вага: {}{}", letter, item.name, item.weight, equipped_tag);
+                let name = t_item(&item.name, loc);
+                let weight_label = if loc == Locale::Uk { "вага" } else { "weight" };
+                let desc = format!("  [{}] {} - {}: {}{}", letter, name, weight_label, item.weight, equipped_tag);
                 execute!(stdout, MoveTo(ox + 2, oy + 3 + idx as u16), SetForegroundColor(Color::White), Print(desc), ResetColor)?;
             }
         }
@@ -302,7 +384,11 @@ fn show_inventory_modal(stdout: &mut Stdout, world: &SimulationWorld) -> io::Res
             if key.kind != KeyEventKind::Press {
                 continue;
             }
-            match key.code {
+            let code = match key.code {
+                KeyCode::Char(c) => KeyCode::Char(map_ukrainian_key(c)),
+                other => other,
+            };
+            match code {
                 KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char(' ') => return Ok(None),
                 KeyCode::Char(c) if c.is_ascii_lowercase() => {
                     let idx = (c as u8 - b'a') as usize;
@@ -366,7 +452,11 @@ fn show_conducts_modal(stdout: &mut Stdout, world: &SimulationWorld) -> io::Resu
 
     loop {
         if let Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press && matches!(key.code, KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char(' ')) {
+            let code = match key.code {
+                KeyCode::Char(c) => KeyCode::Char(map_ukrainian_key(c)),
+                other => other,
+            };
+            if key.kind == KeyEventKind::Press && matches!(code, KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char(' ')) {
                 break;
             }
         }
@@ -419,7 +509,11 @@ fn show_enhance_modal(stdout: &mut Stdout, world: &mut SimulationWorld) -> io::R
             if key.kind != KeyEventKind::Press {
                 continue;
             }
-            match key.code {
+            let code = match key.code {
+                KeyCode::Char(c) => KeyCode::Char(map_ukrainian_key(c)),
+                other => other,
+            };
+            match code {
                 KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char(' ') => break,
                 KeyCode::Char(c) if c >= 'a' && c <= 'g' => {
                     let idx = (c as u8 - b'a') as usize;
@@ -502,7 +596,11 @@ fn show_help_modal(stdout: &mut Stdout, locale: Locale) -> io::Result<()> {
 
     loop {
         if let Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press && matches!(key.code, KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char(' ') | KeyCode::Char('?')) {
+            let code = match key.code {
+                KeyCode::Char(c) => KeyCode::Char(map_ukrainian_key(c)),
+                other => other,
+            };
+            if key.kind == KeyEventKind::Press && matches!(code, KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char(' ') | KeyCode::Char('?')) {
                 break;
             }
         }
@@ -532,6 +630,7 @@ fn main() -> io::Result<()> {
         Some(cfg) => cfg,
         None => return Ok(()),
     };
+    execute!(stdout, Clear(ClearType::All))?;
 
     let char_name = config.name.clone();
     let mut world = SimulationWorld::new_with_character(42, config);
@@ -551,6 +650,11 @@ fn main() -> io::Result<()> {
                 continue;
             }
 
+            let code = match key.code {
+                KeyCode::Char(c) => KeyCode::Char(map_ukrainian_key(c)),
+                other => other,
+            };
+
             let player_opt = world.arena.actors.get(world.player_id).cloned();
             let Some(player) = player_opt else { break; };
             if player.is_dead {
@@ -559,13 +663,13 @@ fn main() -> io::Result<()> {
                 } else {
                     "You have died... Press 'q' to quit.".into()
                 };
-                if key.code == KeyCode::Char('q') || key.code == KeyCode::Esc {
+                if code == KeyCode::Char('q') || code == KeyCode::Esc {
                     break;
                 }
                 continue;
             }
 
-            let action = match key.code {
+            let action = match code {
                 KeyCode::Char('q') | KeyCode::Esc => break,
                 KeyCode::Char('?') => {
                     show_help_modal(&mut stdout, world.locale)?;
@@ -635,7 +739,11 @@ fn main() -> io::Result<()> {
                     )?;
                     if let Event::Key(ext_key) = event::read()? {
                         if ext_key.kind == KeyEventKind::Press {
-                            match ext_key.code {
+                            let ext_code = match ext_key.code {
+                                KeyCode::Char(c) => KeyCode::Char(map_ukrainian_key(c)),
+                                other => other,
+                            };
+                            match ext_code {
                                 KeyCode::Char('e') => {
                                     show_enhance_modal(&mut stdout, &mut world)?;
                                 }
@@ -670,8 +778,9 @@ fn main() -> io::Result<()> {
                     if let Some(item_id) = show_inventory_modal(&mut stdout, &world)? {
                         world.hero.quivered_item = Some(item_id);
                         let item_name = world.arena.items.get(item_id).map(|i| i.name.as_str()).unwrap_or("item");
+                        let localized_name = t_item(item_name, world.locale);
                         message = if world.locale == Locale::Uk {
-                            format!("Ви вклали у сагайдак: {}.", item_name)
+                            format!("Ви вклали у сагайдак: {}.", localized_name)
                         } else {
                             format!("You ready {} in your quiver.", item_name)
                         };
@@ -948,7 +1057,7 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
         hunger_display,
         world.scheduler.turn,
         t("wield", locale),
-        world.wielded_item.and_then(|id| world.arena.items.get(id)).map(|i| i.name.as_str()).unwrap_or(none_str),
+        world.wielded_item.and_then(|id| world.arena.items.get(id)).map(|i| t_item(&i.name, locale)).unwrap_or_else(|| none_str.to_string()),
         aff_str
     );
     execute!(

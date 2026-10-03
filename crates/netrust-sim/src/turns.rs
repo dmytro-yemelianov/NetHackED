@@ -25,13 +25,13 @@ impl SimulationWorld {
                             if let Some(p) = self.arena.actors.get_mut(self.player_id) {
                                 p.is_dead = true;
                             }
-                            events.push(GameEvent::LogMessage { text: "You turn to stone...".to_string() });
+                            events.push(GameEvent::LogMessage { text: netrust_i18n::Messages::petrification_death(self.locale).to_string() });
                         }
                         netrust_core::afflictions::AfflictionTickResult::SlimeDeath => {
                             if let Some(p) = self.arena.actors.get_mut(self.player_id) {
                                 p.is_dead = true;
                             }
-                            events.push(GameEvent::LogMessage { text: "You turn into green slime...".to_string() });
+                            events.push(GameEvent::LogMessage { text: netrust_i18n::Messages::sliming_death(self.locale).to_string() });
                         }
                         _ => {}
                     }

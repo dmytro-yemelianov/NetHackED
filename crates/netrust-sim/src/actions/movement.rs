@@ -190,7 +190,7 @@ impl SimulationWorld {
                             let has_unpaid = self.arena.items_carried_by(self.player_id).iter().any(|id| self.is_unpaid(*id));
                             if has_unpaid {
                                 events.push(GameEvent::LogMessage {
-                                    text: "You hear the shopkeeper shout: 'Stop, thief! You haven't paid for that!'".into(),
+                                    text: netrust_i18n::Messages::shopkeeper_shout(self.locale).into(),
                                 });
                                 // Turn shopkeeper hostile
                                 for (_, actor) in self.arena.actors.iter_mut() {
@@ -206,7 +206,7 @@ impl SimulationWorld {
                     _ => {
                         // Impassable obstacle; do not consume energy
                         events.push(GameEvent::LogMessage {
-                            text: "Ouch! You bump into a solid wall.".into(),
+                            text: netrust_i18n::Messages::bump_wall(self.locale).into(),
                         });
                     }
                 }

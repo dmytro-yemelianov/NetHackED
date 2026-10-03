@@ -550,6 +550,251 @@ impl Messages {
             Locale::Uk => format!("{}: 'Чудово! Ти повернув {}! Боги благословляють твоє священне сходження!'", leader_name, artifact_name),
         }
     }
+
+    pub fn bump_wall(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "Ouch! You bump into a solid wall.",
+            Locale::Uk => "Ой! Ви врізаєтесь у глуху стіну.",
+        }
+    }
+
+    pub fn shopkeeper_shout(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You hear the shopkeeper shout: 'Stop, thief! You haven't paid for that!'",
+            Locale::Uk => "Ви чуєте крик крамаря: 'Стій, злодію! Ти не заплатив за це!'",
+        }
+    }
+
+    pub fn nothing_to_pickup(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "There is nothing here to pick up.",
+            Locale::Uk => "Тут немає нічого, що можна підібрати.",
+        }
+    }
+
+    pub fn search_nothing(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You search the area but find nothing.",
+            Locale::Uk => "Ви оглядаєтеся навколо, але нічого не знаходите.",
+        }
+    }
+
+    pub fn trap_disarmed(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You successfully disarmed the trap.",
+            Locale::Uk => "Вам вдалося успішно знешкодити пастку.",
+        }
+    }
+
+    pub fn no_trap(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "There is no trap here to disarm.",
+            Locale::Uk => "Тут немає пастки для знешкодження.",
+        }
+    }
+
+    pub fn quiver_success(item_name: &str, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!("You ready {} in your quiver.", item_name),
+            Locale::Uk => format!("Ви вклали {} у сагайдак.", item_name),
+        }
+    }
+
+    pub fn quiver_empty(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You have nothing quivered.",
+            Locale::Uk => "У вашому сагайдаку порожньо.",
+        }
+    }
+
+    pub fn petrification_death(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You turn to stone...",
+            Locale::Uk => "Ви перетворюєтесь на холодний камінь...",
+        }
+    }
+
+    pub fn sliming_death(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You turn into green slime...",
+            Locale::Uk => "Ви перетворюєтесь на зеленого слимака...",
+        }
+    }
+
+    pub fn pickup_item(name: &str, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!("You pick up a {}.", name),
+            Locale::Uk => format!("Ви підбираєте {}.", t_item(name, locale)),
+        }
+    }
+
+    pub fn no_stairs_down(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "There are no stairs leading down here.",
+            Locale::Uk => "Тут немає сходів, що ведуть вниз.",
+        }
+    }
+
+    pub fn no_stairs_up(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "There are no stairs leading up here.",
+            Locale::Uk => "Тут немає сходів, що ведуть вгору.",
+        }
+    }
+
+    pub fn mount_steed(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You mount the steed.",
+            Locale::Uk => "Ви сідаєте на скакуна.",
+        }
+    }
+
+    pub fn cannot_mount(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You cannot mount this monster.",
+            Locale::Uk => "Ви не можете осідлати цю істоту.",
+        }
+    }
+
+    pub fn dismount_steed(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You dismount.",
+            Locale::Uk => "Ви спішуєтесь.",
+        }
+    }
+
+    pub fn not_mounted(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You are not mounted.",
+            Locale::Uk => "Ви не верхи.",
+        }
+    }
+
+    pub fn revert_form(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You revert to your normal form!",
+            Locale::Uk => "Ви повертаєтесь до свого звичайного вигляду!",
+        }
+    }
+
+    pub fn hit_monster(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You hit a monster!",
+            Locale::Uk => "Ви влучили у монстра!",
+        }
+    }
+
+    pub fn projectile_breaks(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "The projectile breaks!",
+            Locale::Uk => "Снаряд розбивається вщент!",
+        }
+    }
+
+    pub fn projectile_misses(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "The projectile misses and lands on the floor.",
+            Locale::Uk => "Снаряд пролітає повз та падає на підлогу.",
+        }
+    }
+
+    pub fn slime_burned(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "The fire burns away the slime!",
+            Locale::Uk => "Вогонь випалює слиз!",
+        }
+    }
+}
+
+/// Translates item names to the specified locale.
+pub fn t_item(name: &str, locale: Locale) -> String {
+    if locale == Locale::En {
+        return name.to_string();
+    }
+    match name.to_lowercase().as_str() {
+        "long sword" => "довгий меч".into(),
+        "short sword" => "короткий меч".into(),
+        "dagger" => "кинджал".into(),
+        "bow" => "лук".into(),
+        "arrow" => "стріла".into(),
+        "crossbow" => "арбалет".into(),
+        "crossbow bolt" => "арбалетний болт".into(),
+        "club" => "кийок".into(),
+        "shield" => "щит".into(),
+        "small shield" => "малий щит".into(),
+        "plate mail" => "латний обладунок".into(),
+        "leather armor" => "шкіряна броня".into(),
+        "potion of healing" => "зілля зцілення".into(),
+        "potion of extra healing" => "зілля сильного зцілення".into(),
+        "potion of water" => "зілля води".into(),
+        "potion of holy water" => "зілля святої води".into(),
+        "potion of unholy water" => "зілля нечестивої води".into(),
+        "potion of polymorph" => "зілля поліморфізму".into(),
+        "potion of acid" => "зілля кислоти".into(),
+        "scroll of teleportation" => "сувій телепортації".into(),
+        "scroll of identify" => "сувій розпізнання".into(),
+        "scroll of remove curse" => "сувій зняття прокляття".into(),
+        "scroll of enchant weapon" => "сувій чарування зброї".into(),
+        "scroll of enchant armor" => "сувій чарування броні".into(),
+        "scroll of genocide" => "сувій геноциду".into(),
+        "wand of striking" => "жезл удару".into(),
+        "wand of cold" => "жезл холоду".into(),
+        "wand of fire" => "жезл вогню".into(),
+        "wand of sleep" => "жезл сну".into(),
+        "wand of death" => "жезл смерті".into(),
+        "wand of digging" => "жезл копання".into(),
+        "wand of wishing" => "жезл бажань".into(),
+        "wand of polymorph" => "жезл поліморфізму".into(),
+        "magic marker" => "чарівний маркер".into(),
+        "food ration" => "пайок".into(),
+        "corpse" => "труп".into(),
+        "lizard corpse" => "труп ящірки".into(),
+        "amulet of yendor" => "Амулет Єндора".into(),
+        "bell of opening" => "Дзвін Відкриття".into(),
+        "candelabrum of invocation" => "Свічник Поклику".into(),
+        "book of the dead" => "Книга Мертвих".into(),
+        _ => {
+            if name.ends_with("corpse") {
+                let inner = name[..name.len() - 6].trim();
+                format!("труп ({})", t_monster(inner, locale))
+            } else {
+                name.to_string()
+            }
+        }
+    }
+}
+
+/// Translates monster names to the specified locale.
+pub fn t_monster(name: &str, locale: Locale) -> String {
+    if locale == Locale::En {
+        return name.to_string();
+    }
+    match name.to_lowercase().as_str() {
+        "hill orc" => "гірський орк".into(),
+        "orc" => "орк".into(),
+        "goblin" => "гоблін".into(),
+        "jackal" => "шакал".into(),
+        "newt" => "тритон".into(),
+        "kobold" => "кобольд".into(),
+        "cockatrice" => "кокатрис".into(),
+        "green slime" => "зелений слиз".into(),
+        "floating eye" => "летюче око".into(),
+        "red dragon" => "червоний дракон".into(),
+        "lich" => "ліч".into(),
+        "shopkeeper" => "крамар".into(),
+        "priest" => "жрець".into(),
+        "medusa" => "Медуза".into(),
+        "vlad the impaler" => "Влад Колосажатель".into(),
+        "wizard of yendor" => "Чарівник Єндора".into(),
+        "croesus" => "Крез".into(),
+        _ => {
+            if name.starts_with("ghost of ") {
+                format!("привид героя {}", &name[9..])
+            } else {
+                name.to_string()
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -583,5 +828,27 @@ mod tests {
         assert!(Messages::ascension_victory(Alignment::Neutral, Locale::Uk).contains("безсмертя"));
         assert!(Messages::prayer_timeout(Locale::Uk).contains("блискавка"));
         assert!(Messages::prayer_coaligned(Locale::Uk).contains("примирення"));
+        assert_eq!(Messages::bump_wall(Locale::Uk), "Ой! Ви врізаєтесь у глуху стіну.");
+        assert_eq!(Messages::nothing_to_pickup(Locale::Uk), "Тут немає нічого, що можна підібрати.");
+        assert_eq!(Messages::no_stairs_down(Locale::Uk), "Тут немає сходів, що ведуть вниз.");
+        assert_eq!(Messages::no_stairs_up(Locale::Uk), "Тут немає сходів, що ведуть вгору.");
+        assert_eq!(Messages::revert_form(Locale::Uk), "Ви повертаєтесь до свого звичайного вигляду!");
+    }
+
+    #[test]
+    fn test_i18n_item_and_monster_translation() {
+        assert_eq!(t_item("long sword", Locale::Uk), "довгий меч");
+        assert_eq!(t_item("long sword", Locale::En), "long sword");
+        assert_eq!(t_item("dagger", Locale::Uk), "кинджал");
+        assert_eq!(t_item("potion of holy water", Locale::Uk), "зілля святої води");
+        assert_eq!(t_item("scroll of genocide", Locale::Uk), "сувій геноциду");
+        assert_eq!(t_item("wand of wishing", Locale::Uk), "жезл бажань");
+        assert_eq!(t_item("orc corpse", Locale::Uk), "труп (орк)");
+
+        assert_eq!(t_monster("orc", Locale::Uk), "орк");
+        assert_eq!(t_monster("orc", Locale::En), "orc");
+        assert_eq!(t_monster("red dragon", Locale::Uk), "червоний дракон");
+        assert_eq!(t_monster("shopkeeper", Locale::Uk), "крамар");
+        assert_eq!(t_monster("wizard of yendor", Locale::Uk), "Чарівник Єндора");
     }
 }

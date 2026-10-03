@@ -76,19 +76,20 @@ impl SimulationWorld {
                     }
                 }
                 if !found {
-                    events.push(GameEvent::LogMessage { text: "You search the area but find nothing.".to_string() });
+                    events.push(GameEvent::LogMessage { text: netrust_i18n::Messages::search_nothing(self.locale).into() });
                 }
                 self.scheduler.hero_act(NORMAL_SPEED);
             }
             ActionAst::Untrap(coord) => {
                 if let Some(trap) = self.level.traps.get_mut(&coord) {
                     if netrust_core::traps::disarm_trap(trap) {
-                        events.push(GameEvent::LogMessage { text: "You successfully disarmed the trap.".to_string() });
+                        events.push(GameEvent::LogMessage { text: netrust_i18n::Messages::trap_disarmed(self.locale).into() });
                     } else {
-                        events.push(GameEvent::LogMessage { text: "The trap is already disarmed.".to_string() });
+                        let text = if self.locale == netrust_i18n::Locale::Uk { "Пастку вже знешкоджено." } else { "The trap is already disarmed." };
+                        events.push(GameEvent::LogMessage { text: text.into() });
                     }
                 } else {
-                    events.push(GameEvent::LogMessage { text: "There is no trap here to disarm.".to_string() });
+                    events.push(GameEvent::LogMessage { text: netrust_i18n::Messages::no_trap(self.locale).into() });
                 }
                 self.scheduler.hero_act(NORMAL_SPEED);
             }

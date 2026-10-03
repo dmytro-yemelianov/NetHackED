@@ -481,7 +481,7 @@ impl SimulationWorld {
                 self.scheduler.hero_act(NORMAL_SPEED);
             }
             _ => {
-                events.push(GameEvent::LogMessage { text: "There are no stairs leading down here.".into() });
+                events.push(GameEvent::LogMessage { text: netrust_i18n::Messages::no_stairs_down(self.locale).into() });
             }
         }
 
@@ -608,7 +608,7 @@ impl SimulationWorld {
                 self.scheduler.hero_act(NORMAL_SPEED);
             }
             _ => {
-                events.push(GameEvent::LogMessage { text: "There are no stairs leading up here.".into() });
+                events.push(GameEvent::LogMessage { text: netrust_i18n::Messages::no_stairs_up(self.locale).into() });
             }
         }
 

@@ -14,8 +14,9 @@ impl SimulationWorld {
         let items = self.arena.items_carried_by(self.player_id);
         if items.contains(&idx) {
             self.hero.quivered_item = Some(idx);
+            let item_name = self.arena.items.get(idx).map(|i| i.name.as_str()).unwrap_or("item");
             events.push(GameEvent::LogMessage {
-                text: "You quiver the item.".into(),
+                text: netrust_i18n::Messages::quiver_success(&netrust_i18n::t_item(item_name, self.locale), self.locale),
             });
         }
         events
@@ -49,7 +50,7 @@ impl SimulationWorld {
             if let Some(actor_id) = target_actor {
                 let damage = 2; // Simple damage for now
                 events.push(GameEvent::LogMessage {
-                    text: "You hit a monster!".into(),
+                    text: netrust_i18n::Messages::hit_monster(self.locale).into(),
                 });
                 
                 let lethal = if let Some(target) = self.arena.actors.get_mut(actor_id) {
@@ -74,7 +75,7 @@ impl SimulationWorld {
                 let roll = self.rng.random_range(0..100);
                 if resolve_projectile_impact(25, roll) {
                     events.push(GameEvent::LogMessage {
-                        text: "The projectile breaks!".into(),
+                        text: netrust_i18n::Messages::projectile_breaks(self.locale).into(),
                     });
                     self.arena.destroy_item(item_id);
                     if true { let player = &mut self.hero;
@@ -90,7 +91,7 @@ impl SimulationWorld {
                 }
             } else {
                 events.push(GameEvent::LogMessage {
-                    text: "The projectile misses and lands on the floor.".into(),
+                    text: netrust_i18n::Messages::projectile_misses(self.locale).into(),
                 });
                 if let Some(item) = self.arena.items.get_mut(item_id) {
                     item.location = ItemLocation::Floor(current);
@@ -101,7 +102,7 @@ impl SimulationWorld {
             }
         } else {
             events.push(GameEvent::LogMessage {
-                text: "You have nothing quivered.".into(),
+                text: netrust_i18n::Messages::quiver_empty(self.locale).into(),
             });
         }
 
@@ -120,12 +121,12 @@ impl SimulationWorld {
                         saddle_equipped: true,
                     });
                     events.push(GameEvent::LogMessage {
-                        text: "You mount the steed.".into(),
+                        text: netrust_i18n::Messages::mount_steed(self.locale).into(),
                     });
                 }
             } else {
                 events.push(GameEvent::LogMessage {
-                    text: "You cannot mount this monster.".into(),
+                    text: netrust_i18n::Messages::cannot_mount(self.locale).into(),
                 });
             }
         }
@@ -141,11 +142,11 @@ impl SimulationWorld {
             if player.mount.is_some() {
                 player.mount = None;
                 events.push(GameEvent::LogMessage {
-                    text: "You dismount.".into(),
+                    text: netrust_i18n::Messages::dismount_steed(self.locale).into(),
                 });
             } else {
                 events.push(GameEvent::LogMessage {
-                    text: "You are not mounted.".into(),
+                    text: netrust_i18n::Messages::not_mounted(self.locale).into(),
                 });
             }
         }

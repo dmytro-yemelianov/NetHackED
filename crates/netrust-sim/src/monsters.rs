@@ -232,7 +232,7 @@ impl SimulationWorld {
                                             if self.hero.afflictions.sliming.is_some() {
                                                 netrust_core::afflictions::cure_sliming(&mut self.hero);
                                                 events.push(GameEvent::LogMessage {
-                                                    text: "The fire burns away the slime!".to_string(),
+                                                    text: netrust_i18n::Messages::slime_burned(self.locale).to_string(),
                                                 });
                                             }
                                         }

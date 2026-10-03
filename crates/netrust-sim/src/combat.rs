@@ -136,7 +136,7 @@ impl SimulationWorld {
                             target.max_hp = self.hero.base_max_hp as u32;
                             lethal = false;
                             events.push(GameEvent::LogMessage {
-                                text: "You revert to your normal form!".to_string(),
+                                text: netrust_i18n::Messages::revert_form(self.locale).to_string(),
                             });
                         }
                         netrust_core::polymorph::PolyDamageResult::Dead => {
