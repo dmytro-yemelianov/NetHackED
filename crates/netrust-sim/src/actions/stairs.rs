@@ -3,8 +3,12 @@
 use netrust_arena::{ActorId, ItemId, ItemLocation};
 use netrust_core::energy::NORMAL_SPEED;
 use netrust_data::{create_item_record, create_monster_record, ItemKindId, MonsterSpeciesId};
-use netrust_dungeon::{generate_dungeon_level, generate_sokoban_level};
+use netrust_dungeon::{
+    generate_dungeon_level, generate_gehennom_maze_level, generate_moloch_sanctum_level,
+    generate_sokoban_level, generate_valley_of_the_dead,
+};
 use netrust_types::{BranchCoord, BranchId, Buc, Coord, Tile};
+use rand::Rng;
 
 use crate::events::GameEvent;
 use crate::world::{SimulationWorld, StoredLevel};
@@ -150,6 +154,93 @@ impl SimulationWorld {
                         text: "You descend into the rugged, dark caverns of the Gnomish Mines.".into(),
                     });
                 }
+                (BranchId::Gehennom, 1) => {
+                    // Valley of the Dead
+                    let lvl = generate_valley_of_the_dead(&mut self.rng);
+                    self.level = lvl;
+
+                    for (i, room) in self.level.rooms.iter().enumerate() {
+                        if i > 0 {
+                            let species = if i % 2 == 0 { MonsterSpeciesId::Skeleton } else { MonsterSpeciesId::Vampire };
+                            let mon = create_monster_record(species, room.center());
+                            self.arena.spawn_actor(mon);
+                        }
+                    }
+
+                    // Spawn Bell of Opening in Valley of the Dead
+                    let bell_coord = self.level.rooms[1].center();
+                    let bell = create_item_record(ItemKindId::BellOfOpening, ItemLocation::Floor(bell_coord), Buc::Blessed);
+                    self.arena.spawn_item(bell);
+
+                    events.push(GameEvent::LogMessage {
+                        text: "You cross into the gloomy, desolate Valley of the Dead...".into(),
+                    });
+                }
+                (BranchId::Gehennom, 5) => {
+                    // Deepest Gehennom Maze with Vibrating Square
+                    let (lvl, vs) = generate_gehennom_maze_level(&mut self.rng, 5, true);
+                    self.level = lvl;
+                    self.vibrating_square = vs;
+
+                    for (i, room) in self.level.rooms.iter().enumerate() {
+                        if i > 0 {
+                            let mon = create_monster_record(MonsterSpeciesId::SilverDragon, room.center());
+                            self.arena.spawn_actor(mon);
+                        }
+                    }
+
+                    // Spawn Candelabrum and Book of the Dead
+                    let cand_coord = self.level.rooms[1].center();
+                    let cand = create_item_record(ItemKindId::CandelabrumOfInvocation, ItemLocation::Floor(cand_coord), Buc::Uncursed);
+                    self.arena.spawn_item(cand);
+
+                    let book_coord = Coord::new_unchecked(self.level.rooms[1].x1 + 1, self.level.rooms[1].y1 + 1);
+                    let book = create_item_record(ItemKindId::BookOfTheDead, ItemLocation::Floor(book_coord), Buc::Blessed);
+                    self.arena.spawn_item(book);
+
+                    // Spawn 7 wax candles
+                    for c_i in 0..7 {
+                        let candle_c = Coord::new_unchecked(self.level.rooms[0].x1 + 1 + c_i, self.level.rooms[0].y1 + 1);
+                        let candle = create_item_record(ItemKindId::WaxCandle, ItemLocation::Floor(candle_c), Buc::Uncursed);
+                        self.arena.spawn_item(candle);
+                    }
+
+                    events.push(GameEvent::LogMessage {
+                        text: "You reach the infernal bottom of Gehennom. A cryptic vibration resonates beneath the stone.".into(),
+                    });
+                }
+                (BranchId::Gehennom, 6) => {
+                    // Moloch's Sanctum
+                    let (lvl, _spawn) = generate_moloch_sanctum_level(&mut self.rng);
+                    self.level = lvl;
+
+                    let priest = create_monster_record(MonsterSpeciesId::Priest, self.level.stairs_down);
+                    self.arena.spawn_actor(priest);
+
+                    let amulet = create_item_record(ItemKindId::AmuletOfYendor, ItemLocation::Floor(self.level.stairs_down), Buc::Blessed);
+                    self.arena.spawn_item(amulet);
+
+                    events.push(GameEvent::LogMessage {
+                        text: "You enter Moloch's Sanctum! Rivers of boiling lava surround the unholy high altar!".into(),
+                    });
+                }
+                (BranchId::Gehennom, d) => {
+                    // Intermediate Gehennom Mazes
+                    let (lvl, _) = generate_gehennom_maze_level(&mut self.rng, d, false);
+                    self.level = lvl;
+
+                    for (i, room) in self.level.rooms.iter().enumerate() {
+                        if i > 0 {
+                            let species = if i % 2 == 0 { MonsterSpeciesId::SilverDragon } else { MonsterSpeciesId::Vampire };
+                            let mon = create_monster_record(species, room.center());
+                            self.arena.spawn_actor(mon);
+                        }
+                    }
+
+                    events.push(GameEvent::LogMessage {
+                        text: format!("You delve through the fiery, twisting corridors of Gehennom (level {}).", d),
+                    });
+                }
                 _ => {
                     let mut new_level = generate_dungeon_level(&mut self.rng);
 
@@ -169,6 +260,16 @@ impl SimulationWorld {
                             let branch_coord = Coord::new_unchecked(room.x1 + 1, room.y1 + 1);
                             new_level.set_tile(branch_coord, Tile::BranchStairs {
                                 branch: BranchId::Sokoban,
+                                level: 1,
+                                up: false,
+                            });
+                        }
+                    }
+                    if branch == BranchId::DungeonsOfDoom && depth == 5 {
+                        if let Some(room) = new_level.rooms.first() {
+                            let branch_coord = Coord::new_unchecked(room.x1 + 1, room.y1 + 1);
+                            new_level.set_tile(branch_coord, Tile::BranchStairs {
+                                branch: BranchId::Gehennom,
                                 level: 1,
                                 up: false,
                             });
@@ -214,6 +315,34 @@ impl SimulationWorld {
         let Some(player) = self.arena.actors.get(self.player_id).cloned() else {
             return events;
         };
+
+        // Gehennom bottom floor: Vibrating Square subterranean portal
+        if self.current_branch == BranchId::Gehennom && self.depth == 5 && self.vibrating_square == Some(player.coord) {
+            if netrust_core::is_sanctum_accessible(self.ritual_progress) {
+                let from_depth = self.depth;
+                self.pack_current_level();
+                self.depth = 6;
+                let gen_events = self.unpack_or_generate_level(BranchId::Gehennom, 6);
+                events.extend(gen_events);
+
+                let new_coord = self.level.stairs_up;
+                if let Some(p) = self.arena.actors.get_mut(self.player_id) {
+                    p.coord = new_coord;
+                }
+
+                events.push(GameEvent::LevelChanged { from_depth, to_depth: self.depth });
+                events.push(GameEvent::LogMessage {
+                    text: "You step through the subterranean portal into Moloch's Sanctum!".into(),
+                });
+                self.scheduler.hero_act(NORMAL_SPEED);
+                return events;
+            } else {
+                events.push(GameEvent::LogMessage {
+                    text: "You feel a strange vibration beneath your feet, but the subterranean way remains sealed. Perform the Invocation Ritual!".into(),
+                });
+                return events;
+            }
+        }
 
         let tile = self.level.get_tile(player.coord).clone();
         match tile {
@@ -268,6 +397,33 @@ impl SimulationWorld {
         match tile {
             Tile::Stairs { up: true } => {
                 if self.depth > 1 {
+                    // Gehennom Mysterious Force when ascending with the real Amulet of Yendor
+                    let has_amulet = self.arena.items_carried_by(self.player_id).iter().any(|&iid| {
+                        self.arena.items.get(iid).map(|it| it.name.contains("Amulet of Yendor")).unwrap_or(false)
+                    });
+                    if self.current_branch == BranchId::Gehennom && has_amulet {
+                        let roll = self.rng.random::<u32>();
+                        if let Some(pushed_depth) = netrust_core::calculate_mysterious_force(self.depth, roll) {
+                            let from_depth = self.depth;
+                            self.pack_current_level();
+                            self.depth = pushed_depth;
+                            let gen_events = self.unpack_or_generate_level(BranchId::Gehennom, self.depth);
+                            events.extend(gen_events);
+
+                            let new_coord = self.level.stairs_up;
+                            if let Some(p) = self.arena.actors.get_mut(self.player_id) {
+                                p.coord = new_coord;
+                            }
+
+                            events.push(GameEvent::LevelChanged { from_depth, to_depth: self.depth });
+                            events.push(GameEvent::LogMessage {
+                                text: format!("An eldritch Mysterious Force pushes you downward to level {}!", pushed_depth),
+                            });
+                            self.scheduler.hero_act(NORMAL_SPEED);
+                            return events;
+                        }
+                    }
+
                     let from_depth = self.depth;
                     self.pack_current_level();
                     self.depth -= 1;

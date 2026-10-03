@@ -304,15 +304,39 @@ impl SimulationWorld {
                     }
                     self.scheduler.hero_act(NORMAL_SPEED);
                 } else if item.class == ItemClass::Spellbook {
-                    let spell = if item.name.contains("force bolt") {
-                        SpellKind::ForceBolt
+                    if item.name.contains("Book of the Dead") {
+                        let player_coord = self.arena.actors.get(self.player_id).map(|p| p.coord).unwrap_or(Coord::new_unchecked(0, 0));
+                        let on_vs = self.vibrating_square == Some(player_coord);
+                        self.ritual_progress = netrust_core::step_ritual(
+                            self.ritual_progress,
+                            netrust_core::InvocationStep::ReadBook,
+                            on_vs,
+                            &self.candelabrum_state,
+                        );
+                        if netrust_core::is_sanctum_accessible(self.ritual_progress) {
+                            events.push(GameEvent::LogMessage {
+                                text: "The cavern trembles violently! A subterranean portal to Moloch's Sanctum opens before you!".into(),
+                            });
+                        } else if !on_vs {
+                            events.push(GameEvent::LogMessage {
+                                text: "You recite the eldritch litany of the Book of the Dead, but nothing happens. You are not on the Vibrating Square!".into(),
+                            });
+                        } else {
+                            events.push(GameEvent::LogMessage {
+                                text: "You read from the Book of the Dead, but the ritual sequence is incomplete.".into(),
+                            });
+                        }
                     } else {
-                        SpellKind::CureLightWounds
-                    };
-                    if !self.known_spells.iter().any(|(s, _)| *s == spell) {
-                        self.known_spells.push((spell, 20000));
+                        let spell = if item.name.contains("force bolt") {
+                            SpellKind::ForceBolt
+                        } else {
+                            SpellKind::CureLightWounds
+                        };
+                        if !self.known_spells.iter().any(|(s, _)| *s == spell) {
+                            self.known_spells.push((spell, 20000));
+                        }
+                        events.push(GameEvent::LogMessage { text: format!("You study the {} and memorize the spell!", item.name) });
                     }
-                    events.push(GameEvent::LogMessage { text: format!("You study the {} and memorize the spell!", item.name) });
                     self.scheduler.hero_act(NORMAL_SPEED);
                 } else {
                     events.push(GameEvent::LogMessage { text: "You can only read scrolls or spellbooks!".into() });

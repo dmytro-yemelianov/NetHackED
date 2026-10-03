@@ -46,6 +46,12 @@ pub struct SimulationWorld {
     pub player_luck: i32,
     pub locale: netrust_types::Locale,
     pub bones_storage: Vec<netrust_types::BonesData>,
+    #[serde(default)]
+    pub candelabrum_state: netrust_core::CandelabrumState,
+    #[serde(default)]
+    pub ritual_progress: netrust_core::RitualProgress,
+    #[serde(default)]
+    pub vibrating_square: Option<Coord>,
     #[serde(skip, default = "default_rng")]
     pub rng: ChaCha8Rng,
     pub seed: u64,
@@ -159,6 +165,9 @@ impl SimulationWorld {
             player_luck: 0,
             locale: netrust_types::Locale::En,
             bones_storage: Vec::new(),
+            candelabrum_state: netrust_core::CandelabrumState::empty(),
+            ritual_progress: netrust_core::RitualProgress::Uninitiated,
+            vibrating_square: None,
             rng,
             seed,
             event_log: Vec::new(),

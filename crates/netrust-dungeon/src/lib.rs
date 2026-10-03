@@ -8,6 +8,7 @@ pub mod room;
 pub mod sokoban;
 pub mod endgame;
 pub mod mines;
+pub mod gehennom;
 
 pub use fov::{compute_fov, compute_illumination};
 pub use generator::{
@@ -19,6 +20,9 @@ pub use room::{Rect, Room, RoomType};
 pub use sokoban::generate_sokoban_level;
 pub use endgame::{generate_astral_plane, generate_castle_level};
 pub use mines::{generate_mines_cavern_level, generate_minetown_level, generate_mines_end_level, MinetownLayout};
+pub use gehennom::{
+    generate_gehennom_maze_level, generate_moloch_sanctum_level, generate_valley_of_the_dead,
+};
 
 #[cfg(test)]
 mod tests {

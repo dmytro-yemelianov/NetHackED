@@ -1833,6 +1833,100 @@ fn test_blindness_and_telepathy_perception() {
     assert!(!detected_no_esp.contains(&skel), "Without telepathy and blind, cannot detect Skeleton");
 }
 
+#[test]
+fn test_invocation_ritual_and_moloch_sanctum_portal() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    sim.current_branch = netrust_types::BranchId::Gehennom;
+    sim.depth = 5;
+
+    let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+    let vs_coord = p_coord.step(Direction::East).unwrap();
+    sim.vibrating_square = Some(vs_coord);
+
+    // Spawn Bell, Candelabrum, 7 Candles, Book of the Dead
+    let bell = sim.arena.spawn_item(create_item_record(ItemKindId::BellOfOpening, ItemLocation::CarriedBy(sim.player_id), Buc::Blessed));
+    let cand = sim.arena.spawn_item(create_item_record(ItemKindId::CandelabrumOfInvocation, ItemLocation::CarriedBy(sim.player_id), Buc::Blessed));
+    for _ in 0..7 {
+        sim.arena.spawn_item(create_item_record(ItemKindId::WaxCandle, ItemLocation::CarriedBy(sim.player_id), Buc::Uncursed));
+    }
+    let book = sim.arena.spawn_item(create_item_record(ItemKindId::BookOfTheDead, ItemLocation::CarriedBy(sim.player_id), Buc::Blessed));
+
+    // Attach 7 candles to candelabrum
+    for _ in 0..7 {
+        let carried = sim.arena.items_carried_by(sim.player_id);
+        let candle_idx = carried.iter().position(|&id| {
+            sim.arena.items.get(id).map(|it| it.name.contains("candle")).unwrap_or(false)
+        }).unwrap();
+        sim.step_player_action(ActionAst::Apply(candle_idx));
+    }
+    assert_eq!(sim.candelabrum_state.candle_count, 7);
+
+    // Step 1: Ring Bell
+    let carried = sim.arena.items_carried_by(sim.player_id);
+    let bell_idx = carried.iter().position(|&id| id == bell).unwrap();
+    let events = sim.step_player_action(ActionAst::Apply(bell_idx));
+    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("Bell of Opening"))));
+    assert_eq!(sim.ritual_progress, netrust_core::RitualProgress::BellResounding);
+
+    // Step 2: Light Candelabrum
+    let carried = sim.arena.items_carried_by(sim.player_id);
+    let cand_idx = carried.iter().position(|&id| id == cand).unwrap();
+    let events = sim.step_player_action(ActionAst::Apply(cand_idx));
+    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("blaze with holy"))));
+    assert_eq!(sim.ritual_progress, netrust_core::RitualProgress::CandlesBurning);
+
+    // Step 3 off Vibrating Square: Reading Book fails to open portal
+    let carried = sim.arena.items_carried_by(sim.player_id);
+    let book_idx = carried.iter().position(|&id| id == book).unwrap();
+    let events = sim.step_player_action(ActionAst::Read(book_idx));
+    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("not on the Vibrating Square"))));
+    assert_eq!(sim.ritual_progress, netrust_core::RitualProgress::CandlesBurning);
+
+    // Move onto Vibrating Square
+    sim.level.set_tile(vs_coord, Tile::Room);
+    if let Some(p) = sim.arena.actors.get_mut(sim.player_id) {
+        p.coord = vs_coord;
+    }
+
+    // Attempt descend before ritual completion fails
+    let events_descend_fail = sim.step_player_action(ActionAst::Descend);
+    assert!(events_descend_fail.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("Perform the Invocation Ritual"))));
+
+    // Step 3 on Vibrating Square: Reading Book opens Sanctum!
+    let carried = sim.arena.items_carried_by(sim.player_id);
+    let book_idx = carried.iter().position(|&id| id == book).unwrap();
+    let events = sim.step_player_action(ActionAst::Read(book_idx));
+    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("Moloch's Sanctum opens"))));
+    assert_eq!(sim.ritual_progress, netrust_core::RitualProgress::SanctumOpened);
+
+    // Descend through portal into Moloch's Sanctum (depth 6)
+    let events_descend = sim.step_player_action(ActionAst::Descend);
+    assert!(events_descend.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("step through the subterranean portal into Moloch's Sanctum"))));
+    assert_eq!(sim.depth, 6);
+}
+
+#[test]
+fn test_gehennom_mysterious_force_pushback() {
+    let mut sim = SimulationWorld::new_with_seed(12345);
+    sim.current_branch = netrust_types::BranchId::Gehennom;
+    sim.depth = 3;
+
+    // Carrying real Amulet of Yendor
+    sim.arena.spawn_item(create_item_record(ItemKindId::AmuletOfYendor, ItemLocation::CarriedBy(sim.player_id), Buc::Blessed));
+
+    // Stand on stairs up
+    let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+    sim.level.set_tile(p_coord, Tile::Stairs { up: true });
+
+    // Test calculate_mysterious_force bounds directly
+    for roll in 0..100 {
+        if let Some(pushed) = netrust_core::calculate_mysterious_force(3, roll) {
+            assert!(pushed > 3 && pushed <= 6);
+        }
+    }
+}
+
+
 
 
 

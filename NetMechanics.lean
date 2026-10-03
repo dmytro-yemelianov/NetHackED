@@ -30,3 +30,4 @@ import NetMechanics.PetCoop
 import NetMechanics.Mines
 import NetMechanics.Lighting
 import NetMechanics.Tournament
+import NetMechanics.Gehennom

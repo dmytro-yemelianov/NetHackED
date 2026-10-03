@@ -15,11 +15,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("                        Formally Verified NetHack Simulation Engine                                 ");
     println!("====================================================================================================");
 
-    let seeds: Vec<u64> = (1..=10).collect();
-    let roles = vec![RoleId::Valkyrie, RoleId::Wizard, RoleId::Barbarian];
+    let seeds: Vec<u64> = (1..=25).collect();
+    let roles = vec![RoleId::Valkyrie, RoleId::Wizard];
     let max_turns = 1000u64;
 
-    let total_expected = seeds.len() * roles.len() * 3;
+    let total_expected = seeds.len() * roles.len() * 4;
     println!(
         "Executing {} seeded simulation runs across {} seeds and {} roles...",
         total_expected,

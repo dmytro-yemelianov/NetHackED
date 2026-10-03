@@ -27,6 +27,8 @@ use netrust_core::{
     can_see_tile, LightSource, tick_light_fuel, can_detect_monster,
     calculate_tournament_score, decide_tactical_action, is_hp_critical, TacticalAction,
     TacticalContext,
+    CandelabrumState, InvocationStep, RitualProgress, REQUIRED_CANDLES, is_candelabrum_ready,
+    step_ritual, is_sanctum_accessible, calculate_mysterious_force,
 };
 use proptest::prelude::*;
 
@@ -1170,6 +1172,89 @@ proptest! {
         let s_kills1 = calculate_tournament_score(turns, depth1, kills1.min(kills2), gold);
         let s_kills2 = calculate_tournament_score(turns, depth1, kills1.max(kills2), gold);
         prop_assert!(s_kills1 <= s_kills2);
+    }
+
+    // -------------------------------------------------------------
+    // Theorems: candelabrum_requires_seven_candles & unlit_candelabrum_not_ready
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_candelabrum_ready_theorems(
+        candle_count in 0u32..20,
+        is_lit in any::<bool>(),
+    ) {
+        let cand = CandelabrumState { candle_count, is_lit };
+        let ready = is_candelabrum_ready(&cand);
+
+        // Theorem: candelabrum_requires_seven_candles
+        if candle_count != REQUIRED_CANDLES {
+            prop_assert!(!ready);
+        }
+
+        // Theorem: unlit_candelabrum_not_ready
+        if !is_lit {
+            prop_assert!(!ready);
+        }
+
+        if candle_count == REQUIRED_CANDLES && is_lit {
+            prop_assert!(ready);
+        }
+    }
+
+    // -------------------------------------------------------------
+    // Theorems: reading_book_off_vibrating_square_fails,
+    //           full_ritual_unlocks_sanctum, sanctum_opening_is_permanent
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_invocation_ritual_theorems(
+        on_vibrating_square in any::<bool>(),
+        is_lit in any::<bool>(),
+        candle_count in 0u32..10,
+    ) {
+        let cand = CandelabrumState { candle_count, is_lit };
+
+        // Theorem: full_ritual_unlocks_sanctum
+        if is_candelabrum_ready(&cand) {
+            let s1 = step_ritual(RitualProgress::Uninitiated, InvocationStep::RingBell, true, &cand);
+            prop_assert_eq!(s1, RitualProgress::BellResounding);
+
+            let s2 = step_ritual(s1, InvocationStep::LightCandelabrum, true, &cand);
+            prop_assert_eq!(s2, RitualProgress::CandlesBurning);
+
+            let s3 = step_ritual(s2, InvocationStep::ReadBook, true, &cand);
+            prop_assert_eq!(s3, RitualProgress::SanctumOpened);
+            prop_assert!(is_sanctum_accessible(s3));
+        }
+
+        // Theorem: reading_book_off_vibrating_square_fails
+        let s_off = step_ritual(RitualProgress::CandlesBurning, InvocationStep::ReadBook, false, &cand);
+        prop_assert_ne!(s_off, RitualProgress::SanctumOpened);
+        prop_assert!(!is_sanctum_accessible(s_off));
+
+        // Theorem: sanctum_opening_is_permanent
+        for step in [InvocationStep::RingBell, InvocationStep::LightCandelabrum, InvocationStep::ReadBook] {
+            let next = step_ritual(RitualProgress::SanctumOpened, step, on_vibrating_square, &cand);
+            prop_assert_eq!(next, RitualProgress::SanctumOpened);
+            prop_assert!(is_sanctum_accessible(next));
+        }
+    }
+
+    // -------------------------------------------------------------
+    // Theorem: mysterious_force_bounds
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_mysterious_force_bounds(
+        depth in 1usize..100,
+        roll in any::<u32>(),
+    ) {
+        let result = calculate_mysterious_force(depth, roll);
+        if roll % 3 == 0 {
+            prop_assert!(result.is_some());
+            let pushed_depth = result.unwrap();
+            prop_assert!(pushed_depth > depth);
+            prop_assert!(pushed_depth <= depth + 3);
+        } else {
+            prop_assert!(result.is_none());
+        }
     }
 }
 

@@ -2,6 +2,7 @@
 
 use netrust_arena::ItemLocation;
 use netrust_core::energy::NORMAL_SPEED;
+use netrust_types::Coord;
 
 use crate::events::GameEvent;
 use crate::world::SimulationWorld;
@@ -159,9 +160,73 @@ impl SimulationWorld {
         let carried = self.arena.items_carried_by(self.player_id);
         if idx < carried.len() {
             let item_id = carried[idx];
-            if let Some(item) = self.arena.items.get_mut(item_id) {
-                let name = item.name.to_lowercase();
-                if name.contains("lamp") || name.contains("lantern") || name.contains("candle") {
+            let (item_name, _enchantment) = if let Some(it) = self.arena.items.get(item_id) {
+                (it.name.clone(), it.enchantment)
+            } else {
+                return events;
+            };
+
+            let name = item_name.to_lowercase();
+            let player_coord = self.arena.actors.get(self.player_id).map(|p| p.coord).unwrap_or(Coord::new_unchecked(0, 0));
+            let on_vs = self.vibrating_square == Some(player_coord);
+
+            if name.contains("bell of opening") {
+                self.ritual_progress = netrust_core::step_ritual(
+                    self.ritual_progress,
+                    netrust_core::InvocationStep::RingBell,
+                    on_vs,
+                    &self.candelabrum_state,
+                );
+                events.push(GameEvent::LogMessage {
+                    text: "You ring the Bell of Opening. It produces an otherworldly, reverberating silver chime.".into(),
+                });
+                self.scheduler.hero_act(NORMAL_SPEED);
+            } else if name.contains("candelabrum") {
+                if self.candelabrum_state.light() {
+                    self.ritual_progress = netrust_core::step_ritual(
+                        self.ritual_progress,
+                        netrust_core::InvocationStep::LightCandelabrum,
+                        on_vs,
+                        &self.candelabrum_state,
+                    );
+                    events.push(GameEvent::LogMessage {
+                        text: "The seven candles on the Candelabrum of Invocation blaze with holy incandescent flame!".into(),
+                    });
+                } else {
+                    events.push(GameEvent::LogMessage {
+                        text: format!("The Candelabrum of Invocation is not ready. It needs 7 candles (currently has {}).", self.candelabrum_state.candle_count),
+                    });
+                }
+                self.scheduler.hero_act(NORMAL_SPEED);
+            } else if name.contains("candle") {
+                let has_candelabrum = carried.iter().any(|&cid| {
+                    self.arena.items.get(cid).map(|it| it.name.contains("Candelabrum")).unwrap_or(false)
+                });
+                if has_candelabrum && self.candelabrum_state.attach_candle() {
+                    self.arena.destroy_item(item_id);
+                    events.push(GameEvent::LogMessage {
+                        text: format!("You attach the candle to the Candelabrum of Invocation. ({}/7 candles attached)", self.candelabrum_state.candle_count),
+                    });
+                    self.scheduler.hero_act(NORMAL_SPEED);
+                } else {
+                    // Regular candle lighting toggle
+                    if let Some(item) = self.arena.items.get_mut(item_id) {
+                        if item.enchantment <= 0 {
+                            item.enchantment = 1;
+                            events.push(GameEvent::LogMessage {
+                                text: format!("You light the {}. It casts a bright illumination.", item.name),
+                            });
+                        } else {
+                            item.enchantment = 0;
+                            events.push(GameEvent::LogMessage {
+                                text: format!("You extinguish the {}.", item.name),
+                            });
+                        }
+                    }
+                    self.scheduler.hero_act(NORMAL_SPEED);
+                }
+            } else if name.contains("lamp") || name.contains("lantern") {
+                if let Some(item) = self.arena.items.get_mut(item_id) {
                     if item.enchantment <= 0 {
                         item.enchantment = 1;
                         events.push(GameEvent::LogMessage {
@@ -173,12 +238,12 @@ impl SimulationWorld {
                             text: format!("You extinguish the {}.", item.name),
                         });
                     }
-                    self.scheduler.hero_act(NORMAL_SPEED);
-                } else {
-                    events.push(GameEvent::LogMessage {
-                        text: format!("You don't know how to apply the {}.", item.name),
-                    });
                 }
+                self.scheduler.hero_act(NORMAL_SPEED);
+            } else {
+                events.push(GameEvent::LogMessage {
+                    text: format!("You don't know how to apply the {}.", item_name),
+                });
             }
         } else {
             events.push(GameEvent::LogMessage {

@@ -30,6 +30,7 @@ pub mod pet_coop;
 pub mod mines;
 pub mod lighting;
 pub mod tournament;
+pub mod gehennom;
 
 pub use ast::{ActionAst, Direction, EffectAst, WorldState};
 pub use buc::{dip_water, uncurse, Buc, WaterType};
@@ -72,6 +73,10 @@ pub use lighting::{
 pub use tournament::{
     calculate_tournament_score, decide_tactical_action, is_hp_critical, TacticalAction,
     TacticalContext,
+};
+pub use gehennom::{
+    calculate_mysterious_force, is_candelabrum_ready, is_sanctum_accessible, step_ritual,
+    CandelabrumState, InvocationStep, RitualProgress, REQUIRED_CANDLES,
 };
 pub use netrust_types::{
     ArtifactKind, AscensionOutcome, BonesData, BonesItem, BranchCoord, BranchId, BreathType, Deity,
