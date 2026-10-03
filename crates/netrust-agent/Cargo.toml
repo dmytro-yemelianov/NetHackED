@@ -41,3 +41,7 @@ path = "src/bin/graphql.rs"
 name = "netrust-benchmark"
 path = "src/bin/benchmark.rs"
 
+[[bin]]
+name = "netrust-demo"
+path = "src/bin/demo.rs"
+
