@@ -1,6 +1,6 @@
 //! JSON-RPC 2.0 standard protocol streaming over stdio for autonomous AI pairs.
 
-use netrust_sim::{ActionAst, Coord, Direction};
+use netrust_sim::{ActionAst, Direction};
 use serde_json::{json, Value};
 
 use crate::session::AgentSession;
@@ -39,8 +39,10 @@ pub fn handle_jsonrpc_request(session: &mut AgentSession, line: &str) -> Option<
         "netrust.inspectTile" => {
             let x = params.get("x").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
             let y = params.get("y").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
-            let insp = session.inspect_tile(Coord::new_unchecked(x, y));
-            json!(insp)
+            match session.inspect_tile(x, y) {
+                Ok(i) => json!(i),
+                Err(e) => json!({ "error": e }),
+            }
         }
         _ => return Some(json!({
             "jsonrpc": "2.0",

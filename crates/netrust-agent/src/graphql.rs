@@ -121,11 +121,9 @@ impl QueryRoot {
     async fn inspect_tile(&self, ctx: &Context<'_>, x: usize, y: usize) -> String {
         let state = ctx.data_unchecked::<AppState>();
         let session = state.session.lock().unwrap();
-        if let Some(coord) = Coord::new(x, y) {
-            let info = session.inspect_tile(coord);
-            serde_json::to_string_pretty(&info).unwrap_or_default()
-        } else {
-            "Coordinate out of dungeon bounds".to_string()
+        match session.inspect_tile(x, y) {
+            Ok(info) => serde_json::to_string_pretty(&info).unwrap_or_default(),
+            Err(e) => e,
         }
     }
 

@@ -65,8 +65,7 @@ fn main() {
             _ => obs.player_coord.y,
         };
 
-        if let Some(target_coord) = netrust_sim::Coord::new(target_x, target_y) {
-            let inspection = session.inspect_tile(target_coord);
+        if let Ok(inspection) = session.inspect_tile(target_x, target_y) {
             println!("  🔍 Target Tile ({}, {}): {:?} (passable: {})",
                 target_x, target_y, inspection.tile, inspection.is_passable);
         }

@@ -167,8 +167,10 @@ pub fn handle_mcp_request(session: &mut AgentSession, line: &str) -> Option<Valu
                 "netrust_inspect_tile" => {
                     let x = args.get("x").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
                     let y = args.get("y").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
-                    let insp = session.inspect_tile(Coord::new_unchecked(x, y));
-                    serde_json::to_string_pretty(&insp).unwrap_or_default()
+                    match session.inspect_tile(x, y) {
+                        Ok(i) => serde_json::to_string_pretty(&i).unwrap_or_default(),
+                        Err(e) => e,
+                    }
                 }
                 "netrust_render_map" => {
                     crate::ascii::render_ascii_map(&session.world)

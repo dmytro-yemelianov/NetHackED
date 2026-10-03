@@ -7,6 +7,8 @@ pub mod arena;
 pub mod ascii;
 pub mod jsonrpc;
 pub mod mcp;
+pub mod rpc;
+pub mod stdio;
 pub mod observation;
 pub mod session;
 pub mod conducts;
