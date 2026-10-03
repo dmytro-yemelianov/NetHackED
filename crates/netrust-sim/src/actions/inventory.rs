@@ -1,0 +1,156 @@
+//! Inventory manipulation: PickUp, Drop, Wield, Container Put & Take.
+
+use netrust_arena::ItemLocation;
+use netrust_core::energy::NORMAL_SPEED;
+
+use crate::events::GameEvent;
+use crate::world::SimulationWorld;
+
+impl SimulationWorld {
+    pub(crate) fn handle_pickup(&mut self) -> Vec<GameEvent> {
+        let mut events = Vec::new();
+        let Some(player) = self.arena.actors.get(self.player_id).cloned() else {
+            return events;
+        };
+
+        let floor_items = self.arena.items_at_floor(player.coord);
+        if let Some(&item_id) = floor_items.first() {
+            if let Some(item) = self.arena.items.get_mut(item_id) {
+                item.location = ItemLocation::CarriedBy(self.player_id);
+                let name = item.name.clone();
+                events.push(GameEvent::ItemPickedUp { actor: self.player_id, item: item_id });
+                events.push(GameEvent::LogMessage { text: format!("You pick up a {}.", name) });
+                if let Some(cost) = self.get_unpaid_cost(item_id) {
+                    events.push(GameEvent::LogMessage {
+                        text: format!("The shopkeeper says: 'That will be {} zorkmids.'", cost),
+                    });
+                }
+                self.scheduler.hero_act(NORMAL_SPEED);
+            }
+        } else {
+            events.push(GameEvent::LogMessage { text: "There is nothing here to pick up.".into() });
+        }
+
+        events
+    }
+
+    pub(crate) fn handle_drop(&mut self, idx: usize) -> Vec<GameEvent> {
+        let mut events = Vec::new();
+        let Some(player) = self.arena.actors.get(self.player_id).cloned() else {
+            return events;
+        };
+
+        let carried = self.arena.items_carried_by(self.player_id);
+        if idx < carried.len() {
+            let item_id = carried[idx];
+            if let Some(item) = self.arena.items.get_mut(item_id) {
+                item.location = ItemLocation::Floor(player.coord);
+                let name = item.name.clone();
+                if self.wielded_item == Some(item_id) {
+                    self.wielded_item = None;
+                }
+                events.push(GameEvent::ItemDropped { actor: self.player_id, item: item_id });
+                events.push(GameEvent::LogMessage { text: format!("You drop the {}.", name) });
+                self.scheduler.hero_act(NORMAL_SPEED);
+            }
+        } else {
+            events.push(GameEvent::LogMessage { text: "You don't have that item in your pack.".into() });
+        }
+
+        events
+    }
+
+    pub(crate) fn handle_wield(&mut self, idx: usize) -> Vec<GameEvent> {
+        let mut events = Vec::new();
+        let carried = self.arena.items_carried_by(self.player_id);
+        if idx < carried.len() {
+            let item_id = carried[idx];
+            self.wielded_item = Some(item_id);
+            let name = self.arena.items.get(item_id).map(|i| i.name.clone()).unwrap_or_default();
+            events.push(GameEvent::ItemWielded { actor: self.player_id, item: item_id });
+            events.push(GameEvent::LogMessage { text: format!("You wield the {}.", name) });
+            self.scheduler.hero_act(NORMAL_SPEED);
+        } else {
+            events.push(GameEvent::LogMessage { text: "You don't have that item to wield.".into() });
+        }
+
+        events
+    }
+
+    pub(crate) fn handle_put_in_container(&mut self, item_index: usize, container_index: usize) -> Vec<GameEvent> {
+        let mut events = Vec::new();
+        let carried = self.arena.items_carried_by(self.player_id);
+        if item_index < carried.len() && container_index < carried.len() {
+            let item_id = carried[item_index];
+            let container_id = carried[container_index];
+            if item_id == container_id {
+                events.push(GameEvent::LogMessage { text: "You cannot put something inside itself!".into() });
+            } else {
+                let item = self.arena.items.get(item_id).unwrap().clone();
+                let container = self.arena.items.get(container_id).unwrap().clone();
+                if !container.is_container {
+                    events.push(GameEvent::LogMessage { text: format!("The {} is not a container.", container.name) });
+                } else if !netrust_core::inventory::can_insert_safe_flags(item.is_bag_of_holding, container.is_container, container.is_bag_of_holding) {
+                    // Magical container explosion!
+                    events.push(GameEvent::LogMessage {
+                        text: "The magical energies rupture the fabric of space! The bag explodes with a blinding flash!".into(),
+                    });
+                    if self.wielded_item == Some(item_id) || self.wielded_item == Some(container_id) {
+                        self.wielded_item = None;
+                    }
+                    self.arena.destroy_item(item_id);
+                    self.arena.destroy_item(container_id);
+                    if let Some(p) = self.arena.actors.get_mut(self.player_id) {
+                        p.hp = p.hp.saturating_sub(15);
+                        if p.hp == 0 {
+                            p.is_dead = true;
+                        }
+                    }
+                    self.scheduler.hero_act(NORMAL_SPEED);
+                } else {
+                    if let Some(i) = self.arena.items.get_mut(item_id) {
+                        i.location = ItemLocation::InContainer(container_id);
+                    }
+                    if self.wielded_item == Some(item_id) {
+                        self.wielded_item = None;
+                    }
+                    events.push(GameEvent::LogMessage {
+                        text: format!("You put the {} into the {}.", item.name, container.name),
+                    });
+                    self.scheduler.hero_act(NORMAL_SPEED);
+                }
+            }
+        } else {
+            events.push(GameEvent::LogMessage { text: "Invalid item index for container action.".into() });
+        }
+
+        events
+    }
+
+    pub(crate) fn handle_take_from_container(&mut self, container_index: usize, item_index: usize) -> Vec<GameEvent> {
+        let mut events = Vec::new();
+        let carried = self.arena.items_carried_by(self.player_id);
+        if container_index < carried.len() {
+            let container_id = carried[container_index];
+            let in_container = self.arena.items_in_container(container_id);
+            if item_index < in_container.len() {
+                let item_id = in_container[item_index];
+                let item_name = self.arena.items.get(item_id).map(|i| i.name.clone()).unwrap_or_default();
+                let container_name = self.arena.items.get(container_id).map(|c| c.name.clone()).unwrap_or_default();
+                if let Some(i) = self.arena.items.get_mut(item_id) {
+                    i.location = ItemLocation::CarriedBy(self.player_id);
+                }
+                events.push(GameEvent::LogMessage {
+                    text: format!("You take the {} out of the {}.", item_name, container_name),
+                });
+                self.scheduler.hero_act(NORMAL_SPEED);
+            } else {
+                events.push(GameEvent::LogMessage { text: "There is no such item in that container.".into() });
+            }
+        } else {
+            events.push(GameEvent::LogMessage { text: "Invalid container index.".into() });
+        }
+
+        events
+    }
+}

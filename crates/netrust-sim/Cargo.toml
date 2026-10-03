@@ -1,0 +1,20 @@
+[package]
+name = "netrust-sim"
+version = "0.1.0"
+edition = "2021"
+description = "Deterministic simulation engine, replay logger, and event processor for NetRust"
+
+[dependencies]
+netrust-types = { path = "../netrust-types" }
+netrust-arena = { path = "../netrust-arena" }
+netrust-dungeon = { path = "../netrust-dungeon" }
+netrust-core = { path = "../netrust-core" }
+netrust-data = { path = "../netrust-data" }
+rand = "0.9"
+rand_chacha = "0.9"
+serde = { version = "1.0", features = ["derive"] }
+
+[dev-dependencies]
+proptest = "1.5"
+serde_json = "1.0"
+
