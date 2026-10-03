@@ -71,21 +71,77 @@ impl SimulationWorld {
                         }
                     });
 
-                    if let Some(target_enemy) = adjacent_hostile {
-                        let combat_events = self.resolve_combat(mon_id, target_enemy);
-                        events.extend(combat_events);
-                    } else if mon.coord.chebyshev_distance(pc) > 2 {
-                        if let Some(next_c) = dijkstra.steepest_descent(mon.coord) {
-                            if self.level.is_passable(next_c) && self.actor_at(next_c).is_none() {
-                                let from = mon.coord;
-                                if let Some(m) = self.arena.actors.get_mut(mon_id) {
-                                    m.coord = next_c;
+                    // Tactical Co-op Priority: check if hostile directly threatens hero
+                    let hostile_threatening_hero = pc.neighbors().into_iter().find_map(|adj| {
+                        if let Some(other_id) = self.actor_at(adj) {
+                            if other_id != self.player_id && !self.arena.actors.get(other_id).map(|a| a.is_tame).unwrap_or(false) {
+                                Some(other_id)
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        }
+                    });
+
+                    let goal = netrust_core::choose_pet_goal(hostile_threatening_hero.or(adjacent_hostile), None);
+
+                    match goal {
+                        netrust_core::PetGoal::AttackHostile(target_enemy) => {
+                            let enemy_coord = self.arena.actors.get(target_enemy).map(|a| a.coord).unwrap_or(pc);
+                            if mon.coord.chebyshev_distance(enemy_coord) <= 1 {
+                                let enemy_name = self.arena.actors.get(target_enemy).map(|a| a.name.clone()).unwrap_or_else(|| "monster".into());
+                                if hostile_threatening_hero == Some(target_enemy) {
+                                    events.push(GameEvent::LogMessage {
+                                        text: Messages::pet_defends_hero(&mon.name, &enemy_name, self.locale),
+                                    });
                                 }
-                                events.push(GameEvent::ActorMoved {
-                                    actor: mon_id,
-                                    from,
-                                    to: next_c,
-                                });
+                                let combat_events = self.resolve_combat(mon_id, target_enemy);
+                                events.extend(combat_events);
+                            } else {
+                                let threat_dijkstra = DijkstraField::compute(enemy_coord, |c| self.level.is_passable(c));
+                                if let Some(step_c) = threat_dijkstra.steepest_descent(mon.coord) {
+                                    let floor_items = self.arena.items_at_floor(step_c);
+                                    let bucs: Vec<Buc> = floor_items.iter().filter_map(|&id| self.arena.items.get(id).map(|it| it.buc)).collect();
+                                    if !netrust_core::pet_tile_steppable(&bucs) {
+                                        events.push(GameEvent::LogMessage {
+                                            text: Messages::pet_whimpers_at_cursed(&mon.name, self.locale),
+                                        });
+                                    } else if self.level.is_passable(step_c) && self.actor_at(step_c).is_none() {
+                                        let from = mon.coord;
+                                        if let Some(m) = self.arena.actors.get_mut(mon_id) {
+                                            m.coord = step_c;
+                                        }
+                                        events.push(GameEvent::ActorMoved {
+                                            actor: mon_id,
+                                            from,
+                                            to: step_c,
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                        _ => {
+                            if mon.coord.chebyshev_distance(pc) > 2 {
+                                if let Some(next_c) = dijkstra.steepest_descent(mon.coord) {
+                                    let floor_items = self.arena.items_at_floor(next_c);
+                                    let bucs: Vec<Buc> = floor_items.iter().filter_map(|&id| self.arena.items.get(id).map(|it| it.buc)).collect();
+                                    if !netrust_core::pet_tile_steppable(&bucs) {
+                                        events.push(GameEvent::LogMessage {
+                                            text: Messages::pet_whimpers_at_cursed(&mon.name, self.locale),
+                                        });
+                                    } else if self.level.is_passable(next_c) && self.actor_at(next_c).is_none() {
+                                        let from = mon.coord;
+                                        if let Some(m) = self.arena.actors.get_mut(mon_id) {
+                                            m.coord = next_c;
+                                        }
+                                        events.push(GameEvent::ActorMoved {
+                                            actor: mon_id,
+                                            from,
+                                            to: next_c,
+                                        });
+                                    }
+                                }
                             }
                         }
                     }
@@ -282,4 +338,64 @@ impl SimulationWorld {
         }
         events
     }
+
+    /// Feeds a companion pet, increasing loyalty and potentially promoting its species.
+    pub fn feed_companion_pet(&mut self, pet_id: ActorId, nutrition: u32) -> Vec<GameEvent> {
+        let mut events = Vec::new();
+        let Some(pet) = self.arena.actors.get_mut(pet_id) else {
+            return events;
+        };
+        if !pet.is_tame {
+            return events;
+        }
+
+        let (new_tameness, is_tame) = netrust_core::pet::feed_pet(pet.tameness, pet.is_tame, nutrition);
+        pet.tameness = new_tameness;
+        pet.is_tame = is_tame;
+        pet.hp = (pet.hp + nutrition / 20).min(pet.max_hp);
+
+        // Check for level advancement and promotion
+        let exp_gain = nutrition / 50 + 1;
+        let new_level = pet.level + exp_gain;
+        pet.level = new_level;
+
+        let cur_tier = if pet.name.contains("little dog") {
+            Some(netrust_core::PetSpeciesTier::LittleDog)
+        } else if pet.name.contains("war dog") {
+            Some(netrust_core::PetSpeciesTier::WarDog)
+        } else if pet.name.contains("dog") {
+            Some(netrust_core::PetSpeciesTier::Dog)
+        } else if pet.name.contains("kitten") {
+            Some(netrust_core::PetSpeciesTier::Kitten)
+        } else if pet.name.contains("large cat") {
+            Some(netrust_core::PetSpeciesTier::LargeCat)
+        } else if pet.name.contains("housecat") {
+            Some(netrust_core::PetSpeciesTier::Housecat)
+        } else {
+            None
+        };
+
+        if let Some(tier) = cur_tier {
+            let promoted = netrust_core::promote_pet(tier, pet.level);
+            if promoted != tier {
+                let old_name = pet.name.clone();
+                let (new_name, new_max_hp) = match promoted {
+                    netrust_core::PetSpeciesTier::Dog => ("dog", 24),
+                    netrust_core::PetSpeciesTier::WarDog => ("war dog", 45),
+                    netrust_core::PetSpeciesTier::Housecat => ("housecat", 20),
+                    netrust_core::PetSpeciesTier::LargeCat => ("large cat", 40),
+                    _ => (old_name.as_str(), pet.max_hp),
+                };
+                pet.name = new_name.into();
+                pet.max_hp = new_max_hp;
+                pet.hp = new_max_hp;
+                events.push(GameEvent::LogMessage {
+                    text: netrust_i18n::Messages::pet_grows(&old_name, new_name, self.locale),
+                });
+            }
+        }
+
+        events
+    }
 }
+

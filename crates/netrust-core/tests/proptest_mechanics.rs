@@ -21,6 +21,7 @@ use netrust_core::{
     corrupt_buc_on_death, create_ghost_hp, is_valid_bones_level,
     buy_factor, calculate_buy_price, calculate_sell_price, dilute_potion, rub_lamp, sell_factor,
     DilutionState, RubResult,
+    choose_pet_goal, pet_tile_steppable, promote_pet, PetFamily, PetGoal, PetSpeciesTier,
 };
 use proptest::prelude::*;
 
@@ -906,7 +907,62 @@ proptest! {
             prop_assert!(next_sell_fac >= cur_sell_fac);
         }
     }
+
+    // -------------------------------------------------------------
+    // Theorems: pet_rejects_cursed_tile & pet_accepts_safe_tile
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_pet_buc_detection_theorems(b1 in arb_buc(), b2 in arb_buc(), b3 in arb_buc()) {
+        let items = vec![b1, b2, b3];
+        let has_cursed = items.contains(&Buc::Cursed);
+        let steppable = pet_tile_steppable(&items);
+        if has_cursed {
+            prop_assert!(!steppable);
+        } else {
+            prop_assert!(steppable);
+        }
+    }
+
+    // -------------------------------------------------------------
+    // Theorems: promote_preserves_family & promote_monotonic_level
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_pet_promotion_theorems(species_idx in 0usize..6, l1 in 1u32..20, l2 in 1u32..20) {
+        let species = match species_idx {
+            0 => PetSpeciesTier::LittleDog,
+            1 => PetSpeciesTier::Dog,
+            2 => PetSpeciesTier::WarDog,
+            3 => PetSpeciesTier::Kitten,
+            4 => PetSpeciesTier::Housecat,
+            _ => PetSpeciesTier::LargeCat,
+        };
+
+        // Preserves biological family
+        let promoted1 = promote_pet(species, l1);
+        prop_assert_eq!(promoted1.family(), species.family());
+        prop_assert!(matches!(promoted1.family(), PetFamily::Canine | PetFamily::Feline));
+
+        // Monotonic level progression
+        if l1 <= l2 {
+            let promoted2 = promote_pet(species, l2);
+            prop_assert!(promoted1.power_tier() <= promoted2.power_tier());
+        }
+
+        // Fixed points at apex tier
+        prop_assert_eq!(promote_pet(PetSpeciesTier::WarDog, l1), PetSpeciesTier::WarDog);
+        prop_assert_eq!(promote_pet(PetSpeciesTier::LargeCat, l1), PetSpeciesTier::LargeCat);
+    }
+
+    // -------------------------------------------------------------
+    // Theorem: pet_prioritizes_hero_defense
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_pet_tactical_defense_priority(hostile_id in 0usize..100) {
+        let goal = choose_pet_goal(Some(hostile_id), Some(Coord::new_unchecked(10, 10)));
+        prop_assert_eq!(goal, PetGoal::AttackHostile(hostile_id));
+    }
 }
+
 
 
 

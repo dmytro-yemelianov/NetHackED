@@ -113,6 +113,7 @@ fn test_melee_attack_action() {
         is_player: false,
         is_dead: false,
         is_tame: false,
+        tameness: 0,
         abilities: Vec::new(),
     };
     let mon_id = sim.arena.spawn_actor(goblin);
@@ -157,6 +158,7 @@ fn test_zap_wand_beam_propagation_and_damage() {
         is_player: false,
         is_dead: false,
         is_tame: false,
+        tameness: 0,
         abilities: Vec::new(),
     };
     let mon_id = sim.arena.spawn_actor(mon);
@@ -814,6 +816,73 @@ fn test_companion_pet_attacks_hostile() {
 }
 
 #[test]
+fn test_companion_pet_buc_reluctance() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    let p_coord = Coord::new_unchecked(10, 15);
+    let pet_coord = Coord::new_unchecked(10, 10);
+    let cursed_tile = Coord::new_unchecked(10, 11);
+
+    for y in 10..=15 {
+        sim.level.set_tile(Coord::new_unchecked(10, y), Tile::Room);
+    }
+
+    if let Some(p) = sim.arena.actors.get_mut(sim.player_id) {
+        p.coord = p_coord;
+    }
+
+    let pet_id = sim.arena.spawn_actor(create_monster_record(
+        MonsterSpeciesId::LittleDog,
+        pet_coord,
+    ));
+
+    // Place cursed item directly in the path between pet and player
+    let cursed_sword = sim.arena.spawn_item(create_item_record(
+        ItemKindId::LongSword,
+        ItemLocation::Floor(cursed_tile),
+        Buc::Cursed,
+    ));
+
+    // Wait turn: pet desires to move towards player, but detects cursed item!
+    let events = sim.step_player_action(ActionAst::Wait);
+    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("whimpering") || text.contains("backs away"))));
+    assert_eq!(sim.arena.actors.get(pet_id).unwrap().coord, pet_coord, "Pet must not step onto cursed item floor tile");
+
+    // Cleanse/un-curse the item
+    if let Some(it) = sim.arena.items.get_mut(cursed_sword) {
+        it.buc = Buc::Uncursed;
+    }
+
+    // Next turn: pet now willingly steps onto the uncursed item tile
+    let _events2 = sim.step_player_action(ActionAst::Wait);
+    assert_eq!(sim.arena.actors.get(pet_id).unwrap().coord, cursed_tile, "Pet must willingly step onto uncursed floor tile");
+}
+
+#[test]
+fn test_companion_pet_feeding_and_growth() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    let pet_id = sim.arena.spawn_actor(create_monster_record(
+        MonsterSpeciesId::LittleDog,
+        Coord::new_unchecked(5, 5),
+    ));
+
+    // Little dog starts at level 2, max_hp 12
+    assert_eq!(sim.arena.actors.get(pet_id).unwrap().name, "little dog");
+    assert_eq!(sim.arena.actors.get(pet_id).unwrap().max_hp, 12);
+
+    // Feed nutrition to reach level 4 -> promotes to dog
+    let events1 = sim.feed_companion_pet(pet_id, 100);
+    assert!(events1.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("grows into a dog"))));
+    assert_eq!(sim.arena.actors.get(pet_id).unwrap().name, "dog");
+    assert_eq!(sim.arena.actors.get(pet_id).unwrap().max_hp, 24);
+
+    // Feed further nutrition to reach level 7 -> promotes to war dog
+    let events2 = sim.feed_companion_pet(pet_id, 150);
+    assert!(events2.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("grows into a war dog"))));
+    assert_eq!(sim.arena.actors.get(pet_id).unwrap().name, "war dog");
+    assert_eq!(sim.arena.actors.get(pet_id).unwrap().max_hp, 45);
+}
+
+#[test]
 fn test_scroll_of_enchant_weapon() {
     let mut sim = SimulationWorld::new_with_seed(42);
 
@@ -1222,6 +1291,7 @@ fn test_artifact_combat_bonus_and_vorpal_blade() {
         is_player: false,
         is_dead: false,
         is_tame: false,
+        tameness: 0,
         abilities: Vec::new(),
     });
 
@@ -1269,6 +1339,7 @@ fn test_ukrainian_i18n_simulation_logging() {
         is_player: false,
         is_dead: false,
         is_tame: false,
+        tameness: 0,
         abilities: Vec::new(),
     });
 

@@ -51,6 +51,7 @@ pub struct ActorRecord {
     pub is_player: bool,
     pub is_dead: bool,
     pub is_tame: bool,
+    pub tameness: u32,
     pub abilities: Vec<MonsterAbility>,
 }
 
@@ -194,6 +195,7 @@ mod tests {
             is_player: true,
             is_dead: false,
             is_tame: false,
+            tameness: 0,
             abilities: Vec::new(),
         };
         let id = arena.spawn_actor(actor);

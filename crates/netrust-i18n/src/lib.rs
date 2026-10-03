@@ -479,6 +479,27 @@ impl Messages {
             ),
         }
     }
+
+    pub fn pet_whimpers_at_cursed(pet_name: &str, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!("Your {} sniffs the ground and cautiously backs away, whimpering.", pet_name),
+            Locale::Uk => format!("Ваш {} обнюхує землю та обережно сахається назад, жалібно скавулячи.", pet_name),
+        }
+    }
+
+    pub fn pet_grows(pet_name: &str, new_species: &str, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!("Your {} shimmers with vitality and grows into a {}!", pet_name, new_species),
+            Locale::Uk => format!("Ваш {} сповнюється дикою силою та виростає у {}!", pet_name, new_species),
+        }
+    }
+
+    pub fn pet_defends_hero(pet_name: &str, hostile_name: &str, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!("Your {} fiercely attacks {} to protect you!", pet_name, hostile_name),
+            Locale::Uk => format!("Ваш {} люто атакує {}, захищаючи вас!", pet_name, hostile_name),
+        }
+    }
 }
 
 #[cfg(test)]

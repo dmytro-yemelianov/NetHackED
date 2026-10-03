@@ -219,6 +219,7 @@ pub fn spawn_player_character(
         is_player: true,
         is_dead: false,
         is_tame: false,
+        tameness: 0,
         abilities: Vec::new(),
     };
     let player_id = arena.spawn_actor(actor);
