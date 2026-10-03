@@ -33,6 +33,7 @@ pub mod lighting;
 pub mod tournament;
 pub mod gehennom;
 pub mod quest;
+pub mod traps;
 
 pub use ast::{ActionAst, Direction, EffectAst, WorldState};
 pub use buc::{dip_water, uncurse, Buc, WaterType};

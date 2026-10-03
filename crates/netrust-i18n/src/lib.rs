@@ -119,6 +119,14 @@ pub fn t_branch(branch: BranchId, locale: Locale) -> &'static str {
         (BranchId::AstralPlane, Locale::Uk) => "Астральний План",
         (BranchId::Quest, Locale::En) => "The Quest",
         (BranchId::Quest, Locale::Uk) => "Завдання Героя",
+        (BranchId::WizardsTower, Locale::En) => "Wizard's Tower",
+        (BranchId::WizardsTower, Locale::Uk) => "Вежа Чарівника",
+        (BranchId::VladsTower, Locale::En) => "Vlad's Tower",
+        (BranchId::VladsTower, Locale::Uk) => "Вежа Влада",
+        (BranchId::FortLudios, Locale::En) => "Fort Ludios",
+        (BranchId::FortLudios, Locale::Uk) => "Форт Лудіос",
+        (BranchId::RogueLevel, Locale::En) => "Rogue Level",
+        (BranchId::RogueLevel, Locale::Uk) => "Рівень Rogue",
     }
 }
 

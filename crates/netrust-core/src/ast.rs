@@ -47,6 +47,8 @@ pub enum ActionAst {
     Fire(Direction),
     Mount(ActorId),
     Dismount,
+    Search,
+    Untrap(Coord),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -158,6 +158,42 @@ pub enum BranchId {
     Gehennom,
     AstralPlane,
     Quest,
+    WizardsTower,
+    VladsTower,
+    FortLudios,
+    RogueLevel,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum TrapType {
+    Arrow,
+    Dart,
+    RockFall,
+    Pit,
+    SpikedPit,
+    Teleport,
+    Fire,
+    LevelTeleport,
+    Polymorph,
+    AntiMagic,
+    SleepingGas,
+    Rust,
+    Web,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum TrapState {
+    Hidden,
+    Revealed,
+    Disarmed,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TrapRecord {
+    pub id: usize,
+    pub trap_type: TrapType,
+    pub state: TrapState,
+    pub coord: Coord,
 }
 
 /// Discrete branch coordinate: (BranchId, LevelWithinBranch).

@@ -11,8 +11,12 @@ pub const fn branch_entrance_depth(b: BranchId) -> usize {
         BranchId::GnomishMines => 3,
         BranchId::Sokoban => 4,
         BranchId::Gehennom => 5,
-        BranchId::AstralPlane => 1,
         BranchId::Quest => 4,
+        BranchId::AstralPlane => 1,
+        BranchId::WizardsTower => 3,
+        BranchId::VladsTower => 3,
+        BranchId::FortLudios => 1,
+        BranchId::RogueLevel => 1,
     }
 }
 
@@ -25,6 +29,10 @@ pub const fn branch_max_depth(b: BranchId) -> usize {
         BranchId::Gehennom => 20,
         BranchId::AstralPlane => 5,
         BranchId::Quest => 3,
+        BranchId::WizardsTower => 3,
+        BranchId::VladsTower => 3,
+        BranchId::FortLudios => 1,
+        BranchId::RogueLevel => 1,
     }
 }
 

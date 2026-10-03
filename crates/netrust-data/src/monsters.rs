@@ -56,6 +56,10 @@ pub enum MonsterSpeciesId {
     MinionOfHuhetotl,
     // Quest Guardians
     QuestGuardian,
+    // Bosses
+    WizardOfYendor,
+    VladTheImpaler,
+    Croesus,
 }
 
 /// Behavioral archetype for autonomous monster decision making.
@@ -787,6 +791,55 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         intrinsics: Intrinsics::empty(),
         damage_dice: (2, 8),
         ai_behavior: AiBehavior::Stationary,
+        abilities: &[],
+    },
+    // Bosses
+    MonsterArchetype {
+        id: MonsterSpeciesId::WizardOfYendor,
+        name: "Wizard of Yendor",
+        glyph: '@',
+        base_hp: 300,
+        max_hp: 300,
+        ac: -8,
+        level: 30,
+        speed: 12,
+        alignment: Alignment::Chaotic,
+        intrinsics: Intrinsics::empty(),
+        damage_dice: (4, 8),
+        ai_behavior: AiBehavior::MeleeHunter,
+        abilities: &[MonsterAbility::Spellcaster {
+            spell: MonsterSpell::SummonMonsters,
+            cooldown_turns: 5,
+        }],
+    },
+    MonsterArchetype {
+        id: MonsterSpeciesId::VladTheImpaler,
+        name: "Vlad the Impaler",
+        glyph: 'V',
+        base_hp: 250,
+        max_hp: 250,
+        ac: -3,
+        level: 25,
+        speed: 18,
+        alignment: Alignment::Chaotic,
+        intrinsics: Intrinsics::empty().with_cold_resistance(),
+        damage_dice: (3, 10),
+        ai_behavior: AiBehavior::MeleeHunter,
+        abilities: &[],
+    },
+    MonsterArchetype {
+        id: MonsterSpeciesId::Croesus,
+        name: "Croesus",
+        glyph: '@',
+        base_hp: 280,
+        max_hp: 280,
+        ac: -5,
+        level: 20,
+        speed: 15,
+        alignment: Alignment::Lawful,
+        intrinsics: Intrinsics::empty(),
+        damage_dice: (4, 6),
+        ai_behavior: AiBehavior::MeleeHunter,
         abilities: &[],
     },
 ];

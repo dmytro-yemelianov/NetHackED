@@ -1640,3 +1640,83 @@ proptest! {
         prop_assert_eq!(result, roll < break_prob);
     }
 }
+
+
+prop_compose! {
+    fn arb_trap_type()(idx in 0..13) -> netrust_types::TrapType {
+        match idx {
+            0 => netrust_types::TrapType::Arrow,
+            1 => netrust_types::TrapType::Dart,
+            2 => netrust_types::TrapType::RockFall,
+            3 => netrust_types::TrapType::Pit,
+            4 => netrust_types::TrapType::SpikedPit,
+            5 => netrust_types::TrapType::Teleport,
+            6 => netrust_types::TrapType::Fire,
+            7 => netrust_types::TrapType::LevelTeleport,
+            8 => netrust_types::TrapType::Polymorph,
+            9 => netrust_types::TrapType::AntiMagic,
+            10 => netrust_types::TrapType::SleepingGas,
+            11 => netrust_types::TrapType::Rust,
+            _ => netrust_types::TrapType::Web,
+        }
+    }
+}
+
+prop_compose! {
+    fn arb_trap_state()(idx in 0..3) -> netrust_types::TrapState {
+        match idx {
+            0 => netrust_types::TrapState::Hidden,
+            1 => netrust_types::TrapState::Revealed,
+            _ => netrust_types::TrapState::Disarmed,
+        }
+    }
+}
+
+prop_compose! {
+    fn arb_trap_record()(trap_type in arb_trap_type(), state in arb_trap_state()) -> netrust_types::TrapRecord {
+        netrust_types::TrapRecord {
+            id: 0,
+            trap_type,
+            state,
+            coord: netrust_core::Coord::new_unchecked(0, 0),
+        }
+    }
+}
+
+proptest! {
+    #[test]
+    fn prop_flying_bypasses_floor_traps(mut trap in arb_trap_record()) {
+        trap.state = netrust_types::TrapState::Revealed;
+        let is_floor = netrust_core::traps::is_floor_trap(trap.trap_type);
+        if is_floor {
+            prop_assert!(!netrust_core::traps::can_trigger_trap(&trap, true));
+        }
+        prop_assert!(netrust_core::traps::can_trigger_trap(&trap, false));
+    }
+
+    #[test]
+    fn prop_disarmed_trap_never_triggers(mut trap in arb_trap_record(), is_flying in proptest::bool::ANY) {
+        trap.state = netrust_types::TrapState::Disarmed;
+        prop_assert!(!netrust_core::traps::can_trigger_trap(&trap, is_flying));
+    }
+
+    #[test]
+    fn prop_trigger_trap_reveals_hidden(mut trap in arb_trap_record()) {
+        trap.state = netrust_types::TrapState::Hidden;
+        let triggered = netrust_core::traps::trigger_trap(&mut trap, false);
+        prop_assert!(triggered.is_some());
+        prop_assert_eq!(trap.state, netrust_types::TrapState::Revealed);
+    }
+
+    #[test]
+    fn prop_disarm_trap_transitions_to_disarmed(mut trap in arb_trap_record()) {
+        let is_already_disarmed = trap.state == netrust_types::TrapState::Disarmed;
+        let res = netrust_core::traps::disarm_trap(&mut trap);
+        if is_already_disarmed {
+            prop_assert!(!res);
+        } else {
+            prop_assert!(res);
+        }
+        prop_assert_eq!(trap.state, netrust_types::TrapState::Disarmed);
+    }
+}

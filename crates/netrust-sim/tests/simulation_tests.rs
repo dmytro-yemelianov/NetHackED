@@ -2411,3 +2411,81 @@ fn test_steed_mounting_and_effective_movement() {
     let hero_after = sim.arena.actors.get(sim.player_id).unwrap();
     assert_eq!(hero_after.coord, netrust_types::Coord::new_unchecked(p_coord.x + 1, p_coord.y), "Hero should have moved");
 }
+
+#[test]
+fn test_trap_trigger_and_search_reveal() {
+    let mut sim = SimulationWorld::new_with_seed(1234);
+    let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+    
+    // Find adjacent empty space for the trap
+    let mut trap_coord = None;
+    for d in netrust_sim::Direction::all_compass() {
+        if let Some(c) = p_coord.step(d) {
+            if sim.level.is_passable(c) && sim.actor_at(c).is_none() {
+                trap_coord = Some(c);
+                break;
+            }
+        }
+    }
+    let trap_coord = trap_coord.unwrap();
+    
+    let trap = netrust_types::TrapRecord {
+        id: sim.level.traps.len(),
+        trap_type: netrust_types::TrapType::Arrow,
+        state: netrust_types::TrapState::Hidden,
+        coord: trap_coord,
+    };
+    sim.level.traps.insert(trap_coord, trap);
+    
+    // Perform Search -> Trap Revealed
+    let _search_events = sim.step_player_action(ActionAst::Search);
+    
+    // We check that the trap state updated to Revealed
+    let trap_after_search = sim.level.traps.get(&trap_coord).unwrap();
+    assert_eq!(trap_after_search.state, netrust_types::TrapState::Revealed);
+    
+    // Perform Untrap -> Trap Disarmed
+    let _untrap_events = sim.step_player_action(ActionAst::Untrap(trap_coord));
+    let trap_after_untrap = sim.level.traps.get(&trap_coord).unwrap();
+    assert_eq!(trap_after_untrap.state, netrust_types::TrapState::Disarmed);
+}
+
+#[test]
+fn test_flying_bypasses_pit_trap() {
+    let mut sim = SimulationWorld::new_with_seed(4242);
+    let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+    
+    // Find an open space to step into
+    let mut step_dir = None;
+    for d in netrust_sim::Direction::all_compass() {
+        if let Some(c) = p_coord.step(d) {
+            if sim.level.is_passable(c) && sim.actor_at(c).is_none() {
+                step_dir = Some(d);
+                break;
+            }
+        }
+    }
+    let step_dir = step_dir.unwrap();
+    let trap_coord = p_coord.step(step_dir).unwrap();
+    
+    let trap = netrust_types::TrapRecord {
+        id: sim.level.traps.len(),
+        trap_type: netrust_types::TrapType::Pit,
+        state: netrust_types::TrapState::Hidden,
+        coord: trap_coord,
+    };
+    sim.level.traps.insert(trap_coord, trap);
+    
+    if let Some(p) = sim.arena.actors.get_mut(sim.player_id) {
+        p.intrinsics.levitation = true;
+    }
+    
+    let move_events = sim.step_player_action(ActionAst::Move(step_dir));
+    
+    // Trap should not trigger, so we should NOT see it print "pit"
+    assert!(!move_events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("pit"))));
+    
+    // Trap state should remain Hidden since it wasn't triggered
+    let trap_after = sim.level.traps.get(&trap_coord).unwrap();
+    assert_eq!(trap_after.state, netrust_types::TrapState::Hidden);
+}

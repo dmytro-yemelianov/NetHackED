@@ -149,3 +149,29 @@ pub fn validate_stair_connectivity(level: &DungeonLevel) -> bool {
 
     false
 }
+
+pub fn generate_wizards_tower<R: Rng>(_rng: &mut R) -> DungeonLevel {
+    let mut level = DungeonLevel::new_solid(Tile::Stone);
+    level.set_tile(Coord::new_unchecked(40, 10), Tile::Stairs { up: false });
+    level.stairs_down = Coord::new_unchecked(40, 10);
+    level
+}
+
+pub fn generate_vlads_tower<R: Rng>(_rng: &mut R) -> DungeonLevel {
+    let mut level = DungeonLevel::new_solid(Tile::Stone);
+    level.set_tile(Coord::new_unchecked(40, 10), Tile::Stairs { up: false });
+    level.stairs_down = Coord::new_unchecked(40, 10);
+    level
+}
+
+pub fn generate_fort_ludios<R: Rng>(_rng: &mut R) -> DungeonLevel {
+    let mut level = DungeonLevel::new_solid(Tile::Stone);
+    level.set_tile(Coord::new_unchecked(40, 10), Tile::Stairs { up: true });
+    level.stairs_up = Coord::new_unchecked(40, 10);
+    level
+}
+
+pub fn generate_rogue_level<R: Rng>(rng: &mut R) -> DungeonLevel {
+    generate_dungeon_level(rng)
+}
+

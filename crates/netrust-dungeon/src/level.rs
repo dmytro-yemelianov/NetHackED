@@ -16,6 +16,8 @@ pub struct DungeonLevel {
     pub stairs_down: Coord,
     pub engravings: HashMap<Coord, Engraving>,
     #[serde(default)]
+    pub traps: HashMap<Coord, netrust_types::TrapRecord>,
+    #[serde(default)]
     pub is_dark: bool,
 }
 
@@ -41,6 +43,7 @@ impl DungeonLevel {
             stairs_up: Coord::new_unchecked(1, 1),
             stairs_down: Coord::new_unchecked(1, 1),
             engravings: HashMap::new(),
+            traps: HashMap::new(),
             is_dark: false,
         }
     }

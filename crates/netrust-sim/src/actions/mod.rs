@@ -64,6 +64,34 @@ impl SimulationWorld {
             ActionAst::Fire(dir) => events.extend(self.handle_fire(dir)),
             ActionAst::Mount(actor_id) => events.extend(self.handle_mount(actor_id)),
             ActionAst::Dismount => events.extend(self.handle_dismount()),
+            ActionAst::Search => {
+                let mut found = false;
+                for neighbor in self.arena.actors.get(self.player_id).unwrap().coord.neighbors() {
+                    if let Some(trap) = self.level.traps.get_mut(&neighbor) {
+                        if trap.state == netrust_types::TrapState::Hidden {
+                            trap.state = netrust_types::TrapState::Revealed;
+                            events.push(GameEvent::LogMessage { text: format!("You find a {:?} trap!", trap.trap_type) });
+                            found = true;
+                        }
+                    }
+                }
+                if !found {
+                    events.push(GameEvent::LogMessage { text: "You search the area but find nothing.".to_string() });
+                }
+                self.scheduler.hero_act(NORMAL_SPEED);
+            }
+            ActionAst::Untrap(coord) => {
+                if let Some(trap) = self.level.traps.get_mut(&coord) {
+                    if netrust_core::traps::disarm_trap(trap) {
+                        events.push(GameEvent::LogMessage { text: "You successfully disarmed the trap.".to_string() });
+                    } else {
+                        events.push(GameEvent::LogMessage { text: "The trap is already disarmed.".to_string() });
+                    }
+                } else {
+                    events.push(GameEvent::LogMessage { text: "There is no trap here to disarm.".to_string() });
+                }
+                self.scheduler.hero_act(NORMAL_SPEED);
+            }
             ActionAst::Wait => {
                 self.scheduler.hero_act(NORMAL_SPEED);
             }
