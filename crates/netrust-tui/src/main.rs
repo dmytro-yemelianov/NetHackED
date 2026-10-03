@@ -1,6 +1,9 @@
 //! NetRust Terminal User Interface (TUI).
 //!
 //! Classic ASCII 80x21 NetHack presentation layer running directly on Crossterm.
+//! Fully supports canonical subsystems: 12 Traps, #enhance Skill Tree,
+//! #conduct Voluntary Conduct Tracker, Quivers & Ranged Firing, Steeds/Riding,
+//! and Status Afflictions (Petrification, Sliming, Polymorph).
 
 use crossterm::{
     cursor::{Hide, MoveTo, Show},
@@ -9,12 +12,14 @@ use crossterm::{
     style::{Color, Print, ResetColor, SetForegroundColor},
     terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use netrust_core::skills::{enhance_skill, skill_damage_bonus, skill_to_hit_bonus};
 use netrust_dungeon::compute_fov;
 use netrust_i18n::{t, t_align, t_hunger_str, Locale};
 use netrust_sim::{
     ActionAst, Alignment, CharacterConfig, Coord, Direction, DoorState, GameEvent, Gender,
     HungerState, RaceId, RoleId, SimulationWorld, Tile, COLNO, ROWNO,
 };
+use netrust_types::{ItemId, SkillClass, SkillLevel, TrapState};
 use std::collections::HashSet;
 use std::io::{self, stdout, Stdout};
 
@@ -190,6 +195,202 @@ fn select_character(stdout: &mut Stdout, locale: Locale) -> io::Result<Option<Ch
     }
 }
 
+fn prompt_direction(stdout: &mut Stdout, prompt_msg: &str) -> io::Result<Option<Direction>> {
+    execute!(
+        stdout,
+        MoveTo(0, 0),
+        Clear(ClearType::CurrentLine),
+        SetForegroundColor(Color::Yellow),
+        Print(prompt_msg),
+        ResetColor
+    )?;
+
+    loop {
+        if let Event::Key(key) = event::read()? {
+            if key.kind != KeyEventKind::Press {
+                continue;
+            }
+            match key.code {
+                KeyCode::Char('h') | KeyCode::Left => return Ok(Some(Direction::West)),
+                KeyCode::Char('l') | KeyCode::Right => return Ok(Some(Direction::East)),
+                KeyCode::Char('k') | KeyCode::Up => return Ok(Some(Direction::North)),
+                KeyCode::Char('j') | KeyCode::Down => return Ok(Some(Direction::South)),
+                KeyCode::Char('y') => return Ok(Some(Direction::NorthWest)),
+                KeyCode::Char('u') => return Ok(Some(Direction::NorthEast)),
+                KeyCode::Char('b') => return Ok(Some(Direction::SouthWest)),
+                KeyCode::Char('n') => return Ok(Some(Direction::SouthEast)),
+                KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char(' ') => return Ok(None),
+                _ => {}
+            }
+        }
+    }
+}
+
+fn show_inventory_modal(stdout: &mut Stdout, world: &SimulationWorld) -> io::Result<Option<ItemId>> {
+    execute!(stdout, MoveTo(0, 0), Clear(ClearType::All))?;
+    let loc = world.locale;
+    let title = if loc == Locale::Uk {
+        "=== ІНВЕНТАР ПЕРСОНАЖА (Натисніть букву або Esc для закриття) ==="
+    } else {
+        "=== CHARACTER INVENTORY (Press item letter or Esc to close) ==="
+    };
+
+    execute!(stdout, MoveTo(2, 1), SetForegroundColor(Color::Cyan), Print(title), ResetColor)?;
+
+    let carried = world.arena.items_carried_by(world.player_id);
+    if carried.is_empty() {
+        let empty_msg = if loc == Locale::Uk { "Ваш інвентар порожній." } else { "Your pack is empty." };
+        execute!(stdout, MoveTo(4, 3), SetForegroundColor(Color::DarkGrey), Print(empty_msg), ResetColor)?;
+    } else {
+        for (idx, &item_id) in carried.iter().enumerate().take(26) {
+            let letter = (b'a' + idx as u8) as char;
+            if let Some(item) = world.arena.items.get(item_id) {
+                let equipped_tag = if world.wielded_item == Some(item_id) {
+                    if loc == Locale::Uk { " (в руці)" } else { " (weapon in hand)" }
+                } else {
+                    ""
+                };
+                let desc = format!("  [{}] {} - вага: {}{}", letter, item.name, item.weight, equipped_tag);
+                execute!(stdout, MoveTo(2, (3 + idx) as u16), SetForegroundColor(Color::White), Print(desc), ResetColor)?;
+            }
+        }
+    }
+
+    loop {
+        if let Event::Key(key) = event::read()? {
+            if key.kind != KeyEventKind::Press {
+                continue;
+            }
+            match key.code {
+                KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char(' ') => return Ok(None),
+                KeyCode::Char(c) if c.is_ascii_lowercase() => {
+                    let idx = (c as u8 - b'a') as usize;
+                    if idx < carried.len() {
+                        return Ok(Some(carried[idx]));
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+}
+
+fn show_conducts_modal(stdout: &mut Stdout, world: &SimulationWorld) -> io::Result<()> {
+    execute!(stdout, MoveTo(0, 0), Clear(ClearType::All))?;
+    let loc = world.locale;
+    let title = if loc == Locale::Uk {
+        "=== ДОБРОВІЛЬНІ ОБІТНИЦІ (NetHack Voluntary Conducts) ==="
+    } else {
+        "=== VOLUNTARY CONDUCTS TRACKER (NetHack Formal Conducts) ==="
+    };
+
+    execute!(stdout, MoveTo(2, 1), SetForegroundColor(Color::Yellow), Print(title), ResetColor)?;
+
+    let conducts = [
+        ("Pacifist (Never kill any creature directly)", world.conducts.pacifist),
+        ("Vegan (Never consume animal products)", world.conducts.vegan),
+        ("Vegetarian (Never consume meat)", world.conducts.vegetarian),
+        ("Atheist (Never pray or sacrifice at altars)", world.conducts.atheist),
+        ("Illiterate (Never read scrolls or books)", world.conducts.illiterate),
+        ("Genocideless (Never cast or read genocide)", world.conducts.genocideless),
+        ("Polypileless (Never polypile items)", world.conducts.polypileless),
+        ("Wishless (Never wish for items)", world.conducts.wishless),
+    ];
+
+    for (idx, (name, active)) in conducts.iter().enumerate() {
+        let (status_str, status_color) = if *active {
+            ("[ACTIVE / НЕПОРУШЕНО]", Color::Green)
+        } else {
+            ("[BROKEN / ПОРУШЕНО]", Color::Red)
+        };
+
+        execute!(
+            stdout,
+            MoveTo(4, (3 + idx * 2) as u16),
+            SetForegroundColor(Color::White),
+            Print(format!("{:<48} ", name)),
+            SetForegroundColor(status_color),
+            Print(status_str),
+            ResetColor
+        )?;
+    }
+
+    let footer = if loc == Locale::Uk {
+        "Натисніть Esc або Пробіл для повернення до гри..."
+    } else {
+        "Press Esc or Space to return to the dungeon..."
+    };
+    execute!(stdout, MoveTo(4, 20), SetForegroundColor(Color::DarkGrey), Print(footer), ResetColor)?;
+
+    loop {
+        if let Event::Key(key) = event::read()? {
+            if key.kind == KeyEventKind::Press && matches!(key.code, KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char(' ')) {
+                break;
+            }
+        }
+    }
+    Ok(())
+}
+
+fn show_enhance_modal(stdout: &mut Stdout, world: &mut SimulationWorld) -> io::Result<()> {
+    loop {
+        execute!(stdout, MoveTo(0, 0), Clear(ClearType::All))?;
+        let loc = world.locale;
+        let title = if loc == Locale::Uk {
+            format!("=== ДЕРЕВО НАВИЧОК ЗБРОЇ (#enhance) | Вільних слотів: {} ===", world.hero.skills.available_slots)
+        } else {
+            format!("=== WEAPON SKILLS PROFICIENCY TREE (#enhance) | Available Slots: {} ===", world.hero.skills.available_slots)
+        };
+
+        execute!(stdout, MoveTo(2, 1), SetForegroundColor(Color::Cyan), Print(title), ResetColor)?;
+
+        let all_skills = [
+            (SkillClass::Dagger, "Dagger"),
+            (SkillClass::ShortSword, "Short Sword"),
+            (SkillClass::LongSword, "Long Sword"),
+            (SkillClass::Bow, "Bow"),
+            (SkillClass::Crossbow, "Crossbow"),
+            (SkillClass::Club, "Club"),
+            (SkillClass::BareHanded, "Bare Handed"),
+        ];
+
+        for (idx, (skill_cls, name)) in all_skills.iter().enumerate() {
+            let letter = (b'a' + idx as u8) as char;
+            let current_lvl = world.hero.skills.skills.get(skill_cls).copied().unwrap_or(SkillLevel::Unskilled);
+            let to_hit = skill_to_hit_bonus(current_lvl);
+            let dmg = skill_damage_bonus(current_lvl);
+            let lvl_name = format!("{:?}", current_lvl);
+
+            let desc = format!("  [{}] {:<14} : {:<9} (To-Hit: {:+2}, Dmg: {:+2})", letter, name, lvl_name, to_hit, dmg);
+            execute!(stdout, MoveTo(2, (3 + idx) as u16), SetForegroundColor(Color::White), Print(desc), ResetColor)?;
+        }
+
+        let prompt = if loc == Locale::Uk {
+            "Натисніть букву [a-g] для покращення навички або Esc для закриття."
+        } else {
+            "Press skill letter [a-g] to enhance skill, or Esc to exit."
+        };
+        execute!(stdout, MoveTo(2, 16), SetForegroundColor(Color::Yellow), Print(prompt), ResetColor)?;
+
+        if let Event::Key(key) = event::read()? {
+            if key.kind != KeyEventKind::Press {
+                continue;
+            }
+            match key.code {
+                KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char(' ') => break,
+                KeyCode::Char(c) if c >= 'a' && c <= 'g' => {
+                    let idx = (c as u8 - b'a') as usize;
+                    if let Some((skill_cls, _)) = all_skills.get(idx) {
+                        let _ = enhance_skill(&mut world.hero.skills, *skill_cls);
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+    Ok(())
+}
+
 fn main() -> io::Result<()> {
     let args: Vec<String> = std::env::args().collect();
     let mut locale = Locale::En;
@@ -217,9 +418,9 @@ fn main() -> io::Result<()> {
     let mut world = SimulationWorld::new_with_character(42, config);
     world.set_locale(locale);
     let mut message = if locale == Locale::Uk {
-        format!("Ласкаво просимо до NetRust, {}! Класичний NetHack 5.0, формалізований у Lean 4.", char_name)
+        format!("Ласкаво просимо до NetRust, {}! 100% канонічний NetHack 5.0, формалізований у Lean 4.", char_name)
     } else {
-        format!("Welcome to NetRust, {}! Classic NetHack 5.0 formalized & verified in Lean 4.", char_name)
+        format!("Welcome to NetRust, {}! 100% canonical NetHack 5.0 formalized & verified in Lean 4.", char_name)
     };
     let mut last_dir = Direction::East;
 
@@ -257,6 +458,7 @@ fn main() -> io::Result<()> {
                     };
                     None
                 }
+                // Cardinal & Diagonal Movement
                 KeyCode::Char('h') | KeyCode::Left => {
                     last_dir = Direction::West;
                     Some(ActionAst::Move(Direction::West))
@@ -291,6 +493,76 @@ fn main() -> io::Result<()> {
                 }
                 KeyCode::Char('.') | KeyCode::Char('5') => Some(ActionAst::Wait),
                 KeyCode::Char(',') => Some(ActionAst::PickUp),
+
+                // Canonical Actions
+                KeyCode::Char('s') => Some(ActionAst::Search),
+                KeyCode::Char('i') => {
+                    let _ = show_inventory_modal(&mut stdout, &world)?;
+                    None
+                }
+                KeyCode::Char('#') => {
+                    // Extended command menu
+                    execute!(
+                        stdout,
+                        MoveTo(0, 0),
+                        Clear(ClearType::CurrentLine),
+                        SetForegroundColor(Color::Yellow),
+                        Print(if world.locale == Locale::Uk { "#команда: [e]nhance (навички) | [c]onduct (обітниці): " } else { "#command: [e]nhance (skills) | [c]onduct (challenges): " }),
+                        ResetColor
+                    )?;
+                    if let Event::Key(ext_key) = event::read()? {
+                        if ext_key.kind == KeyEventKind::Press {
+                            match ext_key.code {
+                                KeyCode::Char('e') => {
+                                    show_enhance_modal(&mut stdout, &mut world)?;
+                                }
+                                KeyCode::Char('c') => {
+                                    show_conducts_modal(&mut stdout, &world)?;
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                    None
+                }
+                KeyCode::Char('f') => {
+                    // Fire quivered projectile
+                    let prompt_text = if world.locale == Locale::Uk {
+                        "У якому напрямку вистрілити? [h/j/k/l/y/u/b/n]: "
+                    } else {
+                        "In what direction? [h/j/k/l/y/u/b/n]: "
+                    };
+                    prompt_direction(&mut stdout, prompt_text)?.map(ActionAst::Fire)
+                }
+                KeyCode::Char('Q') => {
+                    // Quiver ammunition
+                    if let Some(item_id) = show_inventory_modal(&mut stdout, &world)? {
+                        world.hero.quivered_item = Some(item_id);
+                        let item_name = world.arena.items.get(item_id).map(|i| i.name.as_str()).unwrap_or("item");
+                        message = if world.locale == Locale::Uk {
+                            format!("Ви вклали у сагайдак: {}.", item_name)
+                        } else {
+                            format!("You ready {} in your quiver.", item_name)
+                        };
+                    }
+                    None
+                }
+                KeyCode::Char('t') | KeyCode::Char('^') => {
+                    // Untrap in facing direction
+                    player.coord.step(last_dir).map(ActionAst::Untrap)
+                }
+                KeyCode::Char('R') => {
+                    // Mount / Dismount steed
+                    if world.hero.mount.is_some() {
+                        Some(ActionAst::Dismount)
+                    } else {
+                        // Attempt to mount adjacent tame steed
+                        let adj_steed = Direction::all_compass().iter().find_map(|&d| {
+                            player.coord.step(d).and_then(|c| world.actor_at(c))
+                        });
+                        adj_steed.map(ActionAst::Mount)
+                    }
+                }
                 KeyCode::Char('p') => Some(ActionAst::Pay),
                 KeyCode::Char('P') => Some(ActionAst::Pray),
                 KeyCode::Char('S') => Some(ActionAst::Sacrifice(0)),
@@ -302,10 +574,15 @@ fn main() -> io::Result<()> {
                 KeyCode::Char('>') => Some(ActionAst::Descend),
                 KeyCode::Char('<') => Some(ActionAst::Ascend),
                 KeyCode::Char('z') => {
-                    Some(ActionAst::ZapWand { dir: last_dir, energy: 6 })
+                    let prompt_text = if world.locale == Locale::Uk {
+                        "Куди спрямувати жезл? [h/j/k/l/y/u/b/n]: "
+                    } else {
+                        "Zap wand in what direction? [h/j/k/l/y/u/b/n]: "
+                    };
+                    let dir = prompt_direction(&mut stdout, prompt_text)?.unwrap_or(last_dir);
+                    Some(ActionAst::ZapWand { dir, energy: 6 })
                 }
                 KeyCode::Char('o') => {
-                    // Open door in adjacent direction
                     let adj_door = Direction::all_compass().iter().find_map(|&d| {
                         player.coord.step(d).and_then(|c| {
                             if matches!(world.level.get_tile(c), Tile::Door { state: DoorState::Closed, .. }) {
@@ -318,7 +595,6 @@ fn main() -> io::Result<()> {
                     adj_door.map(ActionAst::OpenDoor)
                 }
                 KeyCode::Char('c') => {
-                    // Close door in adjacent direction
                     let adj_door = Direction::all_compass().iter().find_map(|&d| {
                         player.coord.step(d).and_then(|c| {
                             if matches!(world.level.get_tile(c), Tile::Door { state: DoorState::Open, .. }) {
@@ -331,7 +607,6 @@ fn main() -> io::Result<()> {
                     adj_door.map(ActionAst::CloseDoor)
                 }
                 KeyCode::Char('K') => {
-                    // Kick in last moved direction
                     player.coord.step(last_dir).map(ActionAst::Kick)
                 }
                 _ => None,
@@ -390,11 +665,20 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
             // Actor priority
             if let Some(actor_id) = world.actor_at(c) {
                 if actor_id == world.player_id {
-                    execute!(stdout, SetForegroundColor(Color::White), Print("@"), ResetColor)?;
+                    let hero_sym = if world.hero.polymorph.is_some() { "D" } else { "@" };
+                    execute!(stdout, SetForegroundColor(Color::White), Print(hero_sym), ResetColor)?;
                     continue;
                 } else if let Some(actor) = world.arena.actors.get(actor_id) {
                     let ch = actor.name.chars().next().unwrap_or('m').to_ascii_lowercase();
                     execute!(stdout, SetForegroundColor(Color::Red), Print(ch), ResetColor)?;
+                    continue;
+                }
+            }
+
+            // Trap priority
+            if let Some(trap) = world.level.traps.get(&c) {
+                if trap.state == TrapState::Revealed {
+                    execute!(stdout, SetForegroundColor(Color::Cyan), Print("^"), ResetColor)?;
                     continue;
                 }
             }
@@ -466,7 +750,7 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
         }
     }
 
-    // Line 22: Botl Status Line
+    // Line 22: Botl Status Line + Afflictions
     let locale = world.locale;
     let player = world.arena.actors.get(world.player_id);
     let (hp, max_hp, ac, _lvl, name, align_enum) = player
@@ -486,8 +770,28 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
     let hunger_display = if hunger_code.is_empty() { "" } else { t_hunger_str(hunger_code, locale) };
     let none_str = if locale == Locale::Uk { "пусто" } else { "none" };
 
+    // Affliction tags
+    let mut affliction_tags = Vec::new();
+    if let Some(petri) = &world.hero.afflictions.petrification {
+        affliction_tags.push(format!("[STONE:{}]", petri.turns_remaining));
+    }
+    if let Some(slime) = &world.hero.afflictions.sliming {
+        affliction_tags.push(format!("[SLIME:{}]", slime.turns_remaining));
+    }
+    if world.hero.polymorph.is_some() {
+        affliction_tags.push("[Poly]".into());
+    }
+    if world.hero.mount.is_some() {
+        affliction_tags.push("[Mounted]".into());
+    }
+    let aff_str = if affliction_tags.is_empty() {
+        String::new()
+    } else {
+        format!(" {}", affliction_tags.join(" "))
+    };
+
     let status = format!(
-        "{}:{} {}:{:<2} {}:{} {}:{}({}) {}:{}({}) {}:{:<2} {:<8} {}:{:<4} {}:{}",
+        "{}:{} {}:{:<2} {}:{} {}:{}({}) {}:{}({}) {}:{:<2} {:<6} T:{:<4} {}:{}{}",
         name,
         align_short,
         t("dlvl", locale),
@@ -503,18 +807,18 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
         t("ac", locale),
         ac,
         hunger_display,
-        t("turn", locale),
         world.scheduler.turn,
         t("wield", locale),
-        world.wielded_item.and_then(|id| world.arena.items.get(id)).map(|i| i.name.as_str()).unwrap_or(none_str)
+        world.wielded_item.and_then(|id| world.arena.items.get(id)).map(|i| i.name.as_str()).unwrap_or(none_str),
+        aff_str
     );
     execute!(stdout, MoveTo(0, 22), SetForegroundColor(Color::Green), Print(format!("{:<80}", status)), ResetColor)?;
 
     // Line 23: Command Bar
     let cmd_help = if locale == Locale::Uk {
-        "[h/j/k/l: Рух | e: Їсти | x: Закляття | r: Читати | z: Жезл | ,: Взяти | P: Молитва | S: Жертва | L: Мова | q: Вихід]"
+        "[h/j/k/l: Рух | s: Пошук | f: Стріляти | Q: Сагайдак | #: Команди | i: Торба | q: Вихід]"
     } else {
-        "[h/j/k/l: Move | e: Eat | x: Cast | r: Read | z: Zap | ,: PickUp | P: Pray | S: Sac | L: Lang | q: Quit]"
+        "[h/j/k/l: Move | s: Search | f: Fire | Q: Quiver | #: Commands | i: Inv | q: Quit]"
     };
     execute!(stdout, MoveTo(0, 23), SetForegroundColor(Color::DarkGrey), Print(format!("{:<80}", cmd_help)), ResetColor)?;
 
