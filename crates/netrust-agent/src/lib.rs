@@ -18,6 +18,11 @@ pub use jsonrpc::{handle_jsonrpc_request, run_jsonrpc_server};
 pub use mcp::{handle_mcp_request, run_mcp_server};
 pub use observation::{ActorObservation, GameObservation, TileInspection};
 pub use session::AgentSession;
+pub use arena::{
+    run_evaluation_suite, run_game_with_trajectory, run_single_game, AgentPolicy, ArenaSummary,
+    BenchmarkReport, PetTesterTacticalPolicy, PolicyStats, RandomPolicy, RunResult, SpeedrunPolicy,
+    SurvivalPolicy, TrajectoryRecording, TrajectoryStep,
+};
 
 #[cfg(test)]
 mod tests {

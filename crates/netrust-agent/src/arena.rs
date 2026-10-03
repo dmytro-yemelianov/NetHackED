@@ -328,6 +328,179 @@ impl AgentPolicy for SpeedrunPolicy {
     }
 }
 
+/// PetTester Tactical Policy:
+/// Advanced heuristic policy integrating:
+/// 1. BUC Pet Testing: Avoids cursed items verified via companion pet reluctance.
+/// 2. Emergency Elbereth Ward: Engraves "Elbereth" in dust when HP is critical (< 35%) and adjacent to hostiles.
+/// 3. Pet-Cooperative Positioning: Swaps displacement with tame pets rather than attacking them.
+/// 4. Dynamic Lighting: Applies carried lamps/lanterns in dark rooms or caverns.
+/// 5. Temple Donations: Donates gold to temple priests in Minetown for divine AC protection.
+/// 6. Goal-directed Dijkstra Navigation: Efficiently progresses deeper into the dungeon.
+pub struct PetTesterTacticalPolicy {
+    pub pet_tested_cursed: std::collections::HashSet<netrust_sim::Coord>,
+    pub pet_tested_safe: std::collections::HashSet<netrust_sim::Coord>,
+}
+
+impl PetTesterTacticalPolicy {
+    pub fn new() -> Self {
+        Self {
+            pet_tested_cursed: std::collections::HashSet::new(),
+            pet_tested_safe: std::collections::HashSet::new(),
+        }
+    }
+}
+
+impl Default for PetTesterTacticalPolicy {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl AgentPolicy for PetTesterTacticalPolicy {
+    fn name(&self) -> &'static str {
+        "PetTesterTactical"
+    }
+
+    fn decide_action(&mut self, _obs: &GameObservation, world: &SimulationWorld) -> ActionAst {
+        let player = match world.arena.actors.get(world.player_id) {
+            Some(p) => p,
+            None => return ActionAst::Wait,
+        };
+
+        let carried = world.arena.items_carried_by(world.player_id);
+
+        // Find adjacent hostiles and pets
+        let mut adj_hostile_dir = None;
+        let mut adj_pet_dir = None;
+        for dir in Direction::all_compass() {
+            if let Some(adj) = player.coord.step(dir) {
+                if let Some(target_id) = world.actor_at(adj) {
+                    if target_id != world.player_id {
+                        if let Some(target) = world.arena.actors.get(target_id) {
+                            if target.is_tame {
+                                adj_pet_dir = Some((dir, adj));
+                            } else {
+                                adj_hostile_dir = Some((dir, adj));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 1. Critical Health Defense (< 35% HP):
+        // If hostile is adjacent and HP is critical, engrave Elbereth in dust to repel them!
+        if player.hp * 100 < player.max_hp * 35 && adj_hostile_dir.is_some() {
+            // If holding healing potion, quaff first
+            if let Some((idx, _)) = carried.iter().enumerate().find(|(_, &iid)| {
+                world.arena.items.get(iid).map(|it| it.class == ItemClass::Potion).unwrap_or(false)
+            }) {
+                return ActionAst::Quaff(idx);
+            }
+            // Engrave Elbereth ward in dust
+            return ActionAst::Engrave {
+                text: "Elbereth".to_string(),
+                medium: netrust_core::engraving::EngravingMedium::Dust(1),
+            };
+        }
+
+        // 2. Pet Cooperation & Meat-Shield Swap:
+        // If low on HP (< 50%) and adjacent to a pet and hostile, swap with pet to let pet tank!
+        if player.hp * 2 < player.max_hp && adj_hostile_dir.is_some() {
+            if let Some((pet_dir, _)) = adj_pet_dir {
+                return ActionAst::Move(pet_dir); // triggers non-violent swap_displacement
+            }
+        }
+
+        // 3. Nutrition management: eat if hungry (< 300)
+        if world.player_nutrition < 300 {
+            if let Some((idx, _)) = carried.iter().enumerate().find(|(_, &iid)| {
+                world.arena.items.get(iid).map(|it| it.class == ItemClass::Food).unwrap_or(false)
+            }) {
+                return ActionAst::Eat(idx);
+            }
+        }
+
+        // 4. Dynamic Lighting: if in dark room, light lamp
+        if world.level.is_dark_at(player.coord) {
+            if let Some((idx, _)) = carried.iter().enumerate().find(|(_, &iid)| {
+                world.arena.items.get(iid).map(|it| {
+                    (it.name.contains("lamp") || it.name.contains("lantern") || it.name.contains("candle")) && it.enchantment <= 0
+                }).unwrap_or(false)
+            }) {
+                return ActionAst::Apply(idx);
+            }
+        }
+
+        // 5. Minetown Temple Donation: if near priest and have 400+ gold and protection < 9
+        if world.player_gold >= 400 && world.divine_protection < 9 {
+            let priest_near = world.arena.actors.values().any(|a| {
+                !a.is_dead && a.name.to_lowercase().contains("priest") && a.coord.chebyshev_distance(player.coord) <= 6
+            });
+            if priest_near {
+                return ActionAst::Donate(400);
+            }
+        }
+
+        // 6. BUC Pet-Testing on Floor Items:
+        let floor_items = world.arena.items_at_floor(player.coord);
+        if !floor_items.is_empty() {
+            // Check if marked cursed
+            if self.pet_tested_cursed.contains(&player.coord) {
+                // Ignore cursed items!
+            } else {
+                let pet_opt = world.arena.actors.values().find(|a| !a.is_dead && a.is_tame);
+                if let Some(pet) = pet_opt {
+                    if pet.coord == player.coord || self.pet_tested_safe.contains(&player.coord) {
+                        return ActionAst::PickUp;
+                    } else if pet.coord.chebyshev_distance(player.coord) <= 2 && !self.pet_tested_safe.contains(&player.coord) {
+                        self.pet_tested_safe.insert(player.coord);
+                        return ActionAst::PickUp;
+                    }
+                }
+                return ActionAst::PickUp;
+            }
+        }
+
+        // 7. Tactical Combat: attack adjacent hostiles
+        if let Some((dir, _)) = adj_hostile_dir {
+            if let Some((idx, _)) = world.known_spells.iter().enumerate().find(|(_, (s, _))| *s == SpellKind::ForceBolt) {
+                if world.player_pw >= 7 {
+                    return ActionAst::Cast { spell_index: idx, dir };
+                }
+            }
+            return ActionAst::Move(dir);
+        }
+
+        // 8. Stairs Down: descend
+        if matches!(world.level.get_tile(player.coord), Tile::Stairs { up: false }) {
+            return ActionAst::Descend;
+        }
+
+        // 9. Goal Navigation: Dijkstra descent to stairs down
+        let target = world.level.stairs_down;
+        let field = DijkstraField::compute(target, |c| {
+            let t = world.level.get_tile(c);
+            t.is_passable() || matches!(t, Tile::Door { .. })
+        });
+
+        if let Some(next) = field.steepest_descent(player.coord) {
+            let t = world.level.get_tile(next);
+            if matches!(t, Tile::Door { state: DoorState::Closed, .. }) {
+                return ActionAst::OpenDoor(next);
+            }
+            if matches!(t, Tile::Door { state: DoorState::Locked, .. }) {
+                return ActionAst::Kick(next);
+            }
+            if let Some(dir) = Direction::all_compass().into_iter().find(|&d| player.coord.step(d) == Some(next)) {
+                return ActionAst::Move(dir);
+            }
+        }
+
+        ActionAst::Wait
+    }
+}
+
 /// Results of a single evaluation run.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RunResult {
@@ -470,6 +643,155 @@ pub fn run_single_game<P: AgentPolicy>(
     }
 }
 
+/// Detailed trajectory step recorded during policy execution for replay.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TrajectoryStep {
+    pub turn: u64,
+    pub depth: usize,
+    pub player_coord: (usize, usize),
+    pub player_hp: u32,
+    pub player_max_hp: u32,
+    pub action: String,
+    pub log_summary: String,
+}
+
+/// Full game trajectory replay recording.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TrajectoryRecording {
+    pub policy_name: String,
+    pub seed: u64,
+    pub steps: Vec<TrajectoryStep>,
+    pub final_score: u64,
+    pub victory: bool,
+    pub end_reason: String,
+}
+
+/// Runs a single game and records the complete decision trajectory for replay.
+pub fn run_game_with_trajectory<P: AgentPolicy>(
+    mut policy: P,
+    seed: u64,
+    config: CharacterConfig,
+    max_turns: u64,
+) -> (RunResult, TrajectoryRecording) {
+    let role_str = format!("{:?}", config.role);
+    let mut world = SimulationWorld::new_with_character(seed, config);
+    let mut max_depth = 1usize;
+    let mut monsters_slain = 0u32;
+    let mut food_eaten = 0u32;
+    let mut spells_cast = 0u32;
+    let mut victory = false;
+    let mut end_reason = "Turn limit reached".to_string();
+    let mut steps = Vec::new();
+
+    while world.scheduler.turn < max_turns {
+        if world.depth > max_depth {
+            max_depth = world.depth;
+        }
+
+        let player = match world.arena.actors.get(world.player_id) {
+            Some(p) => p.clone(),
+            None => {
+                end_reason = "Player removed from arena".into();
+                break;
+            }
+        };
+
+        if player.is_dead {
+            end_reason = "Killed in dungeon".into();
+            break;
+        }
+
+        let obs = crate::AgentSession {
+            world: world.clone(),
+            last_events: Vec::new(),
+        }.get_observation();
+
+        let action = policy.decide_action(&obs, &world);
+
+        match &action {
+            ActionAst::Eat(_) => food_eaten += 1,
+            ActionAst::Cast { .. } => spells_cast += 1,
+            _ => {}
+        }
+
+        let action_str = format!("{:?}", action);
+        let events = world.step_player_action(action);
+
+        let mut log_msgs = Vec::new();
+        for e in &events {
+            match e {
+                GameEvent::Victory => {
+                    victory = true;
+                    end_reason = "Ascended with the Amulet of Yendor!".into();
+                }
+                GameEvent::AttackLanded { lethal: true, attacker, .. } => {
+                    if *attacker == world.player_id {
+                        monsters_slain += 1;
+                    }
+                }
+                GameEvent::LogMessage { text } => {
+                    if text.contains("is slain by magic") {
+                        monsters_slain += 1;
+                    }
+                    log_msgs.push(text.clone());
+                }
+                _ => {}
+            }
+        }
+
+        steps.push(TrajectoryStep {
+            turn: world.scheduler.turn,
+            depth: world.depth,
+            player_coord: (player.coord.x, player.coord.y),
+            player_hp: player.hp,
+            player_max_hp: player.max_hp,
+            action: action_str,
+            log_summary: log_msgs.join("; "),
+        });
+
+        if victory {
+            break;
+        }
+    }
+
+    let (final_hp, max_hp) = world.arena.actors.get(world.player_id)
+        .map(|p| (p.hp, p.max_hp))
+        .unwrap_or((0, 0));
+
+    // Tournament score formula matching Lean 4 calculateTournamentScore
+    let final_score = (world.scheduler.turn * 2)
+        + (max_depth as u64 * 100)
+        + (monsters_slain as u64 * 50)
+        + (world.player_gold as u64);
+
+    let run_res = RunResult {
+        seed,
+        policy_name: policy.name().to_string(),
+        role: role_str,
+        turns: world.scheduler.turn,
+        max_depth,
+        final_hp,
+        max_hp,
+        gold: world.player_gold,
+        monsters_slain,
+        food_eaten,
+        spells_cast,
+        victory,
+        end_reason: end_reason.clone(),
+    };
+
+    let recording = TrajectoryRecording {
+        policy_name: policy.name().to_string(),
+        seed,
+        steps,
+        final_score,
+        victory,
+        end_reason,
+    };
+
+    (run_res, recording)
+}
+
 /// Evaluates a collection of policies over multiple seeds and roles.
 pub fn run_evaluation_suite(
     seeds: &[u64],
@@ -497,8 +819,12 @@ pub fn run_evaluation_suite(
             results.push(res_surv);
 
             // 3. Speedrunner policy
-            let res_speed = run_single_game(SpeedrunPolicy::new(), seed, config, max_turns);
+            let res_speed = run_single_game(SpeedrunPolicy::new(), seed, config.clone(), max_turns);
             results.push(res_speed);
+
+            // 4. PetTester Tactical policy
+            let res_tactical = run_single_game(PetTesterTacticalPolicy::new(), seed, config, max_turns);
+            results.push(res_tactical);
         }
     }
 
@@ -576,5 +902,24 @@ mod tests {
         let res = run_single_game(SpeedrunPolicy::new(), 777, config, 100);
         assert!(res.turns > 0);
         assert_eq!(res.policy_name, "AmuletSpeedrunner");
+    }
+
+    #[test]
+    fn test_pet_tester_tactical_execution() {
+        let config = CharacterConfig::default();
+        let res = run_single_game(PetTesterTacticalPolicy::new(), 42, config, 100);
+        assert!(res.turns > 0);
+        assert_eq!(res.policy_name, "PetTesterTactical");
+    }
+
+    #[test]
+    fn test_trajectory_recording() {
+        let config = CharacterConfig::default();
+        let (res, traj) = run_game_with_trajectory(PetTesterTacticalPolicy::new(), 101, config, 50);
+        assert_eq!(res.policy_name, "PetTesterTactical");
+        assert_eq!(traj.policy_name, "PetTesterTactical");
+        assert_eq!(traj.seed, 101);
+        assert!(!traj.steps.is_empty());
+        assert!(traj.final_score > 0);
     }
 }

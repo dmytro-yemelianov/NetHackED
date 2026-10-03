@@ -25,6 +25,8 @@ use netrust_core::{
     apply_priest_donation, MAX_DIVINE_PROTECTION, protection_donation_cost, priest_uncurse,
     LuckstoneStatus, step_luck_decay,
     can_see_tile, LightSource, tick_light_fuel, can_detect_monster,
+    calculate_tournament_score, decide_tactical_action, is_hp_critical, TacticalAction,
+    TacticalContext,
 };
 use proptest::prelude::*;
 
@@ -1113,6 +1115,61 @@ proptest! {
         if blind && !tile_visible && !has_mind {
             prop_assert!(!detected);
         }
+    }
+
+    // -------------------------------------------------------------
+    // Theorems: critical_hp_elbereth_priority & pet_test_priority
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_tactical_decision_theorems(
+        hp in 1u32..100,
+        max_hp in 1u32..100,
+        has_hostile_adj in proptest::bool::ANY,
+        has_pet_adj in proptest::bool::ANY,
+        has_unchecked_floor_item in proptest::bool::ANY,
+        on_stairs_down in proptest::bool::ANY,
+    ) {
+        let ctx = TacticalContext {
+            hp,
+            max_hp: max_hp.max(hp), // hp <= max_hp
+            has_hostile_adj,
+            has_pet_adj,
+            has_unchecked_floor_item,
+            on_stairs_down,
+        };
+
+        let action = decide_tactical_action(&ctx);
+
+        // Theorem: critical HP with adjacent hostiles strictly triggers Elbereth
+        if is_hp_critical(ctx.hp, ctx.max_hp) && ctx.has_hostile_adj {
+            prop_assert_eq!(action, TacticalAction::EngraveElbereth);
+        }
+
+        // Theorem: unchecked item with pet present triggers pet testing wait
+        if !ctx.has_hostile_adj && ctx.has_unchecked_floor_item && ctx.has_pet_adj {
+            prop_assert_eq!(action, TacticalAction::WaitPetTest);
+        }
+    }
+
+    // -------------------------------------------------------------
+    // Theorems: tournament_score_depth_monotonic & kills_monotonic
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_tournament_scoring_monotonicity(
+        turns in 1u64..1000,
+        depth1 in 1u64..10,
+        depth2 in 1u64..10,
+        kills1 in 0u64..50,
+        kills2 in 0u64..50,
+        gold in 0u64..1000,
+    ) {
+        let s_depth1 = calculate_tournament_score(turns, depth1.min(depth2), kills1, gold);
+        let s_depth2 = calculate_tournament_score(turns, depth1.max(depth2), kills1, gold);
+        prop_assert!(s_depth1 <= s_depth2);
+
+        let s_kills1 = calculate_tournament_score(turns, depth1, kills1.min(kills2), gold);
+        let s_kills2 = calculate_tournament_score(turns, depth1, kills1.max(kills2), gold);
+        prop_assert!(s_kills1 <= s_kills2);
     }
 }
 

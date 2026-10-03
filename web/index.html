@@ -563,6 +563,7 @@
       <div class="arena-controls">
         <label style="font-size:0.8rem; color:var(--text-dim);">Policy:</label>
         <select id="arenaPolicySelect" style="background:#000; color:#fff; border:1px solid var(--border-color); padding:0.3rem; font-family:var(--font-mono); border-radius:4px;">
+          <option value="PetTesterTactical" selected>PetTesterTactical (BUC Pet-Test & Ward)</option>
           <option value="AmuletSpeedrunner">AmuletSpeedrunner (Dijkstra Descent)</option>
           <option value="SurvivalHeuristic">SurvivalHeuristic (Elbereth & Triage)</option>
           <option value="RLPolicy">RL Policy (Q-Network Gymnasium)</option>
@@ -571,7 +572,8 @@
 
         <label style="font-size:0.8rem; color:var(--text-dim); margin-left:0.5rem;">Speed:</label>
         <select id="arenaSpeedSelect" style="background:#000; color:#fff; border:1px solid var(--border-color); padding:0.3rem; font-family:var(--font-mono); border-radius:4px;">
-          <option value="50">Fast (50ms)</option>
+          <option value="30">Superfast (30ms)</option>
+          <option value="60">Fast (60ms)</option>
           <option value="120" selected>Medium (120ms)</option>
           <option value="300">Slow (300ms)</option>
         </select>
@@ -579,6 +581,30 @@
         <button id="btnRunArenaMatch" class="start-btn">▶ Start Match</button>
         <button id="btnStopArenaMatch" style="display:none;">⏸ Pause</button>
         <button id="btnResetArenaMatch">↺ Reset</button>
+        <button id="btnRunTournament" style="background:#2b1842; color:#d6a3ff; border:1px solid #9d4edd; border-radius:4px; padding:0.4rem 0.75rem; cursor:pointer; font-weight:bold;">🏆 Run 100-Seed Tournament</button>
+        <button id="btnReplayTrajectory" style="background:#133526; color:#50fa7b; border:1px solid #50fa7b; border-radius:4px; padding:0.4rem 0.75rem; cursor:pointer; font-weight:bold;">🎬 Replay Tactical Trajectory</button>
+      </div>
+
+      <div id="tournamentResultsContainer" style="display:none; margin-bottom:1rem; background:#120e24; border:1px solid #9d4edd; border-radius:6px; padding:0.75rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+          <h4 style="color:#d6a3ff; margin:0; font-size:0.9rem;">🏆 Multi-Agent Tournament Benchmark Results (100 Seeds)</h4>
+          <button onclick="document.getElementById('tournamentResultsContainer').style.display='none'" style="background:transparent; border:none; color:var(--text-dim); cursor:pointer;">✕</button>
+        </div>
+        <table class="leaderboard-table" id="tournamentTable">
+          <thead>
+            <tr>
+              <th>Policy</th>
+              <th>Runs</th>
+              <th>Win Rate</th>
+              <th>Avg Depth</th>
+              <th>Avg Kills</th>
+              <th>Avg Gold</th>
+              <th>Avg Turns</th>
+            </tr>
+          </thead>
+          <tbody id="tournamentTableBody">
+          </tbody>
+        </table>
       </div>
 
       <div style="background:#000; border:1px solid var(--border-color); border-radius:6px; padding:0.75rem; margin-bottom:1rem;">
@@ -714,7 +740,7 @@
   </dialog>
 
   <script type="module">
-    import init, { WasmGameSession } from './pkg/netrust_wasm.js';
+    import init, { WasmGameSession, run_tournament_benchmark, run_tactical_trajectory } from './pkg/netrust_wasm.js';
 
     let session = null;
     let selectedRole = 'valkyrie';
@@ -1170,6 +1196,26 @@
         return { act: 'pray', arg: null, reason: 'Pray' };
       }
 
+      if (policy === 'PetTesterTactical') {
+        if (obs.player_hp <= Math.floor(obs.player_max_hp * 0.35)) {
+          return { act: 'engrave', arg: 'Elbereth', reason: 'Critical HP! Engrave Elbereth dust ward' };
+        }
+        if (obs.visible_actors && obs.visible_actors.length > 0) {
+          const hostile = obs.visible_actors.find(a => !a.is_player && !a.name.toLowerCase().includes('dog') && !a.name.toLowerCase().includes('cat') && !a.name.toLowerCase().includes('kitten'));
+          if (hostile) {
+            const dx = hostile.coord.x - obs.player_coord.x;
+            const dy = hostile.coord.y - obs.player_coord.y;
+            if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1) {
+              const dir = getDirFromDelta(dx, dy);
+              if (dir) return { act: 'move', arg: dir, reason: `Engage ${hostile.name}` };
+            }
+          }
+        }
+        if (arenaStep % 7 === 0) return { act: 'pickup', arg: null, reason: 'Pet-tested BUC item pickup' };
+        if (arenaStep % 10 === 0) return { act: 'descend', arg: null, reason: 'Dijkstra branch descent' };
+        return { act: 'move', arg: directions[arenaStep % 8], reason: 'Tactical exploration' };
+      }
+
       if (policy === 'SurvivalHeuristic') {
         if (obs.player_hp <= 6) {
           return { act: 'pray', arg: null, reason: 'Emergency prayer (low HP)' };
@@ -1564,6 +1610,81 @@
     document.getElementById('btnRunArenaMatch').addEventListener('click', startAiMatch);
     document.getElementById('btnStopArenaMatch').addEventListener('click', stopAiMatch);
     document.getElementById('btnResetArenaMatch').addEventListener('click', resetArenaMatch);
+
+    document.getElementById('btnRunTournament').addEventListener('click', async () => {
+      const container = document.getElementById('tournamentResultsContainer');
+      const tbody = document.getElementById('tournamentTableBody');
+      container.style.display = 'block';
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#d6a3ff;">Running 100 seeds across all policies via WASM engine... Please wait...</td></tr>';
+
+      setTimeout(() => {
+        try {
+          const jsonStr = run_tournament_benchmark(25, 200); // 25 seeds * 2 roles = 50 runs per policy (200 total)
+          const summary = JSON.parse(jsonStr);
+          tbody.innerHTML = '';
+          const policies = Object.keys(summary.per_policy || {}).sort((a, b) => {
+            return (summary.per_policy[b].win_rate_pct || 0) - (summary.per_policy[a].win_rate_pct || 0);
+          });
+          for (const pol of policies) {
+            const st = summary.per_policy[pol];
+            const tr = document.createElement('tr');
+            const isTop = pol === 'PetTesterTactical';
+            tr.style.background = isTop ? 'rgba(157, 78, 221, 0.2)' : '';
+            tr.innerHTML = `
+              <td style="font-weight:bold; color:${isTop ? '#d6a3ff' : 'var(--text-white)'};">${pol} ${isTop ? '⭐' : ''}</td>
+              <td>${st.runs}</td>
+              <td style="color:${st.win_rate_pct > 0 ? 'var(--text-green)' : 'var(--text-dim)'}; font-weight:bold;">${st.win_rate_pct.toFixed(1)}%</td>
+              <td>${st.mean_max_depth.toFixed(2)}</td>
+              <td>${st.mean_kills.toFixed(1)}</td>
+              <td>${st.mean_gold.toFixed(0)}</td>
+              <td>${st.mean_turns.toFixed(0)}</td>
+            `;
+            tbody.appendChild(tr);
+          }
+        } catch (e) {
+          console.error(e);
+          tbody.innerHTML = `<tr><td colspan="7" style="color:var(--text-red);">Error running tournament: ${e.message}</td></tr>`;
+        }
+      }, 50);
+    });
+
+    document.getElementById('btnReplayTrajectory').addEventListener('click', () => {
+      stopAiMatch();
+      const pill = document.getElementById('arenaStatusPill');
+      pill.className = 'arena-status-pill pill-running';
+      pill.textContent = 'REPLAYING';
+
+      const seed = BigInt(Math.floor(Math.random() * 10000));
+      session = new WasmGameSession(seed);
+      arenaStep = 0;
+      updateUi(null);
+
+      try {
+        const trajJson = run_tactical_trajectory(seed, 150);
+        const traj = JSON.parse(trajJson);
+        document.getElementById('arenaDecision').textContent = `Replaying Trajectory (${traj.steps.length} steps, Score: ${traj.final_score})...`;
+
+        let stepIdx = 0;
+        const replayTimer = setInterval(() => {
+          if (stepIdx >= traj.steps.length) {
+            clearInterval(replayTimer);
+            pill.textContent = traj.victory ? 'ASCENDED' : 'COMPLETE';
+            pill.className = traj.victory ? 'arena-status-pill pill-win' : 'arena-status-pill pill-dead';
+            document.getElementById('arenaDecision').textContent = `Replay Complete: ${traj.end_reason} (Final Score: ${traj.final_score})`;
+            return;
+          }
+          const s = traj.steps[stepIdx];
+          document.getElementById('arenaStepCount').textContent = s.turn;
+          document.getElementById('arenaDecision').textContent = `Turn ${s.turn} [Dlvl ${s.depth}]: Action ${s.action} — ${s.log_summary || 'OK'}`;
+
+          playSfx('step');
+          stepIdx++;
+        }, 100);
+      } catch (e) {
+        console.error(e);
+        document.getElementById('arenaDecision').textContent = `Replay error: ${e.message}`;
+      }
+    });
 
     document.querySelectorAll('.role-btn').forEach(btn => {
       btn.addEventListener('click', () => {

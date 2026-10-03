@@ -29,3 +29,4 @@ import NetMechanics.InventoryInteraction
 import NetMechanics.PetCoop
 import NetMechanics.Mines
 import NetMechanics.Lighting
+import NetMechanics.Tournament

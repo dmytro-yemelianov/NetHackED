@@ -296,6 +296,28 @@ impl WasmGameSession {
     }
 }
 
+/// Run tournament benchmark across seeds comparing Random, Survival, Speedrunner, and PetTesterTactical.
+#[wasm_bindgen]
+pub fn run_tournament_benchmark(num_seeds: u32, max_turns: u32) -> String {
+    let seeds: Vec<u64> = (1..=(num_seeds as u64).max(1)).collect();
+    let roles = vec![RoleId::Valkyrie, RoleId::Wizard];
+    let (_results, summary) = netrust_agent::run_evaluation_suite(&seeds, &roles, (max_turns as u64).max(10));
+    serde_json::to_string(&summary).unwrap_or_default()
+}
+
+/// Run a match with PetTesterTacticalPolicy and return full decision trajectory JSON for replay in Web UI.
+#[wasm_bindgen]
+pub fn run_tactical_trajectory(seed: u64, max_turns: u32) -> String {
+    let config = CharacterConfig::default();
+    let (_res, traj) = netrust_agent::run_game_with_trajectory(
+        netrust_agent::PetTesterTacticalPolicy::new(),
+        seed,
+        config,
+        (max_turns as u64).max(10),
+    );
+    serde_json::to_string(&traj).unwrap_or_default()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
