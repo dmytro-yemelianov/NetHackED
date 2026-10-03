@@ -5,6 +5,7 @@ pub mod generator;
 pub mod level;
 pub mod raycast;
 pub mod room;
+pub mod sokoban;
 
 pub use fov::compute_fov;
 pub use generator::{
@@ -13,6 +14,7 @@ pub use generator::{
 pub use level::DungeonLevel;
 pub use raycast::trace_beam_path;
 pub use room::{Rect, Room, RoomType};
+pub use sokoban::generate_sokoban_level;
 
 #[cfg(test)]
 mod tests {

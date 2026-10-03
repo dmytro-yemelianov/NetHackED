@@ -19,11 +19,70 @@ impl SimulationWorld {
         let ny = player.coord.y as isize + dy;
 
         if let Some(target_coord) = Coord::new(nx as usize, ny as usize) {
-            // Check if monster at target -> Melee Attack
+            // Check if actor at target
             if let Some(target_id) = self.actor_at(target_coord) {
-                let combat_events = self.resolve_combat(self.player_id, target_id);
-                events.extend(combat_events);
-                self.scheduler.hero_act(NORMAL_SPEED);
+                let is_target_tame = self.arena.actors.get(target_id).map(|a| a.is_tame).unwrap_or(false);
+                if is_target_tame {
+                    // Displacement! Non-violent position swap verified in Lean 4
+                    let pet_name = self.arena.actors.get(target_id).map(|a| a.name.clone()).unwrap_or_else(|| "pet".into());
+                    let from = player.coord;
+                    if let Some(p) = self.arena.actors.get_mut(self.player_id) {
+                        p.coord = target_coord;
+                    }
+                    if let Some(pet) = self.arena.actors.get_mut(target_id) {
+                        pet.coord = from;
+                    }
+                    events.push(GameEvent::ActorMoved {
+                        actor: self.player_id,
+                        from,
+                        to: target_coord,
+                    });
+                    events.push(GameEvent::ActorMoved {
+                        actor: target_id,
+                        from: target_coord,
+                        to: from,
+                    });
+                    events.push(GameEvent::LogMessage {
+                        text: format!("You displace {}.", pet_name),
+                    });
+                    self.scheduler.hero_act(NORMAL_SPEED);
+                } else {
+                    let combat_events = self.resolve_combat(self.player_id, target_id);
+                    events.extend(combat_events);
+                    self.scheduler.hero_act(NORMAL_SPEED);
+                }
+            } else if let Some(boulder_id) = self.arena.items.iter().find_map(|(id, item)| {
+                if item.location == netrust_arena::ItemLocation::Floor(target_coord) && item.name == "boulder" {
+                    Some(id)
+                } else {
+                    None
+                }
+            }) {
+                // Boulder pushing mechanics formally verified in Lean 4
+                if let Some(next_c) = target_coord.step(dir) {
+                    let is_occupied = self.actor_at(next_c).is_some() || self.arena.items.values().any(|it| it.location == netrust_arena::ItemLocation::Floor(next_c) && it.name == "boulder");
+                    let outcome = netrust_core::sokoban::push_boulder(target_coord, dir, self.level.get_tile(next_c), is_occupied);
+                    match outcome {
+                        netrust_core::sokoban::PushOutcome::Moved(new_pos) => {
+                            if let Some(it) = self.arena.items.get_mut(boulder_id) {
+                                it.location = netrust_arena::ItemLocation::Floor(new_pos);
+                            }
+                            events.push(GameEvent::LogMessage { text: "You push the boulder.".into() });
+                            self.scheduler.hero_act(NORMAL_SPEED);
+                        }
+                        netrust_core::sokoban::PushOutcome::FilledPit(pit_pos) => {
+                            self.arena.destroy_item(boulder_id);
+                            self.level.set_tile(pit_pos, Tile::Pit { filled: true });
+                            events.push(GameEvent::LogMessage { text: "The boulder falls into the pit and fills it!".into() });
+                            self.scheduler.hero_act(NORMAL_SPEED);
+                        }
+                        netrust_core::sokoban::PushOutcome::Blocked => {
+                            events.push(GameEvent::LogMessage { text: "You try to move the boulder, but it won't budge.".into() });
+                        }
+                    }
+                } else {
+                    events.push(GameEvent::LogMessage { text: "You try to move the boulder, but it won't budge.".into() });
+                }
             } else {
                 // Check tile
                 let tile = self.level.get_tile(target_coord).clone();

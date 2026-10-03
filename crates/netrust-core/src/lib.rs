@@ -16,6 +16,10 @@ pub mod raycast;
 pub mod dungeon_stack;
 pub mod nutrition;
 pub mod magic;
+pub mod sokoban;
+pub mod branch;
+pub mod pet;
+pub mod enchantment;
 
 pub use ast::{ActionAst, Direction, EffectAst, WorldState};
 pub use buc::{dip_water, uncurse, Buc, WaterType};
@@ -33,4 +37,9 @@ pub use raycast::{reflect, step_ray, BeamRay, StepResult, SurfaceOrientation, Ve
 pub use dungeon_stack::DungeonDepth;
 pub use nutrition::{hunger_of_nutrition, hunger_tier, metabolic_tick, HungerState};
 pub use magic::{can_cast, cast_spell, decay_retention, mana_cost, SpellKind};
+pub use sokoban::{push_boulder, PushOutcome};
+pub use branch::{branch_entrance_depth, branch_max_depth, enter_branch, exit_branch};
+pub use pet::{feed_pet, interact_with_occupant, swap_displacement, HeroInteraction};
+pub use enchantment::{apply_erosion, enchant_item, mix_alchemy, EnchantResult, MAX_EROSION, SAFE_ENCHANT_CAP};
+pub use netrust_types::{BranchCoord, BranchId};
 

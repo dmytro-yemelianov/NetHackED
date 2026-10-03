@@ -62,6 +62,20 @@ pub fn render_ascii_map(world: &SimulationWorld) -> String {
                         '>'
                     }
                 }
+                Tile::BranchStairs { up, .. } => {
+                    if *up {
+                        '<'
+                    } else {
+                        '>'
+                    }
+                }
+                Tile::Pit { filled } => {
+                    if *filled {
+                        '.'
+                    } else {
+                        '0'
+                    }
+                }
                 Tile::Altar { .. } => '_',
                 Tile::Pool { frozen } => {
                     if *frozen {

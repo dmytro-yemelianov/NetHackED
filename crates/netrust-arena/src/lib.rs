@@ -31,6 +31,9 @@ pub struct ItemRecord {
     pub buc: Buc,
     pub is_container: bool,
     pub is_bag_of_holding: bool,
+    pub enchantment: i8,
+    pub erosion: u8,
+    pub proofed: bool,
     pub location: ItemLocation,
 }
 
@@ -47,6 +50,7 @@ pub struct ActorRecord {
     pub intrinsics: Intrinsics,
     pub is_player: bool,
     pub is_dead: bool,
+    pub is_tame: bool,
 }
 
 /// The centralized entity arena replacing all ambient pointers.
@@ -188,6 +192,7 @@ mod tests {
             intrinsics: Intrinsics::default(),
             is_player: true,
             is_dead: false,
+            is_tame: false,
         };
         let id = arena.spawn_actor(actor);
         assert_eq!(arena.actors.get(id).unwrap().hp, 20);
@@ -206,6 +211,9 @@ mod tests {
             buc: Buc::Uncursed,
             is_container: false,
             is_bag_of_holding: false,
+            enchantment: 0,
+            erosion: 0,
+            proofed: false,
             location: ItemLocation::Limbo,
         });
 
@@ -216,6 +224,9 @@ mod tests {
             buc: Buc::Uncursed,
             is_container: true,
             is_bag_of_holding: true,
+            enchantment: 0,
+            erosion: 0,
+            proofed: false,
             location: ItemLocation::Floor(Coord::new(10, 10).unwrap()),
         });
 
@@ -239,6 +250,9 @@ mod tests {
             buc: Buc::Uncursed,
             is_container: true,
             is_bag_of_holding: false,
+            enchantment: 0,
+            erosion: 0,
+            proofed: false,
             location: ItemLocation::Limbo,
         });
         let box2 = arena.spawn_item(ItemRecord {
@@ -248,6 +262,9 @@ mod tests {
             buc: Buc::Uncursed,
             is_container: true,
             is_bag_of_holding: false,
+            enchantment: 0,
+            erosion: 0,
+            proofed: false,
             location: ItemLocation::InContainer(box1),
         });
 

@@ -28,7 +28,8 @@ pub struct StoredLevel {
 pub struct SimulationWorld {
     pub level: DungeonLevel,
     pub levels: Vec<DungeonLevel>,
-    pub stored_levels: Vec<(usize, StoredLevel)>,
+    pub current_branch: netrust_types::BranchId,
+    pub stored_levels: Vec<((netrust_types::BranchId, usize), StoredLevel)>,
     pub depth: usize,
     pub arena: EntityArena,
     pub player_id: ActorId,
@@ -134,6 +135,7 @@ impl SimulationWorld {
 
         Self {
             levels: vec![level.clone()],
+            current_branch: netrust_types::BranchId::DungeonsOfDoom,
             stored_levels: Vec::new(),
             depth: 1,
             level,

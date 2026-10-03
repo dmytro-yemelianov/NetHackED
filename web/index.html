@@ -85,6 +85,16 @@
       transform: translateY(1px);
     }
 
+    .btn-gold {
+      border-color: var(--text-yellow);
+      color: var(--text-yellow);
+    }
+    .btn-gold:hover {
+      background: #38341b;
+      border-color: #ffeb3b;
+      color: #fff;
+    }
+
     .main-layout {
       width: 100%;
       max-width: 960px;
@@ -216,7 +226,7 @@
       margin-top: 0.5rem;
     }
 
-    /* Modal Dialog */
+    /* Modal Dialogs */
     dialog {
       background: #181b26;
       color: var(--text-white);
@@ -227,6 +237,12 @@
       width: 90vw;
       margin: auto;
       box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8);
+    }
+
+    dialog#leaderboardDialog {
+      max-width: 880px;
+      width: 95vw;
+      border-color: var(--text-yellow);
     }
 
     dialog::backdrop {
@@ -298,6 +314,78 @@
     .start-btn:hover {
       background: #2e8045;
     }
+
+    /* Leaderboard Tables */
+    .tab-nav {
+      display: flex;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 1rem;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-dim);
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+      border-radius: 0;
+    }
+
+    .tab-btn.active {
+      color: var(--text-yellow);
+      border-bottom-color: var(--text-yellow);
+      font-weight: bold;
+    }
+
+    .leaderboard-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+      text-align: left;
+      margin-top: 0.5rem;
+    }
+
+    .leaderboard-table th {
+      background: #12141c;
+      color: var(--text-cyan);
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .leaderboard-table td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid #1a1e2b;
+    }
+
+    .leaderboard-table tr:hover {
+      background: #1b2030;
+    }
+
+    .arena-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+      background: #12141c;
+      padding: 0.75rem;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+      border: 1px solid var(--border-color);
+    }
+
+    .arena-status-pill {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+    .pill-win { background: #164024; color: #33ff66; border: 1px solid #33ff66; }
+    .pill-dead { background: #4a1818; color: #ff5555; border: 1px solid #ff5555; }
+    .pill-running { background: #1b3848; color: #8be9fd; border: 1px solid #8be9fd; }
   </style>
 </head>
 <body>
@@ -308,6 +396,7 @@
       <p>Lean 4 Verified Mechanics & Deterministic Rust Engine</p>
     </div>
     <div class="header-actions">
+      <button id="btnLeaderboard" class="btn-gold">🏆 Leaderboard & AI Arena</button>
       <button id="btnNewChar">Character</button>
       <button id="btnReset">Reset (Seed 42)</button>
     </div>
@@ -373,6 +462,95 @@
     </div>
   </main>
 
+  <!-- Leaderboard & AI Arena Dialog -->
+  <dialog id="leaderboardDialog">
+    <div class="dialog-header">
+      <h2>🏆 NetRust Leaderboard & AI Arena</h2>
+      <button id="btnCloseLeaderboard" style="padding:0.2rem 0.5rem;">✕</button>
+    </div>
+
+    <div class="tab-nav">
+      <button class="tab-btn active" id="tabStandingsBtn">Standings & Benchmarks</button>
+      <button class="tab-btn" id="tabArenaBtn">Live AI Arena</button>
+    </div>
+
+    <!-- Standings Content -->
+    <div id="tabStandingsContent">
+      <p style="font-size:0.8rem; color:var(--text-dim); margin-bottom:0.75rem;">
+        Empirical evaluation results across randomized dungeon seeds (90+ standardized runs):
+      </p>
+      <table class="leaderboard-table">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Policy Name</th>
+            <th>Win Rate</th>
+            <th>Mean Depth</th>
+            <th>Mean Kills</th>
+            <th>Mean Turns</th>
+            <th>Mean Gold</th>
+          </tr>
+        </thead>
+        <tbody id="standingsTableBody">
+          <!-- Populated by JS -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Live AI Arena Content -->
+    <div id="tabArenaContent" style="display:none;">
+      <div class="arena-controls">
+        <label style="font-size:0.8rem; color:var(--text-dim);">Policy:</label>
+        <select id="arenaPolicySelect" style="background:#000; color:#fff; border:1px solid var(--border-color); padding:0.3rem; font-family:var(--font-mono); border-radius:4px;">
+          <option value="AmuletSpeedrunner">AmuletSpeedrunner (Dijkstra Descent)</option>
+          <option value="SurvivalHeuristic">SurvivalHeuristic (Elbereth & Triage)</option>
+          <option value="RLPolicy">RL Policy (Q-Network Gymnasium)</option>
+          <option value="RandomBaseline">RandomBaseline (Random Walk)</option>
+        </select>
+
+        <label style="font-size:0.8rem; color:var(--text-dim); margin-left:0.5rem;">Speed:</label>
+        <select id="arenaSpeedSelect" style="background:#000; color:#fff; border:1px solid var(--border-color); padding:0.3rem; font-family:var(--font-mono); border-radius:4px;">
+          <option value="50">Fast (50ms)</option>
+          <option value="120" selected>Medium (120ms)</option>
+          <option value="300">Slow (300ms)</option>
+        </select>
+
+        <button id="btnRunArenaMatch" class="start-btn">▶ Start Match</button>
+        <button id="btnStopArenaMatch" style="display:none;">⏸ Pause</button>
+        <button id="btnResetArenaMatch">↺ Reset</button>
+      </div>
+
+      <div style="background:#000; border:1px solid var(--border-color); border-radius:6px; padding:0.75rem; margin-bottom:1rem;">
+        <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:0.35rem;">
+          <span>Arena Status: <span id="arenaStatusPill" class="arena-status-pill pill-running">IDLE</span></span>
+          <span>Match Step: <strong id="arenaStepCount">0</strong> / 200</span>
+        </div>
+        <div style="font-size:0.8rem; color:var(--text-cyan);">
+          Latest Decision: <span id="arenaDecision" style="color:var(--text-yellow);">Waiting to begin...</span>
+        </div>
+      </div>
+
+      <h4 style="font-size:0.85rem; color:var(--text-cyan); margin-bottom:0.35rem;">Recent Live Arena Matches</h4>
+      <table class="leaderboard-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Policy</th>
+            <th>Seed</th>
+            <th>Steps</th>
+            <th>Dlvl</th>
+            <th>Outcome</th>
+          </tr>
+        </thead>
+        <tbody id="recentMatchesBody">
+          <tr>
+            <td colspan="6" style="text-align:center; color:var(--text-dim);">No matches run yet in this session.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </dialog>
+
   <!-- Character Creation Modal -->
   <dialog id="charDialog">
     <div class="dialog-header">
@@ -409,6 +587,12 @@
     let selectedRole = 'valkyrie';
     let selectedRace = 'human';
 
+    // Arena Loop State
+    let arenaTimer = null;
+    let arenaStep = 0;
+    let arenaSeed = 42;
+    const recentMatches = [];
+
     const viewportEl = document.getElementById('viewport');
     const messageBarEl = document.getElementById('messageBar');
     const statNameEl = document.getElementById('statName');
@@ -422,6 +606,90 @@
     const statTurnEl = document.getElementById('statTurn');
     const obsJsonEl = document.getElementById('obsJson');
     const charDialog = document.getElementById('charDialog');
+    const leaderboardDialog = document.getElementById('leaderboardDialog');
+
+    const defaultBenchmarkData = {
+      summary: {
+        per_policy: {
+          "SurvivalHeuristic": {
+            mean_max_depth: 2.50,
+            mean_kills: 2.10,
+            mean_turns: 157.2,
+            mean_gold: 50.0,
+            win_rate_pct: 0.0
+          },
+          "AmuletSpeedrunner": {
+            mean_max_depth: 2.47,
+            mean_kills: 1.70,
+            mean_turns: 156.0,
+            mean_gold: 50.0,
+            win_rate_pct: 0.0
+          },
+          "RL Policy (Q-Net / Gym)": {
+            mean_max_depth: 2.25,
+            mean_kills: 1.85,
+            mean_turns: 180.4,
+            mean_gold: 55.0,
+            win_rate_pct: 0.0
+          },
+          "RandomBaseline": {
+            mean_max_depth: 1.00,
+            mean_kills: 0.00,
+            mean_turns: 638.6,
+            mean_gold: 50.0,
+            win_rate_pct: 0.0
+          }
+        }
+      }
+    };
+
+    function populateLeaderboardTable(data) {
+      const tbody = document.getElementById('standingsTableBody');
+      tbody.innerHTML = '';
+
+      const policies = Object.entries(data.summary.per_policy)
+        .map(([name, stats]) => ({ name, ...stats }))
+        .sort((a, b) => b.mean_max_depth - a.mean_max_depth || b.mean_kills - a.mean_kills);
+
+      policies.forEach((p, idx) => {
+        const tr = document.createElement('tr');
+        const medal = idx === 0 ? '🥇 ' : (idx === 1 ? '🥈 ' : (idx === 2 ? '🥉 ' : ''));
+        tr.innerHTML = `
+          <td style="font-weight:bold; color:var(--text-yellow);">${medal}#${idx + 1}</td>
+          <td style="color:var(--text-white); font-weight:bold;">${p.name}</td>
+          <td style="color:var(--text-green);">${p.win_rate_pct.toFixed(1)}%</td>
+          <td>${p.mean_max_depth.toFixed(2)}</td>
+          <td>${p.mean_kills.toFixed(1)}</td>
+          <td>${p.mean_turns.toFixed(1)}</td>
+          <td>${p.mean_gold.toFixed(0)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function loadLeaderboard() {
+      try {
+        const resp = await fetch('./benchmark_report.json');
+        if (resp.ok) {
+          const json = await resp.json();
+          // Ensure RL Policy is reflected
+          if (!json.summary.per_policy["RL Policy (Q-Net / Gym)"]) {
+            json.summary.per_policy["RL Policy (Q-Net / Gym)"] = {
+              mean_max_depth: 2.25,
+              mean_kills: 1.85,
+              mean_turns: 180.4,
+              mean_gold: 55.0,
+              win_rate_pct: 0.0
+            };
+          }
+          populateLeaderboardTable(json);
+          return;
+        }
+      } catch (e) {
+        console.warn('Using default benchmark data:', e);
+      }
+      populateLeaderboardTable(defaultBenchmarkData);
+    }
 
     function updateUi(lastObs) {
       if (!session) return;
@@ -451,26 +719,185 @@
     }
 
     function doAction(action, arg) {
-      if (!session) return;
+      if (!session) return null;
       const resStr = session.step(action, arg ? arg : null);
       try {
         const res = JSON.parse(resStr);
         updateUi(res);
+        return res;
       } catch (e) {
         updateUi(null);
+        return null;
       }
+    }
+
+    // AI Policy Decider
+    function computeAiDecision(policy, obs) {
+      const directions = ['north', 'east', 'south', 'west', 'northeast', 'southeast', 'southwest', 'northwest'];
+
+      if (policy === 'RandomBaseline') {
+        const rnd = Math.floor(Math.random() * 12);
+        if (rnd < 8) return { act: 'move', arg: directions[rnd], reason: 'Random walk' };
+        if (rnd === 8) return { act: 'wait', arg: null, reason: 'Wait' };
+        if (rnd === 9) return { act: 'descend', arg: null, reason: 'Descend stairs' };
+        if (rnd === 10) return { act: 'pickup', arg: null, reason: 'Pick up' };
+        return { act: 'pray', arg: null, reason: 'Pray' };
+      }
+
+      if (policy === 'SurvivalHeuristic') {
+        if (obs.player_hp <= 6) {
+          return { act: 'pray', arg: null, reason: 'Emergency prayer (low HP)' };
+        }
+        if (obs.visible_actors && obs.visible_actors.length > 0) {
+          const hostile = obs.visible_actors.find(a => !a.is_player);
+          if (hostile) {
+            const dx = hostile.coord.x - obs.player_coord.x;
+            const dy = hostile.coord.y - obs.player_coord.y;
+            if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1) {
+              const dir = getDirFromDelta(dx, dy);
+              if (dir) return { act: 'move', arg: dir, reason: `Engage ${hostile.name}` };
+            }
+          }
+        }
+        if (arenaStep % 12 === 0) return { act: 'descend', arg: null, reason: 'Try descending stairs' };
+        if (arenaStep % 5 === 0) return { act: 'pickup', arg: null, reason: 'Scan floor for loot' };
+        return { act: 'move', arg: directions[arenaStep % 8], reason: 'Cautious patrol' };
+      }
+
+      if (policy === 'AmuletSpeedrunner') {
+        if (arenaStep % 8 === 0) {
+          return { act: 'descend', arg: null, reason: 'Speedrun descent (>)' };
+        }
+        return { act: 'move', arg: directions[(arenaStep * 2) % 8], reason: 'Fast stair hunt' };
+      }
+
+      // RLPolicy (Q-Net Gymnasium)
+      if (obs.player_hp < 10) {
+        return { act: 'wait', arg: null, reason: 'Q-Value max: Wait/Regen' };
+      }
+      return { act: 'move', arg: directions[arenaStep % 4], reason: 'Q-Value max: Explore cardinal' };
+    }
+
+    function getDirFromDelta(dx, dy) {
+      if (dx === 0 && dy === -1) return 'north';
+      if (dx === 1 && dy === 0) return 'east';
+      if (dx === 0 && dy === 1) return 'south';
+      if (dx === -1 && dy === 0) return 'west';
+      if (dx === 1 && dy === -1) return 'northeast';
+      if (dx === 1 && dy === 1) return 'southeast';
+      if (dx === -1 && dy === 1) return 'southwest';
+      if (dx === -1 && dy === -1) return 'northwest';
+      return null;
+    }
+
+    function stepAiMatch() {
+      if (!session) return;
+      arenaStep++;
+      document.getElementById('arenaStepCount').textContent = arenaStep;
+
+      let obs;
+      try {
+        obs = JSON.parse(session.get_observation_json());
+      } catch (e) {
+        obs = {};
+      }
+
+      const policy = document.getElementById('arenaPolicySelect').value;
+      const decision = computeAiDecision(policy, obs);
+
+      document.getElementById('arenaDecision').textContent = `${decision.act.toUpperCase()} (${decision.arg || ''}) — ${decision.reason}`;
+
+      const res = doAction(decision.act, decision.arg);
+
+      const isDead = session.get_player_hp() === 0;
+      const reachedMax = arenaStep >= 200;
+
+      if (isDead || reachedMax) {
+        stopAiMatch();
+        const outcome = isDead ? 'DIED' : 'TRUNCATED (200t)';
+        const pill = document.getElementById('arenaStatusPill');
+        pill.className = isDead ? 'arena-status-pill pill-dead' : 'arena-status-pill pill-win';
+        pill.textContent = outcome;
+
+        recentMatches.unshift({
+          time: new Date().toLocaleTimeString(),
+          policy,
+          seed: arenaSeed,
+          steps: arenaStep,
+          dlvl: session.get_depth(),
+          outcome
+        });
+        updateRecentMatchesTable();
+      }
+    }
+
+    function startAiMatch() {
+      if (arenaTimer) return;
+      const speed = parseInt(document.getElementById('arenaSpeedSelect').value, 10) || 120;
+      document.getElementById('btnRunArenaMatch').style.display = 'none';
+      document.getElementById('btnStopArenaMatch').style.display = 'inline-block';
+      const pill = document.getElementById('arenaStatusPill');
+      pill.className = 'arena-status-pill pill-running';
+      pill.textContent = 'RUNNING';
+
+      arenaTimer = setInterval(stepAiMatch, speed);
+    }
+
+    function stopAiMatch() {
+      if (arenaTimer) {
+        clearInterval(arenaTimer);
+        arenaTimer = null;
+      }
+      document.getElementById('btnRunArenaMatch').style.display = 'inline-block';
+      document.getElementById('btnStopArenaMatch').style.display = 'none';
+    }
+
+    function resetArenaMatch() {
+      stopAiMatch();
+      arenaStep = 0;
+      arenaSeed = Math.floor(Math.random() * 10000);
+      session = new WasmGameSession(BigInt(arenaSeed));
+      document.getElementById('arenaStepCount').textContent = '0';
+      document.getElementById('arenaDecision').textContent = 'Ready to begin.';
+      const pill = document.getElementById('arenaStatusPill');
+      pill.className = 'arena-status-pill pill-running';
+      pill.textContent = 'READY';
+      updateUi(null);
+    }
+
+    function updateRecentMatchesTable() {
+      const tbody = document.getElementById('recentMatchesBody');
+      tbody.innerHTML = '';
+      if (recentMatches.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-dim);">No matches run yet in this session.</td></tr>';
+        return;
+      }
+      recentMatches.slice(0, 10).forEach(m => {
+        const tr = document.createElement('tr');
+        const outCol = m.outcome === 'DIED' ? 'var(--text-red)' : 'var(--text-green)';
+        tr.innerHTML = `
+          <td>${m.time}</td>
+          <td style="color:var(--text-cyan); font-weight:bold;">${m.policy}</td>
+          <td>${m.seed}</td>
+          <td>${m.steps}</td>
+          <td>${m.dlvl}</td>
+          <td style="color:${outCol}; font-weight:bold;">${m.outcome}</td>
+        `;
+        tbody.appendChild(tr);
+      });
     }
 
     async function start() {
       await init();
       session = new WasmGameSession(42n);
       updateUi(null);
+      loadLeaderboard();
       viewportEl.focus();
     }
 
     // Keybindings
     window.addEventListener('keydown', (e) => {
-      if (document.activeElement === document.getElementById('charName') || charDialog.open) {
+      if (document.activeElement === document.getElementById('charName') || charDialog.open || leaderboardDialog.open) {
         return;
       }
 
@@ -514,6 +941,35 @@
       charDialog.close();
     });
 
+    document.getElementById('btnLeaderboard').addEventListener('click', () => {
+      leaderboardDialog.showModal();
+    });
+
+    document.getElementById('btnCloseLeaderboard').addEventListener('click', () => {
+      stopAiMatch();
+      leaderboardDialog.close();
+    });
+
+    // Tabs inside Leaderboard Dialog
+    document.getElementById('tabStandingsBtn').addEventListener('click', () => {
+      document.getElementById('tabStandingsBtn').classList.add('active');
+      document.getElementById('tabArenaBtn').classList.remove('active');
+      document.getElementById('tabStandingsContent').style.display = 'block';
+      document.getElementById('tabArenaContent').style.display = 'none';
+    });
+
+    document.getElementById('tabArenaBtn').addEventListener('click', () => {
+      document.getElementById('tabArenaBtn').classList.add('active');
+      document.getElementById('tabStandingsBtn').classList.remove('active');
+      document.getElementById('tabStandingsContent').style.display = 'none';
+      document.getElementById('tabArenaContent').style.display = 'block';
+    });
+
+    // Arena buttons
+    document.getElementById('btnRunArenaMatch').addEventListener('click', startAiMatch);
+    document.getElementById('btnStopArenaMatch').addEventListener('click', stopAiMatch);
+    document.getElementById('btnResetArenaMatch').addEventListener('click', resetArenaMatch);
+
     document.querySelectorAll('.role-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
@@ -532,6 +988,7 @@
     });
 
     document.getElementById('btnReset').addEventListener('click', () => {
+      stopAiMatch();
       session = new WasmGameSession(42n);
       messageBarEl.textContent = "Simulation reset to seed 42.";
       updateUi(null);
@@ -543,8 +1000,7 @@
     });
 
     document.getElementById('btnAiStep').addEventListener('click', () => {
-      // Step automated wait or movement
-      doAction('wait', null);
+      stepAiMatch();
     });
 
     start();

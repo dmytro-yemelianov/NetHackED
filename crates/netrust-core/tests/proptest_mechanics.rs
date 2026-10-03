@@ -8,6 +8,10 @@ use netrust_core::{
     Engraving, EngravingMedium, FormStats, Item, KnowledgeLevel, MetricState, PolyEntity,
     SchedulerState, StepAction, StepResult, SurfaceOrientation, Tile, Velocity, WaterType,
     NORMAL_SPEED, DungeonDepth, hunger_tier, hunger_of_nutrition, SpellKind, cast_spell, mana_cost,
+    push_boulder, PushOutcome, branch_entrance_depth, branch_max_depth, enter_branch, exit_branch,
+    BranchCoord, BranchId, Coord, Direction,
+    feed_pet, interact_with_occupant, swap_displacement, HeroInteraction,
+    apply_erosion, enchant_item, mix_alchemy, SAFE_ENCHANT_CAP,
 };
 use proptest::prelude::*;
 
@@ -429,6 +433,172 @@ proptest! {
             prop_assert!(pw < mana_cost(spell));
         }
     }
+
+    // -------------------------------------------------------------
+    // Theorem: wall_strictly_blocks & pit_push_fills & floor_push_advances
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_boulder_push_theorems(x in 10usize..70, y in 5usize..15, dir_idx in 0usize..4) {
+        let dir = match dir_idx {
+            0 => Direction::North,
+            1 => Direction::East,
+            2 => Direction::South,
+            _ => Direction::West,
+        };
+        let pos = Coord::new_unchecked(x, y);
+        let next_pos = pos.step(dir).unwrap();
+
+        // Wall strictly blocks
+        let wall = Tile::Wall { horizontal: true };
+        prop_assert_eq!(push_boulder(pos, dir, &wall, false), PushOutcome::Blocked);
+
+        // Pit push fills
+        let pit = Tile::Pit { filled: false };
+        prop_assert_eq!(push_boulder(pos, dir, &pit, false), PushOutcome::FilledPit(next_pos));
+
+        // Floor push advances
+        let room = Tile::Room;
+        prop_assert_eq!(push_boulder(pos, dir, &room, false), PushOutcome::Moved(next_pos));
+
+        // Occupied target strictly blocks
+        prop_assert_eq!(push_boulder(pos, dir, &room, true), PushOutcome::Blocked);
+    }
+
+    // -------------------------------------------------------------
+    // Theorem: corner_deadlock_blocked
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_corner_deadlock(x in 10usize..70, y in 5usize..15) {
+        let pos = Coord::new_unchecked(x, y);
+        let wall = Tile::Wall { horizontal: true };
+
+        // Pushing North or East into corner walls
+        let res_n = push_boulder(pos, Direction::North, &wall, false);
+        let res_e = push_boulder(pos, Direction::East, &wall, false);
+        prop_assert_eq!(res_n, PushOutcome::Blocked);
+        prop_assert_eq!(res_e, PushOutcome::Blocked);
+    }
+
+    // -------------------------------------------------------------
+    // Theorem: branch_transition_invertible & main_dungeon_no_side_exit
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_branch_theorems(branch_idx in 0usize..3) {
+        let branch = match branch_idx {
+            0 => BranchId::DungeonsOfDoom,
+            1 => BranchId::GnomishMines,
+            _ => BranchId::Sokoban,
+        };
+
+        prop_assert!(branch_max_depth(branch) >= 3);
+        let entrance = branch_entrance_depth(branch);
+        let entered = enter_branch(branch, entrance);
+        prop_assert_eq!(entered, Some(BranchCoord { branch, depth: 1 }));
+
+        let exited = exit_branch(entered.unwrap());
+        prop_assert_eq!(exited, Some(BranchCoord { branch: BranchId::DungeonsOfDoom, depth: entrance }));
+    }
+
+    #[test]
+    fn prop_main_dungeon_no_side_exit_thm(_dummy in 0..1) {
+        prop_assert_eq!(
+            exit_branch(BranchCoord { branch: BranchId::DungeonsOfDoom, depth: 1 }),
+            Some(BranchCoord { branch: BranchId::DungeonsOfDoom, depth: 1 })
+        );
+    }
+
+    // -------------------------------------------------------------
+    // Theorems: swap_involution & swap_preserves_distance
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_pet_displacement_geometry(hx in 0usize..79, hy in 0usize..20, px in 0usize..79, py in 0usize..20) {
+        let hero = Coord::new_unchecked(hx, hy);
+        let pet = Coord::new_unchecked(px, py);
+
+        let (h1, p1) = swap_displacement(hero, pet);
+        let (h2, p2) = swap_displacement(h1, p1);
+
+        // Involution: swapping twice restores original positions
+        prop_assert_eq!((h2, p2), (hero, pet));
+
+        // Distance conservation
+        prop_assert_eq!(hero.chebyshev_distance(pet), h1.chebyshev_distance(p1));
+    }
+
+    // -------------------------------------------------------------
+    // Theorems: feed_increases_tameness & feed_preserves_tame
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_feed_pet_tameness(tameness in 1u32..100, nutrition in 0u32..1000) {
+        let (new_tameness, is_tame) = feed_pet(tameness, true, nutrition);
+        prop_assert!(new_tameness > tameness);
+        prop_assert!(is_tame);
+    }
+
+    // -------------------------------------------------------------
+    // Theorem: displacement_non_violent
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_pet_displacement_non_violent(hx in 0usize..79, hy in 0usize..20, px in 0usize..79, py in 0usize..20) {
+        let hero = Coord::new_unchecked(hx, hy);
+        let pet = Coord::new_unchecked(px, py);
+        let dummy_id = 42usize;
+
+        let interaction_tame = interact_with_occupant(hero, pet, dummy_id, true);
+        prop_assert_eq!(
+            interaction_tame,
+            HeroInteraction::DisplacePet {
+                pet_id: dummy_id,
+                new_hero_pos: pet,
+                new_pet_pos: hero,
+            }
+        );
+
+        let interaction_hostile = interact_with_occupant(hero, pet, dummy_id, false);
+        prop_assert_eq!(interaction_hostile, HeroInteraction::MeleeAttack(dummy_id));
+    }
+
+    // -------------------------------------------------------------
+    // Theorems: enchant_below_cap_safe & enchant_below_cap_increases
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_enchant_theorems(cur_ench in -5i8..SAFE_ENCHANT_CAP, blessed in proptest::bool::ANY) {
+        let res = enchant_item(cur_ench, blessed, false);
+        prop_assert!(!res.evaporated);
+        prop_assert!(res.new_ench > cur_ench);
+    }
+
+    #[test]
+    fn prop_enchant_at_or_above_cap(cur_ench in SAFE_ENCHANT_CAP..20i8, blessed in proptest::bool::ANY) {
+        let res = enchant_item(cur_ench, blessed, false);
+        prop_assert!(res.evaporated);
+        prop_assert_eq!(res.new_ench, cur_ench);
+    }
+
+    // -------------------------------------------------------------
+    // Theorems: proofed_impermeable & erosion_monotonic
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_erosion_theorems(cur_erosion in 0u8..=4, proofed in proptest::bool::ANY) {
+        let next_erosion = apply_erosion(cur_erosion, proofed);
+        if proofed {
+            prop_assert_eq!(next_erosion, cur_erosion);
+        } else {
+            prop_assert!(next_erosion >= cur_erosion);
+        }
+    }
+
+    // -------------------------------------------------------------
+    // Theorem: alchemy_healing_energy_commutative
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_alchemy_theorems(_dummy in 0..1) {
+        let mix1 = mix_alchemy("potion of healing", "potion of speed");
+        let mix2 = mix_alchemy("potion of speed", "potion of healing");
+        prop_assert_eq!(mix1, mix2);
+        prop_assert_eq!(mix1, Some("potion of extra healing"));
+    }
 }
+
 
 

@@ -103,6 +103,33 @@ def main : IO Unit := do
   let castRes := castSpell casterPw SpellKind.ForceBolt
   IO.println s!"[Magic] Caster with {casterPw} Pw cast Force Bolt -> remaining Pw: {repr castRes}"
 
+  -- 14. Sokoban & Boulder Dynamics demonstration
+  let sokoPush := pushBoulder (5, 5) PushDir.East SokoTile.Floor
+  let sokoPitPush := pushBoulder (5, 5) PushDir.North SokoTile.Pit
+  IO.println s!"[Sokoban] Push onto floor -> {repr sokoPush}, Push into pit -> {repr sokoPitPush}"
+
+  -- 15. Dungeon Branching & Topology demonstration
+  let minesEntrance := enterBranch BranchId.GnomishMines 3
+  let minesExit := exitBranch ⟨BranchId.GnomishMines, 1⟩
+  IO.println s!"[Branch] Enter Mines from depth 3 -> {repr minesEntrance}, Exit Mines -> {repr minesExit}"
+
+  -- 16. Pet & Companion Dynamics demonstration
+  let heroPos : PetCoord := ⟨10, 10⟩
+  let petPos : PetCoord := ⟨11, 10⟩
+  let (newH, newP) := swapPositions heroPos petPos
+  let interaction := interactWithOccupant heroPos petPos 42 true
+  IO.println s!"[Pet] Hero at {repr heroPos} displaces tame pet at {repr petPos} -> Hero: {repr newH}, Pet: {repr newP}, Action: {repr interaction}"
+
+  -- 17. Enchantment, Erosion & Alchemy demonstration
+  let ench0 := enchantItem 2 true false
+  let erosion0 := applyErosion ⟨0, false⟩
+  let alchemyRes := mixAlchemy AlchemyPotion.Healing AlchemyPotion.GainEnergy
+  IO.println s!"[Enchantment] +2 sword enchanted with blessed scroll -> {repr ench0}"
+  IO.println s!"[Erosion] Unproofed armor exposed to acid -> {repr erosion0}"
+  IO.println s!"[Alchemy] Dipping healing into gain energy -> {repr alchemyRes}"
+
+
+
 
 
 

@@ -363,6 +363,13 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
                 Tile::Stairs { up } => {
                     execute!(stdout, SetForegroundColor(Color::Magenta), Print(if *up { '<' } else { '>' }), ResetColor)?;
                 }
+                Tile::BranchStairs { up, .. } => {
+                    execute!(stdout, SetForegroundColor(Color::Cyan), Print(if *up { '<' } else { '>' }), ResetColor)?;
+                }
+                Tile::Pit { filled } => {
+                    let (sym, col) = if *filled { ('.', Color::Grey) } else { ('0', Color::DarkYellow) };
+                    execute!(stdout, SetForegroundColor(col), Print(sym), ResetColor)?;
+                }
                 Tile::Altar { .. } => {
                     execute!(stdout, SetForegroundColor(Color::White), Print("_"), ResetColor)?;
                 }

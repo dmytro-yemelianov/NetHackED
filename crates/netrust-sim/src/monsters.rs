@@ -25,6 +25,43 @@ impl SimulationWorld {
                 let Some(mon) = self.arena.actors.get(mon_id).cloned() else { continue; };
                 if mon.is_dead { continue; }
 
+                // Companion Pet AI
+                if mon.is_tame {
+                    // 1. Attack adjacent hostile enemies
+                    let adjacent_hostile = mon.coord.neighbors().into_iter().find_map(|adj| {
+                        if let Some(other_id) = self.actor_at(adj) {
+                            if other_id != self.player_id && !self.arena.actors.get(other_id).map(|a| a.is_tame).unwrap_or(false) {
+                                Some(other_id)
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        }
+                    });
+
+                    if let Some(target_enemy) = adjacent_hostile {
+                        let combat_events = self.resolve_combat(mon_id, target_enemy);
+                        events.extend(combat_events);
+                    } else if mon.coord.chebyshev_distance(pc) > 2 {
+                        // Follow hero using Dijkstra gradient towards hero
+                        if let Some(next_c) = dijkstra.steepest_descent(mon.coord) {
+                            if self.level.is_passable(next_c) && self.actor_at(next_c).is_none() {
+                                let from = mon.coord;
+                                if let Some(m) = self.arena.actors.get_mut(mon_id) {
+                                    m.coord = next_c;
+                                }
+                                events.push(GameEvent::ActorMoved {
+                                    actor: mon_id,
+                                    from,
+                                    to: next_c,
+                                });
+                            }
+                        }
+                    }
+                    continue;
+                }
+
                 // Peaceful shopkeeper will not attack unless provoked or shoplifted
                 if mon.name == "shopkeeper" && mon.alignment == Alignment::Neutral {
                     continue;

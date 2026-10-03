@@ -3,3 +3,7 @@
 .DS_Store
 *.tgz
 /NetHack-5.0.0
+*.so
+__pycache__/
+*.egg-info/
+.pytest_cache/

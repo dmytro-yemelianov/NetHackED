@@ -19,6 +19,8 @@ pub enum MonsterSpeciesId {
     SilverDragon,
     Lich,
     Shopkeeper,
+    LittleDog,
+    Kitten,
 }
 
 /// Behavioral archetype for autonomous monster decision making.
@@ -32,6 +34,8 @@ pub enum AiBehavior {
     Stationary,
     /// Peaceful shopkeeper defending store merchandise.
     Shopkeeper,
+    /// Loyal pet following hero, displacing when stepped on, attacking hostiles.
+    CompanionPet,
 }
 
 /// Declarative specification of a monster species.
@@ -220,6 +224,34 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         damage_dice: (2, 6),
         ai_behavior: AiBehavior::Shopkeeper,
     },
+    MonsterArchetype {
+        id: MonsterSpeciesId::LittleDog,
+        name: "little dog",
+        glyph: 'd',
+        base_hp: 12,
+        max_hp: 12,
+        ac: 6,
+        level: 2,
+        speed: 12,
+        alignment: Alignment::Neutral,
+        intrinsics: Intrinsics::empty(),
+        damage_dice: (1, 6),
+        ai_behavior: AiBehavior::CompanionPet,
+    },
+    MonsterArchetype {
+        id: MonsterSpeciesId::Kitten,
+        name: "kitten",
+        glyph: 'f',
+        base_hp: 10,
+        max_hp: 10,
+        ac: 6,
+        level: 2,
+        speed: 12,
+        alignment: Alignment::Neutral,
+        intrinsics: Intrinsics::empty(),
+        damage_dice: (1, 4),
+        ai_behavior: AiBehavior::CompanionPet,
+    },
 ];
 
 /// Look up a monster archetype from the bestiary table.
@@ -245,5 +277,6 @@ pub fn create_monster_record(id: MonsterSpeciesId, coord: Coord) -> ActorRecord 
         intrinsics: arch.intrinsics,
         is_player: false,
         is_dead: false,
+        is_tame: arch.ai_behavior == AiBehavior::CompanionPet,
     }
 }

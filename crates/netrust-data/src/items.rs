@@ -32,10 +32,14 @@ pub enum ItemKindId {
     ScrollOfIdentify,
     ScrollOfTeleportation,
     ScrollOfRemoveCurse,
+    ScrollOfEnchantWeapon,
+    ScrollOfEnchantArmor,
     // Containers & Tools
     Sack,
     BagOfHolding,
     Chest,
+    // Rocks & Heavy Objects
+    Boulder,
     // Food
     FoodRation,
     Apple,
@@ -45,8 +49,10 @@ pub enum ItemKindId {
     SpellbookOfHealing,
     // Amulets & Quest Artifacts
     AmuletOfYendor,
-    // Treasure
+    AmuletOfReflection,
+    // Treasure & Gems
     GoldPieces,
+    Luckstone,
 }
 
 /// Declarative specification of an item archetype.
@@ -310,6 +316,30 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         is_container: false,
         is_bag_of_holding: false,
     },
+    ItemArchetype {
+        id: ItemKindId::ScrollOfEnchantWeapon,
+        name: "scroll of enchant weapon",
+        class: ItemClass::Scroll,
+        weight: 5,
+        cost: 60,
+        damage_small: (0, 0),
+        damage_large: (0, 0),
+        ac_bonus: 0,
+        is_container: false,
+        is_bag_of_holding: false,
+    },
+    ItemArchetype {
+        id: ItemKindId::ScrollOfEnchantArmor,
+        name: "scroll of enchant armor",
+        class: ItemClass::Scroll,
+        weight: 5,
+        cost: 80,
+        damage_small: (0, 0),
+        damage_large: (0, 0),
+        ac_bonus: 0,
+        is_container: false,
+        is_bag_of_holding: false,
+    },
     // Containers
     ItemArchetype {
         id: ItemKindId::Sack,
@@ -345,6 +375,18 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         damage_large: (0, 0),
         ac_bonus: 0,
         is_container: true,
+        is_bag_of_holding: false,
+    },
+    ItemArchetype {
+        id: ItemKindId::Boulder,
+        name: "boulder",
+        class: ItemClass::Rock,
+        weight: 6000,
+        cost: 0,
+        damage_small: (0, 0),
+        damage_large: (0, 0),
+        ac_bonus: 0,
+        is_container: false,
         is_bag_of_holding: false,
     },
     // Food
@@ -422,13 +464,37 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         is_container: false,
         is_bag_of_holding: false,
     },
-    // Gold
+    ItemArchetype {
+        id: ItemKindId::AmuletOfReflection,
+        name: "amulet of reflection",
+        class: ItemClass::Amulet,
+        weight: 20,
+        cost: 150,
+        damage_small: (0, 0),
+        damage_large: (0, 0),
+        ac_bonus: 0,
+        is_container: false,
+        is_bag_of_holding: false,
+    },
+    // Gold & Gems
     ItemArchetype {
         id: ItemKindId::GoldPieces,
         name: "gold pieces",
         class: ItemClass::Coin,
         weight: 1,
         cost: 1,
+        damage_small: (0, 0),
+        damage_large: (0, 0),
+        ac_bonus: 0,
+        is_container: false,
+        is_bag_of_holding: false,
+    },
+    ItemArchetype {
+        id: ItemKindId::Luckstone,
+        name: "luckstone",
+        class: ItemClass::Gem,
+        weight: 10,
+        cost: 60,
         damage_small: (0, 0),
         damage_large: (0, 0),
         ac_bonus: 0,
@@ -457,6 +523,9 @@ pub fn create_item_record(id: ItemKindId, location: ItemLocation, buc: Buc) -> I
         buc,
         is_container: arch.is_container,
         is_bag_of_holding: arch.is_bag_of_holding,
+        enchantment: 0,
+        erosion: 0,
+        proofed: false,
         location,
     }
 }

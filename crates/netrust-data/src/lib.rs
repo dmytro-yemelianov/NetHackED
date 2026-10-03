@@ -12,8 +12,8 @@ pub use monsters::{
     BESTIARY,
 };
 pub use roles::{
-    get_race, get_role, spawn_player_character, CharacterConfig, Gender, RaceId, RaceSpec, RoleId,
-    RoleSpec, RACES, ROLES,
+    get_race, get_role, spawn_player_character, spawn_starting_pet, CharacterConfig, Gender, RaceId,
+    RaceSpec, RoleId, RoleSpec, RACES, ROLES,
 };
 
 #[cfg(test)]

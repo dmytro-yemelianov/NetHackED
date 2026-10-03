@@ -111,6 +111,21 @@ impl Direction {
     }
 }
 
+/// Canonical NetHack dungeon branch taxonomy.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum BranchId {
+    DungeonsOfDoom,
+    GnomishMines,
+    Sokoban,
+}
+
+/// Discrete branch coordinate: (BranchId, LevelWithinBranch).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct BranchCoord {
+    pub branch: BranchId,
+    pub depth: usize,
+}
+
 /// Alignment in NetHack.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Alignment {
@@ -139,6 +154,8 @@ pub enum Tile {
     Door { state: DoorState, trapped: bool },
     SecretDoor { locked: bool },
     Stairs { up: bool },
+    BranchStairs { branch: BranchId, level: usize, up: bool },
+    Pit { filled: bool },
     Altar { align: Alignment },
     Pool { frozen: bool },
     Lava,
@@ -147,7 +164,8 @@ pub enum Tile {
 impl Tile {
     pub fn is_passable(&self) -> bool {
         match self {
-            Tile::Corr | Tile::Room | Tile::Stairs { .. } | Tile::Altar { .. } => true,
+            Tile::Corr | Tile::Room | Tile::Stairs { .. } | Tile::BranchStairs { .. } | Tile::Altar { .. } => true,
+            Tile::Pit { filled } => *filled,
             Tile::Door { state, .. } => matches!(state, DoorState::Open | DoorState::Broken),
             Tile::Pool { frozen } => *frozen,
             _ => false,
@@ -156,7 +174,7 @@ impl Tile {
 
     pub fn is_transparent(&self) -> bool {
         match self {
-            Tile::Room | Tile::Corr | Tile::Stairs { .. } | Tile::Altar { .. } | Tile::Pool { .. } | Tile::Lava => true,
+            Tile::Room | Tile::Corr | Tile::Stairs { .. } | Tile::BranchStairs { .. } | Tile::Pit { .. } | Tile::Altar { .. } | Tile::Pool { .. } | Tile::Lava => true,
             Tile::Door { state, .. } => matches!(state, DoorState::Open | DoorState::Broken),
             _ => false,
         }

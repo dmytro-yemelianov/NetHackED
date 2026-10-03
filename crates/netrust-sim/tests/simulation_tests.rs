@@ -111,6 +111,7 @@ fn test_melee_attack_action() {
         intrinsics: Intrinsics::default(),
         is_player: false,
         is_dead: false,
+        is_tame: false,
     };
     let mon_id = sim.arena.spawn_actor(goblin);
 
@@ -153,6 +154,7 @@ fn test_zap_wand_beam_propagation_and_damage() {
         intrinsics: Intrinsics::default(),
         is_player: false,
         is_dead: false,
+        is_tame: false,
     };
     let mon_id = sim.arena.spawn_actor(mon);
 
@@ -179,6 +181,9 @@ fn test_pickup_and_drop_lifecycle() {
         buc: Buc::Uncursed,
         is_container: false,
         is_bag_of_holding: false,
+        enchantment: 0,
+        erosion: 0,
+        proofed: false,
         location: ItemLocation::Floor(p_coord),
     });
 
@@ -203,6 +208,9 @@ fn test_wield_weapon() {
         buc: Buc::Uncursed,
         is_container: false,
         is_bag_of_holding: false,
+        enchantment: 0,
+        erosion: 0,
+        proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
     });
 
@@ -557,6 +565,9 @@ fn test_nutrition_decay_and_eating() {
         buc: Buc::Uncursed,
         is_container: false,
         is_bag_of_holding: false,
+        enchantment: 0,
+        erosion: 0,
+        proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
     });
     let carried2 = sim.arena.items_carried_by(sim.player_id);
@@ -609,3 +620,268 @@ fn test_magic_spellcasting_and_mana() {
     assert_eq!(sim.arena.actors.get(sim.player_id).unwrap().hp, 12);
     assert_eq!(sim.player_pw, 15);
 }
+
+#[test]
+fn test_boulder_push_floor() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    let p_coord = Coord::new_unchecked(10, 10);
+    let b_coord = Coord::new_unchecked(11, 10);
+    let dest_coord = Coord::new_unchecked(12, 10);
+
+    sim.level.set_tile(p_coord, Tile::Room);
+    sim.level.set_tile(b_coord, Tile::Room);
+    sim.level.set_tile(dest_coord, Tile::Room);
+
+    if let Some(p) = sim.arena.actors.get_mut(sim.player_id) {
+        p.coord = p_coord;
+    }
+
+    let boulder_id = sim.arena.spawn_item(create_item_record(
+        ItemKindId::Boulder,
+        ItemLocation::Floor(b_coord),
+        Buc::Uncursed,
+    ));
+
+    let events = sim.step_player_action(ActionAst::Move(Direction::East));
+    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("You push the boulder"))));
+    assert_eq!(sim.arena.items.get(boulder_id).unwrap().location, ItemLocation::Floor(dest_coord));
+}
+
+#[test]
+fn test_boulder_push_pit_fill() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    let p_coord = Coord::new_unchecked(10, 10);
+    let b_coord = Coord::new_unchecked(11, 10);
+    let pit_coord = Coord::new_unchecked(12, 10);
+
+    sim.level.set_tile(p_coord, Tile::Room);
+    sim.level.set_tile(b_coord, Tile::Room);
+    sim.level.set_tile(pit_coord, Tile::Pit { filled: false });
+
+    if let Some(p) = sim.arena.actors.get_mut(sim.player_id) {
+        p.coord = p_coord;
+    }
+
+    let boulder_id = sim.arena.spawn_item(create_item_record(
+        ItemKindId::Boulder,
+        ItemLocation::Floor(b_coord),
+        Buc::Uncursed,
+    ));
+
+    let events = sim.step_player_action(ActionAst::Move(Direction::East));
+    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("fills it"))));
+    assert_eq!(sim.level.get_tile(pit_coord), &Tile::Pit { filled: true });
+    assert!(sim.arena.items.get(boulder_id).is_none(), "Boulder must be consumed by filling pit");
+}
+
+#[test]
+fn test_boulder_push_blocked_by_wall() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    let p_coord = Coord::new_unchecked(10, 10);
+    let b_coord = Coord::new_unchecked(11, 10);
+    let wall_coord = Coord::new_unchecked(12, 10);
+
+    sim.level.set_tile(p_coord, Tile::Room);
+    sim.level.set_tile(b_coord, Tile::Room);
+    sim.level.set_tile(wall_coord, Tile::Wall { horizontal: false });
+
+    if let Some(p) = sim.arena.actors.get_mut(sim.player_id) {
+        p.coord = p_coord;
+    }
+
+    let boulder_id = sim.arena.spawn_item(create_item_record(
+        ItemKindId::Boulder,
+        ItemLocation::Floor(b_coord),
+        Buc::Uncursed,
+    ));
+
+    let events = sim.step_player_action(ActionAst::Move(Direction::East));
+    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("won't budge"))));
+    assert_eq!(sim.arena.items.get(boulder_id).unwrap().location, ItemLocation::Floor(b_coord));
+}
+
+#[test]
+fn test_branch_transition_sokoban() {
+    use netrust_types::BranchId;
+    let mut sim = SimulationWorld::new_with_seed(42);
+
+    // Place branch stairs to Sokoban
+    let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+    sim.level.set_tile(p_coord, Tile::BranchStairs {
+        branch: BranchId::Sokoban,
+        level: 1,
+        up: false,
+    });
+
+    let descend_events = sim.step_player_action(ActionAst::Descend);
+    assert!(descend_events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("Sokoban"))));
+    assert_eq!(sim.current_branch, BranchId::Sokoban);
+    assert_eq!(sim.depth, 1);
+
+    // Check that Sokoban prize (Bag of Holding) and boulders exist
+    let has_boh = sim.arena.items.values().any(|it| it.name.contains("bag of holding"));
+    assert!(has_boh, "Sokoban prize chamber must spawn Bag of Holding");
+
+    let num_boulders = sim.arena.items.values().filter(|it| it.name == "boulder").count();
+    assert!(num_boulders >= 4, "Sokoban level must spawn puzzle boulders");
+
+    // Ascend back to Dungeons of Doom
+    let soko_p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+    assert_eq!(sim.level.get_tile(soko_p_coord), &Tile::BranchStairs {
+        branch: BranchId::DungeonsOfDoom,
+        level: 4,
+        up: true,
+    });
+
+    let ascend_events = sim.step_player_action(ActionAst::Ascend);
+    assert!(ascend_events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("return to DungeonsOfDoom"))));
+    assert_eq!(sim.current_branch, BranchId::DungeonsOfDoom);
+    assert_eq!(sim.depth, 4);
+}
+
+#[test]
+fn test_companion_pet_displacement() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    let p_coord = Coord::new_unchecked(10, 10);
+    let pet_coord = Coord::new_unchecked(11, 10);
+
+    sim.level.set_tile(p_coord, Tile::Room);
+    sim.level.set_tile(pet_coord, Tile::Room);
+
+    if let Some(p) = sim.arena.actors.get_mut(sim.player_id) {
+        p.coord = p_coord;
+    }
+
+    let pet_id = sim.arena.spawn_actor(create_monster_record(
+        MonsterSpeciesId::LittleDog,
+        pet_coord,
+    ));
+    assert!(sim.arena.actors.get(pet_id).unwrap().is_tame);
+
+    let initial_player_hp = sim.arena.actors.get(sim.player_id).unwrap().hp;
+    let initial_pet_hp = sim.arena.actors.get(pet_id).unwrap().hp;
+
+    let events = sim.step_player_action(ActionAst::Move(Direction::East));
+
+    // Must be displaced, not attacked
+    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("You displace little dog"))));
+    assert_eq!(sim.arena.actors.get(sim.player_id).unwrap().hp, initial_player_hp, "Displacement must be non-violent");
+    assert_eq!(sim.arena.actors.get(pet_id).unwrap().hp, initial_pet_hp, "Displacement must be non-violent");
+
+    // Coordinates swapped!
+    assert_eq!(sim.arena.actors.get(sim.player_id).unwrap().coord, pet_coord);
+    assert_eq!(sim.arena.actors.get(pet_id).unwrap().coord, p_coord);
+}
+
+#[test]
+fn test_companion_pet_attacks_hostile() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    let p_coord = Coord::new_unchecked(10, 10);
+    let pet_coord = Coord::new_unchecked(11, 10);
+    let enemy_coord = Coord::new_unchecked(12, 10);
+
+    sim.level.set_tile(p_coord, Tile::Room);
+    sim.level.set_tile(pet_coord, Tile::Room);
+    sim.level.set_tile(enemy_coord, Tile::Room);
+
+    if let Some(p) = sim.arena.actors.get_mut(sim.player_id) {
+        p.coord = p_coord;
+    }
+
+    let _pet_id = sim.arena.spawn_actor(create_monster_record(
+        MonsterSpeciesId::LittleDog,
+        pet_coord,
+    ));
+    let goblin_id = sim.arena.spawn_actor(create_monster_record(
+        MonsterSpeciesId::Goblin,
+        enemy_coord,
+    ));
+
+    let goblin_initial_hp = sim.arena.actors.get(goblin_id).unwrap().hp;
+
+    // Player waits, allowing monster turn to tick
+    let _events = sim.step_player_action(ActionAst::Wait);
+
+    // Goblin should have taken combat damage from little dog
+    let goblin_after = sim.arena.actors.get(goblin_id).unwrap();
+    assert!(goblin_after.hp < goblin_initial_hp || goblin_after.is_dead, "Pet must attack adjacent hostile monster");
+    // Player was not attacked by pet
+    let p_after = sim.arena.actors.get(sim.player_id).unwrap();
+    assert_eq!(p_after.hp, p_after.max_hp);
+}
+
+#[test]
+fn test_scroll_of_enchant_weapon() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+
+    let sword = sim.arena.spawn_item(create_item_record(
+        ItemKindId::LongSword,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Uncursed,
+    ));
+    sim.wielded_item = Some(sword);
+    assert_eq!(sim.arena.items.get(sword).unwrap().enchantment, 0);
+
+    let scroll = sim.arena.spawn_item(create_item_record(
+        ItemKindId::ScrollOfEnchantWeapon,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Blessed,
+    ));
+
+    let carried = sim.arena.items_carried_by(sim.player_id);
+    let scroll_idx = carried.iter().position(|&id| id == scroll).unwrap();
+
+    let events = sim.step_player_action(ActionAst::Read(scroll_idx));
+    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("silvery aura"))));
+    assert_eq!(sim.arena.items.get(sword).unwrap().enchantment, 2);
+}
+
+#[test]
+fn test_scroll_of_enchant_armor() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+
+    let scroll = sim.arena.spawn_item(create_item_record(
+        ItemKindId::ScrollOfEnchantArmor,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Uncursed,
+    ));
+
+    let carried = sim.arena.items_carried_by(sim.player_id);
+    let scroll_idx = carried.iter().position(|&id| id == scroll).unwrap();
+
+    let events = sim.step_player_action(ActionAst::Read(scroll_idx));
+    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("protective silver sheen"))));
+    let enchanted_armor = sim.arena.items_carried_by(sim.player_id).into_iter()
+        .filter_map(|id| sim.arena.items.get(id))
+        .find(|it| it.class == ItemClass::Armor)
+        .unwrap();
+    assert_eq!(enchanted_armor.enchantment, 1);
+}
+
+#[test]
+fn test_alchemy_potion_mixing() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+
+    let pot_heal = sim.arena.spawn_item(create_item_record(
+        ItemKindId::PotionOfHealing,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Uncursed,
+    ));
+    let pot_speed = sim.arena.spawn_item(create_item_record(
+        ItemKindId::PotionOfSpeed,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Uncursed,
+    ));
+
+    let carried = sim.arena.items_carried_by(sim.player_id);
+    let heal_idx = carried.iter().position(|&id| id == pot_heal).unwrap();
+    let speed_idx = carried.iter().position(|&id| id == pot_speed).unwrap();
+
+    let events = sim.handle_dip_potion(speed_idx, heal_idx);
+    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("potion of extra healing"))));
+    assert_eq!(sim.arena.items.get(pot_heal).unwrap().name, "potion of extra healing");
+    assert!(sim.arena.items.get(pot_speed).is_none(), "Reagent potion must be consumed");
+}
+
+
+

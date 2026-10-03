@@ -218,6 +218,7 @@ pub fn spawn_player_character(
         intrinsics: race.intrinsics,
         is_player: true,
         is_dead: false,
+        is_tame: false,
     };
     let player_id = arena.spawn_actor(actor);
 
@@ -229,4 +230,19 @@ pub fn spawn_player_character(
     }
 
     (player_id, item_ids)
+}
+
+/// Spawns an initial companion pet (Little Dog or Kitten) adjacent to the hero.
+pub fn spawn_starting_pet(
+    role: RoleId,
+    hero_coord: Coord,
+    arena: &mut EntityArena,
+) -> Option<ActorId> {
+    let species = match role {
+        RoleId::Wizard | RoleId::Healer => crate::monsters::MonsterSpeciesId::Kitten,
+        _ => crate::monsters::MonsterSpeciesId::LittleDog,
+    };
+    let pet_coord = hero_coord.step(netrust_types::Direction::East).unwrap_or(hero_coord);
+    let pet_record = crate::monsters::create_monster_record(species, pet_coord);
+    Some(arena.spawn_actor(pet_record))
 }

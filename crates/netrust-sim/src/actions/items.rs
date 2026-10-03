@@ -35,6 +35,35 @@ impl SimulationWorld {
         events
     }
 
+    pub fn handle_dip_potion(&mut self, reagent_idx: usize, target_idx: usize) -> Vec<GameEvent> {
+        let mut events = Vec::new();
+        let carried = self.arena.items_carried_by(self.player_id);
+        if reagent_idx < carried.len() && target_idx < carried.len() && reagent_idx != target_idx {
+            let reagent_id = carried[reagent_idx];
+            let target_id = carried[target_idx];
+            let reagent_name = self.arena.items.get(reagent_id).map(|it| it.name.clone());
+            let target_name = self.arena.items.get(target_id).map(|it| it.name.clone());
+
+            if let (Some(r_name), Some(t_name)) = (reagent_name, target_name) {
+                if let Some(result_name) = netrust_core::enchantment::mix_alchemy(&r_name, &t_name) {
+                    self.arena.destroy_item(reagent_id);
+                    if let Some(target_item) = self.arena.items.get_mut(target_id) {
+                        target_item.name = result_name.to_string();
+                    }
+                    events.push(GameEvent::LogMessage {
+                        text: format!("The liquids fizz and bubble furiously! You produce a {}.", result_name),
+                    });
+                    self.scheduler.hero_act(NORMAL_SPEED);
+                } else {
+                    events.push(GameEvent::LogMessage { text: "Nothing interesting happens.".into() });
+                }
+            }
+        } else {
+            events.push(GameEvent::LogMessage { text: "Invalid items to mix.".into() });
+        }
+        events
+    }
+
     pub(crate) fn handle_quaff(&mut self, idx: usize) -> Vec<GameEvent> {
         let mut events = Vec::new();
         let carried = self.arena.items_carried_by(self.player_id);
@@ -93,6 +122,54 @@ impl SimulationWorld {
                             }
                         }
                         events.push(GameEvent::LogMessage { text: "You feel as though someone is helping you. Your possessions are uncursed!".into() });
+                    } else if item.name.contains("enchant weapon") {
+                        if let Some(wielded_id) = self.wielded_item {
+                            if let Some(wielded) = self.arena.items.get_mut(wielded_id) {
+                                let is_blessed = item.buc == Buc::Blessed;
+                                let is_cursed = item.buc == Buc::Cursed;
+                                let res = netrust_core::enchantment::enchant_item(wielded.enchantment, is_blessed, is_cursed);
+                                if res.evaporated {
+                                    let name = wielded.name.clone();
+                                    self.arena.destroy_item(wielded_id);
+                                    self.wielded_item = None;
+                                    events.push(GameEvent::LogMessage {
+                                        text: format!("Your {} glows violently and evaporates!", name),
+                                    });
+                                } else {
+                                    wielded.enchantment = res.new_ench;
+                                    events.push(GameEvent::LogMessage {
+                                        text: format!("Your {} glows with a silvery aura! ({:+})", wielded.name, res.new_ench),
+                                    });
+                                }
+                            }
+                        } else {
+                            events.push(GameEvent::LogMessage { text: "Your hands itch for a moment.".into() });
+                        }
+                    } else if item.name.contains("enchant armor") {
+                        let armor_id = self.arena.items_carried_by(self.player_id).into_iter().find(|&id| {
+                            self.arena.items.get(id).map(|it| it.class == ItemClass::Armor).unwrap_or(false)
+                        });
+                        if let Some(aid) = armor_id {
+                            if let Some(armor) = self.arena.items.get_mut(aid) {
+                                let is_blessed = item.buc == Buc::Blessed;
+                                let is_cursed = item.buc == Buc::Cursed;
+                                let res = netrust_core::enchantment::enchant_item(armor.enchantment, is_blessed, is_cursed);
+                                if res.evaporated {
+                                    let name = armor.name.clone();
+                                    self.arena.destroy_item(aid);
+                                    events.push(GameEvent::LogMessage {
+                                        text: format!("Your {} glows violently and evaporates!", name),
+                                    });
+                                } else {
+                                    armor.enchantment = res.new_ench;
+                                    events.push(GameEvent::LogMessage {
+                                        text: format!("Your {} glows with a protective silver sheen! ({:+})", armor.name, res.new_ench),
+                                    });
+                                }
+                            }
+                        } else {
+                            events.push(GameEvent::LogMessage { text: "Your skin feels warm for a moment.".into() });
+                        }
                     } else {
                         events.push(GameEvent::LogMessage { text: format!("You read the {}. Knowledge fills your mind!", item.name) });
                     }
