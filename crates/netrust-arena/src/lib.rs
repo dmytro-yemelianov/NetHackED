@@ -2,7 +2,7 @@
 //!
 //! Replaces NetHack's intrusive `union vptrs` and linked lists with type-safe generational handles.
 
-use netrust_types::{Alignment, Buc, Coord, Intrinsics, ItemClass};
+use netrust_types::{Alignment, Buc, Coord, Intrinsics, ItemClass, MonsterAbility};
 use serde::{Deserialize, Serialize};
 use slotmap::{new_key_type, SlotMap};
 
@@ -51,6 +51,7 @@ pub struct ActorRecord {
     pub is_player: bool,
     pub is_dead: bool,
     pub is_tame: bool,
+    pub abilities: Vec<MonsterAbility>,
 }
 
 /// The centralized entity arena replacing all ambient pointers.
@@ -193,6 +194,7 @@ mod tests {
             is_player: true,
             is_dead: false,
             is_tame: false,
+            abilities: Vec::new(),
         };
         let id = arena.spawn_actor(actor);
         assert_eq!(arena.actors.get(id).unwrap().hp, 20);

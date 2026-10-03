@@ -112,6 +112,7 @@ fn test_melee_attack_action() {
         is_player: false,
         is_dead: false,
         is_tame: false,
+        abilities: Vec::new(),
     };
     let mon_id = sim.arena.spawn_actor(goblin);
 
@@ -155,6 +156,7 @@ fn test_zap_wand_beam_propagation_and_damage() {
         is_player: false,
         is_dead: false,
         is_tame: false,
+        abilities: Vec::new(),
     };
     let mon_id = sim.arena.spawn_actor(mon);
 
@@ -1219,6 +1221,7 @@ fn test_artifact_combat_bonus_and_vorpal_blade() {
         is_player: false,
         is_dead: false,
         is_tame: false,
+        abilities: Vec::new(),
     });
 
     let excalibur = sim.arena.spawn_item(ItemRecord {
@@ -1265,6 +1268,7 @@ fn test_ukrainian_i18n_simulation_logging() {
         is_player: false,
         is_dead: false,
         is_tame: false,
+        abilities: Vec::new(),
     });
 
     let combat_events = sim.step_player_action(ActionAst::MeleeAttack(mon_coord));
@@ -1286,6 +1290,111 @@ fn test_ukrainian_i18n_simulation_logging() {
 
     let wish_events = sim.step_player_action(ActionAst::Wish("blessed +2 silver dragon scale mail".into()));
     assert!(wish_events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("падає з небес"))));
+}
+
+#[test]
+fn test_monster_dragon_breath_and_reflection() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    let p_coord = Coord::new_unchecked(10, 10);
+    let dragon_coord = Coord::new_unchecked(13, 10); // 3 tiles East
+    if let Some(p) = sim.arena.actors.get_mut(sim.player_id) {
+        p.coord = p_coord;
+        p.intrinsics.reflection = true; // Player has reflection!
+    }
+
+    // Ensure floor tiles are clear room tiles
+    for x in 10..=13 {
+        sim.level.set_tile(Coord::new_unchecked(x, 10), Tile::Room);
+    }
+
+    let dragon = netrust_data::create_monster_record(
+        netrust_data::MonsterSpeciesId::RedDragon,
+        dragon_coord,
+    );
+    let dragon_id = sim.arena.spawn_actor(dragon);
+
+    // Turn step triggers monster breath towards player
+    let events = sim.step_player_action(ActionAst::Wait);
+    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("bounces the deadly breath") || text.contains("відбиття"))));
+
+    // Dragon was hit by its own breath
+    let dragon_after = sim.arena.actors.get(dragon_id).unwrap();
+    assert!(dragon_after.hp < 90 || dragon_after.is_dead);
+}
+
+#[test]
+fn test_monster_medusa_petrification_gaze() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    let p_coord = Coord::new_unchecked(10, 10);
+    let medusa_coord = Coord::new_unchecked(12, 10);
+    if let Some(p) = sim.arena.actors.get_mut(sim.player_id) {
+        p.coord = p_coord;
+        p.intrinsics.reflection = true; // Reflection reflects gaze back!
+    }
+
+    for x in 10..=12 {
+        sim.level.set_tile(Coord::new_unchecked(x, 10), Tile::Room);
+    }
+
+    let medusa = netrust_data::create_monster_record(
+        netrust_data::MonsterSpeciesId::Medusa,
+        medusa_coord,
+    );
+    let medusa_id = sim.arena.spawn_actor(medusa);
+
+    let events = sim.step_player_action(ActionAst::Wait);
+    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("gaze is reflected") || text.contains("погляд"))));
+
+    // Medusa petrified herself and died!
+    let medusa_after = sim.arena.actors.get(medusa_id).unwrap();
+    assert!(medusa_after.is_dead);
+}
+
+#[test]
+fn test_monster_lich_summon_and_curse() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    let p_coord = Coord::new_unchecked(10, 10);
+    let lich_coord = Coord::new_unchecked(12, 10);
+    if let Some(p) = sim.arena.actors.get_mut(sim.player_id) {
+        p.coord = p_coord;
+    }
+
+    for x in 10..=12 {
+        sim.level.set_tile(Coord::new_unchecked(x, 10), Tile::Room);
+    }
+
+    let potion = sim.arena.spawn_item(ItemRecord {
+        name: "potion of healing".into(),
+        class: ItemClass::Potion,
+        weight: 20,
+        buc: Buc::Uncursed,
+        is_container: false,
+        is_bag_of_holding: false,
+        enchantment: 0,
+        erosion: 0,
+        proofed: false,
+        location: ItemLocation::CarriedBy(sim.player_id),
+    });
+
+    let mut lich = netrust_data::create_monster_record(
+        netrust_data::MonsterSpeciesId::Lich,
+        lich_coord,
+    );
+    lich.abilities = vec![
+        netrust_types::MonsterAbility::Spellcaster {
+            spell: netrust_types::MonsterSpell::SummonMonsters,
+            cooldown_turns: 1,
+        },
+    ];
+    let _lich_id = sim.arena.spawn_actor(lich);
+
+    let events = sim.step_player_action(ActionAst::Wait);
+    // Lich cast either summon minions or curse
+    let cast_something = events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("incantation") || text.contains("cursed") || text.contains("повстають") || text.contains("проклятий")));
+    assert!(cast_something);
+
+    let item_after = sim.arena.items.get(potion).unwrap();
+    assert!(item_after.buc == Buc::Cursed || events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("incantation") || text.contains("заклинання"))));
 }
 
 

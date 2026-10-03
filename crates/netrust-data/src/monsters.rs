@@ -1,7 +1,9 @@
 //! Declarative monster bestiary and species registry for NetRust.
 
 use netrust_arena::ActorRecord;
-use netrust_types::{Alignment, Coord, Intrinsics};
+use netrust_types::{
+    Alignment, BreathType, Coord, GazeType, Intrinsics, MonsterAbility, MonsterSpell,
+};
 use serde::{Deserialize, Serialize};
 
 /// Enumeration of canonical monster species.
@@ -17,6 +19,8 @@ pub enum MonsterSpeciesId {
     Skeleton,
     Vampire,
     SilverDragon,
+    RedDragon,
+    Medusa,
     Lich,
     Shopkeeper,
     LittleDog,
@@ -39,7 +43,7 @@ pub enum AiBehavior {
 }
 
 /// Declarative specification of a monster species.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct MonsterArchetype {
     pub id: MonsterSpeciesId,
     pub name: &'static str,
@@ -53,6 +57,7 @@ pub struct MonsterArchetype {
     pub intrinsics: Intrinsics,
     pub damage_dice: (u32, u32),
     pub ai_behavior: AiBehavior,
+    pub abilities: &'static [MonsterAbility],
 }
 
 pub static BESTIARY: &[MonsterArchetype] = &[
@@ -69,6 +74,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         intrinsics: Intrinsics::empty(),
         damage_dice: (1, 6),
         ai_behavior: AiBehavior::CautiousHunter,
+        abilities: &[],
     },
     MonsterArchetype {
         id: MonsterSpeciesId::Hobgoblin,
@@ -83,6 +89,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         intrinsics: Intrinsics::empty(),
         damage_dice: (1, 8),
         ai_behavior: AiBehavior::CautiousHunter,
+        abilities: &[],
     },
     MonsterArchetype {
         id: MonsterSpeciesId::Orc,
@@ -97,6 +104,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         intrinsics: Intrinsics::empty(),
         damage_dice: (1, 8),
         ai_behavior: AiBehavior::MeleeHunter,
+        abilities: &[],
     },
     MonsterArchetype {
         id: MonsterSpeciesId::Kobold,
@@ -111,6 +119,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         intrinsics: Intrinsics::empty().with_poison_resistance(),
         damage_dice: (1, 4),
         ai_behavior: AiBehavior::CautiousHunter,
+        abilities: &[],
     },
     MonsterArchetype {
         id: MonsterSpeciesId::Jackal,
@@ -125,6 +134,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         intrinsics: Intrinsics::empty(),
         damage_dice: (1, 4),
         ai_behavior: AiBehavior::MeleeHunter,
+        abilities: &[],
     },
     MonsterArchetype {
         id: MonsterSpeciesId::GiantAnt,
@@ -139,6 +149,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         intrinsics: Intrinsics::empty().with_poison_resistance(),
         damage_dice: (2, 4),
         ai_behavior: AiBehavior::MeleeHunter,
+        abilities: &[],
     },
     MonsterArchetype {
         id: MonsterSpeciesId::FloatingEye,
@@ -153,6 +164,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         intrinsics: Intrinsics::empty().with_see_invisible(),
         damage_dice: (0, 0),
         ai_behavior: AiBehavior::Stationary,
+        abilities: &[MonsterAbility::Gaze { gaze: GazeType::Paralysis }],
     },
     MonsterArchetype {
         id: MonsterSpeciesId::Skeleton,
@@ -167,6 +179,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         intrinsics: Intrinsics::empty().with_cold_resistance(),
         damage_dice: (1, 8),
         ai_behavior: AiBehavior::MeleeHunter,
+        abilities: &[],
     },
     MonsterArchetype {
         id: MonsterSpeciesId::Vampire,
@@ -181,6 +194,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         intrinsics: Intrinsics::empty().with_cold_resistance(),
         damage_dice: (2, 8),
         ai_behavior: AiBehavior::MeleeHunter,
+        abilities: &[],
     },
     MonsterArchetype {
         id: MonsterSpeciesId::SilverDragon,
@@ -192,9 +206,48 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         level: 15,
         speed: 12,
         alignment: Alignment::Lawful,
-        intrinsics: Intrinsics::empty().with_cold_resistance().with_fire_resistance(),
+        intrinsics: Intrinsics::empty().with_cold_resistance().with_fire_resistance().with_reflection(),
         damage_dice: (4, 8),
         ai_behavior: AiBehavior::MeleeHunter,
+        abilities: &[MonsterAbility::Breath {
+            breath: BreathType::Cold,
+            range: 6,
+            damage_dice: (3, 6),
+        }],
+    },
+    MonsterArchetype {
+        id: MonsterSpeciesId::RedDragon,
+        name: "red dragon",
+        glyph: 'D',
+        base_hp: 90,
+        max_hp: 90,
+        ac: -1,
+        level: 15,
+        speed: 12,
+        alignment: Alignment::Chaotic,
+        intrinsics: Intrinsics::empty().with_fire_resistance(),
+        damage_dice: (4, 8),
+        ai_behavior: AiBehavior::MeleeHunter,
+        abilities: &[MonsterAbility::Breath {
+            breath: BreathType::Fire,
+            range: 6,
+            damage_dice: (3, 6),
+        }],
+    },
+    MonsterArchetype {
+        id: MonsterSpeciesId::Medusa,
+        name: "medusa",
+        glyph: '@',
+        base_hp: 75,
+        max_hp: 75,
+        ac: 2,
+        level: 13,
+        speed: 12,
+        alignment: Alignment::Chaotic,
+        intrinsics: Intrinsics::empty().with_poison_resistance(),
+        damage_dice: (2, 6),
+        ai_behavior: AiBehavior::MeleeHunter,
+        abilities: &[MonsterAbility::Gaze { gaze: GazeType::Petrification }],
     },
     MonsterArchetype {
         id: MonsterSpeciesId::Lich,
@@ -209,6 +262,10 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         intrinsics: Intrinsics::empty().with_cold_resistance().with_telepathy(),
         damage_dice: (3, 8),
         ai_behavior: AiBehavior::MeleeHunter,
+        abilities: &[MonsterAbility::Spellcaster {
+            spell: MonsterSpell::SummonMonsters,
+            cooldown_turns: 8,
+        }],
     },
     MonsterArchetype {
         id: MonsterSpeciesId::Shopkeeper,
@@ -223,6 +280,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         intrinsics: Intrinsics::empty().with_magic_resistance(),
         damage_dice: (2, 6),
         ai_behavior: AiBehavior::Shopkeeper,
+        abilities: &[],
     },
     MonsterArchetype {
         id: MonsterSpeciesId::LittleDog,
@@ -237,6 +295,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         intrinsics: Intrinsics::empty(),
         damage_dice: (1, 6),
         ai_behavior: AiBehavior::CompanionPet,
+        abilities: &[],
     },
     MonsterArchetype {
         id: MonsterSpeciesId::Kitten,
@@ -251,6 +310,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         intrinsics: Intrinsics::empty(),
         damage_dice: (1, 4),
         ai_behavior: AiBehavior::CompanionPet,
+        abilities: &[],
     },
 ];
 
@@ -278,5 +338,6 @@ pub fn create_monster_record(id: MonsterSpeciesId, coord: Coord) -> ActorRecord 
         is_player: false,
         is_dead: false,
         is_tame: arch.ai_behavior == AiBehavior::CompanionPet,
+        abilities: arch.abilities.to_vec(),
     }
 }

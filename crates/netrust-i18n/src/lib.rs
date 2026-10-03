@@ -375,6 +375,55 @@ impl Messages {
             Locale::Uk => "Чудовисько бачить напис Елберет і в жаху втікає!",
         }
     }
+
+    pub fn dragon_breath(monster: &str, breath_name: &str, damage: u32, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!("{} breathes a fiery blast of {}! You take {} damage!", monster, breath_name, damage),
+            Locale::Uk => format!("{} вивергає нищівний подих ({})! Ви отримуєте {} шкоди!", monster, breath_name, damage),
+        }
+    }
+
+    pub fn breath_reflected(monster: &str, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!("Your reflection bounces the deadly breath back at the {}!", monster),
+            Locale::Uk => format!("Ваше відбиття повертає смертоносний подих назад у {}!", monster),
+        }
+    }
+
+    pub fn breath_absorbed(breath_name: &str, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!("You are engulfed in the blast of {}, but your innate resistance absorbs it completely!", breath_name),
+            Locale::Uk => format!("Вас охоплює полум'яний подих ({}), але ваш вроджений опір повністю поглинає його!", breath_name),
+        }
+    }
+
+    pub fn gaze_reflected(monster: &str, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!("The {}'s terrifying gaze is reflected back into its own eyes!", monster),
+            Locale::Uk => format!("Жахливий погляд {} відбивається просто в його власні очі!", monster),
+        }
+    }
+
+    pub fn gaze_afflicted(monster: &str, gaze_name: &str, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!("You meet the gaze of the {}! You are struck by {}!", monster, gaze_name),
+            Locale::Uk => format!("Ви зустрічаєтеся поглядом із {}! Вас охоплює {}!", monster, gaze_name),
+        }
+    }
+
+    pub fn monster_summon_incantation(monster: &str, count: usize, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!("The {} chants an unholy incantation! {} creature(s) rise from the shadows!", monster, count),
+            Locale::Uk => format!("{} вигукує темне заклинання! З тіні повстають {} істот!", monster, count),
+        }
+    }
+
+    pub fn monster_curse_item(item_name: &str, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!("A malevolent aura sweeps over your pack! Your {} is now cursed!", item_name),
+            Locale::Uk => format!("Зловісна аура торкається вашого наплічника! Ваш {} тепер проклятий!", item_name),
+        }
+    }
 }
 
 #[cfg(test)]

@@ -550,6 +550,55 @@ impl Intrinsics {
         self.fast = true;
         self
     }
+
+    pub const fn with_reflection(mut self) -> Self {
+        self.reflection = true;
+        self
+    }
+}
+
+/// Element type for monster breath weapons and beam attacks.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum BreathType {
+    Fire,
+    Cold,
+    Shock,
+    Sleep,
+    Poison,
+    Disintegration,
+}
+
+/// Types of gaze attacks (e.g. Floating Eye, Medusa).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum GazeType {
+    Paralysis,
+    Petrification,
+    Confusion,
+}
+
+/// Outcome of a gaze attack considering defender's reflection and sight.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum GazeEffect {
+    ReflectedToAttacker,
+    BlindImmune,
+    Afflicted(GazeType),
+}
+
+/// Spells castable by intelligent monsters (e.g. liches, demons).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum MonsterSpell {
+    SummonMonsters,
+    CurseItems,
+    RaiseDead,
+    CauseWounds,
+}
+
+/// Special tactical attack ability of a monster.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum MonsterAbility {
+    Breath { breath: BreathType, range: usize, damage_dice: (u32, u32) },
+    Gaze { gaze: GazeType },
+    Spellcaster { spell: MonsterSpell, cooldown_turns: u32 },
 }
 
 #[cfg(test)]

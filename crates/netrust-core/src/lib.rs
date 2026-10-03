@@ -23,6 +23,7 @@ pub mod enchantment;
 pub mod endgame;
 pub mod religion;
 pub mod artifacts_wands;
+pub mod monster_abilities;
 
 pub use ast::{ActionAst, Direction, EffectAst, WorldState};
 pub use buc::{dip_water, uncurse, Buc, WaterType};
@@ -47,8 +48,10 @@ pub use enchantment::{apply_erosion, enchant_item, mix_alchemy, EnchantResult, M
 pub use endgame::{destroy_drawbridge, offer_amulet_on_high_altar, toggle_drawbridge};
 pub use religion::{clamp_favor, consecrate_water, resolve_sacrifice, tick_prayer_timeout};
 pub use artifacts_wands::{apply_vorpal_strike, parse_wish, recharge_wand, resolve_artifact_damage, zap_wand};
+pub use monster_abilities::{calculate_summon_count, resolve_breath_damage, resolve_gaze};
 pub use netrust_types::{
-    ArtifactKind, AscensionOutcome, BranchCoord, BranchId, Deity, DivineState, DrawbridgeState,
-    DrawbridgeTransition, EndgamePlane, Pantheon, RechargeResult, SacrificeResult, WandCharges,
+    ArtifactKind, AscensionOutcome, BranchCoord, BranchId, BreathType, Deity, DivineState,
+    DrawbridgeState, DrawbridgeTransition, EndgamePlane, GazeEffect, GazeType, Intrinsics,
+    MonsterAbility, MonsterSpell, Pantheon, RechargeResult, SacrificeResult, WandCharges,
 };
 

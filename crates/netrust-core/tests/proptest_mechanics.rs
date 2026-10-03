@@ -17,6 +17,7 @@ use netrust_core::{
     clamp_favor, consecrate_water, resolve_sacrifice, tick_prayer_timeout,
     DivineState,
     apply_vorpal_strike, zap_wand, recharge_wand, WandCharges, RechargeResult,
+    BreathType, GazeType, GazeEffect, Intrinsics, calculate_summon_count, resolve_breath_damage, resolve_gaze,
 };
 use proptest::prelude::*;
 
@@ -747,6 +748,76 @@ proptest! {
                 recharges: recharges + 1,
             }));
         }
+    }
+
+    // -------------------------------------------------------------
+    // Theorem: breath_damage_le_raw
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_breath_damage_bounded(
+        raw in 0u32..200,
+        b_idx in 0usize..6,
+        fire_res in proptest::bool::ANY,
+        cold_res in proptest::bool::ANY,
+        shock_res in proptest::bool::ANY,
+        reflect in proptest::bool::ANY,
+    ) {
+        let breaths = [
+            BreathType::Fire,
+            BreathType::Cold,
+            BreathType::Shock,
+            BreathType::Sleep,
+            BreathType::Poison,
+            BreathType::Disintegration,
+        ];
+        let breath = breaths[b_idx];
+        let mut intrinsics = Intrinsics::empty();
+        intrinsics.fire_resistance = fire_res;
+        intrinsics.cold_resistance = cold_res;
+        intrinsics.shock_resistance = shock_res;
+        intrinsics.reflection = reflect;
+
+        let (dmg, was_reflected) = resolve_breath_damage(raw, breath, &intrinsics);
+        prop_assert!(dmg <= raw);
+        if reflect {
+            prop_assert_eq!(dmg, 0);
+            prop_assert!(was_reflected);
+        }
+    }
+
+    // -------------------------------------------------------------
+    // Theorems: gaze_reflection_immune & gaze_blindness_immune
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_gaze_invariants(
+        g_idx in 0usize..3,
+        has_reflection in proptest::bool::ANY,
+        is_blind in proptest::bool::ANY,
+    ) {
+        let gazes = [GazeType::Paralysis, GazeType::Petrification, GazeType::Confusion];
+        let gaze = gazes[g_idx];
+        let res = resolve_gaze(gaze, has_reflection, is_blind);
+
+        if has_reflection {
+            prop_assert_eq!(res, GazeEffect::ReflectedToAttacker);
+        } else if is_blind {
+            prop_assert_eq!(res, GazeEffect::BlindImmune);
+        } else {
+            prop_assert_eq!(res, GazeEffect::Afflicted(gaze));
+        }
+    }
+
+    // -------------------------------------------------------------
+    // Theorem: summon_count_bounded
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_summon_count_bounded(
+        cur in 0usize..50,
+        cap in 0usize..50,
+        desired in 0usize..20,
+    ) {
+        let count = calculate_summon_count(cur, cap, desired);
+        prop_assert!(cur + count <= cap.max(cur));
     }
 }
 
