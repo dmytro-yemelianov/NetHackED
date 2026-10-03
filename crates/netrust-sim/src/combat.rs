@@ -74,21 +74,56 @@ impl SimulationWorld {
 
             let mut lethal = false;
             if let Some(target) = self.arena.actors.get_mut(defender_id) {
-                if artifact == Some(netrust_types::ArtifactKind::VorpalBlade) {
-                    // Vorpal decapitation check
-                    let decap = (self.rng.next_u32() % 20) == 0;
-                    let (new_hp, dead) = netrust_core::artifacts_wands::apply_vorpal_strike(target.hp, decap);
-                    if decap {
-                        events.push(GameEvent::LogMessage {
-                            text: netrust_i18n::Messages::vorpal_decapitate(&defender.name, self.locale),
-                        });
-                    }
-                    target.hp = new_hp.saturating_sub(final_damage);
-                    target.is_dead = dead || target.hp == 0;
-                    lethal = target.is_dead;
+                let decap = if artifact == Some(netrust_types::ArtifactKind::VorpalBlade) {
+                    (self.rng.next_u32() % 20) == 0
                 } else {
-                    target.hp = target.hp.saturating_sub(final_damage);
-                    target.is_dead = target.hp == 0;
+                    false
+                };
+                
+                if decap {
+                    events.push(GameEvent::LogMessage {
+                        text: netrust_i18n::Messages::vorpal_decapitate(&defender.name, self.locale),
+                    });
+                }
+                
+                if defender_id == self.player_id {
+                    let mut actual_damage = final_damage as i32;
+                    if decap { actual_damage += 9999; } // Force fatal
+                    
+                    let poly_res = netrust_core::polymorph::apply_poly_damage(&mut self.hero, actual_damage);
+                    match poly_res {
+                        netrust_core::polymorph::PolyDamageResult::Absorbed => {
+                            if let Some(poly) = &self.hero.polymorph {
+                                target.hp = poly.hp as u32;
+                                target.max_hp = poly.max_hp as u32;
+                            } else {
+                                target.hp = self.hero.base_hp as u32;
+                                target.max_hp = self.hero.base_max_hp as u32;
+                            }
+                            lethal = false;
+                        }
+                        netrust_core::polymorph::PolyDamageResult::Reverted { excess_damage: _ } => {
+                            target.hp = self.hero.base_hp as u32;
+                            target.max_hp = self.hero.base_max_hp as u32;
+                            lethal = false;
+                            events.push(GameEvent::LogMessage {
+                                text: "You revert to your normal form!".to_string(),
+                            });
+                        }
+                        netrust_core::polymorph::PolyDamageResult::Dead => {
+                            target.hp = 0;
+                            target.is_dead = true;
+                            lethal = true;
+                        }
+                    }
+                } else {
+                    let (new_hp, dead) = if decap {
+                        netrust_core::artifacts_wands::apply_vorpal_strike(target.hp, decap)
+                    } else {
+                        (target.hp.saturating_sub(final_damage), target.hp <= final_damage)
+                    };
+                    target.hp = new_hp;
+                    target.is_dead = dead || target.hp == 0;
                     lethal = target.is_dead;
                 }
             }

@@ -176,6 +176,19 @@ impl SimulationWorld {
                             p.intrinsics.fast = true;
                         }
                         events.push(GameEvent::LogMessage { text: "You quaff the potion. You are moving much faster!".into() });
+                    } else if item.name.contains("polymorph") {
+                        // Apply polymorph to self
+                        self.hero.polymorph = Some(netrust_types::PolymorphForm {
+                            monster_id: 1, // Dummy id
+                            hp: 20,
+                            max_hp: 20,
+                            duration: 100,
+                        });
+                        if let Some(p) = self.arena.actors.get_mut(self.player_id) {
+                            p.hp = 20;
+                            p.max_hp = 20;
+                        }
+                        events.push(GameEvent::LogMessage { text: "You feel a change coming over you... you polymorph!".into() });
                     } else {
                         events.push(GameEvent::LogMessage { text: format!("You quaff the {}. It tastes like water.", item.name) });
                     }
@@ -568,16 +581,37 @@ impl SimulationWorld {
                         12u32
                     };
                     if let Some(target) = self.arena.actors.get_mut(target_id) {
-                        target.hp = target.hp.saturating_sub(wand_damage);
-                        if target.hp == 0 {
-                            target.is_dead = true;
+                        if wand_name.contains("polymorph") {
+                            if !target.is_unique && !target.is_player {
+                                // transform monster
+                                let new_species = netrust_data::MonsterSpeciesId::Goblin; // simplified
+                                let new_arch = netrust_data::get_monster_species(new_species);
+                                target.name = new_arch.name.to_string();
+                                target.hp = new_arch.base_hp;
+                                target.max_hp = new_arch.max_hp;
+                                target.ac = new_arch.ac;
+                                target.speed = new_arch.speed;
+                                target.level = new_arch.level;
+                                events.push(GameEvent::LogMessage {
+                                    text: format!("The monster turns into a {}!", target.name),
+                                });
+                            } else {
+                                events.push(GameEvent::LogMessage {
+                                    text: "The monster shudders but is unaffected.".into(),
+                                });
+                            }
+                        } else {
+                            target.hp = target.hp.saturating_sub(wand_damage);
+                            if target.hp == 0 {
+                                target.is_dead = true;
+                            }
+                            events.push(GameEvent::AttackLanded {
+                                attacker: self.player_id,
+                                target: target_id,
+                                damage: wand_damage,
+                                lethal: target.is_dead,
+                            });
                         }
-                        events.push(GameEvent::AttackLanded {
-                            attacker: self.player_id,
-                            target: target_id,
-                            damage: wand_damage,
-                            lethal: target.is_dead,
-                        });
                         if target.is_dead {
                             events.push(GameEvent::LogMessage { text: format!("{} is destroyed by the wand beam!", target.name) });
                             let corpse = create_item_record(ItemKindId::Corpse, ItemLocation::Floor(target.coord), Buc::Uncursed);

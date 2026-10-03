@@ -1328,6 +1328,92 @@ proptest! {
             prop_assert_eq!(quest_progress_rank(state.progress), 3);
         }
     }
+    // -------------------------------------------------------------
+    // Theorem: prop_poly_damage_absorption_and_reversion
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_poly_damage_absorption_and_reversion(
+        base_hp in 10i32..100,
+        poly_hp in 10i32..100,
+        damage in 0i32..150,
+    ) {
+        use netrust_types::{Hero, PolymorphForm};
+        use netrust_core::polymorph::{apply_poly_damage, PolyDamageResult};
+        
+        let mut hero = Hero {
+            base_hp,
+            base_max_hp: base_hp,
+            polymorph: Some(PolymorphForm {
+                monster_id: 1,
+                hp: poly_hp,
+                max_hp: poly_hp,
+                duration: 100,
+            }),
+            lycanthropy: None,
+        };
+
+        let result = apply_poly_damage(&mut hero, damage);
+        prop_assert_eq!(hero.base_max_hp, base_hp); // Invariant
+
+        if damage < poly_hp {
+            prop_assert!(matches!(result, PolyDamageResult::Absorbed));
+            prop_assert!(hero.polymorph.is_some());
+            prop_assert_eq!(hero.polymorph.as_ref().unwrap().hp, poly_hp - damage);
+            prop_assert_eq!(hero.base_hp, base_hp);
+        } else {
+            let excess = damage - poly_hp;
+            prop_assert!(hero.polymorph.is_none());
+            if excess < base_hp {
+                let matches_reverted = matches!(result, PolyDamageResult::Reverted { excess_damage } if excess_damage == excess);
+                prop_assert!(matches_reverted);
+                prop_assert_eq!(hero.base_hp, base_hp - excess);
+            } else {
+                prop_assert!(matches!(result, PolyDamageResult::Dead));
+                prop_assert!(hero.base_hp <= 0);
+            }
+        }
+    }
+
+    // -------------------------------------------------------------
+    // Theorem: prop_polypile_count_bounds
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_polypile_count_bounds(
+        count in 0usize..50,
+        seed in any::<u64>()
+    ) {
+        use netrust_core::polypile::{polypile_stack, Item};
+        use netrust_types::ItemClass;
+        let mut items = Vec::new();
+        for _ in 0..count {
+            items.push(Item {
+                name: "sword".to_string(),
+                class: ItemClass::Weapon,
+            });
+        }
+        let result = polypile_stack(&items, seed);
+        prop_assert!(result.len() <= items.len());
+    }
+
+    // -------------------------------------------------------------
+    // Theorem: prop_cure_lycanthropy_restores_clean
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_cure_lycanthropy_restores_clean(
+        infected in any::<bool>(),
+    ) {
+        use netrust_types::{Hero, LycanthropyState};
+        use netrust_core::polymorph::cure_lycanthropy;
+        let mut hero = Hero {
+            base_hp: 10,
+            base_max_hp: 10,
+            polymorph: None,
+            lycanthropy: if infected { Some(LycanthropyState { species: 2, turns_infected: 5 }) } else { None },
+        };
+        let cured = cure_lycanthropy(&mut hero);
+        prop_assert_eq!(cured, infected);
+        prop_assert!(hero.lycanthropy.is_none());
+    }
 }
 
 

@@ -813,6 +813,7 @@ pub fn create_monster_record(id: MonsterSpeciesId, coord: Coord) -> ActorRecord 
         alignment: arch.alignment,
         intrinsics: arch.intrinsics,
         is_player: false,
+        is_unique: arch.name.chars().next().map_or(false, |c| c.is_uppercase()),
         is_dead: false,
         is_tame: arch.ai_behavior == AiBehavior::CompanionPet,
         tameness: if arch.ai_behavior == AiBehavior::CompanionPet { 5 } else { 0 },

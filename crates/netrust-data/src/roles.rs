@@ -208,6 +208,7 @@ pub fn spawn_player_character(
 
     let actor = ActorRecord {
         name: config.name.clone(),
+        is_unique: true,
         coord,
         hp: role.base_hp,
         max_hp: role.base_hp,

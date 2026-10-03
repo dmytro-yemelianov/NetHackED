@@ -49,6 +49,7 @@ pub struct ActorRecord {
     pub alignment: Alignment,
     pub intrinsics: Intrinsics,
     pub is_player: bool,
+    pub is_unique: bool,
     pub is_dead: bool,
     pub is_tame: bool,
     pub tameness: u32,
@@ -196,6 +197,7 @@ mod tests {
             is_dead: false,
             is_tame: false,
             tameness: 0,
+            is_unique: false,
             abilities: Vec::new(),
         };
         let id = arena.spawn_actor(actor);

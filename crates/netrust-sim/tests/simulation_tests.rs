@@ -114,6 +114,7 @@ fn test_melee_attack_action() {
         is_dead: false,
         is_tame: false,
         tameness: 0,
+        is_unique: false,
         abilities: Vec::new(),
     };
     let mon_id = sim.arena.spawn_actor(goblin);
@@ -159,6 +160,7 @@ fn test_zap_wand_beam_propagation_and_damage() {
         is_dead: false,
         is_tame: false,
         tameness: 0,
+        is_unique: false,
         abilities: Vec::new(),
     };
     let mon_id = sim.arena.spawn_actor(mon);
@@ -1292,6 +1294,7 @@ fn test_artifact_combat_bonus_and_vorpal_blade() {
         is_dead: false,
         is_tame: false,
         tameness: 0,
+        is_unique: false,
         abilities: Vec::new(),
     });
 
@@ -1340,6 +1343,7 @@ fn test_ukrainian_i18n_simulation_logging() {
         is_dead: false,
         is_tame: false,
         tameness: 0,
+        is_unique: false,
         abilities: Vec::new(),
     });
 
@@ -1483,7 +1487,7 @@ fn test_bones_file_generation_and_ghost_encounter() {
         p.is_dead = true;
     }
 
-    let sword = sim1.arena.spawn_item(ItemRecord {
+    let _sword = sim1.arena.spawn_item(ItemRecord {
         name: "long sword".into(),
         class: ItemClass::Weapon,
         weight: 30,
@@ -1565,7 +1569,7 @@ fn test_potion_dilution_and_water_transformation() {
     assert_eq!(sim.arena.items.get(potion).unwrap().name, "potion of water");
 
     // Dip Water into Holy Water -> Holy Water (Blessed)
-    let events3 = sim.step_player_action(ActionAst::Dip {
+    let _events3 = sim.step_player_action(ActionAst::Dip {
         item_index: idx,
         into_water: WaterType::Holy,
     });
@@ -2031,3 +2035,106 @@ fn test_quest_nemesis_boss_fight_and_completion() {
 
 
 
+
+#[test]
+fn test_hero_polymorph_potion_and_damage_reversion() {
+    let mut sim = SimulationWorld::new_with_seed(1024);
+    let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+    
+    if let Some(p) = sim.arena.actors.get_mut(sim.player_id) {
+        p.hp = 100;
+        p.max_hp = 100;
+    }
+    sim.hero.base_hp = 100;
+    sim.hero.base_max_hp = 100;
+
+    let potion = sim.arena.spawn_item(ItemRecord {
+        name: "potion of polymorph".into(),
+        class: ItemClass::Potion,
+        weight: 2, buc: Buc::Uncursed, is_container: false, is_bag_of_holding: false,
+        enchantment: 0, erosion: 0, proofed: false, location: ItemLocation::CarriedBy(sim.player_id),
+    });
+    let carried = sim.arena.items_carried_by(sim.player_id);
+    let idx = carried.iter().position(|&id| id == potion).unwrap();
+    
+    sim.step_player_action(ActionAst::Quaff(idx));
+    assert!(sim.hero.polymorph.is_some());
+    assert_eq!(sim.hero.polymorph.as_ref().unwrap().hp, 20);
+    assert_eq!(sim.arena.actors.get(sim.player_id).unwrap().hp, 20);
+
+    let mon_coord = netrust_types::Coord::new_unchecked(p_coord.x + 1, p_coord.y);
+    let mon = ActorRecord {
+        name: "Orc".into(),
+        coord: mon_coord,
+        hp: 50, max_hp: 50, ac: 0, level: 30, speed: 20,
+        alignment: netrust_types::Alignment::Chaotic,
+        intrinsics: netrust_types::Intrinsics::default(),
+        is_player: false, is_dead: false, is_tame: false, tameness: 0,
+        is_unique: false, abilities: Vec::new(),
+    };
+    sim.arena.spawn_actor(mon);
+
+    let mut poly_dropped = false;
+    for _ in 0..20 {
+        sim.step_player_action(ActionAst::Wait);
+        if sim.hero.polymorph.is_none() {
+            poly_dropped = true;
+            break;
+        }
+    }
+    assert!(poly_dropped, "Polymorph form should drop from lethal damage");
+    
+    let current_base = sim.hero.base_hp;
+    assert!(current_base < 100 && current_base > 0, "Hero should survive with reduced base HP, got {}", current_base);
+}
+
+#[test]
+fn test_wand_of_polymorph_unique_monster_invariant() {
+    // 1. Zap unique boss (Vlad)
+    let mut sim1 = SimulationWorld::new_with_seed(1025);
+    let p_coord1 = sim1.arena.actors.get(sim1.player_id).unwrap().coord;
+    for dx in 1..=4 {
+        sim1.level.set_tile(netrust_types::Coord::new_unchecked(p_coord1.x + dx, p_coord1.y), netrust_types::Tile::Room);
+    }
+    let vlad_id = sim1.arena.spawn_actor(ActorRecord {
+        name: "Vlad the Impaler".into(),
+        coord: netrust_types::Coord::new_unchecked(p_coord1.x + 1, p_coord1.y),
+        hp: 50, max_hp: 50, ac: -3, level: 14, speed: 12,
+        alignment: netrust_types::Alignment::Chaotic,
+        intrinsics: netrust_types::Intrinsics::default(),
+        is_player: false, is_dead: false, is_tame: false, tameness: 0,
+        is_unique: true, abilities: Vec::new(),
+    });
+    sim1.arena.spawn_item(ItemRecord {
+        name: "wand of polymorph".into(),
+        class: ItemClass::Wand,
+        weight: 7, buc: Buc::Uncursed, is_container: false, is_bag_of_holding: false,
+        enchantment: 5, erosion: 0, proofed: false, location: ItemLocation::CarriedBy(sim1.player_id),
+    });
+    sim1.step_player_action(ActionAst::ZapWand { dir: netrust_types::Direction::East, energy: 5 });
+    assert_eq!(sim1.arena.actors.get(vlad_id).unwrap().name, "Vlad the Impaler");
+
+    // 2. Zap regular monster (Orc)
+    let mut sim2 = SimulationWorld::new_with_seed(1026);
+    let p_coord2 = sim2.arena.actors.get(sim2.player_id).unwrap().coord;
+    for dx in 1..=4 {
+        sim2.level.set_tile(netrust_types::Coord::new_unchecked(p_coord2.x + dx, p_coord2.y), netrust_types::Tile::Room);
+    }
+    let orc_id = sim2.arena.spawn_actor(ActorRecord {
+        name: "Orc".into(),
+        coord: netrust_types::Coord::new_unchecked(p_coord2.x + 1, p_coord2.y),
+        hp: 10, max_hp: 10, ac: 10, level: 1, speed: 10,
+        alignment: netrust_types::Alignment::Chaotic,
+        intrinsics: netrust_types::Intrinsics::default(),
+        is_player: false, is_dead: false, is_tame: false, tameness: 0,
+        is_unique: false, abilities: Vec::new(),
+    });
+    sim2.arena.spawn_item(ItemRecord {
+        name: "wand of polymorph".into(),
+        class: ItemClass::Wand,
+        weight: 7, buc: Buc::Uncursed, is_container: false, is_bag_of_holding: false,
+        enchantment: 5, erosion: 0, proofed: false, location: ItemLocation::CarriedBy(sim2.player_id),
+    });
+    sim2.step_player_action(ActionAst::ZapWand { dir: netrust_types::Direction::East, energy: 5 });
+    assert_ne!(sim2.arena.actors.get(orc_id).unwrap().name, "Orc");
+}

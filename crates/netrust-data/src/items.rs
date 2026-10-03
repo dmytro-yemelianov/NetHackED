@@ -27,6 +27,10 @@ pub enum ItemKindId {
     WandOfWishing,
     WandOfCold,
     WandOfSecretDoorDetection,
+    WandOfPolymorph,
+    PotionOfPolymorph,
+    SprigOfWolfsbane,
+    PotionOfHolyWater,
     // Potions
     PotionOfHealing,
     PotionOfExtraHealing,
@@ -831,9 +835,59 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         is_container: false,
         is_bag_of_holding: false,
     },
-];
 
+    ItemArchetype {
+        id: ItemKindId::WandOfPolymorph,
+        name: "wand of polymorph",
+        class: ItemClass::Wand,
+        weight: 7,
+        cost: 200,
+        damage_small: (0, 0),
+        damage_large: (0, 0),
+        ac_bonus: 0,
+        is_container: false,
+        is_bag_of_holding: false,
+    },
+
+    ItemArchetype {
+        id: ItemKindId::PotionOfPolymorph,
+        name: "potion of polymorph",
+        class: ItemClass::Potion,
+        weight: 20,
+        cost: 200,
+        damage_small: (0, 0),
+        damage_large: (0, 0),
+        ac_bonus: 0,
+        is_container: false,
+        is_bag_of_holding: false,
+    },
+    ItemArchetype {
+        id: ItemKindId::SprigOfWolfsbane,
+        name: "sprig of wolfsbane",
+        class: ItemClass::Food,
+        weight: 1,
+        cost: 300,
+        damage_small: (0, 0),
+        damage_large: (0, 0),
+        ac_bonus: 0,
+        is_container: false,
+        is_bag_of_holding: false,
+    },
+    ItemArchetype {
+        id: ItemKindId::PotionOfHolyWater,
+        name: "potion of holy water",
+        class: ItemClass::Potion,
+        weight: 20,
+        cost: 50,
+        damage_small: (0, 0),
+        damage_large: (0, 0),
+        ac_bonus: 0,
+        is_container: false,
+        is_bag_of_holding: false,
+    },
+];
 /// Look up an item archetype from the catalog table.
+
 pub fn get_item_archetype(id: ItemKindId) -> &'static ItemArchetype {
     ITEM_CATALOG
         .iter()

@@ -677,3 +677,50 @@ mod tests {
         assert_eq!(ItemClass::Coin.symbol(), '$');
     }
 }
+
+pub type MonsterId = usize;
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PolymorphForm {
+    pub monster_id: MonsterId,
+    pub hp: i32,
+    pub max_hp: i32,
+    pub duration: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LycanthropyState {
+    pub species: MonsterId,
+    pub turns_infected: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Hero {
+    pub base_hp: i32,
+    pub base_max_hp: i32,
+    pub polymorph: Option<PolymorphForm>,
+    pub lycanthropy: Option<LycanthropyState>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PolypileResult {
+    pub transformed: usize,
+    pub destroyed: usize,
+    pub unchanged: usize,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum EquipSlot {
+    Helmet,
+    Suit,
+    Shirt,
+    Cloak,
+    Gloves,
+    Boots,
+    Shield,
+    Amulet,
+    LeftRing,
+    RightRing,
+    Weapon,
+    Quiver,
+}

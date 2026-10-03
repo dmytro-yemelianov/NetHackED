@@ -139,3 +139,60 @@ mod tests {
         assert!(!is_dead);
     }
 }
+
+use netrust_types::{Hero, MonsterId, EquipSlot};
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PolyDamageResult {
+    Absorbed,
+    Reverted { excess_damage: i32 },
+    Dead,
+}
+
+pub fn apply_poly_damage(hero: &mut Hero, damage: i32) -> PolyDamageResult {
+    if let Some(poly) = &mut hero.polymorph {
+        if damage < poly.hp {
+            poly.hp -= damage;
+            PolyDamageResult::Absorbed
+        } else {
+            let excess = damage - poly.hp;
+            hero.polymorph = None;
+            hero.base_hp -= excess;
+            if hero.base_hp <= 0 {
+                PolyDamageResult::Dead
+            } else {
+                PolyDamageResult::Reverted { excess_damage: excess }
+            }
+        }
+    } else {
+        hero.base_hp -= damage;
+        if hero.base_hp <= 0 {
+            PolyDamageResult::Dead
+        } else {
+            PolyDamageResult::Absorbed // Or maybe Reverted is not needed here, Absorbed means not dead in base form? Actually, instructions say "If polymorphed..." 
+        }
+    }
+}
+
+pub fn can_wear_in_form(form: MonsterId, slot: EquipSlot) -> bool {
+    // Humanoid forms can wear armor, animal forms unequip armor.
+    // Assuming form is a usize. Let's just say form % 2 == 0 is humanoid for now, 
+    // or if MonsterSpeciesId is involved we could map it. But here we have MonsterId as usize.
+    match slot {
+        EquipSlot::Helmet | EquipSlot::Suit | EquipSlot::Shirt | EquipSlot::Cloak |
+        EquipSlot::Gloves | EquipSlot::Boots | EquipSlot::Shield | EquipSlot::Weapon => {
+            // Simplified check: if form is even, assume humanoid. In a real impl, look up monster archetype.
+            form % 2 == 0
+        }
+        _ => true,
+    }
+}
+
+pub fn cure_lycanthropy(hero: &mut Hero) -> bool {
+    if hero.lycanthropy.is_some() {
+        hero.lycanthropy = None;
+        true
+    } else {
+        false
+    }
+}
