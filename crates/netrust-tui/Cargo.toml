@@ -1,0 +1,18 @@
+[package]
+name = "netrust-tui"
+version = "0.1.0"
+edition = "2021"
+description = "Terminal User Interface (TUI) for NetRust with classic NetHack ASCII rendering"
+
+[dependencies]
+netrust-types = { path = "../netrust-types" }
+netrust-arena = { path = "../netrust-arena" }
+netrust-core = { path = "../netrust-core" }
+netrust-dungeon = { path = "../netrust-dungeon" }
+netrust-sim = { path = "../netrust-sim" }
+netrust-agent = { path = "../netrust-agent" }
+crossterm = "0.28"
+
+[[bin]]
+name = "netrust"
+path = "src/main.rs"

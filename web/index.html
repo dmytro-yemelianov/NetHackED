@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NetRust — Formalized & Verified Classic NetHack</title>
+  <style>
+    :root {
+      --bg-color: #0c0d10;
+      --terminal-bg: #14161d;
+      --border-color: #2a2e3d;
+      --text-green: #33ff66;
+      --text-yellow: #f1fa8c;
+      --text-cyan: #8be9fd;
+      --text-red: #ff5555;
+      --text-dim: #6272a4;
+      --text-white: #f8f8f2;
+      --font-mono: 'Courier New', Courier, Menlo, Consolas, Monaco, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-white);
+      font-family: var(--font-mono);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1rem;
+      user-select: none;
+    }
+
+    header {
+      width: 100%;
+      max-width: 960px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 1rem;
+    }
+
+    .title-group h1 {
+      font-size: 1.25rem;
+      color: var(--text-yellow);
+      letter-spacing: 0.1em;
+    }
+
+    .title-group p {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    button {
+      background: #212534;
+      color: var(--text-cyan);
+      border: 1px solid var(--border-color);
+      padding: 0.35rem 0.75rem;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    button:hover {
+      background: #2e3449;
+      border-color: var(--text-cyan);
+      color: var(--text-white);
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .main-layout {
+      width: 100%;
+      max-width: 960px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .terminal-container {
+      background: var(--terminal-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 1rem;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      position: relative;
+    }
+
+    .message-bar {
+      font-size: 0.95rem;
+      min-height: 1.5rem;
+      color: var(--text-yellow);
+      margin-bottom: 0.5rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .viewport {
+      background: #000000;
+      border: 1px solid #1a1a24;
+      border-radius: 4px;
+      padding: 0.5rem;
+      font-size: 1rem;
+      line-height: 1.15;
+      letter-spacing: 0.05em;
+      color: var(--text-green);
+      overflow-x: auto;
+      white-space: pre;
+      box-shadow: inset 0 0 10px rgba(0, 255, 100, 0.05);
+    }
+
+    .status-bar {
+      margin-top: 0.75rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+      font-size: 0.85rem;
+      color: var(--text-white);
+    }
+
+    .status-item {
+      display: flex;
+      gap: 0.35rem;
+    }
+
+    .status-label {
+      color: var(--text-dim);
+    }
+
+    .status-val {
+      color: var(--text-green);
+      font-weight: bold;
+    }
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-top: 0.5rem;
+    }
+
+    .control-card {
+      background: var(--terminal-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 0.75rem;
+      font-size: 0.8rem;
+    }
+
+    .control-card h3 {
+      font-size: 0.85rem;
+      color: var(--text-cyan);
+      margin-bottom: 0.5rem;
+      border-bottom: 1px dashed var(--border-color);
+      padding-bottom: 0.25rem;
+    }
+
+    .dpad {
+      display: grid;
+      grid-template-columns: repeat(3, 44px);
+      gap: 4px;
+      justify-content: center;
+      margin: 0.5rem 0;
+    }
+
+    .dpad button {
+      padding: 0.5rem 0;
+      font-size: 0.9rem;
+      font-weight: bold;
+    }
+
+    .action-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-top: 0.5rem;
+    }
+
+    .agent-panel {
+      background: var(--terminal-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 0.75rem;
+      font-size: 0.8rem;
+    }
+
+    .agent-panel textarea {
+      width: 100%;
+      height: 120px;
+      background: #000;
+      color: var(--text-cyan);
+      border: 1px solid var(--border-color);
+      padding: 0.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      border-radius: 4px;
+      resize: vertical;
+      margin-top: 0.5rem;
+    }
+
+    /* Modal Dialog */
+    dialog {
+      background: #181b26;
+      color: var(--text-white);
+      border: 2px solid var(--text-cyan);
+      border-radius: 8px;
+      padding: 1.5rem;
+      max-width: 540px;
+      width: 90vw;
+      margin: auto;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8);
+    }
+
+    dialog::backdrop {
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(2px);
+    }
+
+    .dialog-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.5rem;
+    }
+
+    .dialog-header h2 {
+      color: var(--text-yellow);
+      font-size: 1.15rem;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      margin-bottom: 0.35rem;
+    }
+
+    .role-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.5rem;
+    }
+
+    .role-btn {
+      padding: 0.5rem;
+      text-align: left;
+      font-size: 0.8rem;
+      border: 1px solid var(--border-color);
+      background: #14161f;
+      color: var(--text-white);
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .role-btn.active {
+      border-color: var(--text-green);
+      background: #1b2820;
+      color: var(--text-green);
+    }
+
+    .dialog-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .start-btn {
+      background: #256637;
+      color: #fff;
+      border-color: #33ff66;
+    }
+
+    .start-btn:hover {
+      background: #2e8045;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="title-group">
+      <h1>NETRUST 5.0</h1>
+      <p>Lean 4 Verified Mechanics & Deterministic Rust Engine</p>
+    </div>
+    <div class="header-actions">
+      <button id="btnNewChar">Character</button>
+      <button id="btnReset">Reset (Seed 42)</button>
+    </div>
+  </header>
+
+  <main class="main-layout">
+    <div class="terminal-container">
+      <div id="messageBar" class="message-bar">Welcome to NetRust! Formalized and mathematically verified in Lean 4.</div>
+      <pre id="viewport" class="viewport" tabindex="0">Initializing WebAssembly engine...</pre>
+      <div class="status-bar">
+        <div class="status-item"><span class="status-label">Hero:</span><span id="statName" class="status-val">Valkyrie</span></div>
+        <div class="status-item"><span class="status-label">Align:</span><span id="statAlign" class="status-val">Neutral</span></div>
+        <div class="status-item"><span class="status-label">Dlvl:</span><span id="statDepth" class="status-val">1</span></div>
+        <div class="status-item"><span class="status-label">Gold:</span><span id="statGold" class="status-val">50</span></div>
+        <div class="status-item"><span class="status-label">HP:</span><span id="statHp" class="status-val">18(18)</span></div>
+        <div class="status-item"><span class="status-label">Pw:</span><span id="statPw" class="status-val">5(5)</span></div>
+        <div class="status-item"><span class="status-label">AC:</span><span id="statAc" class="status-val">7</span></div>
+        <div class="status-item"><span class="status-label">Nutr:</span><span id="statNutr" class="status-val">Normal</span></div>
+        <div class="status-item"><span class="status-label">Turn:</span><span id="statTurn" class="status-val">1</span></div>
+      </div>
+    </div>
+
+    <div class="controls-grid">
+      <!-- D-Pad and Action keys -->
+      <div class="control-card">
+        <h3>Direct Controls</h3>
+        <div class="dpad">
+          <button data-act="move" data-arg="y">y</button>
+          <button data-act="move" data-arg="k">k</button>
+          <button data-act="move" data-arg="u">u</button>
+          <button data-act="move" data-arg="h">h</button>
+          <button data-act="wait">.</button>
+          <button data-act="move" data-arg="l">l</button>
+          <button data-act="move" data-arg="b">b</button>
+          <button data-act="move" data-arg="j">j</button>
+          <button data-act="move" data-arg="n">n</button>
+        </div>
+        <div class="action-buttons">
+          <button data-act="eat" data-arg="0">[e] Eat</button>
+          <button data-act="cast" data-arg="0">[x] Cast</button>
+          <button data-act="read" data-arg="0">[r] Read</button>
+          <button data-act="pickup">[,] PickUp</button>
+          <button data-act="pay">[p] Pay</button>
+          <button data-act="pray">[P] Pray</button>
+          <button data-act="sacrifice" data-arg="0">[S] Sacrifice</button>
+          <button data-act="wield" data-arg="0">[w] Wield</button>
+          <button data-act="drop" data-arg="0">[d] Drop</button>
+          <button data-act="descend">[>] Descend</button>
+          <button data-act="ascend">[&lt;] Ascend</button>
+        </div>
+      </div>
+
+      <!-- Agent / LLM Observation Stream -->
+      <div class="agent-panel">
+        <h3>Agent / LLM JSON Telemetry</h3>
+        <p style="color:var(--text-dim); font-size:0.75rem;">Structured observation emitted to autonomous AI pairs:</p>
+        <textarea id="obsJson" readonly></textarea>
+        <div style="margin-top:0.5rem; display:flex; gap:0.5rem;">
+          <button id="btnCopyJson">Copy JSON</button>
+          <button id="btnAiStep">Step AI Move</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Character Creation Modal -->
+  <dialog id="charDialog">
+    <div class="dialog-header">
+      <h2>Character Creation</h2>
+      <button id="btnCloseDialog" style="padding:0.2rem 0.5rem;">✕</button>
+    </div>
+    <div class="form-group">
+      <label for="charName">Character Name:</label>
+      <input type="text" id="charName" value="Hero" style="width:100%; padding:0.4rem; background:#000; color:#fff; border:1px solid var(--border-color); font-family:var(--font-mono); border-radius:4px;">
+    </div>
+    <div class="form-group">
+      <label>Choose Class / Role:</label>
+      <div id="roleGrid" class="role-grid">
+        <button class="role-btn active" data-role="valkyrie" data-race="human">Valkyrie (Human)</button>
+        <button class="role-btn" data-role="wizard" data-race="human">Wizard (Human)</button>
+        <button class="role-btn" data-role="barbarian" data-race="orc">Barbarian (Orc)</button>
+        <button class="role-btn" data-role="rogue" data-race="human">Rogue (Human)</button>
+        <button class="role-btn" data-role="knight" data-race="dwarf">Knight (Dwarf)</button>
+        <button class="role-btn" data-role="monk" data-race="human">Monk (Human)</button>
+        <button class="role-btn" data-role="healer" data-race="gnome">Healer (Gnome)</button>
+        <button class="role-btn" data-role="tourist" data-race="human">Tourist (Human)</button>
+        <button class="role-btn" data-role="archaeologist" data-race="human">Archaeologist (Human)</button>
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <button class="start-btn" id="btnStartGame">Embark Into Dungeon</button>
+    </div>
+  </dialog>
+
+  <script type="module">
+    import init, { WasmGameSession } from './pkg/netrust_wasm.js';
+
+    let session = null;
+    let selectedRole = 'valkyrie';
+    let selectedRace = 'human';
+
+    const viewportEl = document.getElementById('viewport');
+    const messageBarEl = document.getElementById('messageBar');
+    const statNameEl = document.getElementById('statName');
+    const statAlignEl = document.getElementById('statAlign');
+    const statDepthEl = document.getElementById('statDepth');
+    const statGoldEl = document.getElementById('statGold');
+    const statHpEl = document.getElementById('statHp');
+    const statPwEl = document.getElementById('statPw');
+    const statAcEl = document.getElementById('statAc');
+    const statNutrEl = document.getElementById('statNutr');
+    const statTurnEl = document.getElementById('statTurn');
+    const obsJsonEl = document.getElementById('obsJson');
+    const charDialog = document.getElementById('charDialog');
+
+    function updateUi(lastObs) {
+      if (!session) return;
+      viewportEl.textContent = session.render_ascii();
+      statNameEl.textContent = session.get_player_name();
+      statAlignEl.textContent = session.get_player_alignment();
+      statDepthEl.textContent = session.get_depth();
+      statGoldEl.textContent = session.get_player_gold();
+      statHpEl.textContent = `${session.get_player_hp()}(${session.get_player_max_hp()})`;
+      statPwEl.textContent = `${session.get_player_pw()}(${session.get_player_max_pw()})`;
+      statAcEl.textContent = session.get_player_ac();
+      statNutrEl.textContent = `${session.get_player_nutrition()} (${session.get_hunger_state()})`;
+      statTurnEl.textContent = session.get_turn();
+
+      const obsJson = session.get_observation_json();
+      obsJsonEl.value = obsJson;
+
+      if (lastObs && lastObs.last_events && lastObs.last_events.length > 0) {
+        const lastMsg = lastObs.last_events
+          .filter(e => e.LogMessage)
+          .map(e => e.LogMessage.text)
+          .pop();
+        if (lastMsg) {
+          messageBarEl.textContent = lastMsg;
+        }
+      }
+    }
+
+    function doAction(action, arg) {
+      if (!session) return;
+      const resStr = session.step(action, arg ? arg : null);
+      try {
+        const res = JSON.parse(resStr);
+        updateUi(res);
+      } catch (e) {
+        updateUi(null);
+      }
+    }
+
+    async function start() {
+      await init();
+      session = new WasmGameSession(42n);
+      updateUi(null);
+      viewportEl.focus();
+    }
+
+    // Keybindings
+    window.addEventListener('keydown', (e) => {
+      if (document.activeElement === document.getElementById('charName') || charDialog.open) {
+        return;
+      }
+
+      switch (e.key) {
+        case 'h': case 'ArrowLeft': doAction('move', 'west'); break;
+        case 'l': case 'ArrowRight': doAction('move', 'east'); break;
+        case 'k': case 'ArrowUp': doAction('move', 'north'); break;
+        case 'j': case 'ArrowDown': doAction('move', 'south'); break;
+        case 'y': doAction('move', 'northwest'); break;
+        case 'u': doAction('move', 'northeast'); break;
+        case 'b': doAction('move', 'southwest'); break;
+        case 'n': doAction('move', 'southeast'); break;
+        case '.': case ' ': doAction('wait', null); break;
+        case ',': doAction('pickup', null); break;
+        case 'e': doAction('eat', '0'); break;
+        case 'x': doAction('cast', '0'); break;
+        case 'r': doAction('read', '0'); break;
+        case 'p': doAction('pay', null); break;
+        case 'P': doAction('pray', null); break;
+        case 'S': doAction('sacrifice', '0'); break;
+        case 'w': doAction('wield', '0'); break;
+        case 'd': doAction('drop', '0'); break;
+        case '>': doAction('descend', null); break;
+        case '<': doAction('ascend', null); break;
+      }
+    });
+
+    // Button clicks
+    document.querySelectorAll('[data-act]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        doAction(btn.dataset.act, btn.dataset.arg || null);
+      });
+    });
+
+    // Dialog controls
+    document.getElementById('btnNewChar').addEventListener('click', () => {
+      charDialog.showModal();
+    });
+
+    document.getElementById('btnCloseDialog').addEventListener('click', () => {
+      charDialog.close();
+    });
+
+    document.querySelectorAll('.role-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedRole = btn.dataset.role;
+        selectedRace = btn.dataset.race;
+      });
+    });
+
+    document.getElementById('btnStartGame').addEventListener('click', () => {
+      const name = document.getElementById('charName').value.trim() || 'Hero';
+      session = WasmGameSession.new_with_character(42n, selectedRole, selectedRace, name);
+      messageBarEl.textContent = `Welcome, ${name} the ${selectedRole.toUpperCase()}! Your quest begins.`;
+      charDialog.close();
+      updateUi(null);
+    });
+
+    document.getElementById('btnReset').addEventListener('click', () => {
+      session = new WasmGameSession(42n);
+      messageBarEl.textContent = "Simulation reset to seed 42.";
+      updateUi(null);
+    });
+
+    document.getElementById('btnCopyJson').addEventListener('click', () => {
+      navigator.clipboard.writeText(obsJsonEl.value);
+      alert("Observation JSON copied to clipboard!");
+    });
+
+    document.getElementById('btnAiStep').addEventListener('click', () => {
+      // Step automated wait or movement
+      doAction('wait', null);
+    });
+
+    start();
+  </script>
+</body>
+</html>
