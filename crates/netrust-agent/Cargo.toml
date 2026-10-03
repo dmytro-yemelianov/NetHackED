@@ -45,3 +45,8 @@ path = "src/bin/benchmark.rs"
 name = "netrust-demo"
 path = "src/bin/demo.rs"
 
+[[bin]]
+name = "netrust-bones-server"
+path = "src/bin/bones_server.rs"
+
+

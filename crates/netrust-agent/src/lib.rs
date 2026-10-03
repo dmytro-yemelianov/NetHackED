@@ -10,6 +10,7 @@ pub mod mcp;
 pub mod observation;
 pub mod session;
 pub mod conducts;
+pub mod bones;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod graphql;

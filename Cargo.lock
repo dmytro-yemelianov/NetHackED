@@ -894,6 +894,7 @@ name = "netrust-py"
 version = "0.1.0"
 dependencies = [
  "netrust-agent",
+ "netrust-arena",
  "netrust-core",
  "netrust-sim",
  "netrust-types",

@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""NetRust Gymnasium RL Demo & Benchmark.
+"""NetRust Gymnasium RL Autonomous Agent Demonstration & Benchmark.
 
-Simulates an episode with the NetRust Gym environment, evaluating
-a basic heuristic agent vs random policy and printing telemetry.
+Evaluates autonomous agent policies with action masking and voluntary conducts:
+1. Pacifist Explorer (action-masked strict conduct obedience)
+2. Tactical Delver (ranged weapons, Elbereth warding, secret searching)
+3. Action-Masked Random Explorer
 """
 
 import sys
@@ -21,8 +23,8 @@ if (target_debug / "libnetrust_py.dylib").exists() and not (target_debug / "netr
 
 from netrust_gym import NetRustGymEnv, ACTION_NAMES
 
-def run_agent_episode(policy_name: str = "heuristic", seed: int = 42, max_steps: int = 150):
-    env = NetRustGymEnv(seed=seed, max_steps=max_steps, render_mode="ansi")
+def run_agent_episode(policy_name: str = "pacifist", seed: int = 42, max_steps: int = 150):
+    env = NetRustGymEnv(seed=seed, max_steps=max_steps, render_mode="ansi", conduct_masking=True)
     obs, info = env.reset()
 
     total_reward = 0.0
@@ -30,43 +32,89 @@ def run_agent_episode(policy_name: str = "heuristic", seed: int = 42, max_steps:
     terminated = False
     truncated = False
 
-    print(f"==================================================")
-    print(f" Starting NetRust RL Episode: {policy_name.upper()} (Seed {seed})")
-    print(f"==================================================")
+    print(f"\n{'=' * 68}")
+    print(f" NetRust RL Episode: {policy_name.upper()} (Seed {seed})")
+    print(f"{'=' * 68}")
 
     while not (terminated or truncated):
         steps += 1
+        mask = env.action_masks()
+        valid_actions = [idx for idx, valid in enumerate(mask) if valid]
 
-        if policy_name == "heuristic":
-            # Survival / Exploration heuristic:
-            # 1. If HP low (< 8), pray or engrave Elbereth
-            # 2. Descend if on stairs
-            # 3. Otherwise explore cardinal directions
-            hp = obs["player_hp"]
-            if hp <= 6:
-                action = 14 # Engrave Elbereth
-            elif steps % 15 == 0:
-                action = 9  # Try descend
-            elif steps % 7 == 0:
-                action = 11 # Try pick up
+        if not valid_actions:
+            valid_actions = [8] # Wait fallback
+
+        if policy_name == "pacifist":
+            # Strict Pacifist Survival & Exploration:
+            # 1. If standing on stairs down and valid, descend!
+            # 2. If item on floor and valid, pick up!
+            # 3. If low HP, search or engrave Elbereth
+            # 4. Otherwise navigate in compass directions that don't collide with monsters
+            if 9 in valid_actions: # DESCEND
+                action = 9
+            elif 11 in valid_actions: # PICKUP
+                action = 11
+            elif 13 in valid_actions: # UNTRAP
+                action = 13
+            elif obs["player_hp"] <= 8 and 12 in valid_actions: # SEARCH
+                action = 12
             else:
-                action = (steps % 8) # Compass walk
-        elif policy_name == "random":
-            action = random.randint(0, len(ACTION_NAMES) - 1)
-        else:
-            action = 8 # Wait
+                # Filter compass movement actions (0..7) that are in valid_actions
+                compass_valid = [a for a in range(8) if a in valid_actions]
+                if compass_valid:
+                    action = compass_valid[steps % len(compass_valid)]
+                else:
+                    action = random.choice(valid_actions)
+
+        elif policy_name == "tactical":
+            # Tactical delver:
+            # 1. If quivered item ready and fire action valid, fire projectile
+            # 2. If on stairs, descend
+            # 3. If item on floor, pickup
+            # 4. Explore
+            fire_actions = [a for a in [14, 15, 16, 17] if a in valid_actions]
+            if fire_actions:
+                action = random.choice(fire_actions)
+            elif 9 in valid_actions:
+                action = 9
+            elif 18 in valid_actions: # QUIVER
+                action = 18
+            elif 11 in valid_actions: # PICKUP
+                action = 11
+            elif 12 in valid_actions: # SEARCH
+                action = 12
+            else:
+                compass_valid = [a for a in range(8) if a in valid_actions]
+                if compass_valid:
+                    action = compass_valid[steps % len(compass_valid)]
+                else:
+                    action = random.choice(valid_actions)
+
+        else: # "random_masked"
+            action = random.choice(valid_actions)
 
         obs, reward, terminated, truncated, info = env.step(action)
         total_reward += reward
 
         if steps % 25 == 0 or terminated or truncated:
-            print(f"[Step {steps:3d}] Action: {ACTION_NAMES[action]:<15} | Reward: {reward:6.2f} (Total: {total_reward:6.2f}) | HP: {obs['player_hp']}/{obs['player_max_hp']} | Depth: {obs['depth']} | Gold: {obs['gold']}")
+            action_name = ACTION_NAMES[action] if action < len(ACTION_NAMES) else f"Action({action})"
+            conducts = obs["conducts"]
+            pacifist_tag = "[PACIFIST]" if conducts.get("pacifist") else "[KILLED]"
+            vegan_tag = "[VEGAN]" if conducts.get("vegan") else "[CARN]"
+            print(
+                f"[Step {steps:3d}] {action_name:<16} | Rew: {reward:6.2f} (Tot: {total_reward:6.2f}) | "
+                f"HP: {obs['player_hp']}/{obs['player_max_hp']} | Dlvl: {obs['depth']} | "
+                f"{pacifist_tag} {vegan_tag}"
+            )
 
     outcome = "VICTORY" if info.get("won") else ("DEAD" if info.get("is_dead") else "TRUNCATED")
-    print(f"--------------------------------------------------")
+    final_conducts = obs["conducts"]
+    print(f"{'-' * 68}")
     print(f" Episode Finished in {steps} steps | Outcome: {outcome} | Total Reward: {total_reward:.2f}")
-    print(f" Final Floor View:")
+    print(f" Final Conducts Audit: Pacifist={final_conducts.get('pacifist')}, Vegan={final_conducts.get('vegan')}, Atheist={final_conducts.get('atheist')}, Illiterate={final_conducts.get('illiterate')}")
+    print(f" Final ASCII Viewport:")
     print(env.render())
+
     return {
         "policy": policy_name,
         "seed": seed,
@@ -74,17 +122,26 @@ def run_agent_episode(policy_name: str = "heuristic", seed: int = 42, max_steps:
         "total_reward": total_reward,
         "outcome": outcome,
         "final_hp": obs["player_hp"],
-        "depth": obs["depth"]
+        "depth": obs["depth"],
+        "conducts": final_conducts,
     }
 
 if __name__ == "__main__":
     seed = int(sys.argv[1]) if len(sys.argv) > 1 else 42
-    print("Testing Heuristic Agent...")
-    h_result = run_agent_episode("heuristic", seed=seed, max_steps=100)
 
-    print("\nTesting Random Policy...")
-    r_result = run_agent_episode("random", seed=seed, max_steps=100)
+    print("Evaluating Policy 1: Strict Pacifist Explorer (Masked)...")
+    p_result = run_agent_episode("pacifist", seed=seed, max_steps=100)
 
-    print("\nSummary Comparison:")
-    print(f"Heuristic Reward: {h_result['total_reward']:.2f} (Steps: {h_result['steps']}, Depth: {h_result['depth']})")
-    print(f"Random    Reward: {r_result['total_reward']:.2f} (Steps: {r_result['steps']}, Depth: {r_result['depth']})")
+    print("\nEvaluating Policy 2: Tactical Delver...")
+    t_result = run_agent_episode("tactical", seed=seed, max_steps=100)
+
+    print("\nEvaluating Policy 3: Action-Masked Random Policy...")
+    r_result = run_agent_episode("random_masked", seed=seed, max_steps=100)
+
+    print("\n" + "=" * 68)
+    print(" SUMMARY BENCHMARK COMPARISON")
+    print("=" * 68)
+    print(f"Pacifist Explorer: Reward {p_result['total_reward']:6.2f} | Steps: {p_result['steps']:3d} | Dlvl: {p_result['depth']} | Pacifist Conduct: {p_result['conducts']['pacifist']}")
+    print(f"Tactical Delver:   Reward {t_result['total_reward']:6.2f} | Steps: {t_result['steps']:3d} | Dlvl: {t_result['depth']} | Pacifist Conduct: {t_result['conducts']['pacifist']}")
+    print(f"Random Masked:     Reward {r_result['total_reward']:6.2f} | Steps: {r_result['steps']:3d} | Dlvl: {r_result['depth']} | Pacifist Conduct: {r_result['conducts']['pacifist']}")
+    print("=" * 68)

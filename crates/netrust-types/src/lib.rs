@@ -690,6 +690,27 @@ pub struct BonesData {
     pub killer: String,
 }
 
+/// Graveyard headstone record and death cause memorial.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GraveRecord {
+    pub hero_name: String,
+    pub hero_level: u32,
+    pub depth: u32,
+    pub killer: String,
+    pub date: String,
+    pub epitaph: String,
+    pub ascii_headstone: String,
+}
+
+/// Statistics and telemetry for the networked shared graveyard.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct GraveyardStats {
+    pub total_deaths: usize,
+    pub active_bones_count: usize,
+    pub total_graves: usize,
+    pub haunted_depths: Vec<u32>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

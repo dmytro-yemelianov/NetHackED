@@ -11,6 +11,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 pyo3 = { version = "0.23", features = ["abi3-py310"] }
 netrust-types = { path = "../netrust-types" }
+netrust-arena = { path = "../netrust-arena" }
 netrust-core = { path = "../netrust-core" }
 netrust-sim = { path = "../netrust-sim" }
 netrust-agent = { path = "../netrust-agent" }
