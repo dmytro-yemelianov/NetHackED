@@ -36,3 +36,5 @@ import NetMechanics.Genocide
 import NetMechanics.Affliction
 import NetMechanics.Skills
 import NetMechanics.Ranged
+import NetMechanics.Traps
+import NetMechanics.InvocationBranches
