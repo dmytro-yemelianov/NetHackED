@@ -1,0 +1,98 @@
+//! Interactive agent session managing game state, stepping, and inspections.
+
+use std::collections::HashSet;
+use netrust_data::roles::CharacterConfig;
+use netrust_dungeon::compute_fov;
+use netrust_sim::{ActionAst, Coord, GameEvent, SimulationWorld};
+
+use crate::ascii::render_ascii_map;
+use crate::observation::{ActorObservation, GameObservation, TileInspection};
+
+/// High-level session managing an interactive agent interaction.
+pub struct AgentSession {
+    pub world: SimulationWorld,
+    pub last_events: Vec<GameEvent>,
+}
+
+impl AgentSession {
+    pub fn new(seed: u64) -> Self {
+        Self {
+            world: SimulationWorld::new_with_seed(seed),
+            last_events: Vec::new(),
+        }
+    }
+
+    pub fn new_with_character(seed: u64, config: CharacterConfig) -> Self {
+        Self {
+            world: SimulationWorld::new_with_character(seed, config),
+            last_events: Vec::new(),
+        }
+    }
+
+    pub fn get_observation(&self) -> GameObservation {
+        let player = self.world.arena.actors.get(self.world.player_id);
+        let player_coord = player.map(|p| p.coord).unwrap_or(Coord::new_unchecked(0, 0));
+        let player_hp = player.map(|p| p.hp).unwrap_or(0);
+        let player_max_hp = player.map(|p| p.max_hp).unwrap_or(0);
+        let player_ac = player.map(|p| p.ac).unwrap_or(10);
+        let is_game_over = player.map(|p| p.is_dead).unwrap_or(true);
+
+        let visible: HashSet<Coord> = compute_fov(&self.world.level, player_coord, 8);
+
+        let mut visible_actors = Vec::new();
+        for (id, actor) in self.world.arena.actors.iter() {
+            if !actor.is_dead && visible.contains(&actor.coord) {
+                visible_actors.push(ActorObservation {
+                    name: actor.name.clone(),
+                    coord: actor.coord,
+                    hp: actor.hp,
+                    max_hp: actor.max_hp,
+                    is_player: id == self.world.player_id,
+                });
+            }
+        }
+
+        GameObservation {
+            turn: self.world.scheduler.turn,
+            depth: self.world.depth,
+            player_coord,
+            player_hp,
+            player_max_hp,
+            player_ac,
+            player_nutrition: self.world.player_nutrition,
+            player_pw: self.world.player_pw,
+            player_max_pw: self.world.player_max_pw,
+            player_gold: self.world.player_gold,
+            visible_actors,
+            ascii_map: render_ascii_map(&self.world),
+            last_events: self.last_events.clone(),
+            is_game_over,
+        }
+    }
+
+    pub fn step(&mut self, action: ActionAst) -> GameObservation {
+        self.last_events = self.world.step_player_action(action);
+        self.get_observation()
+    }
+
+    pub fn inspect_tile(&self, coord: Coord) -> TileInspection {
+        let tile = self.world.level.get_tile(coord).clone();
+        let occupant = self.world.actor_at(coord).and_then(|id| {
+            self.world.arena.actors.get(id).map(|a| ActorObservation {
+                name: a.name.clone(),
+                coord: a.coord,
+                hp: a.hp,
+                max_hp: a.max_hp,
+                is_player: id == self.world.player_id,
+            })
+        });
+
+        TileInspection {
+            coord,
+            is_passable: tile.is_passable(),
+            is_transparent: tile.is_transparent(),
+            tile,
+            occupant,
+        }
+    }
+}
