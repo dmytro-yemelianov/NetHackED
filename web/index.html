@@ -396,6 +396,7 @@
       <p>Lean 4 Verified Mechanics & Deterministic Rust Engine</p>
     </div>
     <div class="header-actions">
+      <button id="btnToggleLang" class="btn-gold" title="Switch language / Змінити мову">🌐 EN / УКР</button>
       <button id="btnLeaderboard" class="btn-gold">🏆 Leaderboard & AI Arena</button>
       <button id="btnNewChar">Character</button>
       <button id="btnReset">Reset (Seed 42)</button>
@@ -407,22 +408,22 @@
       <div id="messageBar" class="message-bar">Welcome to NetRust! Formalized and mathematically verified in Lean 4.</div>
       <pre id="viewport" class="viewport" tabindex="0">Initializing WebAssembly engine...</pre>
       <div class="status-bar">
-        <div class="status-item"><span class="status-label">Hero:</span><span id="statName" class="status-val">Valkyrie</span></div>
-        <div class="status-item"><span class="status-label">Align:</span><span id="statAlign" class="status-val">Neutral</span></div>
-        <div class="status-item"><span class="status-label">Dlvl:</span><span id="statDepth" class="status-val">1</span></div>
-        <div class="status-item"><span class="status-label">Gold:</span><span id="statGold" class="status-val">50</span></div>
-        <div class="status-item"><span class="status-label">HP:</span><span id="statHp" class="status-val">18(18)</span></div>
-        <div class="status-item"><span class="status-label">Pw:</span><span id="statPw" class="status-val">5(5)</span></div>
-        <div class="status-item"><span class="status-label">AC:</span><span id="statAc" class="status-val">7</span></div>
-        <div class="status-item"><span class="status-label">Nutr:</span><span id="statNutr" class="status-val">Normal</span></div>
-        <div class="status-item"><span class="status-label">Turn:</span><span id="statTurn" class="status-val">1</span></div>
+        <div class="status-item"><span id="lblHero" class="status-label">Hero:</span><span id="statName" class="status-val">Valkyrie</span></div>
+        <div class="status-item"><span id="lblAlign" class="status-label">Align:</span><span id="statAlign" class="status-val">Neutral</span></div>
+        <div class="status-item"><span id="lblDlvl" class="status-label">Dlvl:</span><span id="statDepth" class="status-val">1</span></div>
+        <div class="status-item"><span id="lblGold" class="status-label">Gold:</span><span id="statGold" class="status-val">50</span></div>
+        <div class="status-item"><span id="lblHp" class="status-label">HP:</span><span id="statHp" class="status-val">18(18)</span></div>
+        <div class="status-item"><span id="lblPw" class="status-label">Pw:</span><span id="statPw" class="status-val">5(5)</span></div>
+        <div class="status-item"><span id="lblAc" class="status-label">AC:</span><span id="statAc" class="status-val">7</span></div>
+        <div class="status-item"><span id="lblNutr" class="status-label">Nutr:</span><span id="statNutr" class="status-val">Normal</span></div>
+        <div class="status-item"><span id="lblTurn" class="status-label">Turn:</span><span id="statTurn" class="status-val">1</span></div>
       </div>
     </div>
 
     <div class="controls-grid">
       <!-- D-Pad and Action keys -->
       <div class="control-card">
-        <h3>Direct Controls</h3>
+        <h3 id="lblDirectControls">Direct Controls</h3>
         <div class="dpad">
           <button data-act="move" data-arg="y">y</button>
           <button data-act="move" data-arg="k">k</button>
@@ -435,17 +436,17 @@
           <button data-act="move" data-arg="n">n</button>
         </div>
         <div class="action-buttons">
-          <button data-act="eat" data-arg="0">[e] Eat</button>
-          <button data-act="cast" data-arg="0">[x] Cast</button>
-          <button data-act="read" data-arg="0">[r] Read</button>
-          <button data-act="pickup">[,] PickUp</button>
-          <button data-act="pay">[p] Pay</button>
-          <button data-act="pray">[P] Pray</button>
-          <button data-act="sacrifice" data-arg="0">[S] Sacrifice</button>
-          <button data-act="wield" data-arg="0">[w] Wield</button>
-          <button data-act="drop" data-arg="0">[d] Drop</button>
-          <button data-act="descend">[>] Descend</button>
-          <button data-act="ascend">[&lt;] Ascend</button>
+          <button data-act="eat" data-arg="0" id="btnActEat">[e] Eat</button>
+          <button data-act="cast" data-arg="0" id="btnActCast">[x] Cast</button>
+          <button data-act="read" data-arg="0" id="btnActRead">[r] Read</button>
+          <button data-act="pickup" id="btnActPickup">[,] PickUp</button>
+          <button data-act="pay" id="btnActPay">[p] Pay</button>
+          <button data-act="pray" id="btnActPray">[P] Pray</button>
+          <button data-act="sacrifice" data-arg="0" id="btnActSacrifice">[S] Sacrifice</button>
+          <button data-act="wield" data-arg="0" id="btnActWield">[w] Wield</button>
+          <button data-act="drop" data-arg="0" id="btnActDrop">[d] Drop</button>
+          <button data-act="descend" id="btnActDescend">[>] Descend</button>
+          <button data-act="ascend" id="btnActAscend">[&lt;] Ascend</button>
         </div>
       </div>
 
@@ -554,25 +555,25 @@
   <!-- Character Creation Modal -->
   <dialog id="charDialog">
     <div class="dialog-header">
-      <h2>Character Creation</h2>
+      <h2 id="lblCharCreation">Character Creation</h2>
       <button id="btnCloseDialog" style="padding:0.2rem 0.5rem;">✕</button>
     </div>
     <div class="form-group">
-      <label for="charName">Character Name:</label>
+      <label for="charName" id="lblCharName">Character Name:</label>
       <input type="text" id="charName" value="Hero" style="width:100%; padding:0.4rem; background:#000; color:#fff; border:1px solid var(--border-color); font-family:var(--font-mono); border-radius:4px;">
     </div>
     <div class="form-group">
-      <label>Choose Class / Role:</label>
+      <label id="lblChooseRole">Choose Class / Role:</label>
       <div id="roleGrid" class="role-grid">
-        <button class="role-btn active" data-role="valkyrie" data-race="human">Valkyrie (Human)</button>
-        <button class="role-btn" data-role="wizard" data-race="human">Wizard (Human)</button>
-        <button class="role-btn" data-role="barbarian" data-race="orc">Barbarian (Orc)</button>
-        <button class="role-btn" data-role="rogue" data-race="human">Rogue (Human)</button>
-        <button class="role-btn" data-role="knight" data-race="dwarf">Knight (Dwarf)</button>
-        <button class="role-btn" data-role="monk" data-race="human">Monk (Human)</button>
-        <button class="role-btn" data-role="healer" data-race="gnome">Healer (Gnome)</button>
-        <button class="role-btn" data-role="tourist" data-race="human">Tourist (Human)</button>
-        <button class="role-btn" data-role="archaeologist" data-race="human">Archaeologist (Human)</button>
+        <button class="role-btn active" data-role="valkyrie" data-race="human" id="roleBtnValkyrie">Valkyrie (Human)</button>
+        <button class="role-btn" data-role="wizard" data-race="human" id="roleBtnWizard">Wizard (Human)</button>
+        <button class="role-btn" data-role="barbarian" data-race="orc" id="roleBtnBarbarian">Barbarian (Orc)</button>
+        <button class="role-btn" data-role="rogue" data-race="human" id="roleBtnRogue">Rogue (Human)</button>
+        <button class="role-btn" data-role="knight" data-race="dwarf" id="roleBtnKnight">Knight (Dwarf)</button>
+        <button class="role-btn" data-role="monk" data-race="human" id="roleBtnMonk">Monk (Human)</button>
+        <button class="role-btn" data-role="healer" data-race="gnome" id="roleBtnHealer">Healer (Gnome)</button>
+        <button class="role-btn" data-role="tourist" data-race="human" id="roleBtnTourist">Tourist (Human)</button>
+        <button class="role-btn" data-role="archaeologist" data-race="human" id="roleBtnArchaeologist">Archaeologist (Human)</button>
       </div>
     </div>
     <div class="dialog-footer">
@@ -691,17 +692,94 @@
       populateLeaderboardTable(defaultBenchmarkData);
     }
 
+    let currentLocale = 'en';
+
+    function toggleLanguage() {
+      currentLocale = currentLocale === 'en' ? 'uk' : 'en';
+      if (session && session.set_locale) {
+        session.set_locale(currentLocale);
+      }
+      applyLocalization(currentLocale);
+      updateUi(null);
+    }
+
+    function applyLocalization(locale) {
+      const isUk = locale === 'uk';
+      document.getElementById('btnToggleLang').textContent = isUk ? '🌐 УКР (Змінити на EN)' : '🌐 EN / УКР';
+      document.getElementById('lblHero').textContent = isUk ? 'Герой:' : 'Hero:';
+      document.getElementById('lblAlign').textContent = isUk ? 'Шлях:' : 'Align:';
+      document.getElementById('lblDlvl').textContent = isUk ? 'Рівень:' : 'Dlvl:';
+      document.getElementById('lblGold').textContent = isUk ? 'Золото:' : 'Gold:';
+      document.getElementById('lblHp').textContent = isUk ? 'Здоров\'я:' : 'HP:';
+      document.getElementById('lblPw').textContent = isUk ? 'Мана:' : 'Pw:';
+      document.getElementById('lblAc').textContent = isUk ? 'Броня:' : 'AC:';
+      document.getElementById('lblNutr').textContent = isUk ? 'Ситість:' : 'Nutr:';
+      document.getElementById('lblTurn').textContent = isUk ? 'Хід:' : 'Turn:';
+      document.getElementById('lblDirectControls').textContent = isUk ? 'Керування' : 'Direct Controls';
+
+      document.getElementById('btnActEat').textContent = isUk ? '[e] Їсти' : '[e] Eat';
+      document.getElementById('btnActCast').textContent = isUk ? '[x] Закляття' : '[x] Cast';
+      document.getElementById('btnActRead').textContent = isUk ? '[r] Читати' : '[r] Read';
+      document.getElementById('btnActPickup').textContent = isUk ? '[,] Підняти' : '[,] PickUp';
+      document.getElementById('btnActPay').textContent = isUk ? '[p] Платити' : '[p] Pay';
+      document.getElementById('btnActPray').textContent = isUk ? '[P] Молитися' : '[P] Pray';
+      document.getElementById('btnActSacrifice').textContent = isUk ? '[S] Жертва' : '[S] Sacrifice';
+      document.getElementById('btnActWield').textContent = isUk ? '[w] Зброя' : '[w] Wield';
+      document.getElementById('btnActDrop').textContent = isUk ? '[d] Кинути' : '[d] Drop';
+      document.getElementById('btnActDescend').textContent = isUk ? '[>] Вниз' : '[>] Descend';
+      document.getElementById('btnActAscend').textContent = isUk ? '[<] Вгору' : '[<] Ascend';
+
+      document.getElementById('btnLeaderboard').textContent = isUk ? '🏆 Таблиця лідерів & ШІ Арена' : '🏆 Leaderboard & AI Arena';
+      document.getElementById('btnNewChar').textContent = isUk ? 'Персонаж' : 'Character';
+      document.getElementById('btnReset').textContent = isUk ? 'Скинути (Сід 42)' : 'Reset (Seed 42)';
+
+      // Character creation modal
+      const lblCharCreation = document.getElementById('lblCharCreation');
+      if (lblCharCreation) lblCharCreation.textContent = isUk ? 'Створення персонажа' : 'Character Creation';
+      const lblCharName = document.getElementById('lblCharName');
+      if (lblCharName) lblCharName.textContent = isUk ? 'Ім\'я героя:' : 'Character Name:';
+      const lblChooseRole = document.getElementById('lblChooseRole');
+      if (lblChooseRole) lblChooseRole.textContent = isUk ? 'Оберіть клас / роль:' : 'Choose Class / Role:';
+      const btnStartGame = document.getElementById('btnStartGame');
+      if (btnStartGame) btnStartGame.textContent = isUk ? 'Вирушити в підземелля' : 'Embark Into Dungeon';
+
+      const roleValk = document.getElementById('roleBtnValkyrie');
+      if (roleValk) roleValk.textContent = isUk ? 'Валькірія (Людина)' : 'Valkyrie (Human)';
+      const roleWiz = document.getElementById('roleBtnWizard');
+      if (roleWiz) roleWiz.textContent = isUk ? 'Маг (Людина)' : 'Wizard (Human)';
+      const roleBarb = document.getElementById('roleBtnBarbarian');
+      if (roleBarb) roleBarb.textContent = isUk ? 'Варвар (Орк)' : 'Barbarian (Orc)';
+      const roleRog = document.getElementById('roleBtnRogue');
+      if (roleRog) roleRog.textContent = isUk ? 'Розбійник (Людина)' : 'Rogue (Human)';
+      const roleKni = document.getElementById('roleBtnKnight');
+      if (roleKni) roleKni.textContent = isUk ? 'Лицар (Дворф)' : 'Knight (Dwarf)';
+      const roleMonk = document.getElementById('roleBtnMonk');
+      if (roleMonk) roleMonk.textContent = isUk ? 'Монах (Людина)' : 'Monk (Human)';
+      const roleHeal = document.getElementById('roleBtnHealer');
+      if (roleHeal) roleHeal.textContent = isUk ? 'Цілитель (Гном)' : 'Healer (Gnome)';
+      const roleTour = document.getElementById('roleBtnTourist');
+      if (roleTour) roleTour.textContent = isUk ? 'Турист (Людина)' : 'Tourist (Human)';
+      const roleArch = document.getElementById('roleBtnArchaeologist');
+      if (roleArch) roleArch.textContent = isUk ? 'Археолог (Людина)' : 'Archaeologist (Human)';
+
+      if (isUk) {
+        messageBarEl.textContent = 'Ласкаво просимо до NetRust! Формалізовано та математично доведено в Lean 4.';
+      } else {
+        messageBarEl.textContent = 'Welcome to NetRust! Formalized and mathematically verified in Lean 4.';
+      }
+    }
+
     function updateUi(lastObs) {
       if (!session) return;
       viewportEl.textContent = session.render_ascii();
       statNameEl.textContent = session.get_player_name();
-      statAlignEl.textContent = session.get_player_alignment();
+      statAlignEl.textContent = session.get_localized_alignment ? session.get_localized_alignment() : session.get_player_alignment();
       statDepthEl.textContent = session.get_depth();
       statGoldEl.textContent = session.get_player_gold();
       statHpEl.textContent = `${session.get_player_hp()}(${session.get_player_max_hp()})`;
       statPwEl.textContent = `${session.get_player_pw()}(${session.get_player_max_pw()})`;
       statAcEl.textContent = session.get_player_ac();
-      statNutrEl.textContent = `${session.get_player_nutrition()} (${session.get_hunger_state()})`;
+      statNutrEl.textContent = `${session.get_player_nutrition()} (${session.get_localized_hunger_state ? session.get_localized_hunger_state() : session.get_hunger_state()})`;
       statTurnEl.textContent = session.get_turn();
 
       const obsJson = session.get_observation_json();
@@ -1047,6 +1125,9 @@
         doAction(btn.dataset.act, btn.dataset.arg || null);
       });
     });
+
+    // Language toggle
+    document.getElementById('btnToggleLang').addEventListener('click', toggleLanguage);
 
     // Dialog controls
     document.getElementById('btnNewChar').addEventListener('click', () => {

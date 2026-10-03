@@ -1240,5 +1240,54 @@ fn test_artifact_combat_bonus_and_vorpal_blade() {
     assert!(events.iter().any(|e| matches!(e, GameEvent::AttackLanded { attacker, target, damage, .. } if *attacker == sim.player_id && *target == monster_id && *damage >= 16)));
 }
 
+#[test]
+fn test_ukrainian_i18n_simulation_logging() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    sim.set_locale(netrust_types::Locale::Uk);
+    assert_eq!(sim.get_locale(), netrust_types::Locale::Uk);
+
+    let p_coord = Coord::new_unchecked(10, 10);
+    let mon_coord = Coord::new_unchecked(11, 10);
+    if let Some(p) = sim.arena.actors.get_mut(sim.player_id) {
+        p.coord = p_coord;
+    }
+
+    let _mon = sim.arena.spawn_actor(netrust_arena::ActorRecord {
+        name: "гоблін".into(),
+        coord: mon_coord,
+        hp: 30,
+        max_hp: 30,
+        ac: 10,
+        level: 1,
+        speed: 12,
+        alignment: Alignment::Chaotic,
+        intrinsics: Intrinsics::default(),
+        is_player: false,
+        is_dead: false,
+        is_tame: false,
+    });
+
+    let combat_events = sim.step_player_action(ActionAst::MeleeAttack(mon_coord));
+    assert!(combat_events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("влучає") || text.contains("промахується"))));
+
+    // Test wishing in Ukrainian
+    let _wand_id = sim.arena.spawn_item(ItemRecord {
+        name: "wand of wishing".into(),
+        class: ItemClass::Wand,
+        weight: 7,
+        buc: Buc::Blessed,
+        is_container: false,
+        is_bag_of_holding: false,
+        enchantment: 3,
+        erosion: 0,
+        proofed: false,
+        location: ItemLocation::CarriedBy(sim.player_id),
+    });
+
+    let wish_events = sim.step_player_action(ActionAst::Wish("blessed +2 silver dragon scale mail".into()));
+    assert!(wish_events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("падає з небес"))));
+}
+
+
 
 

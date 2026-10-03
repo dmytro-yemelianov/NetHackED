@@ -24,9 +24,9 @@ impl SimulationWorld {
                     let old_nut = self.player_nutrition;
                     self.player_nutrition = netrust_core::nutrition::metabolic_tick(self.player_nutrition);
                     if old_nut >= 150 && self.player_nutrition < 150 {
-                        events.push(GameEvent::LogMessage { text: "You are beginning to feel hungry.".into() });
+                        events.push(GameEvent::LogMessage { text: netrust_i18n::Messages::hunger_hungry(self.locale).into() });
                     } else if old_nut >= 50 && self.player_nutrition < 50 {
-                        events.push(GameEvent::LogMessage { text: "You feel weak from hunger!".into() });
+                        events.push(GameEvent::LogMessage { text: netrust_i18n::Messages::hunger_weak(self.locale).into() });
                     } else if self.player_nutrition == 0 && (self.scheduler.turn % 10 == 0) {
                         if let Some(p) = self.arena.actors.get_mut(self.player_id) {
                             p.hp = p.hp.saturating_sub(1);
@@ -34,7 +34,7 @@ impl SimulationWorld {
                                 p.is_dead = true;
                             }
                         }
-                        events.push(GameEvent::LogMessage { text: "You are fainting from starvation!".into() });
+                        events.push(GameEvent::LogMessage { text: netrust_i18n::Messages::hunger_fainting(self.locale).into() });
                     }
 
                     if self.scheduler.monster_can_act() {

@@ -5,6 +5,31 @@ use serde::{Deserialize, Serialize};
 pub const COLNO: usize = 80;
 pub const ROWNO: usize = 21;
 
+/// Supported language locales for NetRust internationalization (i18n).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+pub enum Locale {
+    #[default]
+    En,
+    Uk,
+}
+
+impl Locale {
+    pub fn parse(s: &str) -> Self {
+        match s.trim().to_lowercase().as_str() {
+            "uk" | "ua" | "uk_ua" | "uk-ua" | "ukrainian" | "укр" | "українська" => Locale::Uk,
+            _ => Locale::En,
+        }
+    }
+
+    pub fn code(self) -> &'static str {
+        match self {
+            Locale::En => "en",
+            Locale::Uk => "uk",
+        }
+    }
+}
+
+
 /// Bounded coordinate on the $80 \times 21$ dungeon grid.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct Coord {

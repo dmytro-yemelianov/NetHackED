@@ -190,7 +190,7 @@ impl SimulationWorld {
                                         }
                                     }
                                     events.push(GameEvent::LogMessage {
-                                        text: format!("Your {} vibrates violently and explodes in a blast of shards!", wand_name),
+                                        text: netrust_i18n::Messages::wand_exploded(&wand_name, self.locale),
                                     });
                                 }
                                 netrust_types::RechargeResult::Success(new_w) => {
@@ -198,7 +198,7 @@ impl SimulationWorld {
                                         w_mut.enchantment = new_w.charges as i8;
                                         w_mut.erosion = new_w.recharges as u8;
                                         events.push(GameEvent::LogMessage {
-                                            text: format!("Your {} glows with bright light! Recharged to ({}:{})!", wand_name, new_w.charges, new_w.recharges),
+                                            text: netrust_i18n::Messages::wand_recharged(&wand_name, new_w.charges, new_w.recharges, self.locale),
                                         });
                                     }
                                 }
@@ -358,7 +358,7 @@ impl SimulationWorld {
                     wand_item.name.clone()
                 } else {
                     events.push(GameEvent::LogMessage {
-                        text: "Nothing happens. The wand is empty!".into(),
+                        text: netrust_i18n::Messages::wand_empty(self.locale).into(),
                     });
                     self.scheduler.hero_act(NORMAL_SPEED);
                     return events;
@@ -389,7 +389,7 @@ impl SimulationWorld {
             }
             if revealed > 0 {
                 events.push(GameEvent::LogMessage {
-                    text: format!("The wand tingles! {} hidden door(s) are revealed!", revealed),
+                    text: netrust_i18n::Messages::secret_doors_found(revealed, self.locale),
                 });
             } else {
                 events.push(GameEvent::LogMessage {
@@ -422,20 +422,20 @@ impl SimulationWorld {
                     let _ = netrust_core::endgame::destroy_drawbridge();
                     self.level.set_tile(coord, netrust_types::Tile::Moat);
                     events.push(GameEvent::LogMessage {
-                        text: "The striking ray shatters the drawbridge! It collapses into the moat!".into(),
+                        text: netrust_i18n::Messages::drawbridge_collapse(self.locale).into(),
                     });
                     break;
                 } else if matches!(current_tile, netrust_types::Tile::Door { .. }) {
                     self.level.get_tile_mut(coord).break_door();
                     events.push(GameEvent::LogMessage {
-                        text: "The door splinters apart violently!".into(),
+                        text: netrust_i18n::Messages::door_splinters(self.locale).into(),
                     });
                 }
             } else if wand_name.contains("cold") {
                 if matches!(current_tile, netrust_types::Tile::Pool { .. }) {
                     self.level.set_tile(coord, netrust_types::Tile::Pool { frozen: true });
                     events.push(GameEvent::LogMessage {
-                        text: "The ray of frost freezes the water into a sheet of solid ice!".into(),
+                        text: netrust_i18n::Messages::pool_frozen(self.locale).into(),
                     });
                 }
             }
@@ -493,7 +493,7 @@ impl SimulationWorld {
             if let Some(new_w) = netrust_core::artifacts_wands::zap_wand(netrust_types::WandCharges { charges, recharges }) {
                 wand_item.enchantment = new_w.charges as i8;
             } else {
-                events.push(GameEvent::LogMessage { text: "The wand of wishing is empty! Nothing happens.".into() });
+                events.push(GameEvent::LogMessage { text: netrust_i18n::Messages::wish_empty(self.locale).into() });
                 self.scheduler.hero_act(NORMAL_SPEED);
                 return events;
             }
@@ -512,7 +512,7 @@ impl SimulationWorld {
                 let spawned_id = self.arena.spawn_item(record);
                 let item_name = self.arena.items.get(spawned_id).unwrap().name.clone();
                 events.push(GameEvent::LogMessage {
-                    text: format!("A {} miraculously drops from the heavens at your feet!", item_name),
+                    text: netrust_i18n::Messages::wish_granted(&item_name, self.locale),
                 });
             } else {
                 events.push(GameEvent::LogMessage {

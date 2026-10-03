@@ -1,6 +1,7 @@
 use netrust_arena::{ItemLocation, ItemRecord};
 use netrust_core::energy::NORMAL_SPEED;
 use netrust_core::religion::{clamp_favor, consecrate_water, resolve_sacrifice};
+use netrust_i18n::Messages;
 use netrust_types::{Alignment, Buc, ItemClass, SacrificeResult, Tile};
 
 use crate::events::GameEvent;
@@ -24,7 +25,7 @@ impl SimulationWorld {
                 p.hp = p.hp.saturating_sub(smite_damage).max(1);
             }
             events.push(GameEvent::LogMessage {
-                text: "You pray too soon! A cloud of brimstone appears, and you are struck by celestial lightning!".into(),
+                text: Messages::prayer_timeout(self.locale).into(),
             });
             self.scheduler.hero_act(NORMAL_SPEED);
             return events;
@@ -42,7 +43,7 @@ impl SimulationWorld {
                         p.hp = p.max_hp;
                     }
                     events.push(GameEvent::LogMessage {
-                        text: "You feel devoutly reconciled with your god! You are fully healed.".into(),
+                        text: Messages::prayer_coaligned(self.locale).into(),
                     });
 
                     // Check for water consecration into Holy Water!
@@ -52,7 +53,7 @@ impl SimulationWorld {
                             if item.name.to_lowercase().contains("potion of water") && item.buc == Buc::Uncursed {
                                 item.buc = consecrate_water(item.buc, true, self.divine_state.favor);
                                 events.push(GameEvent::LogMessage {
-                                    text: "A flash of divine light consecrates your water into Holy Water!".into(),
+                                    text: Messages::holy_water_consecrated(self.locale).into(),
                                 });
                                 break;
                             }
@@ -63,7 +64,7 @@ impl SimulationWorld {
                         p.hp = (p.hp + 8).min(p.max_hp);
                     }
                     events.push(GameEvent::LogMessage {
-                        text: "You feel a soothing warmth envelop you. You recover health.".into(),
+                        text: Messages::prayer_neutral(self.locale).into(),
                     });
                 } else {
                     // Wrath from opposing god!
@@ -72,24 +73,24 @@ impl SimulationWorld {
                         p.hp = p.hp.saturating_sub(wrath_damage).max(1);
                     }
                     events.push(GameEvent::LogMessage {
-                        text: "The altar shudders violently! A voice thunders: 'Infidel!' Divine lightning strikes you!".into(),
+                        text: Messages::prayer_wrath(self.locale).into(),
                     });
                 }
             }
             Tile::HighAltar { align } => {
                 if player.alignment == align {
                     events.push(GameEvent::LogMessage {
-                        text: "You kneel before the High Altar of your deity on the Astral Plane. The presence of divinity hums with eternal power.".into(),
+                        text: Messages::prayer_high_altar_coaligned(self.locale).into(),
                     });
                 } else {
                     events.push(GameEvent::LogMessage {
-                        text: "You sense intense celestial fury radiating from this foreign High Altar!".into(),
+                        text: Messages::prayer_high_altar_foreign(self.locale).into(),
                     });
                 }
             }
             _ => {
                 events.push(GameEvent::LogMessage {
-                    text: "You pray to the gods of the dungeon. A harmonious chime echoes in the distance.".into(),
+                    text: Messages::prayer_general(self.locale).into(),
                 });
             }
         }
@@ -129,7 +130,7 @@ impl SimulationWorld {
                         SacrificeResult::AltarConverted(new_align) => {
                             self.level.set_tile(p_coord, Tile::Altar { align: new_align });
                             events.push(GameEvent::LogMessage {
-                                text: format!("You sacrifice the {}. An astral flash erupts and the altar converts to {:?}!", item_name, new_align),
+                                text: Messages::altar_converted(&item_name, new_align, self.locale),
                             });
                         }
                         SacrificeResult::FavorIncreased(fav) => {
@@ -138,7 +139,7 @@ impl SimulationWorld {
                                 p.hp += 1;
                             }
                             events.push(GameEvent::LogMessage {
-                                text: format!("You sacrifice the {}. An aura of divine light envelops the altar. You feel favored by your god (Favor: {}, +1 Max HP)!", item_name, fav),
+                                text: Messages::sacrifice_favor_increased(&item_name, fav, self.locale),
                             });
                         }
                         SacrificeResult::DivineGift(artifact_name) => {
@@ -156,14 +157,14 @@ impl SimulationWorld {
                             };
                             self.arena.spawn_item(gift_record);
                             events.push(GameEvent::LogMessage {
-                                text: format!("A thunderous celestial horn sounds! Your deity crowns you their champion and gifts you {}!", artifact_name),
+                                text: Messages::divine_crowning(&artifact_name, self.locale),
                             });
                         }
                     }
                     self.scheduler.hero_act(NORMAL_SPEED);
                 } else {
                     events.push(GameEvent::LogMessage {
-                        text: "You don't have that item in your pack to sacrifice.".into(),
+                        text: Messages::no_sacrifice_item(self.locale).into(),
                     });
                 }
             }
@@ -183,13 +184,13 @@ impl SimulationWorld {
                                     self.wielded_item = None;
                                 }
                                 events.push(GameEvent::LogMessage {
-                                    text: format!("An astral choir erupts! You offer the Amulet of Yendor on your co-aligned {:?} High Altar and ascend to immortality as a demigod!", god_align),
+                                    text: Messages::ascension_victory(god_align, self.locale),
                                 });
                                 events.push(GameEvent::Victory);
                             }
                             netrust_types::AscensionOutcome::Rejected(reason) => {
                                 events.push(GameEvent::LogMessage {
-                                    text: format!("Offering rejected! {}", reason),
+                                    text: Messages::ascension_rejected(&reason, self.locale),
                                 });
                                 if let Some(p) = self.arena.actors.get_mut(self.player_id) {
                                     p.hp = p.hp.saturating_sub(15).max(1);
@@ -198,19 +199,19 @@ impl SimulationWorld {
                         }
                     } else {
                         events.push(GameEvent::LogMessage {
-                            text: "The High Altar demands nothing less than the genuine Amulet of Yendor!".into(),
+                            text: Messages::high_altar_demands_amulet(self.locale).into(),
                         });
                     }
                     self.scheduler.hero_act(NORMAL_SPEED);
                 } else {
                     events.push(GameEvent::LogMessage {
-                        text: "You don't have that item in your pack to sacrifice.".into(),
+                        text: Messages::no_sacrifice_item(self.locale).into(),
                     });
                 }
             }
             _ => {
                 events.push(GameEvent::LogMessage {
-                    text: "There is no altar here to sacrifice upon.".into(),
+                    text: Messages::no_altar(self.locale).into(),
                 });
             }
         }

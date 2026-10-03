@@ -173,6 +173,48 @@ impl WasmGameSession {
         self.session.world.arena.actors.get(self.session.world.player_id).map(|p| format!("{:?}", p.alignment)).unwrap_or_default()
     }
 
+    #[wasm_bindgen]
+    pub fn set_locale(&mut self, locale_str: &str) {
+        let loc = netrust_types::Locale::parse(locale_str);
+        self.session.world.set_locale(loc);
+    }
+
+    #[wasm_bindgen]
+    pub fn get_locale(&self) -> String {
+        self.session.world.get_locale().code().to_string()
+    }
+
+    #[wasm_bindgen]
+    pub fn get_localized_hunger_state(&self) -> String {
+        let hunger_state = format!("{:?}", self.session.world.hunger_state());
+        netrust_i18n::t_hunger_str(&hunger_state, self.session.world.locale).to_string()
+    }
+
+    #[wasm_bindgen]
+    pub fn get_localized_alignment(&self) -> String {
+        if let Some(p) = self.session.world.arena.actors.get(self.session.world.player_id) {
+            netrust_i18n::t_align(p.alignment, self.session.world.locale).to_string()
+        } else {
+            "".to_string()
+        }
+    }
+
+    #[wasm_bindgen]
+    pub fn get_i18n_strings_json(locale_str: &str) -> String {
+        let loc = netrust_types::Locale::parse(locale_str);
+        let keys = [
+            "hero", "align", "dlvl", "gold", "hp", "pw", "ac", "nutr", "turn",
+            "eat", "cast", "read", "pickup", "pay", "pray", "sacrifice",
+            "wield", "drop", "descend", "ascend", "wait", "leaderboard", "character", "reset"
+        ];
+        let mut map = std::collections::HashMap::new();
+        for k in keys {
+            map.insert(k, netrust_i18n::t(k, loc));
+        }
+        map.insert("welcome", netrust_i18n::Messages::welcome(loc));
+        serde_json::to_string(&map).unwrap_or_default()
+    }
+
     /// Return catalog of available roles and races in JSON format.
     #[wasm_bindgen]
     pub fn get_roles_json() -> String {

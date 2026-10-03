@@ -42,6 +42,7 @@ pub struct SimulationWorld {
     pub player_max_pw: u32,
     pub known_spells: Vec<(SpellKind, u32)>,
     pub divine_state: netrust_types::DivineState,
+    pub locale: netrust_types::Locale,
     #[serde(skip, default = "default_rng")]
     pub rng: ChaCha8Rng,
     pub seed: u64,
@@ -151,10 +152,21 @@ impl SimulationWorld {
             player_max_pw,
             known_spells,
             divine_state: netrust_types::DivineState::default(),
+            locale: netrust_types::Locale::En,
             rng,
             seed,
             event_log: Vec::new(),
         }
+    }
+
+    /// Set active locale for game event text and logging.
+    pub fn set_locale(&mut self, locale: netrust_types::Locale) {
+        self.locale = locale;
+    }
+
+    /// Retrieve active locale.
+    pub fn get_locale(&self) -> netrust_types::Locale {
+        self.locale
     }
 
     /// Initialize a new deterministic simulation world from a seed with default character.

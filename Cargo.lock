@@ -882,6 +882,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "netrust-i18n"
+version = "0.1.0"
+dependencies = [
+ "netrust-types",
+ "serde",
+]
+
+[[package]]
 name = "netrust-py"
 version = "0.1.0"
 dependencies = [
@@ -903,6 +911,7 @@ dependencies = [
  "netrust-core",
  "netrust-data",
  "netrust-dungeon",
+ "netrust-i18n",
  "netrust-types",
  "proptest",
  "rand 0.9.5",
@@ -920,6 +929,7 @@ dependencies = [
  "netrust-arena",
  "netrust-core",
  "netrust-dungeon",
+ "netrust-i18n",
  "netrust-sim",
  "netrust-types",
 ]
@@ -943,6 +953,7 @@ dependencies = [
  "netrust-core",
  "netrust-data",
  "netrust-dungeon",
+ "netrust-i18n",
  "netrust-sim",
  "netrust-types",
  "serde",

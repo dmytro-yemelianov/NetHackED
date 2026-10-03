@@ -11,6 +11,7 @@ netrust-core = { path = "../netrust-core" }
 netrust-dungeon = { path = "../netrust-dungeon" }
 netrust-sim = { path = "../netrust-sim" }
 netrust-agent = { path = "../netrust-agent" }
+netrust-i18n = { path = "../netrust-i18n" }
 crossterm = "0.28"
 
 [[bin]]

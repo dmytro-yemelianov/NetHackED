@@ -80,7 +80,7 @@ impl SimulationWorld {
                     let (new_hp, dead) = netrust_core::artifacts_wands::apply_vorpal_strike(target.hp, decap);
                     if decap {
                         events.push(GameEvent::LogMessage {
-                            text: format!("*SNICKER-SNACK!* Vorpal Blade decapitates {}!", defender.name),
+                            text: netrust_i18n::Messages::vorpal_decapitate(&defender.name, self.locale),
                         });
                     }
                     target.hp = new_hp.saturating_sub(final_damage);
@@ -98,10 +98,10 @@ impl SimulationWorld {
                 damage: final_damage,
                 lethal,
             });
-            let attack_msg = format!("{} hits {} for {} damage!", attacker.name, defender.name, final_damage);
+            let attack_msg = netrust_i18n::Messages::attack_hit(&attacker.name, &defender.name, final_damage, self.locale);
             events.push(GameEvent::LogMessage { text: attack_msg });
             if lethal {
-                events.push(GameEvent::LogMessage { text: format!("{} is killed!", defender.name) });
+                events.push(GameEvent::LogMessage { text: netrust_i18n::Messages::killed(&defender.name, self.locale) });
                 if defender_id != self.player_id {
                     let corpse = create_item_record(ItemKindId::Corpse, ItemLocation::Floor(defender.coord), Buc::Uncursed);
                     self.arena.spawn_item(corpse);
@@ -112,7 +112,9 @@ impl SimulationWorld {
                 attacker: attacker_id,
                 target: defender_id,
             });
-            events.push(GameEvent::LogMessage { text: format!("{} misses {}.", attacker.name, defender.name) });
+            events.push(GameEvent::LogMessage {
+                text: netrust_i18n::Messages::attack_miss(&attacker.name, &defender.name, self.locale),
+            });
         }
 
         events

@@ -10,6 +10,7 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use netrust_dungeon::compute_fov;
+use netrust_i18n::{t, t_align, t_hunger_str, Locale};
 use netrust_sim::{
     ActionAst, Alignment, CharacterConfig, Coord, Direction, DoorState, GameEvent, Gender,
     HungerState, RaceId, RoleId, SimulationWorld, Tile, COLNO, ROWNO,
@@ -35,8 +36,46 @@ impl Drop for TerminalGuard {
     }
 }
 
-fn select_character(stdout: &mut Stdout) -> io::Result<Option<CharacterConfig>> {
+fn select_character(stdout: &mut Stdout, locale: Locale) -> io::Result<Option<CharacterConfig>> {
     execute!(stdout, MoveTo(0, 0), Clear(ClearType::All))?;
+    let header_desc = if locale == Locale::Uk {
+        "  Хто ви? Оберіть початковий клас персонажа:\n\n"
+    } else {
+        "  Who are you? Pick your starting character role:\n\n"
+    };
+
+    let roles_desc = if locale == Locale::Uk {
+        concat!(
+            "    [v] Валькірія     - Нейтральна Людина (Високе HP, Довгий Меч, Щит)\n",
+            "    [w] Маг           - Нейтральна Людина (Магія, Жезл Удару, Сувої)\n",
+            "    [b] Варвар        - Хаотичний Орк     (Високе HP, Нищівний Ближній Бій)\n",
+            "    [r] Розбійник     - Хаотична Людина   (Кинджал, Короткий Меч, Мішок)\n",
+            "    [k] Лицар         - Законний Дворф    (Важка Броня, Довгий Меч)\n",
+            "    [m] Монах         - Нейтральна Людина (Бойові Мистецтва, Зцілення)\n",
+            "    [h] Цілитель      - Нейтральний Гном  (Зілля Зцілення, Живучість)\n",
+            "    [t] Турист        - Нейтральна Людина (Золото, Бездонна Торба)\n",
+            "    [a] Археолог      - Законна Людина    (Мішок, Меч, Стародавні Знання)\n\n",
+        )
+    } else {
+        concat!(
+            "    [v] Valkyrie      - Neutral Human (High HP, Long Sword, Shield)\n",
+            "    [w] Wizard        - Neutral Human (Magic, Wand of Striking, Scrolls)\n",
+            "    [b] Barbarian     - Chaotic Orc   (High HP, Brutal Melee)\n",
+            "    [r] Rogue         - Chaotic Human (Dagger, Short Sword, Sack)\n",
+            "    [k] Knight        - Lawful Dwarf  (Heavy Armor, Long Sword)\n",
+            "    [m] Monk          - Neutral Human (Martial Arts, Healing, Teleport)\n",
+            "    [h] Healer        - Neutral Gnome (Healing Potions, High Vitality)\n",
+            "    [t] Tourist       - Neutral Human (Gold, Bag of Holding, Extra Potions)\n",
+            "    [a] Archaeologist - Lawful Human  (Sack, Short Sword, Ancient Lore)\n\n",
+        )
+    };
+
+    let prompt = if locale == Locale::Uk {
+        "  Оберіть роль [v/w/b/r/k/m/h/t/a] або [Enter] для Валькірії: "
+    } else {
+        "  Press role key [v/w/b/r/k/m/h/t/a] or [Enter] for default Valkyrie: "
+    };
+
     execute!(
         stdout,
         MoveTo(0, 1),
@@ -50,18 +89,10 @@ fn select_character(stdout: &mut Stdout) -> io::Result<Option<CharacterConfig>> 
         Print("================================================================================"),
         MoveTo(0, 5),
         SetForegroundColor(Color::White),
-        Print("  Who are you? Pick your starting character role:\n\n"),
-        Print("    [v] Valkyrie      - Neutral Human (High HP, Long Sword, Shield)\n"),
-        Print("    [w] Wizard        - Neutral Human (Magic, Wand of Striking, Scrolls)\n"),
-        Print("    [b] Barbarian     - Chaotic Orc   (High HP, Brutal Melee)\n"),
-        Print("    [r] Rogue         - Chaotic Human (Dagger, Short Sword, Sack)\n"),
-        Print("    [k] Knight        - Lawful Dwarf  (Heavy Armor, Long Sword)\n"),
-        Print("    [m] Monk          - Neutral Human (Martial Arts, Healing, Teleport)\n"),
-        Print("    [h] Healer        - Neutral Gnome (Healing Potions, High Vitality)\n"),
-        Print("    [t] Tourist       - Neutral Human (Gold, Bag of Holding, Extra Potions)\n"),
-        Print("    [a] Archaeologist - Lawful Human  (Sack, Short Sword, Ancient Lore)\n\n"),
+        Print(header_desc),
+        Print(roles_desc),
         SetForegroundColor(Color::Green),
-        Print("  Press role key [v/w/b/r/k/m/h/t/a] or [Enter] for default Valkyrie: "),
+        Print(prompt),
         ResetColor
     )?;
 
@@ -74,7 +105,7 @@ fn select_character(stdout: &mut Stdout) -> io::Result<Option<CharacterConfig>> 
                 KeyCode::Char('q') | KeyCode::Esc => return Ok(None),
                 KeyCode::Char('v') | KeyCode::Enter | KeyCode::Char(' ') => {
                     return Ok(Some(CharacterConfig {
-                        name: "Valkyrie".into(),
+                        name: if locale == Locale::Uk { "Валькірія".into() } else { "Valkyrie".into() },
                         role: RoleId::Valkyrie,
                         race: RaceId::Human,
                         gender: Gender::Female,
@@ -83,7 +114,7 @@ fn select_character(stdout: &mut Stdout) -> io::Result<Option<CharacterConfig>> 
                 }
                 KeyCode::Char('w') => {
                     return Ok(Some(CharacterConfig {
-                        name: "Wizard".into(),
+                        name: if locale == Locale::Uk { "Маг".into() } else { "Wizard".into() },
                         role: RoleId::Wizard,
                         race: RaceId::Human,
                         gender: Gender::Male,
@@ -92,7 +123,7 @@ fn select_character(stdout: &mut Stdout) -> io::Result<Option<CharacterConfig>> 
                 }
                 KeyCode::Char('b') => {
                     return Ok(Some(CharacterConfig {
-                        name: "Barbarian".into(),
+                        name: if locale == Locale::Uk { "Варвар".into() } else { "Barbarian".into() },
                         role: RoleId::Barbarian,
                         race: RaceId::Orc,
                         gender: Gender::Male,
@@ -101,7 +132,7 @@ fn select_character(stdout: &mut Stdout) -> io::Result<Option<CharacterConfig>> 
                 }
                 KeyCode::Char('r') => {
                     return Ok(Some(CharacterConfig {
-                        name: "Rogue".into(),
+                        name: if locale == Locale::Uk { "Розбійник".into() } else { "Rogue".into() },
                         role: RoleId::Rogue,
                         race: RaceId::Human,
                         gender: Gender::Female,
@@ -110,7 +141,7 @@ fn select_character(stdout: &mut Stdout) -> io::Result<Option<CharacterConfig>> 
                 }
                 KeyCode::Char('k') => {
                     return Ok(Some(CharacterConfig {
-                        name: "Knight".into(),
+                        name: if locale == Locale::Uk { "Лицар".into() } else { "Knight".into() },
                         role: RoleId::Knight,
                         race: RaceId::Dwarf,
                         gender: Gender::Male,
@@ -119,7 +150,7 @@ fn select_character(stdout: &mut Stdout) -> io::Result<Option<CharacterConfig>> 
                 }
                 KeyCode::Char('m') => {
                     return Ok(Some(CharacterConfig {
-                        name: "Monk".into(),
+                        name: if locale == Locale::Uk { "Монах".into() } else { "Monk".into() },
                         role: RoleId::Monk,
                         race: RaceId::Human,
                         gender: Gender::Male,
@@ -128,7 +159,7 @@ fn select_character(stdout: &mut Stdout) -> io::Result<Option<CharacterConfig>> 
                 }
                 KeyCode::Char('h') => {
                     return Ok(Some(CharacterConfig {
-                        name: "Healer".into(),
+                        name: if locale == Locale::Uk { "Цілитель".into() } else { "Healer".into() },
                         role: RoleId::Healer,
                         race: RaceId::Gnome,
                         gender: Gender::Female,
@@ -137,7 +168,7 @@ fn select_character(stdout: &mut Stdout) -> io::Result<Option<CharacterConfig>> 
                 }
                 KeyCode::Char('t') => {
                     return Ok(Some(CharacterConfig {
-                        name: "Tourist".into(),
+                        name: if locale == Locale::Uk { "Турист".into() } else { "Tourist".into() },
                         role: RoleId::Tourist,
                         race: RaceId::Human,
                         gender: Gender::Male,
@@ -146,7 +177,7 @@ fn select_character(stdout: &mut Stdout) -> io::Result<Option<CharacterConfig>> 
                 }
                 KeyCode::Char('a') => {
                     return Ok(Some(CharacterConfig {
-                        name: "Archaeologist".into(),
+                        name: if locale == Locale::Uk { "Археолог".into() } else { "Archaeologist".into() },
                         role: RoleId::Archaeologist,
                         race: RaceId::Human,
                         gender: Gender::Female,
@@ -160,17 +191,36 @@ fn select_character(stdout: &mut Stdout) -> io::Result<Option<CharacterConfig>> 
 }
 
 fn main() -> io::Result<()> {
+    let args: Vec<String> = std::env::args().collect();
+    let mut locale = Locale::En;
+    for (i, arg) in args.iter().enumerate() {
+        if arg == "--lang" || arg == "-l" {
+            if let Some(val) = args.get(i + 1) {
+                locale = Locale::parse(val);
+            }
+        } else if arg == "--uk" {
+            locale = Locale::Uk;
+        } else if arg == "--en" {
+            locale = Locale::En;
+        }
+    }
+
     let mut stdout = stdout();
     let _guard = TerminalGuard::new(&mut stdout)?;
 
-    let config = match select_character(&mut stdout)? {
+    let config = match select_character(&mut stdout, locale)? {
         Some(cfg) => cfg,
         None => return Ok(()),
     };
 
     let char_name = config.name.clone();
     let mut world = SimulationWorld::new_with_character(42, config);
-    let mut message = format!("Welcome to NetRust, {}! Classic NetHack 5.0 formalized & verified in Lean 4.", char_name);
+    world.set_locale(locale);
+    let mut message = if locale == Locale::Uk {
+        format!("Ласкаво просимо до NetRust, {}! Класичний NetHack 5.0, формалізований у Lean 4.", char_name)
+    } else {
+        format!("Welcome to NetRust, {}! Classic NetHack 5.0 formalized & verified in Lean 4.", char_name)
+    };
     let mut last_dir = Direction::East;
 
     loop {
@@ -184,7 +234,11 @@ fn main() -> io::Result<()> {
             let player_opt = world.arena.actors.get(world.player_id).cloned();
             let Some(player) = player_opt else { break; };
             if player.is_dead {
-                message = "You have died... Press 'q' to quit.".into();
+                message = if world.locale == Locale::Uk {
+                    "Ви загинули... Натисніть 'q' для виходу.".into()
+                } else {
+                    "You have died... Press 'q' to quit.".into()
+                };
                 if key.code == KeyCode::Char('q') || key.code == KeyCode::Esc {
                     break;
                 }
@@ -193,6 +247,16 @@ fn main() -> io::Result<()> {
 
             let action = match key.code {
                 KeyCode::Char('q') | KeyCode::Esc => break,
+                KeyCode::Char('L') | KeyCode::Char('\\') => {
+                    let new_loc = if world.locale == Locale::Uk { Locale::En } else { Locale::Uk };
+                    world.set_locale(new_loc);
+                    message = if new_loc == Locale::Uk {
+                        "Мову інтерфейсу перемкнено на українську (uk-UA).".into()
+                    } else {
+                        "Interface language switched to English (en-US).".into()
+                    };
+                    None
+                }
                 KeyCode::Char('h') | KeyCode::Left => {
                     last_dir = Direction::West;
                     Some(ActionAst::Move(Direction::West))
@@ -275,14 +339,20 @@ fn main() -> io::Result<()> {
 
             if let Some(act) = action {
                 let events = world.step_player_action(act);
+                let loc = world.locale;
                 if let Some(last_msg) = events.iter().filter_map(|e| match e {
                     GameEvent::LogMessage { text } => Some(text.clone()),
                     GameEvent::AttackLanded { damage, lethal, .. } => {
-                        Some(format!("You hit the monster for {} damage!{}", damage, if *lethal { " It dies!" } else { "" }))
+                        let hit_str = if loc == Locale::Uk {
+                            format!("Ви влучаєте у чудовисько на {} шкоди!{}", damage, if *lethal { " Воно гине!" } else { "" })
+                        } else {
+                            format!("You hit the monster for {} damage!{}", damage, if *lethal { " It dies!" } else { "" })
+                        };
+                        Some(hit_str)
                     }
-                    GameEvent::AttackMissed { .. } => Some("You miss the monster.".into()),
-                    GameEvent::DoorToggled { new_state, .. } => Some(format!("The door is now {:?}.", new_state)),
-                    GameEvent::LevelChanged { to_depth, .. } => Some(format!("You enter dungeon level {}.", to_depth)),
+                    GameEvent::AttackMissed { .. } => Some(if loc == Locale::Uk { "Ви промахуєтесь повз чудовисько.".into() } else { "You miss the monster.".into() }),
+                    GameEvent::DoorToggled { new_state, .. } => Some(if loc == Locale::Uk { format!("Стан дверей: {:?}.", new_state) } else { format!("The door is now {:?}.", new_state) }),
+                    GameEvent::LevelChanged { to_depth, .. } => Some(if loc == Locale::Uk { format!("Ви переходите на рівень {}.", to_depth) } else { format!("You enter dungeon level {}.", to_depth) }),
                     _ => None,
                 }).last() {
                     message = last_msg;
@@ -397,39 +467,55 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
     }
 
     // Line 22: Botl Status Line
+    let locale = world.locale;
     let player = world.arena.actors.get(world.player_id);
-    let (hp, max_hp, ac, _lvl, name, align) = player
-        .map(|p| (p.hp, p.max_hp, p.ac, p.level, p.name.as_str(), format!("{:?}", p.alignment)))
-        .unwrap_or((0, 0, 10, 1, "Hero", "Neutral".to_string()));
+    let (hp, max_hp, ac, _lvl, name, align_enum) = player
+        .map(|p| (p.hp, p.max_hp, p.ac, p.level, p.name.as_str(), p.alignment))
+        .unwrap_or((0, 0, 10, 1, "Hero", Alignment::Neutral));
 
-    let align_short = &align[..align.len().min(3)];
-    let hunger_str = match world.hunger_state() {
-        HungerState::Satiated => "Satiated",
+    let align_str = t_align(align_enum, locale);
+    let align_short: String = align_str.chars().take(3).collect();
+    let hunger_code = match world.hunger_state() {
+        HungerState::Satiated => "satiated",
         HungerState::Normal => "",
-        HungerState::Hungry => "Hungry",
-        HungerState::Weak => "Weak",
-        HungerState::Fainting => "Fainting",
-        HungerState::Starved => "Starved",
+        HungerState::Hungry => "hungry",
+        HungerState::Weak => "weak",
+        HungerState::Fainting => "fainting",
+        HungerState::Starved => "starved",
     };
+    let hunger_display = if hunger_code.is_empty() { "" } else { t_hunger_str(hunger_code, locale) };
+    let none_str = if locale == Locale::Uk { "пусто" } else { "none" };
+
     let status = format!(
-        "{}:{} Dlvl:{:<2} $:{} HP:{}({}) Pw:{}({}) AC:{:<2} {:<8} T:{:<4} Wield:{}",
+        "{}:{} {}:{:<2} {}:{} {}:{}({}) {}:{}({}) {}:{:<2} {:<8} {}:{:<4} {}:{}",
         name,
         align_short,
+        t("dlvl", locale),
         world.depth,
+        t("gold", locale),
         world.player_gold,
+        t("hp", locale),
         hp,
         max_hp,
+        t("pw", locale),
         world.player_pw,
         world.player_max_pw,
+        t("ac", locale),
         ac,
-        hunger_str,
+        hunger_display,
+        t("turn", locale),
         world.scheduler.turn,
-        world.wielded_item.and_then(|id| world.arena.items.get(id)).map(|i| i.name.as_str()).unwrap_or("none")
+        t("wield", locale),
+        world.wielded_item.and_then(|id| world.arena.items.get(id)).map(|i| i.name.as_str()).unwrap_or(none_str)
     );
     execute!(stdout, MoveTo(0, 22), SetForegroundColor(Color::Green), Print(format!("{:<80}", status)), ResetColor)?;
 
     // Line 23: Command Bar
-    let cmd_help = "[h/j/k/l: Move | e: Eat | x: Cast | r: Read | z: Zap | ,: PickUp | p: Pay | P: Pray | S: Sac | q: Quit]";
+    let cmd_help = if locale == Locale::Uk {
+        "[h/j/k/l: Рух | e: Їсти | x: Закляття | r: Читати | z: Жезл | ,: Взяти | P: Молитва | S: Жертва | L: Мова | q: Вихід]"
+    } else {
+        "[h/j/k/l: Move | e: Eat | x: Cast | r: Read | z: Zap | ,: PickUp | P: Pray | S: Sac | L: Lang | q: Quit]"
+    };
     execute!(stdout, MoveTo(0, 23), SetForegroundColor(Color::DarkGrey), Print(format!("{:<80}", cmd_help)), ResetColor)?;
 
     Ok(())

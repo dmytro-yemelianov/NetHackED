@@ -10,5 +10,6 @@ members = [
     "crates/netrust-tui",
     "crates/netrust-wasm",
     "crates/netrust-py",
+    "crates/netrust-i18n",
 ]
 resolver = "2"
