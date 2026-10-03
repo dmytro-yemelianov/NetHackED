@@ -59,7 +59,7 @@ pub struct SimulationWorld {
     pub alignment_record: i32,
     #[serde(default)]
     pub role_name: String,
-    #[serde(skip, default = "default_rng")]
+    #[serde(default = "default_rng")]
     pub rng: ChaCha8Rng,
     pub seed: u64,
     pub event_log: Vec<GameEvent>,

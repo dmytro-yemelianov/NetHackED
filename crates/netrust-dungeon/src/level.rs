@@ -14,8 +14,9 @@ pub struct DungeonLevel {
     pub rooms: Vec<Room>,
     pub stairs_up: Coord,
     pub stairs_down: Coord,
+    #[serde(with = "coord_map")]
     pub engravings: HashMap<Coord, Engraving>,
-    #[serde(default)]
+    #[serde(default, with = "coord_map")]
     pub traps: HashMap<Coord, netrust_types::TrapRecord>,
     #[serde(default)]
     pub is_dark: bool,
@@ -116,5 +117,32 @@ impl DungeonLevel {
             }
         }
         false
+    }
+}
+
+/// Serializes `HashMap<Coord, V>` as a coordinate-sorted sequence of `(Coord, V)` pairs:
+/// valid JSON (no struct keys) and deterministic ordering.
+mod coord_map {
+    use std::collections::HashMap;
+    use netrust_types::Coord;
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+    pub fn serialize<S, V>(map: &HashMap<Coord, V>, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+        V: Serialize,
+    {
+        let mut entries: Vec<(&Coord, &V)> = map.iter().collect();
+        entries.sort_by_key(|(c, _)| **c);
+        s.collect_seq(entries)
+    }
+
+    pub fn deserialize<'de, D, V>(d: D) -> Result<HashMap<Coord, V>, D::Error>
+    where
+        D: Deserializer<'de>,
+        V: Deserialize<'de>,
+    {
+        let entries: Vec<(Coord, V)> = Vec::deserialize(d)?;
+        Ok(entries.into_iter().collect())
     }
 }
