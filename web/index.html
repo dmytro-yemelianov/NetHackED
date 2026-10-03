@@ -462,6 +462,7 @@
     <div class="terminal-container">
       <div id="messageBar" class="message-bar">Welcome to NetRust! Formalized and mathematically verified in Lean 4.</div>
       <pre id="viewport" class="viewport" tabindex="0">Initializing WebAssembly engine...</pre>
+      <canvas id="tileCanvas" width="960" height="504" class="viewport canvas-viewport" style="display:none; width: 100%; height: auto; max-width: 960px; image-rendering: pixelated; image-rendering: crisp-edges;" tabindex="0"></canvas>
       <div class="status-bar">
         <div class="status-item"><span id="lblHero" class="status-label">Hero:</span><span id="statName" class="status-val">Valkyrie</span></div>
         <div class="status-item"><span id="lblAlign" class="status-label">Align:</span><span id="statAlign" class="status-val">Neutral</span></div>
@@ -851,9 +852,13 @@
     }
 
     let currentLocale = 'en';
+    const DISPLAY_MODES = ['ascii', 'crt', 'canvas'];
+    let displayMode = 'ascii';
     let crtMode = false;
     let soundEnabled = true;
     let audioCtx = null;
+    let canvasEl = null;
+    let canvasCtx = null;
 
     function initAudio() {
       if (!audioCtx) {
@@ -948,12 +953,350 @@
       }
     }
 
+    function applyDisplayMode() {
+      const isUk = currentLocale === 'uk';
+      const btn = document.getElementById('btnDisplayMode');
+      if (!canvasEl) {
+        canvasEl = document.getElementById('tileCanvas');
+        if (canvasEl) canvasCtx = canvasEl.getContext('2d');
+      }
+
+      if (displayMode === 'ascii') {
+        crtMode = false;
+        document.body.classList.remove('crt-mode');
+        if (viewportEl) viewportEl.style.display = 'block';
+        if (canvasEl) canvasEl.style.display = 'none';
+        btn.textContent = isUk ? '📺 Режим: ASCII' : '📺 Mode: ASCII';
+      } else if (displayMode === 'crt') {
+        crtMode = true;
+        document.body.classList.add('crt-mode');
+        if (viewportEl) viewportEl.style.display = 'block';
+        if (canvasEl) canvasEl.style.display = 'none';
+        btn.textContent = isUk ? '📺 Режим: CRT' : '📺 Mode: CRT';
+      } else { // canvas
+        crtMode = false;
+        document.body.classList.remove('crt-mode');
+        if (viewportEl) viewportEl.style.display = 'none';
+        if (canvasEl) canvasEl.style.display = 'block';
+        btn.textContent = isUk ? '🎮 Режим: 2D Тайли' : '🎮 Mode: 2D Tiles';
+      }
+      if (session) {
+        updateUi();
+      }
+    }
+
     function toggleDisplayMode() {
-      crtMode = !crtMode;
-      document.body.classList.toggle('crt-mode', crtMode);
-      document.getElementById('btnDisplayMode').textContent = crtMode
-        ? (currentLocale === 'uk' ? '📺 CRT: УВІМК' : '📺 CRT: ON')
-        : (currentLocale === 'uk' ? '📺 Режим CRT' : '📺 Phosphor CRT');
+      const idx = DISPLAY_MODES.indexOf(displayMode);
+      displayMode = DISPLAY_MODES[(idx + 1) % DISPLAY_MODES.length];
+      applyDisplayMode();
+    }
+
+    function renderCanvas(data) {
+      if (!canvasEl) {
+        canvasEl = document.getElementById('tileCanvas');
+        if (canvasEl) canvasCtx = canvasEl.getContext('2d');
+      }
+      if (!canvasCtx || !data || !data.tiles) return;
+
+      const ctx = canvasCtx;
+      const T_W = 12;
+      const T_H = 24;
+
+      ctx.fillStyle = '#080a0f';
+      ctx.fillRect(0, 0, 960, 504);
+
+      const tiles = data.tiles;
+      const playerCoord = data.player_coord; // [x, y]
+
+      for (let y = 0; y < 21; y++) {
+        for (let x = 0; x < 80; x++) {
+          const tile = tiles[y] ? tiles[y][x] : null;
+          if (!tile) continue;
+
+          const px = x * T_W;
+          const py = y * T_H;
+
+          switch (tile.kind) {
+            case 'stone':
+              ctx.fillStyle = '#0a0d14';
+              ctx.fillRect(px, py, T_W, T_H);
+              ctx.fillStyle = '#05070a';
+              ctx.fillRect(px + 2, py + 4, 2, 2);
+              ctx.fillRect(px + 8, py + 14, 2, 2);
+              break;
+            case 'wall_h':
+              ctx.fillStyle = '#3f465c';
+              ctx.fillRect(px, py, T_W, T_H);
+              ctx.fillStyle = '#6272a4';
+              ctx.fillRect(px, py, T_W, 2);
+              ctx.fillStyle = '#282a36';
+              ctx.fillRect(px, py + T_H - 2, T_W, 2);
+              ctx.fillStyle = '#212534';
+              ctx.fillRect(px + 5, py + 2, 1, T_H - 4);
+              break;
+            case 'wall_v':
+              ctx.fillStyle = '#383e52';
+              ctx.fillRect(px, py, T_W, T_H);
+              ctx.fillStyle = '#6272a4';
+              ctx.fillRect(px, py, 2, T_H);
+              ctx.fillStyle = '#212534';
+              ctx.fillRect(px + T_W - 2, py, 2, T_H);
+              ctx.fillStyle = '#282a36';
+              ctx.fillRect(px + 2, py + 11, T_W - 4, 1);
+              break;
+            case 'room':
+              ctx.fillStyle = '#1b1e2b';
+              ctx.fillRect(px, py, T_W, T_H);
+              ctx.strokeStyle = '#232738';
+              ctx.lineWidth = 1;
+              ctx.strokeRect(px + 0.5, py + 0.5, T_W - 1, T_H - 1);
+              break;
+            case 'corr':
+              ctx.fillStyle = '#141620';
+              ctx.fillRect(px, py, T_W, T_H);
+              ctx.fillStyle = '#222634';
+              ctx.fillRect(px + 2, py + 3, 2, 2);
+              ctx.fillRect(px + 7, py + 8, 2, 2);
+              ctx.fillRect(px + 3, py + 15, 2, 2);
+              ctx.fillRect(px + 8, py + 19, 2, 2);
+              break;
+            case 'door_open':
+              ctx.fillStyle = '#1b1e2b';
+              ctx.fillRect(px, py, T_W, T_H);
+              ctx.fillStyle = '#8d6e63';
+              ctx.fillRect(px, py, 2, T_H);
+              ctx.fillRect(px + T_W - 2, py, 2, T_H);
+              break;
+            case 'door_closed':
+              ctx.fillStyle = '#5d4037';
+              ctx.fillRect(px, py, T_W, T_H);
+              ctx.fillStyle = '#8d6e63';
+              ctx.fillRect(px + 2, py + 2, T_W - 4, T_H - 4);
+              ctx.fillStyle = '#d7ccc8';
+              ctx.fillRect(px + 3, py + 11, 2, 2);
+              break;
+            case 'door_broken':
+              ctx.fillStyle = '#1b1e2b';
+              ctx.fillRect(px, py, T_W, T_H);
+              ctx.fillStyle = '#4e342e';
+              ctx.fillRect(px + 2, py + 4, 3, 5);
+              ctx.fillRect(px + 6, py + 12, 4, 4);
+              break;
+            case 'stairs_up':
+              ctx.fillStyle = '#1b1e2b';
+              ctx.fillRect(px, py, T_W, T_H);
+              ctx.fillStyle = '#8be9fd';
+              ctx.fillRect(px + 2, py + 16, 8, 4);
+              ctx.fillRect(px + 3, py + 10, 6, 4);
+              ctx.fillRect(px + 4, py + 4, 4, 4);
+              break;
+            case 'stairs_down':
+              ctx.fillStyle = '#0e1017';
+              ctx.fillRect(px, py, T_W, T_H);
+              ctx.fillStyle = '#ffb86c';
+              ctx.fillRect(px + 2, py + 4, 8, 4);
+              ctx.fillRect(px + 3, py + 10, 6, 4);
+              ctx.fillRect(px + 4, py + 16, 4, 4);
+              break;
+            case 'pit':
+              ctx.fillStyle = '#050608';
+              ctx.fillRect(px, py, T_W, T_H);
+              ctx.strokeStyle = '#ff5555';
+              ctx.lineWidth = 1;
+              ctx.strokeRect(px + 2, py + 4, T_W - 4, T_H - 8);
+              break;
+            case 'altar_lawful':
+            case 'altar_neutral':
+            case 'altar_chaotic':
+              ctx.fillStyle = '#1b1e2b';
+              ctx.fillRect(px, py, T_W, T_H);
+              ctx.fillStyle = '#e0e0e0';
+              ctx.fillRect(px + 2, py + 6, T_W - 4, T_H - 12);
+              const auraColor = tile.kind === 'altar_lawful' ? '#8be9fd' : (tile.kind === 'altar_neutral' ? '#f1fa8c' : '#ff5555');
+              ctx.fillStyle = auraColor;
+              ctx.fillRect(px + 4, py + 9, T_W - 8, T_H - 18);
+              break;
+            case 'bridge_open':
+            case 'bridge_closed':
+              ctx.fillStyle = tile.kind === 'bridge_open' ? '#1b1e2b' : '#3e2723';
+              ctx.fillRect(px, py, T_W, T_H);
+              ctx.strokeStyle = '#8d6e63';
+              ctx.lineWidth = 1;
+              ctx.strokeRect(px + 1, py + 2, T_W - 2, T_H - 4);
+              break;
+            case 'water':
+              ctx.fillStyle = '#1565c0';
+              ctx.fillRect(px, py, T_W, T_H);
+              ctx.fillStyle = '#42a5f5';
+              ctx.fillRect(px + 2, py + 5, 4, 2);
+              ctx.fillRect(px + 6, py + 14, 4, 2);
+              break;
+            case 'ice':
+              ctx.fillStyle = '#80deea';
+              ctx.fillRect(px, py, T_W, T_H);
+              ctx.fillStyle = '#e0f7fa';
+              ctx.fillRect(px + 3, py + 6, 3, 2);
+              ctx.fillRect(px + 6, py + 15, 3, 2);
+              break;
+            case 'lava':
+              ctx.fillStyle = '#d84315';
+              ctx.fillRect(px, py, T_W, T_H);
+              ctx.fillStyle = '#ffeb3b';
+              ctx.fillRect(px + 2, py + 4, 3, 3);
+              ctx.fillRect(px + 7, py + 12, 3, 3);
+              ctx.fillStyle = '#ff5722';
+              ctx.fillRect(px + 3, py + 17, 5, 2);
+              break;
+            default:
+              ctx.fillStyle = '#1b1e2b';
+              ctx.fillRect(px, py, T_W, T_H);
+          }
+        }
+      }
+
+      // Draw floor items
+      if (data.items) {
+        for (const item of data.items) {
+          const ix = item.x * T_W;
+          const iy = item.y * T_H;
+
+          ctx.save();
+          if (item.class === 'coin') {
+            ctx.fillStyle = '#ffd700';
+            ctx.beginPath();
+            ctx.arc(ix + T_W / 2, iy + T_H / 2, 4, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (item.class === 'potion') {
+            ctx.fillStyle = '#ff4081';
+            ctx.fillRect(ix + 3, iy + 10, 6, 8);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(ix + 5, iy + 6, 2, 4);
+          } else if (item.class === 'scroll') {
+            ctx.fillStyle = '#fff59d';
+            ctx.fillRect(ix + 2, iy + 8, 8, 8);
+            ctx.fillStyle = '#ff5252';
+            ctx.fillRect(ix + 5, iy + 8, 2, 8);
+          } else if (item.class === 'spellbook') {
+            ctx.fillStyle = '#ba68c8';
+            ctx.fillRect(ix + 2, iy + 6, 8, 11);
+            ctx.fillStyle = '#ffd700';
+            ctx.fillRect(ix + 4, iy + 9, 4, 2);
+          } else if (item.class === 'wand') {
+            ctx.strokeStyle = '#00e676';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(ix + 2, iy + T_H - 4);
+            ctx.lineTo(ix + T_W - 2, iy + 4);
+            ctx.stroke();
+          } else if (item.class === 'amulet') {
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(ix + 3, iy + 7, 6, 7);
+            ctx.fillStyle = '#e040fb';
+            ctx.fillRect(ix + 4, iy + 12, 4, 4);
+          } else if (item.class === 'weapon') {
+            ctx.strokeStyle = '#81d4fa';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(ix + 3, iy + T_H - 4);
+            ctx.lineTo(ix + T_W - 3, iy + 4);
+            ctx.stroke();
+            ctx.fillStyle = '#ffd700';
+            ctx.fillRect(ix + 2, iy + T_H - 7, 3, 3);
+          } else if (item.class === 'armor') {
+            ctx.fillStyle = '#90a4ae';
+            ctx.fillRect(ix + 2, iy + 6, 8, 10);
+            ctx.fillStyle = '#607d8b';
+            ctx.fillRect(ix + 4, iy + 8, 4, 6);
+          } else {
+            ctx.fillStyle = '#ffb74d';
+            ctx.fillRect(ix + 3, iy + 8, 6, 6);
+          }
+          ctx.restore();
+        }
+      }
+
+      // Draw actors (monsters & hero)
+      if (data.actors) {
+        for (const actor of data.actors) {
+          const ax = actor.x * T_W;
+          const ay = actor.y * T_H;
+
+          ctx.save();
+          if (actor.is_player) {
+            // Hero: Golden aura & armored avatar
+            ctx.fillStyle = 'rgba(255, 215, 0, 0.25)';
+            ctx.beginPath();
+            ctx.arc(ax + T_W / 2, ay + T_H / 2, 9, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Hero sprite body & helmet
+            ctx.fillStyle = '#ffd700';
+            ctx.fillRect(ax + 2, ay + 4, 8, 6);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(ax + 3, ay + 6, 2, 2);
+            ctx.fillRect(ax + 7, ay + 6, 2, 2);
+            ctx.fillStyle = '#ffb300';
+            ctx.fillRect(ax + 3, ay + 10, 6, 9);
+            ctx.fillStyle = '#64b5f6';
+            ctx.fillRect(ax + 9, ay + 7, 2, 10);
+          } else {
+            // Monster sprite
+            const mname = actor.name.toLowerCase();
+            let mcolor = '#ff5555';
+            if (mname.includes('dragon')) mcolor = '#ff1744';
+            else if (mname.includes('vampire')) mcolor = '#b71c1c';
+            else if (mname.includes('skeleton')) mcolor = '#f5f5f5';
+            else if (mname.includes('orc')) mcolor = '#388e3c';
+            else if (mname.includes('goblin')) mcolor = '#8bc34a';
+            else if (mname.includes('priest')) mcolor = '#ab47bc';
+            else if (mname.includes('shopkeeper')) mcolor = '#ce93d8';
+            else if (mname.includes('watchman')) mcolor = '#29b6f6';
+            else if (mname.includes('dog') || mname.includes('cat') || mname.includes('kitten')) mcolor = '#8d6e63';
+
+            ctx.fillStyle = mcolor;
+            ctx.fillRect(ax + 2, ay + 5, 8, 12);
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(ax + 3, ay + 7, 2, 2);
+            ctx.fillRect(ax + 7, ay + 7, 2, 2);
+
+            if (actor.hp < actor.max_hp) {
+              ctx.fillStyle = '#ff5555';
+              ctx.fillRect(ax + 1, ay + 1, 10, 2);
+              const hpRatio = Math.max(0, Math.min(1, actor.hp / actor.max_hp));
+              ctx.fillStyle = '#33ff66';
+              ctx.fillRect(ax + 1, ay + 1, Math.floor(10 * hpRatio), 2);
+            }
+          }
+          ctx.restore();
+        }
+      }
+
+      // Fog of War / Dynamic lighting shading
+      for (let y = 0; y < 21; y++) {
+        for (let x = 0; x < 80; x++) {
+          const tile = tiles[y] ? tiles[y][x] : null;
+          if (!tile || !tile.visible) {
+            ctx.fillStyle = 'rgba(8, 9, 12, 0.94)';
+            ctx.fillRect(x * T_W, y * T_H, T_W, T_H);
+          }
+        }
+      }
+
+      // Soft lantern ambient vignette around hero
+      if (playerCoord) {
+        const plx = playerCoord[0] * T_W + T_W / 2;
+        const ply = playerCoord[1] * T_H + T_H / 2;
+        const rad = 72;
+        const grad = ctx.createRadialGradient(plx, ply, 12, plx, ply, rad);
+        grad.addColorStop(0, 'rgba(255, 238, 187, 0.08)');
+        grad.addColorStop(0.7, 'rgba(255, 220, 150, 0.02)');
+        grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(plx, ply, rad, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
 
     function toggleSound() {
@@ -1047,7 +1390,7 @@
       const isUk = locale === 'uk';
       document.getElementById('btnToggleLang').textContent = isUk ? '🌐 УКР (Змінити на EN)' : '🌐 EN / УКР';
       document.getElementById('btnToggleSound').textContent = soundEnabled ? (isUk ? '🔊 Звук: УВІМК' : '🔊 SFX: ON') : (isUk ? '🔇 Звук: ВИМК' : '🔇 SFX: OFF');
-      document.getElementById('btnDisplayMode').textContent = crtMode ? (isUk ? '📺 CRT: УВІМК' : '📺 CRT: ON') : (isUk ? '📺 Режим CRT' : '📺 Phosphor CRT');
+      applyDisplayMode();
 
       document.getElementById('lblHero').textContent = isUk ? 'Герой:' : 'Hero:';
       document.getElementById('lblAlign').textContent = isUk ? 'Шлях:' : 'Align:';
@@ -1132,6 +1475,14 @@
     function updateUi(lastObs) {
       if (!session) return;
       viewportEl.textContent = session.render_ascii();
+      if (displayMode === 'canvas' && session.get_canvas_render_data_json) {
+        try {
+          const cData = JSON.parse(session.get_canvas_render_data_json());
+          renderCanvas(cData);
+        } catch (err) {
+          console.error("Canvas render error:", err);
+        }
+      }
       statNameEl.textContent = session.get_player_name();
       statAlignEl.textContent = session.get_localized_alignment ? session.get_localized_alignment() : session.get_player_alignment();
       statDepthEl.textContent = session.get_depth();
@@ -1477,6 +1828,7 @@
     async function start() {
       await init();
       session = new WasmGameSession(42n);
+      applyDisplayMode();
       updateUi(null);
       loadLeaderboard();
       loadPolicyWeights();

@@ -294,6 +294,108 @@ impl WasmGameSession {
         });
         serde_json::to_string(&data).unwrap_or_default()
     }
+
+    /// Return full 80x21 grid tile matrix, floor items, visible actors, and illumination for 2D retro canvas rendering.
+    #[wasm_bindgen]
+    pub fn get_canvas_render_data_json(&self) -> String {
+        let (visible, detected_monsters) = self.session.world.compute_perception();
+        let player = self.session.world.arena.actors.get(self.session.world.player_id);
+        let player_coord = player.map(|p| p.coord);
+
+        let mut tiles_data = Vec::with_capacity(netrust_types::ROWNO);
+        for y in 0..netrust_types::ROWNO {
+            let mut row = Vec::with_capacity(netrust_types::COLNO);
+            for x in 0..netrust_types::COLNO {
+                let c = netrust_types::Coord::new_unchecked(x, y);
+                let tile = self.session.world.level.get_tile(c);
+                let is_vis = visible.contains(&c);
+                let is_dark = self.session.world.level.is_dark_at(c);
+                let tile_kind = match tile {
+                    netrust_types::Tile::Stone => "stone",
+                    netrust_types::Tile::Wall { horizontal } => if *horizontal { "wall_h" } else { "wall_v" },
+                    netrust_types::Tile::Room => "room",
+                    netrust_types::Tile::Corr => "corr",
+                    netrust_types::Tile::Door { state, .. } => match state {
+                        netrust_types::DoorState::Open => "door_open",
+                        netrust_types::DoorState::Broken => "door_broken",
+                        _ => "door_closed",
+                    },
+                    netrust_types::Tile::SecretDoor { .. } => "stone",
+                    netrust_types::Tile::Stairs { up } => if *up { "stairs_up" } else { "stairs_down" },
+                    netrust_types::Tile::BranchStairs { up, .. } => if *up { "stairs_up" } else { "stairs_down" },
+                    netrust_types::Tile::Pit { filled } => if *filled { "room" } else { "pit" },
+                    netrust_types::Tile::Altar { align } | netrust_types::Tile::HighAltar { align } => match align {
+                        netrust_types::Alignment::Lawful => "altar_lawful",
+                        netrust_types::Alignment::Neutral => "altar_neutral",
+                        _ => "altar_chaotic",
+                    },
+                    netrust_types::Tile::Drawbridge { open } => if *open { "bridge_open" } else { "bridge_closed" },
+                    netrust_types::Tile::Moat => "water",
+                    netrust_types::Tile::Pool { frozen } => if *frozen { "ice" } else { "water" },
+                    netrust_types::Tile::Lava => "lava",
+                };
+                row.push(serde_json::json!({
+                    "kind": tile_kind,
+                    "visible": is_vis,
+                    "dark": is_dark,
+                }));
+            }
+            tiles_data.push(row);
+        }
+
+        // Collect floor items
+        let mut floor_items = Vec::new();
+        for (_, item) in self.session.world.arena.items.iter() {
+            if let netrust_arena::ItemLocation::Floor(c) = item.location {
+                if visible.contains(&c) {
+                    floor_items.push(serde_json::json!({
+                        "x": c.x,
+                        "y": c.y,
+                        "name": item.name,
+                        "symbol": item.class.symbol().to_string(),
+                        "class": format!("{:?}", item.class).to_lowercase(),
+                    }));
+                }
+            }
+        }
+
+        // Collect actors
+        let mut actors = Vec::new();
+        if let Some(p) = player {
+            actors.push(serde_json::json!({
+                "x": p.coord.x,
+                "y": p.coord.y,
+                "name": p.name,
+                "is_player": true,
+                "hp": p.hp,
+                "max_hp": p.max_hp,
+            }));
+        }
+        for (id, actor) in self.session.world.arena.actors.iter() {
+            if id != self.session.world.player_id && !actor.is_dead {
+                if detected_monsters.contains(&id) || visible.contains(&actor.coord) {
+                    actors.push(serde_json::json!({
+                        "x": actor.coord.x,
+                        "y": actor.coord.y,
+                        "name": actor.name,
+                        "is_player": false,
+                        "hp": actor.hp,
+                        "max_hp": actor.max_hp,
+                    }));
+                }
+            }
+        }
+
+        let payload = serde_json::json!({
+            "player_coord": player_coord.map(|c| (c.x, c.y)),
+            "tiles": tiles_data,
+            "items": floor_items,
+            "actors": actors,
+            "turn": self.session.world.scheduler.turn,
+        });
+
+        serde_json::to_string(&payload).unwrap_or_default()
+    }
 }
 
 /// Run tournament benchmark across seeds comparing Random, Survival, Speedrunner, and PetTesterTactical.
