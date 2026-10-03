@@ -27,6 +27,7 @@ pub mod monster_abilities;
 pub mod bones;
 pub mod inventory_interaction;
 pub mod pet_coop;
+pub mod mines;
 
 pub use ast::{ActionAst, Direction, EffectAst, WorldState};
 pub use buc::{dip_water, uncurse, Buc, WaterType};
@@ -58,6 +59,10 @@ pub use inventory_interaction::{
     sell_factor, DilutionState, RubResult,
 };
 pub use pet_coop::{choose_pet_goal, pet_tile_steppable, promote_pet, PetFamily, PetGoal, PetSpeciesTier};
+pub use mines::{
+    apply_priest_donation, clamp_luck, priest_uncurse, protection_donation_cost, step_luck_decay,
+    LuckstoneStatus, MAX_DIVINE_PROTECTION,
+};
 pub use netrust_types::{
     ArtifactKind, AscensionOutcome, BonesData, BonesItem, BranchCoord, BranchId, BreathType, Deity,
     DivineState, DrawbridgeState, DrawbridgeTransition, EndgamePlane, GazeEffect, GazeType, Intrinsics,

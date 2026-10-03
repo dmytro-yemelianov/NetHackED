@@ -1631,6 +1631,112 @@ fn test_shopkeeper_price_identification() {
     assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("shopkeeper appraises your long sword"))));
 }
 
+#[test]
+fn test_gnomish_mines_branch_transition() {
+    use netrust_types::BranchId;
+    let mut sim = SimulationWorld::new_with_seed(101);
+
+    // Place branch stairs down to Gnomish Mines at player location
+    let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+    sim.level.set_tile(p_coord, Tile::BranchStairs {
+        branch: BranchId::GnomishMines,
+        level: 1,
+        up: false,
+    });
+
+    let descend_events = sim.step_player_action(ActionAst::Descend);
+    assert!(descend_events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("GnomishMines"))));
+    assert_eq!(sim.current_branch, BranchId::GnomishMines);
+    assert_eq!(sim.depth, 1);
+
+    // Verify cavern monsters (Gnomes, Dwarves) were generated
+    let has_miners = sim.arena.actors.values().any(|a| a.name.contains("gnome") || a.name.contains("dwarf"));
+    assert!(has_miners, "Gnomish Mines cavern must spawn gnomes or dwarves");
+
+    // Verify stairs up return to Dungeons of Doom depth 3
+    let mines_p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+    assert_eq!(sim.level.get_tile(mines_p_coord), &Tile::BranchStairs {
+        branch: BranchId::DungeonsOfDoom,
+        level: 3,
+        up: true,
+    });
+
+    let ascend_events = sim.step_player_action(ActionAst::Ascend);
+    assert!(ascend_events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("return to DungeonsOfDoom"))));
+    assert_eq!(sim.current_branch, BranchId::DungeonsOfDoom);
+    assert_eq!(sim.depth, 3);
+}
+
+#[test]
+fn test_minetown_temple_priest_donation_and_uncursing() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+
+    // Place a priest adjacent to the player
+    let priest_coord = Coord::new_unchecked(p_coord.x + 1, p_coord.y);
+    let priest = netrust_data::create_monster_record(
+        MonsterSpeciesId::Priest,
+        priest_coord,
+    );
+    sim.arena.spawn_actor(priest);
+
+    // Give player a cursed weapon
+    let cursed_sword = sim.arena.spawn_item(create_item_record(
+        ItemKindId::LongSword,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Cursed,
+    ));
+
+    // Try donation without gold -> should fail
+    sim.player_gold = 0;
+    let fail_events = sim.step_player_action(ActionAst::Donate(400));
+    assert!(fail_events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("not have enough gold"))));
+
+    // Give player ample gold (2000 zm)
+    sim.player_gold = 2000;
+    let initial_ac = sim.arena.actors.get(sim.player_id).unwrap().ac;
+    assert_eq!(sim.divine_protection, 0);
+
+    // Donate 400 zm -> should grant protection and uncurse items
+    let donate_events = sim.step_player_action(ActionAst::Donate(400));
+    assert!(donate_events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("divine AC protection"))));
+    assert!(donate_events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("uncursed"))));
+
+    assert!(sim.divine_protection > 0);
+    assert!(sim.arena.actors.get(sim.player_id).unwrap().ac < initial_ac);
+    assert_eq!(sim.arena.items.get(cursed_sword).unwrap().buc, Buc::Uncursed);
+    assert_eq!(sim.player_gold, 1600);
+}
+
+#[test]
+fn test_mines_end_luckstone_preservation() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+
+    // Spawn a luckstone in player's inventory
+    let luckstone = sim.arena.spawn_item(create_item_record(
+        ItemKindId::Luckstone,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Uncursed,
+    ));
+
+    // Case 1: Positive luck is preserved by uncursed luckstone
+    sim.player_luck = 5;
+    sim.tick_luck_decay();
+    assert_eq!(sim.player_luck, 5, "Uncursed luckstone must prevent positive luck decay");
+
+    // Case 2: Negative luck is healed faster (by 1 toward 0)
+    sim.player_luck = -3;
+    sim.tick_luck_decay();
+    assert_eq!(sim.player_luck, -2, "Uncursed luckstone heals negative luck toward 0");
+
+    // Case 3: Without luckstone, positive luck naturally decays by 1 toward 0
+    sim.arena.destroy_item(luckstone);
+    sim.player_luck = 5;
+    sim.tick_luck_decay();
+    assert_eq!(sim.player_luck, 4, "Without luckstone, positive luck decays toward 0");
+}
+
+
 
 
 

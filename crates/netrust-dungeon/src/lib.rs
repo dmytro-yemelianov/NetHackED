@@ -7,6 +7,7 @@ pub mod raycast;
 pub mod room;
 pub mod sokoban;
 pub mod endgame;
+pub mod mines;
 
 pub use fov::compute_fov;
 pub use generator::{
@@ -17,6 +18,7 @@ pub use raycast::trace_beam_path;
 pub use room::{Rect, Room, RoomType};
 pub use sokoban::generate_sokoban_level;
 pub use endgame::{generate_astral_plane, generate_castle_level};
+pub use mines::{generate_mines_cavern_level, generate_minetown_level, generate_mines_end_level, MinetownLayout};
 
 #[cfg(test)]
 mod tests {

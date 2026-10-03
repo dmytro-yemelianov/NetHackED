@@ -42,6 +42,8 @@ pub struct SimulationWorld {
     pub player_max_pw: u32,
     pub known_spells: Vec<(SpellKind, u32)>,
     pub divine_state: netrust_types::DivineState,
+    pub divine_protection: u32,
+    pub player_luck: i32,
     pub locale: netrust_types::Locale,
     pub bones_storage: Vec<netrust_types::BonesData>,
     #[serde(skip, default = "default_rng")]
@@ -153,6 +155,8 @@ impl SimulationWorld {
             player_max_pw,
             known_spells,
             divine_state: netrust_types::DivineState::default(),
+            divine_protection: 0,
+            player_luck: 0,
             locale: netrust_types::Locale::En,
             bones_storage: Vec::new(),
             rng,
@@ -208,5 +212,19 @@ impl SimulationWorld {
     /// Return the current hunger state based on nutrition points.
     pub fn hunger_state(&self) -> HungerState {
         hunger_of_nutrition(self.player_nutrition)
+    }
+
+    /// Progress one tick of luck decay based on carried luckstone.
+    pub fn tick_luck_decay(&mut self) {
+        let luckstone = self.arena.items_carried_by(self.player_id).into_iter().find_map(|iid| {
+            self.arena.items.get(iid).filter(|it| it.name.to_lowercase().contains("luckstone")).map(|it| it.buc)
+        });
+        let stone_status = match luckstone {
+            Some(Buc::Blessed) => netrust_core::mines::LuckstoneStatus::Blessed,
+            Some(Buc::Uncursed) => netrust_core::mines::LuckstoneStatus::Uncursed,
+            Some(Buc::Cursed) => netrust_core::mines::LuckstoneStatus::Cursed,
+            None => netrust_core::mines::LuckstoneStatus::None,
+        };
+        self.player_luck = netrust_core::mines::step_luck_decay(self.player_luck, stone_status);
     }
 }

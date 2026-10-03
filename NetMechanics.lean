@@ -27,3 +27,4 @@ import NetMechanics.MonsterAbilities
 import NetMechanics.Bones
 import NetMechanics.InventoryInteraction
 import NetMechanics.PetCoop
+import NetMechanics.Mines

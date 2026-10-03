@@ -66,8 +66,8 @@ impl SimulationWorld {
             }
             self.unpaid_items = stored.unpaid_items;
         } else {
-            match branch {
-                BranchId::Sokoban => {
+            match (branch, depth) {
+                (BranchId::Sokoban, _) => {
                     let (soko_level, boulder_coords) = generate_sokoban_level(depth);
                     self.level = soko_level;
 
@@ -91,10 +91,79 @@ impl SimulationWorld {
                         text: "You step into the legendary Sokoban puzzle maze! Boulders and pits line the corridors.".into(),
                     });
                 }
+                (BranchId::GnomishMines, 3) => {
+                    // Minetown! Complete with shops, temple, priest, and watchmen
+                    let layout = netrust_dungeon::generate_minetown_level(&mut self.rng);
+                    self.level = layout.level;
+
+                    let priest = create_monster_record(MonsterSpeciesId::Priest, layout.priest_coord);
+                    self.arena.spawn_actor(priest);
+
+                    for wc in layout.watchmen_coords {
+                        let watchman = create_monster_record(MonsterSpeciesId::Watchman, wc);
+                        self.arena.spawn_actor(watchman);
+                    }
+
+                    for sc in layout.shopkeeper_coords {
+                        let shopkeeper = create_monster_record(MonsterSpeciesId::Shopkeeper, sc);
+                        self.arena.spawn_actor(shopkeeper);
+                    }
+
+                    events.push(GameEvent::LogMessage {
+                        text: "Welcome to Minetown! Bustling shops and an ancient sanctuary stand before you.".into(),
+                    });
+                }
+                (BranchId::GnomishMines, 5) => {
+                    // Mines' End! Sprawling labyrinth with guaranteed Luckstone
+                    let (lvl, luckstone_coord) = netrust_dungeon::generate_mines_end_level(&mut self.rng);
+                    self.level = lvl;
+
+                    let luckstone = create_item_record(ItemKindId::Luckstone, ItemLocation::Floor(luckstone_coord), Buc::Uncursed);
+                    self.arena.spawn_item(luckstone);
+
+                    for (i, room) in self.level.rooms.iter().enumerate() {
+                        if i > 0 {
+                            let species = if i % 2 == 0 { MonsterSpeciesId::SilverDragon } else { MonsterSpeciesId::Vampire };
+                            let mon = create_monster_record(species, room.center());
+                            self.arena.spawn_actor(mon);
+                        }
+                    }
+
+                    events.push(GameEvent::LogMessage {
+                        text: "You reach Mines' End! A legendary luckstone rests in the deepest shrine.".into(),
+                    });
+                }
+                (BranchId::GnomishMines, d) => {
+                    // Caverns (1, 2, 4)
+                    let lvl = netrust_dungeon::generate_mines_cavern_level(&mut self.rng, d);
+                    self.level = lvl;
+
+                    for (i, room) in self.level.rooms.iter().enumerate() {
+                        if i > 0 {
+                            let species = if i % 2 == 0 { MonsterSpeciesId::Gnome } else { MonsterSpeciesId::Dwarf };
+                            let mon = create_monster_record(species, room.center());
+                            self.arena.spawn_actor(mon);
+                        }
+                    }
+
+                    events.push(GameEvent::LogMessage {
+                        text: "You descend into the rugged, dark caverns of the Gnomish Mines.".into(),
+                    });
+                }
                 _ => {
                     let mut new_level = generate_dungeon_level(&mut self.rng);
 
                     // Place branch stairs in Dungeons of Doom
+                    if branch == BranchId::DungeonsOfDoom && depth == 3 {
+                        if let Some(room) = new_level.rooms.get(1) {
+                            let branch_coord = Coord::new_unchecked(room.x1 + 1, room.y1 + 1);
+                            new_level.set_tile(branch_coord, Tile::BranchStairs {
+                                branch: BranchId::GnomishMines,
+                                level: 1,
+                                up: false,
+                            });
+                        }
+                    }
                     if branch == BranchId::DungeonsOfDoom && depth == 4 {
                         if let Some(room) = new_level.rooms.get(1) {
                             let branch_coord = Coord::new_unchecked(room.x1 + 1, room.y1 + 1);

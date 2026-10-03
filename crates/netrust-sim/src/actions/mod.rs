@@ -57,6 +57,7 @@ impl SimulationWorld {
             ActionAst::Engrave { text, medium } => events.extend(self.handle_engrave(text, medium)),
             ActionAst::Rub(idx) => events.extend(self.handle_rub(idx)),
             ActionAst::PriceCheck(idx) => events.extend(self.handle_price_check(idx)),
+            ActionAst::Donate(amt) => events.extend(self.handle_donate(amt)),
             ActionAst::Wait => {
                 self.scheduler.hero_act(NORMAL_SPEED);
             }
@@ -67,6 +68,10 @@ impl SimulationWorld {
         events.extend(sim_events);
 
         self.divine_state.prayer_timeout = netrust_core::religion::tick_prayer_timeout(self.divine_state.prayer_timeout);
+
+        if self.scheduler.turn > 0 && self.scheduler.turn % 600 == 0 {
+            self.tick_luck_decay();
+        }
 
         self.event_log.extend(events.clone());
         events

@@ -22,6 +22,8 @@ use netrust_core::{
     buy_factor, calculate_buy_price, calculate_sell_price, dilute_potion, rub_lamp, sell_factor,
     DilutionState, RubResult,
     choose_pet_goal, pet_tile_steppable, promote_pet, PetFamily, PetGoal, PetSpeciesTier,
+    apply_priest_donation, MAX_DIVINE_PROTECTION, protection_donation_cost, priest_uncurse,
+    LuckstoneStatus, step_luck_decay,
 };
 use proptest::prelude::*;
 
@@ -961,7 +963,73 @@ proptest! {
         let goal = choose_pet_goal(Some(hostile_id), Some(Coord::new_unchecked(10, 10)));
         prop_assert_eq!(goal, PetGoal::AttackHostile(hostile_id));
     }
+
+    // -------------------------------------------------------------
+    // Theorem: priest_protection_bounded & priest_protection_monotonic
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_priest_protection_theorems(
+        cur in 0u32..=9,
+        donation in 0u32..=10000,
+        level in 1u32..=30,
+    ) {
+        let res = apply_priest_donation(cur, donation, level);
+        // Bounded by MAX_DIVINE_PROTECTION (9)
+        prop_assert!(res <= MAX_DIVINE_PROTECTION);
+        // Monotonic
+        prop_assert!(cur <= res);
+
+        // Insufficient donation leaves protection unchanged
+        if donation < protection_donation_cost(level) && cur < MAX_DIVINE_PROTECTION {
+            prop_assert_eq!(res, cur);
+        }
+    }
+
+    // -------------------------------------------------------------
+    // Theorem: priest_uncurse_never_cursed
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_priest_uncurse_theorems(buc in arb_buc()) {
+        let purified = priest_uncurse(buc);
+        prop_assert_ne!(purified, Buc::Cursed);
+    }
+
+    // -------------------------------------------------------------
+    // Theorem: luckstone_preserves_positive_luck & luckstone_heals_negative_luck
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_luckstone_theorems(
+        luck in -10i32..=10,
+        stone_idx in 0u32..4,
+    ) {
+        let stone = match stone_idx {
+            0 => LuckstoneStatus::None,
+            1 => LuckstoneStatus::Blessed,
+            2 => LuckstoneStatus::Uncursed,
+            _ => LuckstoneStatus::Cursed,
+        };
+
+        let next_luck = step_luck_decay(luck, stone);
+        // Canonical luck bounds preserved [-10, 10]
+        prop_assert!((-10..=10).contains(&next_luck));
+
+        // Blessed/Uncursed preserves good luck
+        if (stone == LuckstoneStatus::Blessed || stone == LuckstoneStatus::Uncursed) && luck > 0 {
+            prop_assert_eq!(next_luck, luck);
+        }
+
+        // Blessed/Uncursed strictly improves bad luck toward 0
+        if (stone == LuckstoneStatus::Blessed || stone == LuckstoneStatus::Uncursed) && luck < 0 {
+            prop_assert_eq!(next_luck, luck + 1);
+        }
+
+        // Cursed luckstone traps bad luck
+        if stone == LuckstoneStatus::Cursed && luck < 0 {
+            prop_assert_eq!(next_luck, luck);
+        }
+    }
 }
+
 
 
 

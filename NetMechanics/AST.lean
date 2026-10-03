@@ -48,6 +48,7 @@ inductive ActionAST where
   | Descend
   | Eat (itemIndex : Nat)
   | Cast (spellIndex : Nat) (dir : Direction)
+  | Donate (amount : Nat)
 deriving Repr, DecidableEq
 
 /--

@@ -217,4 +217,89 @@ impl SimulationWorld {
         }
         events
     }
+
+    pub(crate) fn handle_donate(&mut self, amount: u32) -> Vec<GameEvent> {
+        let mut events = Vec::new();
+        let Some(player) = self.arena.actors.get(self.player_id).cloned() else {
+            return events;
+        };
+
+        // Find a priest on the floor near player (distance <= 6)
+        let priest_id = self.arena.actors.iter().find_map(|(id, a)| {
+            if !a.is_dead && a.name.to_lowercase().contains("priest") && a.coord.chebyshev_distance(player.coord) <= 6 {
+                Some(id)
+            } else {
+                None
+            }
+        });
+
+        let Some(_pid) = priest_id else {
+            events.push(GameEvent::LogMessage {
+                text: "There is no priest nearby to receive your donation.".into(),
+            });
+            return events;
+        };
+
+        let donation = if amount == 0 {
+            // Default donation: 400 * level
+            netrust_core::mines::protection_donation_cost(player.level)
+        } else {
+            amount
+        };
+
+        if self.player_gold < donation {
+            events.push(GameEvent::LogMessage {
+                text: format!("You do not have enough gold to donate {} zm.", donation),
+            });
+            return events;
+        }
+
+        self.player_gold -= donation;
+
+        // Apply divine protection
+        let prev_prot = self.divine_protection;
+        let new_prot = netrust_core::mines::apply_priest_donation(prev_prot, donation, player.level);
+        if new_prot > prev_prot {
+            let gained = new_prot - prev_prot;
+            self.divine_protection = new_prot;
+            if let Some(p) = self.arena.actors.get_mut(self.player_id) {
+                p.ac -= gained as i32; // Lower AC is better in NetHack
+            }
+            events.push(GameEvent::LogMessage {
+                text: format!("You feel much safer! You are granted +{} divine AC protection (total: +{}).", gained, new_prot),
+            });
+        } else if prev_prot >= netrust_core::mines::MAX_DIVINE_PROTECTION {
+            events.push(GameEvent::LogMessage {
+                text: "The priest smiles benevolently: 'You already possess the maximum divine protection.'".into(),
+            });
+        } else {
+            events.push(GameEvent::LogMessage {
+                text: "The priest thanks you for your contribution to the temple.".into(),
+            });
+        }
+
+        // Uncursing service: if donation >= 200 * level, uncurse cursed items
+        let uncurse_threshold = 200 * player.level.max(1);
+        if donation >= uncurse_threshold {
+            let carried = self.arena.items_carried_by(self.player_id);
+            let mut uncursed_count = 0;
+            for iid in carried {
+                if let Some(item) = self.arena.items.get_mut(iid) {
+                    if item.buc == Buc::Cursed {
+                        item.buc = netrust_core::mines::priest_uncurse(item.buc);
+                        uncursed_count += 1;
+                    }
+                }
+            }
+            if uncursed_count > 0 {
+                events.push(GameEvent::LogMessage {
+                    text: format!("The priest sprinkles holy water! {} cursed items glow and are uncursed.", uncursed_count),
+                });
+            }
+        }
+
+        self.divine_state.favor = netrust_core::religion::clamp_favor(self.divine_state.favor + 2);
+        self.scheduler.hero_act(NORMAL_SPEED);
+        events
+    }
 }

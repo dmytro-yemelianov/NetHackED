@@ -27,7 +27,7 @@ def branchEntranceDepth : BranchId → Nat
 /-- Max depth of each branch -/
 def branchMaxDepth : BranchId → Nat
   | BranchId.DungeonsOfDoom => 5
-  | BranchId.GnomishMines  => 4
+  | BranchId.GnomishMines  => 5
   | BranchId.Sokoban       => 3
 
 /-- Enter a branch from the main dungeon stack -/

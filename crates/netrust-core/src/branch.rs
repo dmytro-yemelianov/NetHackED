@@ -19,7 +19,7 @@ pub const fn branch_entrance_depth(b: BranchId) -> usize {
 pub const fn branch_max_depth(b: BranchId) -> usize {
     match b {
         BranchId::DungeonsOfDoom => 5,
-        BranchId::GnomishMines => 4,
+        BranchId::GnomishMines => 5,
         BranchId::Sokoban => 3,
         BranchId::Gehennom => 20,
         BranchId::AstralPlane => 5,
