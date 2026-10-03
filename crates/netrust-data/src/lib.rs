@@ -9,8 +9,8 @@ pub mod pantheons;
 
 pub use items::{create_item_record, get_item_archetype, ItemArchetype, ItemKindId, ITEM_CATALOG};
 pub use monsters::{
-    create_monster_record, get_monster_species, AiBehavior, MonsterArchetype, MonsterSpeciesId,
-    BESTIARY,
+    create_ghost_record, create_monster_record, get_monster_species, AiBehavior, MonsterArchetype,
+    MonsterSpeciesId, BESTIARY,
 };
 pub use roles::{
     get_race, get_role, spawn_player_character, spawn_starting_pet, CharacterConfig, Gender, RaceId,

@@ -424,6 +424,13 @@ impl Messages {
             Locale::Uk => format!("Зловісна аура торкається вашого наплічника! Ваш {} тепер проклятий!", item_name),
         }
     }
+
+    pub fn ghost_encounter(hero_name: &str, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!("You feel an icy chill down your spine... The vengeful ghost of {} haunts this graveyard!", hero_name),
+            Locale::Uk => format!("Крижаний холод сковує ваш подих... Мстивий привид героя {} блукає цим могильником!", hero_name),
+        }
+    }
 }
 
 #[cfg(test)]

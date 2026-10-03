@@ -1397,6 +1397,73 @@ fn test_monster_lich_summon_and_curse() {
     assert!(item_after.buc == Buc::Cursed || events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("incantation") || text.contains("заклинання"))));
 }
 
+#[test]
+fn test_bones_file_generation_and_ghost_encounter() {
+    let mut sim1 = SimulationWorld::new_with_seed(42);
+    sim1.depth = 3;
+    let death_coord = Coord::new_unchecked(15, 12);
+    if let Some(p) = sim1.arena.actors.get_mut(sim1.player_id) {
+        p.name = "Conan".into();
+        p.coord = death_coord;
+        p.level = 5;
+        p.max_hp = 45;
+        p.hp = 0;
+        p.is_dead = true;
+    }
+
+    let sword = sim1.arena.spawn_item(ItemRecord {
+        name: "long sword".into(),
+        class: ItemClass::Weapon,
+        weight: 30,
+        buc: Buc::Blessed,
+        is_container: false,
+        is_bag_of_holding: false,
+        enchantment: 2,
+        erosion: 0,
+        proofed: false,
+        location: ItemLocation::CarriedBy(sim1.player_id),
+    });
+
+    // Save bones on death
+    let bones = sim1.save_bones("hill orc").expect("Bones should be valid on depth 3");
+    assert_eq!(bones.hero_name, "Conan");
+    assert_eq!(bones.depth, 3);
+    assert_eq!(bones.death_coord, death_coord);
+    assert!(bones.items.len() >= 1);
+    // Gear must be corrupted to Cursed
+    assert!(bones.items.iter().all(|item| item.buc == Buc::Cursed));
+    assert!(bones.items.iter().any(|item| item.name == "long sword"));
+
+    // New run enters depth 3
+    let mut sim2 = SimulationWorld::new_with_seed(100);
+    sim2.depth = 3;
+    sim2.bones_storage.push(bones);
+
+    // Clear floor around death coord
+    sim2.level.set_tile(death_coord, Tile::Room);
+    for n in death_coord.neighbors() {
+        sim2.level.set_tile(n, Tile::Room);
+    }
+
+    let events = sim2.check_and_load_bones();
+    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("ghost of Conan"))));
+
+    // Ghost actor spawned
+    let ghost_id = sim2.actor_at(death_coord).expect("Ghost should occupy death location");
+    let ghost = sim2.arena.actors.get(ghost_id).unwrap();
+    assert_eq!(ghost.name, "ghost of Conan");
+    assert_eq!(ghost.hp, 45);
+
+    // Cursed items scattered on floor
+    let floor_items = sim2.arena.items_at_floor(death_coord);
+    let floor_items_neighbor: Vec<_> = death_coord.neighbors().into_iter().flat_map(|c| sim2.arena.items_at_floor(c)).collect();
+    let all_bones_items: Vec<_> = floor_items.into_iter().chain(floor_items_neighbor).collect();
+    assert!(all_bones_items.iter().any(|&it_id| sim2.arena.items.get(it_id).map(|it| it.buc == Buc::Cursed && it.name == "long sword").unwrap_or(false)));
+
+    // Bones consumed
+    assert!(sim2.bones_storage.is_empty());
+}
+
 
 
 

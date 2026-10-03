@@ -43,6 +43,7 @@ pub struct SimulationWorld {
     pub known_spells: Vec<(SpellKind, u32)>,
     pub divine_state: netrust_types::DivineState,
     pub locale: netrust_types::Locale,
+    pub bones_storage: Vec<netrust_types::BonesData>,
     #[serde(skip, default = "default_rng")]
     pub rng: ChaCha8Rng,
     pub seed: u64,
@@ -153,6 +154,7 @@ impl SimulationWorld {
             known_spells,
             divine_state: netrust_types::DivineState::default(),
             locale: netrust_types::Locale::En,
+            bones_storage: Vec::new(),
             rng,
             seed,
             event_log: Vec::new(),

@@ -18,6 +18,7 @@ use netrust_core::{
     DivineState,
     apply_vorpal_strike, zap_wand, recharge_wand, WandCharges, RechargeResult,
     BreathType, GazeType, GazeEffect, Intrinsics, calculate_summon_count, resolve_breath_damage, resolve_gaze,
+    corrupt_buc_on_death, create_ghost_hp, is_valid_bones_level,
 };
 use proptest::prelude::*;
 
@@ -818,6 +819,37 @@ proptest! {
     ) {
         let count = calculate_summon_count(cur, cap, desired);
         prop_assert!(cur + count <= cap.max(cur));
+    }
+
+    // -------------------------------------------------------------
+    // Theorems: corrupt_buc_idempotent & corrupt_buc_always_cursed
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_corrupt_buc_theorems(buc in arb_buc()) {
+        let corrupted = corrupt_buc_on_death(buc);
+        prop_assert_eq!(corrupted, Buc::Cursed);
+        prop_assert_eq!(corrupt_buc_on_death(corrupted), Buc::Cursed);
+    }
+
+    // -------------------------------------------------------------
+    // Theorems: ghost_hp_bounded & ghost_hp_strictly_positive
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_ghost_hp_theorems(hp in 0u32..500) {
+        let ghost_hp = create_ghost_hp(hp);
+        prop_assert!(ghost_hp >= 1);
+        if hp >= 1 {
+            prop_assert_eq!(ghost_hp, hp);
+        }
+    }
+
+    // -------------------------------------------------------------
+    // Theorem: valid_bones_level_ge_one
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_valid_bones_level_theorems(depth in 0u32..100) {
+        let is_valid = is_valid_bones_level(depth);
+        prop_assert_eq!(is_valid, depth >= 1);
     }
 }
 

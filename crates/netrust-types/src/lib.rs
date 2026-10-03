@@ -601,6 +601,29 @@ pub enum MonsterAbility {
     Spellcaster { spell: MonsterSpell, cooldown_turns: u32 },
 }
 
+/// An item preserved in a graveyard bones file.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BonesItem {
+    pub name: String,
+    pub class: ItemClass,
+    pub weight: u32,
+    pub buc: Buc,
+    pub enchantment: i8,
+}
+
+/// Graveyard bones record capturing an adventurer's demise for cross-run persistence.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BonesData {
+    pub depth: u32,
+    pub hero_name: String,
+    pub hero_level: u32,
+    pub max_hp: u32,
+    pub ac: i32,
+    pub death_coord: Coord,
+    pub items: Vec<BonesItem>,
+    pub killer: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

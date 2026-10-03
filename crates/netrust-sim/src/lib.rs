@@ -1,6 +1,7 @@
 //! Complete, deterministic simulation engine for NetRust.
 
 pub mod actions;
+pub mod bones;
 pub mod combat;
 pub mod events;
 pub mod monsters;

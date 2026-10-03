@@ -25,6 +25,7 @@ pub enum MonsterSpeciesId {
     Shopkeeper,
     LittleDog,
     Kitten,
+    Ghost,
 }
 
 /// Behavioral archetype for autonomous monster decision making.
@@ -312,6 +313,21 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         ai_behavior: AiBehavior::CompanionPet,
         abilities: &[],
     },
+    MonsterArchetype {
+        id: MonsterSpeciesId::Ghost,
+        name: "ghost",
+        glyph: 'G',
+        base_hp: 20,
+        max_hp: 20,
+        ac: -2,
+        level: 10,
+        speed: 12,
+        alignment: Alignment::Neutral,
+        intrinsics: Intrinsics::empty().with_cold_resistance().with_see_invisible(),
+        damage_dice: (1, 8),
+        ai_behavior: AiBehavior::MeleeHunter,
+        abilities: &[],
+    },
 ];
 
 /// Look up a monster archetype from the bestiary table.
@@ -340,4 +356,14 @@ pub fn create_monster_record(id: MonsterSpeciesId, coord: Coord) -> ActorRecord 
         is_tame: arch.ai_behavior == AiBehavior::CompanionPet,
         abilities: arch.abilities.to_vec(),
     }
+}
+
+/// Spawns a hostile ghost representing a deceased adventurer from a graveyard bones file.
+pub fn create_ghost_record(name: &str, level: u32, hp: u32, coord: Coord) -> ActorRecord {
+    let mut rec = create_monster_record(MonsterSpeciesId::Ghost, coord);
+    rec.name = format!("ghost of {}", name);
+    rec.level = level;
+    rec.max_hp = hp;
+    rec.hp = hp;
+    rec
 }
