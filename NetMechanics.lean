@@ -32,3 +32,4 @@ import NetMechanics.Lighting
 import NetMechanics.Tournament
 import NetMechanics.Gehennom
 import NetMechanics.Quest
+import NetMechanics.Genocide
