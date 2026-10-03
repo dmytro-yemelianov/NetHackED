@@ -2138,3 +2138,81 @@ fn test_wand_of_polymorph_unique_monster_invariant() {
     sim2.step_player_action(ActionAst::ZapWand { dir: netrust_types::Direction::East, energy: 5 });
     assert_ne!(sim2.arena.actors.get(orc_id).unwrap().name, "Orc");
 }
+
+#[test]
+fn test_scroll_of_genocide_conduct_and_level_wipe() {
+    use netrust_types::{Buc, ItemClass};
+    use netrust_sim::ActionAst;
+    use netrust_arena::{ItemRecord, ItemLocation, ActorRecord};
+    use netrust_core::genocide::is_genocided;
+
+    let mut sim = SimulationWorld::new_with_seed(1027);
+    let player_c = sim.arena.actors.get(sim.player_id).unwrap().coord;
+
+    // Make space and spawn target monster (Goblin)
+    let mon_c = netrust_types::Coord::new_unchecked(player_c.x + 1, player_c.y);
+    sim.level.set_tile(mon_c, netrust_types::Tile::Room);
+    let goblin_id = sim.arena.spawn_actor(ActorRecord {
+        name: "Goblin".into(),
+        coord: mon_c,
+        hp: 10, max_hp: 10, ac: 10, level: 1, speed: 10,
+        alignment: netrust_types::Alignment::Chaotic,
+        intrinsics: netrust_types::Intrinsics::default(),
+        is_player: false, is_dead: false, is_tame: false, tameness: 0,
+        is_unique: false, abilities: Vec::new(),
+    });
+
+    let scroll_id = sim.arena.spawn_item(ItemRecord {
+        name: "scroll of genocide".into(),
+        class: ItemClass::Scroll,
+        weight: 2, buc: Buc::Uncursed, is_container: false, is_bag_of_holding: false,
+        enchantment: 0, erosion: 0, proofed: false, location: ItemLocation::CarriedBy(sim.player_id),
+    });
+
+    assert!(sim.conducts.genocideless);
+    assert!(sim.arena.actors.contains_key(goblin_id));
+
+    let carried = sim.arena.items_carried_by(sim.player_id);
+    let idx = carried.iter().position(|&id| id == scroll_id).unwrap();
+
+    let _events = sim.step_player_action(ActionAst::Read(idx));
+
+    assert!(!sim.conducts.genocideless);
+    assert!(!sim.arena.actors.contains_key(goblin_id));
+    assert!(is_genocided(&sim.genocide_registry, "Goblin", 'g'));
+}
+
+#[test]
+fn test_cursed_scroll_of_genocide_summons() {
+    use netrust_types::{Buc, ItemClass};
+    use netrust_sim::ActionAst;
+    use netrust_arena::{ItemRecord, ItemLocation};
+
+    let mut sim = SimulationWorld::new_with_seed(1028);
+    let player_c = sim.arena.actors.get(sim.player_id).unwrap().coord;
+
+    for x in (player_c.x - 2)..=(player_c.x + 2) {
+        for y in (player_c.y - 2)..=(player_c.y + 2) {
+            let c = netrust_types::Coord::new_unchecked(x, y);
+            sim.level.set_tile(c, netrust_types::Tile::Room);
+        }
+    }
+
+    let scroll_id = sim.arena.spawn_item(ItemRecord {
+        name: "scroll of genocide".into(),
+        class: ItemClass::Scroll,
+        weight: 2, buc: Buc::Cursed, is_container: false, is_bag_of_holding: false,
+        enchantment: 0, erosion: 0, proofed: false, location: ItemLocation::CarriedBy(sim.player_id),
+    });
+
+    let before_count = sim.arena.actors.len();
+
+    let carried = sim.arena.items_carried_by(sim.player_id);
+    let idx = carried.iter().position(|&id| id == scroll_id).unwrap();
+
+    sim.step_player_action(ActionAst::Read(idx));
+
+    let after_count = sim.arena.actors.len();
+    assert_eq!(after_count, before_count + 4);
+    assert!(!sim.conducts.genocideless);
+}

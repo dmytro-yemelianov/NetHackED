@@ -92,3 +92,5 @@ pub use netrust_types::{
 };
 
 pub mod polypile;
+pub mod genocide;
+pub use genocide::*;

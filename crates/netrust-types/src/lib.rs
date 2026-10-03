@@ -724,3 +724,28 @@ pub enum EquipSlot {
     Weapon,
     Quiver,
 }
+
+use std::collections::HashSet;
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum GenocideTarget {
+    Species(String),
+    Class(char),
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GenocideRegistry {
+    pub genocided_species: HashSet<String>,
+    pub genocided_classes: HashSet<char>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ConductTracker {
+    pub genocideless: bool,
+}
+
+impl Default for ConductTracker {
+    fn default() -> Self {
+        Self { genocideless: true }
+    }
+}

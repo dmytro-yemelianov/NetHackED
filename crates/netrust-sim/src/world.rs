@@ -63,6 +63,10 @@ pub struct SimulationWorld {
     pub rng: ChaCha8Rng,
     pub seed: u64,
     pub event_log: Vec<GameEvent>,
+    #[serde(default)]
+    pub genocide_registry: netrust_types::GenocideRegistry,
+    #[serde(default)]
+    pub conducts: netrust_types::ConductTracker,
 }
 
 pub fn default_rng() -> ChaCha8Rng {
@@ -187,6 +191,8 @@ impl SimulationWorld {
             rng,
             seed,
             event_log: Vec::new(),
+            genocide_registry: netrust_types::GenocideRegistry::default(),
+            conducts: netrust_types::ConductTracker::default(),
         }
     }
 

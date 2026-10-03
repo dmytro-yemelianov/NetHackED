@@ -365,7 +365,10 @@ impl SimulationWorld {
                                 _ => MonsterSpeciesId::SilverDragon,
                             };
                             let monster = create_monster_record(species, room.center());
-                            self.arena.spawn_actor(monster);
+                            let arch = netrust_data::get_monster_species(species);
+                            if !netrust_core::genocide::is_genocided(&self.genocide_registry, arch.name, arch.glyph) {
+                                self.arena.spawn_actor(monster);
+                            }
                         }
                     }
 

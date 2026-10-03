@@ -312,6 +312,51 @@ impl SimulationWorld {
                         } else {
                             events.push(GameEvent::LogMessage { text: "You have no wands to recharge.".into() });
                         }
+                    } else if item.name.contains("genocide") {
+                        self.conducts.genocideless = false;
+                        match item.buc {
+                            Buc::Cursed => {
+                                let summon_count = netrust_core::genocide::cursed_genocide_summon_count();
+                                let player_c = self.arena.actors.get(self.player_id).map(|p| p.coord).unwrap_or(Coord::new_unchecked(1, 1));
+                                for _ in 0..summon_count {
+                                    let spawn_c = player_c.neighbors().into_iter().find(|&c| self.level.is_passable(c) && self.actor_at(c).is_none()).unwrap_or(player_c);
+                                    let mut mon = netrust_data::create_monster_record(netrust_data::MonsterSpeciesId::Goblin, spawn_c);
+                                    mon.name = "hostile goblin".into();
+                                    self.arena.spawn_actor(mon);
+                                }
+                                events.push(GameEvent::LogMessage { text: "You read the cursed scroll of genocide. Monsters appear!".into() });
+                            }
+                            Buc::Uncursed => {
+                                let target = netrust_types::GenocideTarget::Species("Goblin".to_string());
+                                netrust_core::genocide::apply_genocide(&mut self.genocide_registry, target.clone());
+                                // Wipe from current floor
+                                let mut to_remove = Vec::new();
+                                for (aid, actor) in self.arena.actors.iter() {
+                                    if !actor.is_player && netrust_core::genocide::is_genocided(&self.genocide_registry, &actor.name, 'g') {
+                                        to_remove.push(aid);
+                                    }
+                                }
+                                for aid in to_remove {
+                                    self.arena.actors.remove(aid);
+                                }
+                                events.push(GameEvent::LogMessage { text: "You read the scroll of genocide. A species is wiped out!".into() });
+                            }
+                            Buc::Blessed => {
+                                let target = netrust_types::GenocideTarget::Class('L'); // Lich class for example
+                                netrust_core::genocide::apply_genocide(&mut self.genocide_registry, target.clone());
+                                // Wipe from current floor
+                                let mut to_remove = Vec::new();
+                                for (aid, actor) in self.arena.actors.iter() {
+                                    if !actor.is_player && netrust_core::genocide::is_genocided(&self.genocide_registry, &actor.name, 'L') {
+                                        to_remove.push(aid);
+                                    }
+                                }
+                                for aid in to_remove {
+                                    self.arena.actors.remove(aid);
+                                }
+                                events.push(GameEvent::LogMessage { text: "You read the blessed scroll of genocide. A whole class of monsters is wiped out!".into() });
+                            }
+                        }
                     } else {
                         events.push(GameEvent::LogMessage { text: format!("You read the {}. Knowledge fills your mind!", item.name) });
                     }

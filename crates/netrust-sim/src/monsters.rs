@@ -248,8 +248,11 @@ impl SimulationWorld {
                                                     netrust_data::MonsterSpeciesId::Skeleton,
                                                     neighbor,
                                                 );
-                                                self.arena.spawn_actor(skeleton);
-                                                spawned += 1;
+                                                let arch = netrust_data::get_monster_species(netrust_data::MonsterSpeciesId::Skeleton);
+                                                if !netrust_core::genocide::is_genocided(&self.genocide_registry, arch.name, arch.glyph) {
+                                                    self.arena.spawn_actor(skeleton);
+                                                    spawned += 1;
+                                                }
                                             }
                                         }
                                         if spawned > 0 {

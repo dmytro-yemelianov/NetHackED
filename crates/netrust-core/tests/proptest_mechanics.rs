@@ -1414,6 +1414,52 @@ proptest! {
         prop_assert_eq!(cured, infected);
         prop_assert!(hero.lycanthropy.is_none());
     }
+
+    // -------------------------------------------------------------
+    // Theorem: is_genocided_species_and_class
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_is_genocided_species_and_class(
+        species in ".*",
+        glyph in any::<char>(),
+        other_species in ".*",
+        other_glyph in any::<char>(),
+    ) {
+        use netrust_types::GenocideRegistry;
+        use netrust_core::{is_genocided, apply_genocide};
+        use netrust_types::GenocideTarget;
+        
+        let mut registry = GenocideRegistry {
+            genocided_species: std::collections::HashSet::new(),
+            genocided_classes: std::collections::HashSet::new(),
+        };
+        apply_genocide(&mut registry, GenocideTarget::Species(species.clone()));
+        apply_genocide(&mut registry, GenocideTarget::Class(glyph));
+
+        prop_assert!(is_genocided(&registry, &species, glyph));
+        
+        if species != other_species && glyph != other_glyph {
+            prop_assert!(!is_genocided(&registry, &other_species, other_glyph));
+        }
+    }
+
+    // -------------------------------------------------------------
+    // Theorem: write_with_marker_ink_invariants
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_write_with_marker_ink_invariants(ink in 0u8..=255, cost in 0u8..=255) {
+        use netrust_core::write_with_marker;
+        let res = write_with_marker(ink, cost);
+        if ink >= cost {
+            let new_ink = res.unwrap();
+            prop_assert_eq!(new_ink, ink - cost);
+            if cost > 0 {
+                prop_assert!(new_ink < ink);
+            }
+        } else {
+            prop_assert!(res.is_err());
+        }
+    }
 }
 
 
