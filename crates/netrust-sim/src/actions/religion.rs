@@ -10,6 +10,7 @@ use crate::world::SimulationWorld;
 impl SimulationWorld {
     pub(crate) fn handle_pray(&mut self) -> Vec<GameEvent> {
         let mut events = Vec::new();
+        netrust_core::conducts::record_altar_action(&mut self.conducts);
         let Some(player) = self.arena.actors.get(self.player_id).cloned() else {
             return events;
         };
@@ -100,6 +101,7 @@ impl SimulationWorld {
 
     pub(crate) fn handle_sacrifice(&mut self, idx: usize) -> Vec<GameEvent> {
         let mut events = Vec::new();
+        netrust_core::conducts::record_altar_action(&mut self.conducts);
         let Some(player) = self.arena.actors.get(self.player_id).cloned() else {
             return events;
         };
@@ -154,6 +156,9 @@ impl SimulationWorld {
                                 erosion: 0,
                                 proofed: true,
                                 location: ItemLocation::CarriedBy(self.player_id),
+                                corpse_race: None,
+                                corpse_age: 0,
+                                rot_threshold: 50,
                             };
                             self.arena.spawn_item(gift_record);
                             events.push(GameEvent::LogMessage {

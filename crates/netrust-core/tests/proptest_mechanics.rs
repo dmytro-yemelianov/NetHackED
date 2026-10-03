@@ -1720,3 +1720,76 @@ proptest! {
         prop_assert_eq!(trap.state, netrust_types::TrapState::Disarmed);
     }
 }
+
+prop_compose! {
+    fn arb_conduct_tracker()(
+        pacifist in any::<bool>(),
+        vegan in any::<bool>(),
+        vegetarian in any::<bool>(),
+        atheist in any::<bool>(),
+        illiterate in any::<bool>(),
+        genocideless in any::<bool>(),
+        polypileless in any::<bool>(),
+        wishless in any::<bool>(),
+    ) -> netrust_types::ConductTracker {
+        netrust_types::ConductTracker {
+            pacifist, vegan, vegetarian, atheist, illiterate, genocideless, polypileless, wishless
+        }
+    }
+}
+
+proptest! {
+    // -------------------------------------------------------------
+    // Theorem: prop_corpse_tainted_threshold
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_corpse_tainted_threshold(age in 0u32..1000, rot_threshold in 0u32..1000) {
+        prop_assert_eq!(
+            netrust_core::nutrition::is_corpse_tainted(age, rot_threshold),
+            age > rot_threshold
+        );
+    }
+
+    // -------------------------------------------------------------
+    // Theorem: prop_cannibalism_same_race
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_cannibalism_same_race(corpse_race in "[a-z]+", hero_race in "[a-z]+") {
+        let expected = corpse_race == hero_race;
+        prop_assert_eq!(
+            netrust_core::nutrition::is_cannibalism(&corpse_race, &hero_race),
+            expected
+        );
+    }
+
+    // -------------------------------------------------------------
+    // Theorem: prop_conduct_irreversibility
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_conduct_irreversibility(tracker_base in arb_conduct_tracker()) {
+        let mut t1 = tracker_base.clone();
+        netrust_core::conducts::record_kill(&mut t1);
+        if !tracker_base.pacifist { prop_assert_eq!(t1.pacifist, false); }
+
+        let mut t2 = tracker_base.clone();
+        netrust_core::conducts::record_eat_meat(&mut t2);
+        if !tracker_base.vegan { prop_assert_eq!(t2.vegan, false); }
+        if !tracker_base.vegetarian { prop_assert_eq!(t2.vegetarian, false); }
+
+        let mut t3 = tracker_base.clone();
+        netrust_core::conducts::record_read(&mut t3);
+        if !tracker_base.illiterate { prop_assert_eq!(t3.illiterate, false); }
+
+        let mut t4 = tracker_base.clone();
+        netrust_core::conducts::record_altar_action(&mut t4);
+        if !tracker_base.atheist { prop_assert_eq!(t4.atheist, false); }
+
+        let mut t5 = tracker_base.clone();
+        netrust_core::conducts::record_wish(&mut t5);
+        if !tracker_base.wishless { prop_assert_eq!(t5.wishless, false); }
+
+        let mut t6 = tracker_base.clone();
+        netrust_core::conducts::record_polypile(&mut t6);
+        if !tracker_base.polypileless { prop_assert_eq!(t6.polypileless, false); }
+    }
+}

@@ -83,6 +83,9 @@ impl SimulationWorld {
                         erosion: 0,
                         proofed: false,
                         location: ItemLocation::Floor(target_coord),
+                        corpse_race: None,
+                        corpse_age: 0,
+                        rot_threshold: 50,
                     };
                     self.arena.spawn_item(item_record);
                 }

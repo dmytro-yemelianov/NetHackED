@@ -29,6 +29,9 @@ pub struct ItemRecord {
     pub erosion: u8,
     pub proofed: bool,
     pub location: ItemLocation,
+    pub corpse_race: Option<String>,
+    pub corpse_age: u32,
+    pub rot_threshold: u32,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -215,6 +218,9 @@ mod tests {
             erosion: 0,
             proofed: false,
             location: ItemLocation::Limbo,
+            corpse_race: None,
+            corpse_age: 0,
+            rot_threshold: 50,
         });
 
         let boh = arena.spawn_item(ItemRecord {
@@ -228,6 +234,9 @@ mod tests {
             erosion: 0,
             proofed: false,
             location: ItemLocation::Floor(Coord::new(10, 10).unwrap()),
+            corpse_race: None,
+            corpse_age: 0,
+            rot_threshold: 50,
         });
 
         // Place dagger inside bag
@@ -254,6 +263,9 @@ mod tests {
             erosion: 0,
             proofed: false,
             location: ItemLocation::Limbo,
+            corpse_race: None,
+            corpse_age: 0,
+            rot_threshold: 50,
         });
         let box2 = arena.spawn_item(ItemRecord {
             name: "box 2".into(),
@@ -266,6 +278,9 @@ mod tests {
             erosion: 0,
             proofed: false,
             location: ItemLocation::InContainer(box1),
+            corpse_race: None,
+            corpse_age: 0,
+            rot_threshold: 50,
         });
 
         assert!(arena.contains_transitive(box1, box2));

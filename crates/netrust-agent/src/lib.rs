@@ -9,6 +9,7 @@ pub mod jsonrpc;
 pub mod mcp;
 pub mod observation;
 pub mod session;
+pub mod conducts;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod graphql;

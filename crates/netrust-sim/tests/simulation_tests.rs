@@ -192,6 +192,9 @@ fn test_pickup_and_drop_lifecycle() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::Floor(p_coord),
+        corpse_race: None,
+        corpse_age: 0,
+        rot_threshold: 50,
     });
 
     let events_pickup = sim.step_player_action(ActionAst::PickUp);
@@ -219,6 +222,9 @@ fn test_wield_weapon() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_race: None,
+        corpse_age: 0,
+        rot_threshold: 50,
     });
 
     let carried = sim.arena.items_carried_by(sim.player_id);
@@ -576,6 +582,9 @@ fn test_nutrition_decay_and_eating() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_race: None,
+        corpse_age: 0,
+        rot_threshold: 50,
     });
     let carried2 = sim.arena.items_carried_by(sim.player_id);
     let corpse_idx = carried2.iter().position(|&id| id == corpse).unwrap();
@@ -1063,6 +1072,9 @@ fn test_altar_sacrifice_and_divine_crowning() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_race: None,
+        corpse_age: 0,
+        rot_threshold: 50,
     });
 
     let carried = sim.arena.items_carried_by(sim.player_id);
@@ -1095,6 +1107,9 @@ fn test_altar_holy_water_consecration() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_race: None,
+        corpse_age: 0,
+        rot_threshold: 50,
     });
 
     let events = sim.step_player_action(ActionAst::Pray);
@@ -1118,6 +1133,9 @@ fn test_wand_of_wishing_spawns_item() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_race: None,
+        corpse_age: 0,
+        rot_threshold: 50,
     });
 
     let events = sim.step_player_action(ActionAst::Wish("blessed +2 silver dragon scale mail".into()));
@@ -1162,6 +1180,9 @@ fn test_wand_of_striking_destroys_drawbridge() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_race: None,
+        corpse_age: 0,
+        rot_threshold: 50,
     });
 
     let events = sim.step_player_action(ActionAst::ZapWand {
@@ -1197,6 +1218,9 @@ fn test_wand_of_cold_freezes_pool() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_race: None,
+        corpse_age: 0,
+        rot_threshold: 50,
     });
 
     let events = sim.step_player_action(ActionAst::ZapWand {
@@ -1222,6 +1246,9 @@ fn test_scroll_of_charging_and_explosion() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_race: None,
+        corpse_age: 0,
+        rot_threshold: 50,
     });
 
     let scroll = sim.arena.spawn_item(ItemRecord {
@@ -1235,6 +1262,9 @@ fn test_scroll_of_charging_and_explosion() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_race: None,
+        corpse_age: 0,
+        rot_threshold: 50,
     });
 
     let carried = sim.arena.items_carried_by(sim.player_id);
@@ -1261,6 +1291,9 @@ fn test_scroll_of_charging_and_explosion() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_race: None,
+        corpse_age: 0,
+        rot_threshold: 50,
     });
     let carried2 = sim.arena.items_carried_by(sim.player_id);
     let s2_idx = carried2.iter().position(|&id| id == scroll2).unwrap();
@@ -1309,6 +1342,9 @@ fn test_artifact_combat_bonus_and_vorpal_blade() {
         erosion: 0,
         proofed: true,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_race: None,
+        corpse_age: 0,
+        rot_threshold: 50,
     });
     sim.wielded_item = Some(excalibur);
 
@@ -1362,6 +1398,9 @@ fn test_ukrainian_i18n_simulation_logging() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_race: None,
+        corpse_age: 0,
+        rot_threshold: 50,
     });
 
     let wish_events = sim.step_player_action(ActionAst::Wish("blessed +2 silver dragon scale mail".into()));
@@ -1450,6 +1489,9 @@ fn test_monster_lich_summon_and_curse() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_race: None,
+        corpse_age: 0,
+        rot_threshold: 50,
     });
 
     let mut lich = netrust_data::create_monster_record(
@@ -1498,6 +1540,9 @@ fn test_bones_file_generation_and_ghost_encounter() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim1.player_id),
+        corpse_race: None,
+        corpse_age: 0,
+        rot_threshold: 50,
     });
 
     // Save bones on death
@@ -2053,6 +2098,9 @@ fn test_hero_polymorph_potion_and_damage_reversion() {
         class: ItemClass::Potion,
         weight: 2, buc: Buc::Uncursed, is_container: false, is_bag_of_holding: false,
         enchantment: 0, erosion: 0, proofed: false, location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_race: None,
+        corpse_age: 0,
+        rot_threshold: 50,
     });
     let carried = sim.arena.items_carried_by(sim.player_id);
     let idx = carried.iter().position(|&id| id == potion).unwrap();
@@ -2110,6 +2158,9 @@ fn test_wand_of_polymorph_unique_monster_invariant() {
         class: ItemClass::Wand,
         weight: 7, buc: Buc::Uncursed, is_container: false, is_bag_of_holding: false,
         enchantment: 5, erosion: 0, proofed: false, location: ItemLocation::CarriedBy(sim1.player_id),
+        corpse_race: None,
+        corpse_age: 0,
+        rot_threshold: 50,
     });
     sim1.step_player_action(ActionAst::ZapWand { dir: netrust_types::Direction::East, energy: 5 });
     assert_eq!(sim1.arena.actors.get(vlad_id).unwrap().name, "Vlad the Impaler");
@@ -2134,6 +2185,9 @@ fn test_wand_of_polymorph_unique_monster_invariant() {
         class: ItemClass::Wand,
         weight: 7, buc: Buc::Uncursed, is_container: false, is_bag_of_holding: false,
         enchantment: 5, erosion: 0, proofed: false, location: ItemLocation::CarriedBy(sim2.player_id),
+        corpse_race: None,
+        corpse_age: 0,
+        rot_threshold: 50,
     });
     sim2.step_player_action(ActionAst::ZapWand { dir: netrust_types::Direction::East, energy: 5 });
     assert_ne!(sim2.arena.actors.get(orc_id).unwrap().name, "Orc");
@@ -2167,6 +2221,9 @@ fn test_scroll_of_genocide_conduct_and_level_wipe() {
         class: ItemClass::Scroll,
         weight: 2, buc: Buc::Uncursed, is_container: false, is_bag_of_holding: false,
         enchantment: 0, erosion: 0, proofed: false, location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_race: None,
+        corpse_age: 0,
+        rot_threshold: 50,
     });
 
     assert!(sim.conducts.genocideless);
@@ -2203,6 +2260,9 @@ fn test_cursed_scroll_of_genocide_summons() {
         class: ItemClass::Scroll,
         weight: 2, buc: Buc::Cursed, is_container: false, is_bag_of_holding: false,
         enchantment: 0, erosion: 0, proofed: false, location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_race: None,
+        corpse_age: 0,
+        rot_threshold: 50,
     });
 
     let before_count = sim.arena.actors.len();
@@ -2243,6 +2303,9 @@ fn test_petrification_countdown_and_lizard_cure() {
         class: ItemClass::Food,
         weight: 10, buc: Buc::Uncursed, is_container: false, is_bag_of_holding: false,
         enchantment: 0, erosion: 0, proofed: false, location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_race: None,
+        corpse_age: 0,
+        rot_threshold: 50,
     });
     
     let carried = sim.arena.items_carried_by(sim.player_id);
@@ -2295,6 +2358,9 @@ fn test_weapon_skill_combat_bonus() {
         class: ItemClass::Weapon,
         weight: 40, buc: Buc::Uncursed, is_container: false, is_bag_of_holding: false,
         enchantment: 0, erosion: 0, proofed: false, location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_race: None,
+        corpse_age: 0,
+        rot_threshold: 50,
     });
     
     // Wield it
@@ -2358,6 +2424,9 @@ fn test_ranged_fire_arrow_hits_monster() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_race: None,
+        corpse_age: 0,
+        rot_threshold: 50,
     });
     
     // Quiver the arrow
@@ -2489,3 +2558,121 @@ fn test_flying_bypasses_pit_trap() {
     let trap_after = sim.level.traps.get(&trap_coord).unwrap();
     assert_eq!(trap_after.state, netrust_types::TrapState::Hidden);
 }
+
+// -------------------------------------------------------------------------------------------------
+// Simulation Tests for Corpse Nutrition, Cannibalism, Intrinsic Absorption, and Voluntary Conducts
+// -------------------------------------------------------------------------------------------------
+
+#[test]
+fn test_corpse_eating_and_conduct_invalidation() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    
+    let corpse = ItemRecord {
+        name: "goblin corpse".into(),
+        class: ItemClass::Food,
+        weight: 10,
+        buc: Buc::Uncursed,
+        is_container: false,
+        is_bag_of_holding: false,
+        enchantment: 0,
+        erosion: 0,
+        proofed: false,
+        location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_race: Some("goblin".into()),
+        corpse_age: 0,
+        rot_threshold: 50,
+    };
+    
+    let corpse_id = sim.arena.items.insert(corpse);
+    
+    // Check initial conducts
+    assert!(sim.conducts.vegan);
+    assert!(sim.conducts.vegetarian);
+    
+    let initial_nutrition = sim.player_nutrition;
+    
+    let carried = sim.arena.items_carried_by(sim.player_id);
+    let corpse_idx = carried.iter().position(|&id| id == corpse_id).unwrap();
+
+    // Eat the corpse
+    let _events = sim.step_player_action(ActionAst::Eat(corpse_idx));
+    
+    // Verify nutrition increases
+    assert!(sim.player_nutrition > initial_nutrition);
+    
+    // Verify conducts are invalidated
+    assert!(!sim.conducts.vegan);
+    assert!(!sim.conducts.vegetarian);
+}
+
+#[test]
+fn test_cannibalism_detection() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    
+    let human_corpse = ItemRecord {
+        name: "human corpse".into(),
+        class: ItemClass::Food,
+        weight: 10,
+        buc: Buc::Uncursed,
+        is_container: false,
+        is_bag_of_holding: false,
+        enchantment: 0,
+        erosion: 0,
+        proofed: false,
+        location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_race: Some("human".into()),
+        corpse_age: 0,
+        rot_threshold: 50,
+    };
+    
+    let corpse_id = sim.arena.items.insert(human_corpse);
+    
+    let carried = sim.arena.items_carried_by(sim.player_id);
+    let corpse_idx = carried.iter().position(|&id| id == corpse_id).unwrap();
+
+    let events = sim.step_player_action(ActionAst::Eat(corpse_idx));
+    
+    // Verify cannibalism violation occurs
+    let has_cannibal_msg = events.iter().any(|e| {
+        if let GameEvent::LogMessage { text } = e {
+            text.contains("cannibal")
+        } else {
+            false
+        }
+    });
+    
+    assert!(has_cannibal_msg, "Expected cannibalism message");
+}
+
+#[test]
+fn test_pacifist_conduct_violation_on_kill() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    assert!(sim.conducts.pacifist);
+    
+    let player = sim.arena.actors.get(sim.player_id).unwrap();
+    let monster_pos = player.coord.step(Direction::East).unwrap();
+    
+    let monster = ActorRecord {
+        name: "goblin".into(),
+        coord: monster_pos,
+        hp: 1, // 1 HP to ensure a kill
+        max_hp: 10,
+        ac: 10,
+        level: 1,
+        speed: 12,
+        alignment: Alignment::Chaotic,
+        intrinsics: Intrinsics::empty(),
+        is_player: false,
+        is_unique: false,
+        is_dead: false,
+        is_tame: false, tameness: 0, abilities: vec![],
+    };
+    
+    let monster_id = sim.arena.actors.insert(monster);
+    
+    // Melee attack the monster
+    let _events = sim.step_player_action(ActionAst::MeleeAttack(monster_pos));
+    
+    assert!(!sim.conducts.pacifist, "Pacifist conduct should be violated on kill");
+}
+

@@ -214,6 +214,7 @@ impl SimulationWorld {
             let item = self.arena.items.get(item_id).cloned();
             if let Some(item) = item {
                 if item.class == ItemClass::Scroll {
+                    netrust_core::conducts::record_read(&mut self.conducts);
                     self.arena.destroy_item(item_id);
                     if item.name.contains("teleport") {
                         if self.level.rooms.len() > 1 {
@@ -365,6 +366,7 @@ impl SimulationWorld {
                     }
                     self.scheduler.hero_act(NORMAL_SPEED);
                 } else if item.class == ItemClass::Spellbook {
+                    netrust_core::conducts::record_read(&mut self.conducts);
                     if item.name.contains("Book of the Dead") {
                         let player_coord = self.arena.actors.get(self.player_id).map(|p| p.coord).unwrap_or(Coord::new_unchecked(0, 0));
                         let on_vs = self.vibrating_square == Some(player_coord);
@@ -428,6 +430,32 @@ impl SimulationWorld {
                     self.player_nutrition = (self.player_nutrition + nut_gain).min(2000);
 
                     if item.name.contains("corpse") {
+                        netrust_core::conducts::record_eat_meat(&mut self.conducts);
+                        let corpse_race = item.corpse_race.as_deref().unwrap_or("unknown");
+                        if netrust_core::nutrition::is_cannibalism(corpse_race, "human") {
+                            events.push(GameEvent::LogMessage { text: "You cannibal! You feel deeply ashamed.".into() });
+                        }
+                        if netrust_core::nutrition::is_corpse_tainted(item.corpse_age, item.rot_threshold) {
+                            events.push(GameEvent::LogMessage { text: "Ugh, this corpse is tainted!".into() });
+                        }
+                        
+                        let monster_name = item.name.replace(" corpse", "");
+                        if let Some(intrinsic) = netrust_core::nutrition::intrinsic_from_corpse(&monster_name) {
+                            if let Some(p) = self.arena.actors.get_mut(self.player_id) {
+                                match intrinsic.as_str() {
+                                    "fire_resistance" => p.intrinsics.fire_resistance = true,
+                                    "cold_resistance" => p.intrinsics.cold_resistance = true,
+                                    "shock_resistance" => p.intrinsics.shock_resistance = true,
+                                    "poison_resistance" => p.intrinsics.poison_resistance = true,
+                                    "sleep_resistance" => p.intrinsics.sleep_resistance = true,
+                                    "telepathy" => p.intrinsics.telepathy = true,
+                                    "see_invisible" => p.intrinsics.see_invisible = true,
+                                    _ => {}
+                                }
+                            }
+                            events.push(GameEvent::LogMessage { text: format!("You gained {}!", intrinsic) });
+                        }
+
                         if item.name.contains("lizard") {
                             netrust_core::afflictions::cure_petrification(&mut self.hero);
                             events.push(GameEvent::LogMessage {
@@ -702,6 +730,7 @@ impl SimulationWorld {
                 return events;
             }
         }
+        netrust_core::conducts::record_wish(&mut self.conducts);
 
         if let Some((item_query, ench, buc)) = netrust_core::artifacts_wands::parse_wish(&wish_str) {
             let matched_arch = netrust_data::ITEM_CATALOG.iter().find(|arch| {

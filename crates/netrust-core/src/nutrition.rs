@@ -47,6 +47,27 @@ pub fn metabolic_tick(n: u32) -> u32 {
     n.saturating_sub(1)
 }
 
+pub fn is_corpse_tainted(age: u32, rot_threshold: u32) -> bool {
+    age > rot_threshold
+}
+
+pub fn is_cannibalism(corpse_race: &str, hero_race: &str) -> bool {
+    corpse_race == hero_race
+}
+
+pub fn intrinsic_from_corpse(monster_name: &str) -> Option<String> {
+    match monster_name.to_lowercase().as_str() {
+        "red dragon" | "fire giant" | "fire elemental" => Some("fire_resistance".to_string()),
+        "floating eye" => Some("telepathy".to_string()),
+        "winter wolf" | "white dragon" | "frost giant" => Some("cold_resistance".to_string()),
+        "energy vortex" | "blue dragon" => Some("shock_resistance".to_string()),
+        "green dragon" | "killer bee" => Some("poison_resistance".to_string()),
+        "gelatinous cube" => Some("sleep_resistance".to_string()),
+        "stalker" => Some("see_invisible".to_string()),
+        _ => None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

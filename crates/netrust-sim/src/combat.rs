@@ -165,6 +165,9 @@ impl SimulationWorld {
             let attack_msg = netrust_i18n::Messages::attack_hit(&attacker.name, &defender.name, final_damage, self.locale);
             events.push(GameEvent::LogMessage { text: attack_msg });
             if lethal {
+                if attacker_id == self.player_id {
+                    netrust_core::conducts::record_kill(&mut self.conducts);
+                }
                 events.push(GameEvent::LogMessage { text: netrust_i18n::Messages::killed(&defender.name, self.locale) });
                 if defender_id != self.player_id {
                     // Check if the defeated enemy is the unique Class Nemesis

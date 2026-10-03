@@ -852,11 +852,27 @@ pub struct GenocideRegistry {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ConductTracker {
+    pub pacifist: bool,
+    pub vegan: bool,
+    pub vegetarian: bool,
+    pub atheist: bool,
+    pub illiterate: bool,
     pub genocideless: bool,
+    pub polypileless: bool,
+    pub wishless: bool,
 }
 
 impl Default for ConductTracker {
     fn default() -> Self {
-        Self { genocideless: true }
+        Self {
+            pacifist: true,
+            vegan: true,
+            vegetarian: true,
+            atheist: true,
+            illiterate: true,
+            genocideless: true,
+            polypileless: true,
+            wishless: true,
+        }
     }
 }
