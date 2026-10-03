@@ -79,7 +79,9 @@ fn tools_list() -> Value {
                         "action": {
                             "type": "string",
                             "enum": STEP_ACTIONS
-                        }
+                        },
+                        "index": { "type": "integer" },
+                        "direction": { "type": "string" }
                     },
                     "required": ["action"]
                 }

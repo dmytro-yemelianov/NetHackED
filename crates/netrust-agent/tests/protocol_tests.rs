@@ -137,3 +137,24 @@ fn mcp_step_enum_matches_accepted_actions() {
         assert!(r.get("result").is_some(), "enum action {} rejected: {}", a, r);
     }
 }
+
+#[test]
+fn mcp_null_id_is_a_request_and_errors_carry_jsonrpc() {
+    let mut s = AgentSession::new(42);
+    let r = mcp(&mut s, json!({"jsonrpc":"2.0","id":null,"method":"ping"})).unwrap();
+    assert!(r["id"].is_null());
+    assert_eq!(r["result"], json!({}));
+    let r = mcp(&mut s, json!({"jsonrpc":"2.0","id":null,"method":"no/such"})).unwrap();
+    assert_eq!(r["jsonrpc"], "2.0");
+    assert!(r["id"].is_null());
+    assert_eq!(r["error"]["code"], METHOD_NOT_FOUND);
+}
+
+#[test]
+fn mcp_step_schema_declares_index_and_direction() {
+    let mut s = AgentSession::new(42);
+    let r = mcp(&mut s, json!({"jsonrpc":"2.0","id":2,"method":"tools/list"})).unwrap();
+    let step = r["result"]["tools"].as_array().unwrap().iter().find(|t| t["name"] == "netrust_step").unwrap();
+    assert_eq!(step["inputSchema"]["properties"]["index"]["type"], "integer");
+    assert_eq!(step["inputSchema"]["properties"]["direction"]["type"], "string");
+}
