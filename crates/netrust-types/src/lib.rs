@@ -45,9 +45,27 @@ impl Locale {
 
 /// Bounded coordinate on the $80 \times 21$ dungeon grid.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(try_from = "RawCoord")]
 pub struct Coord {
     pub x: usize,
     pub y: usize,
+}
+
+/// Unvalidated wire form of `Coord`; deserialization goes through `Coord::new`.
+#[derive(Deserialize)]
+struct RawCoord {
+    x: usize,
+    y: usize,
+}
+
+impl TryFrom<RawCoord> for Coord {
+    type Error = String;
+
+    fn try_from(raw: RawCoord) -> Result<Self, Self::Error> {
+        Coord::new(raw.x, raw.y).ok_or_else(|| {
+            format!("coordinate ({}, {}) out of bounds {}x{}", raw.x, raw.y, COLNO, ROWNO)
+        })
+    }
 }
 
 impl Coord {
@@ -745,6 +763,17 @@ mod tests {
         assert_eq!(ItemClass::Potion.symbol(), '!');
         assert_eq!(ItemClass::Wand.symbol(), '/');
         assert_eq!(ItemClass::Coin.symbol(), '$');
+    }
+
+    #[test]
+    fn coord_deserialize_rejects_out_of_bounds() {
+        let ok: Coord = serde_json::from_str(r#"{"x":79,"y":20}"#).unwrap();
+        assert_eq!(ok, Coord::new(79, 20).unwrap());
+        assert!(serde_json::from_str::<Coord>(r#"{"x":80,"y":0}"#).is_err());
+        assert!(serde_json::from_str::<Coord>(r#"{"x":0,"y":21}"#).is_err());
+        assert!(serde_json::from_str::<Coord>(r#"{"x":1000,"y":5}"#).is_err());
+        let json = serde_json::to_string(&Coord::new(3, 4).unwrap()).unwrap();
+        assert_eq!(json, r#"{"x":3,"y":4}"#);
     }
 }
 
