@@ -3,7 +3,7 @@
 //! Classic ASCII 80x21 NetHack presentation layer running directly on Crossterm.
 //! Fully supports canonical subsystems: 12 Traps, #enhance Skill Tree,
 //! #conduct Voluntary Conduct Tracker, Quivers & Ranged Firing, Steeds/Riding,
-//! and Status Afflictions (Petrification, Sliming, Polymorph).
+//! Status Afflictions (Petrification, Sliming, Polymorph), and screen-centered layouts.
 
 use crossterm::{
     cursor::{Hide, MoveTo, Show},
@@ -41,63 +41,102 @@ impl Drop for TerminalGuard {
     }
 }
 
+/// Calculate horizontal and vertical offsets to center an 80x24 NetHack viewport on any screen size.
+fn screen_offsets() -> (u16, u16) {
+    let (term_width, term_height) = crossterm::terminal::size().unwrap_or((80, 24));
+    let offset_x = (term_width.saturating_sub(80)) / 2;
+    let offset_y = (term_height.saturating_sub(24)) / 2;
+    (offset_x, offset_y)
+}
+
 fn select_character(stdout: &mut Stdout, locale: Locale) -> io::Result<Option<CharacterConfig>> {
-    execute!(stdout, MoveTo(0, 0), Clear(ClearType::All))?;
+    let (ox, oy) = screen_offsets();
+    execute!(stdout, Clear(ClearType::All))?;
+
+    let border_top = "+------------------------------------------------------------------------------+";
+    let title_line = "|                 NETRUST: Classic NetHack 5.0 in Rust & Lean 4                |";
+    let border_mid = "+------------------------------------------------------------------------------+";
+    let border_bot = "+------------------------------------------------------------------------------+";
+
+    execute!(
+        stdout,
+        MoveTo(ox, oy),
+        SetForegroundColor(Color::Cyan),
+        Print(border_top),
+        MoveTo(ox, oy + 1),
+        SetForegroundColor(Color::Yellow),
+        Print(title_line),
+        MoveTo(ox, oy + 2),
+        SetForegroundColor(Color::Cyan),
+        Print(border_mid),
+        ResetColor
+    )?;
+
     let header_desc = if locale == Locale::Uk {
-        "  Хто ви? Оберіть початковий клас персонажа:\n\n"
+        "Хто ви? Оберіть початковий клас персонажа:"
     } else {
-        "  Who are you? Pick your starting character role:\n\n"
-    };
-
-    let roles_desc = if locale == Locale::Uk {
-        concat!(
-            "    [v] Валькірія     - Нейтральна Людина (Високе HP, Довгий Меч, Щит)\n",
-            "    [w] Маг           - Нейтральна Людина (Магія, Жезл Удару, Сувої)\n",
-            "    [b] Варвар        - Хаотичний Орк     (Високе HP, Нищівний Ближній Бій)\n",
-            "    [r] Розбійник     - Хаотична Людина   (Кинджал, Короткий Меч, Мішок)\n",
-            "    [k] Лицар         - Законний Дворф    (Важка Броня, Довгий Меч)\n",
-            "    [m] Монах         - Нейтральна Людина (Бойові Мистецтва, Зцілення)\n",
-            "    [h] Цілитель      - Нейтральний Гном  (Зілля Зцілення, Живучість)\n",
-            "    [t] Турист        - Нейтральна Людина (Золото, Бездонна Торба)\n",
-            "    [a] Археолог      - Законна Людина    (Мішок, Меч, Стародавні Знання)\n\n",
-        )
-    } else {
-        concat!(
-            "    [v] Valkyrie      - Neutral Human (High HP, Long Sword, Shield)\n",
-            "    [w] Wizard        - Neutral Human (Magic, Wand of Striking, Scrolls)\n",
-            "    [b] Barbarian     - Chaotic Orc   (High HP, Brutal Melee)\n",
-            "    [r] Rogue         - Chaotic Human (Dagger, Short Sword, Sack)\n",
-            "    [k] Knight        - Lawful Dwarf  (Heavy Armor, Long Sword)\n",
-            "    [m] Monk          - Neutral Human (Martial Arts, Healing, Teleport)\n",
-            "    [h] Healer        - Neutral Gnome (Healing Potions, High Vitality)\n",
-            "    [t] Tourist       - Neutral Human (Gold, Bag of Holding, Extra Potions)\n",
-            "    [a] Archaeologist - Lawful Human  (Sack, Short Sword, Ancient Lore)\n\n",
-        )
-    };
-
-    let prompt = if locale == Locale::Uk {
-        "  Оберіть роль [v/w/b/r/k/m/h/t/a] або [Enter] для Валькірії: "
-    } else {
-        "  Press role key [v/w/b/r/k/m/h/t/a] or [Enter] for default Valkyrie: "
+        "Who are you? Pick your starting character role:"
     };
 
     execute!(
         stdout,
-        MoveTo(0, 1),
-        SetForegroundColor(Color::Cyan),
-        Print("================================================================================"),
-        MoveTo(0, 2),
-        SetForegroundColor(Color::Yellow),
-        Print("                 NETRUST: Classic NetHack 5.0 in Rust & Lean 4                 "),
-        MoveTo(0, 3),
-        SetForegroundColor(Color::Cyan),
-        Print("================================================================================"),
-        MoveTo(0, 5),
+        MoveTo(ox + 2, oy + 4),
         SetForegroundColor(Color::White),
         Print(header_desc),
-        Print(roles_desc),
+        ResetColor
+    )?;
+
+    let roles: &[(&str, &str, &str)] = if locale == Locale::Uk {
+        &[
+            ("[v] Валькірія",     "Нейтральна Людина", "(Високе HP, Довгий Меч, Щит)"),
+            ("[w] Маг",           "Нейтральна Людина", "(Магія, Жезл Удару, Сувої)"),
+            ("[b] Варвар",        "Хаотичний Орк",     "(Високе HP, Нищівний Ближній Бій)"),
+            ("[r] Розбійник",     "Хаотична Людина",   "(Кинджал, Короткий Меч, Мішок)"),
+            ("[k] Лицар",         "Законний Дворф",    "(Важка Броня, Довгий Меч)"),
+            ("[m] Монах",         "Нейтральна Людина", "(Бойові Мистецтва, Зцілення)"),
+            ("[h] Цілитель",      "Нейтральний Гном",  "(Зілля Зцілення, Живучість)"),
+            ("[t] Турист",        "Нейтральна Людина", "(Золото, Бездонна Торба)"),
+            ("[a] Археолог",      "Законна Людина",    "(Мішок, Меч, Стародавні Знання)"),
+        ]
+    } else {
+        &[
+            ("[v] Valkyrie",      "Neutral Human",     "(High HP, Long Sword, Shield)"),
+            ("[w] Wizard",        "Neutral Human",     "(Magic, Wand of Striking, Scrolls)"),
+            ("[b] Barbarian",     "Chaotic Orc",       "(High HP, Brutal Melee)"),
+            ("[r] Rogue",         "Chaotic Human",     "(Dagger, Short Sword, Sack)"),
+            ("[k] Knight",        "Lawful Dwarf",      "(Heavy Armor, Long Sword)"),
+            ("[m] Monk",          "Neutral Human",     "(Martial Arts, Healing, Teleport)"),
+            ("[h] Healer",        "Neutral Gnome",     "(Healing Potions, High Vitality)"),
+            ("[t] Tourist",       "Neutral Human",     "(Gold, Bag of Holding, Extra Potions)"),
+            ("[a] Archaeologist", "Lawful Human",      "(Sack, Short Sword, Ancient Lore)"),
+        ]
+    };
+
+    for (idx, (role_name, align_race, details)) in roles.iter().enumerate() {
+        let line = format!("    {:<18} - {:<18} {}", role_name, align_race, details);
+        execute!(
+            stdout,
+            MoveTo(ox, oy + 6 + idx as u16),
+            SetForegroundColor(Color::White),
+            Print(line),
+            ResetColor
+        )?;
+    }
+
+    let prompt = if locale == Locale::Uk {
+        "Оберіть роль [v/w/b/r/k/m/h/t/a] або [Enter] для Валькірії: "
+    } else {
+        "Press role key [v/w/b/r/k/m/h/t/a] or [Enter] for default Valkyrie: "
+    };
+
+    execute!(
+        stdout,
+        MoveTo(ox + 2, oy + 17),
         SetForegroundColor(Color::Green),
         Print(prompt),
+        MoveTo(ox, oy + 19),
+        SetForegroundColor(Color::Cyan),
+        Print(border_bot),
         ResetColor
     )?;
 
@@ -196,9 +235,10 @@ fn select_character(stdout: &mut Stdout, locale: Locale) -> io::Result<Option<Ch
 }
 
 fn prompt_direction(stdout: &mut Stdout, prompt_msg: &str) -> io::Result<Option<Direction>> {
+    let (ox, oy) = screen_offsets();
     execute!(
         stdout,
-        MoveTo(0, 0),
+        MoveTo(ox, oy),
         Clear(ClearType::CurrentLine),
         SetForegroundColor(Color::Yellow),
         Print(prompt_msg),
@@ -227,7 +267,8 @@ fn prompt_direction(stdout: &mut Stdout, prompt_msg: &str) -> io::Result<Option<
 }
 
 fn show_inventory_modal(stdout: &mut Stdout, world: &SimulationWorld) -> io::Result<Option<ItemId>> {
-    execute!(stdout, MoveTo(0, 0), Clear(ClearType::All))?;
+    let (ox, oy) = screen_offsets();
+    execute!(stdout, Clear(ClearType::All))?;
     let loc = world.locale;
     let title = if loc == Locale::Uk {
         "=== ІНВЕНТАР ПЕРСОНАЖА (Натисніть букву або Esc для закриття) ==="
@@ -235,14 +276,14 @@ fn show_inventory_modal(stdout: &mut Stdout, world: &SimulationWorld) -> io::Res
         "=== CHARACTER INVENTORY (Press item letter or Esc to close) ==="
     };
 
-    execute!(stdout, MoveTo(2, 1), SetForegroundColor(Color::Cyan), Print(title), ResetColor)?;
+    execute!(stdout, MoveTo(ox + 2, oy + 1), SetForegroundColor(Color::Cyan), Print(title), ResetColor)?;
 
     let carried = world.arena.items_carried_by(world.player_id);
     if carried.is_empty() {
         let empty_msg = if loc == Locale::Uk { "Ваш інвентар порожній." } else { "Your pack is empty." };
-        execute!(stdout, MoveTo(4, 3), SetForegroundColor(Color::DarkGrey), Print(empty_msg), ResetColor)?;
+        execute!(stdout, MoveTo(ox + 4, oy + 3), SetForegroundColor(Color::DarkGrey), Print(empty_msg), ResetColor)?;
     } else {
-        for (idx, &item_id) in carried.iter().enumerate().take(26) {
+        for (idx, &item_id) in carried.iter().enumerate().take(20) {
             let letter = (b'a' + idx as u8) as char;
             if let Some(item) = world.arena.items.get(item_id) {
                 let equipped_tag = if world.wielded_item == Some(item_id) {
@@ -251,7 +292,7 @@ fn show_inventory_modal(stdout: &mut Stdout, world: &SimulationWorld) -> io::Res
                     ""
                 };
                 let desc = format!("  [{}] {} - вага: {}{}", letter, item.name, item.weight, equipped_tag);
-                execute!(stdout, MoveTo(2, (3 + idx) as u16), SetForegroundColor(Color::White), Print(desc), ResetColor)?;
+                execute!(stdout, MoveTo(ox + 2, oy + 3 + idx as u16), SetForegroundColor(Color::White), Print(desc), ResetColor)?;
             }
         }
     }
@@ -276,7 +317,8 @@ fn show_inventory_modal(stdout: &mut Stdout, world: &SimulationWorld) -> io::Res
 }
 
 fn show_conducts_modal(stdout: &mut Stdout, world: &SimulationWorld) -> io::Result<()> {
-    execute!(stdout, MoveTo(0, 0), Clear(ClearType::All))?;
+    let (ox, oy) = screen_offsets();
+    execute!(stdout, Clear(ClearType::All))?;
     let loc = world.locale;
     let title = if loc == Locale::Uk {
         "=== ДОБРОВІЛЬНІ ОБІТНИЦІ (NetHack Voluntary Conducts) ==="
@@ -284,7 +326,7 @@ fn show_conducts_modal(stdout: &mut Stdout, world: &SimulationWorld) -> io::Resu
         "=== VOLUNTARY CONDUCTS TRACKER (NetHack Formal Conducts) ==="
     };
 
-    execute!(stdout, MoveTo(2, 1), SetForegroundColor(Color::Yellow), Print(title), ResetColor)?;
+    execute!(stdout, MoveTo(ox + 2, oy + 1), SetForegroundColor(Color::Yellow), Print(title), ResetColor)?;
 
     let conducts = [
         ("Pacifist (Never kill any creature directly)", world.conducts.pacifist),
@@ -306,7 +348,7 @@ fn show_conducts_modal(stdout: &mut Stdout, world: &SimulationWorld) -> io::Resu
 
         execute!(
             stdout,
-            MoveTo(4, (3 + idx * 2) as u16),
+            MoveTo(ox + 4, oy + 3 + (idx * 2) as u16),
             SetForegroundColor(Color::White),
             Print(format!("{:<48} ", name)),
             SetForegroundColor(status_color),
@@ -320,7 +362,7 @@ fn show_conducts_modal(stdout: &mut Stdout, world: &SimulationWorld) -> io::Resu
     } else {
         "Press Esc or Space to return to the dungeon..."
     };
-    execute!(stdout, MoveTo(4, 20), SetForegroundColor(Color::DarkGrey), Print(footer), ResetColor)?;
+    execute!(stdout, MoveTo(ox + 4, oy + 20), SetForegroundColor(Color::DarkGrey), Print(footer), ResetColor)?;
 
     loop {
         if let Event::Key(key) = event::read()? {
@@ -334,7 +376,8 @@ fn show_conducts_modal(stdout: &mut Stdout, world: &SimulationWorld) -> io::Resu
 
 fn show_enhance_modal(stdout: &mut Stdout, world: &mut SimulationWorld) -> io::Result<()> {
     loop {
-        execute!(stdout, MoveTo(0, 0), Clear(ClearType::All))?;
+        let (ox, oy) = screen_offsets();
+        execute!(stdout, Clear(ClearType::All))?;
         let loc = world.locale;
         let title = if loc == Locale::Uk {
             format!("=== ДЕРЕВО НАВИЧОК ЗБРОЇ (#enhance) | Вільних слотів: {} ===", world.hero.skills.available_slots)
@@ -342,7 +385,7 @@ fn show_enhance_modal(stdout: &mut Stdout, world: &mut SimulationWorld) -> io::R
             format!("=== WEAPON SKILLS PROFICIENCY TREE (#enhance) | Available Slots: {} ===", world.hero.skills.available_slots)
         };
 
-        execute!(stdout, MoveTo(2, 1), SetForegroundColor(Color::Cyan), Print(title), ResetColor)?;
+        execute!(stdout, MoveTo(ox + 2, oy + 1), SetForegroundColor(Color::Cyan), Print(title), ResetColor)?;
 
         let all_skills = [
             (SkillClass::Dagger, "Dagger"),
@@ -362,7 +405,7 @@ fn show_enhance_modal(stdout: &mut Stdout, world: &mut SimulationWorld) -> io::R
             let lvl_name = format!("{:?}", current_lvl);
 
             let desc = format!("  [{}] {:<14} : {:<9} (To-Hit: {:+2}, Dmg: {:+2})", letter, name, lvl_name, to_hit, dmg);
-            execute!(stdout, MoveTo(2, (3 + idx) as u16), SetForegroundColor(Color::White), Print(desc), ResetColor)?;
+            execute!(stdout, MoveTo(ox + 2, oy + 3 + idx as u16), SetForegroundColor(Color::White), Print(desc), ResetColor)?;
         }
 
         let prompt = if loc == Locale::Uk {
@@ -370,7 +413,7 @@ fn show_enhance_modal(stdout: &mut Stdout, world: &mut SimulationWorld) -> io::R
         } else {
             "Press skill letter [a-g] to enhance skill, or Esc to exit."
         };
-        execute!(stdout, MoveTo(2, 16), SetForegroundColor(Color::Yellow), Print(prompt), ResetColor)?;
+        execute!(stdout, MoveTo(ox + 2, oy + 14), SetForegroundColor(Color::Yellow), Print(prompt), ResetColor)?;
 
         if let Event::Key(key) = event::read()? {
             if key.kind != KeyEventKind::Press {
@@ -385,6 +428,82 @@ fn show_enhance_modal(stdout: &mut Stdout, world: &mut SimulationWorld) -> io::R
                     }
                 }
                 _ => {}
+            }
+        }
+    }
+    Ok(())
+}
+
+fn show_help_modal(stdout: &mut Stdout, locale: Locale) -> io::Result<()> {
+    let (ox, oy) = screen_offsets();
+    execute!(stdout, Clear(ClearType::All))?;
+
+    let title = if locale == Locale::Uk {
+        "=== NETRUST ДОВІДНИК КЛАВІШ ТА КОМАНД ==="
+    } else {
+        "=== NETRUST COMMAND & KEYBINDING REFERENCE ==="
+    };
+    execute!(stdout, MoveTo(ox + 2, oy + 1), SetForegroundColor(Color::Cyan), Print(title), ResetColor)?;
+
+    let help_lines = if locale == Locale::Uk {
+        &[
+            "  h/j/k/l, Стрілки : Рух у 4 сторони світу (Захід, Південь, Північ, Схід)",
+            "  y/u/b/n          : Діагональний рух (NW, NE, SW, SE)",
+            "  . / 5            : Зачекати один хід (пропустити чергу)",
+            "  ,                : Підібрати предмет з поточної клітинки",
+            "  > / <            : Спуститися / піднятися сходами",
+            "  s                : Активний пошук секретних дверей та прихованих пасток",
+            "  t / ^            : Знешкодити сусідню виявлену пастку (#untrap)",
+            "  f                : Вистрілити з сагайдака (із запитом напрямку)",
+            "  Q                : Обрати боєприпаси для сагайдака (#quiver)",
+            "  R                : Осідлати їздову тварину або зійти з коня (#ride)",
+            "  e / q / r / z    : З'їсти / Випити зілля / Прочитати сувій / Застосувати жезл",
+            "  p / P / S        : Заплатити / Помолитися / Пожертвувати на вівтарі",
+            "  o / c / K        : Відкрити двері / Закрити двері / Вдарити ногою (Kick)",
+            "  #e / #c          : Меню покращення навичок (#enhance) / Обітниці (#conduct)",
+            "  i                : Відкрити інвентар | L : Змінити мову (UK/EN) | q : Вихід",
+        ]
+    } else {
+        &[
+            "  h/j/k/l, Arrows  : Cardinal Movement (West, South, North, East)",
+            "  y/u/b/n          : Diagonal Movement (NW, NE, SW, SE)",
+            "  . / 5            : Wait one turn (rest and let energy tick)",
+            "  ,                : Pick up item from floor",
+            "  > / <            : Descend / ascend stairs",
+            "  s                : Actively search for secret doors & hidden traps",
+            "  t / ^            : Untrap / disarm an adjacent revealed trap (#untrap)",
+            "  f                : Fire quivered projectile (prompts direction)",
+            "  Q                : Quiver ammunition selector (#quiver)",
+            "  R                : Mount saddled steed or dismount (#ride)",
+            "  e / q / r / z    : Eat corpse / Quaff potion / Read scroll / Zap wand",
+            "  p / P / S        : Pay shopkeeper / Pray to deity / Sacrifice at altar",
+            "  o / c / K        : Open door / Close door / Kick adjacent target",
+            "  #e / #c          : Enhance skills (#enhance) / Voluntary conducts (#conduct)",
+            "  i                : Open inventory | L : Switch Language (UK/EN) | q : Quit",
+        ]
+    };
+
+    for (idx, line) in help_lines.iter().enumerate() {
+        execute!(
+            stdout,
+            MoveTo(ox + 2, oy + 3 + idx as u16),
+            SetForegroundColor(Color::White),
+            Print(line),
+            ResetColor
+        )?;
+    }
+
+    let footer = if locale == Locale::Uk {
+        "Натисніть Esc або Пробіл для повернення до гри..."
+    } else {
+        "Press Esc or Space to return to the dungeon..."
+    };
+    execute!(stdout, MoveTo(ox + 4, oy + 21), SetForegroundColor(Color::DarkGrey), Print(footer), ResetColor)?;
+
+    loop {
+        if let Event::Key(key) = event::read()? {
+            if key.kind == KeyEventKind::Press && matches!(key.code, KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char(' ') | KeyCode::Char('?')) {
+                break;
             }
         }
     }
@@ -448,6 +567,10 @@ fn main() -> io::Result<()> {
 
             let action = match key.code {
                 KeyCode::Char('q') | KeyCode::Esc => break,
+                KeyCode::Char('?') => {
+                    show_help_modal(&mut stdout, world.locale)?;
+                    None
+                }
                 KeyCode::Char('L') | KeyCode::Char('\\') => {
                     let new_loc = if world.locale == Locale::Uk { Locale::En } else { Locale::Uk };
                     world.set_locale(new_loc);
@@ -501,10 +624,10 @@ fn main() -> io::Result<()> {
                     None
                 }
                 KeyCode::Char('#') => {
-                    // Extended command menu
+                    let (ox, oy) = screen_offsets();
                     execute!(
                         stdout,
-                        MoveTo(0, 0),
+                        MoveTo(ox, oy),
                         Clear(ClearType::CurrentLine),
                         SetForegroundColor(Color::Yellow),
                         Print(if world.locale == Locale::Uk { "#команда: [e]nhance (навички) | [c]onduct (обітниці): " } else { "#command: [e]nhance (skills) | [c]onduct (challenges): " }),
@@ -523,6 +646,14 @@ fn main() -> io::Result<()> {
                             }
                         }
                     }
+                    None
+                }
+                KeyCode::Char('E') => {
+                    show_enhance_modal(&mut stdout, &mut world)?;
+                    None
+                }
+                KeyCode::Char('C') => {
+                    show_conducts_modal(&mut stdout, &world)?;
                     None
                 }
                 KeyCode::Char('f') => {
@@ -640,6 +771,8 @@ fn main() -> io::Result<()> {
 }
 
 fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Result<()> {
+    let (ox, oy) = screen_offsets();
+
     let p_coord = world
         .arena
         .actors
@@ -650,11 +783,17 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
     let visible: HashSet<Coord> = compute_fov(&world.level, p_coord, 8);
 
     // Line 0: Message banner
-    execute!(stdout, MoveTo(0, 0), SetForegroundColor(Color::Yellow), Print(format!("{:<80}", message)), ResetColor)?;
+    execute!(
+        stdout,
+        MoveTo(ox, oy),
+        SetForegroundColor(Color::Yellow),
+        Print(format!("{:<80}", message)),
+        ResetColor
+    )?;
 
     // Lines 1..=21: 80x21 Dungeon grid
     for y in 0..ROWNO {
-        execute!(stdout, MoveTo(0, (y + 1) as u16))?;
+        execute!(stdout, MoveTo(ox, oy + (y + 1) as u16))?;
         for x in 0..COLNO {
             let c = Coord::new_unchecked(x, y);
             if !visible.contains(&c) {
@@ -812,15 +951,27 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
         world.wielded_item.and_then(|id| world.arena.items.get(id)).map(|i| i.name.as_str()).unwrap_or(none_str),
         aff_str
     );
-    execute!(stdout, MoveTo(0, 22), SetForegroundColor(Color::Green), Print(format!("{:<80}", status)), ResetColor)?;
+    execute!(
+        stdout,
+        MoveTo(ox, oy + 22),
+        SetForegroundColor(Color::Green),
+        Print(format!("{:<80}", status)),
+        ResetColor
+    )?;
 
     // Line 23: Command Bar
     let cmd_help = if locale == Locale::Uk {
-        "[h/j/k/l: Рух | s: Пошук | f: Стріляти | Q: Сагайдак | #: Команди | i: Торба | q: Вихід]"
+        "[h/j/k/l: Рух | s: Пошук | f: Стріляти | Q: Сагайдак | #: Команди | ?: Довідка | q: Вихід]"
     } else {
-        "[h/j/k/l: Move | s: Search | f: Fire | Q: Quiver | #: Commands | i: Inv | q: Quit]"
+        "[h/j/k/l: Move | s: Search | f: Fire | Q: Quiver | #: Commands | ?: Help | q: Quit]"
     };
-    execute!(stdout, MoveTo(0, 23), SetForegroundColor(Color::DarkGrey), Print(format!("{:<80}", cmd_help)), ResetColor)?;
+    execute!(
+        stdout,
+        MoveTo(ox, oy + 23),
+        SetForegroundColor(Color::DarkGrey),
+        Print(format!("{:<80}", cmd_help)),
+        ResetColor
+    )?;
 
     Ok(())
 }
