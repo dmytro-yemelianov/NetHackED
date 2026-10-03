@@ -15,12 +15,35 @@ impl SimulationWorld {
         };
 
         let floor_items = self.arena.items_at_floor(player.coord);
-        if let Some(&item_id) = floor_items.first() {
+        let chosen_item = floor_items.iter().copied().max_by_key(|&iid| {
+            if let Some(item) = self.arena.items.get(iid) {
+                if item.name.contains("Amulet") || item.name.starts_with("The ") || item.name.contains("Orb") {
+                    100
+                } else if item.name == "corpse" {
+                    1
+                } else {
+                    10
+                }
+            } else {
+                0
+            }
+        });
+
+        if let Some(item_id) = chosen_item {
             if let Some(item) = self.arena.items.get_mut(item_id) {
                 item.location = ItemLocation::CarriedBy(self.player_id);
                 let name = item.name.clone();
                 events.push(GameEvent::ItemPickedUp { actor: self.player_id, item: item_id });
                 events.push(GameEvent::LogMessage { text: format!("You pick up a {}.", name) });
+
+                let quest_cfg = netrust_core::get_role_quest_config(&self.role_name);
+                if name.eq_ignore_ascii_case(quest_cfg.artifact_name) {
+                    netrust_core::pick_up_quest_artifact(&mut self.quest_state);
+                    events.push(GameEvent::LogMessage {
+                        text: format!("A surge of celestial energy surges through your veins as you take hold of {}!", name),
+                    });
+                }
+
                 if let Some(cost) = self.get_unpaid_cost(item_id) {
                     events.push(GameEvent::LogMessage {
                         text: format!("The shopkeeper says: 'That will be {} zorkmids.'", cost),

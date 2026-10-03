@@ -52,6 +52,12 @@ pub struct SimulationWorld {
     pub ritual_progress: netrust_core::RitualProgress,
     #[serde(default)]
     pub vibrating_square: Option<Coord>,
+    #[serde(default)]
+    pub quest_state: netrust_core::QuestState,
+    #[serde(default)]
+    pub alignment_record: i32,
+    #[serde(default)]
+    pub role_name: String,
     #[serde(skip, default = "default_rng")]
     pub rng: ChaCha8Rng,
     pub seed: u64,
@@ -168,6 +174,9 @@ impl SimulationWorld {
             candelabrum_state: netrust_core::CandelabrumState::empty(),
             ritual_progress: netrust_core::RitualProgress::Uninitiated,
             vibrating_square: None,
+            quest_state: netrust_core::QuestState::default(),
+            alignment_record: 25, // Hero starts with pious devotion
+            role_name: format!("{:?}", config.role),
             rng,
             seed,
             event_log: Vec::new(),

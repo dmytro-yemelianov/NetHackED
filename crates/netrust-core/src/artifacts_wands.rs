@@ -25,6 +25,15 @@ pub fn resolve_artifact_damage(
         ArtifactKind::VorpalBlade => base_damage + 6,
         ArtifactKind::Magicbane => base_damage + 4,
         ArtifactKind::EyeOfTheAethiopica => base_damage,
+        ArtifactKind::TheTsurugiOfMuramasa => base_damage + 16,
+        ArtifactKind::TheStaffOfAesculapius => base_damage + 8,
+        ArtifactKind::TheOrbOfFate
+        | ArtifactKind::TheHeartOfAhriman
+        | ArtifactKind::TheMagicMirrorOfMerlin
+        | ArtifactKind::TheEyesOfTheOverworld
+        | ArtifactKind::TheMasterKeyOfThievery
+        | ArtifactKind::ThePlatinumYendorianExpressCard
+        | ArtifactKind::TheOrbOfDetection => base_damage + 5,
     }
 }
 

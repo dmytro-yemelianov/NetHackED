@@ -153,7 +153,17 @@ def main : IO Unit := do
   let wandRecharged := rechargeWand (wand1.getD wand0) 5
   IO.println s!"[Artifact] Excalibur damage vs demon: {excalDmg}"
   IO.println s!"[Artifact] Vorpal Blade decapitation strike -> Defender HP: {vorpalResult.hp}, Dead: {vorpalResult.isDead}"
-  IO.println s!"[Wand] Zapped wand (3:0) -> Remaining: {repr wand1}, Recharged -> {repr wandRecharged}"
+  -- 21. Class Quest Branch & Nemesis demonstration
+  let questHero : HeroQuestEligibility := { experienceLevel := 14, alignmentRecord := 25, isHostileToLeader := false }
+  let q0 : QuestState := { progress := QuestProgress.Unassigned, artifactLocation := ArtifactLocation.HeldByNemesis, nemesisHp := 120 }
+  let qAssigned := consultLeader q0 questHero
+  let qDamaged := attackNemesis qAssigned 50
+  let qDefeated := attackNemesis qDamaged 100
+  let qClaimed := pickUpQuestArtifact qDefeated
+  let qComplete := returnToLeaderWithArtifact qClaimed
+  IO.println s!"[Quest] Eligible Hero level 14 consults Leader -> Progress: {repr qAssigned.progress}"
+  IO.println s!"[Quest] Nemesis Lord Surtur defeated -> Artifact: {repr qDefeated.artifactLocation}, Progress: {repr qDefeated.progress}"
+  IO.println s!"[Quest] Hero claims Quest Artifact & Leader blesses -> Progress: {repr qComplete.progress}"
 
 
 

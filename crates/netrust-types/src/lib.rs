@@ -144,6 +144,7 @@ pub enum BranchId {
     Sokoban,
     Gehennom,
     AstralPlane,
+    Quest,
 }
 
 /// Discrete branch coordinate: (BranchId, LevelWithinBranch).
@@ -244,6 +245,15 @@ pub enum ArtifactKind {
     Mjollnir,
     Magicbane,
     EyeOfTheAethiopica,
+    TheOrbOfFate,
+    TheHeartOfAhriman,
+    TheMagicMirrorOfMerlin,
+    TheEyesOfTheOverworld,
+    TheMasterKeyOfThievery,
+    TheTsurugiOfMuramasa,
+    ThePlatinumYendorianExpressCard,
+    TheStaffOfAesculapius,
+    TheOrbOfDetection,
 }
 
 /// Wand charge state tracking current charges and number of recharges.

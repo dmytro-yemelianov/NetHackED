@@ -117,6 +117,8 @@ pub fn t_branch(branch: BranchId, locale: Locale) -> &'static str {
         (BranchId::Gehennom, Locale::Uk) => "Геєнна",
         (BranchId::AstralPlane, Locale::En) => "Astral Plane",
         (BranchId::AstralPlane, Locale::Uk) => "Астральний План",
+        (BranchId::Quest, Locale::En) => "The Quest",
+        (BranchId::Quest, Locale::Uk) => "Завдання Героя",
     }
 }
 
@@ -510,6 +512,34 @@ impl Messages {
         match locale {
             Locale::En => format!("Your {} fiercely attacks {} to protect you!", pet_name, hostile_name),
             Locale::Uk => format!("Ваш {} люто атакує {}, захищаючи вас!", pet_name, hostile_name),
+        }
+    }
+
+    pub fn quest_leader_accept(leader_name: &str, artifact_name: &str, nemesis_name: &str, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!("{}: 'You have proven your devotion! Seek out {}, defeat them in their lair, and recover {}!'", leader_name, nemesis_name, artifact_name),
+            Locale::Uk => format!("{}: 'Ти довів свою гідність! Знайди {}, подолай їх у лігві та поверни {}!'", leader_name, nemesis_name, artifact_name),
+        }
+    }
+
+    pub fn quest_leader_reject_level(leader_name: &str, min_level: u32, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!("{}: 'You are not yet experienced enough for the trial. Return when you have achieved level {}.'", leader_name, min_level),
+            Locale::Uk => format!("{}: 'Твій досвід ще занадто малий для цього випробування. Повертайся, коли досягнеш {} рівня.'", leader_name, min_level),
+        }
+    }
+
+    pub fn quest_nemesis_defeat(nemesis_name: &str, artifact_name: &str, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!("{} collapses with a death rattle! {} clatters to the floor!", nemesis_name, artifact_name),
+            Locale::Uk => format!("{} падає зі смертельним стогоном! {} падає на кам'яну підлогу!", nemesis_name, artifact_name),
+        }
+    }
+
+    pub fn quest_completed(leader_name: &str, artifact_name: &str, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!("{}: 'Magnificent! You have brought back {}! The gods bless your sacred ascension!'", leader_name, artifact_name),
+            Locale::Uk => format!("{}: 'Чудово! Ти повернув {}! Боги благословляють твоє священне сходження!'", leader_name, artifact_name),
         }
     }
 }

@@ -1926,6 +1926,105 @@ fn test_gehennom_mysterious_force_pushback() {
     }
 }
 
+#[test]
+fn test_quest_branch_transition_and_leader_qualification() {
+    let mut sim = SimulationWorld::new_with_seed(777);
+    sim.role_name = "Valkyrie".to_string();
+
+    // Step onto Quest branch stairs
+    sim.current_branch = netrust_types::BranchId::Quest;
+    sim.depth = 1;
+    let gen_events = sim.unpack_or_generate_level(netrust_types::BranchId::Quest, 1);
+    assert!(gen_events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("Sanctuary of The Norn"))));
+
+    // Stand on stairs down (towards Quest Locate)
+    let stairs_down = sim.level.stairs_down;
+    if let Some(p) = sim.arena.actors.get_mut(sim.player_id) {
+        p.coord = stairs_down;
+        p.level = 1; // Underleveled
+    }
+
+    // Attempt to descend while underleveled -> rejected by The Norn
+    let events_rej = sim.step_player_action(ActionAst::Descend);
+    assert!(events_rej.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("The Norn") && text.contains("level 14"))));
+    assert_eq!(sim.depth, 1);
+    assert_eq!(sim.quest_state.progress, netrust_core::QuestProgress::Unassigned);
+
+    // Level up hero to level 14
+    if let Some(p) = sim.arena.actors.get_mut(sim.player_id) {
+        p.level = 14;
+    }
+    sim.alignment_record = 30;
+
+    // Attempt to descend now -> accepted, quest assigned, descent proceeds to depth 2
+    let events_acc = sim.step_player_action(ActionAst::Descend);
+    assert!(events_acc.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("The Norn") && text.contains("Lord Surtur"))));
+    assert_eq!(sim.depth, 2);
+    assert_eq!(sim.quest_state.progress, netrust_core::QuestProgress::Assigned);
+}
+
+#[test]
+fn test_quest_nemesis_boss_fight_and_completion() {
+    let mut sim = SimulationWorld::new_with_seed(888);
+    sim.role_name = "Valkyrie".to_string();
+    sim.quest_state.progress = netrust_core::QuestProgress::Assigned;
+
+    // Generate Quest Goal level (depth 3)
+    sim.current_branch = netrust_types::BranchId::Quest;
+    sim.depth = 3;
+    let _ = sim.unpack_or_generate_level(netrust_types::BranchId::Quest, 3);
+
+    // Verify Nemesis (Lord Surtur) exists
+    let surtur_id = sim.arena.actors.iter()
+        .find(|(_, a)| a.name == "Lord Surtur")
+        .map(|(id, _)| id)
+        .expect("Lord Surtur should be present in Quest Goal");
+
+    let surtur_coord = sim.arena.actors.get(surtur_id).unwrap().coord;
+
+    // Place hero adjacent to Lord Surtur with appropriate quest-level stats
+    let hero_coord = surtur_coord.step(netrust_types::Direction::West).unwrap();
+    if let Some(p) = sim.arena.actors.get_mut(sim.player_id) {
+        p.coord = hero_coord;
+        p.level = 15;
+    }
+
+    // Give hero Vorpal Blade with +5 enchantment to strike down the nemesis
+    let mut vorpal_rec = create_item_record(ItemKindId::VorpalBlade, ItemLocation::CarriedBy(sim.player_id), Buc::Blessed);
+    vorpal_rec.enchantment = 5;
+    let vorpal = sim.arena.spawn_item(vorpal_rec);
+    sim.wielded_item = Some(vorpal);
+
+    // Deal lethal blow to Lord Surtur
+    if let Some(surtur) = sim.arena.actors.get_mut(surtur_id) {
+        surtur.hp = 1;
+    }
+    let combat_events = sim.step_player_action(ActionAst::Move(netrust_types::Direction::East));
+    assert!(combat_events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("Lord Surtur") && text.contains("The Orb of Fate"))));
+    assert_eq!(sim.quest_state.progress, netrust_core::QuestProgress::NemesisDefeated);
+    assert_eq!(sim.quest_state.artifact_location, netrust_core::ArtifactLocation::DroppedOnFloor);
+
+    // Step onto the dropped Quest Artifact and pick it up
+    if let Some(p) = sim.arena.actors.get_mut(sim.player_id) {
+        p.coord = surtur_coord;
+    }
+    let pickup_events = sim.step_player_action(ActionAst::PickUp);
+    assert!(pickup_events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("The Orb of Fate"))));
+    assert_eq!(sim.quest_state.artifact_location, netrust_core::ArtifactLocation::CarriedByHero);
+
+    // Return to Quest Home (depth 1) and present artifact to The Norn
+    sim.depth = 1;
+    let _ = sim.unpack_or_generate_level(netrust_types::BranchId::Quest, 1);
+    let up_coord = sim.level.stairs_up;
+    if let Some(p) = sim.arena.actors.get_mut(sim.player_id) {
+        p.coord = up_coord;
+    }
+
+    let ascend_events = sim.step_player_action(ActionAst::Ascend);
+    assert!(ascend_events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("The Norn") && text.contains("bless"))));
+    assert_eq!(sim.quest_state.progress, netrust_core::QuestProgress::Completed);
+}
+
 
 
 

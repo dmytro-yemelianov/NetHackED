@@ -55,7 +55,7 @@ impl SimulationWorld {
     }
 
     /// Restore an existing cached level or procedurally generate a new level.
-    pub(crate) fn unpack_or_generate_level(&mut self, branch: BranchId, depth: usize) -> Vec<GameEvent> {
+    pub fn unpack_or_generate_level(&mut self, branch: BranchId, depth: usize) -> Vec<GameEvent> {
         let mut events = Vec::new();
         let target_key = (branch, depth);
 
@@ -241,6 +241,74 @@ impl SimulationWorld {
                         text: format!("You delve through the fiery, twisting corridors of Gehennom (level {}).", d),
                     });
                 }
+                (BranchId::Quest, 1) => {
+                    let layout = netrust_dungeon::generate_quest_home_level(&mut self.rng, &self.role_name);
+                    self.level = layout.level;
+
+                    let quest_cfg = netrust_core::get_role_quest_config(&self.role_name);
+                    let leader_species = match quest_cfg.role_name.to_lowercase().as_str() {
+                        "valkyrie" => MonsterSpeciesId::TheNorn,
+                        "wizard" => MonsterSpeciesId::NeferetTheGreen,
+                        "barbarian" => MonsterSpeciesId::Pelias,
+                        "knight" => MonsterSpeciesId::KingArthur,
+                        "monk" => MonsterSpeciesId::GrandMaster,
+                        "rogue" => MonsterSpeciesId::MasterAssassin,
+                        "tourist" => MonsterSpeciesId::Twoflower,
+                        "healer" => MonsterSpeciesId::Hippocrates,
+                        _ => MonsterSpeciesId::LordCarnarvon,
+                    };
+                    let mut leader = create_monster_record(leader_species, layout.leader_coord);
+                    leader.is_tame = true;
+                    self.arena.spawn_actor(leader);
+
+                    for gc in layout.guardian_coords {
+                        let mut guardian = create_monster_record(MonsterSpeciesId::QuestGuardian, gc);
+                        guardian.is_tame = true;
+                        self.arena.spawn_actor(guardian);
+                    }
+
+                    events.push(GameEvent::LogMessage {
+                        text: format!("You enter the Sanctuary of {}: '{}'.", quest_cfg.leader_name, quest_cfg.home_desc),
+                    });
+                }
+                (BranchId::Quest, 2) => {
+                    let lvl = netrust_dungeon::generate_quest_locate_level(&mut self.rng, 2);
+                    self.level = lvl;
+
+                    for (i, room) in self.level.rooms.iter().enumerate() {
+                        if i > 0 {
+                            let species = if i % 2 == 0 { MonsterSpeciesId::GiantAnt } else { MonsterSpeciesId::Skeleton };
+                            let mon = create_monster_record(species, room.center());
+                            self.arena.spawn_actor(mon);
+                        }
+                    }
+
+                    events.push(GameEvent::LogMessage {
+                        text: "You navigate the treacherous labyrinth of the Quest trial.".into(),
+                    });
+                }
+                (BranchId::Quest, 3) => {
+                    let layout = netrust_dungeon::generate_quest_goal_level(&mut self.rng, &self.role_name);
+                    self.level = layout.level;
+
+                    let quest_cfg = netrust_core::get_role_quest_config(&self.role_name);
+                    let nemesis_species = match quest_cfg.role_name.to_lowercase().as_str() {
+                        "valkyrie" => MonsterSpeciesId::LordSurtur,
+                        "wizard" => MonsterSpeciesId::TheDarkOne,
+                        "barbarian" => MonsterSpeciesId::ThothAmon,
+                        "knight" => MonsterSpeciesId::Ixoth,
+                        "monk" => MonsterSpeciesId::MasterKaen,
+                        "rogue" => MonsterSpeciesId::MasterOfThieves,
+                        "healer" => MonsterSpeciesId::Cyclops,
+                        _ => MonsterSpeciesId::MinionOfHuhetotl,
+                    };
+                    let nemesis = create_monster_record(nemesis_species, layout.nemesis_coord);
+                    self.arena.spawn_actor(nemesis);
+
+                    events.push(GameEvent::LogMessage {
+                        text: format!("You arrive at the inner sanctum: {}! {} glares at you with burning hatred!", quest_cfg.goal_desc, quest_cfg.nemesis_name),
+                    });
+                }
                 _ => {
                     let mut new_level = generate_dungeon_level(&mut self.rng);
 
@@ -260,6 +328,14 @@ impl SimulationWorld {
                             let branch_coord = Coord::new_unchecked(room.x1 + 1, room.y1 + 1);
                             new_level.set_tile(branch_coord, Tile::BranchStairs {
                                 branch: BranchId::Sokoban,
+                                level: 1,
+                                up: false,
+                            });
+                        }
+                        if let Some(room) = new_level.rooms.get(2) {
+                            let quest_coord = Coord::new_unchecked(room.x1 + 1, room.y1 + 1);
+                            new_level.set_tile(quest_coord, Tile::BranchStairs {
+                                branch: BranchId::Quest,
                                 level: 1,
                                 up: false,
                             });
@@ -347,6 +423,28 @@ impl SimulationWorld {
         let tile = self.level.get_tile(player.coord).clone();
         match tile {
             Tile::Stairs { up: false } => {
+                if self.current_branch == BranchId::Quest && self.depth == 1 {
+                    let p_lvl = self.arena.actors.get(self.player_id).map(|p| p.level).unwrap_or(1);
+                    let hero_elig = netrust_core::HeroQuestEligibility {
+                        experience_level: p_lvl,
+                        alignment_record: self.alignment_record,
+                        is_hostile_to_leader: false,
+                    };
+                    let quest_cfg = netrust_core::get_role_quest_config(&self.role_name);
+                    if self.quest_state.progress == netrust_core::QuestProgress::Unassigned {
+                        if let Err(_) = netrust_core::consult_leader(&mut self.quest_state, &hero_elig) {
+                            events.push(GameEvent::LogMessage {
+                                text: netrust_i18n::Messages::quest_leader_reject_level(quest_cfg.leader_name, netrust_core::QUEST_MIN_LEVEL, self.locale),
+                            });
+                            return events;
+                        } else {
+                            events.push(GameEvent::LogMessage {
+                                text: netrust_i18n::Messages::quest_leader_accept(quest_cfg.leader_name, quest_cfg.artifact_name, quest_cfg.nemesis_name, self.locale),
+                            });
+                        }
+                    }
+                }
+
                 let from_depth = self.depth;
                 self.pack_current_level();
                 self.depth += 1;
@@ -478,6 +576,18 @@ impl SimulationWorld {
                 }
             }
             Tile::BranchStairs { branch, level, up: true } => {
+                if self.current_branch == BranchId::Quest && self.depth == 1 {
+                    let quest_cfg = netrust_core::get_role_quest_config(&self.role_name);
+                    if self.quest_state.progress == netrust_core::QuestProgress::NemesisDefeated
+                        && self.quest_state.artifact_location == netrust_core::ArtifactLocation::CarriedByHero
+                    {
+                        netrust_core::return_to_leader_with_artifact(&mut self.quest_state);
+                        events.push(GameEvent::LogMessage {
+                            text: netrust_i18n::Messages::quest_completed(quest_cfg.leader_name, quest_cfg.artifact_name, self.locale),
+                        });
+                    }
+                }
+
                 let from_depth = self.depth;
                 self.pack_current_level();
                 self.current_branch = branch;

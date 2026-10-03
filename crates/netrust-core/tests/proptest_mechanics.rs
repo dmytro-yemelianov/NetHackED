@@ -29,6 +29,9 @@ use netrust_core::{
     TacticalContext,
     CandelabrumState, InvocationStep, RitualProgress, REQUIRED_CANDLES, is_candelabrum_ready,
     step_ritual, is_sanctum_accessible, calculate_mysterious_force,
+    attack_nemesis, consult_leader, is_hero_eligible_for_quest, pick_up_quest_artifact,
+    quest_progress_rank, return_to_leader_with_artifact, ArtifactLocation, HeroQuestEligibility,
+    QuestProgress, QuestState, QUEST_MIN_ALIGNMENT, QUEST_MIN_LEVEL,
 };
 use proptest::prelude::*;
 
@@ -1254,6 +1257,75 @@ proptest! {
             prop_assert!(pushed_depth <= depth + 3);
         } else {
             prop_assert!(result.is_none());
+        }
+    }
+
+    // -------------------------------------------------------------
+    // Theorems: Quest Leader qualification, Nemesis combat & Artifact invariants
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_leader_qualification_theorems(
+        level in 1u32..30,
+        alignment in -50i32..50,
+        is_hostile in any::<bool>(),
+    ) {
+        let hero = HeroQuestEligibility {
+            experience_level: level,
+            alignment_record: alignment,
+            is_hostile_to_leader: is_hostile,
+        };
+
+        let mut state = QuestState::default();
+        let res = consult_leader(&mut state, &hero);
+
+        if level < QUEST_MIN_LEVEL || alignment < QUEST_MIN_ALIGNMENT || is_hostile {
+            prop_assert!(!is_hero_eligible_for_quest(&hero));
+            prop_assert!(res.is_err());
+            prop_assert_eq!(state.progress, QuestProgress::Unassigned);
+        } else {
+            prop_assert!(is_hero_eligible_for_quest(&hero));
+            prop_assert!(res.is_ok());
+            prop_assert_eq!(state.progress, QuestProgress::Assigned);
+        }
+    }
+
+    #[test]
+    fn prop_nemesis_combat_and_artifact_theorems(
+        nemesis_hp in 10u32..500,
+        damage in 0u32..1000,
+    ) {
+        let mut state = QuestState {
+            progress: QuestProgress::Assigned,
+            artifact_location: ArtifactLocation::HeldByNemesis,
+            nemesis_hp,
+        };
+
+        let rank_before = quest_progress_rank(state.progress);
+        let defeated = attack_nemesis(&mut state, damage);
+        let rank_after = quest_progress_rank(state.progress);
+
+        // Theorem: attack_nemesis_monotonic
+        prop_assert!(rank_after >= rank_before);
+
+        if damage < nemesis_hp {
+            // Theorem: non_fatal_nemesis_retains_artifact
+            prop_assert!(!defeated);
+            prop_assert_eq!(state.progress, QuestProgress::Assigned);
+            prop_assert_eq!(state.artifact_location, ArtifactLocation::HeldByNemesis);
+            prop_assert_eq!(state.nemesis_hp, nemesis_hp - damage);
+        } else {
+            // Theorems: fatal_nemesis_drops_artifact & fatal_nemesis_advances_progress
+            prop_assert!(defeated);
+            prop_assert_eq!(state.progress, QuestProgress::NemesisDefeated);
+            prop_assert_eq!(state.artifact_location, ArtifactLocation::DroppedOnFloor);
+            prop_assert_eq!(state.nemesis_hp, 0);
+
+            // Pickup and completion lifecycle
+            prop_assert!(pick_up_quest_artifact(&mut state));
+            prop_assert_eq!(state.artifact_location, ArtifactLocation::CarriedByHero);
+            prop_assert!(return_to_leader_with_artifact(&mut state));
+            prop_assert_eq!(state.progress, QuestProgress::Completed);
+            prop_assert_eq!(quest_progress_rank(state.progress), 3);
         }
     }
 }

@@ -12,6 +12,7 @@ pub const fn branch_entrance_depth(b: BranchId) -> usize {
         BranchId::Sokoban => 4,
         BranchId::Gehennom => 5,
         BranchId::AstralPlane => 1,
+        BranchId::Quest => 4,
     }
 }
 
@@ -23,6 +24,7 @@ pub const fn branch_max_depth(b: BranchId) -> usize {
         BranchId::Sokoban => 3,
         BranchId::Gehennom => 20,
         BranchId::AstralPlane => 5,
+        BranchId::Quest => 3,
     }
 }
 

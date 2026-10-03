@@ -103,6 +103,28 @@ impl SimulationWorld {
             if lethal {
                 events.push(GameEvent::LogMessage { text: netrust_i18n::Messages::killed(&defender.name, self.locale) });
                 if defender_id != self.player_id {
+                    // Check if the defeated enemy is the unique Class Nemesis
+                    let quest_cfg = netrust_core::get_role_quest_config(&self.role_name);
+                    if defender.name.eq_ignore_ascii_case(quest_cfg.nemesis_name) {
+                        netrust_core::attack_nemesis(&mut self.quest_state, 9999);
+                        let art_id = match quest_cfg.role_name.to_lowercase().as_str() {
+                            "valkyrie" => ItemKindId::OrbOfFate,
+                            "wizard" => ItemKindId::EyeOfTheAethiopica,
+                            "barbarian" => ItemKindId::HeartOfAhriman,
+                            "knight" => ItemKindId::MagicMirrorOfMerlin,
+                            "monk" => ItemKindId::EyesOfTheOverworld,
+                            "rogue" => ItemKindId::MasterKeyOfThievery,
+                            "tourist" => ItemKindId::PlatinumYendorianExpressCard,
+                            "healer" => ItemKindId::StaffOfAesculapius,
+                            _ => ItemKindId::OrbOfDetection,
+                        };
+                        let art_rec = create_item_record(art_id, ItemLocation::Floor(defender.coord), Buc::Blessed);
+                        self.arena.spawn_item(art_rec);
+                        events.push(GameEvent::LogMessage {
+                            text: netrust_i18n::Messages::quest_nemesis_defeat(quest_cfg.nemesis_name, quest_cfg.artifact_name, self.locale),
+                        });
+                    }
+
                     let corpse = create_item_record(ItemKindId::Corpse, ItemLocation::Floor(defender.coord), Buc::Uncursed);
                     self.arena.spawn_item(corpse);
                 }
