@@ -1,6 +1,7 @@
 //! Protocol-level hardening tests for session, rpc helpers and stdio loop.
 
 use netrust_agent::mcp::{handle_mcp_line, handle_mcp_request};
+use netrust_agent::jsonrpc::{handle_jsonrpc_line, handle_jsonrpc_request};
 use netrust_agent::rpc::{parse_direction, parse_request, INVALID_PARAMS, INVALID_REQUEST, METHOD_NOT_FOUND, PARSE_ERROR};
 use serde_json::json;
 use netrust_agent::stdio::serve_lines;
@@ -157,4 +158,20 @@ fn mcp_step_schema_declares_index_and_direction() {
     let step = r["result"]["tools"].as_array().unwrap().iter().find(|t| t["name"] == "netrust_step").unwrap();
     assert_eq!(step["inputSchema"]["properties"]["index"]["type"], "integer");
     assert_eq!(step["inputSchema"]["properties"]["direction"]["type"], "string");
+}
+
+#[test]
+fn jsonrpc_robustness() {
+    let mut s = AgentSession::new(42);
+    let r = handle_jsonrpc_request(&mut s, "nope").unwrap();
+    assert_eq!(r["error"]["code"], PARSE_ERROR);
+    let r = handle_jsonrpc_line(&mut s, Err(())).unwrap();
+    assert_eq!(r["error"]["code"], PARSE_ERROR);
+    assert!(handle_jsonrpc_request(&mut s, r#"{"jsonrpc":"2.0","method":"netrust.step","params":{"action":"wait"}}"#).is_none());
+    let r = handle_jsonrpc_request(&mut s, r#"{"jsonrpc":"2.0","id":1,"method":"netrust.inspectTile","params":{"x":1000,"y":0}}"#).unwrap();
+    assert_eq!(r["error"]["code"], INVALID_PARAMS);
+    let r = handle_jsonrpc_request(&mut s, r#"{"jsonrpc":"2.0","id":2,"method":"netrust.step","params":{"action":"dance"}}"#).unwrap();
+    assert_eq!(r["error"]["code"], INVALID_PARAMS);
+    let r = handle_jsonrpc_request(&mut s, r#"{"jsonrpc":"2.0","id":3,"method":"netrust.step","params":{"action":"northeast"}}"#).unwrap();
+    assert!(r.get("result").is_some());
 }

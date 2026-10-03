@@ -1,83 +1,68 @@
 //! JSON-RPC 2.0 standard protocol streaming over stdio for autonomous AI pairs.
 
-use netrust_sim::{ActionAst, Direction};
+use netrust_sim::ActionAst;
 use serde_json::{json, Value};
 
+use crate::rpc::{
+    self, error_response, parse_direction, result_response, RpcRequest, INVALID_PARAMS,
+    METHOD_NOT_FOUND,
+};
 use crate::session::AgentSession;
 
 pub fn handle_jsonrpc_request(session: &mut AgentSession, line: &str) -> Option<Value> {
-    let req: Value = serde_json::from_str(line).ok()?;
-    let id = req.get("id").cloned();
-    let method = req.get("method")?.as_str()?;
-    let params = req.get("params").cloned().unwrap_or(json!({}));
+    handle_jsonrpc_line(session, Ok(line))
+}
 
-    let result = match method {
-        "netrust.getObservation" => {
-            let obs = session.get_observation();
-            json!(obs)
-        }
-        "netrust.renderAscii" => {
-            json!({ "ascii": crate::ascii::render_ascii_map(&session.world) })
-        }
+pub fn handle_jsonrpc_line(session: &mut AgentSession, line: Result<&str, ()>) -> Option<Value> {
+    let req = match rpc::parse_request(line) {
+        Ok(r) => r,
+        Err(err) => return Some(err),
+    };
+    let RpcRequest { id, method, params } = req;
+    let reply = dispatch(session, &method, &params);
+    // Notifications (no id) never get a response.
+    let id = id?;
+    Some(match reply {
+        Ok(result) => result_response(id, result),
+        Err((code, msg)) => error_response(id, code, msg),
+    })
+}
+
+fn dispatch(session: &mut AgentSession, method: &str, params: &Value) -> Result<Value, (i64, String)> {
+    match method {
+        "netrust.getObservation" => Ok(json!(session.get_observation())),
+        "netrust.renderAscii" => Ok(json!({ "ascii": crate::ascii::render_ascii_map(&session.world) })),
         "netrust.step" => {
             let action_str = params.get("action").and_then(|a| a.as_str()).unwrap_or("wait");
             let action = match action_str {
-                "north" | "k" => ActionAst::Move(Direction::North),
-                "east" | "l" => ActionAst::Move(Direction::East),
-                "south" | "j" => ActionAst::Move(Direction::South),
-                "west" | "h" => ActionAst::Move(Direction::West),
+                "wait" => ActionAst::Wait,
                 "pickup" => ActionAst::PickUp,
                 "pay" => ActionAst::Pay,
                 "pray" => ActionAst::Pray,
                 "descend" => ActionAst::Descend,
                 "ascend" => ActionAst::Ascend,
-                _ => ActionAst::Wait,
+                other => parse_direction(other)
+                    .map(ActionAst::Move)
+                    .ok_or_else(|| (INVALID_PARAMS, format!("Unknown action '{}'", other)))?,
             };
-            let obs = session.step(action);
-            json!(obs)
+            Ok(json!(session.step(action)))
         }
         "netrust.inspectTile" => {
-            let x = params.get("x").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
-            let y = params.get("y").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
-            match session.inspect_tile(x, y) {
-                Ok(i) => json!(i),
-                Err(e) => json!({ "error": e }),
-            }
+            let x = params.get("x").and_then(|v| v.as_u64())
+                .ok_or((INVALID_PARAMS, "missing integer 'x'".to_string()))? as usize;
+            let y = params.get("y").and_then(|v| v.as_u64())
+                .ok_or((INVALID_PARAMS, "missing integer 'y'".to_string()))? as usize;
+            session.inspect_tile(x, y).map(|i| json!(i)).map_err(|e| (INVALID_PARAMS, e))
         }
-        _ => return Some(json!({
-            "jsonrpc": "2.0",
-            "id": id,
-            "error": { "code": -32601, "message": format!("Method '{}' not found", method) }
-        })),
-    };
-
-    Some(json!({
-        "jsonrpc": "2.0",
-        "id": id,
-        "result": result
-    }))
+        _ => Err((METHOD_NOT_FOUND, format!("Method '{}' not found", method))),
+    }
 }
 
 /// Run streaming JSON-RPC 2.0 loop over stdin/stdout.
 pub fn run_jsonrpc_server(seed: u64) -> std::io::Result<()> {
-    use std::io::{BufRead, Write};
-
-    let stdin = std::io::stdin();
-    let mut stdout = std::io::stdout();
     let mut session = AgentSession::new(seed);
-
-    for line in stdin.lock().lines() {
-        let line = line?;
-        if line.trim().is_empty() {
-            continue;
-        }
-
-        if let Some(resp) = handle_jsonrpc_request(&mut session, &line) {
-            let out_str = serde_json::to_string(&resp).unwrap_or_default();
-            writeln!(stdout, "{}", out_str)?;
-            stdout.flush()?;
-        }
-    }
-
-    Ok(())
+    let stdin = std::io::stdin();
+    crate::stdio::serve_lines(stdin.lock(), std::io::stdout(), |line| {
+        handle_jsonrpc_line(&mut session, line).map(|v| v.to_string())
+    })
 }
