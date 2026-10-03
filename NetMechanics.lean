@@ -1,0 +1,21 @@
+-- This module serves as the root of the `NetMechanics` library.
+-- Import modules here that should be built as part of the library.
+import NetMechanics.Basic
+import NetMechanics.BUC
+import NetMechanics.Inventory
+import NetMechanics.Energy
+import NetMechanics.Grid
+import NetMechanics.Combat
+import NetMechanics.AST
+import NetMechanics.FOV
+import NetMechanics.Raycast
+import NetMechanics.Engraving
+import NetMechanics.Identification
+import NetMechanics.Polymorph
+import NetMechanics.Pathfinding
+import NetMechanics.DungeonStack
+import NetMechanics.Nutrition
+import NetMechanics.Magic
+
+
+

@@ -1,0 +1,10 @@
+name = "NetMechanics"
+version = "0.1.0"
+defaultTargets = ["netmechanics"]
+
+[[lean_lib]]
+name = "NetMechanics"
+
+[[lean_exe]]
+name = "netmechanics"
+root = "Main"
