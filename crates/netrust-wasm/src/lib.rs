@@ -94,7 +94,36 @@ impl WasmGameSession {
             "drop" => ActionAst::Drop(arg.and_then(|s| s.parse().ok()).unwrap_or(0)),
             "wield" => ActionAst::Wield(arg.and_then(|s| s.parse().ok()).unwrap_or(0)),
             "eat" => ActionAst::Eat(arg.and_then(|s| s.parse().ok()).unwrap_or(0)),
+            "quaff" => ActionAst::Quaff(arg.and_then(|s| s.parse().ok()).unwrap_or(0)),
             "read" => ActionAst::Read(arg.and_then(|s| s.parse().ok()).unwrap_or(0)),
+            "rub" => ActionAst::Rub(arg.and_then(|s| s.parse().ok()).unwrap_or(0)),
+            "price_check" | "appraise" => ActionAst::PriceCheck(arg.and_then(|s| s.parse().ok()).unwrap_or(0)),
+            "dip" => {
+                let (idx, water) = if let Some(ref s) = arg {
+                    if let Some((idx_s, w_s)) = s.split_once(':') {
+                        let i = idx_s.parse().unwrap_or(0);
+                        let w = match w_s.to_lowercase().as_str() {
+                            "unholy" | "cursed" => netrust_types::WaterType::Unholy,
+                            "plain" | "uncursed" => netrust_types::WaterType::Plain,
+                            _ => netrust_types::WaterType::Holy,
+                        };
+                        (i, w)
+                    } else {
+                        (s.parse().unwrap_or(0), netrust_types::WaterType::Holy)
+                    }
+                } else {
+                    (0, netrust_types::WaterType::Holy)
+                };
+                ActionAst::Dip { item_index: idx, into_water: water }
+            }
+            "engrave" => {
+                let text = arg.unwrap_or_else(|| "Elbereth".to_string());
+                ActionAst::Engrave {
+                    text,
+                    medium: netrust_core::engraving::EngravingMedium::Dust(1),
+                }
+            }
+            "wish" => ActionAst::Wish(arg.unwrap_or_default()),
             "cast" => ActionAst::Cast {
                 spell_index: arg.and_then(|s| s.parse().ok()).unwrap_or(0),
                 dir: Direction::None,
@@ -111,6 +140,34 @@ impl WasmGameSession {
 
         let obs = self.session.step(action);
         serde_json::to_string(&obs).unwrap_or_default()
+    }
+
+    /// Return carried inventory as JSON array with detailed stats for UI rendering.
+    #[wasm_bindgen]
+    pub fn get_inventory_json(&self) -> String {
+        let carried_ids = self.session.world.arena.items_carried_by(self.session.world.player_id);
+        let items: Vec<serde_json::Value> = carried_ids
+            .into_iter()
+            .enumerate()
+            .filter_map(|(idx, id)| {
+                self.session.world.arena.items.get(id).map(|it| {
+                    let unpaid = self.session.world.get_unpaid_cost(id);
+                    serde_json::json!({
+                        "index": idx,
+                        "name": it.name,
+                        "class": format!("{:?}", it.class),
+                        "weight": it.weight,
+                        "buc": format!("{:?}", it.buc),
+                        "enchantment": it.enchantment,
+                        "erosion": it.erosion,
+                        "proofed": it.proofed,
+                        "is_container": it.is_container,
+                        "unpaid_cost": unpaid,
+                    })
+                })
+            })
+            .collect();
+        serde_json::to_string(&items).unwrap_or_default()
     }
 
     #[wasm_bindgen]
@@ -205,7 +262,8 @@ impl WasmGameSession {
         let keys = [
             "hero", "align", "dlvl", "gold", "hp", "pw", "ac", "nutr", "turn",
             "eat", "cast", "read", "pickup", "pay", "pray", "sacrifice",
-            "wield", "drop", "descend", "ascend", "wait", "leaderboard", "character", "reset"
+            "wield", "drop", "descend", "ascend", "wait", "leaderboard", "character", "reset",
+            "inventory", "quaff", "dip", "rub", "price_check", "engrave"
         ];
         let mut map = std::collections::HashMap::new();
         for k in keys {
@@ -263,5 +321,23 @@ mod tests {
         assert_eq!(wasm_sess.get_player_hp(), 20);
         assert_eq!(wasm_sess.get_player_name(), "Conan");
         assert_eq!(wasm_sess.get_player_alignment(), "Chaotic");
+    }
+
+    #[test]
+    fn test_wasm_inventory_and_extended_actions() {
+        let mut wasm_sess = WasmGameSession::new(42);
+        let inv_json = wasm_sess.get_inventory_json();
+        assert!(inv_json.contains("name"));
+        assert!(inv_json.contains("buc"));
+
+        // Test dip, engrave, price_check actions
+        let res_dip = wasm_sess.step("dip", Some("0:holy".into()));
+        assert!(res_dip.contains("turn"));
+
+        let res_engrave = wasm_sess.step("engrave", Some("Elbereth".into()));
+        assert!(res_engrave.contains("turn"));
+
+        let res_price = wasm_sess.step("price_check", Some("0".into()));
+        assert!(res_price.contains("turn"));
     }
 }

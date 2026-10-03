@@ -386,6 +386,59 @@
     .pill-win { background: #164024; color: #33ff66; border: 1px solid #33ff66; }
     .pill-dead { background: #4a1818; color: #ff5555; border: 1px solid #ff5555; }
     .pill-running { background: #1b3848; color: #8be9fd; border: 1px solid #8be9fd; }
+
+    /* CRT Phosphor Mode */
+    body.crt-mode {
+      --bg-color: #040804;
+      --terminal-bg: #061107;
+      --border-color: #173819;
+      --text-green: #33ff66;
+      --text-yellow: #99ff99;
+      --text-cyan: #66ffbb;
+      --text-white: #ddffdd;
+      --text-dim: #2e6834;
+    }
+
+    body.crt-mode .viewport {
+      color: #33ff66;
+      text-shadow: 0 0 5px rgba(51, 255, 102, 0.75), 0 0 12px rgba(51, 255, 102, 0.35);
+      background: radial-gradient(ellipse at center, #091a09 0%, #010401 100%);
+      border-color: #1a4d1a;
+      position: relative;
+    }
+
+    body.crt-mode .viewport::after {
+      content: " ";
+      display: block;
+      position: absolute;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%), linear-gradient(90deg, rgba(0, 255, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 255, 0, 0.02));
+      z-index: 2;
+      background-size: 100% 3px, 6px 100%;
+      pointer-events: none;
+      animation: crtFlicker 0.15s infinite;
+    }
+
+    @keyframes crtFlicker {
+      0% { opacity: 0.98; }
+      50% { opacity: 1.0; }
+      100% { opacity: 0.97; }
+    }
+
+    .inv-row {
+      cursor: pointer;
+      transition: background 0.1s ease;
+    }
+    .inv-row:hover {
+      background: #23293d !important;
+    }
+    .inv-row.selected {
+      background: #2a3552 !important;
+      outline: 1px solid var(--text-cyan);
+    }
+    .buc-blessed { color: #f1fa8c; font-weight: bold; }
+    .buc-uncursed { color: #f8f8f2; }
+    .buc-cursed { color: #ff5555; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -396,6 +449,8 @@
       <p>Lean 4 Verified Mechanics & Deterministic Rust Engine</p>
     </div>
     <div class="header-actions">
+      <button id="btnToggleSound" class="btn-gold" title="Toggle 8-bit retro audio effects">🔊 SFX: ON</button>
+      <button id="btnDisplayMode" title="Toggle CRT Phosphor display">📺 Phosphor CRT</button>
       <button id="btnToggleLang" class="btn-gold" title="Switch language / Змінити мову">🌐 EN / УКР</button>
       <button id="btnLeaderboard" class="btn-gold">🏆 Leaderboard & AI Arena</button>
       <button id="btnNewChar">Character</button>
@@ -436,7 +491,9 @@
           <button data-act="move" data-arg="n">n</button>
         </div>
         <div class="action-buttons">
+          <button id="btnOpenInv" class="btn-gold" style="font-weight:bold;">🎒 [i] Inventory</button>
           <button data-act="eat" data-arg="0" id="btnActEat">[e] Eat</button>
+          <button data-act="quaff" data-arg="0" id="btnActQuaff">[q] Quaff</button>
           <button data-act="cast" data-arg="0" id="btnActCast">[x] Cast</button>
           <button data-act="read" data-arg="0" id="btnActRead">[r] Read</button>
           <button data-act="pickup" id="btnActPickup">[,] PickUp</button>
@@ -445,6 +502,9 @@
           <button data-act="sacrifice" data-arg="0" id="btnActSacrifice">[S] Sacrifice</button>
           <button data-act="wield" data-arg="0" id="btnActWield">[w] Wield</button>
           <button data-act="drop" data-arg="0" id="btnActDrop">[d] Drop</button>
+          <button data-act="rub" data-arg="0" id="btnActRub">[R] Rub</button>
+          <button data-act="price_check" data-arg="0" id="btnActPriceCheck">[$] Appraise</button>
+          <button id="btnActEngraveModal">[E] Engrave</button>
           <button data-act="descend" id="btnActDescend">[>] Descend</button>
           <button data-act="ascend" id="btnActAscend">[&lt;] Ascend</button>
         </div>
@@ -581,6 +641,78 @@
     </div>
   </dialog>
 
+  <!-- Inventory Modal Dialog -->
+  <dialog id="inventoryDialog" style="max-width: 720px; width: 94vw;">
+    <div class="dialog-header">
+      <h2 id="lblInvHeader">🎒 Hero Inventory</h2>
+      <button id="btnCloseInventory" style="padding:0.2rem 0.5rem;">✕</button>
+    </div>
+    <p style="font-size:0.8rem; color:var(--text-dim); margin-bottom:0.75rem;" id="lblInvSubtext">
+      Select an item to inspect or perform an action:
+    </p>
+    <div style="max-height: 260px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 0.75rem;">
+      <table class="leaderboard-table" id="invTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Item Name</th>
+            <th>Class</th>
+            <th>BUC</th>
+            <th>Ench</th>
+            <th>Wt</th>
+            <th>Shop Cost</th>
+          </tr>
+        </thead>
+        <tbody id="invTableBody">
+          <!-- Populated by JS -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Inventory Actions for Selected Item -->
+    <div id="invActionPanel" style="background:#12141c; padding:0.75rem; border-radius:6px; border:1px solid var(--border-color);">
+      <div style="font-size:0.85rem; margin-bottom:0.5rem; display:flex; justify-content:space-between;">
+        <span>Selected: <strong id="invSelectedItemName" style="color:var(--text-yellow);">None</strong></span>
+        <span id="invSelectedMeta" style="color:var(--text-dim); font-size:0.75rem;"></span>
+      </div>
+      <div class="action-buttons" style="margin-top:0;">
+        <button id="btnInvWield" class="btn-gold">Wield (w)</button>
+        <button id="btnInvQuaff">Quaff (q)</button>
+        <button id="btnInvRead">Read (r)</button>
+        <button id="btnInvEat">Eat (e)</button>
+        <button id="btnInvDrop">Drop (d)</button>
+        <button id="btnInvRub">Rub Lamp/Artifact (R)</button>
+        <button id="btnInvPriceCheck">Appraise / PriceCheck ($)</button>
+      </div>
+
+      <!-- Dip Sub-Panel -->
+      <div style="margin-top:0.75rem; padding-top:0.5rem; border-top:1px dashed var(--border-color); display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+        <span style="font-size:0.75rem; color:var(--text-cyan); font-weight:bold;">#dip into water:</span>
+        <button id="btnDipHoly" style="border-color:#33ff66; color:#33ff66;">Holy Water (Bless)</button>
+        <button id="btnDipPlain" style="border-color:#8be9fd; color:#8be9fd;">Plain Water (Uncurse/Dilute)</button>
+        <button id="btnDipUnholy" style="border-color:#ff5555; color:#ff5555;">Unholy Water (Curse)</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Engrave Modal Dialog -->
+  <dialog id="engraveDialog" style="max-width: 480px; width: 90vw;">
+    <div class="dialog-header">
+      <h2 id="lblEngraveHeader">✒️ Engrave in the Dust</h2>
+      <button id="btnCloseEngrave" style="padding:0.2rem 0.5rem;">✕</button>
+    </div>
+    <div class="form-group">
+      <label for="engraveText" id="lblEngravePrompt">What do you want to engrave with your fingertips?</label>
+      <input type="text" id="engraveText" value="Elbereth" style="width:100%; padding:0.4rem; background:#000; color:#fff; border:1px solid var(--border-color); font-family:var(--font-mono); border-radius:4px;">
+    </div>
+    <p style="font-size:0.75rem; color:var(--text-dim); margin-bottom:1rem;" id="lblEngraveHelp">
+      Writing <strong style="color:var(--text-yellow);">Elbereth</strong> wards the tile and prevents non-humanoid monsters from attacking!
+    </p>
+    <div class="dialog-footer">
+      <button class="start-btn" id="btnConfirmEngrave">Engrave</button>
+    </div>
+  </dialog>
+
   <script type="module">
     import init, { WasmGameSession } from './pkg/netrust_wasm.js';
 
@@ -693,6 +825,188 @@
     }
 
     let currentLocale = 'en';
+    let crtMode = false;
+    let soundEnabled = true;
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) {
+          audioCtx = new AudioCtx();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playSfx(type) {
+      if (!soundEnabled) return;
+      initAudio();
+      if (!audioCtx) return;
+
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      switch (type) {
+        case 'step':
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(120, now);
+          osc.frequency.exponentialRampToValueAtTime(40, now + 0.04);
+          gain.gain.setValueAtTime(0.06, now);
+          gain.gain.linearRampToValueAtTime(0.001, now + 0.04);
+          osc.start(now);
+          osc.stop(now + 0.04);
+          break;
+        case 'hit':
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(160, now);
+          osc.frequency.exponentialRampToValueAtTime(40, now + 0.12);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.linearRampToValueAtTime(0.001, now + 0.12);
+          osc.start(now);
+          osc.stop(now + 0.12);
+          break;
+        case 'zap':
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(900, now);
+          osc.frequency.exponentialRampToValueAtTime(120, now + 0.22);
+          gain.gain.setValueAtTime(0.18, now);
+          gain.gain.linearRampToValueAtTime(0.001, now + 0.22);
+          osc.start(now);
+          osc.stop(now + 0.22);
+          break;
+        case 'potion':
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(340, now);
+          osc.frequency.setValueAtTime(440, now + 0.05);
+          osc.frequency.setValueAtTime(554.37, now + 0.1);
+          osc.frequency.setValueAtTime(659.25, now + 0.15);
+          gain.gain.setValueAtTime(0.14, now);
+          gain.gain.linearRampToValueAtTime(0.001, now + 0.22);
+          osc.start(now);
+          osc.stop(now + 0.22);
+          break;
+        case 'pray':
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(261.63, now);
+          osc.frequency.exponentialRampToValueAtTime(523.25, now + 0.35);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.linearRampToValueAtTime(0.001, now + 0.4);
+          osc.start(now);
+          osc.stop(now + 0.4);
+          break;
+        case 'ward':
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(587.33, now);
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.2);
+          gain.gain.setValueAtTime(0.16, now);
+          gain.gain.linearRampToValueAtTime(0.001, now + 0.25);
+          osc.start(now);
+          osc.stop(now + 0.25);
+          break;
+        case 'dip':
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(420, now);
+          osc.frequency.exponentialRampToValueAtTime(620, now + 0.08);
+          osc.frequency.exponentialRampToValueAtTime(280, now + 0.16);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.linearRampToValueAtTime(0.001, now + 0.2);
+          osc.start(now);
+          osc.stop(now + 0.2);
+          break;
+      }
+    }
+
+    function toggleDisplayMode() {
+      crtMode = !crtMode;
+      document.body.classList.toggle('crt-mode', crtMode);
+      document.getElementById('btnDisplayMode').textContent = crtMode
+        ? (currentLocale === 'uk' ? '📺 CRT: УВІМК' : '📺 CRT: ON')
+        : (currentLocale === 'uk' ? '📺 Режим CRT' : '📺 Phosphor CRT');
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      document.getElementById('btnToggleSound').textContent = soundEnabled
+        ? (currentLocale === 'uk' ? '🔊 Звук: УВІМК' : '🔊 SFX: ON')
+        : (currentLocale === 'uk' ? '🔇 Звук: ВИМК' : '🔇 SFX: OFF');
+    }
+
+    const inventoryDialog = document.getElementById('inventoryDialog');
+    const engraveDialog = document.getElementById('engraveDialog');
+    let selectedInvIndex = 0;
+    let cachedInventory = [];
+
+    function openInventoryDialog() {
+      if (!session) return;
+      renderInventoryTable();
+      inventoryDialog.showModal();
+    }
+
+    function renderInventoryTable() {
+      if (!session || !session.get_inventory_json) return;
+      try {
+        cachedInventory = JSON.parse(session.get_inventory_json());
+      } catch (e) {
+        cachedInventory = [];
+      }
+      const tbody = document.getElementById('invTableBody');
+      tbody.innerHTML = '';
+
+      if (cachedInventory.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-dim);">Inventory is empty.</td></tr>';
+        document.getElementById('invSelectedItemName').textContent = 'None';
+        document.getElementById('invSelectedMeta').textContent = '';
+        return;
+      }
+
+      if (selectedInvIndex >= cachedInventory.length) {
+        selectedInvIndex = 0;
+      }
+
+      cachedInventory.forEach((item, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = `inv-row ${idx === selectedInvIndex ? 'selected' : ''}`;
+        const bucClass = item.buc === 'Blessed' ? 'buc-blessed' : (item.buc === 'Cursed' ? 'buc-cursed' : 'buc-uncursed');
+        const costStr = item.unpaid_cost !== null && item.unpaid_cost !== undefined ? `${item.unpaid_cost} zm (unpaid)` : '-';
+        tr.innerHTML = `
+          <td>${idx}</td>
+          <td style="font-weight:bold;">${item.name}</td>
+          <td>${item.class}</td>
+          <td class="${bucClass}">${item.buc}</td>
+          <td>${item.enchantment >= 0 ? '+' : ''}${item.enchantment}</td>
+          <td>${item.weight}</td>
+          <td style="color:${item.unpaid_cost ? 'var(--text-yellow)' : 'var(--text-dim)'};">${costStr}</td>
+        `;
+        tr.addEventListener('click', () => {
+          selectInvItem(idx);
+        });
+        tbody.appendChild(tr);
+      });
+
+      selectInvItem(selectedInvIndex);
+    }
+
+    function selectInvItem(idx) {
+      selectedInvIndex = idx;
+      const rows = document.querySelectorAll('.inv-row');
+      rows.forEach((r, i) => {
+        r.classList.toggle('selected', i === idx);
+      });
+      const item = cachedInventory[idx];
+      if (item) {
+        document.getElementById('invSelectedItemName').textContent = item.name;
+        document.getElementById('invSelectedMeta').textContent = `Class: ${item.class} | BUC: ${item.buc} | Wt: ${item.weight}`;
+      } else {
+        document.getElementById('invSelectedItemName').textContent = 'None';
+        document.getElementById('invSelectedMeta').textContent = '';
+      }
+    }
 
     function toggleLanguage() {
       currentLocale = currentLocale === 'en' ? 'uk' : 'en';
@@ -706,6 +1020,9 @@
     function applyLocalization(locale) {
       const isUk = locale === 'uk';
       document.getElementById('btnToggleLang').textContent = isUk ? '🌐 УКР (Змінити на EN)' : '🌐 EN / УКР';
+      document.getElementById('btnToggleSound').textContent = soundEnabled ? (isUk ? '🔊 Звук: УВІМК' : '🔊 SFX: ON') : (isUk ? '🔇 Звук: ВИМК' : '🔇 SFX: OFF');
+      document.getElementById('btnDisplayMode').textContent = crtMode ? (isUk ? '📺 CRT: УВІМК' : '📺 CRT: ON') : (isUk ? '📺 Режим CRT' : '📺 Phosphor CRT');
+
       document.getElementById('lblHero').textContent = isUk ? 'Герой:' : 'Hero:';
       document.getElementById('lblAlign').textContent = isUk ? 'Шлях:' : 'Align:';
       document.getElementById('lblDlvl').textContent = isUk ? 'Рівень:' : 'Dlvl:';
@@ -717,7 +1034,9 @@
       document.getElementById('lblTurn').textContent = isUk ? 'Хід:' : 'Turn:';
       document.getElementById('lblDirectControls').textContent = isUk ? 'Керування' : 'Direct Controls';
 
+      document.getElementById('btnOpenInv').textContent = isUk ? '🎒 [i] Інвентар' : '🎒 [i] Inventory';
       document.getElementById('btnActEat').textContent = isUk ? '[e] Їсти' : '[e] Eat';
+      document.getElementById('btnActQuaff').textContent = isUk ? '[q] Пити' : '[q] Quaff';
       document.getElementById('btnActCast').textContent = isUk ? '[x] Закляття' : '[x] Cast';
       document.getElementById('btnActRead').textContent = isUk ? '[r] Читати' : '[r] Read';
       document.getElementById('btnActPickup').textContent = isUk ? '[,] Підняти' : '[,] PickUp';
@@ -726,6 +1045,9 @@
       document.getElementById('btnActSacrifice').textContent = isUk ? '[S] Жертва' : '[S] Sacrifice';
       document.getElementById('btnActWield').textContent = isUk ? '[w] Зброя' : '[w] Wield';
       document.getElementById('btnActDrop').textContent = isUk ? '[d] Кинути' : '[d] Drop';
+      document.getElementById('btnActRub').textContent = isUk ? '[R] Терти' : '[R] Rub';
+      document.getElementById('btnActPriceCheck').textContent = isUk ? '[$] Оцінити' : '[$] Appraise';
+      document.getElementById('btnActEngraveModal').textContent = isUk ? '[E] Викарбувати' : '[E] Engrave';
       document.getElementById('btnActDescend').textContent = isUk ? '[>] Вниз' : '[>] Descend';
       document.getElementById('btnActAscend').textContent = isUk ? '[<] Вгору' : '[<] Ascend';
 
@@ -761,6 +1083,18 @@
       if (roleTour) roleTour.textContent = isUk ? 'Турист (Людина)' : 'Tourist (Human)';
       const roleArch = document.getElementById('roleBtnArchaeologist');
       if (roleArch) roleArch.textContent = isUk ? 'Археолог (Людина)' : 'Archaeologist (Human)';
+
+      // Inventory & Engrave modals
+      const lblInvHeader = document.getElementById('lblInvHeader');
+      if (lblInvHeader) lblInvHeader.textContent = isUk ? '🎒 Інвентар героя' : '🎒 Hero Inventory';
+      const lblInvSubtext = document.getElementById('lblInvSubtext');
+      if (lblInvSubtext) lblInvSubtext.textContent = isUk ? 'Оберіть предмет для дій або огляду:' : 'Select an item to inspect or perform an action:';
+      const lblEngraveHeader = document.getElementById('lblEngraveHeader');
+      if (lblEngraveHeader) lblEngraveHeader.textContent = isUk ? '✒️ Викарбувати на поросі' : '✒️ Engrave in the Dust';
+      const lblEngravePrompt = document.getElementById('lblEngravePrompt');
+      if (lblEngravePrompt) lblEngravePrompt.textContent = isUk ? 'Що ви бажаєте написати пальцем?' : 'What do you want to engrave with your fingertips?';
+      const lblEngraveHelp = document.getElementById('lblEngraveHelp');
+      if (lblEngraveHelp) lblEngraveHelp.innerHTML = isUk ? 'Напис <strong style="color:var(--text-yellow);">Elbereth</strong> захищає клітинку та відлякує не-гуманоїдних монстрів!' : 'Writing <strong style="color:var(--text-yellow);">Elbereth</strong> wards the tile and prevents non-humanoid monsters from attacking!';
 
       if (isUk) {
         messageBarEl.textContent = 'Ласкаво просимо до NetRust! Формалізовано та математично доведено в Lean 4.';
@@ -798,10 +1132,24 @@
 
     function doAction(action, arg) {
       if (!session) return null;
+      // Sound FX trigger
+      if (action === 'move') playSfx('step');
+      else if (action === 'zap') playSfx('zap');
+      else if (action === 'quaff' || action === 'eat') playSfx('potion');
+      else if (action === 'pray' || action === 'sacrifice') playSfx('pray');
+      else if (action === 'engrave') playSfx('ward');
+      else if (action === 'dip') playSfx('dip');
+
       const resStr = session.step(action, arg ? arg : null);
       try {
         const res = JSON.parse(resStr);
+        if (res.last_events && res.last_events.some(e => e.AttackLanded)) {
+          playSfx('hit');
+        }
         updateUi(res);
+        if (inventoryDialog.open) {
+          renderInventoryTable();
+        }
         return res;
       } catch (e) {
         updateUi(null);
@@ -1089,9 +1437,33 @@
       viewportEl.focus();
     }
 
+    function execInvAction(act) {
+      if (cachedInventory.length === 0) return;
+      doAction(act, String(selectedInvIndex));
+      renderInventoryTable();
+    }
+
+    function execDipAction(waterType) {
+      if (cachedInventory.length === 0) return;
+      doAction('dip', `${selectedInvIndex}:${waterType}`);
+      renderInventoryTable();
+    }
+
+    function openEngraveDialog() {
+      engraveDialog.showModal();
+    }
+
+    function confirmEngrave() {
+      const text = document.getElementById('engraveText').value.trim() || 'Elbereth';
+      doAction('engrave', text);
+      engraveDialog.close();
+    }
+
     // Keybindings
     window.addEventListener('keydown', (e) => {
-      if (document.activeElement === document.getElementById('charName') || charDialog.open || leaderboardDialog.open) {
+      if (document.activeElement === document.getElementById('charName') ||
+          document.activeElement === document.getElementById('engraveText') ||
+          charDialog.open || leaderboardDialog.open || inventoryDialog.open || engraveDialog.open) {
         return;
       }
 
@@ -1106,9 +1478,12 @@
         case 'n': doAction('move', 'southeast'); break;
         case '.': case ' ': doAction('wait', null); break;
         case ',': doAction('pickup', null); break;
+        case 'i': openInventoryDialog(); break;
         case 'e': doAction('eat', '0'); break;
+        case 'q': doAction('quaff', '0'); break;
         case 'x': doAction('cast', '0'); break;
         case 'r': doAction('read', '0'); break;
+        case 'E': openEngraveDialog(); break;
         case 'p': doAction('pay', null); break;
         case 'P': doAction('pray', null); break;
         case 'S': doAction('sacrifice', '0'); break;
@@ -1125,6 +1500,29 @@
         doAction(btn.dataset.act, btn.dataset.arg || null);
       });
     });
+
+    // Sound and Display toggles
+    document.getElementById('btnToggleSound').addEventListener('click', toggleSound);
+    document.getElementById('btnDisplayMode').addEventListener('click', toggleDisplayMode);
+
+    // Inventory and Engrave modal triggers
+    document.getElementById('btnOpenInv').addEventListener('click', openInventoryDialog);
+    document.getElementById('btnCloseInventory').addEventListener('click', () => inventoryDialog.close());
+    document.getElementById('btnActEngraveModal').addEventListener('click', openEngraveDialog);
+    document.getElementById('btnCloseEngrave').addEventListener('click', () => engraveDialog.close());
+    document.getElementById('btnConfirmEngrave').addEventListener('click', confirmEngrave);
+
+    // Inventory modal action buttons
+    document.getElementById('btnInvWield').addEventListener('click', () => execInvAction('wield'));
+    document.getElementById('btnInvQuaff').addEventListener('click', () => execInvAction('quaff'));
+    document.getElementById('btnInvRead').addEventListener('click', () => execInvAction('read'));
+    document.getElementById('btnInvEat').addEventListener('click', () => execInvAction('eat'));
+    document.getElementById('btnInvDrop').addEventListener('click', () => execInvAction('drop'));
+    document.getElementById('btnInvRub').addEventListener('click', () => execInvAction('rub'));
+    document.getElementById('btnInvPriceCheck').addEventListener('click', () => execInvAction('price_check'));
+    document.getElementById('btnDipHoly').addEventListener('click', () => execDipAction('holy'));
+    document.getElementById('btnDipPlain').addEventListener('click', () => execDipAction('plain'));
+    document.getElementById('btnDipUnholy').addEventListener('click', () => execDipAction('unholy'));
 
     // Language toggle
     document.getElementById('btnToggleLang').addEventListener('click', toggleLanguage);
