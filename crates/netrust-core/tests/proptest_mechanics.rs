@@ -962,25 +962,38 @@ proptest! {
         charges in 0u32..20,
         recharges in 0u32..10,
         wishing in proptest::bool::ANY,
-        blessed in proptest::bool::ANY,
+        buc_i in 0u8..3,
+        directional in proptest::bool::ANY,
         roll_343 in 0u32..343,
-        charge_roll in 1u32..16,
+        rn5 in 0u32..5,
+        rnd_roll in 1u32..16,
     ) {
+        let buc = [Buc::Cursed, Buc::Uncursed, Buc::Blessed][buc_i as usize];
+        let lim: u32 = if wishing { 1 } else if directional { 8 } else { 15 };
         let w = WandCharges { charges, recharges };
-        let res = recharge_wand(w, wishing, blessed, roll_343, charge_roll);
-        // C: n > 0 && (wishing || n^3 > rn2(343))
+        let res = recharge_wand(w, buc, lim, wishing, roll_343, rn5, rnd_roll);
+        // Reference from read.c:737-794.
         let n = recharges.min(7);
         let explode = n > 0 && (wishing || n * n * n > roll_343);
-        let new_spe = std::cmp::max(charges + 1, charge_roll);
-        let expected = if explode || (wishing && new_spe > 3) {
+        let expected = if explode {
             RechargeResult::Exploded
+        } else if buc == Buc::Cursed {
+            RechargeResult::Success(WandCharges { charges: 0, recharges: recharges + 1 })
         } else {
-            RechargeResult::Success(WandCharges { charges: new_spe, recharges: recharges + 1 })
+            let mut amt = if lim == 1 { 1 } else { (lim - 4) + rn5 };
+            if buc != Buc::Blessed {
+                amt = rnd_roll.min(amt).max(1);
+            }
+            let spe = std::cmp::max(charges + 1, amt);
+            if wishing && spe > 3 {
+                RechargeResult::Exploded
+            } else {
+                RechargeResult::Success(WandCharges { charges: spe, recharges: recharges + 1 })
+            }
         };
         prop_assert_eq!(res.clone(), expected);
         if recharges == 0 && !wishing {
-            let is_success = matches!(res, RechargeResult::Success(_));
-            prop_assert!(is_success);
+            prop_assert!(matches!(res, RechargeResult::Success(_)));
         }
         if recharges >= 7 {
             prop_assert_eq!(res, RechargeResult::Exploded);

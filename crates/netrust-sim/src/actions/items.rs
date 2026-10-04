@@ -490,31 +490,36 @@ impl SimulationWorld {
                             ]
                             .iter()
                             .any(|k| wand_name.contains(k));
-                            let lim: i32 = if is_wishing {
+                            let lim: u32 = if is_wishing {
                                 1
                             } else if nodir {
                                 15
                             } else {
                                 8
                             };
-                            // read.c:729 draws: rn2(343) for explosion, then the charge roll
-                            // (read.c:760-766): blessed rn1(5, lim-4), uncursed rnd() of it.
-                            let roll_343 = self.rng.random_range(0..343u32);
-                            let mut charge_n = if lim == 1 {
-                                1
+                            // read.c:741: rn2(343) is drawn only when n > 0 && !wishing
+                            // (C short-circuits); then rn1(5, lim-4) and, uncursed, rnd(n).
+                            let roll_343 =
+                                if netrust_core::artifacts_wands::recharge_needs_explosion_roll(
+                                    recharges, is_wishing,
+                                ) {
+                                    self.rng.random_range(0..343u32)
+                                } else {
+                                    0
+                                };
+                            let rn5 = if lim > 1 && item.buc != Buc::Cursed {
+                                self.rng.random_range(0..5u32)
                             } else {
-                                self.rng.random_range(0..5i32) + lim - 4
+                                0
                             };
-                            if item.buc != Buc::Blessed {
-                                charge_n = self.rng.random_range(1..=charge_n);
-                            }
+                            let rnd_roll = if lim > 1 && item.buc == Buc::Uncursed {
+                                self.rng.random_range(1..=(lim - 4 + rn5))
+                            } else {
+                                1
+                            };
                             let wand_state = netrust_types::WandCharges { charges, recharges };
                             match netrust_core::artifacts_wands::recharge_wand(
-                                wand_state,
-                                is_wishing,
-                                item.buc == Buc::Blessed,
-                                roll_343,
-                                charge_n as u32,
+                                wand_state, item.buc, lim, is_wishing, roll_343, rn5, rnd_roll,
                             ) {
                                 netrust_types::RechargeResult::Exploded => {
                                     self.arena.destroy_item(wid);
@@ -533,12 +538,7 @@ impl SimulationWorld {
                                 }
                                 netrust_types::RechargeResult::Success(new_w) => {
                                     if let Some(w_mut) = self.arena.items.get_mut(wid) {
-                                        // read.c:757 cursed: stripspe (spe > 0 -> 0).
-                                        let charges_now = if item.buc == Buc::Cursed {
-                                            0
-                                        } else {
-                                            new_w.charges
-                                        };
+                                        let charges_now = new_w.charges;
                                         w_mut.enchantment = charges_now.min(i8::MAX as u32) as i8;
                                         w_mut.recharged = new_w.recharges.min(u8::MAX as u32) as u8;
                                         events.push(GameEvent::LogMessage {

@@ -63,41 +63,66 @@ pub fn zap_wand(w: WandCharges) -> Option<WandCharges> {
     }
 }
 
-/// Recharges a wand with a Scroll of Charging (uncursed or blessed).
+/// Recharges a wand with a Scroll of Charging.
 ///
-/// C `read.c:729` `recharge`, wands at `read.c:737-794`: with `n` prior
-/// recharges the wand explodes iff `n > 0 && (wishing || n*n*n > rn2(7*7*7))`
-/// (so the first recharge never explodes; `n >= 7` always does). Otherwise the
-/// recharge counter increments and `spe = max(spe + 1, charge_roll)`, where
-/// `charge_roll` is the caller's `n` from `read.c:760-766`: `rn1(5, lim-4)`
-/// when blessed, `rnd()` of that when uncursed (`lim` 1 wishing / 8 directional
-/// / 15 non-directional). A wand of wishing left with more than 3 charges
-/// explodes (`read.c:785`).
+/// C `read.c:729` `recharge`, wands at `read.c:737-794`. With `n` prior
+/// recharges (capped at 7) the wand explodes iff
+/// `n > 0 && (wishing || n*n*n > rn2(343))` (all BUC; the first recharge never
+/// explodes). Otherwise the counter increments and:
+/// - cursed: `stripspe` (charges become 0 if positive);
+/// - else `n = (lim == 1) ? 1 : rn1(5, lim - 4)`, and uncursed takes `rnd(n)`;
+///   `spe = max(spe + 1, n)`; a wishing wand left above 3 charges explodes
+///   (`read.c:785`).
 ///
-/// - `roll_343`: the `rn2(343)` draw, range `0..343` (clamped).
-/// - `charge_roll`: final charge count, range `1..=15` (clamped).
-/// - `blessed` is informational here: the BUC formulas are applied by the
-///   caller when drawing `charge_roll`.
+/// Rolls (all clamped, never panic):
+/// - `roll_343`: `rn2(343)`, range `0..343`. C short-circuits, so the caller
+///   should draw it only when `recharges > 0 && !is_wishing` (see
+///   [`recharge_needs_explosion_roll`]); otherwise it is ignored.
+/// - `rn5`: `rn2(5)` of `rn1(5, lim-4)`, range `0..=4` (ignored if `lim == 1`).
+/// - `rnd_roll`: the uncursed `rnd(n)` draw, range `1..=n` (n = `lim-4+rn5`).
+/// - `lim`: 1 wishing, 8 directional, 15 non-directional (clamped to 5..=15
+///   unless 1).
 pub fn recharge_wand(
     state: WandCharges,
+    buc: Buc,
+    lim: u32,
     is_wishing: bool,
-    _blessed: bool,
     roll_343: u32,
-    charge_roll: u32,
+    rn5: u32,
+    rnd_roll: u32,
 ) -> RechargeResult {
-    let roll = roll_343.min(342);
     let n = state.recharges.min(7);
-    if n > 0 && (is_wishing || n * n * n > roll) {
+    if n > 0 && (is_wishing || n * n * n > roll_343.min(342)) {
         return RechargeResult::Exploded;
     }
-    let charges = (state.charges + 1).max(charge_roll.clamp(1, 15));
+    let recharges = state.recharges + 1;
+    if buc == Buc::Cursed {
+        return RechargeResult::Success(WandCharges {
+            charges: 0,
+            recharges,
+        });
+    }
+    let amount = if lim <= 1 {
+        1
+    } else {
+        let top = lim.clamp(5, 15) - 4 + rn5.min(4);
+        if buc == Buc::Blessed {
+            top
+        } else {
+            rnd_roll.clamp(1, top)
+        }
+    };
+    let charges = (state.charges + 1).max(amount);
     if is_wishing && charges > 3 {
         return RechargeResult::Exploded;
     }
-    RechargeResult::Success(WandCharges {
-        charges,
-        recharges: state.recharges + 1,
-    })
+    RechargeResult::Success(WandCharges { charges, recharges })
+}
+
+/// Whether C draws `rn2(343)` for this recharge (`read.c:741`: only when
+/// `n > 0` and the wand is not wishing).
+pub fn recharge_needs_explosion_roll(recharges: u32, is_wishing: bool) -> bool {
+    recharges > 0 && !is_wishing
 }
 
 /// Parses a wishing string into (item_name, enchantment, buc).
@@ -182,12 +207,22 @@ mod tests {
         assert_eq!(zap_wand(empty), None);
     }
 
+    fn rc(
+        w: WandCharges,
+        buc: Buc,
+        wishing: bool,
+        r343: u32,
+        rn5: u32,
+        rnd: u32,
+    ) -> RechargeResult {
+        recharge_wand(w, buc, if wishing { 1 } else { 8 }, wishing, r343, rn5, rnd)
+    }
+
     #[test]
     fn test_recharge_first_never_explodes() {
-        let w = WandCharges::new(0);
         for roll in [0, 1, 342] {
             assert!(matches!(
-                recharge_wand(w, false, true, roll, 5),
+                rc(WandCharges::new(0), Buc::Blessed, false, roll, 0, 1),
                 RechargeResult::Success(_)
             ));
         }
@@ -200,10 +235,9 @@ mod tests {
             recharges: 7,
         };
         for roll in [0, 100, 342, 9999] {
-            assert_eq!(
-                recharge_wand(w, false, false, roll, 5),
-                RechargeResult::Exploded
-            );
+            for buc in [Buc::Cursed, Buc::Uncursed, Buc::Blessed] {
+                assert_eq!(rc(w, buc, false, roll, 0, 1), RechargeResult::Exploded);
+            }
         }
     }
 
@@ -214,56 +248,110 @@ mod tests {
             recharges: 1,
         };
         assert_eq!(
-            recharge_wand(w, false, true, 0, 5),
+            rc(w, Buc::Blessed, false, 0, 0, 1),
             RechargeResult::Exploded
         );
         assert!(matches!(
-            recharge_wand(w, false, true, 1, 5),
+            rc(w, Buc::Blessed, false, 1, 0, 1),
             RechargeResult::Success(_)
         ));
     }
 
     #[test]
-    fn test_recharge_wishing_explodes_from_n1() {
+    fn test_recharge_wishing() {
         let w = WandCharges {
             charges: 0,
             recharges: 1,
         };
         assert_eq!(
-            recharge_wand(w, true, true, 342, 1),
+            rc(w, Buc::Blessed, true, 342, 0, 1),
             RechargeResult::Exploded
         );
-        // First recharge of an empty wishing wand: spe = max(0+1, 1) = 1.
-        let ok = recharge_wand(WandCharges::new(0), true, true, 342, 1);
         assert_eq!(
-            ok,
+            rc(WandCharges::new(0), Buc::Blessed, true, 0, 0, 1),
             RechargeResult::Success(WandCharges {
                 charges: 1,
+                recharges: 1
+            })
+        );
+        // spe 3 -> max(4, 1) = 4 > 3 explodes.
+        assert_eq!(
+            rc(WandCharges::new(3), Buc::Blessed, true, 0, 0, 1),
+            RechargeResult::Exploded
+        );
+    }
+
+    #[test]
+    fn test_recharge_cursed_strips_charges() {
+        let w = WandCharges {
+            charges: 6,
+            recharges: 0,
+        };
+        assert_eq!(
+            rc(w, Buc::Cursed, false, 0, 4, 8),
+            RechargeResult::Success(WandCharges {
+                charges: 0,
                 recharges: 1
             })
         );
     }
 
     #[test]
-    fn test_recharge_sets_max_of_roll_and_spe_plus_one() {
+    fn test_recharge_blessed_and_uncursed_ranges() {
         let w = WandCharges {
-            charges: 6,
+            charges: 0,
             recharges: 0,
         };
+        // blessed directional: rn1(5,4) = 4 + rn5
+        for rn5 in 0..=4 {
+            assert_eq!(
+                rc(w, Buc::Blessed, false, 0, rn5, 1),
+                RechargeResult::Success(WandCharges {
+                    charges: 4 + rn5,
+                    recharges: 1
+                })
+            );
+        }
+        // uncursed: rnd(4+rn5), clamped to the range
         assert_eq!(
-            recharge_wand(w, false, true, 0, 4),
-            RechargeResult::Success(WandCharges {
-                charges: 7,
-                recharges: 1
-            })
-        );
-        assert_eq!(
-            recharge_wand(w, false, true, 0, 8),
+            rc(w, Buc::Uncursed, false, 0, 4, 99),
             RechargeResult::Success(WandCharges {
                 charges: 8,
                 recharges: 1
             })
         );
+        assert_eq!(
+            rc(w, Buc::Uncursed, false, 0, 4, 2),
+            RechargeResult::Success(WandCharges {
+                charges: 2,
+                recharges: 1
+            })
+        );
+        // max rule: spe 6, blessed roll 4 -> 7
+        assert_eq!(
+            rc(
+                WandCharges {
+                    charges: 6,
+                    recharges: 0
+                },
+                Buc::Blessed,
+                false,
+                0,
+                0,
+                1
+            ),
+            RechargeResult::Success(WandCharges {
+                charges: 7,
+                recharges: 1
+            })
+        );
+    }
+
+    #[test]
+    fn test_explosion_roll_needed_only_when_c_draws_it() {
+        assert!(!recharge_needs_explosion_roll(0, false));
+        assert!(!recharge_needs_explosion_roll(3, true));
+        assert!(recharge_needs_explosion_roll(1, false));
     }
 
     #[test]
