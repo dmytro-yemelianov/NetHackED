@@ -819,6 +819,8 @@ fn test_companion_pet_attacks_hostile() {
         enemy_coord,
     ));
 
+    // Deterministic setup: AC 20 guarantees the dog's d20 attack lands.
+    sim.arena.actors.get_mut(goblin_id).unwrap().ac = 20;
     let goblin_initial_hp = sim.arena.actors.get(goblin_id).unwrap().hp;
 
     // Player waits, allowing monster turn to tick
@@ -2663,7 +2665,7 @@ fn test_pacifist_conduct_violation_on_kill() {
         coord: monster_pos,
         hp: 1, // 1 HP to ensure a kill
         max_hp: 10,
-        ac: 10,
+        ac: 20, // AC 20 guarantees the d20 melee roll hits
         level: 1,
         speed: 12,
         alignment: Alignment::Chaotic,

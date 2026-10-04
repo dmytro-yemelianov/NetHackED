@@ -165,3 +165,22 @@ fn normalize_wish_strips_articles() {
     assert_eq!(netrust_sim::normalize_wish_name("  The Amulet of Yendor "), "amulet of yendor");
     assert_eq!(netrust_sim::normalize_wish_name("an elven mithril-coat"), "elven mithril-coat");
 }
+
+#[test]
+fn melee_outcomes_vary_with_seed() {
+    use std::collections::BTreeSet;
+    let mut outcomes = BTreeSet::new();
+    for seed in 0..40u64 {
+        let mut sim = SimulationWorld::new_with_seed(seed);
+        let east = open_east(&mut sim);
+        let mut mon = create_monster_record(MonsterSpeciesId::Goblin, east);
+        mon.hp = 1000;
+        mon.max_hp = 1000;
+        mon.ac = 4;
+        let mid = sim.arena.spawn_actor(mon);
+        sim.step_player_action(ActionAst::MeleeAttack(east));
+        let hp = sim.arena.actors.get(mid).map(|m| m.hp).unwrap_or(0);
+        outcomes.insert(1000 - hp);
+    }
+    assert!(outcomes.len() >= 3, "melee is not random: {:?}", outcomes);
+}
