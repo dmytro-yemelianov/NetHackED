@@ -1,7 +1,10 @@
 //! Melee combat resolution and damage application.
 
 use netrust_arena::{ActorId, ItemLocation};
-use netrust_core::{combat::resolve_melee_attack, Combatant};
+use netrust_core::{
+    combat::{monster_to_hit_value, resolve_melee_attack, to_hit_value},
+    Combatant,
+};
 use netrust_data::{create_item_record, ItemKindId};
 use netrust_types::Buc;
 use rand::{Rng, RngCore};
@@ -104,17 +107,54 @@ impl SimulationWorld {
                     .get(&netrust_types::SkillClass::BareHanded)
                     .copied()
                     .unwrap_or(netrust_types::SkillLevel::Unskilled);
-                skill_hit_bonus = netrust_core::skills::skill_to_hit_bonus(level);
+                // C weapon.c:1601: bare-handed uses its own table (+1/+2), not -4.
+                skill_hit_bonus = netrust_core::skills::bare_handed_hit_bonus(level);
                 skill_dmg_bonus = netrust_core::skills::skill_damage_bonus(level);
             }
         }
 
-        let to_hit_bonus = attacker.level as i32 + weapon_ench + skill_hit_bonus;
+        let target_ac = def_combat.ac;
+        let hero_defender = defender_id == self.player_id;
+        // Hero attacker: C find_roll_to_hit (uhitm.c:365). Monster attacker:
+        // C mattacku (mhitu.c:709), AC_VALUE draws rnd(-ac) when ac < 0.
+        let to_hit = if attacker_id == self.player_id {
+            to_hit_value(
+                attacker.level as i32,
+                self.player_luck,
+                weapon_ench,
+                skill_hit_bonus,
+                target_ac,
+            )
+        } else {
+            let ac_roll = if target_ac < 0 {
+                self.rng.random_range(1..=target_ac.unsigned_abs())
+            } else {
+                1
+            };
+            monster_to_hit_value(attacker.level as i32, target_ac, ac_roll)
+        };
         let d20 = self.rng.random_range(1..=20u32);
-        let dmg_roll = (self.rng.random_range(1..=6i32) + skill_dmg_bonus).max(1) as u32;
+        let base_roll = self.rng.random_range(1..=6u32);
+        // C mhitu.c:1208: rnd(-u.uac) damage reduction only when the hero is hit.
+        let hero_absorb_roll = if hero_defender {
+            Some(if target_ac < 0 {
+                self.rng.random_range(1..=target_ac.unsigned_abs())
+            } else {
+                1
+            })
+        } else {
+            None
+        };
 
-        // skill_dmg_bonus is already folded into dmg_roll; pass 0 to avoid double counting.
-        let result = resolve_melee_attack(to_hit_bonus, 0, def_combat, d20, dmg_roll, weapon_ench);
+        let result = resolve_melee_attack(
+            to_hit,
+            def_combat,
+            d20,
+            base_roll,
+            weapon_ench,
+            skill_dmg_bonus,
+            hero_absorb_roll,
+        );
 
         if result.hit {
             let is_demon_or_undead = defender.name.to_lowercase().contains("demon")

@@ -1,6 +1,7 @@
 /-
   NetHack Mechanics Formalized in Lean 4: Combat & Damage Resolution
-  Formalizing to-hit calculation, AC reduction, and HP clamping.
+  Formalizing C to-hit (uhitm.c:365, mhitu.c:709), hero AC damage reduction
+  (mhitu.c:1208), minimum damage (uhitm.c:1505), and HP clamping.
 -/
 
 namespace NetMechanics
@@ -17,34 +18,174 @@ structure Combatant where
 deriving Repr, DecidableEq
 
 /--
-  NetHack's to-hit threshold formula (uhitm.c:376):
-    threshold = 1 + abon() + find_mac(target) + uhitinc
-  Lower AC is better for defense (AD&D 1e convention), reducing the threshold.
-  A d20 roll succeeds if (roll : Int) ≤ threshold.
+  Hero Luck contribution to melee to-hit (C `uhitm.c:365`, `find_roll_to_hit`):
+    `sgn(Luck) * ((|Luck| + 2) / 3)`, with Luck clamped to the C range `-13..13`.
 -/
-def toHitThreshold (attackerBonus : Int) (targetAC : Int) : Int :=
-  10 + targetAC + attackerBonus
-
-/-- Check if an attack roll lands given d20 roll (1..20) -/
-def attackLands (d20Roll : Nat) (threshold : Int) : Bool :=
-  (d20Roll : Int) ≤ threshold
+def luckToHitBonus (luck : Int) : Int :=
+  let l := max (-13) (min 13 luck)
+  if 0 < l then (l + 2) / 3 else if l < 0 then -((-l + 2) / 3) else 0
 
 /--
-  Calculate damage given roll, enchant, attacker stat bonus, and defender AC.
-  In NetHack (mhitu.c:1208), negative AC absorbs damage:
-    damage -= rnd(-ac), clamped to at least 1 if hit lands.
+  Hero melee to-hit value `tmp` (C `uhitm.c:365`, `find_roll_to_hit`), minimal terms:
+    `tmp = 1 + find_mac(mdef) + u.ulevel + luck bonus + weapon spe + weapon_hit_bonus`
+  `abon()`, rings, monster-state, encumbrance and trap terms are not modelled
+  (taken as 0). Higher target AC makes the target easier to hit.
 -/
-def calculateDamage (roll : Nat) (enchant : Int) (bonus : Int) (defenderAC : Int := 0) : Nat :=
-  let total := (roll : Int) + enchant + bonus
-  if total > 0 then
-    let raw := total.toNat
-    if defenderAC < 0 then
-      let absorb := (-defenderAC).toNat
-      max 1 (raw - absorb)
-    else
-      raw
-  else
-    0
+def toHitValue (level luck enchant skillHit targetAC : Int) : Int :=
+  1 + targetAC + level + luckToHitBonus luck + enchant + skillHit
+
+/-- The `rnd(20)` draw, clamped into `1..20` (out-of-range rolls never panic). -/
+def clampD20 (d20 : Nat) : Nat := max 1 (min 20 d20)
+
+/-- Hit test (C `uhitm.c:780-782`): `mhit = tmp > rnd(20)`. -/
+def attackHits (d20 : Nat) (toHit : Int) : Bool :=
+  decide (((clampD20 d20 : Nat) : Int) < toHit)
+
+/--
+  `AC_VALUE(ac) = ac >= 0 ? ac : -rnd(-ac)` (C `hack.h:1538`); the `rnd(-ac)`
+  draw `acRoll` is clamped into `1..-ac`.
+-/
+def acValue (ac : Int) (acRoll : Nat) : Int :=
+  if 0 ≤ ac then ac else -((max 1 (min acRoll (-ac).toNat) : Nat) : Int)
+
+/-- Monster-vs-hero to-hit (C `mhitu.c:709`): `max 1 (AC_VALUE(u.uac) + 10 + m_lev)`. -/
+def monsterToHitValue (mLevel heroAC : Int) (acRoll : Nat) : Int :=
+  max 1 (acValue heroAC acRoll + 10 + mLevel)
+
+/--
+  Damage of a landed hit before hero-AC reduction (C `uhitm.c:1505`):
+  `base + spe + bonus`, raised to 1 if lower.
+-/
+def meleeDamage (baseRoll : Nat) (enchant bonus : Int) : Nat :=
+  max 1 ((baseRoll : Int) + enchant + bonus).toNat
+
+/--
+  Negative hero AC damage reduction (C `mhitu.c:1208-1211`):
+    `if (dmg && u.uac < 0) { dmg -= rnd(-u.uac); if (dmg < 1) dmg = 1; }`
+  The `rnd(-u.uac)` draw `absorbRoll` is clamped into `1..-heroAC`.
+-/
+def heroDamageAfterAC (damage : Nat) (heroAC : Int) (absorbRoll : Nat) : Nat :=
+  if damage = 0 ∨ 0 ≤ heroAC then damage
+  else max 1 (damage - max 1 (min absorbRoll (-heroAC).toNat))
+
+/--
+  Full damage of a landed hit. `heroAbsorbRoll = some r` only when the defender
+  is the hero (`mhitu.c:1208`); monster defenders take no AC reduction (C `hmon`).
+-/
+def calculateDamage (baseRoll : Nat) (enchant bonus defenderAC : Int)
+    (heroAbsorbRoll : Option Nat) : Nat :=
+  match heroAbsorbRoll with
+  | none => meleeDamage baseRoll enchant bonus
+  | some r => heroDamageAfterAC (meleeDamage baseRoll enchant bonus) defenderAC r
+
+/-- Luck bonus is monotone in Luck. -/
+theorem luck_bonus_monotone (a b : Int) (h : a ≤ b) :
+    luckToHitBonus a ≤ luckToHitBonus b := by
+  unfold luckToHitBonus
+  simp only []
+  split <;> split <;> (try split) <;> (try split) <;> omega
+
+/-- Luck bonus lies in `-5..5`. -/
+theorem luck_bonus_bounded (l : Int) :
+    -5 ≤ luckToHitBonus l ∧ luckToHitBonus l ≤ 5 := by
+  unfold luckToHitBonus
+  simp only []
+  split <;> (try split) <;> omega
+
+/-- To-hit value is monotone in target AC (higher AC is easier to hit). -/
+theorem to_hit_monotone_target_ac (level luck ench skill ac1 ac2 : Int) (h : ac1 ≤ ac2) :
+    toHitValue level luck ench skill ac1 ≤ toHitValue level luck ench skill ac2 := by
+  unfold toHitValue; omega
+
+/-- To-hit value is monotone in Luck. -/
+theorem to_hit_monotone_luck (level l1 l2 ench skill ac : Int) (h : l1 ≤ l2) :
+    toHitValue level l1 ench skill ac ≤ toHitValue level l2 ench skill ac := by
+  unfold toHitValue
+  have := luck_bonus_monotone l1 l2 h
+  omega
+
+/-- To-hit value is monotone in hero level. -/
+theorem to_hit_monotone_level (lv1 lv2 luck ench skill ac : Int) (h : lv1 ≤ lv2) :
+    toHitValue lv1 luck ench skill ac ≤ toHitValue lv2 luck ench skill ac := by
+  unfold toHitValue; omega
+
+/-- The hit test is exactly `rnd(20) < tmp` on the clamped roll. -/
+theorem attack_hits_iff (d20 : Nat) (toHit : Int) :
+    attackHits d20 toHit = true ↔ ((clampD20 d20 : Nat) : Int) < toHit := by
+  simp [attackHits]
+
+/-- A larger `tmp` never turns a hit into a miss. -/
+theorem attack_hits_monotone (d20 : Nat) (t1 t2 : Int) (h : t1 ≤ t2)
+    (hit : attackHits d20 t1 = true) : attackHits d20 t2 = true := by
+  rw [attack_hits_iff] at *; omega
+
+/-- `tmp > 20` hits on every roll. -/
+theorem attack_always_hits_above_20 (d20 : Nat) (toHit : Int) (h : 20 < toHit) :
+    attackHits d20 toHit = true := by
+  rw [attack_hits_iff]; unfold clampD20; omega
+
+/-- `tmp ≤ 1` misses on every roll. -/
+theorem attack_never_hits_le_1 (d20 : Nat) (toHit : Int) (h : toHit ≤ 1) :
+    attackHits d20 toHit = false := by
+  cases hc : attackHits d20 toHit
+  · rfl
+  · rw [attack_hits_iff] at hc; unfold clampD20 at hc; omega
+
+/-- Hitting is monotone in target AC. -/
+theorem hit_monotone_target_ac (d20 : Nat) (level luck ench skill ac1 ac2 : Int)
+    (h : ac1 ≤ ac2) (hit : attackHits d20 (toHitValue level luck ench skill ac1) = true) :
+    attackHits d20 (toHitValue level luck ench skill ac2) = true :=
+  attack_hits_monotone d20 _ _ (to_hit_monotone_target_ac level luck ench skill ac1 ac2 h) hit
+
+/-- Hitting is monotone in Luck. -/
+theorem hit_monotone_luck (d20 : Nat) (level l1 l2 ench skill ac : Int)
+    (h : l1 ≤ l2) (hit : attackHits d20 (toHitValue level l1 ench skill ac) = true) :
+    attackHits d20 (toHitValue level l2 ench skill ac) = true :=
+  attack_hits_monotone d20 _ _ (to_hit_monotone_luck level l1 l2 ench skill ac h) hit
+
+/-- Monster to-hit value is at least 1. -/
+theorem monster_to_hit_pos (mLevel heroAC : Int) (acRoll : Nat) :
+    1 ≤ monsterToHitValue mLevel heroAC acRoll := by
+  unfold monsterToHitValue; omega
+
+/-- A landed hit always deals at least 1 damage before AC reduction. -/
+theorem melee_damage_pos (baseRoll : Nat) (enchant bonus : Int) :
+    1 ≤ meleeDamage baseRoll enchant bonus := by
+  unfold meleeDamage; omega
+
+/-- Hero AC absorption never increases damage. -/
+theorem hero_absorb_le (damage : Nat) (heroAC : Int) (absorbRoll : Nat) :
+    heroDamageAfterAC damage heroAC absorbRoll ≤ damage := by
+  unfold heroDamageAfterAC
+  split <;> omega
+
+/-- Hero AC absorption never reduces positive damage below 1. -/
+theorem hero_absorb_pos (damage : Nat) (heroAC : Int) (absorbRoll : Nat) (h : 1 ≤ damage) :
+    1 ≤ heroDamageAfterAC damage heroAC absorbRoll := by
+  unfold heroDamageAfterAC
+  split <;> omega
+
+/-- Non-negative hero AC gives no damage reduction. -/
+theorem hero_absorb_nonneg_ac (damage : Nat) (heroAC : Int) (absorbRoll : Nat)
+    (h : 0 ≤ heroAC) : heroDamageAfterAC damage heroAC absorbRoll = damage := by
+  unfold heroDamageAfterAC
+  simp [h]
+
+/-- Full damage of a landed hit is at least 1. -/
+theorem calculate_damage_pos (baseRoll : Nat) (enchant bonus ac : Int) (r : Option Nat) :
+    1 ≤ calculateDamage baseRoll enchant bonus ac r := by
+  unfold calculateDamage
+  cases r with
+  | none => exact melee_damage_pos baseRoll enchant bonus
+  | some r => exact hero_absorb_pos _ ac r (melee_damage_pos baseRoll enchant bonus)
+
+/-- AC absorption never increases damage over the unreduced hit. -/
+theorem calculate_damage_le_melee (baseRoll : Nat) (enchant bonus ac : Int) (r : Option Nat) :
+    calculateDamage baseRoll enchant bonus ac r ≤ meleeDamage baseRoll enchant bonus := by
+  unfold calculateDamage
+  cases r with
+  | none => exact Nat.le_refl _
+  | some r => exact hero_absorb_le _ ac r
 
 /-- Apply damage to a combatant, updating HP and death status -/
 def applyDamage (c : Combatant) (dmg : Nat) : Combatant :=
@@ -96,16 +237,18 @@ structure AttackResult where
   defenderAfter : Combatant
 deriving Repr, DecidableEq
 
+/--
+  Melee attack from explicit rolls: `toHit` is the C `tmp`, `d20` the `rnd(20)` draw,
+  `heroAbsorbRoll = some (rnd(-u.uac))` only when the defender is the hero.
+-/
 def resolveMeleeAttack
-    (attackerBonus : Int)
-    (attackerDmgBonus : Int)
+    (toHit : Int)
     (defender : Combatant)
-    (d20Roll : Nat)
-    (dmgRoll : Nat)
-    (weaponEnchant : Int := 0) : AttackResult :=
-  let thresh := toHitThreshold attackerBonus defender.ac
-  if attackLands d20Roll thresh then
-    let dmg := calculateDamage dmgRoll weaponEnchant attackerDmgBonus defender.ac
+    (d20 baseRoll : Nat)
+    (enchant bonus : Int)
+    (heroAbsorbRoll : Option Nat) : AttackResult :=
+  if attackHits d20 toHit then
+    let dmg := calculateDamage baseRoll enchant bonus defender.ac heroAbsorbRoll
     let def' := applyDamage defender dmg
     { hit := true, damageDealt := dmg, defenderAfter := def' }
   else
@@ -115,12 +258,24 @@ def resolveMeleeAttack
   Theorem: A missed attack deals 0 damage and leaves defender unchanged.
 -/
 theorem miss_leaves_defender_unchanged
-    (attBonus attDmgBonus : Int) (defnd : Combatant)
-    (d20Roll dmgRoll : Nat) (ench : Int)
-    (hmiss : attackLands d20Roll (toHitThreshold attBonus defnd.ac) = false) :
-  (resolveMeleeAttack attBonus attDmgBonus defnd d20Roll dmgRoll ench).defenderAfter = defnd ∧
-  (resolveMeleeAttack attBonus attDmgBonus defnd d20Roll dmgRoll ench).damageDealt = 0 := by
+    (toHit : Int) (defnd : Combatant) (d20 baseRoll : Nat) (ench bonus : Int)
+    (r : Option Nat) (hmiss : attackHits d20 toHit = false) :
+  (resolveMeleeAttack toHit defnd d20 baseRoll ench bonus r).defenderAfter = defnd ∧
+  (resolveMeleeAttack toHit defnd d20 baseRoll ench bonus r).damageDealt = 0 := by
   unfold resolveMeleeAttack
   simp [hmiss]
+
+/--
+  Theorem: A landed attack deals at least 1 damage.
+-/
+theorem hit_deals_positive_damage
+    (toHit : Int) (defnd : Combatant) (d20 baseRoll : Nat) (ench bonus : Int)
+    (r : Option Nat) (hhit : (resolveMeleeAttack toHit defnd d20 baseRoll ench bonus r).hit = true) :
+    1 ≤ (resolveMeleeAttack toHit defnd d20 baseRoll ench bonus r).damageDealt := by
+  unfold resolveMeleeAttack at *
+  cases h : attackHits d20 toHit
+  · simp [h] at hhit
+  · simp only [if_true]
+    exact calculate_damage_pos baseRoll ench bonus defnd.ac r
 
 end NetMechanics

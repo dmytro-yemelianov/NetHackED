@@ -134,7 +134,8 @@ fn test_melee_attack_action() {
         coord: mon_coord,
         hp: 5,
         max_hp: 5,
-        ac: 10,
+        // C to-hit: tmp = 1 + AC 23 + lvl 1 + unskilled long sword -4 = 21 > any d20.
+        ac: 23,
         level: 1,
         speed: 10,
         alignment: Alignment::Chaotic,
@@ -1665,7 +1666,8 @@ fn test_artifact_combat_bonus_and_vorpal_blade() {
         coord: mon_coord,
         hp: 50,
         max_hp: 50,
-        ac: 10,
+        // C to-hit: tmp = 1 + AC 14 + lvl 1 + Excalibur +5 = 21 > any d20.
+        ac: 14,
         level: 8,
         speed: 12,
         alignment: Alignment::Chaotic,
@@ -2553,6 +2555,8 @@ fn test_quest_nemesis_boss_fight_and_completion() {
     // Deal lethal blow to Lord Surtur
     if let Some(surtur) = sim.arena.actors.get_mut(surtur_id) {
         surtur.hp = 1;
+        // C to-hit: tmp = 1 + AC 0 + lvl 15 + Vorpal Blade +5 = 21 > any d20.
+        surtur.ac = 0;
     }
     let combat_events = sim.step_player_action(ActionAst::Move(netrust_types::Direction::East));
     assert!(combat_events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("Lord Surtur") && text.contains("The Orb of Fate"))));
@@ -3336,7 +3340,8 @@ fn test_pacifist_conduct_violation_on_kill() {
         coord: monster_pos,
         hp: 1, // 1 HP to ensure a kill
         max_hp: 10,
-        ac: 20, // AC 20 guarantees the d20 melee roll hits
+        // C to-hit: tmp = 1 + AC 23 + lvl 1 + unskilled long sword -4 = 21 > any d20.
+        ac: 23,
         level: 1,
         speed: 12,
         alignment: Alignment::Chaotic,

@@ -3,24 +3,25 @@
 //! Every property test here corresponds to a machine-checked theorem in `NetMechanics`.
 
 use netrust_core::{
-    apply_erosion, apply_priest_donation, apply_vorpal_strike, attack_nemesis,
+    apply_erosion, apply_priest_donation, apply_vorpal_strike, attack_hits, attack_nemesis,
     branch_entrance_depth, branch_max_depth, buy_factor, calculate_buy_price, calculate_damage,
     calculate_encumbrance, calculate_mysterious_force, calculate_sell_price,
     calculate_summon_count, calculate_tournament_score, can_detect_monster, can_insert_safe,
     can_see_tile, cast_spell, choose_pet_goal, clamp_favor, consecrate_water, consult_leader,
     corrupt_buc_on_death, create_ghost_hp, decide_tactical_action, destroy_drawbridge,
     dilute_potion, dip_water, enchant_item, enter_branch, exit_branch, feed_pet,
-    hunger_of_nutrition, hunger_tier, identify_fully, interact_with_occupant, is_candelabrum_ready,
-    is_hero_eligible_for_quest, is_hp_critical, is_sanctum_accessible, is_valid_bones_level,
-    learn_buc, learn_type, mana_cost, mix_alchemy, offer_amulet_on_high_altar, pet_tile_steppable,
-    pick_up_quest_artifact, priest_uncurse, promote_pet, protection_donation_cost, push_boulder,
-    quest_progress_rank, recharge_wand, reflect, resolve_breath_damage, resolve_gaze,
-    resolve_sacrifice, return_to_leader_with_artifact, rub_lamp, sell_factor, step_luck_decay,
-    step_ray, step_ritual, swap_displacement, tick_light_fuel, tick_prayer_timeout,
-    toggle_drawbridge, uncurse, zap_wand, Alignment, ArtifactLocation, AscensionOutcome, BeamRay,
-    BranchCoord, BranchId, BreathType, Buc, CandelabrumState, Combatant, Coord, DilutionState,
-    Direction, DivineState, DoorState, DrawbridgeState, DrawbridgeTransition, DungeonDepth,
-    EncumbranceTier, Engraving, EngravingMedium, FormStats, GazeEffect, GazeType, HeroInteraction,
+    hero_damage_after_ac, hunger_of_nutrition, hunger_tier, identify_fully, interact_with_occupant,
+    is_candelabrum_ready, is_hero_eligible_for_quest, is_hp_critical, is_sanctum_accessible,
+    is_valid_bones_level, learn_buc, learn_type, mana_cost, melee_damage, mix_alchemy,
+    monster_to_hit_value, offer_amulet_on_high_altar, pet_tile_steppable, pick_up_quest_artifact,
+    priest_uncurse, promote_pet, protection_donation_cost, push_boulder, quest_progress_rank,
+    recharge_wand, reflect, resolve_breath_damage, resolve_gaze, resolve_sacrifice,
+    return_to_leader_with_artifact, rub_lamp, sell_factor, step_luck_decay, step_ray, step_ritual,
+    swap_displacement, tick_light_fuel, tick_prayer_timeout, to_hit_value, toggle_drawbridge,
+    uncurse, zap_wand, Alignment, ArtifactLocation, AscensionOutcome, BeamRay, BranchCoord,
+    BranchId, BreathType, Buc, CandelabrumState, Combatant, Coord, DilutionState, Direction,
+    DivineState, DoorState, DrawbridgeState, DrawbridgeTransition, DungeonDepth, EncumbranceTier,
+    Engraving, EngravingMedium, FormStats, GazeEffect, GazeType, HeroInteraction,
     HeroQuestEligibility, Intrinsics, InvocationStep, Item, KnowledgeLevel, LightSource,
     LuckstoneStatus, MetricState, PetFamily, PetGoal, PetSpeciesTier, PolyEntity, PushOutcome,
     QuestProgress, QuestState, RechargeResult, RitualProgress, RubResult, SchedulerState,
@@ -181,21 +182,74 @@ proptest! {
     }
 
     // -------------------------------------------------------------
-    // Theorem: negative_ac_absorbs_damage
+    // C reference: uhitm.c:365 find_roll_to_hit, uhitm.c:780 hit test
     // -------------------------------------------------------------
     #[test]
-    fn prop_negative_ac_absorbs_damage(
-        roll in 1u32..20,
-        enchant in 0i32..10,
-        bonus in 0i32..10,
-        neg_ac in -20i32..-1
+    fn prop_to_hit_matches_c_reference(
+        level in -5i32..40,
+        luck in -30i32..30,
+        enchant in -10i32..10,
+        skill_hit in -4i32..8,
+        target_ac in -40i32..20,
+        d20 in 0u32..30
     ) {
-        let dmg_no_ac = calculate_damage(roll, enchant, bonus, 0);
-        let dmg_neg_ac = calculate_damage(roll, enchant, bonus, neg_ac);
-        prop_assert!(dmg_neg_ac <= dmg_no_ac);
-        if dmg_no_ac > 0 {
-            prop_assert!(dmg_neg_ac >= 1);
-        }
+        // Reference written directly from C:
+        // tmp = 1 + abon(0) + find_mac + ulevel + sgn(Luck)*((|Luck|+2)/3) + spe + skill
+        let l = luck.clamp(-13, 13);
+        let luck_term = l.signum() * ((l.abs() + 2) / 3);
+        let tmp = 1 + target_ac + level + luck_term + enchant + skill_hit;
+        prop_assert_eq!(to_hit_value(level, luck, enchant, skill_hit, target_ac), tmp);
+        // dieroll = rnd(20); mhit = tmp > dieroll
+        let dieroll = d20.clamp(1, 20) as i32;
+        prop_assert_eq!(attack_hits(d20, tmp), tmp > dieroll);
+    }
+
+    // -------------------------------------------------------------
+    // C reference: mhitu.c:709 monster -> hero to-hit, hack.h:1538 AC_VALUE
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_monster_to_hit_matches_c_reference(
+        m_lev in 0i32..50,
+        hero_ac in -40i32..20,
+        ac_roll in 0u32..50
+    ) {
+        let ac_value = if hero_ac >= 0 {
+            hero_ac
+        } else {
+            -(ac_roll.clamp(1, (-hero_ac) as u32) as i32)
+        };
+        let tmp = (ac_value + 10 + m_lev).max(1);
+        prop_assert_eq!(monster_to_hit_value(m_lev, hero_ac, ac_roll), tmp);
+    }
+
+    // -------------------------------------------------------------
+    // C reference: uhitm.c:1505 (min 1) and mhitu.c:1208 (rnd(-uac) absorb)
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_hero_ac_absorb_matches_c(
+        roll in 0u32..30,
+        enchant in -10i32..10,
+        bonus in -5i32..10,
+        hero_ac in -40i32..20,
+        absorb_roll in 0u32..50
+    ) {
+        // dmg = base + spe + bonus; if (dmg < 1) dmg = 1;
+        let base = (roll as i32 + enchant + bonus).max(1) as u32;
+        prop_assert_eq!(melee_damage(roll, enchant, bonus), base);
+        // if (dmg && u.uac < 0) { dmg -= rnd(-u.uac); if (dmg < 1) dmg = 1; }
+        let expected = if base > 0 && hero_ac < 0 {
+            let r = absorb_roll.clamp(1, (-hero_ac) as u32) as i32;
+            (base as i32 - r).max(1) as u32
+        } else {
+            base
+        };
+        prop_assert_eq!(hero_damage_after_ac(base, hero_ac, absorb_roll), expected);
+        prop_assert_eq!(
+            calculate_damage(roll, enchant, bonus, hero_ac, Some(absorb_roll)),
+            expected
+        );
+        // Hero -> monster: no AC reduction at all.
+        prop_assert_eq!(calculate_damage(roll, enchant, bonus, hero_ac, None), base);
     }
 
     // -------------------------------------------------------------

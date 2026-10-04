@@ -14,7 +14,7 @@ The Lean 4 verification project is defined in [lakefile.toml](../lakefile.toml) 
 | **`NetMechanics.Inventory`** | [NetMechanics/Inventory.lean](../NetMechanics/Inventory.lean) | `Item`, `ItemKind`, `EncumbranceTier` | `item_weight_ge_zero`<br>`contents_weight_ge_tail`<br>`unencumbered_when_le_cap`<br>`boh_cannot_contain_boh` |
 | **`NetMechanics.Energy`** | [NetMechanics/Energy.lean](../NetMechanics/Energy.lean) | `SchedulerState`, `StepAction` | `turn_strictly_increases`<br>`hero_act_reduces_energy`<br>`scheduler_progress` (Progress Theorem) |
 | **`NetMechanics.Grid`** | [NetMechanics/Grid.lean](../NetMechanics/Grid.lean) | `Tile`, `DoorState`, `Coord`, `Alignment` | `open_door_is_passable`<br>`secret_door_impassable`<br>`break_door_idempotent`<br>`reveal_secret_door_locked` |
-| **`NetMechanics.Combat`** | [NetMechanics/Combat.lean](../NetMechanics/Combat.lean) | `Combatant`, `AttackResult` | `apply_damage_monotone_hp`<br>`apply_damage_preserves_max_hp`<br>`lethal_damage_kills`<br>`miss_leaves_defender_unchanged` |
+| **`NetMechanics.Combat`** | [NetMechanics/Combat.lean](../NetMechanics/Combat.lean) | `Combatant`, `AttackResult` | `apply_damage_monotone_hp`<br>`apply_damage_preserves_max_hp`<br>`lethal_damage_kills`<br>`miss_leaves_defender_unchanged`<br>`hit_monotone_target_ac`<br>`hit_monotone_luck`<br>`hit_deals_positive_damage`<br>`hero_absorb_le` |
 | **`NetMechanics.AST`** | [NetMechanics/AST.lean](../NetMechanics/AST.lean) | `ActionAST`, `EffectAST`, `WorldState` | `wait_consumes_normal_speed`<br>`inflict_damage_preserves_well_formed`<br>`heal_damage_preserves_well_formed` |
 | **`NetMechanics.FOV`** | [NetMechanics/FOV.lean](../NetMechanics/FOV.lean) | `HasLOS` | `los_refl`<br>`open_door_transparent`<br>`closed_door_opaque`<br>`secret_door_opaque` |
 | **`NetMechanics.Raycast`** | [NetMechanics/Raycast.lean](../NetMechanics/Raycast.lean) | `SurfaceOrientation`, `Velocity`, `BeamRay` | `reflect_involution`<br>`reflect_preserves_speed_sq`<br>`step_decreases_energy`<br>`beam_terminates_after_energy_steps` |
@@ -46,7 +46,7 @@ Unlike unit tests that sample specific inputs, Lean 4 proofs are verified by the
 
 ## 3. The Lean 4 to Rust Verification Bridge
 
-The Rust engine is an independent, hand-written implementation. **Nothing machine-links the Lean models to the Rust code**: there is no extraction, translation, or proof that the Rust functions satisfy the Lean theorems. Instead, many Lean theorems are mirrored by hand as Rust property-based tests (`proptest`), so that the Rust code is at least checked against the same stated properties on randomized inputs. `crates/netrust-core/tests/proptest_mechanics.rs` currently holds 86 such `prop_` tests; they cover a selection of the Lean theorems, not all 204. A proptest passing is evidence, not proof, that Rust agrees with the Lean property.
+The Rust engine is an independent, hand-written implementation. **Nothing machine-links the Lean models to the Rust code**: there is no extraction, translation, or proof that the Rust functions satisfy the Lean theorems. Instead, many Lean theorems are mirrored by hand as Rust property-based tests (`proptest`), so that the Rust code is at least checked against the same stated properties on randomized inputs. `crates/netrust-core/tests/proptest_mechanics.rs` currently holds 88 such `prop_` tests; they cover a selection of the Lean theorems, not all 223. A proptest passing is evidence, not proof, that Rust agrees with the Lean property.
 
 ```
     [Lean 4 Formal Specification]               [Rust Implementation]
@@ -80,6 +80,9 @@ Rows marked "(no proptest yet)" have no corresponding proptest at present.
 | `unencumbered_when_le_cap` | $W \le C \implies \mathcal{E}(W, C) = \text{Unencumbered}$ | Generate $W \le C$ with $C > 0$, assert result is `EncumbranceTier::Unencumbered`. |
 | `scheduler_progress` | $\Delta E < 0 \lor \Delta \text{turn} > 0$ | Assert that stepping `SchedulerState` either reduces actor action points or increments `turn`. |
 | `apply_damage_monotone_hp` | $HP_{\text{after}} \le HP_{\text{before}}$ | Assert that `c.apply_damage(d)` never increases `c.hp` for any $d \in \mathbb{N}$. |
+| `hit_monotone_target_ac`, `hit_monotone_luck` | $\text{tmp} = 1 + AC + lvl + luck(L) + spe + skill$; hit $\iff d_{20} < \text{tmp}$ | `prop_to_hit_matches_c_reference`: `to_hit_value`/`attack_hits` equal a reference written from `uhitm.c:365`/`:780` over random inputs and rolls. |
+| `hero_absorb_le`, `calculate_damage_pos` | $D' = \max(1, D - \text{rnd}(-AC_{hero}))$ if $AC_{hero} < 0$; $D \ge 1$ on hit | `prop_hero_ac_absorb_matches_c`: `melee_damage`/`hero_damage_after_ac`/`calculate_damage` equal a reference from `uhitm.c:1505`/`mhitu.c:1208`. |
+| `monster_to_hit_pos` | $\text{tmp} = \max(1, AC\_VALUE(AC_{hero}) + 10 + m_{lev})$ | `prop_monster_to_hit_matches_c_reference` (reference from `mhitu.c:709`, `hack.h:1538`). |
 | `break_door_idempotent` | $\text{break}(\text{break}(t)) = \text{break}(t)$ | Assert that calling `door.break_door()` twice is identical to calling it once. |
 | `wait_consumes_normal_speed` | $E' = E - 12$ | (no proptest yet) Intended: executing `ActionAst::Wait` decrements energy by `NORMAL_SPEED` (12). |
 
@@ -89,8 +92,7 @@ Rows marked "(no proptest yet)" have no corresponding proptest at present.
 
 * `HasLOS.Adjacent` in `NetMechanics/FOV.lean` accepts any two distinct cells, so line of sight holds between every pair of cells; the FOV theorems are therefore much weaker than they appear.
 * `beam_terminates_after_energy_steps` (`Raycast.lean`) and `pathfinding_step_bounded` (`Pathfinding.lean`) prove only one-step facts, not the termination or convergence their names suggest.
-* The to-hit formula in `Combat.lean` (`10 + AC + bonus`) differs from the `uhitm.c` formula it cites.
-* About 90 of the 204 theorems are one-line proofs (`rfl`, `simp`, `decide`); many state definitional facts rather than deep invariants.
+* About 90 of the 223 theorems are one-line proofs (`rfl`, `simp`, `decide`); many state definitional facts rather than deep invariants.
 * The models are simplified and are not NetHack 5.0 itself; see `docs/formal-mechanics-spec.md` for known divergences.
 * There is no machine-checked link between Lean and Rust (see Section 3).
 

@@ -275,7 +275,9 @@ fn melee_outcomes_vary_with_seed() {
         let mut mon = create_monster_record(MonsterSpeciesId::Goblin, east);
         mon.hp = 1000;
         mon.max_hp = 1000;
-        mon.ac = 4;
+        // C to-hit: tmp = 1 + AC 13 + lvl 1 + long sword unskilled -4 = 11, so a
+        // d20 of 1..=10 hits (~50%): both misses and varied damage occur.
+        mon.ac = 13;
         let mid = sim.arena.spawn_actor(mon);
         sim.step_player_action(ActionAst::MeleeAttack(east));
         let hp = sim.arena.actors.get(mid).map(|m| m.hp).unwrap_or(0);

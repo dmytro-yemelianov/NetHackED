@@ -8,8 +8,6 @@ This document provides the formal mathematical specification for core NetHack me
 
 The Lean models and the Rust engine are simplified abstractions of NetHack mechanics and are **not** a faithful transcription of NetHack 5.0. The formulas in this document describe the models, and in several places they differ from the C source. Known divergences:
 
-* **To-hit formula**: the model uses `10 + AC + bonus` with a hit when `d20 <= threshold`. NetHack C (`find_roll_to_hit` in `uhitm.c`) computes `tmp = 1 + abon() + find_mac(mdef) + u.uhitinc + maybe_polyd(...level...) + Luck + ...` (plus rings, weapon hit bonus, skill, role and encumbrance adjustments) and hits when `tmp > rnd(20)`.
-* **AC damage reduction**: negative-AC damage absorption is applied to monsters in the model; in C it is applied to damage dealt to the hero (`mhitu.c`), not to monster defenders.
 * **Floor-trap set**: the set of traps that fly-over and trigger rules cover is a simplified subset of C's trap types.
 * **Luckstone decay**: the model treats uncursed luckstones like blessed ones (positive luck never decays and negative luck recovers). In C, an uncursed luckstone prevents both good and bad luck from timing out; only blessed stones let bad luck time out and only cursed stones let good luck time out.
 * **Hunger thresholds**: comparison boundaries (`>` versus `>=`) at the hunger status thresholds differ from C.
@@ -180,22 +178,22 @@ $$\text{isPassable}(t) = \begin{cases}
 ## 5. Combat & Damage Algebra
 
 ### Mathematical Model
-NetHack uses the Advanced Dungeons & Dragons descending Armor Class (AC) system (`NetHack-5.0.0/src/uhitm.c`:376).
-* Target to-hit threshold:
-  $$\Theta = 10 + \text{AC}_{\text{target}} + \text{Bonus}_{\text{attacker}}$$
-* Roll on 20-sided die: $D_{20} \in [1, 20]$.
-* Hit condition:
-  $$\text{Hit}(D_{20}, \Theta) \iff D_{20} \le \Theta$$
-  *Notice*: Because better defensive armor lowers AC (e.g., $10 \to 0 \to -5$), it lowers $\Theta$, making $D_{20} \le \Theta$ harder to satisfy.
+NetHack uses the descending Armor Class (AC) system. Hero melee to-hit (`NetHack-5.0.0/src/uhitm.c`:365, `find_roll_to_hit`), minimal terms tracked by NetRust:
+$$\text{tmp} = 1 + \text{AC}_{\text{target}} + \text{level} + \text{sgn}(L)\left\lfloor\frac{|L| + 2}{3}\right\rfloor + \text{spe} + \text{skill}$$
+with Luck $L$ clamped to $[-13, 13]$ (bonus in $[-5, 5]$). `abon()`, rings of increase accuracy, monster-state bonuses, encumbrance and trap penalties are not modelled. Bare-handed skill uses the C table (`weapon.c`:1601: Unskilled/Basic $+1$, Skilled/Expert $+2$).
+* Roll on 20-sided die: $D_{20} \in [1, 20]$ (out-of-range rolls are clamped).
+* Hit condition (`uhitm.c`:780): $\text{Hit} \iff D_{20} < \text{tmp}$. Higher target AC makes the target easier to hit.
+
+Monster attacking the hero (`mhitu.c`:709): $\text{tmp} = \max(1, \text{AC\_VALUE}(\text{AC}_{\text{hero}}) + 10 + m_{\text{lev}})$ with $\text{AC\_VALUE}(a) = a$ for $a \ge 0$ and $-\text{rnd}(-a)$ otherwise (`hack.h`:1538).
 
 ### Damage Resolution & Negative AC Absorption
-Given base damage roll $R$, weapon enchantment $S$, and stat bonus $B$:
-$$D_{\text{raw}} = \max(0, R + S + B)$$
+Given base damage roll $R$, weapon enchantment $S$, and skill bonus $B$, a landed hit deals at least 1 (`uhitm.c`:1505):
+$$D_{\text{raw}} = \max(1, R + S + B)$$
 
-In NetHack (`NetHack-5.0.0/src/mhitu.c`:1208), negative AC provides damage absorption:
+Negative AC reduces damage **only when the hero is the defender** (`NetHack-5.0.0/src/mhitu.c`:1208), using an explicit roll $r = \text{rnd}(-\text{AC}_{\text{hero}})$:
 $$D_{\text{final}} = \begin{cases}
-\max(1, D_{\text{raw}} - (-\text{AC}_{\text{target}})) & \text{if } \text{AC}_{\text{target}} < 0 \land D_{\text{raw}} > 0 \\
-D_{\text{raw}} & \text{otherwise}
+\max(1, D_{\text{raw}} - r) & \text{if the hero is hit and } \text{AC}_{\text{hero}} < 0 \\
+D_{\text{raw}} & \text{otherwise (including every monster defender)}
 \end{cases}$$
 
 HP state transition:
@@ -209,6 +207,11 @@ $$\text{isDead} = (HP_{\text{after}} = 0) \lor (D_{\text{final}} \ge HP_{\text{b
   $$\forall c, D \ge HP(c),\; HP(\text{applyDamage}(c, D)) = 0 \land \text{isDead}(\text{applyDamage}(c, D)) = \text{true}$$
 * `apply_damage_preserves_max_hp`: $HP_{\max}$ is invariant under damage application.
 * `miss_leaves_defender_unchanged`: A missed attack roll guarantees zero damage and identity preservation.
+* `hit_monotone_target_ac` / `hit_monotone_luck`: raising target AC or Luck never turns a hit into a miss.
+* `attack_always_hits_above_20` / `attack_never_hits_le_1`: $	ext{tmp} > 20$ always hits; $	ext{tmp} \le 1$ never hits.
+* `melee_damage_pos`, `calculate_damage_pos`, `hit_deals_positive_damage`: a landed hit deals at least 1 damage.
+* `hero_absorb_le` / `hero_absorb_pos` / `hero_absorb_nonneg_ac`: hero AC absorption never increases damage, never drops positive damage below 1, and is a no-op for $	ext{AC} \ge 0$.
+* `monster_to_hit_pos`: the monster-vs-hero to-hit value is at least 1.
 
 ---
 

@@ -42,7 +42,7 @@ def main : IO Unit := do
     damageBonus := 0,
     isDead := false
   }
-  let attackRes := resolveMeleeAttack 4 2 goblin 15 8 1
+  let attackRes := resolveMeleeAttack (toHitValue 1 0 1 0 goblin.ac) goblin 9 8 1 2 none
   IO.println s!"[Combat] Melee Attack -> Hit: {attackRes.hit}, Damage: {attackRes.damageDealt}, Target HP: {attackRes.defenderAfter.hp}, Dead: {attackRes.defenderAfter.isDead}"
 
   -- 5. AST & Operational Semantics demonstration
