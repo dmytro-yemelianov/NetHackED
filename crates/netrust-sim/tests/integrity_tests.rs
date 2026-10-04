@@ -184,3 +184,19 @@ fn melee_outcomes_vary_with_seed() {
     }
     assert!(outcomes.len() >= 3, "melee is not random: {:?}", outcomes);
 }
+
+#[test]
+fn bumping_a_wall_does_not_tick_prayer_timeout() {
+    let mut sim = SimulationWorld::new_with_seed(12);
+    let p = sim.arena.actors.get(sim.player_id).unwrap().coord;
+    assert!(p.x > 0, "seed 12 player position must have x > 0");
+    let west = Coord::new(p.x - 1, p.y).unwrap();
+    sim.level.set_tile(west, Tile::Wall { horizontal: false });
+    sim.divine_state.prayer_timeout = 100;
+    let turn = sim.scheduler.turn;
+    for _ in 0..10 {
+        sim.step_player_action(ActionAst::Move(Direction::West));
+    }
+    assert_eq!(sim.scheduler.turn, turn, "wall bump should take no time");
+    assert_eq!(sim.divine_state.prayer_timeout, 100);
+}

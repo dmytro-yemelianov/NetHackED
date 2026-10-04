@@ -28,6 +28,9 @@ impl SimulationWorld {
             return events;
         }
 
+        let energy_before = self.scheduler.hero_energy;
+        let turn_before = self.scheduler.turn;
+
         match action {
             ActionAst::Move(dir) => events.extend(self.handle_move(dir)),
             ActionAst::OpenDoor(coord) => events.extend(self.handle_open_door(coord)),
@@ -98,13 +101,17 @@ impl SimulationWorld {
             }
         }
 
+        let spent_time = self.scheduler.hero_energy != energy_before;
+
         // Process monster actions and turn scheduler ticks
         let sim_events = self.process_turn_ticks();
         events.extend(sim_events);
 
-        self.divine_state.prayer_timeout = netrust_core::religion::tick_prayer_timeout(self.divine_state.prayer_timeout);
+        if spent_time {
+            self.divine_state.prayer_timeout = netrust_core::religion::tick_prayer_timeout(self.divine_state.prayer_timeout);
+        }
 
-        if self.scheduler.turn > 0 && self.scheduler.turn % 600 == 0 {
+        if self.scheduler.turn != turn_before && self.scheduler.turn > 0 && self.scheduler.turn % 600 == 0 {
             self.tick_luck_decay();
         }
 
