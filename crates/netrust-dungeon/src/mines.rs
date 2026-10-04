@@ -98,23 +98,24 @@ pub fn generate_minetown_level<R: Rng>(_rng: &mut R) -> MinetownLayout {
     // Priest stands directly in front of the altar
     let priest_coord = Coord::new_unchecked(64, 8);
 
-    // Doorway into the temple
-    level.set_tile(Coord::new_unchecked(56, 7), Tile::Room);
-
     // 3. General Store (north-west)
     let shop1_rect = Rect::new(6, 3, 16, 7);
     carve_room(&mut level, &shop1_rect);
-    level.set_tile(Coord::new_unchecked(22, 6), Tile::Room);
 
     // 4. Lighting & Delicatessen Store (south-west)
     let shop2_rect = Rect::new(6, 12, 16, 7);
     carve_room(&mut level, &shop2_rect);
-    level.set_tile(Coord::new_unchecked(22, 15), Tile::Room);
 
-    // Corridors connecting shops to plaza
-    carve_h_corr(&mut level, 22, 28, 6);
-    carve_h_corr(&mut level, 22, 28, 15);
-    carve_h_corr(&mut level, 52, 56, 7);
+    // General Store door (east wall) -> corridor -> plaza west wall
+    level.set_tile(Coord::new_unchecked(22, 8), Tile::Room);
+    // Delicatessen door (east wall) -> corridor -> plaza west wall
+    level.set_tile(Coord::new_unchecked(22, 13), Tile::Room);
+    // Temple door (west wall) -> corridor -> plaza east wall
+    level.set_tile(Coord::new_unchecked(56, 9), Tile::Room);
+
+    carve_h_corr(&mut level, 22, 28, 8);
+    carve_h_corr(&mut level, 22, 28, 13);
+    carve_h_corr(&mut level, 52, 56, 9);
 
     // Stairs Up (to Mines 2) inside Plaza
     let up_c = Coord::new_unchecked(32, 10);
@@ -134,7 +135,7 @@ pub fn generate_minetown_level<R: Rng>(_rng: &mut R) -> MinetownLayout {
     let watchmen_coords = vec![
         Coord::new_unchecked(35, 11),
         Coord::new_unchecked(45, 11),
-        Coord::new_unchecked(54, 7),
+        Coord::new_unchecked(54, 9),
     ];
 
     level.rooms = vec![

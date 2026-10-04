@@ -102,12 +102,6 @@ pub fn generate_gehennom_maze_level<R: Rng>(
         }
     }
 
-    // Spawn lava fissures
-    for r in &rooms {
-        let c = Coord::new_unchecked(r.x1 + 1, r.y1 + 1);
-        level.set_tile(c, Tile::Lava);
-    }
-
     let up_c = rooms[0].center();
     level.stairs_up = up_c;
     level.set_tile(up_c, Tile::Stairs { up: true });
@@ -124,6 +118,21 @@ pub fn generate_gehennom_maze_level<R: Rng>(
         level.set_tile(down_c, Tile::Stairs { up: false });
         None
     };
+
+    // Spawn lava fissures, never cutting off a room or the way down
+    let mut keep: Vec<Coord> = rooms.iter().map(|r| r.center()).collect();
+    keep.push(level.stairs_down);
+    for r in &rooms {
+        let c = Coord::new_unchecked(r.x1 + 1, r.y1 + 1);
+        if c == level.stairs_up || c == level.stairs_down || Some(c) == vibrating_square || *level.get_tile(c) != Tile::Room {
+            continue;
+        }
+        level.set_tile(c, Tile::Lava);
+        let reach = crate::reach::reachable_from(&level, level.stairs_up);
+        if !keep.iter().all(|k| reach.contains(k)) {
+            level.set_tile(c, Tile::Room);
+        }
+    }
 
     level.rooms = rooms;
     level.is_dark = true;
@@ -181,6 +190,7 @@ pub fn generate_moloch_sanctum_level<R: Rng>(_rng: &mut R) -> (DungeonLevel, Coo
 
     // Portal entrance spawn point on western shore
     let entrance_spawn = Coord::new_unchecked(5, gate_y);
+    level.set_tile(entrance_spawn, Tile::Stairs { up: true });
     level.stairs_up = entrance_spawn;
     level.stairs_down = altar_coord;
 
