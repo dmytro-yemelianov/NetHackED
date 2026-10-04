@@ -230,7 +230,8 @@ impl SimulationWorld {
                     }
                     self.do_boh_explosion(container_id);
                     // The inserted object was never inserted: obfree() deletes it.
-                    self.arena.destroy_item(item_id);
+                    // obfree deletes contents too; a BoH's were already extracted above.
+                    self.destroy_item_tree(item_id);
                     self.arena.destroy_item(container_id);
                     // pickup.c:2693: losehp(d(6, 6), "magical explosion").
                     let damage: u32 = (0..6).map(|_| self.rng.random_range(1..=6u32)).sum();

@@ -565,6 +565,44 @@ fn test_boh_explodes_on_charged_bag_of_tricks() {
 }
 
 #[test]
+fn test_boh_explosion_leaves_no_orphaned_contents() {
+    let mut sim = SimulationWorld::new_with_seed(112);
+    let boh = sim.arena.spawn_item(create_item_record(
+        ItemKindId::BagOfHolding,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Uncursed,
+    ));
+    let sack = sim.arena.spawn_item(create_item_record(
+        ItemKindId::Sack,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Uncursed,
+    ));
+    let mut rec = create_item_record(
+        ItemKindId::Dagger,
+        ItemLocation::InContainer(sack),
+        Buc::Uncursed,
+    );
+    rec.name = "wand of cancellation".into();
+    rec.enchantment = 4;
+    let wand = sim.arena.spawn_item(rec);
+    let events = put_in(&mut sim, sack, boh);
+    assert!(events
+        .iter()
+        .any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("explodes"))));
+    assert!(sim.arena.items.get(sack).is_none());
+    assert!(sim.arena.items.get(wand).is_none());
+    for (_, rec) in sim.arena.items.iter() {
+        if let ItemLocation::InContainer(c) = rec.location {
+            assert!(
+                sim.arena.items.get(c).is_some(),
+                "orphaned item {}",
+                rec.name
+            );
+        }
+    }
+}
+
+#[test]
 fn test_water_dipping() {
     use netrust_types::WaterType;
     let mut sim = SimulationWorld::new_with_seed(107);
