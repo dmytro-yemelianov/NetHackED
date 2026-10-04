@@ -50,7 +50,12 @@ pub fn generate_quest_home_level<R: Rng>(rng: &mut R, _role_name: &str) -> Quest
 
     // Leader's sacred altar in the sanctuary
     let altar_coord = Coord::new_unchecked(42, 8);
-    level.set_tile(altar_coord, Tile::Altar { align: Alignment::Neutral });
+    level.set_tile(
+        altar_coord,
+        Tile::Altar {
+            align: Alignment::Neutral,
+        },
+    );
 
     // 3. Vault room with stairs down into Quest Locate
     let descent_rect = Rect::new(62, 7, 12, 7);
@@ -173,36 +178,27 @@ pub fn generate_quest_goal_level<R: Rng>(_rng: &mut R, role_name: &str) -> Quest
 
     // High dark altar in the Nemesis citadel
     let unholy_altar = Coord::new_unchecked(52, 10);
-    level.set_tile(unholy_altar, Tile::Altar { align: Alignment::Chaotic });
+    level.set_tile(
+        unholy_altar,
+        Tile::Altar {
+            align: Alignment::Chaotic,
+        },
+    );
 
     // 3. Surrounding moat or lava river depending on role lore
-    let is_volcano = role_name.eq_ignore_ascii_case("valkyrie")
-        || role_name.eq_ignore_ascii_case("knight");
+    let is_volcano =
+        role_name.eq_ignore_ascii_case("valkyrie") || role_name.eq_ignore_ascii_case("knight");
 
     for x in 34..62 {
         for y in [3, 17] {
             let c = Coord::new_unchecked(x, y);
-            level.set_tile(
-                c,
-                if is_volcano {
-                    Tile::Lava
-                } else {
-                    Tile::Moat
-                },
-            );
+            level.set_tile(c, if is_volcano { Tile::Lava } else { Tile::Moat });
         }
     }
     for y in 3..=17 {
         for x in [34, 61] {
             let c = Coord::new_unchecked(x, y);
-            level.set_tile(
-                c,
-                if is_volcano {
-                    Tile::Lava
-                } else {
-                    Tile::Moat
-                },
-            );
+            level.set_tile(c, if is_volcano { Tile::Lava } else { Tile::Moat });
         }
     }
 
@@ -221,10 +217,22 @@ pub fn generate_quest_goal_level<R: Rng>(_rng: &mut R, role_name: &str) -> Quest
     );
 
     // Minor decorative pillars
-    level.set_tile(Coord::new_unchecked(42, 7), Tile::Wall { horizontal: false });
-    level.set_tile(Coord::new_unchecked(42, 13), Tile::Wall { horizontal: false });
-    level.set_tile(Coord::new_unchecked(54, 7), Tile::Wall { horizontal: false });
-    level.set_tile(Coord::new_unchecked(54, 13), Tile::Wall { horizontal: false });
+    level.set_tile(
+        Coord::new_unchecked(42, 7),
+        Tile::Wall { horizontal: false },
+    );
+    level.set_tile(
+        Coord::new_unchecked(42, 13),
+        Tile::Wall { horizontal: false },
+    );
+    level.set_tile(
+        Coord::new_unchecked(54, 7),
+        Tile::Wall { horizontal: false },
+    );
+    level.set_tile(
+        Coord::new_unchecked(54, 13),
+        Tile::Wall { horizontal: false },
+    );
 
     QuestGoalLayout {
         level,

@@ -1,22 +1,38 @@
 //! JSON-RPC 2.0 message parser and dispatcher for Model Context Protocol (MCP).
 
-use netrust_data::roles::{CharacterConfig, Gender, RaceId, RoleId, ROLES, RACES};
-use netrust_sim::{ActionAst, Coord, Direction, SimulationWorld};
-use netrust_types::Alignment;
+use netrust_data::roles::{RACES, ROLES};
+use netrust_sim::SimulationWorld;
 use serde_json::{json, Value};
 
+use crate::commands::{action_args_from_json, parse_action, parse_character};
 use crate::rpc::{
-    self, error_response, parse_direction, result_response, RpcRequest, INVALID_PARAMS,
-    METHOD_NOT_FOUND,
+    self, error_response, result_response, RpcRequest, INVALID_PARAMS, METHOD_NOT_FOUND,
 };
 use crate::session::AgentSession;
 
 /// Every action string `netrust_step` accepts; also used as the schema enum.
 pub const STEP_ACTIONS: &[&str] = &[
-    "move_north", "move_east", "move_south", "move_west",
-    "move_northeast", "move_northwest", "move_southeast", "move_southwest",
-    "wait", "pickup", "pay", "pray", "sacrifice", "eat", "cast", "ascend", "descend",
-    "kick_north", "kick_east", "kick_south", "kick_west",
+    "move_north",
+    "move_east",
+    "move_south",
+    "move_west",
+    "move_northeast",
+    "move_northwest",
+    "move_southeast",
+    "move_southwest",
+    "wait",
+    "pickup",
+    "pay",
+    "pray",
+    "sacrifice",
+    "eat",
+    "cast",
+    "ascend",
+    "descend",
+    "kick_north",
+    "kick_east",
+    "kick_south",
+    "kick_west",
 ];
 
 pub fn handle_mcp_request(session: &mut AgentSession, line: &str) -> Option<Value> {
@@ -38,7 +54,11 @@ pub fn handle_mcp_line(session: &mut AgentSession, line: Result<&str, ()>) -> Op
     })
 }
 
-fn dispatch(session: &mut AgentSession, method: &str, params: &Value) -> Result<Value, (i64, String)> {
+fn dispatch(
+    session: &mut AgentSession,
+    method: &str,
+    params: &Value,
+) -> Result<Value, (i64, String)> {
     match method {
         "initialize" => Ok(json!({
             "protocolVersion": "2024-11-05",
@@ -49,8 +69,10 @@ fn dispatch(session: &mut AgentSession, method: &str, params: &Value) -> Result<
         "ping" => Ok(json!({})),
         "tools/list" => Ok(tools_list()),
         "tools/call" => {
-            let tool_name = params.get("name").and_then(|n| n.as_str())
-                .ok_or((INVALID_PARAMS, "tools/call requires params.name".to_string()))?;
+            let tool_name = params.get("name").and_then(|n| n.as_str()).ok_or((
+                INVALID_PARAMS,
+                "tools/call requires params.name".to_string(),
+            ))?;
             let args = params.get("arguments").cloned().unwrap_or(json!({}));
             let text = call_tool(session, tool_name, &args).map_err(|m| (INVALID_PARAMS, m))?;
             Ok(json!({ "content": [ { "type": "text", "text": text } ] }))
@@ -143,39 +165,6 @@ fn tools_list() -> Value {
     })
 }
 
-fn parse_step_action(act: &str, args: &Value, p: Coord) -> Result<ActionAst, String> {
-    if !STEP_ACTIONS.contains(&act) {
-        return Err(format!("Unknown action '{act}'"));
-    }
-    if let Some(dir) = act.strip_prefix("move_") {
-        return parse_direction(dir).map(ActionAst::Move).ok_or_else(|| format!("Unknown action '{act}'"));
-    }
-    if let Some(dir) = act.strip_prefix("kick_") {
-        let d = parse_direction(dir).ok_or_else(|| format!("Unknown action '{act}'"))?;
-        let target = p.step(d).ok_or("kick target is off the map")?;
-        return Ok(ActionAst::Kick(target));
-    }
-    let index = args.get("index").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
-    Ok(match act {
-        "wait" => ActionAst::Wait,
-        "pickup" => ActionAst::PickUp,
-        "pay" => ActionAst::Pay,
-        "pray" => ActionAst::Pray,
-        "sacrifice" => ActionAst::Sacrifice(index),
-        "eat" => ActionAst::Eat(index),
-        "cast" => {
-            let dir = match args.get("direction").and_then(|v| v.as_str()) {
-                Some(d) => parse_direction(d).ok_or_else(|| format!("Unknown direction '{d}'"))?,
-                None => Direction::East,
-            };
-            ActionAst::Cast { spell_index: index, dir }
-        }
-        "ascend" => ActionAst::Ascend,
-        "descend" => ActionAst::Descend,
-        _ => return Err(format!("Unknown action '{act}'")),
-    })
-}
-
 fn call_tool(session: &mut AgentSession, name: &str, args: &Value) -> Result<String, String> {
     match name {
         "netrust_get_observation" => {
@@ -183,15 +172,24 @@ fn call_tool(session: &mut AgentSession, name: &str, args: &Value) -> Result<Str
             Ok(serde_json::to_string_pretty(&obs).unwrap_or_default())
         }
         "netrust_step" => {
-            let act_str = args.get("action").and_then(|a| a.as_str()).ok_or("missing 'action'")?;
-            let p_coord = session.world.arena.actors.get(session.world.player_id).map(|p| p.coord).unwrap_or(Coord::new_unchecked(0, 0));
-            let action = parse_step_action(act_str, args, p_coord)?;
+            let act_str = args
+                .get("action")
+                .and_then(|a| a.as_str())
+                .ok_or("missing 'action'")?;
+            let a = action_args_from_json(args, session.player_coord())?;
+            let action = parse_action(act_str, &a)?;
             let obs = session.step(action);
             Ok(serde_json::to_string_pretty(&obs).unwrap_or_default())
         }
         "netrust_inspect_tile" => {
-            let x = args.get("x").and_then(|v| v.as_u64()).ok_or("missing integer 'x'")? as usize;
-            let y = args.get("y").and_then(|v| v.as_u64()).ok_or("missing integer 'y'")? as usize;
+            let x = args
+                .get("x")
+                .and_then(|v| v.as_u64())
+                .ok_or("missing integer 'x'")? as usize;
+            let y = args
+                .get("y")
+                .and_then(|v| v.as_u64())
+                .ok_or("missing integer 'y'")? as usize;
             let insp = session.inspect_tile(x, y)?;
             Ok(serde_json::to_string_pretty(&insp).unwrap_or_default())
         }
@@ -221,46 +219,19 @@ fn call_tool(session: &mut AgentSession, name: &str, args: &Value) -> Result<Str
         }
         "netrust_reset_with_character" => {
             let seed = args.get("seed").and_then(|v| v.as_u64()).unwrap_or(42);
-            let name = args.get("name").and_then(|v| v.as_str()).unwrap_or("Hero").to_string();
-            let role_str = args.get("role").and_then(|v| v.as_str()).unwrap_or("valkyrie");
-            let race_str = args.get("race").and_then(|v| v.as_str()).unwrap_or("human");
-            let gender_str = args.get("gender").and_then(|v| v.as_str()).unwrap_or("female");
-            let align_str = args.get("alignment").and_then(|v| v.as_str()).unwrap_or("neutral");
-
-            let role_id = match role_str.to_lowercase().as_str() {
-                "wizard" => RoleId::Wizard,
-                "barbarian" => RoleId::Barbarian,
-                "rogue" => RoleId::Rogue,
-                "knight" => RoleId::Knight,
-                "monk" => RoleId::Monk,
-                "healer" => RoleId::Healer,
-                "tourist" => RoleId::Tourist,
-                "archaeologist" => RoleId::Archaeologist,
-                _ => RoleId::Valkyrie,
-            };
-
-            let race_id = match race_str.to_lowercase().as_str() {
-                "elf" => RaceId::Elf,
-                "dwarf" => RaceId::Dwarf,
-                "gnome" => RaceId::Gnome,
-                "orc" => RaceId::Orc,
-                _ => RaceId::Human,
-            };
-
-            let gender = if gender_str.to_lowercase() == "male" { Gender::Male } else { Gender::Female };
-            let alignment = match align_str.to_lowercase().as_str() {
-                "lawful" => Alignment::Lawful,
-                "chaotic" => Alignment::Chaotic,
-                _ => Alignment::Neutral,
-            };
-
-            let config = CharacterConfig {
-                name,
-                role: role_id,
-                race: race_id,
-                gender,
-                alignment,
-            };
+            let name = args
+                .get("name")
+                .and_then(|v| v.as_str())
+                .unwrap_or("Hero")
+                .to_string();
+            let field = |k: &str| args.get(k).and_then(|v| v.as_str());
+            let config = parse_character(
+                Some(name.as_str()),
+                field("role"),
+                field("race"),
+                field("gender"),
+                field("alignment"),
+            )?;
 
             session.world = SimulationWorld::new_with_character(seed, config);
             session.last_events.clear();

@@ -24,7 +24,12 @@ pub fn render_ascii_map(world: &SimulationWorld) -> String {
             if let Some(actor_id) = world.actor_at(c) {
                 if detected_monsters.contains(&actor_id) {
                     if let Some(actor) = world.arena.actors.get(actor_id) {
-                        let ch = actor.name.chars().next().unwrap_or('m').to_ascii_lowercase();
+                        let ch = actor
+                            .name
+                            .chars()
+                            .next()
+                            .unwrap_or('m')
+                            .to_ascii_lowercase();
                         row.push(ch);
                         continue;
                     }

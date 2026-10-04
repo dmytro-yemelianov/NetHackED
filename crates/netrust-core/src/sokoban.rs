@@ -1,6 +1,6 @@
 //! Sokoban puzzle and boulder pushing mechanics.
 //!
-//! Formally verified in Lean 4 (`NetMechanics.Sokoban`).
+//! Modeled in Lean 4 (`NetMechanics.Sokoban`).
 
 use netrust_types::{Coord, Direction, Tile};
 
@@ -32,9 +32,12 @@ pub fn push_boulder(
     };
 
     match target_tile {
-        Tile::Wall { .. } | Tile::Stone | Tile::Door { .. } | Tile::SecretDoor { .. } | Tile::Lava | Tile::Drawbridge { open: false } => {
-            PushOutcome::Blocked
-        }
+        Tile::Wall { .. }
+        | Tile::Stone
+        | Tile::Door { .. }
+        | Tile::SecretDoor { .. }
+        | Tile::Lava
+        | Tile::Drawbridge { open: false } => PushOutcome::Blocked,
         Tile::Pit { filled: false } | Tile::Moat => PushOutcome::FilledPit(next_pos),
         Tile::Room
         | Tile::Corr
@@ -43,9 +46,7 @@ pub fn push_boulder(
         | Tile::BranchStairs { .. }
         | Tile::Altar { .. }
         | Tile::HighAltar { .. }
-        | Tile::Drawbridge { open: true } => {
-            PushOutcome::Moved(next_pos)
-        }
+        | Tile::Drawbridge { open: true } => PushOutcome::Moved(next_pos),
         Tile::Pool { frozen } => {
             if *frozen {
                 PushOutcome::Moved(next_pos)

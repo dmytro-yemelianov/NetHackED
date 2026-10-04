@@ -1,6 +1,6 @@
 //! The Class Quest Branch, Leader qualification, and Nemesis mechanics.
 //!
-//! Formally verified in `NetMechanics.Quest`.
+//! Modeled in Lean 4 (`NetMechanics.Quest`).
 
 use serde::{Deserialize, Serialize};
 
@@ -73,7 +73,10 @@ impl Default for QuestState {
 }
 
 /// Consult the Quest Leader to receive assignment and unlock the portal stairs.
-pub fn consult_leader(state: &mut QuestState, hero: &HeroQuestEligibility) -> Result<(), &'static str> {
+pub fn consult_leader(
+    state: &mut QuestState,
+    hero: &HeroQuestEligibility,
+) -> Result<(), &'static str> {
     match state.progress {
         QuestProgress::Unassigned => {
             if hero.is_hostile_to_leader {
@@ -143,79 +146,204 @@ pub struct RoleQuestConfig {
     pub goal_desc: &'static str,
 }
 
-pub fn get_role_quest_config(role_name: &str) -> RoleQuestConfig {
-    match role_name.to_lowercase().as_str() {
-        "valkyrie" => RoleQuestConfig {
-            role_name: "Valkyrie",
-            leader_name: "The Norn",
-            nemesis_name: "Lord Surtur",
-            artifact_name: "The Orb of Fate",
-            home_desc: "The Temple of the Norn in the Glade of the Valkyries",
-            goal_desc: "The fiery volcano lair of Lord Surtur",
-        },
-        "wizard" => RoleQuestConfig {
-            role_name: "Wizard",
-            leader_name: "Neferet the Green",
-            nemesis_name: "The Dark One",
-            artifact_name: "The Eye of the Aethiopica",
-            home_desc: "The Lonely Tower of the High Wizards",
-            goal_desc: "The Nether Vault of the Dark One",
-        },
-        "barbarian" => RoleQuestConfig {
-            role_name: "Barbarian",
-            leader_name: "Pelias",
-            nemesis_name: "Thoth Amon",
-            artifact_name: "The Heart of Ahriman",
-            home_desc: "The Camp of the Great Warlord Pelias",
-            goal_desc: "The Sunken Citadel of Thoth Amon",
-        },
-        "knight" => RoleQuestConfig {
-            role_name: "Knight",
-            leader_name: "King Arthur",
-            nemesis_name: "Ixoth",
-            artifact_name: "The Magic Mirror of Merlin",
-            home_desc: "Camelot Great Hall of the Round Table",
-            goal_desc: "The Dragon Lair of Ixoth",
-        },
-        "monk" => RoleQuestConfig {
-            role_name: "Monk",
-            leader_name: "Grand Master",
-            nemesis_name: "Master Kaen",
-            artifact_name: "The Eyes of the Overworld",
-            home_desc: "The Monastery of the Silent Order",
-            goal_desc: "The Mountain Caverns of Master Kaen",
-        },
-        "rogue" => RoleQuestConfig {
-            role_name: "Rogue",
-            leader_name: "Master Assassin",
-            nemesis_name: "Master of Thieves",
-            artifact_name: "The Master Key of Thievery",
-            home_desc: "The Shadow Guild of Thieves",
-            goal_desc: "The Vault of the Master of Thieves",
-        },
-        "tourist" => RoleQuestConfig {
-            role_name: "Tourist",
-            leader_name: "Twoflower",
-            nemesis_name: "Master Kaen",
-            artifact_name: "The Platinum Yendorian Express Card",
-            home_desc: "The Tourist Welcome Center",
-            goal_desc: "The Exotic Temple of Doom",
-        },
-        "healer" => RoleQuestConfig {
-            role_name: "Healer",
-            leader_name: "Hippocrates",
-            nemesis_name: "Cyclops",
-            artifact_name: "The Staff of Aesculapius",
-            home_desc: "The Temple of Epidaurus",
-            goal_desc: "The Island Cave of the Cyclops",
-        },
-        _ => RoleQuestConfig {
-            role_name: "Archaeologist",
-            leader_name: "Lord Carnarvon",
-            nemesis_name: "Minion of Huhetotl",
-            artifact_name: "The Orb of Detection",
-            home_desc: "The Royal Archaeological Society",
-            goal_desc: "The Tomb of the Ancient Mayan Gods",
-        },
+/// Quest leader, nemesis, artifact and location names for a role.
+///
+/// C: `role.c` `urole[]` (Arc :45, Bar :86, Hea :168, Kni :208, Mon :248,
+/// Rog :332, Tou :467, Val :507, Wiz :547): leader at +2, nemesis at +4,
+/// artifact at +9, home/goal strings two lines above the leader.
+/// Leader/nemesis/artifact keep the project's display convention (leading
+/// "The" for Norn / Dark One / artifacts) so they equal the BESTIARY and item
+/// names. Matching is case-insensitive. Returns `None` for roles NetRust has
+/// no quest data for (previously a silent Archaeologist fallback).
+pub fn get_role_quest_config(role_name: &str) -> Option<RoleQuestConfig> {
+    let (role, leader, nemesis, artifact, home, goal) = match role_name.to_lowercase().as_str() {
+        "valkyrie" => (
+            "Valkyrie",
+            "The Norn",
+            "Lord Surtur",
+            "The Orb of Fate",
+            "the Shrine of Destiny",
+            "the cave of Surtur",
+        ),
+        "wizard" => (
+            "Wizard",
+            "Neferet the Green",
+            "The Dark One",
+            "The Eye of the Aethiopica",
+            "the Lonely Tower",
+            "the Tower of Darkness",
+        ),
+        "barbarian" => (
+            "Barbarian",
+            "Pelias",
+            "Thoth Amon",
+            "The Heart of Ahriman",
+            "the Camp of the Duali Tribe",
+            "the Duali Oasis",
+        ),
+        "knight" => (
+            "Knight",
+            "King Arthur",
+            "Ixoth",
+            "The Magic Mirror of Merlin",
+            "Camelot Castle",
+            "the Isle of Glass",
+        ),
+        "monk" => (
+            "Monk",
+            "Grand Master",
+            "Master Kaen",
+            "The Eyes of the Overworld",
+            "the Monastery of Chan-Sune",
+            "the Monastery of the Earth-Lord",
+        ),
+        "rogue" => (
+            "Rogue",
+            "Master of Thieves",
+            "Master Assassin",
+            "The Master Key of Thievery",
+            "the Thieves' Guild Hall",
+            "the Assassins' Guild Hall",
+        ),
+        "tourist" => (
+            "Tourist",
+            "Twoflower",
+            "Master of Thieves",
+            "The Platinum Yendorian Express Card",
+            "Ankh-Morpork",
+            "the Thieves' Guild Hall",
+        ),
+        "healer" => (
+            "Healer",
+            "Hippocrates",
+            "Cyclops",
+            "The Staff of Aesculapius",
+            "the Temple of Epidaurus",
+            "the Temple of Coeus",
+        ),
+        "archaeologist" => (
+            "Archaeologist",
+            "Lord Carnarvon",
+            "Minion of Huhetotl",
+            "The Orb of Detection",
+            "the College of Archeology",
+            "the Tomb of the Toltec Kings",
+        ),
+        _ => return None,
+    };
+    Some(RoleQuestConfig {
+        role_name: role,
+        leader_name: leader,
+        nemesis_name: nemesis,
+        artifact_name: artifact,
+        home_desc: home,
+        goal_desc: goal,
+    })
+}
+
+/// Quest config for `role_name`, falling back to the Archaeologist quest for
+/// roles without quest data (documented default; keeps quest levels playable).
+pub fn get_role_quest_config_or_default(role_name: &str) -> RoleQuestConfig {
+    get_role_quest_config(role_name)
+        .or_else(|| get_role_quest_config("archaeologist"))
+        .expect("archaeologist quest data exists")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use proptest::prelude::*;
+
+    /// (role, leader, nemesis, artifact) written from role.c urole table (C ref §15).
+    const C_TABLE: [(&str, &str, &str, &str); 9] = [
+        (
+            "Archaeologist",
+            "Lord Carnarvon",
+            "Minion of Huhetotl",
+            "The Orb of Detection",
+        ),
+        ("Barbarian", "Pelias", "Thoth Amon", "The Heart of Ahriman"),
+        (
+            "Healer",
+            "Hippocrates",
+            "Cyclops",
+            "The Staff of Aesculapius",
+        ),
+        (
+            "Knight",
+            "King Arthur",
+            "Ixoth",
+            "The Magic Mirror of Merlin",
+        ),
+        (
+            "Monk",
+            "Grand Master",
+            "Master Kaen",
+            "The Eyes of the Overworld",
+        ),
+        (
+            "Rogue",
+            "Master of Thieves",
+            "Master Assassin",
+            "The Master Key of Thievery",
+        ),
+        (
+            "Tourist",
+            "Twoflower",
+            "Master of Thieves",
+            "The Platinum Yendorian Express Card",
+        ),
+        ("Valkyrie", "The Norn", "Lord Surtur", "The Orb of Fate"),
+        (
+            "Wizard",
+            "Neferet the Green",
+            "The Dark One",
+            "The Eye of the Aethiopica",
+        ),
+    ];
+
+    #[test]
+    fn quest_table_matches_c() {
+        for (role, leader, nemesis, artifact) in C_TABLE {
+            let c = get_role_quest_config(role).expect(role);
+            assert_eq!(c.role_name, role);
+            assert_eq!(c.leader_name, leader, "{role} leader");
+            assert_eq!(c.nemesis_name, nemesis, "{role} nemesis");
+            assert_eq!(c.artifact_name, artifact, "{role} artifact");
+        }
+    }
+
+    #[test]
+    fn unknown_role_is_none() {
+        assert!(get_role_quest_config("Samurai").is_none());
+        assert!(get_role_quest_config("").is_none());
+    }
+
+    #[test]
+    fn home_goal_use_c_location_names() {
+        let r = get_role_quest_config("Rogue").unwrap();
+        assert_eq!(r.home_desc, "the Thieves' Guild Hall");
+        assert_eq!(r.goal_desc, "the Assassins' Guild Hall");
+        let t = get_role_quest_config("Tourist").unwrap();
+        assert_eq!(t.home_desc, "Ankh-Morpork");
+        assert_eq!(t.goal_desc, "the Thieves' Guild Hall");
+    }
+
+    proptest! {
+        /// Lookup is case-insensitive and agrees with the C table for any casing;
+        /// arbitrary non-role strings yield None.
+        #[test]
+        fn prop_lookup_matches_c_table(idx in 0usize..9, mask in any::<u16>(), junk in "[a-z]{0,12}") {
+            let (role, leader, nemesis, artifact) = C_TABLE[idx];
+            let cased: String = role
+                .chars()
+                .enumerate()
+                .map(|(i, ch)| if mask >> (i % 16) & 1 == 1 { ch.to_ascii_uppercase() } else { ch.to_ascii_lowercase() })
+                .collect();
+            let c = get_role_quest_config(&cased).unwrap();
+            prop_assert_eq!((c.role_name, c.leader_name, c.nemesis_name, c.artifact_name), (role, leader, nemesis, artifact));
+            let is_role = C_TABLE.iter().any(|r| r.0.eq_ignore_ascii_case(&junk));
+            prop_assert_eq!(get_role_quest_config(&junk).is_some(), is_role);
+        }
     }
 }

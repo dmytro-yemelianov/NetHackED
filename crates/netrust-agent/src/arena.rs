@@ -50,14 +50,23 @@ impl AgentPolicy for RandomPolicy {
         if world.player_nutrition < 150 {
             let carried = world.arena.items_carried_by(world.player_id);
             if let Some((idx, _)) = carried.iter().enumerate().find(|(_, &iid)| {
-                world.arena.items.get(iid).map(|it| it.class == ItemClass::Food).unwrap_or(false)
+                world
+                    .arena
+                    .items
+                    .get(iid)
+                    .map(|it| it.class == ItemClass::Food)
+                    .unwrap_or(false)
             }) {
                 return ActionAst::Eat(idx);
             }
         }
 
         // Descend if on stairs down (50% chance)
-        if matches!(world.level.get_tile(player.coord), Tile::Stairs { up: false }) && self.rng.gen_bool(0.5) {
+        if matches!(
+            world.level.get_tile(player.coord),
+            Tile::Stairs { up: false }
+        ) && self.rng.gen_bool(0.5)
+        {
             return ActionAst::Descend;
         }
 
@@ -78,7 +87,13 @@ impl AgentPolicy for RandomPolicy {
             if let Some(next) = player.coord.step(dir) {
                 let tile = world.level.get_tile(next);
                 if tile.is_passable() || matches!(tile, Tile::Door { .. }) {
-                    if matches!(tile, Tile::Door { state: DoorState::Closed, .. }) {
+                    if matches!(
+                        tile,
+                        Tile::Door {
+                            state: DoorState::Closed,
+                            ..
+                        }
+                    ) {
                         return ActionAst::OpenDoor(next);
                     }
                     return ActionAst::Move(dir);
@@ -122,7 +137,12 @@ impl AgentPolicy for SurvivalPolicy {
         if player.hp * 10 < player.max_hp * 4 {
             // Check for potion of healing
             if let Some((idx, _)) = carried.iter().enumerate().find(|(_, &iid)| {
-                world.arena.items.get(iid).map(|it| it.class == ItemClass::Potion).unwrap_or(false)
+                world
+                    .arena
+                    .items
+                    .get(iid)
+                    .map(|it| it.class == ItemClass::Potion)
+                    .unwrap_or(false)
             }) {
                 return ActionAst::Quaff(idx);
             }
@@ -132,7 +152,10 @@ impl AgentPolicy for SurvivalPolicy {
                 *s == SpellKind::CureLightWounds || *s == SpellKind::ExtraHealing
             }) {
                 if world.player_pw >= 5 {
-                    return ActionAst::Cast { spell_index: idx, dir: Direction::None };
+                    return ActionAst::Cast {
+                        spell_index: idx,
+                        dir: Direction::None,
+                    };
                 }
             }
         }
@@ -140,7 +163,12 @@ impl AgentPolicy for SurvivalPolicy {
         // 2. Nutrition management: eat if hungry
         if world.player_nutrition < 300 {
             if let Some((idx, _)) = carried.iter().enumerate().find(|(_, &iid)| {
-                world.arena.items.get(iid).map(|it| it.class == ItemClass::Food).unwrap_or(false)
+                world
+                    .arena
+                    .items
+                    .get(iid)
+                    .map(|it| it.class == ItemClass::Food)
+                    .unwrap_or(false)
             }) {
                 return ActionAst::Eat(idx);
             }
@@ -152,9 +180,17 @@ impl AgentPolicy for SurvivalPolicy {
                 if let Some(target_id) = world.actor_at(adj) {
                     if target_id != world.player_id {
                         // If spellcaster has offensive spell and mana, cast Force Bolt
-                        if let Some((idx, _)) = world.known_spells.iter().enumerate().find(|(_, (s, _))| *s == SpellKind::ForceBolt) {
+                        if let Some((idx, _)) = world
+                            .known_spells
+                            .iter()
+                            .enumerate()
+                            .find(|(_, (s, _))| *s == SpellKind::ForceBolt)
+                        {
                             if world.player_pw >= 7 {
-                                return ActionAst::Cast { spell_index: idx, dir };
+                                return ActionAst::Cast {
+                                    spell_index: idx,
+                                    dir,
+                                };
                             }
                         }
                         return ActionAst::Move(dir);
@@ -169,7 +205,10 @@ impl AgentPolicy for SurvivalPolicy {
         }
 
         // 5. If standing on stairs down, descend
-        if matches!(world.level.get_tile(player.coord), Tile::Stairs { up: false }) {
+        if matches!(
+            world.level.get_tile(player.coord),
+            Tile::Stairs { up: false }
+        ) {
             return ActionAst::Descend;
         }
 
@@ -182,13 +221,28 @@ impl AgentPolicy for SurvivalPolicy {
 
         if let Some(next) = field.steepest_descent(player.coord) {
             let t = world.level.get_tile(next);
-            if matches!(t, Tile::Door { state: DoorState::Closed, .. }) {
+            if matches!(
+                t,
+                Tile::Door {
+                    state: DoorState::Closed,
+                    ..
+                }
+            ) {
                 return ActionAst::OpenDoor(next);
             }
-            if matches!(t, Tile::Door { state: DoorState::Locked, .. }) {
+            if matches!(
+                t,
+                Tile::Door {
+                    state: DoorState::Locked,
+                    ..
+                }
+            ) {
                 return ActionAst::Kick(next);
             }
-            if let Some(dir) = Direction::all_compass().into_iter().find(|&d| player.coord.step(d) == Some(next)) {
+            if let Some(dir) = Direction::all_compass()
+                .into_iter()
+                .find(|&d| player.coord.step(d) == Some(next))
+            {
                 return ActionAst::Move(dir);
             }
         }
@@ -229,7 +283,12 @@ impl AgentPolicy for SpeedrunPolicy {
         // Emergency heal if HP < 30%
         if player.hp * 10 < player.max_hp * 3 {
             if let Some((idx, _)) = carried.iter().enumerate().find(|(_, &iid)| {
-                world.arena.items.get(iid).map(|it| it.class == ItemClass::Potion).unwrap_or(false)
+                world
+                    .arena
+                    .items
+                    .get(iid)
+                    .map(|it| it.class == ItemClass::Potion)
+                    .unwrap_or(false)
             }) {
                 return ActionAst::Quaff(idx);
             }
@@ -237,7 +296,10 @@ impl AgentPolicy for SpeedrunPolicy {
                 *s == SpellKind::CureLightWounds || *s == SpellKind::ExtraHealing
             }) {
                 if world.player_pw >= 5 {
-                    return ActionAst::Cast { spell_index: idx, dir: Direction::None };
+                    return ActionAst::Cast {
+                        spell_index: idx,
+                        dir: Direction::None,
+                    };
                 }
             }
         }
@@ -245,7 +307,12 @@ impl AgentPolicy for SpeedrunPolicy {
         // Eat if hungry
         if world.player_nutrition < 200 {
             if let Some((idx, _)) = carried.iter().enumerate().find(|(_, &iid)| {
-                world.arena.items.get(iid).map(|it| it.class == ItemClass::Food).unwrap_or(false)
+                world
+                    .arena
+                    .items
+                    .get(iid)
+                    .map(|it| it.class == ItemClass::Food)
+                    .unwrap_or(false)
             }) {
                 return ActionAst::Eat(idx);
             }
@@ -253,7 +320,11 @@ impl AgentPolicy for SpeedrunPolicy {
 
         // Check if player already holds the Amulet of Yendor
         let has_amulet = carried.iter().any(|&iid| {
-            world.arena.items.get(iid).is_some_and(netrust_sim::is_real_amulet)
+            world
+                .arena
+                .items
+                .get(iid)
+                .is_some_and(netrust_sim::is_real_amulet)
         });
 
         // Determine destination target coordinate
@@ -302,10 +373,21 @@ impl AgentPolicy for SpeedrunPolicy {
             // If monster occupies next coordinate, attack it or cast offensive spell
             if let Some(target_id) = world.actor_at(next) {
                 if target_id != world.player_id {
-                    let dir = Direction::all_compass().into_iter().find(|&d| player.coord.step(d) == Some(next)).unwrap_or(Direction::None);
-                    if let Some((idx, _)) = world.known_spells.iter().enumerate().find(|(_, (s, _))| *s == SpellKind::ForceBolt) {
+                    let dir = Direction::all_compass()
+                        .into_iter()
+                        .find(|&d| player.coord.step(d) == Some(next))
+                        .unwrap_or(Direction::None);
+                    if let Some((idx, _)) = world
+                        .known_spells
+                        .iter()
+                        .enumerate()
+                        .find(|(_, (s, _))| *s == SpellKind::ForceBolt)
+                    {
                         if world.player_pw >= 7 {
-                            return ActionAst::Cast { spell_index: idx, dir };
+                            return ActionAst::Cast {
+                                spell_index: idx,
+                                dir,
+                            };
                         }
                     }
                     return ActionAst::Move(dir);
@@ -313,13 +395,28 @@ impl AgentPolicy for SpeedrunPolicy {
             }
 
             let t = world.level.get_tile(next);
-            if matches!(t, Tile::Door { state: DoorState::Closed, .. }) {
+            if matches!(
+                t,
+                Tile::Door {
+                    state: DoorState::Closed,
+                    ..
+                }
+            ) {
                 return ActionAst::OpenDoor(next);
             }
-            if matches!(t, Tile::Door { state: DoorState::Locked, .. }) {
+            if matches!(
+                t,
+                Tile::Door {
+                    state: DoorState::Locked,
+                    ..
+                }
+            ) {
                 return ActionAst::Kick(next);
             }
-            if let Some(dir) = Direction::all_compass().into_iter().find(|&d| player.coord.step(d) == Some(next)) {
+            if let Some(dir) = Direction::all_compass()
+                .into_iter()
+                .find(|&d| player.coord.step(d) == Some(next))
+            {
                 return ActionAst::Move(dir);
             }
         }
@@ -393,7 +490,12 @@ impl AgentPolicy for PetTesterTacticalPolicy {
         if player.hp * 100 < player.max_hp * 35 && adj_hostile_dir.is_some() {
             // If holding healing potion, quaff first
             if let Some((idx, _)) = carried.iter().enumerate().find(|(_, &iid)| {
-                world.arena.items.get(iid).map(|it| it.class == ItemClass::Potion).unwrap_or(false)
+                world
+                    .arena
+                    .items
+                    .get(iid)
+                    .map(|it| it.class == ItemClass::Potion)
+                    .unwrap_or(false)
             }) {
                 return ActionAst::Quaff(idx);
             }
@@ -415,7 +517,12 @@ impl AgentPolicy for PetTesterTacticalPolicy {
         // 3. Nutrition management: eat if hungry (< 300)
         if world.player_nutrition < 300 {
             if let Some((idx, _)) = carried.iter().enumerate().find(|(_, &iid)| {
-                world.arena.items.get(iid).map(|it| it.class == ItemClass::Food).unwrap_or(false)
+                world
+                    .arena
+                    .items
+                    .get(iid)
+                    .map(|it| it.class == ItemClass::Food)
+                    .unwrap_or(false)
             }) {
                 return ActionAst::Eat(idx);
             }
@@ -424,21 +531,33 @@ impl AgentPolicy for PetTesterTacticalPolicy {
         // 4. Dynamic Lighting: if in dark room, light lamp
         if world.level.is_dark_at(player.coord) {
             if let Some((idx, _)) = carried.iter().enumerate().find(|(_, &iid)| {
-                world.arena.items.get(iid).map(|it| {
-                    (it.name.contains("lamp") || it.name.contains("lantern") || it.name.contains("candle")) && it.enchantment <= 0
-                }).unwrap_or(false)
+                world
+                    .arena
+                    .items
+                    .get(iid)
+                    .map(|it| {
+                        (it.name.contains("lamp")
+                            || it.name.contains("lantern")
+                            || it.name.contains("candle"))
+                            && it.enchantment <= 0
+                    })
+                    .unwrap_or(false)
             }) {
                 return ActionAst::Apply(idx);
             }
         }
 
         // 5. Minetown Temple Donation: if near priest and have 400+ gold and protection < 9
-        if world.player_gold >= 400 && world.divine_protection < 9 {
+        // Beyond the soft cap each purchase only succeeds with chance 1/protection.
+        if world.player_gold >= 400 && world.divine_protection < netrust_core::PROTECTION_SOFT_CAP {
             let priest_near = world.arena.actors.values().any(|a| {
-                !a.is_dead && a.name.to_lowercase().contains("priest") && a.coord.chebyshev_distance(player.coord) <= 6
+                !a.is_dead
+                    && a.name.to_lowercase().contains("priest")
+                    && a.coord.chebyshev_distance(player.coord) <= 6
             });
             if priest_near {
-                return ActionAst::Donate(400);
+                // 0 = the priest's suggested protection amount (priest.c:645).
+                return ActionAst::Donate(0);
             }
         }
 
@@ -449,11 +568,17 @@ impl AgentPolicy for PetTesterTacticalPolicy {
             if self.pet_tested_cursed.contains(&player.coord) {
                 // Ignore cursed items!
             } else {
-                let pet_opt = world.arena.actors.values().find(|a| !a.is_dead && a.is_tame);
+                let pet_opt = world
+                    .arena
+                    .actors
+                    .values()
+                    .find(|a| !a.is_dead && a.is_tame);
                 if let Some(pet) = pet_opt {
                     if pet.coord == player.coord || self.pet_tested_safe.contains(&player.coord) {
                         return ActionAst::PickUp;
-                    } else if pet.coord.chebyshev_distance(player.coord) <= 2 && !self.pet_tested_safe.contains(&player.coord) {
+                    } else if pet.coord.chebyshev_distance(player.coord) <= 2
+                        && !self.pet_tested_safe.contains(&player.coord)
+                    {
                         self.pet_tested_safe.insert(player.coord);
                         return ActionAst::PickUp;
                     }
@@ -464,16 +589,27 @@ impl AgentPolicy for PetTesterTacticalPolicy {
 
         // 7. Tactical Combat: attack adjacent hostiles
         if let Some((dir, _)) = adj_hostile_dir {
-            if let Some((idx, _)) = world.known_spells.iter().enumerate().find(|(_, (s, _))| *s == SpellKind::ForceBolt) {
+            if let Some((idx, _)) = world
+                .known_spells
+                .iter()
+                .enumerate()
+                .find(|(_, (s, _))| *s == SpellKind::ForceBolt)
+            {
                 if world.player_pw >= 7 {
-                    return ActionAst::Cast { spell_index: idx, dir };
+                    return ActionAst::Cast {
+                        spell_index: idx,
+                        dir,
+                    };
                 }
             }
             return ActionAst::Move(dir);
         }
 
         // 8. Stairs Down: descend
-        if matches!(world.level.get_tile(player.coord), Tile::Stairs { up: false }) {
+        if matches!(
+            world.level.get_tile(player.coord),
+            Tile::Stairs { up: false }
+        ) {
             return ActionAst::Descend;
         }
 
@@ -486,13 +622,28 @@ impl AgentPolicy for PetTesterTacticalPolicy {
 
         if let Some(next) = field.steepest_descent(player.coord) {
             let t = world.level.get_tile(next);
-            if matches!(t, Tile::Door { state: DoorState::Closed, .. }) {
+            if matches!(
+                t,
+                Tile::Door {
+                    state: DoorState::Closed,
+                    ..
+                }
+            ) {
                 return ActionAst::OpenDoor(next);
             }
-            if matches!(t, Tile::Door { state: DoorState::Locked, .. }) {
+            if matches!(
+                t,
+                Tile::Door {
+                    state: DoorState::Locked,
+                    ..
+                }
+            ) {
                 return ActionAst::Kick(next);
             }
-            if let Some(dir) = Direction::all_compass().into_iter().find(|&d| player.coord.step(d) == Some(next)) {
+            if let Some(dir) = Direction::all_compass()
+                .into_iter()
+                .find(|&d| player.coord.step(d) == Some(next))
+            {
                 return ActionAst::Move(dir);
             }
         }
@@ -587,7 +738,8 @@ pub fn run_single_game<P: AgentPolicy>(
         let obs = crate::AgentSession {
             world: world.clone(),
             last_events: Vec::new(),
-        }.get_observation();
+        }
+        .get_observation();
 
         let action = policy.decide_action(&obs, &world);
 
@@ -605,7 +757,11 @@ pub fn run_single_game<P: AgentPolicy>(
                     victory = true;
                     end_reason = "Ascended with the Amulet of Yendor!".into();
                 }
-                GameEvent::AttackLanded { lethal: true, attacker, .. } => {
+                GameEvent::AttackLanded {
+                    lethal: true,
+                    attacker,
+                    ..
+                } => {
                     if *attacker == world.player_id {
                         monsters_slain += 1;
                     }
@@ -622,7 +778,10 @@ pub fn run_single_game<P: AgentPolicy>(
         }
     }
 
-    let (final_hp, max_hp) = world.arena.actors.get(world.player_id)
+    let (final_hp, max_hp) = world
+        .arena
+        .actors
+        .get(world.player_id)
         .map(|p| (p.hp, p.max_hp))
         .unwrap_or((0, 0));
 
@@ -704,7 +863,8 @@ pub fn run_game_with_trajectory<P: AgentPolicy>(
         let obs = crate::AgentSession {
             world: world.clone(),
             last_events: Vec::new(),
-        }.get_observation();
+        }
+        .get_observation();
 
         let action = policy.decide_action(&obs, &world);
 
@@ -714,7 +874,7 @@ pub fn run_game_with_trajectory<P: AgentPolicy>(
             _ => {}
         }
 
-        let action_str = format!("{:?}", action);
+        let action_str = format!("{action:?}");
         let events = world.step_player_action(action);
 
         let mut log_msgs = Vec::new();
@@ -724,7 +884,11 @@ pub fn run_game_with_trajectory<P: AgentPolicy>(
                     victory = true;
                     end_reason = "Ascended with the Amulet of Yendor!".into();
                 }
-                GameEvent::AttackLanded { lethal: true, attacker, .. } => {
+                GameEvent::AttackLanded {
+                    lethal: true,
+                    attacker,
+                    ..
+                } => {
                     if *attacker == world.player_id {
                         monsters_slain += 1;
                     }
@@ -754,7 +918,10 @@ pub fn run_game_with_trajectory<P: AgentPolicy>(
         }
     }
 
-    let (final_hp, max_hp) = world.arena.actors.get(world.player_id)
+    let (final_hp, max_hp) = world
+        .arena
+        .actors
+        .get(world.player_id)
         .map(|p| (p.hp, p.max_hp))
         .unwrap_or((0, 0));
 
@@ -792,6 +959,50 @@ pub fn run_game_with_trajectory<P: AgentPolicy>(
     (run_res, recording)
 }
 
+/// Runs every built-in policy for one seed across the given roles.
+pub fn run_seed_games(seed: u64, roles: &[RoleId], max_turns: u64) -> Vec<RunResult> {
+    let mut results = Vec::new();
+    for &role in roles {
+        let config = CharacterConfig {
+            name: format!("{role:?}"),
+            role,
+            race: netrust_data::roles::RaceId::Human,
+            gender: netrust_data::roles::Gender::Female,
+            alignment: netrust_data::roles::get_role(role).default_alignment,
+        };
+
+        // 1. Random policy
+        results.push(run_single_game(
+            RandomPolicy::new(seed),
+            seed,
+            config.clone(),
+            max_turns,
+        ));
+        // 2. Survival policy
+        results.push(run_single_game(
+            SurvivalPolicy::new(),
+            seed,
+            config.clone(),
+            max_turns,
+        ));
+        // 3. Speedrunner policy
+        results.push(run_single_game(
+            SpeedrunPolicy::new(),
+            seed,
+            config.clone(),
+            max_turns,
+        ));
+        // 4. PetTester Tactical policy
+        results.push(run_single_game(
+            PetTesterTacticalPolicy::new(),
+            seed,
+            config,
+            max_turns,
+        ));
+    }
+    results
+}
+
 /// Evaluates a collection of policies over multiple seeds and roles.
 pub fn run_evaluation_suite(
     seeds: &[u64],
@@ -799,46 +1010,33 @@ pub fn run_evaluation_suite(
     max_turns: u64,
 ) -> (Vec<RunResult>, ArenaSummary) {
     let mut results = Vec::new();
-
     for &seed in seeds {
-        for &role in roles {
-            let config = CharacterConfig {
-                name: format!("{:?}", role),
-                role,
-                race: netrust_data::roles::RaceId::Human,
-                gender: netrust_data::roles::Gender::Female,
-                alignment: netrust_data::roles::get_role(role).default_alignment,
-            };
-
-            // 1. Random policy
-            let res_random = run_single_game(RandomPolicy::new(seed), seed, config.clone(), max_turns);
-            results.push(res_random);
-
-            // 2. Survival policy
-            let res_surv = run_single_game(SurvivalPolicy::new(), seed, config.clone(), max_turns);
-            results.push(res_surv);
-
-            // 3. Speedrunner policy
-            let res_speed = run_single_game(SpeedrunPolicy::new(), seed, config.clone(), max_turns);
-            results.push(res_speed);
-
-            // 4. PetTester Tactical policy
-            let res_tactical = run_single_game(PetTesterTacticalPolicy::new(), seed, config, max_turns);
-            results.push(res_tactical);
-        }
+        results.extend(run_seed_games(seed, roles, max_turns));
     }
+    let summary = summarize(&results);
+    (results, summary)
+}
 
+/// Aggregates per-run results into summary statistics.
+pub fn summarize(results: &[RunResult]) -> ArenaSummary {
     // Aggregate summary statistics
     let mut per_policy_map: HashMap<String, Vec<&RunResult>> = HashMap::new();
-    for r in &results {
-        per_policy_map.entry(r.policy_name.clone()).or_default().push(r);
+    for r in results {
+        per_policy_map
+            .entry(r.policy_name.clone())
+            .or_default()
+            .push(r);
     }
 
     let mut per_policy = HashMap::new();
     for (name, runs) in per_policy_map {
         let n = runs.len();
         let victories = runs.iter().filter(|r| r.victory).count();
-        let win_rate_pct = if n > 0 { (victories as f64 / n as f64) * 100.0 } else { 0.0 };
+        let win_rate_pct = if n > 0 {
+            (victories as f64 / n as f64) * 100.0
+        } else {
+            0.0
+        };
         let mean_turns = runs.iter().map(|r| r.turns as f64).sum::<f64>() / n as f64;
         let mean_max_depth = runs.iter().map(|r| r.max_depth as f64).sum::<f64>() / n as f64;
         let mean_kills = runs.iter().map(|r| r.monsters_slain as f64).sum::<f64>() / n as f64;
@@ -866,14 +1064,12 @@ pub fn run_evaluation_suite(
         0.0
     };
 
-    let summary = ArenaSummary {
+    ArenaSummary {
         total_runs,
         total_victories,
         overall_win_rate_pct,
         per_policy,
-    };
-
-    (results, summary)
+    }
 }
 
 #[cfg(test)]

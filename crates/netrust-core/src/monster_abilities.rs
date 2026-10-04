@@ -31,11 +31,7 @@ pub fn resolve_breath_damage(
 }
 
 /// Resolves gaze attacks (e.g. Medusa, Floating Eye).
-pub fn resolve_gaze(
-    gaze: GazeType,
-    has_reflection: bool,
-    is_blind: bool,
-) -> GazeEffect {
+pub fn resolve_gaze(gaze: GazeType, has_reflection: bool, is_blind: bool) -> GazeEffect {
     if has_reflection {
         GazeEffect::ReflectedToAttacker
     } else if is_blind {
@@ -65,26 +61,53 @@ mod tests {
     #[test]
     fn test_breath_damage_resolution() {
         let none = Intrinsics::empty();
-        assert_eq!(resolve_breath_damage(25, BreathType::Fire, &none), (25, false));
+        assert_eq!(
+            resolve_breath_damage(25, BreathType::Fire, &none),
+            (25, false)
+        );
 
         let fire_res = Intrinsics::empty().with_fire_resistance();
-        assert_eq!(resolve_breath_damage(25, BreathType::Fire, &fire_res), (0, false));
-        assert_eq!(resolve_breath_damage(25, BreathType::Cold, &fire_res), (25, false));
+        assert_eq!(
+            resolve_breath_damage(25, BreathType::Fire, &fire_res),
+            (0, false)
+        );
+        assert_eq!(
+            resolve_breath_damage(25, BreathType::Cold, &fire_res),
+            (25, false)
+        );
 
         let reflect = Intrinsics::empty().with_reflection();
-        assert_eq!(resolve_breath_damage(25, BreathType::Fire, &reflect), (0, true));
-        assert_eq!(resolve_breath_damage(25, BreathType::Cold, &reflect), (0, true));
+        assert_eq!(
+            resolve_breath_damage(25, BreathType::Fire, &reflect),
+            (0, true)
+        );
+        assert_eq!(
+            resolve_breath_damage(25, BreathType::Cold, &reflect),
+            (0, true)
+        );
     }
 
     #[test]
     fn test_gaze_resolution() {
         // Unprotected: afflicted
-        assert_eq!(resolve_gaze(GazeType::Petrification, false, false), GazeEffect::Afflicted(GazeType::Petrification));
+        assert_eq!(
+            resolve_gaze(GazeType::Petrification, false, false),
+            GazeEffect::Afflicted(GazeType::Petrification)
+        );
         // Blindfold: immune
-        assert_eq!(resolve_gaze(GazeType::Paralysis, false, true), GazeEffect::BlindImmune);
+        assert_eq!(
+            resolve_gaze(GazeType::Paralysis, false, true),
+            GazeEffect::BlindImmune
+        );
         // Reflection / Mirror: bounces back to attacker
-        assert_eq!(resolve_gaze(GazeType::Petrification, true, false), GazeEffect::ReflectedToAttacker);
-        assert_eq!(resolve_gaze(GazeType::Petrification, true, true), GazeEffect::ReflectedToAttacker);
+        assert_eq!(
+            resolve_gaze(GazeType::Petrification, true, false),
+            GazeEffect::ReflectedToAttacker
+        );
+        assert_eq!(
+            resolve_gaze(GazeType::Petrification, true, true),
+            GazeEffect::ReflectedToAttacker
+        );
     }
 
     #[test]

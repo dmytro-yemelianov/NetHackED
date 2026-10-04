@@ -11,10 +11,13 @@ python_dir = repo_root / "python"
 target_debug = repo_root / "target" / "debug"
 
 sys.path.insert(0, str(python_dir))
-if (target_debug / "libnetrust_py.dylib").exists() and not (target_debug / "netrust_py.so").exists():
-    import shutil
-    shutil.copy(target_debug / "libnetrust_py.dylib", target_debug / "netrust_py.so")
-sys.path.insert(0, str(target_debug))
+try:
+    import netrust_py  # noqa: F401  (installed, e.g. via `maturin develop`)
+except ImportError:
+    if (target_debug / "libnetrust_py.dylib").exists() and not (target_debug / "netrust_py.so").exists():
+        import shutil
+        shutil.copy(target_debug / "libnetrust_py.dylib", target_debug / "netrust_py.so")
+    sys.path.insert(0, str(target_debug))
 
 from netrust_gym import NetRustGymEnv, ACTION_NAMES
 
@@ -24,24 +27,25 @@ class TestNetRustGymEnv(unittest.TestCase):
 
     def test_reset_shape_and_keys(self):
         obs, info = self.env.reset()
-        self.assertIn("ascii_map", obs)
+        self.assertIn("ascii_map", info)
+        self.assertNotIn("ascii_map", obs)
         self.assertIn("map_glyphs", obs)
         self.assertEqual(len(obs["map_glyphs"]), 80 * 21)
         self.assertIn("player_hp", obs)
         self.assertGreater(obs["player_hp"], 0)
-        self.assertIn("action_mask", obs)
-        self.assertEqual(len(obs["action_mask"]), len(ACTION_NAMES))
-        self.assertIn("conducts", obs)
-        self.assertTrue(obs["conducts"]["pacifist"])
-        self.assertTrue(obs["conducts"]["illiterate"])
-        self.assertTrue(obs["conducts"]["atheist"])
+        self.assertIn("action_mask", info)
+        self.assertEqual(len(info["action_mask"]), len(ACTION_NAMES))
+        self.assertIn("conducts", info)
+        self.assertTrue(info["conducts"]["pacifist"])
+        self.assertTrue(info["conducts"]["illiterate"])
+        self.assertTrue(info["conducts"]["atheist"])
 
     def test_step_execution_and_rewards(self):
         obs, info = self.env.reset()
         init_turn = obs["turn"]
         # Step WAIT
         obs, reward, terminated, truncated, info = self.env.step(8)
-        self.assertEqual(obs["turn"], init_turn + 1)
+        self.assertEqual(int(obs["turn"][0]), int(init_turn[0]) + 1)
         self.assertFalse(terminated)
         self.assertIsInstance(reward, float)
 
@@ -59,6 +63,68 @@ class TestNetRustGymEnv(unittest.TestCase):
         ascii_frame = self.env.render()
         self.assertIsInstance(ascii_frame, str)
         self.assertIn("@", ascii_frame)
+
+    def test_env_checker_passes(self):
+        from gymnasium.utils.env_checker import check_env
+        check_env(NetRustGymEnv(max_steps=20), skip_render_check=True)
+
+    def test_is_real_gymnasium_env(self):
+        import gymnasium
+        self.assertIsInstance(self.env, gymnasium.Env)
+
+    def test_reset_without_seed_varies(self):
+        env = NetRustGymEnv(max_steps=5)
+        seeds = {env.reset()[1]["seed"] for _ in range(5)}
+        self.assertGreater(len(seeds), 1)
+
+    def test_reset_with_seed_is_deterministic(self):
+        env = NetRustGymEnv(max_steps=5)
+        a, _ = env.reset(seed=123)
+        b, _ = env.reset(seed=123)
+        self.assertTrue((a["map_glyphs"] == b["map_glyphs"]).all())
+
+    def test_masked_sampling_respects_mask(self):
+        import numpy as np
+        from netrust_gym.env import sample_masked_action
+        rng = np.random.default_rng(0)
+        mask = [False] * 26
+        mask[3] = mask[23] = True
+        for _ in range(200):
+            self.assertIn(sample_masked_action(mask, rng), (3, 23))
+
+    def test_masked_sampling_all_false_falls_back_to_wait(self):
+        import numpy as np
+        from netrust_gym.env import sample_masked_action
+        self.assertEqual(sample_masked_action([False] * 26, np.random.default_rng(0)), 8)
+
+    def test_explored_count_positive_and_resets(self):
+        import netrust_py
+        raw = netrust_py.NetRustEnv(seed=7, max_steps=10)
+        self.assertGreater(raw.explored_count, 0)
+        raw.reset(seed=7)
+        n = raw.explored_count
+        self.assertGreater(n, 0)
+        # Per-level reset on depth change is covered by the Rust unit test
+        # `exploration_is_keyed_by_depth_and_never_farmed` in crates/netrust-py/src/lib.rs.
+
+    def test_invalid_render_mode_rejected(self):
+        with self.assertRaises(ValueError):
+            NetRustGymEnv(seed=1, render_mode="human")
+        NetRustGymEnv(seed=1, render_mode=None)
+        NetRustGymEnv(seed=1, render_mode="ansi")
+
+    def test_sample_action_never_returns_masked(self):
+        import random
+        from train_reinforce import NeuralPolicy
+
+        class Rigged(random.Random):
+            def random(self):
+                return 0.9999999  # beyond cumulative sum after rounding
+
+        pol = NeuralPolicy.__new__(NeuralPolicy)
+        probs = [0.0, 0.5, 0.4999, 0.0, 0.0]  # sums < r; trailing entries masked
+        self.assertEqual(pol.sample_action(probs, Rigged()), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

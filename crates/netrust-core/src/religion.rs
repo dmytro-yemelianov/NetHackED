@@ -1,6 +1,6 @@
 //! Religion, Divine Favor, Altar Sacrifices, and Water Consecration.
 //!
-//! Formally verified in `NetMechanics.Religion`.
+//! Modeled in Lean 4 (`NetMechanics.Religion`).
 //! Models piety calculus, prayer cooldowns, altar conversions, and holy water consecration.
 
 use netrust_types::{Alignment, Buc, DivineState, SacrificeResult};
@@ -98,7 +98,8 @@ mod tests {
     #[test]
     fn test_sacrifice_coaligned_increases_favor() {
         let state = DivineState::default();
-        let (new_state, res) = resolve_sacrifice(state, Alignment::Neutral, Alignment::Neutral, 250);
+        let (new_state, res) =
+            resolve_sacrifice(state, Alignment::Neutral, Alignment::Neutral, 250);
         assert_eq!(res, SacrificeResult::FavorIncreased(8));
         assert_eq!(new_state.favor, 8);
     }

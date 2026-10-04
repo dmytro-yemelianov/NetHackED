@@ -1,5 +1,6 @@
 [package]
 name = "netrust-tui"
+license = "NGPL"
 version = "0.1.0"
 edition = "2021"
 description = "Terminal User Interface (TUI) for NetRust with classic NetHack ASCII rendering"

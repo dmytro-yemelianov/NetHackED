@@ -1,6 +1,6 @@
 //! Autonomous agent tournament scoring and tactical decision invariants.
 //!
-//! Formally verified in `NetMechanics.Tournament`.
+//! Modeled in Lean 4 (`NetMechanics.Tournament`).
 
 use serde::{Deserialize, Serialize};
 
@@ -67,7 +67,10 @@ mod tests {
             has_unchecked_floor_item: false,
             on_stairs_down: false,
         };
-        assert_eq!(decide_tactical_action(&ctx), TacticalAction::EngraveElbereth);
+        assert_eq!(
+            decide_tactical_action(&ctx),
+            TacticalAction::EngraveElbereth
+        );
     }
 
     #[test]

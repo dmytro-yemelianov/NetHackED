@@ -42,7 +42,7 @@ def main : IO Unit := do
     damageBonus := 0,
     isDead := false
   }
-  let attackRes := resolveMeleeAttack 4 2 goblin 15 8 1
+  let attackRes := resolveMeleeAttack (toHitValue 1 0 1 0 goblin.ac) goblin 9 8 1 2 none
   IO.println s!"[Combat] Melee Attack -> Hit: {attackRes.hit}, Damage: {attackRes.damageDealt}, Target HP: {attackRes.defenderAfter.hp}, Dead: {attackRes.defenderAfter.isDead}"
 
   -- 5. AST & Operational Semantics demonstration
@@ -78,7 +78,7 @@ def main : IO Unit := do
   let heroBase : FormStats := { hp := 20, maxHp := 20, name := "Hero" }
   let vampirePoly : FormStats := { hp := 15, maxHp := 15, name := "Vampire Bat" }
   let polyHero : PolyEntity := { baseForm := heroBase, polyForm := some vampirePoly }
-  let (revertedHero, isDead) := applyPolyDamage polyHero 18
+  let (revertedHero, isDead) := applyPolyDamage polyHero 18 false
   IO.println s!"[Polymorph] Bat (HP=15) took 18 damage -> Reverted to Base: {revertedHero.polyForm.isNone}, Base HP: {revertedHero.baseForm.hp}/20, Dead: {isDead}"
 
   -- 10. Dijkstra Metric Gradient Descent demonstration
@@ -94,9 +94,9 @@ def main : IO Unit := do
   IO.println s!"[DungeonStack] Transitions: surface={depth1.val} -> descend={depth2.val} -> ascend={backTo1.val}"
 
   -- 12. Nutrition & Hunger Clock demonstration
-  let nut0 := 0
+  let nut0 : Int := 0
   let nutFood := nut0 + 400
-  IO.println s!"[Nutrition] Hunger states: 0 nutrition -> {repr (hungerOfNutrition nut0)}, +400 nutrition -> {repr (hungerOfNutrition nutFood)}"
+  IO.println s!"[Nutrition] Hunger states: 0 nutrition -> {repr (hungerOfNutrition nut0 10)}, +400 nutrition -> {repr (hungerOfNutrition nutFood 10)}"
 
   -- 13. Magic Spells & Mana demonstration
   let casterPw := 12
@@ -121,10 +121,12 @@ def main : IO Unit := do
   IO.println s!"[Pet] Hero at {repr heroPos} displaces tame pet at {repr petPos} -> Hero: {repr newH}, Pet: {repr newP}, Action: {repr interaction}"
 
   -- 17. Enchantment, Erosion & Alchemy demonstration
-  let ench0 := enchantItem 2 true false
+  let ench0 := enchantWeapon 2 BUC.Blessed 0 3
   let erosion0 := applyErosion ⟨0, false⟩
   let alchemyRes := mixAlchemy AlchemyPotion.Healing AlchemyPotion.GainEnergy
-  IO.println s!"[Enchantment] +2 sword enchanted with blessed scroll -> {repr ench0}"
+  let ench1 := enchantArmor 4 BUC.Uncursed false false 1 1
+  IO.println s!"[Enchantment] +2 sword enchanted with blessed scroll (rnd(3) = 3) -> {repr ench0}"
+  IO.println s!"[Enchantment] +4 plain armor, uncursed scroll, rn2(4) = 1 -> {repr ench1}"
   IO.println s!"[Erosion] Unproofed armor exposed to acid -> {repr erosion0}"
   IO.println s!"[Alchemy] Dipping healing into gain energy -> {repr alchemyRes}"
 
@@ -150,7 +152,7 @@ def main : IO Unit := do
   let vorpalResult := applyVorpalStrike vorpalDefender true
   let wand0 : WandCharges := { charges := 3, recharges := 0 }
   let wand1 := zapWand wand0
-  let wandRecharged := rechargeWand (wand1.getD wand0) 5
+  let wandRecharged := rechargeWand (wand1.getD wand0) ChargeBuc.Blessed 8 false false 100 1 1
   IO.println s!"[Artifact] Excalibur damage vs demon: {excalDmg}"
   IO.println s!"[Artifact] Vorpal Blade decapitation strike -> Defender HP: {vorpalResult.hp}, Dead: {vorpalResult.isDead}"
   -- 21. Class Quest Branch & Nemesis demonstration

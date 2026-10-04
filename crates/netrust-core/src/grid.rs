@@ -5,7 +5,6 @@
 
 pub use netrust_types::{Alignment, Coord, DoorState, Tile, COLNO, ROWNO};
 
-
 #[cfg(test)]
 mod tests {
     use super::*;

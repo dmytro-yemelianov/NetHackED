@@ -6,12 +6,11 @@
 use crate::buc::{Buc, WaterType};
 use crate::combat::Combatant;
 use crate::energy::NORMAL_SPEED;
-use crate::grid::{Coord, Tile};
 use crate::engraving::EngravingMedium;
+use crate::grid::{Coord, Tile};
 use serde::{Deserialize, Serialize};
 
 pub use netrust_types::{ActorId, Direction, SlotId};
-
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ActionAst {
@@ -23,13 +22,28 @@ pub enum ActionAst {
     PickUp,
     Drop(usize),
     Wield(usize),
-    Dip { item_index: usize, into_water: WaterType },
-    PutInContainer { item_index: usize, container_index: usize },
-    TakeFromContainer { container_index: usize, item_index: usize },
+    Dip {
+        item_index: usize,
+        into_water: WaterType,
+    },
+    PutInContainer {
+        item_index: usize,
+        container_index: usize,
+    },
+    TakeFromContainer {
+        container_index: usize,
+        item_index: usize,
+    },
     Quaff(usize),
     Read(usize),
-    Engrave { text: String, medium: EngravingMedium },
-    ZapWand { dir: Direction, energy: u32 },
+    Engrave {
+        text: String,
+        medium: EngravingMedium,
+    },
+    ZapWand {
+        dir: Direction,
+        energy: u32,
+    },
     Wait,
     Pray,
     Pay,
@@ -37,10 +51,16 @@ pub enum ActionAst {
     Ascend,
     Descend,
     Eat(usize),
-    Cast { spell_index: usize, dir: Direction },
+    Cast {
+        spell_index: usize,
+        dir: Direction,
+    },
     Wish(String),
     Rub(usize),
     PriceCheck(usize),
+    /// Offer gold to a nearby temple priest (C `priest.c:629-723`). `Donate(0)` offers the
+    /// priest's suggested protection amount (`2 * suggested * quan`, `priest.c:645`); any
+    /// offer is capped at the hero's gold (C `bribe`, `minion.c:379-382`).
     Donate(u32),
     Apply(usize),
     Quiver(SlotId),

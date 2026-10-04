@@ -1,5 +1,6 @@
 [package]
 name = "netrust-py"
+license = "NGPL"
 version = "0.1.0"
 edition = "2021"
 description = "PyO3 Python Gym / RL Environment bindings for NetRust"
@@ -15,7 +16,6 @@ netrust-arena = { path = "../netrust-arena" }
 netrust-core = { path = "../netrust-core" }
 netrust-sim = { path = "../netrust-sim" }
 netrust-agent = { path = "../netrust-agent" }
-rand = "0.9"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 

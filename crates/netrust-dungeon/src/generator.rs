@@ -150,4 +150,3 @@ pub fn generate_fort_ludios<R: Rng>(_rng: &mut R) -> DungeonLevel {
 pub fn generate_rogue_level<R: Rng>(rng: &mut R) -> DungeonLevel {
     generate_dungeon_level(rng)
 }
-

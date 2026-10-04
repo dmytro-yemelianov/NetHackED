@@ -5,14 +5,15 @@
 
 pub mod arena;
 pub mod ascii;
+pub mod bones;
+pub mod commands;
+pub mod conducts;
 pub mod jsonrpc;
 pub mod mcp;
-pub mod rpc;
-pub mod stdio;
 pub mod observation;
+pub mod rpc;
 pub mod session;
-pub mod conducts;
-pub mod bones;
+pub mod stdio;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod graphql;
@@ -20,16 +21,17 @@ pub mod graphql;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod netconfig;
 
+pub use arena::{
+    run_evaluation_suite, run_game_with_trajectory, run_seed_games, run_single_game, summarize,
+    AgentPolicy, ArenaSummary, BenchmarkReport, PetTesterTacticalPolicy, PolicyStats, RandomPolicy,
+    RunResult, SpeedrunPolicy, SurvivalPolicy, TrajectoryRecording, TrajectoryStep,
+};
 pub use ascii::render_ascii_map;
+pub use commands::{parse_action, parse_character, ActionArgs, ZAP_ENERGY};
 pub use jsonrpc::{handle_jsonrpc_request, run_jsonrpc_server};
 pub use mcp::{handle_mcp_request, run_mcp_server};
 pub use observation::{ActorObservation, GameObservation, TileInspection};
 pub use session::AgentSession;
-pub use arena::{
-    run_evaluation_suite, run_game_with_trajectory, run_single_game, AgentPolicy, ArenaSummary,
-    BenchmarkReport, PetTesterTacticalPolicy, PolicyStats, RandomPolicy, RunResult, SpeedrunPolicy,
-    SurvivalPolicy, TrajectoryRecording, TrajectoryStep,
-};
 
 #[cfg(test)]
 mod tests {

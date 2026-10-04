@@ -2,10 +2,10 @@
 
 ## 1. Executive Summary & Parity Status
 
-NetRust has migrated and formally verified the core foundation of NetHack:
+NetRust has implemented a core foundation of NetHack mechanics in Rust, with Lean 4 models of selected parts:
 - **Foundational Core**: Turn-based energy loop, coordinate geometry, dungeon branch topology (Main, Mines, Sokoban, Gehennom, Astral, Quest).
 - **Core Systems**: 20-slot inventory, AC/to-hit combat mathematics, prayer & piety, altar sacrifice, shopkeeper economics & anger mechanics, stealth & telepathy, monster AI behaviors, NetHack 3.6+ Sokoban level generation, and Class Quest trials.
-- **Formal Verification**: 100% Lean 4 verified specifications across all implemented mechanics ([NetMechanics.lean](NetMechanics.lean)) with zero `sorry`s.
+- **Lean 4 models**: models of selected mechanics are machine-checked (simplified models; not formally linked to the Rust code) ([NetMechanics.lean](../NetMechanics.lean)) with zero `sorry`s.
 
 To achieve **100% canonical feature parity** with NetHack (3.6 / 3.7 / 5.0 architecture), the remaining missing systems are organized into **4 Milestones** comprising **9 distinct subsystems**.
 
@@ -47,9 +47,9 @@ To achieve **100% canonical feature parity** with NetHack (3.6 / 3.7 / 5.0 archi
   - `netrust-core`: Polymorph reversion logic, shape-fit equipment validation, system-shock RNG checks.
   - `netrust-sim`: Beam and trap interaction, equipment auto-unequip on shape shift, monster stat swap.
 - **Lean 4 Verification Target** (`NetMechanics/Polymorph.lean`):
-  - `theorem polymorph_reversion_preserves_base_stats`: Zero HP in poly form restores base hero HP without instant death unless overflow exceeds base HP.
-  - `theorem poly_item_conservation_or_destruction`: Stack polypiling preserves total item count or strictly reduces it (system shock).
-  - `theorem unique_monsters_immutable_to_poly`: Uniques and artifact items are invariant under polymorph beams.
+  - `theorem poly_reversion_preserves_base_stats`: Zero HP in poly form restores the base form with base HP untouched (overkill discarded, C `rehumanize`) unless Unchanging.
+  - `theorem polypile_preserves_or_reduces_count`: Stack polypiling preserves total item count or strictly reduces it (system shock).
+  - `theorem unique_entities_poly_invariant`: Uniques and artifact items are invariant under polymorph beams.
 
 ### 2.2 Scroll of Genocide & Magic Marker Inscription
 - **Scope & Mechanics**:
@@ -60,7 +60,7 @@ To achieve **100% canonical feature parity** with NetHack (3.6 / 3.7 / 5.0 archi
   - `netrust-core`: Spawn filtration predicate: `is_genocided(monster_id) -> bool`. Ink calculation equations.
   - `netrust-sim`: `Action::Read` handling genocide wipes, `Action::Write` invocation.
 - **Lean 4 Verification Target** (`NetMechanics/Genocide.lean`):
-  - `theorem genocided_monster_never_spawns`: $\forall m, \text{is\_genocided}(m) \implies \text{can\_spawn}(m) = \text{false}$.
+  - `theorem genocided_species_cannot_spawn`: $\forall m, \text{is\_genocided}(m) \implies \text{can\_spawn}(m) = \text{false}$.
   - `theorem genocide_conduct_monotonic`: Reading scroll of genocide permanently disables the `genocideless` conduct flag.
 
 ---
@@ -78,8 +78,8 @@ To achieve **100% canonical feature parity** with NetHack (3.6 / 3.7 / 5.0 archi
   - `netrust-core`: Affliction tick resolution, movement vector scrambling, cure conditions.
   - `netrust-sim`: Per-turn decay in simulation loop; terminal death triggers upon timer expiry.
 - **Lean 4 Verification Target** (`NetMechanics/StatusAffliction.lean`):
-  - `theorem petrification_countdown_bounds`: Petrification timer strictly decrements per turn; non-zero timer reaching 0 triggers stone death unless cured.
-  - `theorem lizard_corpse_cures_petrification`: Consumption of lizard corpse transitions state from `Petrification(n)` to clean.
+  - `theorem petrification_timer_decrements_strictly` (with `petrification_reaches_zero_is_fatal`): Petrification timer strictly decrements per turn; non-zero timer reaching 0 triggers stone death unless cured.
+  - `theorem lizard_cure_restores_unpetrified`: Consumption of lizard corpse transitions state from `Petrification(n)` to clean.
 
 ### 3.2 Ranged Combat, Quivers & Steeds
 - **Scope & Mechanics**:
@@ -89,8 +89,8 @@ To achieve **100% canonical feature parity** with NetHack (3.6 / 3.7 / 5.0 archi
   - `netrust-types`: `QuiverSlot`, `SaddleEquipment`, `MountState`.
   - `netrust-sim`: Projectile trajectory collision detection with floor drop on miss/break; mounted movement delegation.
 - **Lean 4 Verification Target** (`NetMechanics/Ranged.lean`):
-  - `theorem projectile_trajectory_collision`: Projectiles stop at the first non-passable tile or target entity.
-  - `theorem mount_speed_dominance`: When mounted, hero action point cost derives from `min(hero_cost, mount_cost)`.
+  - `theorem projectile_stops_at_obstacle`: Projectiles stop at the first non-passable tile or target entity.
+  - `theorem mount_speed_cost_monotonic` (closest existing; the `min(hero_cost, mount_cost)` dominance statement below is planned): When mounted, hero action point cost derives from `min(hero_cost, mount_cost)`.
 
 ### 3.3 Weapon Skills & Proficiency Mastery (`#enhance`)
 - **Scope & Mechanics**:
@@ -101,7 +101,7 @@ To achieve **100% canonical feature parity** with NetHack (3.6 / 3.7 / 5.0 archi
   - `netrust-types`: `SkillClass`, `ProficiencyLevel`, `SkillTree`.
   - `netrust-core`: Skill progression formula, hit/damage modifier lookup.
 - **Lean 4 Verification Target** (`NetMechanics/Skills.lean`):
-  - `theorem skill_bonuses_monotonic`: Higher skill levels strictly monotonically increase or preserve to-hit and damage bonuses.
+  - `theorem skill_to_hit_monotonic` and `skill_damage_monotonic`: Higher skill levels strictly monotonically increase or preserve to-hit and damage bonuses.
 
 ---
 
@@ -116,8 +116,8 @@ To achieve **100% canonical feature parity** with NetHack (3.6 / 3.7 / 5.0 archi
   - `netrust-dungeon`: Procedural trap distribution per branch depth.
   - `netrust-sim`: Movement trigger handlers, trap discovery actions.
 - **Lean 4 Verification Target** (`NetMechanics/Traps.lean`):
-  - `theorem trap_trigger_invariants`: Stepping on revealed or hidden trap triggers specific effect, revealing hidden traps.
-  - `theorem flying_avoids_floor_traps`: Entities with intrinsic or equipment `Flying` bypass pits, bear traps, and spiked pits.
+  - `theorem non_flying_triggers_floor_trap`, `seen_trap_escape_iff` and `triggering_reveals_hidden_trap`: Stepping on a trap triggers it (a seen trap is escaped iff `rn2(5) = 0`), revealing hidden traps.
+  - `theorem flying_avoids_floor_traps`: Entities with intrinsic or equipment `Flying` bypass C floor traps (arrow, dart, rock, pit, spiked pit, fire, sleeping gas, rust) but not webs.
 
 ### 4.2 Special Boss Branches
 - **Scope & Mechanics**:
@@ -146,8 +146,8 @@ To achieve **100% canonical feature parity** with NetHack (3.6 / 3.7 / 5.0 archi
   - `netrust-core`: Intrinsic roll determination, cannibalism violation check.
   - `netrust-sim`: `Action::Eat` state transitions and decay ticks.
 - **Lean 4 Verification Target** (`NetMechanics/Nutrition.lean`):
-  - `theorem non_decayed_corpse_provides_nutrition`: Ingesting fresh corpse increases hero nutrition by `corpse.nutrition`.
-  - `theorem cannibalism_detects_same_species`: Consuming corpse where `corpse.race == hero.race` unconditionally triggers cannibalism flag.
+  - `theorem fresh_corpse_provides_nutrition`: Ingesting fresh corpse increases hero nutrition by `corpse.nutrition`.
+  - `theorem cannibalism_detects_same_race`: Consuming corpse where `corpse.race == hero.race` unconditionally triggers cannibalism flag.
 
 ### 5.2 Formally Tracked Voluntary Conducts
 - **Scope & Mechanics**:
@@ -185,5 +185,5 @@ Every single phase adheres to NetRust's strict mathematical and software enginee
 1. **Formal Specification**: Lean 4 theorem suite in `NetMechanics/` with zero `sorry`s (`lake build` must exit 0).
 2. **Deterministic Simulation**: All state transitions purely deterministic given `RngSeed`.
 3. **Property Testing**: `proptest` validation ensuring invariant preservation across $10,000$ randomized test iterations.
-4. **WASM & TUI Parity**: Web interface ([web/index.html](web/index.html)) and terminal interface ([crates/netrust-tui](crates/netrust-tui)) reflect all new actions and status indicators.
+4. **WASM & TUI Parity**: Web interface ([web/index.html](../web/index.html)) and terminal interface ([crates/netrust-tui](../crates/netrust-tui)) reflect all new actions and status indicators.
 5. **No Regressions**: Full workspace test suite (`cargo test --workspace`) and demo binary (`netrust-agent demo`) pass cleanly at every commit.

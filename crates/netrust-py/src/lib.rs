@@ -1,12 +1,15 @@
 //! PyO3 Python bindings exposing NetRust as an RL Gymnasium environment.
 
-use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList};
 use netrust_agent::{render_ascii_map, AgentSession, GameObservation};
 use netrust_core::ast::{ActionAst, Direction};
 use netrust_core::engraving::EngravingMedium;
 use netrust_sim::GameEvent;
 use netrust_types::ItemClass;
+use pyo3::prelude::*;
+use pyo3::types::{PyDict, PyList};
+
+/// (observation, reward, terminated, truncated, info) as returned by `step`.
+type StepOutput<'py> = (Bound<'py, PyDict>, f64, bool, bool, Bound<'py, PyDict>);
 
 pub const ACTION_NAMES: [&str; 26] = [
     "MOVE_N",
@@ -37,6 +40,36 @@ pub const ACTION_NAMES: [&str; 26] = [
     "ENGRAVE_ELBERETH",
 ];
 
+/// Tracks tiles seen this episode, keyed by `(depth, Coord)`. Nothing is
+/// forgotten on a depth change (so stair-dancing cannot farm reward); only
+/// `clear` (episode reset) empties it. `len` is the total across all depths.
+#[derive(Default)]
+struct ExplorationTracker {
+    tiles: std::collections::HashSet<(u32, netrust_types::Coord)>,
+}
+
+impl ExplorationTracker {
+    /// Record visible tiles at `depth`; returns how many were newly explored.
+    fn observe(
+        &mut self,
+        depth: u32,
+        visible: impl IntoIterator<Item = netrust_types::Coord>,
+    ) -> usize {
+        let before = self.tiles.len();
+        self.tiles.extend(visible.into_iter().map(|c| (depth, c)));
+        self.tiles.len() - before
+    }
+
+    fn clear(&mut self) {
+        self.tiles.clear();
+    }
+
+    /// Total distinct tiles explored across all depths this episode.
+    fn len(&self) -> usize {
+        self.tiles.len()
+    }
+}
+
 #[pyclass]
 pub struct NetRustEnv {
     session: AgentSession,
@@ -44,7 +77,7 @@ pub struct NetRustEnv {
     step_count: usize,
     max_steps: usize,
     conduct_masking: bool,
-    explored_tiles: std::collections::HashSet<netrust_types::Coord>,
+    explored: ExplorationTracker,
 }
 
 #[pymethods]
@@ -62,7 +95,7 @@ impl NetRustEnv {
             step_count: 0,
             max_steps: max_s,
             conduct_masking: mask,
-            explored_tiles: std::collections::HashSet::new(),
+            explored: ExplorationTracker::default(),
         };
         env.record_exploration();
         env
@@ -71,13 +104,17 @@ impl NetRustEnv {
     /// Reset environment to initial or given seed.
     /// Returns (observation, info)
     #[pyo3(signature = (seed=None))]
-    pub fn reset<'py>(&mut self, py: Python<'py>, seed: Option<u64>) -> PyResult<(Bound<'py, PyDict>, Bound<'py, PyDict>)> {
+    pub fn reset<'py>(
+        &mut self,
+        py: Python<'py>,
+        seed: Option<u64>,
+    ) -> PyResult<(Bound<'py, PyDict>, Bound<'py, PyDict>)> {
         if let Some(s) = seed {
             self.seed = s;
         }
         self.session = AgentSession::new(self.seed);
         self.step_count = 0;
-        self.explored_tiles.clear();
+        self.explored.clear();
         self.record_exploration();
 
         let obs = self.build_observation(py)?;
@@ -87,6 +124,12 @@ impl NetRustEnv {
         info.set_item("depth", self.session.world.depth)?;
 
         Ok((obs, info))
+    }
+
+    /// Number of tiles explored on the current dungeon level.
+    #[getter]
+    pub fn explored_count(&self) -> usize {
+        self.explored.len()
     }
 
     /// Number of discrete actions.
@@ -111,11 +154,7 @@ impl NetRustEnv {
 
     /// Step the environment with a discrete action index (0..25).
     /// Returns: (observation, reward, terminated, truncated, info)
-    pub fn step<'py>(
-        &mut self,
-        py: Python<'py>,
-        action: usize,
-    ) -> PyResult<(Bound<'py, PyDict>, f64, bool, bool, Bound<'py, PyDict>)> {
+    pub fn step<'py>(&mut self, py: Python<'py>, action: usize) -> PyResult<StepOutput<'py>> {
         self.step_count += 1;
         let prev_depth = self.session.world.depth;
         let prev_gold = self.session.world.player_gold;
@@ -123,19 +162,26 @@ impl NetRustEnv {
         let prev_vegan = self.session.world.conducts.vegan;
         let prev_illiterate = self.session.world.conducts.illiterate;
         let prev_atheist = self.session.world.conducts.atheist;
-        let prev_explored_count = self.explored_tiles.len();
 
         let action_ast = self.resolve_action(action);
         let obs_state = self.session.step(action_ast);
         let events = self.session.last_events.clone();
 
-        self.record_exploration();
-        let new_explored = self.explored_tiles.len().saturating_sub(prev_explored_count);
+        let new_explored = self.record_exploration();
 
         // Compute reward
         let mut reward = -0.01; // Step penalty to encourage efficiency
-        let player = self.session.world.arena.actors.get(self.session.world.player_id).cloned();
-        let is_dead = player.as_ref().map(|p| p.is_dead || p.hp == 0).unwrap_or(true);
+        let player = self
+            .session
+            .world
+            .arena
+            .actors
+            .get(self.session.world.player_id)
+            .cloned();
+        let is_dead = player
+            .as_ref()
+            .map(|p| p.is_dead || p.hp == 0)
+            .unwrap_or(true);
         let won = events.iter().any(|e| matches!(e, GameEvent::Victory));
 
         if won {
@@ -220,16 +266,24 @@ impl NetRustEnv {
 }
 
 impl NetRustEnv {
-    fn record_exploration(&mut self) {
+    fn record_exploration(&mut self) -> usize {
         let (visible_tiles, _) = self.session.world.compute_perception();
-        for tile in visible_tiles {
-            self.explored_tiles.insert(tile);
-        }
+        self.explored
+            .observe(self.session.world.depth as u32, visible_tiles)
     }
 
     fn resolve_action(&self, action: usize) -> ActionAst {
-        let carried = self.session.world.arena.items_carried_by(self.session.world.player_id);
-        let player_coord = self.session.world.arena.actors.get(self.session.world.player_id)
+        let carried = self
+            .session
+            .world
+            .arena
+            .items_carried_by(self.session.world.player_id);
+        let player_coord = self
+            .session
+            .world
+            .arena
+            .actors
+            .get(self.session.world.player_id)
             .map(|a| a.coord)
             .unwrap_or(netrust_types::Coord::new_unchecked(0, 0));
 
@@ -249,7 +303,9 @@ impl NetRustEnv {
             12 => ActionAst::Search,
             13 => {
                 // Untrap adjacent trap if found, otherwise self tile
-                let trap_coord = player_coord.neighbors().into_iter()
+                let trap_coord = player_coord
+                    .neighbors()
+                    .into_iter()
                     .find(|c| self.session.world.level.traps.contains_key(c))
                     .unwrap_or(player_coord);
                 ActionAst::Untrap(trap_coord)
@@ -260,13 +316,18 @@ impl NetRustEnv {
             17 => ActionAst::Fire(Direction::West),
             18 => {
                 // Quiver first suitable item (ammo/weapon)
-                let item_to_quiver = carried.iter().find(|&&id| {
-                    if let Some(item) = self.session.world.arena.items.get(id) {
-                        item.class == ItemClass::Weapon || item.name.contains("arrow") || item.name.contains("dart")
-                    } else {
-                        false
-                    }
-                }).copied();
+                let item_to_quiver = carried
+                    .iter()
+                    .find(|&&id| {
+                        if let Some(item) = self.session.world.arena.items.get(id) {
+                            item.class == ItemClass::Weapon
+                                || item.name.contains("arrow")
+                                || item.name.contains("dart")
+                        } else {
+                            false
+                        }
+                    })
+                    .copied();
                 if let Some(id) = item_to_quiver {
                     ActionAst::Quiver(id)
                 } else if let Some(&id) = carried.first() {
@@ -277,32 +338,56 @@ impl NetRustEnv {
             }
             19 => {
                 // Eat first food or corpse
-                let food_idx = carried.iter().position(|&id| {
-                    if let Some(item) = self.session.world.arena.items.get(id) {
-                        item.class == ItemClass::Food || item.corpse_race.is_some() || item.name.contains("corpse")
-                    } else {
-                        false
-                    }
-                }).unwrap_or(0);
+                let food_idx = carried
+                    .iter()
+                    .position(|&id| {
+                        if let Some(item) = self.session.world.arena.items.get(id) {
+                            item.class == ItemClass::Food
+                                || item.corpse_race.is_some()
+                                || item.name.contains("corpse")
+                        } else {
+                            false
+                        }
+                    })
+                    .unwrap_or(0);
                 ActionAst::Eat(food_idx)
             }
             20 => {
                 // Quaff first potion
-                let pot_idx = carried.iter().position(|&id| {
-                    self.session.world.arena.items.get(id).map(|i| i.class == ItemClass::Potion).unwrap_or(false)
-                }).unwrap_or(0);
+                let pot_idx = carried
+                    .iter()
+                    .position(|&id| {
+                        self.session
+                            .world
+                            .arena
+                            .items
+                            .get(id)
+                            .map(|i| i.class == ItemClass::Potion)
+                            .unwrap_or(false)
+                    })
+                    .unwrap_or(0);
                 ActionAst::Quaff(pot_idx)
             }
             21 => {
                 // Read first scroll
-                let scroll_idx = carried.iter().position(|&id| {
-                    self.session.world.arena.items.get(id).map(|i| i.class == ItemClass::Scroll).unwrap_or(false)
-                }).unwrap_or(0);
+                let scroll_idx = carried
+                    .iter()
+                    .position(|&id| {
+                        self.session
+                            .world
+                            .arena
+                            .items
+                            .get(id)
+                            .map(|i| i.class == ItemClass::Scroll)
+                            .unwrap_or(false)
+                    })
+                    .unwrap_or(0);
                 ActionAst::Read(scroll_idx)
             }
-            22 => {
-                ActionAst::ZapWand { dir: Direction::East, energy: 100 }
-            }
+            22 => ActionAst::ZapWand {
+                dir: Direction::East,
+                energy: netrust_agent::commands::ZAP_ENERGY,
+            },
             23 => ActionAst::Pray,
             24 => ActionAst::Pay,
             25 => ActionAst::Engrave {
@@ -318,7 +403,9 @@ impl NetRustEnv {
         let world = &self.session.world;
         let carried = world.arena.items_carried_by(world.player_id);
         let player = world.arena.actors.get(world.player_id);
-        let player_coord = player.map(|p| p.coord).unwrap_or(netrust_types::Coord::new_unchecked(0, 0));
+        let player_coord = player
+            .map(|p| p.coord)
+            .unwrap_or(netrust_types::Coord::new_unchecked(0, 0));
 
         // Descend & Ascend: only valid on stairs
         let on_stairs_down = world.level.stairs_down == player_coord;
@@ -327,20 +414,29 @@ impl NetRustEnv {
         mask[10] = on_stairs_up;
 
         // PickUp: only valid if floor items exist at player coord
-        let floor_has_items = world.arena.items.iter().any(|(_, it)| {
-            it.location == netrust_arena::ItemLocation::Floor(player_coord)
-        });
+        let floor_has_items = world
+            .arena
+            .items
+            .iter()
+            .any(|(_, it)| it.location == netrust_arena::ItemLocation::Floor(player_coord));
         mask[11] = floor_has_items;
 
         // Untrap: only valid if adjacent or current tile has a revealed trap
-        let near_trap = world.level.traps.iter().any(|(&coord, _)| {
-            coord == player_coord || player_coord.is_adjacent(coord)
-        });
+        let near_trap = world
+            .level
+            .traps
+            .iter()
+            .any(|(&coord, _)| coord == player_coord || player_coord.is_adjacent(coord));
         mask[13] = near_trap;
 
         // Quiver & Fire
         let has_quiverable = carried.iter().any(|&id| {
-            world.arena.items.get(id).map(|i| i.class == ItemClass::Weapon || i.name.contains("arrow")).unwrap_or(false)
+            world
+                .arena
+                .items
+                .get(id)
+                .map(|i| i.class == ItemClass::Weapon || i.name.contains("arrow"))
+                .unwrap_or(false)
         });
         mask[18] = has_quiverable;
         let has_quivered = world.hero.quivered_item.is_some();
@@ -351,25 +447,45 @@ impl NetRustEnv {
 
         // Eat: only valid if carried has food
         let has_food = carried.iter().any(|&id| {
-            world.arena.items.get(id).map(|i| i.class == ItemClass::Food || i.corpse_race.is_some()).unwrap_or(false)
+            world
+                .arena
+                .items
+                .get(id)
+                .map(|i| i.class == ItemClass::Food || i.corpse_race.is_some())
+                .unwrap_or(false)
         });
         mask[19] = has_food;
 
         // Quaff: only valid if carried has potion
         let has_potion = carried.iter().any(|&id| {
-            world.arena.items.get(id).map(|i| i.class == ItemClass::Potion).unwrap_or(false)
+            world
+                .arena
+                .items
+                .get(id)
+                .map(|i| i.class == ItemClass::Potion)
+                .unwrap_or(false)
         });
         mask[20] = has_potion;
 
         // Read: only valid if carried has scroll
         let has_scroll = carried.iter().any(|&id| {
-            world.arena.items.get(id).map(|i| i.class == ItemClass::Scroll).unwrap_or(false)
+            world
+                .arena
+                .items
+                .get(id)
+                .map(|i| i.class == ItemClass::Scroll)
+                .unwrap_or(false)
         });
         mask[21] = has_scroll;
 
         // Zap wand: only valid if carried has wand
         let has_wand = carried.iter().any(|&id| {
-            world.arena.items.get(id).map(|i| i.class == ItemClass::Wand).unwrap_or(false)
+            world
+                .arena
+                .items
+                .get(id)
+                .map(|i| i.class == ItemClass::Wand)
+                .unwrap_or(false)
         });
         mask[22] = has_wand;
 
@@ -392,8 +508,14 @@ impl NetRustEnv {
 
                 // Also check moves into adjacent hostile actors
                 let dirs = [
-                    Direction::North, Direction::East, Direction::South, Direction::West,
-                    Direction::NorthEast, Direction::SouthEast, Direction::SouthWest, Direction::NorthWest
+                    Direction::North,
+                    Direction::East,
+                    Direction::South,
+                    Direction::West,
+                    Direction::NorthEast,
+                    Direction::SouthEast,
+                    Direction::SouthWest,
+                    Direction::NorthWest,
                 ];
                 for (i, dir) in dirs.iter().enumerate() {
                     if let Some(target) = player_coord.step(*dir) {
@@ -407,8 +529,15 @@ impl NetRustEnv {
             }
             if c.vegan || c.vegetarian {
                 let only_meat = carried.iter().all(|&id| {
-                    world.arena.items.get(id)
-                        .map(|i| i.corpse_race.is_some() || i.name.contains("corpse") || i.name.contains("meat"))
+                    world
+                        .arena
+                        .items
+                        .get(id)
+                        .map(|i| {
+                            i.corpse_race.is_some()
+                                || i.name.contains("corpse")
+                                || i.name.contains("meat")
+                        })
                         .unwrap_or(true)
                 });
                 if only_meat {
@@ -425,7 +554,11 @@ impl NetRustEnv {
         self.obs_to_dict(py, &obs)
     }
 
-    fn obs_to_dict<'py>(&self, py: Python<'py>, obs: &GameObservation) -> PyResult<Bound<'py, PyDict>> {
+    fn obs_to_dict<'py>(
+        &self,
+        py: Python<'py>,
+        obs: &GameObservation,
+    ) -> PyResult<Bound<'py, PyDict>> {
         let obs_dict = PyDict::new(py);
         let world = &self.session.world;
 
@@ -455,11 +588,32 @@ impl NetRustEnv {
 
         // Afflictions
         let aff_dict = PyDict::new(py);
-        aff_dict.set_item("petrification", world.hero.afflictions.petrification.as_ref().map(|p| p.turns_remaining).unwrap_or(0))?;
-        aff_dict.set_item("sliming", world.hero.afflictions.sliming.as_ref().map(|s| s.turns_remaining).unwrap_or(0))?;
+        aff_dict.set_item(
+            "petrification",
+            world
+                .hero
+                .afflictions
+                .petrification
+                .as_ref()
+                .map(|p| p.turns_remaining)
+                .unwrap_or(0),
+        )?;
+        aff_dict.set_item(
+            "sliming",
+            world
+                .hero
+                .afflictions
+                .sliming
+                .as_ref()
+                .map(|s| s.turns_remaining)
+                .unwrap_or(0),
+        )?;
         aff_dict.set_item("confused", world.hero.afflictions.transient.confused)?;
         aff_dict.set_item("stunned", world.hero.afflictions.transient.stunned)?;
-        aff_dict.set_item("hallucinating", world.hero.afflictions.transient.hallucinating)?;
+        aff_dict.set_item(
+            "hallucinating",
+            world.hero.afflictions.transient.hallucinating,
+        )?;
         aff_dict.set_item("polymorphed", world.hero.polymorph.is_some())?;
         aff_dict.set_item("mounted", world.hero.mount.is_some())?;
         obs_dict.set_item("afflictions", aff_dict)?;
@@ -521,4 +675,33 @@ impl NetRustEnv {
 fn netrust_py(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<NetRustEnv>()?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use netrust_types::Coord;
+
+    fn c(x: i32, y: i32) -> Coord {
+        Coord::new_unchecked(x as _, y as _)
+    }
+
+    #[test]
+    fn exploration_is_keyed_by_depth_and_never_farmed() {
+        let mut t = ExplorationTracker::default();
+        assert_eq!(t.observe(1, [c(1, 1), c(2, 2)]), 2);
+        assert_eq!(t.observe(1, [c(1, 1), c(3, 3)]), 1);
+        assert_eq!(t.len(), 3);
+        // Same coordinates on a new level count as newly explored.
+        assert_eq!(t.observe(2, [c(1, 1), c(2, 2)]), 2);
+        assert_eq!(t.len(), 5);
+        // Stair-dancing back to a visited level does not re-reward.
+        assert_eq!(t.observe(1, [c(1, 1), c(2, 2), c(3, 3)]), 0);
+        assert_eq!(t.observe(2, [c(1, 1)]), 0);
+        assert_eq!(t.len(), 5);
+        // Only an explicit clear (episode reset) forgets everything.
+        t.clear();
+        assert_eq!(t.len(), 0);
+        assert_eq!(t.observe(1, [c(1, 1)]), 1);
+    }
 }

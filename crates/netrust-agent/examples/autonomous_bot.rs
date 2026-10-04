@@ -2,7 +2,7 @@
 //!
 //! Demonstrates how an AI agent, RL model, or autonomous bot connects to NetRust,
 //! perceives structured observations (FOV, tile inspections, visible monsters, logs),
-//! and executes optimal actions in the verified dungeon.
+//! and executes actions in the generated dungeon.
 
 use netrust_agent::AgentSession;
 use netrust_data::roles::{CharacterConfig, Gender, RaceId, RoleId};
@@ -26,8 +26,10 @@ fn main() {
 
     // 2. Initial observation
     let mut obs = session.get_observation();
-    println!("📍 Starting position: ({}, {}) | Turn: {} | HP: {}/{}",
-        obs.player_coord.x, obs.player_coord.y, obs.turn, obs.player_hp, obs.player_max_hp);
+    println!(
+        "📍 Starting position: ({}, {}) | Turn: {} | HP: {}/{}",
+        obs.player_coord.x, obs.player_coord.y, obs.turn, obs.player_hp, obs.player_max_hp
+    );
     println!("\n--- Dungeon Viewport ---");
     println!("{}", obs.ascii_map);
     println!("------------------------\n");
@@ -42,14 +44,16 @@ fn main() {
         Direction::North,
     ];
 
-    for (_step_idx, &dir) in directions.iter().enumerate() {
+    for &dir in directions.iter() {
         println!("Turn {}: Agent deciding next action...", obs.turn);
 
         // Check visible actors
         for actor in &obs.visible_actors {
             if !actor.is_player {
-                println!("  👁️ Monster detected in FOV: {} at ({}, {}) [HP: {}/{}]",
-                    actor.name, actor.coord.x, actor.coord.y, actor.hp, actor.max_hp);
+                println!(
+                    "  👁️ Monster detected in FOV: {} at ({}, {}) [HP: {}/{}]",
+                    actor.name, actor.coord.x, actor.coord.y, actor.hp, actor.max_hp
+                );
             }
         }
 
@@ -66,22 +70,26 @@ fn main() {
         };
 
         if let Ok(inspection) = session.inspect_tile(target_x, target_y) {
-            println!("  🔍 Target Tile ({}, {}): {:?} (passable: {})",
-                target_x, target_y, inspection.tile, inspection.is_passable);
+            println!(
+                "  🔍 Target Tile ({}, {}): {:?} (passable: {})",
+                target_x, target_y, inspection.tile, inspection.is_passable
+            );
         }
 
         // Execute action
         let action = ActionAst::Move(dir);
-        println!("  ⚡ Executing: Move({:?})", dir);
+        println!("  ⚡ Executing: Move({dir:?})");
         obs = session.step(action);
 
         // Process game events / logs
         for event in &obs.last_events {
-            println!("  📜 Event: {:?}", event);
+            println!("  📜 Event: {event:?}");
         }
 
-        println!("  ❤️ Player HP: {}/{} | Position: ({}, {})\n",
-            obs.player_hp, obs.player_max_hp, obs.player_coord.x, obs.player_coord.y);
+        println!(
+            "  ❤️ Player HP: {}/{} | Position: ({}, {})\n",
+            obs.player_hp, obs.player_max_hp, obs.player_coord.x, obs.player_coord.y
+        );
 
         if obs.is_game_over {
             println!("💀 Game over!");

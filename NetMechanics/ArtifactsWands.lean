@@ -84,28 +84,109 @@ inductive RechargeResult where
   | Exploded
 deriving Repr, DecidableEq
 
-/-- Recharging a wand: fails/explodes if over-recharged (> 3 times) -/
-def rechargeWand (w : WandCharges) (addedCharges : Nat) : RechargeResult :=
-  if w.recharges ≥ 3 then
+/-- Scroll BUC for recharging: 0 cursed, 1 uncursed, 2 blessed. -/
+inductive ChargeBuc where
+  | Cursed
+  | Uncursed
+  | Blessed
+deriving Repr, DecidableEq
+
+/-- Recharging a wand with a Scroll of Charging (read.c:737-794).
+    `roll343` is `rn2(343)`, `rn5` the `rn2(5)` of `rn1(5, lim-4)`, `rndRoll`
+    the uncursed `rnd(n)` draw (clamped to `1..n`). The explosion check applies
+    to every BUC: `n > 0 ∧ (wishing ∨ n³ > roll343)` with `n` prior recharges
+    capped at 7. Cursed then strips charges (`stripspe`, read.c:652: a blessed wand, `wandBlessed`, keeps them); otherwise `spe = max (spe+1) amt`
+    and a wishing wand above 3 charges explodes. -/
+def rechargeWand (w : WandCharges) (buc : ChargeBuc) (lim : Nat) (isWishing wandBlessed : Bool)
+    (roll343 rn5 rndRoll : Nat) : RechargeResult :=
+  let n := min w.recharges 7
+  if n > 0 ∧ (isWishing = true ∨ n * n * n > roll343) then
     RechargeResult.Exploded
+  else if buc = ChargeBuc.Cursed then
+    -- read.c:652 stripspe: a blessed wand keeps its charges
+    let kept := if wandBlessed = true then w.charges else 0
+    RechargeResult.Success { charges := kept, recharges := w.recharges + 1 }
   else
-    RechargeResult.Success {
-      charges := w.charges + addedCharges,
-      recharges := w.recharges + 1
-    }
+    let top := if lim ≤ 1 then 1 else (min (max lim 5) 15) - 4 + min rn5 4
+    let amt := if lim ≤ 1 ∨ buc = ChargeBuc.Blessed then top else max 1 (min rndRoll top)
+    let spe := max (w.charges + 1) amt
+    if isWishing = true ∧ spe > 3 then
+      RechargeResult.Exploded
+    else
+      RechargeResult.Success { charges := spe, recharges := w.recharges + 1 }
 
-/-- Theorem: Recharging under limit increases charges without explosion -/
-theorem recharge_safe_below_cap (w : WandCharges) (add : Nat) (h : w.recharges < 3) :
-  ∃ w', rechargeWand w add = RechargeResult.Success w' ∧ w'.charges = w.charges + add := by
-  dsimp [rechargeWand]
-  have h_not : ¬(w.recharges ≥ 3) := by omega
-  rw [if_neg h_not]
-  refine ⟨{ charges := w.charges + add, recharges := w.recharges + 1 }, ⟨rfl, rfl⟩⟩
+/-- Theorem: the first recharge of a non-wishing wand never explodes. -/
+theorem recharge_safe_first (w : WandCharges) (buc : ChargeBuc) (lim roll343 rn5 rndRoll : Nat) (wb : Bool)
+    (h : w.recharges = 0) :
+    ∃ w', rechargeWand w buc lim false wb roll343 rn5 rndRoll = RechargeResult.Success w' := by
+  unfold rechargeWand
+  simp only [h]
+  split <;> simp_all
+  all_goals split <;> simp_all
 
-/-- Theorem: Over-recharging (> 3) triggers explosion -/
-theorem recharge_explodes_at_cap (w : WandCharges) (add : Nat) (h : w.recharges ≥ 3) :
-  rechargeWand w add = RechargeResult.Exploded := by
-  dsimp [rechargeWand]
-  rw [if_pos h]
+/-- Theorem: the explosion check is BUC-independent: a non-wishing wand's recharge
+    explodes (for cursed, or for any BUC since non-wishing never explodes later)
+    iff `n > 0 ∧ n³ > roll` (n = recharges capped at 7). -/
+theorem recharge_explodes_iff (w : WandCharges) (buc : ChargeBuc) (lim roll343 rn5 rndRoll : Nat)
+    (wb : Bool) :
+    rechargeWand w buc lim false wb roll343 rn5 rndRoll = RechargeResult.Exploded ↔
+      (0 < min w.recharges 7 ∧
+        min w.recharges 7 * min w.recharges 7 * min w.recharges 7 > roll343) := by
+  unfold rechargeWand
+  simp only [Bool.false_eq_true, false_or, false_and, if_false]
+  split
+  · simp_all
+  · split <;> simp_all <;> split <;> simp_all
+
+/-- Theorem: with 7 or more prior recharges the wand always explodes for every
+    `rn2(343)` outcome (n³ = 343 > roll), whatever the BUC. -/
+theorem recharge_explodes_at_cap (w : WandCharges) (buc : ChargeBuc)
+    (lim chargeRoll roll343 rndRoll : Nat) (wb : Bool) (h : w.recharges ≥ 7) (hr : roll343 < 343) :
+    rechargeWand w buc lim false wb roll343 chargeRoll rndRoll = RechargeResult.Exploded := by
+  rw [recharge_explodes_iff]
+  have hm : min w.recharges 7 = 7 := by omega
+  rw [hm]
+  omega
+
+/-- Theorem: a wishing wand explodes on any re-recharge (any BUC). -/
+theorem recharge_wishing_explodes (w : WandCharges) (buc : ChargeBuc)
+    (lim roll343 rn5 rndRoll : Nat) (wb : Bool) (h : 0 < w.recharges) :
+    rechargeWand w buc lim true wb roll343 rn5 rndRoll = RechargeResult.Exploded := by
+  have hm : 0 < min w.recharges 7 := by omega
+  simp [rechargeWand, hm]
+
+/-- Theorem: a cursed, surviving recharge of a non-blessed wand leaves it with 0 charges
+    (`stripspe`, read.c:652; a blessed wand keeps its charges, see
+    `recharge_cursed_keeps_blessed`). -/
+theorem recharge_cursed_strips (w : WandCharges) (lim roll343 rn5 rndRoll : Nat) (isW : Bool)
+    (h : rechargeWand w ChargeBuc.Cursed lim isW false roll343 rn5 rndRoll ≠ RechargeResult.Exploded) :
+    rechargeWand w ChargeBuc.Cursed lim isW false roll343 rn5 rndRoll =
+      RechargeResult.Success { charges := 0, recharges := w.recharges + 1 } := by
+  unfold rechargeWand at h ⊢
+  by_cases hc : (0 < min w.recharges 7 ∧ (isW = true ∨ min w.recharges 7 * min w.recharges 7 * min w.recharges 7 > roll343))
+  · simp [hc] at h
+  · simp [hc]
+
+/-- Theorem: a cursed, surviving recharge leaves a blessed wand's charges unchanged
+    (`stripspe` returns early for a blessed wand, read.c:653). -/
+theorem recharge_cursed_keeps_blessed (w : WandCharges) (lim roll343 rn5 rndRoll : Nat)
+    (isW : Bool)
+    (h : rechargeWand w ChargeBuc.Cursed lim isW true roll343 rn5 rndRoll ≠ RechargeResult.Exploded) :
+    rechargeWand w ChargeBuc.Cursed lim isW true roll343 rn5 rndRoll =
+      RechargeResult.Success { charges := w.charges, recharges := w.recharges + 1 } := by
+  unfold rechargeWand at h ⊢
+  by_cases hc : (0 < min w.recharges 7 ∧ (isW = true ∨ min w.recharges 7 * min w.recharges 7 * min w.recharges 7 > roll343))
+  · simp [hc] at h
+  · simp [hc]
+
+/-- Theorem: a blessed non-wishing directional recharge (lim 8) that survives yields
+    `max (spe+1) (4 + rn5)` charges (`rn1(5,4)`, rn5 ≤ 4). -/
+theorem recharge_blessed_amount (w : WandCharges) (roll343 rn5 rndRoll : Nat) (wb : Bool)
+    (h5 : rn5 ≤ 4) (h0 : w.recharges = 0) :
+    rechargeWand w ChargeBuc.Blessed 8 false wb roll343 rn5 rndRoll =
+      RechargeResult.Success { charges := max (w.charges + 1) (4 + rn5), recharges := 1 } := by
+  unfold rechargeWand
+  have : min rn5 4 = rn5 := by omega
+  simp [h0, this]
 
 end NetMechanics

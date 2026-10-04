@@ -19,7 +19,15 @@ fn open_east(sim: &mut SimulationWorld) -> Coord {
 fn arrow_trap_at_one_hp_kills_without_wrapping() {
     let mut sim = SimulationWorld::new_with_seed(5);
     let east = open_east(&mut sim);
-    sim.level.traps.insert(east, TrapRecord { id: 1, trap_type: TrapType::Arrow, state: TrapState::Hidden, coord: east });
+    sim.level.traps.insert(
+        east,
+        TrapRecord {
+            id: 1,
+            trap_type: TrapType::Arrow,
+            state: TrapState::Hidden,
+            coord: east,
+        },
+    );
     sim.arena.actors.get_mut(sim.player_id).unwrap().hp = 1;
     sim.step_player_action(ActionAst::Move(Direction::East));
     let p = sim.arena.actors.get(sim.player_id).unwrap();
@@ -43,10 +51,18 @@ fn damage_player_saturates_and_marks_death() {
 }
 
 fn genocide_scroll(sim: &mut SimulationWorld, buc: Buc) -> usize {
-    let mut scroll = create_item_record(ItemKindId::ScrollOfIdentify, ItemLocation::CarriedBy(sim.player_id), buc);
+    let mut scroll = create_item_record(
+        ItemKindId::ScrollOfIdentify,
+        ItemLocation::CarriedBy(sim.player_id),
+        buc,
+    );
     scroll.name = "scroll of genocide".into();
     let id = sim.arena.spawn_item(scroll);
-    sim.arena.items_carried_by(sim.player_id).iter().position(|&i| i == id).unwrap()
+    sim.arena
+        .items_carried_by(sim.player_id)
+        .iter()
+        .position(|&i| i == id)
+        .unwrap()
 }
 
 #[test]
@@ -55,9 +71,17 @@ fn blessed_genocide_spares_non_lich_actors_and_drops_items() {
     let p = sim.arena.actors.get(sim.player_id).unwrap().coord;
     let c1 = Coord::new(p.x + 2, p.y).unwrap();
     let c2 = Coord::new(p.x + 3, p.y).unwrap();
-    let lich = sim.arena.spawn_actor(create_monster_record(MonsterSpeciesId::Lich, c1));
-    let dog = sim.arena.spawn_actor(create_monster_record(MonsterSpeciesId::LittleDog, c2));
-    let loot = sim.arena.spawn_item(create_item_record(ItemKindId::LongSword, ItemLocation::CarriedBy(lich), Buc::Uncursed));
+    let lich = sim
+        .arena
+        .spawn_actor(create_monster_record(MonsterSpeciesId::Lich, c1));
+    let dog = sim
+        .arena
+        .spawn_actor(create_monster_record(MonsterSpeciesId::LittleDog, c2));
+    let loot = sim.arena.spawn_item(create_item_record(
+        ItemKindId::LongSword,
+        ItemLocation::CarriedBy(lich),
+        Buc::Uncursed,
+    ));
     let before = sim.arena.actors.len();
 
     let idx = genocide_scroll(&mut sim, Buc::Blessed);
@@ -66,18 +90,28 @@ fn blessed_genocide_spares_non_lich_actors_and_drops_items() {
     assert!(!sim.arena.actors.contains_key(lich));
     assert!(sim.arena.actors.contains_key(dog));
     assert_eq!(sim.arena.actors.len(), before - 1);
-    assert_eq!(sim.arena.items.get(loot).unwrap().location, ItemLocation::Floor(c1));
+    assert_eq!(
+        sim.arena.items.get(loot).unwrap().location,
+        ItemLocation::Floor(c1)
+    );
 }
 
 #[test]
 fn uncursed_genocide_hits_bestiary_goblins() {
     let mut sim = SimulationWorld::new_with_seed(78);
     let p = sim.arena.actors.get(sim.player_id).unwrap().coord;
-    let gob = sim.arena.spawn_actor(create_monster_record(MonsterSpeciesId::Goblin, Coord::new(p.x + 2, p.y).unwrap()));
+    let gob = sim.arena.spawn_actor(create_monster_record(
+        MonsterSpeciesId::Goblin,
+        Coord::new(p.x + 2, p.y).unwrap(),
+    ));
     let idx = genocide_scroll(&mut sim, Buc::Uncursed);
     sim.step_player_action(ActionAst::Read(idx));
     assert!(!sim.arena.actors.contains_key(gob));
-    assert!(netrust_core::genocide::is_genocided(&sim.genocide_registry, "goblin", 'o'));
+    assert!(netrust_core::genocide::is_genocided(
+        &sim.genocide_registry,
+        "goblin",
+        'o'
+    ));
 }
 
 #[test]
@@ -100,51 +134,102 @@ fn zap_without_wand_is_free_noop() {
         }
     }
     let energy = sim.scheduler.hero_energy;
-    let ev = sim.step_player_action(ActionAst::ZapWand { dir: Direction::East, energy: 6 });
+    let ev = sim.step_player_action(ActionAst::ZapWand {
+        dir: Direction::East,
+        energy: 6,
+    });
     assert!(ev.iter().any(|e| format!("{e:?}").contains("no wand")));
-    assert!(!ev.iter().any(|e| matches!(e, netrust_sim::GameEvent::BeamPropagated { .. })));
+    assert!(!ev
+        .iter()
+        .any(|e| matches!(e, netrust_sim::GameEvent::BeamPropagated { .. })));
     assert_eq!(sim.scheduler.hero_energy, energy);
 }
 
 #[test]
 fn wish_requires_charged_wand_of_wishing() {
     let mut sim = SimulationWorld::new_with_seed(91);
-    let swords_before = sim.arena.items.values().filter(|it| it.name == "long sword").count();
-    sim.step_player_action(ActionAst::Wish("long sword".into()));
-    assert_eq!(sim.arena.items.values().filter(|it| it.name == "long sword").count(), swords_before);
-
-    sim.arena.spawn_item(create_item_record(ItemKindId::WandOfWishing, ItemLocation::CarriedBy(sim.player_id), Buc::Uncursed));
-    let pcoord = sim.arena.actors.get(sim.player_id).unwrap().coord;
-    let floor_swords = |sim: &SimulationWorld| sim.arena.items.values()
-        .filter(|it| it.name == "long sword" && it.location == ItemLocation::Floor(pcoord))
+    let swords_before = sim
+        .arena
+        .items
+        .values()
+        .filter(|it| it.name == "long sword")
         .count();
+    sim.step_player_action(ActionAst::Wish("long sword".into()));
+    assert_eq!(
+        sim.arena
+            .items
+            .values()
+            .filter(|it| it.name == "long sword")
+            .count(),
+        swords_before
+    );
+
+    sim.arena.spawn_item(create_item_record(
+        ItemKindId::WandOfWishing,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Uncursed,
+    ));
+    let pcoord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+    let floor_swords = |sim: &SimulationWorld| {
+        sim.arena
+            .items
+            .values()
+            .filter(|it| it.name == "long sword" && it.location == ItemLocation::Floor(pcoord))
+            .count()
+    };
     let floor_before = floor_swords(&sim);
     sim.step_player_action(ActionAst::Wish("a blessed +2 long sword".into()));
     assert_eq!(floor_swords(&sim), floor_before + 1);
-    let sword = sim.arena.items.values()
+    let sword = sim
+        .arena
+        .items
+        .values()
         .find(|it| it.name == "long sword" && it.buc == Buc::Blessed && it.enchantment == 2)
         .expect("wish granted");
     assert_eq!(sword.buc, Buc::Blessed);
     assert_eq!(sword.enchantment, 2);
     // Wand had 1 charge: the next wish must not create anything.
-    let dagger_count_before = sim.arena.items.values().filter(|it| it.name == "dagger").count();
+    let dagger_count_before = sim
+        .arena
+        .items
+        .values()
+        .filter(|it| it.name == "dagger")
+        .count();
     sim.step_player_action(ActionAst::Wish("dagger".into()));
-    assert_eq!(sim.arena.items.values().filter(|it| it.name == "dagger").count(), dagger_count_before);
+    assert_eq!(
+        sim.arena
+            .items
+            .values()
+            .filter(|it| it.name == "dagger")
+            .count(),
+        dagger_count_before
+    );
 }
 
 #[test]
 fn wishing_for_the_amulet_gives_imitation() {
     let mut sim = SimulationWorld::new_with_seed(92);
-    sim.arena.spawn_item(create_item_record(ItemKindId::WandOfWishing, ItemLocation::CarriedBy(sim.player_id), Buc::Uncursed));
+    sim.arena.spawn_item(create_item_record(
+        ItemKindId::WandOfWishing,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Uncursed,
+    ));
     sim.step_player_action(ActionAst::Wish("the Amulet of Yendor".into()));
     assert!(!has_item(&sim, "Amulet of Yendor"));
-    assert!(has_item(&sim, "cheap plastic imitation of the Amulet of Yendor"));
+    assert!(has_item(
+        &sim,
+        "cheap plastic imitation of the Amulet of Yendor"
+    ));
 }
 
 #[test]
 fn wish_substring_does_not_match() {
     let mut sim = SimulationWorld::new_with_seed(93);
-    sim.arena.spawn_item(create_item_record(ItemKindId::WandOfWishing, ItemLocation::CarriedBy(sim.player_id), Buc::Uncursed));
+    sim.arena.spawn_item(create_item_record(
+        ItemKindId::WandOfWishing,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Uncursed,
+    ));
     let before = sim.arena.items.len();
     sim.step_player_action(ActionAst::Wish("sword".into()));
     assert_eq!(sim.arena.items.len(), before);
@@ -152,9 +237,17 @@ fn wish_substring_does_not_match() {
 
 #[test]
 fn catalog_wands_start_charged() {
-    let w = create_item_record(ItemKindId::WandOfStriking, ItemLocation::Limbo, Buc::Uncursed);
+    let w = create_item_record(
+        ItemKindId::WandOfStriking,
+        ItemLocation::Limbo,
+        Buc::Uncursed,
+    );
     assert_eq!(w.enchantment, 6);
-    let w = create_item_record(ItemKindId::WandOfWishing, ItemLocation::Limbo, Buc::Uncursed);
+    let w = create_item_record(
+        ItemKindId::WandOfWishing,
+        ItemLocation::Limbo,
+        Buc::Uncursed,
+    );
     assert_eq!(w.enchantment, 1);
     let s = create_item_record(ItemKindId::LongSword, ItemLocation::Limbo, Buc::Uncursed);
     assert_eq!(s.enchantment, 0);
@@ -162,8 +255,14 @@ fn catalog_wands_start_charged() {
 
 #[test]
 fn normalize_wish_strips_articles() {
-    assert_eq!(netrust_sim::normalize_wish_name("  The Amulet of Yendor "), "amulet of yendor");
-    assert_eq!(netrust_sim::normalize_wish_name("an elven mithril-coat"), "elven mithril-coat");
+    assert_eq!(
+        netrust_sim::normalize_wish_name("  The Amulet of Yendor "),
+        "amulet of yendor"
+    );
+    assert_eq!(
+        netrust_sim::normalize_wish_name("an elven mithril-coat"),
+        "elven mithril-coat"
+    );
 }
 
 #[test]
@@ -176,7 +275,9 @@ fn melee_outcomes_vary_with_seed() {
         let mut mon = create_monster_record(MonsterSpeciesId::Goblin, east);
         mon.hp = 1000;
         mon.max_hp = 1000;
-        mon.ac = 4;
+        // C to-hit: tmp = 1 + AC 13 + lvl 1 + long sword unskilled -4 = 11, so a
+        // d20 of 1..=10 hits (~50%): both misses and varied damage occur.
+        mon.ac = 13;
         let mid = sim.arena.spawn_actor(mon);
         sim.step_player_action(ActionAst::MeleeAttack(east));
         let hp = sim.arena.actors.get(mid).map(|m| m.hp).unwrap_or(0);
@@ -204,9 +305,16 @@ fn bumping_a_wall_does_not_tick_prayer_timeout() {
 #[test]
 fn fake_amulet_does_not_win_the_game() {
     let mut sim = SimulationWorld::new_with_seed(94);
-    sim.arena.spawn_item(create_item_record(ItemKindId::WandOfWishing, ItemLocation::CarriedBy(sim.player_id), Buc::Uncursed));
+    sim.arena.spawn_item(create_item_record(
+        ItemKindId::WandOfWishing,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Uncursed,
+    ));
     sim.step_player_action(ActionAst::Wish("the Amulet of Yendor".into()));
-    let fake = sim.arena.items.iter()
+    let fake = sim
+        .arena
+        .items
+        .iter()
         .find(|(_, it)| it.name == "cheap plastic imitation of the Amulet of Yendor")
         .map(|(id, _)| id)
         .expect("fake amulet");
@@ -215,20 +323,31 @@ fn fake_amulet_does_not_win_the_game() {
     sim.arena.actors.get_mut(sim.player_id).unwrap().coord = up;
     assert_eq!(sim.depth, 1);
     let ev = sim.step_player_action(ActionAst::Ascend);
-    assert!(!ev.iter().any(|e| matches!(e, netrust_sim::GameEvent::Victory)));
+    assert!(!ev
+        .iter()
+        .any(|e| matches!(e, netrust_sim::GameEvent::Victory)));
 }
 
 #[test]
 fn wished_wands_keep_initial_charges() {
     let mut sim = SimulationWorld::new_with_seed(95);
     for q in ["wand of striking", "+100 wand of death"] {
-        let mut w = create_item_record(ItemKindId::WandOfWishing, ItemLocation::CarriedBy(sim.player_id), Buc::Uncursed);
+        let mut w = create_item_record(
+            ItemKindId::WandOfWishing,
+            ItemLocation::CarriedBy(sim.player_id),
+            Buc::Uncursed,
+        );
         w.enchantment = 3;
         sim.arena.spawn_item(w);
         sim.step_player_action(ActionAst::Wish(q.into()));
     }
     for name in ["wand of striking", "wand of death"] {
-        let w = sim.arena.items.values().find(|it| it.name == name && matches!(it.location, ItemLocation::Floor(_))).unwrap_or_else(|| panic!("{name} not wished"));
+        let w = sim
+            .arena
+            .items
+            .values()
+            .find(|it| it.name == name && matches!(it.location, ItemLocation::Floor(_)))
+            .unwrap_or_else(|| panic!("{name} not wished"));
         assert_eq!(w.enchantment, 6, "{name}");
     }
 }

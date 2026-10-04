@@ -27,9 +27,15 @@ pub fn tick_afflictions(hero: &mut Hero) -> AfflictionTickResult {
     }
 
     let trans = &mut hero.afflictions.transient;
-    if trans.confused > 0 { trans.confused -= 1; }
-    if trans.stunned > 0 { trans.stunned -= 1; }
-    if trans.hallucinating > 0 { trans.hallucinating -= 1; }
+    if trans.confused > 0 {
+        trans.confused -= 1;
+    }
+    if trans.stunned > 0 {
+        trans.stunned -= 1;
+    }
+    if trans.hallucinating > 0 {
+        trans.hallucinating -= 1;
+    }
 
     AfflictionTickResult::Survived
 }

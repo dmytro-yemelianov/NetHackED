@@ -27,50 +27,96 @@ def minesSubDepth : MinesSubLevel → Nat
 theorem minetown_depth_valid : minesSubDepth MinesSubLevel.Minetown = 3 := rfl
 theorem mines_end_depth_valid : minesSubDepth MinesSubLevel.MinesEnd = 5 := rfl
 
-/-- Maximum divine AC protection purchasable from a temple priest -/
-def maxDivineProtection : Nat := 9
+/-- Hard cap on priest-bought divine protection `u.ublessed` (priest.c:696). -/
+def maxDivineProtection : Nat := 20
 
-/-- Cost per character level for divine protection donation attempt -/
-def protectionDonationCost (heroLevel : Nat) : Nat :=
-  400 * heroLevel
+/-- Below this value every purchase is a guaranteed +1 (priest.c:697). -/
+def protectionSoftCap : Nat := 9
 
-/-- Calculate resulting divine protection after a donation -/
-def applyPriestDonation (currentProt : Nat) (donationAmount : Nat) (heroLevel : Nat) : Nat :=
-  if currentProt ≥ maxDivineProtection then
-    currentProt
-  else if donationAmount ≥ protectionDonationCost heroLevel then
-    currentProt + 1
-  else
-    currentProt
+/-- Suggested donation (priest.c:637-638): `max(ulevelpeak,1) * rn1(101, 150 + 40*cheapskate)`;
+    `rn2_101` is clamped to `0..100`. -/
+def protectionDonationCost (levelPeak cheapskate rn2_101 : Nat) : Nat :=
+  max levelPeak 1 * (150 + cheapskate * 40 + min rn2_101 100)
 
-/-- THEOREM: Divine protection is strictly capped at maxDivineProtection (9) when starting within bounds -/
-theorem priest_protection_bounded (cur : Nat) (amount : Nat) (lvl : Nat)
+/-- One protection-loop iteration (priest.c:694-698). `roll` is `rn2(3)` when `cur = 0`
+    (first purchase 2..4), else `rn2(cur)` (only 0 succeeds from 9 to 19). -/
+def protectionStep (cur roll : Nat) : Nat :=
+  if cur = 0 then 2 + min roll 2
+  else if cur < maxDivineProtection ∧ (cur < protectionSoftCap ∨ roll = 0) then cur + 1
+  else cur
+
+/-- Protection after a donation of `offer` (priest.c:681-699): only the band
+    `2*suggested*quan ≤ offer < 3*suggested*quan` buys protection, with
+    `offer / (2*suggested)` loop iterations drawing from `rolls`
+    (missing rolls default to 0). -/
+def applyPriestDonation (cur offer suggested quan : Nat) (rolls : List Nat) : Nat :=
+  if 2 * suggested * quan ≤ offer ∧ offer < 3 * suggested * quan then
+    (List.range (offer / (2 * suggested))).foldl
+      (fun p i => protectionStep p (rolls.getD i 0)) cur
+  else cur
+
+theorem protectionStep_le (cur roll : Nat) (h : cur ≤ maxDivineProtection) :
+    protectionStep cur roll ≤ maxDivineProtection := by
+  unfold protectionStep maxDivineProtection protectionSoftCap at *
+  repeat' (first | split | omega)
+
+theorem protectionStep_ge (cur roll : Nat) : cur ≤ protectionStep cur roll := by
+  unfold protectionStep
+  repeat' (first | split | omega)
+
+/-- THEOREM: First purchase grants 2..4 points (priest.c:695). -/
+theorem priest_protection_first_gain (roll : Nat) :
+    2 ≤ protectionStep 0 roll ∧ protectionStep 0 roll ≤ 4 := by
+  unfold protectionStep
+  simp only [↓reduceIte]
+  omega
+
+/-- THEOREM: Below the soft cap each purchase is a guaranteed +1 (priest.c:697). -/
+theorem priest_protection_soft_cap_step (cur roll : Nat) (h0 : 0 < cur)
+    (h : cur < protectionSoftCap) : protectionStep cur roll = cur + 1 := by
+  unfold protectionStep maxDivineProtection protectionSoftCap at *
+  repeat' (first | split | omega)
+
+theorem foldl_step_le (xs : List Nat) (rolls : List Nat) (cur : Nat)
+    (h : cur ≤ maxDivineProtection) :
+    xs.foldl (fun p i => protectionStep p (rolls.getD i 0)) cur ≤ maxDivineProtection := by
+  induction xs generalizing cur with
+  | nil => exact h
+  | cons x xs ih => exact ih _ (protectionStep_le _ _ h)
+
+theorem foldl_step_ge (xs : List Nat) (rolls : List Nat) (cur : Nat) :
+    cur ≤ xs.foldl (fun p i => protectionStep p (rolls.getD i 0)) cur := by
+  induction xs generalizing cur with
+  | nil => exact Nat.le_refl _
+  | cons x xs ih => exact Nat.le_trans (protectionStep_ge _ _) (ih _)
+
+/-- THEOREM: Divine protection never exceeds the hard cap 20 when starting within bounds,
+    for every offer and every roll sequence. -/
+theorem priest_protection_bounded (cur offer suggested quan : Nat) (rolls : List Nat)
     (h_cur : cur ≤ maxDivineProtection) :
-    applyPriestDonation cur amount lvl ≤ maxDivineProtection := by
-  dsimp [applyPriestDonation, maxDivineProtection]
+    applyPriestDonation cur offer suggested quan rolls ≤ maxDivineProtection := by
+  unfold applyPriestDonation
   split
+  · exact foldl_step_le _ _ _ h_cur
   · exact h_cur
-  · split <;> omega
 
 /-- THEOREM: Divine protection is monotonic (never decreases from a donation) -/
-theorem priest_protection_monotonic (cur : Nat) (amount : Nat) (lvl : Nat) :
-    cur ≤ applyPriestDonation cur amount lvl := by
-  dsimp [applyPriestDonation, maxDivineProtection]
+theorem priest_protection_monotonic (cur offer suggested quan : Nat) (rolls : List Nat) :
+    cur ≤ applyPriestDonation cur offer suggested quan rolls := by
+  unfold applyPriestDonation
   split
-  · omega
-  · split <;> omega
+  · exact foldl_step_ge _ _ _
+  · exact Nat.le_refl _
 
-/-- THEOREM: Insufficient gold donation guarantees protection is unchanged -/
-theorem priest_protection_insufficient (cur : Nat) (amount : Nat) (lvl : Nat)
-    (h_cur : cur < maxDivineProtection)
-    (h_insuf : amount < protectionDonationCost lvl) :
-    applyPriestDonation cur amount lvl = cur := by
-  dsimp [applyPriestDonation]
+/-- THEOREM: An offer below the protection band (`< 2*suggested*quan`) leaves protection
+    unchanged (priest.c:654-680). -/
+theorem priest_protection_insufficient (cur offer suggested quan : Nat) (rolls : List Nat)
+    (h_insuf : offer < 2 * suggested * quan) :
+    applyPriestDonation cur offer suggested quan rolls = cur := by
+  unfold applyPriestDonation
   split
   · omega
-  · split
-    · omega
-    · rfl
+  · rfl
 
 /-- Priest uncurses a BUC item when purified -/
 def priestUncurse (itemBuc : BUC) : BUC :=
@@ -98,71 +144,69 @@ def clampLuck (luck : Int) : Int :=
 theorem clamp_luck_bounded (l : Int) : -10 ≤ clampLuck l ∧ clampLuck l ≤ 10 := by
   dsimp [clampLuck]
   split
-  · omega
-  · split <;> omega
+  · rename_i h; omega
+  · split
+    · rename_i h h'; omega
+    · omega
 
-/-- Single luck decay step (normally fires every 600 turns) -/
-def stepLuckDecay (rawLuck : Int) (stone : LuckstoneCarried) : Int :=
-  match stone with
-  | LuckstoneCarried.Blessed | LuckstoneCarried.Uncursed =>
-    -- Non-cursed luckstone: positive luck NEVER decays; negative luck recovers!
-    if rawLuck > 0 then rawLuck
-    else if rawLuck < 0 then rawLuck + 1
-    else 0
-  | LuckstoneCarried.Cursed =>
-    -- Cursed luckstone: positive luck decays; negative luck NEVER recovers!
-    if rawLuck > 0 then rawLuck - 1
-    else if rawLuck < 0 then rawLuck
-    else 0
-  | LuckstoneCarried.None =>
-    -- No luckstone: natural decay toward 0 from both directions
-    if rawLuck > 0 then rawLuck - 1
-    else if rawLuck < 0 then rawLuck + 1
-    else 0
+/-- Single luck timeout step toward `baseLuck` (timeout.c:595-620, attrib.c:423).
+    No stone: both directions. Blessed: only luck below base recovers.
+    Uncursed: frozen. Cursed: only luck above base decays. -/
+def luckCanDecay : LuckstoneCarried → Bool
+  | LuckstoneCarried.None => true
+  | LuckstoneCarried.Cursed => true
+  | _ => false
 
-/-- THEOREM: Carrying a non-cursed luckstone strictly preserves positive luck -/
-theorem luckstone_preserves_positive_luck (l : Int) (stone : LuckstoneCarried)
-    (h_pos : l > 0)
+def luckCanRecover : LuckstoneCarried → Bool
+  | LuckstoneCarried.None => true
+  | LuckstoneCarried.Blessed => true
+  | _ => false
+
+def stepLuckDecay (rawLuck baseLuck : Int) (stone : LuckstoneCarried) : Int :=
+  if rawLuck > baseLuck ∧ luckCanDecay stone = true then rawLuck - 1
+  else if rawLuck < baseLuck ∧ luckCanRecover stone = true then rawLuck + 1
+  else rawLuck
+
+/-- THEOREM: A non-cursed luckstone preserves luck above base -/
+theorem luckstone_preserves_positive_luck (l base : Int) (stone : LuckstoneCarried)
+    (h_pos : l > base)
     (h_stone : stone = LuckstoneCarried.Blessed ∨ stone = LuckstoneCarried.Uncursed) :
-    stepLuckDecay l stone = l := by
-  cases h_stone with
-  | inl h =>
-    rw [h]
-    dsimp [stepLuckDecay]
-    rw [if_pos h_pos]
-  | inr h =>
-    rw [h]
-    dsimp [stepLuckDecay]
-    rw [if_pos h_pos]
+    stepLuckDecay l base stone = l := by
+  have h1 : ¬ (l > base ∧ luckCanDecay stone = true) := by
+    rcases h_stone with h | h <;> subst h <;> simp [luckCanDecay]
+  have h2 : ¬ (l < base ∧ luckCanRecover stone = true) := by
+    intro ⟨hl, _⟩; omega
+  simp only [stepLuckDecay, if_neg h1, if_neg h2]
 
-/-- THEOREM: Carrying a non-cursed luckstone strictly improves negative luck toward 0 -/
-theorem luckstone_heals_negative_luck (l : Int) (stone : LuckstoneCarried)
-    (h_neg : l < 0)
-    (h_stone : stone = LuckstoneCarried.Blessed ∨ stone = LuckstoneCarried.Uncursed) :
-    stepLuckDecay l stone = l + 1 := by
-  cases h_stone with
-  | inl h =>
-    rw [h]
-    dsimp [stepLuckDecay]
-    have h_not_pos : ¬(l > 0) := by omega
-    rw [if_neg h_not_pos]
-    rw [if_pos h_neg]
-  | inr h =>
-    rw [h]
-    dsimp [stepLuckDecay]
-    have h_not_pos : ¬(l > 0) := by omega
-    rw [if_neg h_not_pos]
-    rw [if_pos h_neg]
+/-- THEOREM: A blessed luckstone lets luck below base recover by one
+    (renamed from `luckstone_heals_negative_luck`, which wrongly included Uncursed). -/
+theorem blessed_luckstone_heals_negative_luck (l base : Int)
+    (h_neg : l < base) :
+    stepLuckDecay l base LuckstoneCarried.Blessed = l + 1 := by
+  have h1 : ¬ (l > base ∧ luckCanDecay LuckstoneCarried.Blessed = true) := by
+    intro ⟨hl, _⟩; omega
+  have h2 : (l < base ∧ luckCanRecover LuckstoneCarried.Blessed = true) :=
+    ⟨h_neg, by decide⟩
+  simp only [stepLuckDecay, if_neg h1, if_pos h2]
+
+/-- THEOREM: An uncursed luckstone freezes luck entirely (C: neither direction times out) -/
+theorem uncursed_luckstone_freezes_luck (l base : Int) :
+    stepLuckDecay l base LuckstoneCarried.Uncursed = l := by
+  simp [stepLuckDecay, luckCanDecay, luckCanRecover]
 
 /-- THEOREM: Luck decay respects canonical luck bounds [-10, 10] -/
-theorem step_luck_bounds_preserved (l : Int) (stone : LuckstoneCarried)
-    (h_low : -10 ≤ l) (h_high : l ≤ 10) :
-    -10 ≤ stepLuckDecay l stone ∧ stepLuckDecay l stone ≤ 10 := by
-  dsimp [stepLuckDecay]
-  cases stone
-  · split <;> split <;> omega
-  · split <;> split <;> omega
-  · split <;> split <;> omega
-  · split <;> split <;> omega
+theorem step_luck_bounds_preserved (l base : Int) (stone : LuckstoneCarried)
+    (h_low : -10 ≤ l) (h_high : l ≤ 10) (hb_low : -10 ≤ base) (hb_high : base ≤ 10) :
+    -10 ≤ stepLuckDecay l base stone ∧ stepLuckDecay l base stone ≤ 10 := by
+  unfold stepLuckDecay
+  split
+  · rename_i h; omega
+  · split
+    · rename_i h h'; omega
+    · omega
+
+/-- Luck timeout period in turns (timeout.c:595-620): 300 with the Amulet or an angry god. -/
+def luckDecayPeriod (hasAmulet godAngry : Bool) : Nat :=
+  if hasAmulet || godAngry then 300 else 600
 
 end NetMechanics

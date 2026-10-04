@@ -1,5 +1,6 @@
 [package]
 name = "netrust-wasm"
+license = "NGPL"
 version = "0.1.0"
 edition = "2021"
 description = "WebAssembly (WASM) browser bindings and runner for NetRust"
@@ -17,6 +18,7 @@ netrust-sim = { path = "../netrust-sim" }
 netrust-agent = { path = "../netrust-agent" }
 netrust-i18n = { path = "../netrust-i18n" }
 wasm-bindgen = "0.2.129"
+console_error_panic_hook = "0.1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 getrandom = { version = "0.2", features = ["js"] }

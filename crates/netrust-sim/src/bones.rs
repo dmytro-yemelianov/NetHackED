@@ -4,10 +4,26 @@ use netrust_arena::{ItemLocation, ItemRecord};
 use netrust_core::{corrupt_buc_on_death, is_valid_bones_level};
 use netrust_data::create_ghost_record;
 use netrust_i18n::Messages;
-use netrust_types::{BonesData, BonesItem, Buc};
+use netrust_types::{BonesData, BonesItem};
+use rand::Rng;
 
 use crate::events::GameEvent;
 use crate::world::SimulationWorld;
+
+/// Items that `resetobjs` always curses in bones (C `bones.c:170-189`): the Amulet of
+/// Yendor (fake Amulet, `:173`) and the invocation items (Candelabrum `:183`, Bell `:186`,
+/// Book of the Dead `:189`). Quest artifacts are NOT in this list: they take the normal
+/// `rn2(5)` curse roll (`bones.c:291`). Bones records do not carry the item kind, so
+/// detection is by name.
+pub fn always_cursed_in_bones(name: &str) -> bool {
+    const ALWAYS: [&str; 4] = [
+        "Amulet of Yendor",
+        "Candelabrum of Invocation",
+        "Bell of Opening",
+        "Book of the Dead",
+    ];
+    ALWAYS.iter().any(|q| q.eq_ignore_ascii_case(name))
+}
 
 impl SimulationWorld {
     /// Saves dead adventurer state and corrupted gear to the bones graveyard file.
@@ -21,12 +37,13 @@ impl SimulationWorld {
 
         let mut bones_items = Vec::new();
         for id in carried_ids {
+            let roll = self.rng.random_range(0..5u32);
             if let Some(item) = self.arena.items.get(id) {
                 bones_items.push(BonesItem {
                     name: item.name.clone(),
                     class: item.class,
                     weight: item.weight,
-                    buc: corrupt_buc_on_death(item.buc),
+                    buc: corrupt_buc_on_death(item.buc, always_cursed_in_bones(&item.name), roll),
                     enchantment: item.enchantment,
                 });
             }
@@ -76,7 +93,7 @@ impl SimulationWorld {
                         name: b_item.name,
                         class: b_item.class,
                         weight: b_item.weight,
-                        buc: Buc::Cursed,
+                        buc: b_item.buc,
                         is_container: false,
                         is_bag_of_holding: false,
                         enchantment: b_item.enchantment,
@@ -86,6 +103,7 @@ impl SimulationWorld {
                         corpse_race: None,
                         corpse_age: 0,
                         rot_threshold: 50,
+                        recharged: 0,
                     };
                     self.arena.spawn_item(item_record);
                 }

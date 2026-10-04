@@ -3,7 +3,11 @@
 use axum::http::{header::AUTHORIZATION, HeaderMap};
 
 /// `--bind <addr>` on the command line wins, then a non-empty env value, else the default.
-pub fn resolve_bind_addr(cli_args: &[String], env_bind: Option<String>, default_addr: &str) -> String {
+pub fn resolve_bind_addr(
+    cli_args: &[String],
+    env_bind: Option<String>,
+    default_addr: &str,
+) -> String {
     if let Some(pos) = cli_args.iter().position(|a| a == "--bind") {
         if let Some(addr) = cli_args.get(pos + 1) {
             return addr.clone();
@@ -17,7 +21,9 @@ pub fn resolve_bind_addr(cli_args: &[String], env_bind: Option<String>, default_
 
 /// The shared secret from `NETRUST_TOKEN`, if set and non-empty.
 pub fn token_from_env() -> Option<String> {
-    std::env::var("NETRUST_TOKEN").ok().filter(|t| !t.is_empty())
+    std::env::var("NETRUST_TOKEN")
+        .ok()
+        .filter(|t| !t.is_empty())
 }
 
 /// True when no token is configured, or the request carries `Authorization: Bearer <token>`.

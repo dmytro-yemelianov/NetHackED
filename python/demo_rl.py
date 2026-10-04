@@ -25,7 +25,7 @@ from netrust_gym import NetRustGymEnv, ACTION_NAMES
 
 def run_agent_episode(policy_name: str = "pacifist", seed: int = 42, max_steps: int = 150):
     env = NetRustGymEnv(seed=seed, max_steps=max_steps, render_mode="ansi", conduct_masking=True)
-    obs, info = env.reset()
+    obs, info = env.reset(seed=seed)
 
     total_reward = 0.0
     steps = 0
@@ -56,7 +56,7 @@ def run_agent_episode(policy_name: str = "pacifist", seed: int = 42, max_steps: 
                 action = 11
             elif 13 in valid_actions: # UNTRAP
                 action = 13
-            elif obs["player_hp"] <= 8 and 12 in valid_actions: # SEARCH
+            elif int(obs["player_hp"][0]) <= 8 and 12 in valid_actions: # SEARCH
                 action = 12
             else:
                 # Filter compass movement actions (0..7) that are in valid_actions
@@ -98,17 +98,17 @@ def run_agent_episode(policy_name: str = "pacifist", seed: int = 42, max_steps: 
 
         if steps % 25 == 0 or terminated or truncated:
             action_name = ACTION_NAMES[action] if action < len(ACTION_NAMES) else f"Action({action})"
-            conducts = obs["conducts"]
+            conducts = info["conducts"]
             pacifist_tag = "[PACIFIST]" if conducts.get("pacifist") else "[KILLED]"
             vegan_tag = "[VEGAN]" if conducts.get("vegan") else "[CARN]"
             print(
                 f"[Step {steps:3d}] {action_name:<16} | Rew: {reward:6.2f} (Tot: {total_reward:6.2f}) | "
-                f"HP: {obs['player_hp']}/{obs['player_max_hp']} | Dlvl: {obs['depth']} | "
+                f"HP: {int(obs['player_hp'][0])}/{int(obs['player_max_hp'][0])} | Dlvl: {int(obs['depth'][0])} | "
                 f"{pacifist_tag} {vegan_tag}"
             )
 
     outcome = "VICTORY" if info.get("won") else ("DEAD" if info.get("is_dead") else "TRUNCATED")
-    final_conducts = obs["conducts"]
+    final_conducts = info["conducts"]
     print(f"{'-' * 68}")
     print(f" Episode Finished in {steps} steps | Outcome: {outcome} | Total Reward: {total_reward:.2f}")
     print(f" Final Conducts Audit: Pacifist={final_conducts.get('pacifist')}, Vegan={final_conducts.get('vegan')}, Atheist={final_conducts.get('atheist')}, Illiterate={final_conducts.get('illiterate')}")
@@ -121,8 +121,8 @@ def run_agent_episode(policy_name: str = "pacifist", seed: int = 42, max_steps: 
         "steps": steps,
         "total_reward": total_reward,
         "outcome": outcome,
-        "final_hp": obs["player_hp"],
-        "depth": obs["depth"],
+        "final_hp": int(obs["player_hp"][0]),
+        "depth": int(obs["depth"][0]),
         "conducts": final_conducts,
     }
 

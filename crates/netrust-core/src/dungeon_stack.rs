@@ -1,6 +1,6 @@
 //! Multi-floor dungeon depth progression and invariants.
 //!
-//! Formally verified in `NetMechanics.DungeonStack`.
+//! Modeled in Lean 4 (`NetMechanics.DungeonStack`).
 
 use serde::{Deserialize, Serialize};
 

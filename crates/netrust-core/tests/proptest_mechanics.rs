@@ -3,35 +3,32 @@
 //! Every property test here corresponds to a machine-checked theorem in `NetMechanics`.
 
 use netrust_core::{
-    calculate_damage, calculate_encumbrance, can_insert_safe, dip_water, identify_fully, learn_buc,
-    learn_type, reflect, step_ray, uncurse, BeamRay, Buc, Combatant, DoorState, EncumbranceTier,
-    Engraving, EngravingMedium, FormStats, Item, KnowledgeLevel, MetricState, PolyEntity,
-    SchedulerState, StepAction, StepResult, SurfaceOrientation, Tile, Velocity, WaterType,
-    NORMAL_SPEED, DungeonDepth, hunger_tier, hunger_of_nutrition, SpellKind, cast_spell, mana_cost,
-    push_boulder, PushOutcome, branch_entrance_depth, branch_max_depth, enter_branch, exit_branch,
-    BranchCoord, BranchId, Coord, Direction,
-    feed_pet, interact_with_occupant, swap_displacement, HeroInteraction,
-    apply_erosion, enchant_item, mix_alchemy, SAFE_ENCHANT_CAP,
-    Alignment, AscensionOutcome, DrawbridgeState, DrawbridgeTransition,
-    destroy_drawbridge, offer_amulet_on_high_altar, toggle_drawbridge,
-    clamp_favor, consecrate_water, resolve_sacrifice, tick_prayer_timeout,
-    DivineState,
-    apply_vorpal_strike, zap_wand, recharge_wand, WandCharges, RechargeResult,
-    BreathType, GazeType, GazeEffect, Intrinsics, calculate_summon_count, resolve_breath_damage, resolve_gaze,
-    corrupt_buc_on_death, create_ghost_hp, is_valid_bones_level,
-    buy_factor, calculate_buy_price, calculate_sell_price, dilute_potion, rub_lamp, sell_factor,
-    DilutionState, RubResult,
-    choose_pet_goal, pet_tile_steppable, promote_pet, PetFamily, PetGoal, PetSpeciesTier,
-    apply_priest_donation, MAX_DIVINE_PROTECTION, protection_donation_cost, priest_uncurse,
-    LuckstoneStatus, step_luck_decay,
-    can_see_tile, LightSource, tick_light_fuel, can_detect_monster,
-    calculate_tournament_score, decide_tactical_action, is_hp_critical, TacticalAction,
-    TacticalContext,
-    CandelabrumState, InvocationStep, RitualProgress, REQUIRED_CANDLES, is_candelabrum_ready,
-    step_ritual, is_sanctum_accessible, calculate_mysterious_force,
-    attack_nemesis, consult_leader, is_hero_eligible_for_quest, pick_up_quest_artifact,
-    quest_progress_rank, return_to_leader_with_artifact, ArtifactLocation, HeroQuestEligibility,
-    QuestProgress, QuestState, QUEST_MIN_ALIGNMENT, QUEST_MIN_LEVEL,
+    apply_erosion, apply_vorpal_strike, attack_hits, attack_nemesis, branch_entrance_depth,
+    branch_max_depth, buy_price, calculate_damage, calculate_encumbrance, calculate_summon_count,
+    calculate_tournament_score, can_detect_monster, can_see_tile, cast_spell, choose_pet_goal,
+    clamp_favor, consecrate_water, consult_leader, corrupt_buc_on_death, create_ghost_hp,
+    decide_tactical_action, destroy_drawbridge, dilute_potion, dip_water, enchant_armor,
+    enchant_weapon, enter_branch, exit_branch, feed_pet, hero_damage_after_ac, hunger_of_nutrition,
+    hunger_tier, identify_fully, interact_with_occupant, is_candelabrum_ready,
+    is_hero_eligible_for_quest, is_hp_critical, is_sanctum_accessible, is_valid_bones_level,
+    learn_buc, learn_type, luck_decay_period, mana_cost, mbag_explodes, melee_damage, mix_alchemy,
+    monster_to_hit_value, mysterious_force, offer_amulet_on_high_altar, pet_tile_steppable,
+    pick_up_quest_artifact, priest_donation_outcome, priest_donation_quan,
+    priest_suggested_donation, priest_uncurse, promote_pet, protection_purchase_count,
+    protection_purchase_step, push_boulder, quest_progress_rank, recharge_wand, reflect,
+    resolve_breath_damage, resolve_gaze, resolve_sacrifice, return_to_leader_with_artifact,
+    rub_lamp, sell_price, step_luck_decay, step_ray, step_ritual, swap_displacement,
+    tick_light_fuel, tick_prayer_timeout, to_hit_value, toggle_drawbridge, uncurse, zap_wand,
+    Alignment, ArtifactLocation, AscensionOutcome, BagCheckItem, BagCheckKind, BeamRay,
+    BranchCoord, BranchId, BreathType, Buc, CandelabrumState, Combatant, Coord, DilutionState,
+    Direction, DivineState, DonationOutcome, DoorState, DrawbridgeState, DrawbridgeTransition,
+    DungeonDepth, EnchantOutcome, EncumbranceTier, Engraving, EngravingMedium, FormStats,
+    GazeEffect, GazeType, HeroInteraction, HeroQuestEligibility, Intrinsics, InvocationStep,
+    KnowledgeLevel, LightSource, MetricState, MysteriousForceOutcome, PetFamily, PetGoal,
+    PetSpeciesTier, PolyEntity, PushOutcome, QuestProgress, QuestState, RechargeResult,
+    RitualProgress, RubResult, SchedulerState, SpellKind, StepAction, StepResult,
+    SurfaceOrientation, TacticalAction, TacticalContext, Tile, Velocity, WandCharges, WaterType,
+    MAX_DIVINE_PROTECTION, NORMAL_SPEED, QUEST_MIN_ALIGNMENT, QUEST_MIN_LEVEL, REQUIRED_CANDLES,
 };
 use proptest::prelude::*;
 
@@ -77,6 +74,90 @@ prop_compose! {
     }
 }
 
+/// Reference for `seffect_enchant_armor` (read.c:1115-1200), written from the C
+/// with i64 math. `None` = evaporated.
+fn ref_enchant_armor(
+    spe: i8,
+    buc: Buc,
+    special: bool,
+    magical: bool,
+    rn2_s: u32,
+    gain_roll: u32,
+) -> Option<i8> {
+    let scursed = buc == Buc::Cursed;
+    let sblessed = buc == Buc::Blessed;
+    let otmp_spe = i64::from(spe);
+    let mut s = if scursed { -otmp_spe } else { otmp_spe };
+    if s > (if special { 5 } else { 3 }) && i64::from(rn2_s).min(s - 1) != 0 {
+        return None;
+    }
+    s = (4 - s) / 2;
+    if special {
+        s += 1;
+    }
+    if !magical {
+        s += 1;
+    }
+    if sblessed {
+        s += 1;
+    }
+    if s <= 0 {
+        s = 0;
+        if otmp_spe > 0 && i64::from(gain_roll).min(otmp_spe - 1) == 0 {
+            s = 1;
+        }
+    } else {
+        s = i64::from(gain_roll).clamp(1, s);
+    }
+    if s > 11 {
+        s = 11;
+    }
+    if scursed {
+        s = -s;
+    }
+    Some((otmp_spe + s).clamp(-128, 127) as i8)
+}
+
+/// Reference for `seffect_enchant_weapon` (read.c:1667) + `chwepon`
+/// (wield.c:999-1000). `None` = evaporated.
+fn ref_enchant_weapon(spe: i8, buc: Buc, rn2_3: u32, gain_roll: u32) -> Option<i8> {
+    let spe = i64::from(spe);
+    let amount = if buc == Buc::Cursed {
+        -1
+    } else if spe >= 9 {
+        i64::from(i64::from(gain_roll).min(spe - 1) == 0)
+    } else if buc == Buc::Blessed {
+        i64::from(gain_roll).clamp(1, 3 - spe / 3)
+    } else {
+        1
+    };
+    if ((spe > 5 && amount >= 0) || (spe < -5 && amount < 0)) && rn2_3.min(2) != 0 {
+        return None;
+    }
+    Some((spe + amount).clamp(-128, 127) as i8)
+}
+
+fn arb_bag_kind() -> impl Strategy<Value = BagCheckKind> {
+    prop_oneof![
+        Just(BagCheckKind::BagOfHolding),
+        (-2i32..4).prop_map(|charges| BagCheckKind::BagOfTricks { charges }),
+        (-2i32..4).prop_map(|charges| BagCheckKind::WandOfCancellation { charges }),
+        Just(BagCheckKind::Other),
+    ]
+}
+
+fn arb_bag_tree(depth: u32) -> BoxedStrategy<BagCheckItem> {
+    let leaf = arb_bag_kind().prop_map(|kind| BagCheckItem {
+        kind,
+        children: vec![],
+    });
+    leaf.prop_recursive(depth, 12, 3, |inner| {
+        (arb_bag_kind(), proptest::collection::vec(inner, 0..3))
+            .prop_map(|(kind, children)| BagCheckItem { kind, children })
+    })
+    .boxed()
+}
+
 proptest! {
     // -------------------------------------------------------------
     // Theorem: dip_holy_idempotent & dip_unholy_idempotent
@@ -120,6 +201,42 @@ proptest! {
     fn prop_unencumbered_when_le_cap(cap in 1u32..5000, ratio in 0.0f64..=1.0) {
         let wt = (cap as f64 * ratio) as u32;
         prop_assert_eq!(calculate_encumbrance(wt, cap), EncumbranceTier::Unencumbered);
+    }
+
+    /// Reference from `hack.c:4372` (`calc_capacity`) and `hack.c:4295` (`weight_cap`).
+    #[test]
+    fn prop_encumbrance_matches_c_reference(wt in 0u32..20000, cap in 1u32..5000) {
+        let c_tier: i64 = {
+            let (w, wc) = (wt as i64, cap as i64);
+            let diff = w - wc;
+            if diff <= 0 { 0 } else if wc <= 1 { 5 } else { (diff * 2 / wc + 1).min(5) }
+        };
+        let want = match c_tier {
+            0 => EncumbranceTier::Unencumbered,
+            1 => EncumbranceTier::Burdened,
+            2 => EncumbranceTier::Stressed,
+            3 => EncumbranceTier::Strained,
+            4 => EncumbranceTier::Overtaxed,
+            _ => EncumbranceTier::Overloaded,
+        };
+        prop_assert_eq!(netrust_core::encumbrance_tier(wt, cap), want);
+    }
+
+    #[test]
+    fn prop_weight_cap_matches_c_reference(
+        st in -5i32..40, con in -5i32..40, lev in any::<bool>(), legs in 0u8..4
+    ) {
+        let mut carrcap: i64 = 25 * (st as i64 + con as i64) + 50;
+        if lev {
+            carrcap = 1000;
+        } else {
+            if carrcap > 1000 { carrcap = 1000; }
+            carrcap -= 100 * (legs.min(2) as i64);
+        }
+        if carrcap < 1 { carrcap = 1; }
+        let got = netrust_core::weight_cap(st, con, lev, legs);
+        prop_assert_eq!(got as i64, carrcap);
+        prop_assert!((1..=1000).contains(&got));
     }
 
     #[test]
@@ -186,21 +303,74 @@ proptest! {
     }
 
     // -------------------------------------------------------------
-    // Theorem: negative_ac_absorbs_damage
+    // C reference: uhitm.c:365 find_roll_to_hit, uhitm.c:780 hit test
     // -------------------------------------------------------------
     #[test]
-    fn prop_negative_ac_absorbs_damage(
-        roll in 1u32..20,
-        enchant in 0i32..10,
-        bonus in 0i32..10,
-        neg_ac in -20i32..-1
+    fn prop_to_hit_matches_c_reference(
+        level in -5i32..40,
+        luck in -30i32..30,
+        enchant in -10i32..10,
+        skill_hit in -4i32..8,
+        target_ac in -40i32..20,
+        d20 in 0u32..30
     ) {
-        let dmg_no_ac = calculate_damage(roll, enchant, bonus, 0);
-        let dmg_neg_ac = calculate_damage(roll, enchant, bonus, neg_ac);
-        prop_assert!(dmg_neg_ac <= dmg_no_ac);
-        if dmg_no_ac > 0 {
-            prop_assert!(dmg_neg_ac >= 1);
-        }
+        // Reference written directly from C:
+        // tmp = 1 + abon(0) + find_mac + ulevel + sgn(Luck)*((|Luck|+2)/3) + spe + skill
+        let l = luck.clamp(-13, 13);
+        let luck_term = l.signum() * ((l.abs() + 2) / 3);
+        let tmp = 1 + target_ac + level + luck_term + enchant + skill_hit;
+        prop_assert_eq!(to_hit_value(level, luck, enchant, skill_hit, target_ac), tmp);
+        // dieroll = rnd(20); mhit = tmp > dieroll
+        let dieroll = d20.clamp(1, 20) as i32;
+        prop_assert_eq!(attack_hits(d20, tmp), tmp > dieroll);
+    }
+
+    // -------------------------------------------------------------
+    // C reference: mhitu.c:709 monster -> hero to-hit, hack.h:1538 AC_VALUE
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_monster_to_hit_matches_c_reference(
+        m_lev in 0i32..50,
+        hero_ac in -40i32..20,
+        ac_roll in 0u32..50
+    ) {
+        let ac_value = if hero_ac >= 0 {
+            hero_ac
+        } else {
+            -(ac_roll.clamp(1, (-hero_ac) as u32) as i32)
+        };
+        let tmp = (ac_value + 10 + m_lev).max(1);
+        prop_assert_eq!(monster_to_hit_value(m_lev, hero_ac, ac_roll), tmp);
+    }
+
+    // -------------------------------------------------------------
+    // C reference: uhitm.c:1505 (min 1) and mhitu.c:1208 (rnd(-uac) absorb)
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_hero_ac_absorb_matches_c(
+        roll in 0u32..30,
+        enchant in -10i32..10,
+        bonus in -5i32..10,
+        hero_ac in -40i32..20,
+        absorb_roll in 0u32..50
+    ) {
+        // dmg = base + spe + bonus; if (dmg < 1) dmg = 1;
+        let base = (roll as i32 + enchant + bonus).max(1) as u32;
+        prop_assert_eq!(melee_damage(roll, enchant, bonus), base);
+        // if (dmg && u.uac < 0) { dmg -= rnd(-u.uac); if (dmg < 1) dmg = 1; }
+        let expected = if base > 0 && hero_ac < 0 {
+            let r = absorb_roll.clamp(1, (-hero_ac) as u32) as i32;
+            (base as i32 - r).max(1) as u32
+        } else {
+            base
+        };
+        prop_assert_eq!(hero_damage_after_ac(base, hero_ac, absorb_roll), expected);
+        prop_assert_eq!(
+            calculate_damage(roll, enchant, bonus, hero_ac, Some(absorb_roll)),
+            expected
+        );
+        // Hero -> monster: no AC reduction at all.
+        prop_assert_eq!(calculate_damage(roll, enchant, bonus, hero_ac, None), base);
     }
 
     // -------------------------------------------------------------
@@ -223,25 +393,57 @@ proptest! {
     }
 
     // -------------------------------------------------------------
-    // Theorem: boh_cannot_contain_boh (Bag of Holding safety)
+    // Theorem: boh_cannot_contain_boh / depth_zero_boh_explodes /
+    // cancellation_wand_explodes (pickup.c:2488 mbag_explodes)
     // -------------------------------------------------------------
     #[test]
-    fn prop_boh_cannot_contain_boh(buc1 in arb_buc(), buc2 in arb_buc()) {
-        let boh1 = Item::Box {
-            name: "bag 1".into(),
-            base_weight: 15,
-            buc: buc1,
-            is_bag_of_holding: true,
-            contents: vec![],
-        };
-        let boh2 = Item::Box {
-            name: "bag 2".into(),
-            base_weight: 15,
-            buc: buc2,
-            is_bag_of_holding: true,
-            contents: vec![],
-        };
-        prop_assert!(!can_insert_safe(&boh2, &boh1));
+    fn prop_mbag_explodes_matches_c_reference(
+        tree in arb_bag_tree(3),
+        rolls in proptest::collection::vec(any::<u32>(), 64),
+    ) {
+        // Reference written directly from pickup.c:2488-2507; `rolls` are
+        // consumed in C draw order, reduced to rn2(n) range by `% n`.
+        fn reference(o: &BagCheckItem, depth: u32, rolls: &mut impl Iterator<Item = u32>) -> bool {
+            let (otyp_cancel_or_tricks, spe, is_mbag, is_cancel) = match o.kind {
+                BagCheckKind::BagOfHolding => (false, 0, true, false),
+                BagCheckKind::BagOfTricks { charges } => (true, charges, true, false),
+                BagCheckKind::WandOfCancellation { charges } => (true, charges, false, true),
+                BagCheckKind::Other => (false, 0, false, false),
+            };
+            if otyp_cancel_or_tricks && spe <= 0 {
+                return false;
+            }
+            if (is_mbag || is_cancel) && {
+                let n = 1u32 << (if depth > 7 { 7 } else { depth });
+                rolls.next().unwrap_or(0) % n <= depth
+            } {
+                return true;
+            }
+            for c in &o.children {
+                if reference(c, depth + 1, rolls) {
+                    return true;
+                }
+            }
+            false
+        }
+        let mut it_ref = rolls.clone().into_iter();
+        let expected = reference(&tree, 0, &mut it_ref);
+        let mut it = rolls.clone().into_iter();
+        let mut bounds_ok = true;
+        let got = mbag_explodes(&tree, 0, &mut |n| {
+            bounds_ok &= n.is_power_of_two() && n <= 128;
+            it.next().unwrap_or(0) % n
+        });
+        prop_assert_eq!(got, expected);
+        prop_assert!(bounds_ok);
+        // Same number of draws as C.
+        prop_assert_eq!(it.count(), it_ref.count());
+    }
+
+    #[test]
+    fn prop_depth_zero_boh_always_explodes(roll in any::<u32>()) {
+        let boh = BagCheckItem { kind: BagCheckKind::BagOfHolding, children: vec![] };
+        prop_assert!(mbag_explodes(&boh, 0, &mut |_| roll));
     }
 
     // -------------------------------------------------------------
@@ -365,7 +567,7 @@ proptest! {
             base_form: base,
             poly_form: Some(poly),
         };
-        let (after, _) = entity.apply_damage(damage);
+        let (after, _) = entity.apply_damage(damage, false);
         prop_assert_eq!(after.base_form.max_hp, base_hp);
     }
 
@@ -391,8 +593,11 @@ proptest! {
             base_form: base,
             poly_form: Some(poly),
         };
-        let (after, _) = entity.apply_damage(poly_hp + extra);
+        let (after, dead) = entity.apply_damage(poly_hp + extra, false);
         prop_assert!(!after.is_polymorphed());
+        // C rehumanize: excess discarded, base HP untouched, never fatal.
+        prop_assert_eq!(after.base_form.hp, 20);
+        prop_assert!(!dead);
     }
 
     // -------------------------------------------------------------
@@ -429,10 +634,22 @@ proptest! {
     // Theorem: eating_improves_or_preserves_hunger
     // -------------------------------------------------------------
     #[test]
-    fn prop_eating_improves_hunger(n in 0u32..2000, k in 0u32..2000) {
-        let t1 = hunger_tier(hunger_of_nutrition(n));
-        let t2 = hunger_tier(hunger_of_nutrition(n + k));
+    fn prop_eating_improves_hunger(n in -3000i32..3000, k in 0i32..3000, con in 3i32..26) {
+        let t1 = hunger_tier(hunger_of_nutrition(n, con));
+        let t2 = hunger_tier(hunger_of_nutrition(n + k, con));
         prop_assert!(t1 <= t2);
+    }
+
+    /// Reference from `eat.c:3362` (`newuhs`) and `eat.c:3437` (starvation).
+    #[test]
+    fn prop_hunger_matches_c_reference(h in -3000i32..3000, con in 3i32..26) {
+        let want = if h > 1000 { netrust_core::HungerState::Satiated }
+            else if h > 150 { netrust_core::HungerState::Normal }
+            else if h > 50 { netrust_core::HungerState::Hungry }
+            else if h > 0 { netrust_core::HungerState::Weak }
+            else if h < -(100 + 10 * con) { netrust_core::HungerState::Starved }
+            else { netrust_core::HungerState::Fainting };
+        prop_assert_eq!(hunger_of_nutrition(h, con), want);
     }
 
     // -------------------------------------------------------------
@@ -579,20 +796,70 @@ proptest! {
     }
 
     // -------------------------------------------------------------
-    // Theorems: enchant_below_cap_safe & enchant_below_cap_increases
+    // Theorems: enchant_armor_* & enchant_weapon_* (read.c:1115, wield.c:999)
     // -------------------------------------------------------------
     #[test]
-    fn prop_enchant_theorems(cur_ench in -5i8..SAFE_ENCHANT_CAP, blessed in proptest::bool::ANY) {
-        let res = enchant_item(cur_ench, blessed, false);
-        prop_assert!(!res.evaporated);
-        prop_assert!(res.new_ench > cur_ench);
+    fn prop_enchant_armor_matches_c_reference(
+        spe in any::<i8>(),
+        buc in arb_buc(),
+        special in proptest::bool::ANY,
+        magical in proptest::bool::ANY,
+        evap in 0u32..300,
+        gain in 0u32..300,
+    ) {
+        let expected = match ref_enchant_armor(spe, buc, special, magical, evap, gain) {
+            Some(v) => EnchantOutcome::Changed(v),
+            None => EnchantOutcome::Evaporated,
+        };
+        prop_assert_eq!(enchant_armor(spe, buc, special, magical, evap, gain), expected);
     }
 
     #[test]
-    fn prop_enchant_at_or_above_cap(cur_ench in SAFE_ENCHANT_CAP..20i8, blessed in proptest::bool::ANY) {
-        let res = enchant_item(cur_ench, blessed, false);
-        prop_assert!(res.evaporated);
-        prop_assert_eq!(res.new_ench, cur_ench);
+    fn prop_enchant_weapon_matches_c_reference(
+        spe in any::<i8>(),
+        buc in arb_buc(),
+        evap in 0u32..10,
+        gain in 0u32..300,
+    ) {
+        let expected = match ref_enchant_weapon(spe, buc, evap, gain) {
+            Some(v) => EnchantOutcome::Changed(v),
+            None => EnchantOutcome::Evaporated,
+        };
+        prop_assert_eq!(enchant_weapon(spe, buc, evap, gain), expected);
+    }
+
+    #[test]
+    fn prop_enchant_safe_at_or_below_limit(
+        spe in -3i8..=5,
+        buc in arb_buc(),
+        special in proptest::bool::ANY,
+        magical in proptest::bool::ANY,
+        evap in any::<u32>(),
+        gain in any::<u32>(),
+    ) {
+        // enchant_weapon_safe_le_limit: weapon at spe <= 5 never evaporates.
+        prop_assert_ne!(enchant_weapon(spe, buc, evap, gain), EnchantOutcome::Evaporated);
+        // enchant_armor_safe_le_limit: armor at spe <= 3 (5 special) never evaporates.
+        if spe <= if special { 5 } else { 3 } {
+            prop_assert_ne!(
+                enchant_armor(spe, buc, special, magical, evap, gain),
+                EnchantOutcome::Evaporated
+            );
+        }
+    }
+
+    #[test]
+    fn prop_enchant_weapon_increases_below_limit(
+        spe in -100i8..=5,
+        blessed in proptest::bool::ANY,
+        evap in any::<u32>(),
+        gain in any::<u32>(),
+    ) {
+        let buc = if blessed { Buc::Blessed } else { Buc::Uncursed };
+        match enchant_weapon(spe, buc, evap, gain) {
+            EnchantOutcome::Changed(v) => prop_assert!(v > spe),
+            EnchantOutcome::Evaporated => prop_assert!(false, "evaporated below limit"),
+        }
     }
 
     // -------------------------------------------------------------
@@ -674,7 +941,7 @@ proptest! {
     #[test]
     fn prop_clamp_favor_bounded(f in -100i32..100) {
         let clamped = clamp_favor(f);
-        prop_assert!(clamped >= -20 && clamped <= 20);
+        prop_assert!((-20..=20).contains(&clamped));
     }
 
     #[test]
@@ -744,23 +1011,53 @@ proptest! {
     }
 
     // -------------------------------------------------------------
-    // Theorems: recharge_safe_below_cap & recharge_explodes_at_cap
+    // Theorems: recharge_safe_first, recharge_explodes_iff, recharge_explodes_at_cap
+    // Reference written from NetHack read.c:737-794.
     // -------------------------------------------------------------
     #[test]
     fn prop_recharge_theorems(
-        charges in 0u32..10,
+        charges in 0u32..20,
         recharges in 0u32..10,
-        add in 1u32..5,
+        wishing in proptest::bool::ANY,
+        buc_i in 0u8..3,
+        directional in proptest::bool::ANY,
+        roll_343 in 0u32..343,
+        rn5 in 0u32..5,
+        rnd_roll in 1u32..16,
+        wand_blessed in proptest::bool::ANY,
     ) {
+        let buc = [Buc::Cursed, Buc::Uncursed, Buc::Blessed][buc_i as usize];
+        let lim: u32 = if wishing { 1 } else if directional { 8 } else { 15 };
         let w = WandCharges { charges, recharges };
-        let res = recharge_wand(w, add);
-        if recharges >= 3 {
-            prop_assert_eq!(res, RechargeResult::Exploded);
-        } else {
-            prop_assert_eq!(res, RechargeResult::Success(WandCharges {
-                charges: charges + add,
+        let res = recharge_wand(w, buc, lim, wishing, wand_blessed, roll_343, rn5, rnd_roll);
+        // Reference from read.c:737-794.
+        let n = recharges.min(7);
+        let explode = n > 0 && (wishing || n * n * n > roll_343);
+        let expected = if explode {
+            RechargeResult::Exploded
+        } else if buc == Buc::Cursed {
+            RechargeResult::Success(WandCharges {
+                charges: if wand_blessed { charges } else { 0 },
                 recharges: recharges + 1,
-            }));
+            })
+        } else {
+            let mut amt = if lim == 1 { 1 } else { (lim - 4) + rn5 };
+            if buc != Buc::Blessed {
+                amt = rnd_roll.min(amt).max(1);
+            }
+            let spe = std::cmp::max(charges + 1, amt);
+            if wishing && spe > 3 {
+                RechargeResult::Exploded
+            } else {
+                RechargeResult::Success(WandCharges { charges: spe, recharges: recharges + 1 })
+            }
+        };
+        prop_assert_eq!(res.clone(), expected);
+        if recharges == 0 && !wishing {
+            prop_assert!(matches!(res, RechargeResult::Success(_)));
+        }
+        if recharges >= 7 {
+            prop_assert_eq!(res, RechargeResult::Exploded);
         }
     }
 
@@ -835,13 +1132,22 @@ proptest! {
     }
 
     // -------------------------------------------------------------
-    // Theorems: corrupt_buc_idempotent & corrupt_buc_always_cursed
+    // Bones cursing vs reference from bones.c:290-291 / resetobjs
     // -------------------------------------------------------------
     #[test]
-    fn prop_corrupt_buc_theorems(buc in arb_buc()) {
-        let corrupted = corrupt_buc_on_death(buc);
-        prop_assert_eq!(corrupted, Buc::Cursed);
-        prop_assert_eq!(corrupt_buc_on_death(corrupted), Buc::Cursed);
+    fn prop_corrupt_buc_matches_c_reference(
+        buc in arb_buc(),
+        quest in proptest::bool::ANY,
+        roll in 0u32..8,
+    ) {
+        // C: `if (rn2(5)) curse(otmp);` rn2(5) in 0..=4; Amulet/invocation items always cursed.
+        fn reference(b: Buc, quest: bool, r: u32) -> Buc {
+            if quest || r.min(4) != 0 { Buc::Cursed } else { b }
+        }
+        let got = corrupt_buc_on_death(buc, quest, roll);
+        prop_assert_eq!(got, reference(buc, quest, roll));
+        // idempotent for any fixed roll
+        prop_assert_eq!(corrupt_buc_on_death(got, quest, roll), got);
     }
 
     // -------------------------------------------------------------
@@ -897,25 +1203,47 @@ proptest! {
     }
 
     // -------------------------------------------------------------
-    // Theorems: sell_le_buy_price & charisma factor monotonicity
+    // Theorems: sell_le_buy_price, buy_price_antitone_cha (shk.c get_cost / set_cost)
     // -------------------------------------------------------------
     #[test]
-    fn prop_price_identification_theorems(base in 1u32..2000, cha in 1u32..25, buc in arb_buc()) {
-        let buy = calculate_buy_price(base, cha, buc);
-        let sell = calculate_sell_price(base, cha, buc);
-        // Arbitrage prevention: sell price <= buy price
-        prop_assert!(sell <= buy);
+    fn prop_buy_price_matches_c_reference(
+        base in 0u32..5000,
+        cha in -3i32..30,
+        dunce in any::<bool>(),
+        unid in any::<bool>(),
+        artifact in any::<bool>(),
+        angry in any::<bool>(),
+    ) {
+        prop_assert_eq!(
+            buy_price(base, cha, dunce, unid, artifact, angry),
+            c_get_cost(base, cha, dunce, unid, artifact, angry)
+        );
+    }
 
-        // Charisma monotonicity: higher charisma -> buy factor does not increase, sell factor does not decrease
-        if cha < 25 {
-            let next_buy_fac = buy_factor(cha + 1);
-            let cur_buy_fac = buy_factor(cha);
-            prop_assert!(next_buy_fac <= cur_buy_fac);
+    #[test]
+    fn prop_sell_price_matches_c_reference(
+        base in 0u32..5000,
+        dunce in any::<bool>(),
+        lowball in any::<bool>(),
+    ) {
+        prop_assert_eq!(sell_price(base, dunce, lowball), c_set_cost(base, dunce, lowball));
+    }
 
-            let next_sell_fac = sell_factor(cha + 1);
-            let cur_sell_fac = sell_factor(cha);
-            prop_assert!(next_sell_fac >= cur_sell_fac);
-        }
+    #[test]
+    fn prop_price_identification_theorems(
+        base in 0u32..5000,
+        cha in -3i32..30,
+        dunce in any::<bool>(),
+        unid in any::<bool>(),
+        artifact in any::<bool>(),
+        angry in any::<bool>(),
+        lowball in any::<bool>(),
+    ) {
+        // sell_le_buy_price: no arbitrage for any CHA / surcharge combination.
+        let buy = buy_price(base, cha, dunce, unid, artifact, angry);
+        prop_assert!(sell_price(base, dunce, lowball) <= buy);
+        // buy_price_antitone_cha: higher CHA never raises the buy price.
+        prop_assert!(buy_price(base, cha + 1, dunce, unid, artifact, angry) <= buy);
     }
 
     // -------------------------------------------------------------
@@ -973,24 +1301,55 @@ proptest! {
     }
 
     // -------------------------------------------------------------
-    // Theorem: priest_protection_bounded & priest_protection_monotonic
+    // Theorems: priest_protection_bounded, priest_protection_monotonic,
+    // priest_protection_insufficient (priest.c:637-699)
     // -------------------------------------------------------------
     #[test]
     fn prop_priest_protection_theorems(
-        cur in 0u32..=9,
-        donation in 0u32..=10000,
-        level in 1u32..=30,
+        cur in 0u32..=20,
+        level_peak in 0u32..=30,
+        cheapskate in 0u32..=5,
+        rn2_101 in 0u32..101,
+        gold in 0u32..=200_000,
+        offer in 0u32..=200_000,
+        rolls in proptest::collection::vec(0u32..40, 0..64),
     ) {
-        let res = apply_priest_donation(cur, donation, level);
-        // Bounded by MAX_DIVINE_PROTECTION (9)
-        prop_assert!(res <= MAX_DIVINE_PROTECTION);
-        // Monotonic
-        prop_assert!(cur <= res);
+        let suggested = priest_suggested_donation(level_peak, cheapskate, rn2_101);
+        prop_assert_eq!(suggested, level_peak.max(1) * (rn2_101 + 150 + cheapskate * 40));
+        let quan = priest_donation_quan(gold, suggested);
+        prop_assert_eq!(quan, (gold / (suggested * 3)).max(1));
 
-        // Insufficient donation leaves protection unchanged
-        if donation < protection_donation_cost(level) && cur < MAX_DIVINE_PROTECTION {
-            prop_assert_eq!(res, cur);
+        let outcome = priest_donation_outcome(offer, suggested, quan, gold.saturating_sub(offer));
+        let mut prot = cur;
+        if outcome == DonationOutcome::Protection {
+            let n = protection_purchase_count(offer, suggested);
+            prop_assert_eq!(n, offer / (2 * suggested));
+            for i in 0..n as usize {
+                let r = rolls.get(i).copied().unwrap_or(0);
+                prop_assert_eq!(protection_purchase_step(prot, r), c_ublessed_step(prot, r));
+                prot = protection_purchase_step(prot, r);
+            }
         }
+        // Bounded by the hard cap 20, monotonic.
+        prop_assert!(prot <= MAX_DIVINE_PROTECTION);
+        prop_assert!(cur <= prot);
+        // Below the protection band nothing changes.
+        if offer < 2 * suggested * quan {
+            prop_assert!(outcome != DonationOutcome::Protection);
+        }
+    }
+
+    #[test]
+    fn prop_priest_donation_outcome_matches_c_reference(
+        offer in 0u32..=100_000,
+        suggested in 150u32..=20_000,
+        quan in 1u32..=50,
+        gold_after in 0u32..=200_000,
+    ) {
+        prop_assert_eq!(
+            priest_donation_outcome(offer, suggested, quan, gold_after),
+            c_priest_band(offer, suggested, quan, gold_after)
+        );
     }
 
     // -------------------------------------------------------------
@@ -1003,38 +1362,37 @@ proptest! {
     }
 
     // -------------------------------------------------------------
-    // Theorem: luckstone_preserves_positive_luck & luckstone_heals_negative_luck
+    // Luck timeout vs reference from timeout.c:595-620 / attrib.c:423
     // -------------------------------------------------------------
     #[test]
-    fn prop_luckstone_theorems(
+    fn prop_luck_timeout_matches_c_reference(
         luck in -10i32..=10,
+        base in -2i32..=2,
         stone_idx in 0u32..4,
+        amulet in proptest::bool::ANY,
+        angry in proptest::bool::ANY,
     ) {
         let stone = match stone_idx {
-            0 => LuckstoneStatus::None,
-            1 => LuckstoneStatus::Blessed,
-            2 => LuckstoneStatus::Uncursed,
-            _ => LuckstoneStatus::Cursed,
+            0 => None,
+            1 => Some(Buc::Blessed),
+            2 => Some(Buc::Uncursed),
+            _ => Some(Buc::Cursed),
         };
-
-        let next_luck = step_luck_decay(luck, stone);
-        // Canonical luck bounds preserved [-10, 10]
-        prop_assert!((-10..=10).contains(&next_luck));
-
-        // Blessed/Uncursed preserves good luck
-        if (stone == LuckstoneStatus::Blessed || stone == LuckstoneStatus::Uncursed) && luck > 0 {
-            prop_assert_eq!(next_luck, luck);
+        // C: time_luck = stone_luck(FALSE) (blessed +1, cursed -1, uncursed 0);
+        // nostone = !carrying(LUCKSTONE) && !stone_luck(TRUE).
+        let time_luck = match stone { Some(Buc::Blessed) => 1, Some(Buc::Cursed) => -1, _ => 0 };
+        let nostone = stone.is_none();
+        let mut want = luck;
+        if luck > base && (nostone || time_luck < 0) {
+            want -= 1;
+        } else if luck < base && (nostone || time_luck > 0) {
+            want += 1;
         }
-
-        // Blessed/Uncursed strictly improves bad luck toward 0
-        if (stone == LuckstoneStatus::Blessed || stone == LuckstoneStatus::Uncursed) && luck < 0 {
-            prop_assert_eq!(next_luck, luck + 1);
-        }
-
-        // Cursed luckstone traps bad luck
-        if stone == LuckstoneStatus::Cursed && luck < 0 {
-            prop_assert_eq!(next_luck, luck);
-        }
+        prop_assert_eq!(step_luck_decay(luck, base, stone), want);
+        prop_assert_eq!(
+            luck_decay_period(amulet, angry),
+            if amulet || angry { 300 } else { 600 }
+        );
     }
 
     // -------------------------------------------------------------
@@ -1242,21 +1600,54 @@ proptest! {
     }
 
     // -------------------------------------------------------------
-    // Theorem: mysterious_force_bounds
+    // Theorem: mysterious_force_push_bounded (reference from C do.c:1541-1573)
     // -------------------------------------------------------------
     #[test]
-    fn prop_mysterious_force_bounds(
-        depth in 1usize..100,
-        roll in any::<u32>(),
+    fn prop_mysterious_force_matches_c_reference(
+        depth in 0usize..40,
+        bottom in 1usize..40,
+        mf in 0u32..50,
+        al in 0usize..4,
+        t in any::<u32>(),
+        a in any::<u32>(),
+        b in any::<u32>(),
     ) {
-        let result = calculate_mysterious_force(depth, roll);
-        if roll % 3 == 0 {
-            prop_assert!(result.is_some());
-            let pushed_depth = result.unwrap();
-            prop_assert!(pushed_depth > depth);
-            prop_assert!(pushed_depth <= depth + 3);
+        let align = [Alignment::Lawful, Alignment::Neutral, Alignment::Chaotic, Alignment::Unaligned][al];
+        let got = mysterious_force(depth, bottom, mf, align, t, a, b);
+        // C: active iff dunlev < dunlevs - 3; fires iff !rn2(4 + mf)
+        let expected = if depth + 3 >= bottom || t % (4 + mf) != 0 {
+            MysteriousForceOutcome::NoEffect
         } else {
-            prop_assert!(result.is_none());
+            let odds: i64 = match align {
+                Alignment::Lawful => 4,
+                Alignment::Neutral => 3,
+                Alignment::Chaotic => 2,
+                Alignment::Unaligned => 3 - 128,
+            };
+            let mut diff = if odds <= 1 { 0 } else { (a as i64) % odds };
+            if diff != 0 {
+                let dest = (depth as i64 + (b as i64) % diff + 1).min(bottom as i64);
+                diff = dest - depth as i64;
+            }
+            if diff == 0 {
+                MysteriousForceOutcome::SameLevelTeleport
+            } else {
+                MysteriousForceOutcome::PushDown(depth + diff as usize)
+            }
+        };
+        prop_assert_eq!(got, expected);
+        // Bounds: push <= 3 lawful / 2 neutral / 1 chaotic, never in the bottom 4 levels.
+        if let MysteriousForceOutcome::PushDown(d) = got {
+            let cap = match align {
+                Alignment::Lawful => 3,
+                Alignment::Neutral => 2,
+                _ => 1,
+            };
+            prop_assert!(d > depth && d - depth <= cap);
+            prop_assert!(depth + 3 < bottom);
+        }
+        if depth + 3 >= bottom {
+            prop_assert_eq!(got, MysteriousForceOutcome::NoEffect);
         }
     }
 
@@ -1329,21 +1720,24 @@ proptest! {
         }
     }
     // -------------------------------------------------------------
-    // Theorem: prop_poly_damage_absorption_and_reversion
+    // Theorem: poly_reversion_preserves_base_hp (C hack.c:4256 losehp /
+    // polyself.c:1367 rehumanize; reference written from the C rule)
     // -------------------------------------------------------------
     #[test]
-    fn prop_poly_damage_absorption_and_reversion(
-        base_hp in 10i32..100,
-        poly_hp in 10i32..100,
-        damage in 0i32..150,
+    fn prop_poly_damage_matches_c_reference(
+        base_hp in 1i32..100,
+        poly_hp in 1i32..100,
+        damage in -20i32..250,
+        polymorphed in any::<bool>(),
+        unchanging in any::<bool>(),
     ) {
         use netrust_types::{Hero, PolymorphForm};
         use netrust_core::polymorph::{apply_poly_damage, PolyDamageResult};
-        
+
         let mut hero = Hero { mount: None, quivered_item: None,
             base_hp,
             base_max_hp: base_hp,
-            polymorph: Some(PolymorphForm {
+            polymorph: polymorphed.then_some(PolymorphForm {
                 monster_id: 1,
                 hp: poly_hp,
                 max_hp: poly_hp,
@@ -1352,26 +1746,31 @@ proptest! {
             lycanthropy: None, afflictions: Default::default(), skills: Default::default(),
         };
 
-        let result = apply_poly_damage(&mut hero, damage);
-        prop_assert_eq!(hero.base_max_hp, base_hp); // Invariant
-
-        if damage < poly_hp {
-            prop_assert!(matches!(result, PolyDamageResult::Absorbed));
-            prop_assert!(hero.polymorph.is_some());
-            prop_assert_eq!(hero.polymorph.as_ref().unwrap().hp, poly_hp - damage);
-            prop_assert_eq!(hero.base_hp, base_hp);
-        } else {
-            let excess = damage - poly_hp;
-            prop_assert!(hero.polymorph.is_none());
-            if excess < base_hp {
-                let matches_reverted = matches!(result, PolyDamageResult::Reverted { excess_damage } if excess_damage == excess);
-                prop_assert!(matches_reverted);
-                prop_assert_eq!(hero.base_hp, base_hp - excess);
+        // Reference: (result, base_hp after, poly hp after)
+        let n = damage.max(0);
+        let (exp, exp_base, exp_poly) = if polymorphed {
+            let mh = poly_hp - n;
+            if mh >= 1 {
+                (PolyDamageResult::Absorbed, base_hp, Some(mh))
+            } else if unchanging {
+                (PolyDamageResult::Dead, base_hp, Some(mh))
             } else {
-                prop_assert!(matches!(result, PolyDamageResult::Dead));
-                prop_assert!(hero.base_hp <= 0);
+                (PolyDamageResult::Reverted, base_hp, None)
             }
-        }
+        } else {
+            let uhp = base_hp - n;
+            if uhp < 1 {
+                (PolyDamageResult::Dead, uhp, None)
+            } else {
+                (PolyDamageResult::BaseDamaged, uhp, None)
+            }
+        };
+
+        let result = apply_poly_damage(&mut hero, damage, unchanging);
+        prop_assert_eq!(result, exp);
+        prop_assert_eq!(hero.base_hp, exp_base);
+        prop_assert_eq!(hero.base_max_hp, base_hp);
+        prop_assert_eq!(hero.polymorph.map(|p| p.hp), exp_poly);
     }
 
     // -------------------------------------------------------------
@@ -1428,7 +1827,7 @@ proptest! {
         use netrust_types::GenocideRegistry;
         use netrust_core::{is_genocided, apply_genocide};
         use netrust_types::GenocideTarget;
-        
+
         let mut registry = GenocideRegistry {
             genocided_species: std::collections::HashSet::new(),
             genocided_classes: std::collections::HashSet::new(),
@@ -1437,7 +1836,7 @@ proptest! {
         apply_genocide(&mut registry, GenocideTarget::Class(glyph));
 
         prop_assert!(is_genocided(&registry, &species, glyph));
-        
+
         if species != other_species && glyph != other_glyph {
             prop_assert!(!is_genocided(&registry, &other_species, other_glyph));
         }
@@ -1487,7 +1886,7 @@ proptest! {
             let res = tick_afflictions(&mut hero);
             prop_assert_eq!(res, AfflictionTickResult::Survived);
         }
-        
+
         let final_res = tick_afflictions(&mut hero);
         prop_assert_eq!(final_res, AfflictionTickResult::StoneDeath);
 
@@ -1495,7 +1894,7 @@ proptest! {
         hero.afflictions.petrification = Some(PetrificationState { turns_remaining: turns });
         cure_petrification(&mut hero);
         prop_assert!(hero.afflictions.petrification.is_none());
-        
+
         let cured_res = tick_afflictions(&mut hero);
         prop_assert_eq!(cured_res, AfflictionTickResult::Survived);
     }
@@ -1523,7 +1922,7 @@ proptest! {
             let res = tick_afflictions(&mut hero);
             prop_assert_eq!(res, AfflictionTickResult::Survived);
         }
-        
+
         let final_res = tick_afflictions(&mut hero);
         prop_assert_eq!(final_res, AfflictionTickResult::SlimeDeath);
 
@@ -1531,7 +1930,7 @@ proptest! {
         hero.afflictions.sliming = Some(SlimingState { turns_remaining: turns });
         cure_sliming(&mut hero);
         prop_assert!(hero.afflictions.sliming.is_none());
-        
+
         let cured_res = tick_afflictions(&mut hero);
         prop_assert_eq!(cured_res, AfflictionTickResult::Survived);
     }
@@ -1557,7 +1956,7 @@ proptest! {
             for j in i..levels.len() {
                 let li = levels[i];
                 let lj = levels[j];
-                
+
                 prop_assert!(li <= lj);
                 prop_assert!(skill_to_hit_bonus(lj) >= skill_to_hit_bonus(li));
                 prop_assert!(skill_damage_bonus(lj) >= skill_damage_bonus(li));
@@ -1571,20 +1970,20 @@ proptest! {
     ) {
         use netrust_core::skills::enhance_skill;
         use netrust_types::{SkillTree, SkillClass, SkillLevel};
-        
+
         let mut tree = SkillTree {
             skills: std::collections::HashMap::new(),
             available_slots: slots,
         };
 
         let skill = SkillClass::LongSword;
-        
+
         // Unskilled -> Basic
         let res = enhance_skill(&mut tree, skill);
         prop_assert!(res.is_ok());
         prop_assert_eq!(tree.available_slots, slots - 1);
         prop_assert_eq!(tree.skills.get(&skill), Some(&SkillLevel::Basic));
-        
+
         // Basic -> Skilled
         if tree.available_slots > 0 {
             let slots_before = tree.available_slots;
@@ -1592,7 +1991,7 @@ proptest! {
             prop_assert!(res2.is_ok());
             prop_assert_eq!(tree.available_slots, slots_before - 1);
             prop_assert_eq!(tree.skills.get(&skill), Some(&SkillLevel::Skilled));
-            
+
             // Skilled -> Expert
             if tree.available_slots > 0 {
                 let slots_before = tree.available_slots;
@@ -1600,7 +1999,7 @@ proptest! {
                 prop_assert!(res3.is_ok());
                 prop_assert_eq!(tree.available_slots, slots_before - 1);
                 prop_assert_eq!(tree.skills.get(&skill), Some(&SkillLevel::Expert));
-                
+
                 // Expert -> Cannot advance
                 if tree.available_slots > 0 {
                     let slots_before = tree.available_slots;
@@ -1612,12 +2011,6 @@ proptest! {
         }
     }
 }
-
-
-
-
-
-
 
 use netrust_core::ranged::{can_mount, effective_movement_cost, resolve_projectile_impact};
 
@@ -1640,7 +2033,6 @@ proptest! {
         prop_assert_eq!(result, roll < break_prob);
     }
 }
-
 
 prop_compose! {
     fn arb_trap_type()(idx in 0..13) -> netrust_types::TrapType {
@@ -1684,26 +2076,42 @@ prop_compose! {
 }
 
 proptest! {
+    // Reference written directly from NetHack 3.7 C: trap.c:1061 floor_trigger,
+    // dotrap trap.c:2996-3046 (check_in_air; already_seen && !rn2(5) escape).
     #[test]
-    fn prop_flying_bypasses_floor_traps(mut trap in arb_trap_record()) {
-        trap.state = netrust_types::TrapState::Revealed;
-        let is_floor = netrust_core::traps::is_floor_trap(trap.trap_type);
-        if is_floor {
-            prop_assert!(!netrust_core::traps::can_trigger_trap(&trap, true));
-        }
-        prop_assert!(netrust_core::traps::can_trigger_trap(&trap, false));
+    fn prop_can_trigger_trap_matches_c_reference(
+        trap in arb_trap_record(),
+        flying in proptest::bool::ANY,
+        roll in 0u32..100,
+    ) {
+        use netrust_types::{TrapState, TrapType};
+        let floor_trigger = matches!(
+            trap.trap_type,
+            TrapType::Arrow | TrapType::Dart | TrapType::RockFall | TrapType::Pit
+                | TrapType::SpikedPit | TrapType::Fire | TrapType::SleepingGas | TrapType::Rust
+        );
+        let disarmed = trap.state == TrapState::Disarmed;
+        let avoided_in_air = floor_trigger && flying;
+        let escaped_seen = trap.state == TrapState::Revealed && roll % 5 == 0;
+        let expected = !(disarmed || avoided_in_air || escaped_seen);
+        prop_assert_eq!(netrust_core::traps::is_floor_trap(trap.trap_type), floor_trigger);
+        prop_assert_eq!(netrust_core::traps::can_trigger_trap(&trap, flying, roll), expected);
     }
 
     #[test]
-    fn prop_disarmed_trap_never_triggers(mut trap in arb_trap_record(), is_flying in proptest::bool::ANY) {
+    fn prop_disarmed_trap_never_triggers(
+        mut trap in arb_trap_record(),
+        is_flying in proptest::bool::ANY,
+        roll in 0u32..100,
+    ) {
         trap.state = netrust_types::TrapState::Disarmed;
-        prop_assert!(!netrust_core::traps::can_trigger_trap(&trap, is_flying));
+        prop_assert!(!netrust_core::traps::can_trigger_trap(&trap, is_flying, roll));
     }
 
     #[test]
-    fn prop_trigger_trap_reveals_hidden(mut trap in arb_trap_record()) {
+    fn prop_trigger_trap_reveals_hidden(mut trap in arb_trap_record(), roll in 0u32..100) {
         trap.state = netrust_types::TrapState::Hidden;
-        let triggered = netrust_core::traps::trigger_trap(&mut trap, false);
+        let triggered = netrust_core::traps::trigger_trap(&mut trap, false, roll);
         prop_assert!(triggered.is_some());
         prop_assert_eq!(trap.state, netrust_types::TrapState::Revealed);
     }
@@ -1791,5 +2199,113 @@ proptest! {
         let mut t6 = tracker_base.clone();
         netrust_core::conducts::record_polypile(&mut t6);
         if !tracker_base.polypileless { prop_assert_eq!(t6.polypileless, false); }
+    }
+}
+
+/// C shk.c:2877-2988 `get_cost` (reference transcription for the proptest).
+fn c_get_cost(base: u32, cha: i32, dunce: bool, unid: bool, artifact: bool, angry: bool) -> u32 {
+    let mut tmp: i64 = if base == 0 { 5 } else { base as i64 };
+    let (mut multiplier, mut divisor) = (1i64, 1i64);
+    if unid {
+        multiplier *= 4;
+        divisor *= 3;
+    }
+    if dunce {
+        multiplier *= 4;
+        divisor *= 3;
+    }
+    if cha > 18 {
+        divisor *= 2;
+    } else if cha == 18 {
+        multiplier *= 2;
+        divisor *= 3;
+    } else if cha >= 16 {
+        multiplier *= 3;
+        divisor *= 4;
+    } else if cha <= 5 {
+        multiplier *= 2;
+    } else if cha <= 7 {
+        multiplier *= 3;
+        divisor *= 2;
+    } else if cha <= 10 {
+        multiplier *= 4;
+        divisor *= 3;
+    }
+    tmp *= multiplier;
+    if divisor > 1 {
+        tmp *= 10;
+        tmp /= divisor;
+        tmp += 5;
+        tmp /= 10;
+    }
+    if tmp <= 0 {
+        tmp = 1;
+    }
+    if artifact {
+        tmp *= 4;
+    }
+    if angry {
+        tmp += (tmp + 2) / 3;
+    }
+    tmp as u32
+}
+
+/// C shk.c:3148-3192 `set_cost` for a non-gem stack (reference transcription).
+fn c_set_cost(base: u32, dunce: bool, lowball: bool) -> u32 {
+    let mut tmp = base as i64;
+    let mut multiplier = 1i64;
+    let mut divisor = if dunce { 3i64 } else { 2 };
+    if lowball && tmp > 1 {
+        multiplier *= 3;
+        divisor *= 4;
+    }
+    if tmp >= 1 {
+        tmp *= multiplier;
+        if divisor > 1 {
+            tmp *= 10;
+            tmp /= divisor;
+            tmp += 5;
+            tmp /= 10;
+        }
+        if tmp < 1 {
+            tmp = 1;
+        }
+    }
+    tmp as u32
+}
+
+/// C priest.c:694-698: one iteration of the protection loop. `roll` is rn2(3)
+/// when `ublessed == 0`, else rn2(ublessed).
+fn c_ublessed_step(ublessed: u32, roll: u32) -> u32 {
+    if ublessed == 0 {
+        roll.min(2) + 2
+    } else if ublessed < 20 && (ublessed < 9 || roll.min(ublessed - 1) == 0) {
+        ublessed + 1
+    } else {
+        ublessed
+    }
+}
+
+/// C priest.c:654-723: the donation band chosen for `offer` (gold already handed over).
+fn c_priest_band(offer: u32, suggested: u32, quan: u32, gold_after: u32) -> DonationOutcome {
+    let (offer, sq, gold) = (
+        offer as i64,
+        suggested as i64 * quan as i64,
+        gold_after as i64,
+    );
+    if offer == 0 {
+        DonationOutcome::Refused
+    } else if offer < sq {
+        if gold > offer * 2 {
+            DonationOutcome::Cheapskate
+        } else {
+            DonationOutcome::Thanks
+        }
+    } else if offer < sq * 2 {
+        DonationOutcome::Clairvoyance
+    } else if offer < sq * 3 {
+        DonationOutcome::Protection
+    } else {
+        DonationOutcome::Selfless
     }
 }

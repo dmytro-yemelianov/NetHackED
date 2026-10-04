@@ -17,13 +17,18 @@ pub fn render_headstone(
         let pad_total = (width - 2).saturating_sub(len);
         let pad_left = pad_total / 2;
         let pad_right = pad_total - pad_left;
-        format!("|{}{}{}|", " ".repeat(pad_left), trimmed, " ".repeat(pad_right))
+        format!(
+            "|{}{}{}|",
+            " ".repeat(pad_left),
+            trimmed,
+            " ".repeat(pad_right)
+        )
     };
 
     let killer_desc = if killer.starts_with("a ") || killer.starts_with("an ") {
-        format!("killed by {}", killer)
+        format!("killed by {killer}")
     } else {
-        format!("killed by a {}", killer)
+        format!("killed by a {killer}")
     };
 
     let mut lines = Vec::new();
@@ -33,8 +38,8 @@ pub fn render_headstone(
     lines.push(center("REST IN PEACE"));
     lines.push(center(""));
     lines.push(center(hero));
-    lines.push(center(&format!("Level {}", level)));
-    lines.push(center(&format!("Died on Dlvl {}", depth)));
+    lines.push(center(&format!("Level {level}")));
+    lines.push(center(&format!("Died on Dlvl {depth}")));
     lines.push(center(&killer_desc));
     lines.push(center(""));
     if !epitaph.is_empty() {
@@ -62,7 +67,14 @@ mod tests {
 
     #[test]
     fn test_headstone_rendering() {
-        let stone = render_headstone("Conan", 5, 3, "hill orc", "2026-10-04", "Always fought bravely");
+        let stone = render_headstone(
+            "Conan",
+            5,
+            3,
+            "hill orc",
+            "2026-10-04",
+            "Always fought bravely",
+        );
         assert!(stone.contains("REST IN PEACE"));
         assert!(stone.contains("Conan"));
         assert!(stone.contains("Level 5"));

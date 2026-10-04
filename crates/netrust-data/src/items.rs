@@ -837,7 +837,6 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         is_container: false,
         is_bag_of_holding: false,
     },
-
     ItemArchetype {
         id: ItemKindId::WandOfPolymorph,
         name: "wand of polymorph",
@@ -850,7 +849,6 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         is_container: false,
         is_bag_of_holding: false,
     },
-
     ItemArchetype {
         id: ItemKindId::PotionOfPolymorph,
         name: "potion of polymorph",
@@ -913,7 +911,6 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
     },
 ];
 /// Look up an item archetype from the catalog table.
-
 pub fn get_item_archetype(id: ItemKindId) -> &'static ItemArchetype {
     ITEM_CATALOG
         .iter()
@@ -953,5 +950,6 @@ pub fn create_item_record(id: ItemKindId, location: ItemLocation, buc: Buc) -> I
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,
+        recharged: 0,
     }
 }

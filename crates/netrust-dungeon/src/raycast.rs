@@ -1,10 +1,10 @@
 //! Raycasting and beam propagation through dungeon geometry.
 //!
-//! Formally verified in `NetMechanics.Raycast`: strictly terminates in at most `max_energy` steps.
+//! Modeled in Lean 4 (`NetMechanics.Raycast`); the Lean model proves only one-step energy facts, not full termination.
 
+use crate::level::DungeonLevel;
 use netrust_core::{step_ray, BeamRay, StepResult, SurfaceOrientation, Velocity};
 use netrust_types::{Coord, Direction, Tile, COLNO};
-use crate::level::DungeonLevel;
 
 /// Traces a wand beam ray through the dungeon grid, handling wall reflections.
 /// Verified in `NetMechanics.Raycast`: strictly terminates in at most `max_energy` steps.

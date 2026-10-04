@@ -1,6 +1,6 @@
 //! Tactical multi-agent cooperation: Pet BUC detection, promotion hierarchy, and tactical goal selection.
 //!
-//! Formally verified in Lean 4 (`NetMechanics/PetCoop.lean`).
+//! Modeled in Lean 4 (`NetMechanics/PetCoop.lean`).
 
 use netrust_types::{Buc, Coord};
 
@@ -32,8 +32,12 @@ pub enum PetSpeciesTier {
 impl PetSpeciesTier {
     pub fn family(self) -> PetFamily {
         match self {
-            PetSpeciesTier::LittleDog | PetSpeciesTier::Dog | PetSpeciesTier::WarDog => PetFamily::Canine,
-            PetSpeciesTier::Kitten | PetSpeciesTier::Housecat | PetSpeciesTier::LargeCat => PetFamily::Feline,
+            PetSpeciesTier::LittleDog | PetSpeciesTier::Dog | PetSpeciesTier::WarDog => {
+                PetFamily::Canine
+            }
+            PetSpeciesTier::Kitten | PetSpeciesTier::Housecat | PetSpeciesTier::LargeCat => {
+                PetFamily::Feline
+            }
         }
     }
 
@@ -98,7 +102,10 @@ pub enum PetGoal<Id = usize> {
 
 /// Co-op decision function:
 /// Proved in Lean 4: Hostile defense strictly overrides item fetching or following (`pet_prioritizes_hero_defense`).
-pub fn choose_pet_goal<Id: Copy>(hostile_near_hero: Option<Id>, safe_item_nearby: Option<Coord>) -> PetGoal<Id> {
+pub fn choose_pet_goal<Id: Copy>(
+    hostile_near_hero: Option<Id>,
+    safe_item_nearby: Option<Coord>,
+) -> PetGoal<Id> {
     match hostile_near_hero {
         Some(hostile_id) => PetGoal::AttackHostile(hostile_id),
         None => match safe_item_nearby {
@@ -121,12 +128,30 @@ mod tests {
 
     #[test]
     fn test_promotion_ladder() {
-        assert_eq!(promote_pet(PetSpeciesTier::LittleDog, 1), PetSpeciesTier::LittleDog);
-        assert_eq!(promote_pet(PetSpeciesTier::LittleDog, 4), PetSpeciesTier::Dog);
-        assert_eq!(promote_pet(PetSpeciesTier::LittleDog, 7), PetSpeciesTier::WarDog);
-        assert_eq!(promote_pet(PetSpeciesTier::Kitten, 5), PetSpeciesTier::Housecat);
-        assert_eq!(promote_pet(PetSpeciesTier::Housecat, 8), PetSpeciesTier::LargeCat);
-        assert_eq!(promote_pet(PetSpeciesTier::WarDog, 10), PetSpeciesTier::WarDog);
+        assert_eq!(
+            promote_pet(PetSpeciesTier::LittleDog, 1),
+            PetSpeciesTier::LittleDog
+        );
+        assert_eq!(
+            promote_pet(PetSpeciesTier::LittleDog, 4),
+            PetSpeciesTier::Dog
+        );
+        assert_eq!(
+            promote_pet(PetSpeciesTier::LittleDog, 7),
+            PetSpeciesTier::WarDog
+        );
+        assert_eq!(
+            promote_pet(PetSpeciesTier::Kitten, 5),
+            PetSpeciesTier::Housecat
+        );
+        assert_eq!(
+            promote_pet(PetSpeciesTier::Housecat, 8),
+            PetSpeciesTier::LargeCat
+        );
+        assert_eq!(
+            promote_pet(PetSpeciesTier::WarDog, 10),
+            PetSpeciesTier::WarDog
+        );
     }
 
     #[test]

@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
-"""NetRust Policy Gradient / PPO Reinforcement Learning Training Pipeline.
+"""NetRust REINFORCE (vanilla policy gradient) training script.
 
-Trains a compact 2-layer Neural Policy on NetRustGymEnv using pure Python
-(zero external dependencies: no torch/numpy required).
+Trains a compact 2-layer neural policy on NetRustGymEnv with the REINFORCE
+algorithm (Monte-Carlo returns, normalized advantages, no baseline network, no
+clipping -- this is not PPO). The policy math is pure Python; only the
+environment needs gymnasium + numpy. Actions are sampled from the policy
+distribution restricted to the env's action mask.
 Exports trained weights to JSON for real-time 60 FPS in-browser WebAssembly evaluation.
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import math
 import random
@@ -15,42 +19,58 @@ import shutil
 import sys
 import time
 from pathlib import Path
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict, Any, Optional
+
+import numpy as np
 
 # Ensure python directory and netrust_py library are loaded
 script_dir = Path(__file__).resolve().parent
 repo_root = script_dir.parent
 sys.path.insert(0, str(script_dir))
 
-target_debug = repo_root / "target" / "debug"
-target_release = repo_root / "target" / "release"
-for target_dir in (target_release, target_debug):
-    dylib = target_dir / "libnetrust_py.dylib"
-    so = target_dir / "netrust_py.so"
-    if dylib.exists() and not so.exists():
-        shutil.copy(dylib, so)
-    if so.exists() and str(target_dir) not in sys.path:
-        sys.path.insert(0, str(target_dir))
+try:
+    import netrust_py  # noqa: F401  (installed via `maturin develop`)
+except ImportError:
+    target_debug = repo_root / "target" / "debug"
+    target_release = repo_root / "target" / "release"
+    for target_dir in (target_release, target_debug):
+        dylib = target_dir / "libnetrust_py.dylib"
+        so = target_dir / "netrust_py.so"
+        if dylib.exists() and not so.exists():
+            shutil.copy(dylib, so)
+        if so.exists() and str(target_dir) not in sys.path:
+            sys.path.insert(0, str(target_dir))
 
-from netrust_gym import NetRustGymEnv, ACTION_NAMES
+from netrust_gym import NetRustGymEnv, ACTION_NAMES, sample_masked_action
+
+PRAY = ACTION_NAMES.index("PRAY")
 
 NUM_FEATURES = 12
 NUM_HIDDEN = 16
 NUM_ACTIONS = len(ACTION_NAMES)
 
+def _val(obs: Dict[str, Any], key: str, default: float) -> float:
+    """Read a scalar observation (stored as a 1-element array)."""
+    v = obs.get(key)
+    if v is None:
+        return float(default)
+    return float(np.asarray(v).reshape(-1)[0])
+
+
 def extract_features(obs: Dict[str, Any]) -> List[float]:
     """Convert NetRust gym observation dict into normalized feature vector."""
-    hp_norm = float(obs.get("player_hp", 1)) / max(1.0, float(obs.get("player_max_hp", 1)))
-    hp_danger = 1.0 if obs.get("player_hp", 18) <= 6 else 0.0
-    ac_norm = float(obs.get("player_ac", 10)) / 10.0
-    depth_norm = float(obs.get("depth", 1)) / 10.0
-    gold_norm = min(5.0, float(obs.get("gold", 0)) / 100.0)
-    nutr_norm = float(obs.get("nutrition", 900)) / 1000.0
-    pw_norm = float(obs.get("pw", 5)) / 20.0
-    hostiles = min(2.0, max(0.0, float(obs.get("num_visible_actors", 1) - 1)))
-    x_norm = float(obs.get("player_x", 40)) / 80.0
-    y_norm = float(obs.get("player_y", 12)) / 24.0
-    t = float(obs.get("turn", 1))
+    hp = _val(obs, "player_hp", 18)
+    hp_norm = hp / max(1.0, _val(obs, "player_max_hp", 1))
+    hp_danger = 1.0 if hp <= 6 else 0.0
+    ac_norm = _val(obs, "player_ac", 10) / 10.0
+    depth_norm = _val(obs, "depth", 1) / 10.0
+    gold_norm = min(5.0, _val(obs, "gold", 0) / 100.0)
+    nutr_norm = _val(obs, "nutrition", 900) / 1000.0
+    pw_norm = _val(obs, "pw", 5) / 20.0
+    hostiles = min(2.0, max(0.0, _val(obs, "num_visible_actors", 1) - 1))
+    x_norm = _val(obs, "player_x", 40) / 80.0
+    y_norm = _val(obs, "player_y", 12) / 24.0
+    t = _val(obs, "turn", 1)
     turn_sin = math.sin(t * 0.1)
     turn_cos = math.cos(t * 0.1)
 
@@ -73,8 +93,13 @@ class NeuralPolicy:
         self.w2 = [[rng.gauss(0, scale2) for _ in range(h_dim)] for _ in range(out_dim)]
         self.b2 = [0.0] * out_dim
 
-    def forward(self, x: List[float]) -> Tuple[List[float], List[float], List[float]]:
-        """Forward pass: returns (hidden_pre_act, hidden_post_act, action_probs)."""
+    def forward(
+        self, x: List[float], mask: Optional[List[bool]] = None
+    ) -> Tuple[List[float], List[float], List[float]]:
+        """Forward pass: returns (hidden_pre_act, hidden_post_act, action_probs).
+
+        If `mask` is given, invalid actions get probability 0 (masked softmax).
+        """
         # Layer 1: Linear + ReLU
         h_pre = [
             sum(w * xi for w, xi in zip(row, x)) + b
@@ -87,6 +112,8 @@ class NeuralPolicy:
             sum(w * hi for w, hi in zip(row, h_post)) + b
             for row, b in zip(self.w2, self.b2)
         ]
+        if mask is not None and any(mask):
+            logits = [l if m else -math.inf for l, m in zip(logits, mask)]
         max_l = max(logits)
         exp_logits = [math.exp(l - max_l) for l in logits]
         sum_exp = sum(exp_logits)
@@ -97,11 +124,15 @@ class NeuralPolicy:
     def sample_action(self, probs: List[float], rng: random.Random) -> int:
         r = rng.random()
         cum = 0.0
+        last = None
         for i, p in enumerate(probs):
+            if p > 0:
+                last = i
             cum += p
-            if r <= cum:
+            if p > 0 and r <= cum:
                 return i
-        return len(probs) - 1
+        # Rounding fallback: never return a masked (zero-probability) action.
+        return last if last is not None else len(probs) - 1
 
     def export_weights(self) -> Dict[str, Any]:
         """Export serialized weights dictionary."""
@@ -123,24 +154,26 @@ def train_rl_agent(
     max_steps_per_episode: int = 120,
     lr: float = 0.015,
     gamma: float = 0.98,
-    seed: int = 42
+    seed: int = 42,
+    out_path: Optional[Path] = None,
 ) -> Dict[str, Any]:
     print(f"============================================================")
-    print(f" NetRust PPO / Policy Gradient Training Engine")
+    print(f" NetRust REINFORCE Training Engine")
     print(f" Features: {NUM_FEATURES} | Hidden: {NUM_HIDDEN} | Actions: {NUM_ACTIONS} | Episodes: {episodes}")
     print(f"============================================================")
 
     policy = NeuralPolicy(NUM_FEATURES, NUM_HIDDEN, NUM_ACTIONS, seed=seed)
     rng = random.Random(seed)
+    np_rng = np.random.default_rng(seed)
+    env = NetRustGymEnv(seed=seed, max_steps=max_steps_per_episode)
     episode_history = []
     start_time = time.time()
 
     for ep in range(1, episodes + 1):
         ep_seed = seed + ep * 17
-        env = NetRustGymEnv(seed=ep_seed, max_steps=max_steps_per_episode, render_mode="ansi")
-        obs, _ = env.reset()
+        obs, _ = env.reset(seed=ep_seed)
 
-        trajectory: List[Tuple[List[float], List[float], List[float], int, float]] = []
+        trajectory: List[Tuple[List[float], List[float], List[float], int, float, List[bool]]] = []
         total_reward = 0.0
         steps = 0
         terminated = False
@@ -149,22 +182,26 @@ def train_rl_agent(
         while not (terminated or truncated):
             steps += 1
             x = extract_features(obs)
-            h_pre, h_post, probs = policy.forward(x)
-            act = policy.sample_action(probs, rng)
+            mask = [bool(m) for m in env.action_masks()]
+            h_pre, h_post, probs = policy.forward(x, mask)
+            if any(mask):
+                act = policy.sample_action(probs, rng)
+            else:
+                act = sample_masked_action(mask, np_rng)  # WAIT fallback
+            prev_hp = _val(obs, "player_hp", 18)
+            prev_depth = _val(obs, "depth", 1)
 
             obs, reward, terminated, truncated, info = env.step(act)
 
             # Reward shaping for dungeon progression
             shaped_reward = reward
-            if obs.get("player_hp", 18) <= 6 and act == 13: # Prayed when low
+            if prev_hp <= 6 and act == PRAY:  # Prayed when low
                 shaped_reward += 0.8
-            if act == 9 and obs.get("depth", 1) > 1: # Successfully descended
+            if _val(obs, "depth", 1) > prev_depth:  # Successfully descended
                 shaped_reward += 3.0
-            if obs.get("gold", 50) > 50:
-                shaped_reward += 0.2
 
             total_reward += shaped_reward
-            trajectory.append((x, h_pre, h_post, act, shaped_reward))
+            trajectory.append((x, h_pre, h_post, act, shaped_reward, mask))
 
         # Compute discounted returns G_t
         T = len(trajectory)
@@ -190,9 +227,9 @@ def train_rl_agent(
         grad_b2 = [0.0] * NUM_ACTIONS
 
         for t in range(T):
-            x, h_pre, h_post, act, _ = trajectory[t]
+            x, h_pre, h_post, act, _, mask = trajectory[t]
             adv = advantages[t]
-            _, _, probs = policy.forward(x)
+            _, _, probs = policy.forward(x, mask)
 
             # Softmax policy gradient: dLogPi/dz_i = (1{i == a} - probs[i]) * adv
             d_logits = [0.0] * NUM_ACTIONS
@@ -235,14 +272,14 @@ def train_rl_agent(
             "episode": ep,
             "steps": steps,
             "reward": round(total_reward, 2),
-            "final_hp": obs.get("player_hp", 0),
-            "depth": obs.get("depth", 1)
+            "final_hp": _val(obs, "player_hp", 0),
+            "depth": _val(obs, "depth", 1)
         })
 
         if ep % 10 == 0 or ep == episodes:
             mean_rew = sum(e["reward"] for e in episode_history[-10:]) / min(len(episode_history), 10)
             mean_steps = sum(e["steps"] for e in episode_history[-10:]) / min(len(episode_history), 10)
-            print(f"[Episode {ep:3d}/{episodes}] Mean Reward (last 10): {mean_rew:6.2f} | Mean Steps: {mean_steps:5.1f} | Final HP: {obs.get('player_hp', 0)}")
+            print(f"[Episode {ep:3d}/{episodes}] Mean Reward (last 10): {mean_rew:6.2f} | Mean Steps: {mean_steps:5.1f} | Final HP: {_val(obs, 'player_hp', 0):.0f}")
 
     elapsed = time.time() - start_time
     print(f"------------------------------------------------------------")
@@ -251,17 +288,25 @@ def train_rl_agent(
 
     # Export weights to JSON
     weights_data = policy.export_weights()
-    weights_path = repo_root / "policy_weights.json"
-    web_weights_path = repo_root / "web" / "policy_weights.json"
-
-    with open(weights_path, "w") as f:
-        json.dump(weights_data, f, indent=2)
+    web_weights_path = out_path or (repo_root / "web" / "policy_weights.json")
 
     with open(web_weights_path, "w") as f:
         json.dump(weights_data, f, indent=2)
 
-    print(f"Exported policy weights to: {weights_path} & {web_weights_path}")
+    print(f"Exported policy weights to: {web_weights_path}")
     return weights_data
 
 if __name__ == "__main__":
-    train_rl_agent(episodes=60, max_steps_per_episode=120)
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--episodes", type=int, default=60)
+    parser.add_argument("--max-steps", type=int, default=120)
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--out", type=Path, default=None,
+                        help="weights JSON path (default: web/policy_weights.json)")
+    args = parser.parse_args()
+    train_rl_agent(
+        episodes=args.episodes,
+        max_steps_per_episode=args.max_steps,
+        seed=args.seed,
+        out_path=args.out,
+    )

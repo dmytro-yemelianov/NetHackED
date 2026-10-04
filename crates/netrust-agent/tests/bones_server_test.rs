@@ -1,6 +1,5 @@
 //! Integration tests for the Networked Graveyard & Shared Bones Server.
 
-use std::sync::{Arc, Mutex};
 use netrust_agent::bones::{
     create_bones_router, load_remote_bones_for_current_depth, sync_bones_on_death, BonesClient,
     GraveyardState,
@@ -8,6 +7,7 @@ use netrust_agent::bones::{
 use netrust_arena::{ItemLocation, ItemRecord};
 use netrust_sim::{Coord, SimulationWorld};
 use netrust_types::{Buc, ItemClass};
+use std::sync::{Arc, Mutex};
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_networked_bones_flow_and_ghost_reincarnation() {
@@ -56,11 +56,12 @@ async fn test_networked_bones_flow_and_ghost_reincarnation() {
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,
+        recharged: 0,
     });
 
     // 4. Conan falls in battle to a hill orc -> sync bones to server
-    let grave_opt = sync_bones_on_death(&mut sim1, &client, "hill orc")
-        .expect("Bones upload should succeed");
+    let grave_opt =
+        sync_bones_on_death(&mut sim1, &client, "hill orc").expect("Bones upload should succeed");
     let grave = grave_opt.expect("Bones should be valid for depth 3");
 
     assert_eq!(grave.hero_name, "Conan");
@@ -82,7 +83,9 @@ async fn test_networked_bones_flow_and_ghost_reincarnation() {
     assert_eq!(graves.len(), 1);
     assert_eq!(graves[0].hero_name, "Conan");
 
-    let conan_grave = client.fetch_grave("Conan").expect("Grave lookup should succeed");
+    let conan_grave = client
+        .fetch_grave("Conan")
+        .expect("Grave lookup should succeed");
     assert!(conan_grave.is_some());
     assert_eq!(conan_grave.unwrap().hero_name, "Conan");
 
@@ -104,25 +107,38 @@ async fn test_networked_bones_flow_and_ghost_reincarnation() {
     let ghost_found = sim2.arena.actors.iter().any(|(_, actor)| {
         actor.name.to_ascii_lowercase().contains("ghost") && actor.name.contains("Conan")
     });
-    assert!(ghost_found, "Ghost of Conan must be spawned in the dungeon arena");
+    assert!(
+        ghost_found,
+        "Ghost of Conan must be spawned in the dungeon arena"
+    );
 
     // Verify Conan's long sword was scattered and corrupted to cursed
     let floor_items = sim2.arena.items_at_floor(death_coord);
-    let neighbor_items: Vec<_> = death_coord.neighbors().into_iter()
+    let neighbor_items: Vec<_> = death_coord
+        .neighbors()
+        .into_iter()
         .flat_map(|c| sim2.arena.items_at_floor(c))
         .collect();
     let all_items: Vec<_> = floor_items.into_iter().chain(neighbor_items).collect();
 
     let sword_corrupted = all_items.iter().any(|&it_id| {
-        sim2.arena.items.get(it_id)
+        sim2.arena
+            .items
+            .get(it_id)
             .map(|it| it.name == "long sword" && it.buc == Buc::Cursed)
             .unwrap_or(false)
     });
-    assert!(sword_corrupted, "Conan's blessed sword should be corrupted to cursed");
+    assert!(
+        sword_corrupted,
+        "Conan's blessed sword should be corrupted to cursed"
+    );
 
     // 7. Verify bones was claimed from the server
     let post_stats = client.fetch_stats().expect("Stats should fetch");
-    assert_eq!(post_stats.active_bones_count, 0, "Bones for depth 3 should be claimed");
+    assert_eq!(
+        post_stats.active_bones_count, 0,
+        "Bones for depth 3 should be claimed"
+    );
 
     // Next fetch for depth 3 returns None
     let empty_fetch = client.fetch_bones(3).expect("Fetch should succeed");
@@ -194,4 +210,3 @@ async fn test_multiple_depth_bones_and_graveyard_registry() {
     assert_eq!(stats_reset.active_bones_count, 0);
     assert_eq!(stats_reset.total_graves, 0);
 }
-

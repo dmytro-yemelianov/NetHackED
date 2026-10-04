@@ -6,7 +6,11 @@ use crate::events::GameEvent;
 use crate::world::SimulationWorld;
 
 impl SimulationWorld {
-    pub(crate) fn handle_engrave(&mut self, text: String, medium: EngravingMedium) -> Vec<GameEvent> {
+    pub(crate) fn handle_engrave(
+        &mut self,
+        text: String,
+        medium: EngravingMedium,
+    ) -> Vec<GameEvent> {
         let mut events = Vec::new();
         let Some(player) = self.arena.actors.get(self.player_id).cloned() else {
             return events;
@@ -26,7 +30,7 @@ impl SimulationWorld {
             netrust_core::engraving::EngravingMedium::Marked(_) => "with marking ink",
         };
         events.push(GameEvent::LogMessage {
-            text: format!("You write \"{}\" {} on the floor.", text, medium_desc),
+            text: format!("You write \"{text}\" {medium_desc} on the floor."),
         });
         self.scheduler.hero_act(NORMAL_SPEED);
 

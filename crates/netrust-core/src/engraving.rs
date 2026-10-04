@@ -1,6 +1,6 @@
 //! Floor Engravings and Elbereth Wards.
 //!
-//! Formally verified in `NetMechanics.Engraving`.
+//! Modeled in Lean 4 (`NetMechanics.Engraving`).
 //! Models medium durability, smudge degradation, and monster ward repulsion.
 
 use serde::{Deserialize, Serialize};

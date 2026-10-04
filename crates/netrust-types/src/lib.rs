@@ -14,7 +14,6 @@ new_key_type! {
 
 pub type SlotId = ItemId;
 
-
 pub const COLNO: usize = 80;
 pub const ROWNO: usize = 21;
 
@@ -29,7 +28,9 @@ pub enum Locale {
 impl Locale {
     pub fn parse(s: &str) -> Self {
         match s.trim().to_lowercase().as_str() {
-            "uk" | "ua" | "uk_ua" | "uk-ua" | "ukrainian" | "укр" | "українська" => Locale::Uk,
+            "uk" | "ua" | "uk_ua" | "uk-ua" | "ukrainian" | "укр" | "українська" => {
+                Locale::Uk
+            }
             _ => Locale::En,
         }
     }
@@ -41,7 +42,6 @@ impl Locale {
         }
     }
 }
-
 
 /// Bounded coordinate on the $80 \times 21$ dungeon grid.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -63,7 +63,10 @@ impl TryFrom<RawCoord> for Coord {
 
     fn try_from(raw: RawCoord) -> Result<Self, Self::Error> {
         Coord::new(raw.x, raw.y).ok_or_else(|| {
-            format!("coordinate ({}, {}) out of bounds {}x{}", raw.x, raw.y, COLNO, ROWNO)
+            format!(
+                "coordinate ({}, {}) out of bounds {}x{}",
+                raw.x, raw.y, COLNO, ROWNO
+            )
         })
     }
 }
@@ -332,7 +335,10 @@ pub struct WandCharges {
 
 impl WandCharges {
     pub const fn new(charges: u32) -> Self {
-        Self { charges, recharges: 0 }
+        Self {
+            charges,
+            recharges: 0,
+        }
     }
 }
 
@@ -356,19 +362,42 @@ pub enum DoorState {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Tile {
     Stone,
-    Wall { horizontal: bool },
+    Wall {
+        horizontal: bool,
+    },
     Corr,
     Room,
-    Door { state: DoorState, trapped: bool },
-    SecretDoor { locked: bool },
-    Stairs { up: bool },
-    BranchStairs { branch: BranchId, level: usize, up: bool },
-    Pit { filled: bool },
-    Altar { align: Alignment },
-    HighAltar { align: Alignment },
-    Drawbridge { open: bool },
+    Door {
+        state: DoorState,
+        trapped: bool,
+    },
+    SecretDoor {
+        locked: bool,
+    },
+    Stairs {
+        up: bool,
+    },
+    BranchStairs {
+        branch: BranchId,
+        level: usize,
+        up: bool,
+    },
+    Pit {
+        filled: bool,
+    },
+    Altar {
+        align: Alignment,
+    },
+    HighAltar {
+        align: Alignment,
+    },
+    Drawbridge {
+        open: bool,
+    },
     Moat,
-    Pool { frozen: bool },
+    Pool {
+        frozen: bool,
+    },
     Lava,
 }
 
@@ -680,9 +709,18 @@ pub enum MonsterSpell {
 /// Special tactical attack ability of a monster.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MonsterAbility {
-    Breath { breath: BreathType, range: usize, damage_dice: (u32, u32) },
-    Gaze { gaze: GazeType },
-    Spellcaster { spell: MonsterSpell, cooldown_turns: u32 },
+    Breath {
+        breath: BreathType,
+        range: usize,
+        damage_dice: (u32, u32),
+    },
+    Gaze {
+        gaze: GazeType,
+    },
+    Spellcaster {
+        spell: MonsterSpell,
+        cooldown_turns: u32,
+    },
 }
 
 /// An item preserved in a graveyard bones file.
@@ -776,7 +814,6 @@ mod tests {
         assert_eq!(json, r#"{"x":3,"y":4}"#);
     }
 }
-
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PetrificationState {

@@ -22,7 +22,7 @@ pub struct GameObservation {
     pub player_hp: u32,
     pub player_max_hp: u32,
     pub player_ac: i32,
-    pub player_nutrition: u32,
+    pub player_nutrition: i32,
     pub player_pw: u32,
     pub player_max_pw: u32,
     pub player_gold: u32,

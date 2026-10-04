@@ -1,6 +1,6 @@
 //! Pet and companion dynamics.
 //!
-//! Formally verified in Lean 4 (`NetMechanics.Pet`).
+//! Modeled in Lean 4 (`NetMechanics.Pet`).
 
 use netrust_types::Coord;
 
@@ -18,7 +18,7 @@ pub enum HeroInteraction<Id = usize> {
 }
 
 /// Swaps the positions of the hero and their tame companion.
-/// Formally proven in Lean 4 to be an involution (`swap_involution`) and preserve distance.
+/// Proven in the Lean 4 model to be an involution (`swap_involution`) and preserve distance.
 pub fn swap_displacement(hero_pos: Coord, pet_pos: Coord) -> (Coord, Coord) {
     (pet_pos, hero_pos)
 }
@@ -43,7 +43,7 @@ pub fn interact_with_occupant<Id: Copy>(
 }
 
 /// Calculate updated tameness and tame status after offering food/treat.
-/// Formally proven in Lean 4 to strictly increase or maintain tameness.
+/// Proven in the Lean 4 model to strictly increase or maintain tameness.
 pub fn feed_pet(tameness: u32, is_tame: bool, nutrition: u32) -> (u32, bool) {
     if is_tame {
         (tameness + nutrition / 10 + 1, true)

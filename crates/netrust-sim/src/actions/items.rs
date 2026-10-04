@@ -5,7 +5,7 @@ use netrust_core::{buc::WaterType, energy::NORMAL_SPEED, SpellKind};
 use netrust_data::{create_item_record, ItemKindId};
 use netrust_dungeon::trace_beam_path;
 use netrust_types::{Buc, Coord, Direction, ItemClass};
-use rand::RngCore;
+use rand::{Rng, RngCore};
 
 use crate::events::GameEvent;
 use crate::world::SimulationWorld;
@@ -22,14 +22,80 @@ pub fn normalize_wish_name(query: &str) -> String {
 }
 
 const UNWISHABLE: &[ItemKindId] = &[
-    ItemKindId::BellOfOpening, ItemKindId::CandelabrumOfInvocation, ItemKindId::BookOfTheDead,
-    ItemKindId::OrbOfFate, ItemKindId::HeartOfAhriman, ItemKindId::MagicMirrorOfMerlin,
-    ItemKindId::EyesOfTheOverworld, ItemKindId::MasterKeyOfThievery, ItemKindId::TsurugiOfMuramasa,
-    ItemKindId::PlatinumYendorianExpressCard, ItemKindId::StaffOfAesculapius, ItemKindId::OrbOfDetection,
+    ItemKindId::BellOfOpening,
+    ItemKindId::CandelabrumOfInvocation,
+    ItemKindId::BookOfTheDead,
+    ItemKindId::OrbOfFate,
+    ItemKindId::HeartOfAhriman,
+    ItemKindId::MagicMirrorOfMerlin,
+    ItemKindId::EyesOfTheOverworld,
+    ItemKindId::MasterKeyOfThievery,
+    ItemKindId::TsurugiOfMuramasa,
+    ItemKindId::PlatinumYendorianExpressCard,
+    ItemKindId::StaffOfAesculapius,
+    ItemKindId::OrbOfDetection,
 ];
 
 impl SimulationWorld {
-    pub(crate) fn handle_dip(&mut self, item_index: usize, into_water: WaterType) -> Vec<GameEvent> {
+    /// Draws one C enchant roll from `self.rng` in the range of `draw`
+    /// (`rn2(n)`: `0..n`, `rnd(n)`: `1..=n`); no draw yields 0.
+    fn draw_enchant(&mut self, draw: netrust_core::EnchantDraw) -> u32 {
+        match draw {
+            netrust_core::EnchantDraw::None => 0,
+            netrust_core::EnchantDraw::Rn2(n) => self.rng.random_range(0..n.max(1)),
+            netrust_core::EnchantDraw::Rnd(n) => self.rng.random_range(1..=n.max(1)),
+        }
+    }
+
+    /// Applies an enchant scroll outcome to item `id` and logs it.
+    fn apply_enchant_outcome(
+        &mut self,
+        id: netrust_arena::ItemId,
+        outcome: netrust_core::EnchantOutcome,
+        is_armor: bool,
+        events: &mut Vec<GameEvent>,
+    ) {
+        match outcome {
+            netrust_core::EnchantOutcome::Evaporated => {
+                let name = self
+                    .arena
+                    .items
+                    .get(id)
+                    .map(|it| it.name.clone())
+                    .unwrap_or_default();
+                self.arena.destroy_item(id);
+                if self.wielded_item == Some(id) {
+                    self.wielded_item = None;
+                }
+                events.push(GameEvent::LogMessage {
+                    text: format!("Your {name} glows violently and evaporates!"),
+                });
+            }
+            netrust_core::EnchantOutcome::Changed(new_spe) => {
+                if let Some(it) = self.arena.items.get_mut(id) {
+                    it.enchantment = new_spe;
+                    let text = if is_armor {
+                        format!(
+                            "Your {} glows with a protective silver sheen! ({:+})",
+                            it.name, new_spe
+                        )
+                    } else {
+                        format!(
+                            "Your {} glows with a silvery aura! ({:+})",
+                            it.name, new_spe
+                        )
+                    };
+                    events.push(GameEvent::LogMessage { text });
+                }
+            }
+        }
+    }
+
+    pub(crate) fn handle_dip(
+        &mut self,
+        item_index: usize,
+        into_water: WaterType,
+    ) -> Vec<GameEvent> {
         let mut events = Vec::new();
         let carried = self.arena.items_carried_by(self.player_id);
         if item_index < carried.len() {
@@ -45,13 +111,21 @@ impl SimulationWorld {
                             let old = item.name.clone();
                             item.name = "potion of healing".into();
                             events.push(GameEvent::LogMessage {
-                                text: netrust_i18n::Messages::potion_diluted(&old, &item.name, self.locale),
+                                text: netrust_i18n::Messages::potion_diluted(
+                                    &old,
+                                    &item.name,
+                                    self.locale,
+                                ),
                             });
                         } else if !item.name.contains("water") {
                             let old = item.name.clone();
                             item.name = "potion of water".into();
                             events.push(GameEvent::LogMessage {
-                                text: netrust_i18n::Messages::potion_diluted(&old, &item.name, self.locale),
+                                text: netrust_i18n::Messages::potion_diluted(
+                                    &old,
+                                    &item.name,
+                                    self.locale,
+                                ),
                             });
                         }
                     } else if into_water == WaterType::Holy && item.name.contains("water") {
@@ -67,12 +141,17 @@ impl SimulationWorld {
                     Buc::Cursed => "emits an ominous black glow (cursed)!",
                 };
                 events.push(GameEvent::LogMessage {
-                    text: format!("You dip the {} into the water. It {}", item.name, status_desc),
+                    text: format!(
+                        "You dip the {} into the water. It {}",
+                        item.name, status_desc
+                    ),
                 });
                 self.scheduler.hero_act(NORMAL_SPEED);
             }
         } else {
-            events.push(GameEvent::LogMessage { text: "You don't have that item to dip.".into() });
+            events.push(GameEvent::LogMessage {
+                text: "You don't have that item to dip.".into(),
+            });
         }
         events
     }
@@ -81,7 +160,9 @@ impl SimulationWorld {
         let mut events = Vec::new();
         let carried = self.arena.items_carried_by(self.player_id);
         if item_index >= carried.len() {
-            events.push(GameEvent::LogMessage { text: "You don't have that item to rub.".into() });
+            events.push(GameEvent::LogMessage {
+                text: "You don't have that item to rub.".into(),
+            });
             return events;
         }
 
@@ -105,8 +186,17 @@ impl SimulationWorld {
                             text: netrust_i18n::Messages::djinni_wishing(self.locale).into(),
                         });
                         // Grant an immediate boon / blessed scroll of identify
-                        let player_c = self.arena.actors.get(self.player_id).map(|p| p.coord).unwrap_or(Coord::new_unchecked(1, 1));
-                        let gift = create_item_record(ItemKindId::ScrollOfIdentify, ItemLocation::Floor(player_c), Buc::Blessed);
+                        let player_c = self
+                            .arena
+                            .actors
+                            .get(self.player_id)
+                            .map(|p| p.coord)
+                            .unwrap_or(Coord::new_unchecked(1, 1));
+                        let gift = create_item_record(
+                            ItemKindId::ScrollOfIdentify,
+                            ItemLocation::Floor(player_c),
+                            Buc::Blessed,
+                        );
                         self.arena.spawn_item(gift);
                     }
                     netrust_core::RubResult::PeacefulDjinni => {
@@ -118,9 +208,21 @@ impl SimulationWorld {
                         events.push(GameEvent::LogMessage {
                             text: netrust_i18n::Messages::djinni_hostile(self.locale).into(),
                         });
-                        let player_c = self.arena.actors.get(self.player_id).map(|p| p.coord).unwrap_or(Coord::new_unchecked(1, 1));
-                        let spawn_c = player_c.neighbors().into_iter().find(|&c| self.level.is_passable(c) && self.actor_at(c).is_none()).unwrap_or(player_c);
-                        let mut mon = netrust_data::create_monster_record(netrust_data::MonsterSpeciesId::Djinni, spawn_c);
+                        let player_c = self
+                            .arena
+                            .actors
+                            .get(self.player_id)
+                            .map(|p| p.coord)
+                            .unwrap_or(Coord::new_unchecked(1, 1));
+                        let spawn_c = player_c
+                            .neighbors()
+                            .into_iter()
+                            .find(|&c| self.level.is_passable(c) && self.actor_at(c).is_none())
+                            .unwrap_or(player_c);
+                        let mut mon = netrust_data::create_monster_record(
+                            netrust_data::MonsterSpeciesId::Djinni,
+                            spawn_c,
+                        );
                         mon.name = "hostile djinni".into();
                         self.arena.spawn_actor(mon);
                     }
@@ -156,21 +258,28 @@ impl SimulationWorld {
             let target_name = self.arena.items.get(target_id).map(|it| it.name.clone());
 
             if let (Some(r_name), Some(t_name)) = (reagent_name, target_name) {
-                if let Some(result_name) = netrust_core::enchantment::mix_alchemy(&r_name, &t_name) {
+                if let Some(result_name) = netrust_core::enchantment::mix_alchemy(&r_name, &t_name)
+                {
                     self.arena.destroy_item(reagent_id);
                     if let Some(target_item) = self.arena.items.get_mut(target_id) {
                         target_item.name = result_name.to_string();
                     }
                     events.push(GameEvent::LogMessage {
-                        text: format!("The liquids fizz and bubble furiously! You produce a {}.", result_name),
+                        text: format!(
+                            "The liquids fizz and bubble furiously! You produce a {result_name}."
+                        ),
                     });
                     self.scheduler.hero_act(NORMAL_SPEED);
                 } else {
-                    events.push(GameEvent::LogMessage { text: "Nothing interesting happens.".into() });
+                    events.push(GameEvent::LogMessage {
+                        text: "Nothing interesting happens.".into(),
+                    });
                 }
             }
         } else {
-            events.push(GameEvent::LogMessage { text: "Invalid items to mix.".into() });
+            events.push(GameEvent::LogMessage {
+                text: "Invalid items to mix.".into(),
+            });
         }
         events
     }
@@ -188,12 +297,16 @@ impl SimulationWorld {
                         if let Some(p) = self.arena.actors.get_mut(self.player_id) {
                             p.hp = (p.hp + 10).min(p.max_hp);
                         }
-                        events.push(GameEvent::LogMessage { text: "You quaff the potion. You feel much better!".into() });
+                        events.push(GameEvent::LogMessage {
+                            text: "You quaff the potion. You feel much better!".into(),
+                        });
                     } else if item.name.contains("speed") {
                         if let Some(p) = self.arena.actors.get_mut(self.player_id) {
                             p.intrinsics.fast = true;
                         }
-                        events.push(GameEvent::LogMessage { text: "You quaff the potion. You are moving much faster!".into() });
+                        events.push(GameEvent::LogMessage {
+                            text: "You quaff the potion. You are moving much faster!".into(),
+                        });
                     } else if item.name.contains("polymorph") {
                         // Apply polymorph to self
                         self.hero.polymorph = Some(netrust_types::PolymorphForm {
@@ -206,20 +319,32 @@ impl SimulationWorld {
                             p.hp = 20;
                             p.max_hp = 20;
                         }
-                        events.push(GameEvent::LogMessage { text: "You feel a change coming over you... you polymorph!".into() });
+                        events.push(GameEvent::LogMessage {
+                            text: "You feel a change coming over you... you polymorph!".into(),
+                        });
                     } else if item.name.contains("acid") {
                         netrust_core::afflictions::cure_petrification(&mut self.hero);
-                        events.push(GameEvent::LogMessage { text: "You quaff the potion of acid. It burns, but you feel less stiff!".into() });
+                        events.push(GameEvent::LogMessage {
+                            text:
+                                "You quaff the potion of acid. It burns, but you feel less stiff!"
+                                    .into(),
+                        });
                     } else {
-                        events.push(GameEvent::LogMessage { text: format!("You quaff the {}. It tastes like water.", item.name) });
+                        events.push(GameEvent::LogMessage {
+                            text: format!("You quaff the {}. It tastes like water.", item.name),
+                        });
                     }
                     self.scheduler.hero_act(NORMAL_SPEED);
                 } else {
-                    events.push(GameEvent::LogMessage { text: "You can only quaff potions!".into() });
+                    events.push(GameEvent::LogMessage {
+                        text: "You can only quaff potions!".into(),
+                    });
                 }
             }
         } else {
-            events.push(GameEvent::LogMessage { text: "You have no such potion to quaff.".into() });
+            events.push(GameEvent::LogMessage {
+                text: "You have no such potion to quaff.".into(),
+            });
         }
         events
     }
@@ -251,106 +376,248 @@ impl SimulationWorld {
                         }
                         events.push(GameEvent::LogMessage { text: "You feel as though someone is helping you. Your possessions are uncursed!".into() });
                     } else if item.name.contains("enchant weapon") {
-                        if let Some(wielded_id) = self.wielded_item {
-                            if let Some(wielded) = self.arena.items.get_mut(wielded_id) {
-                                let is_blessed = item.buc == Buc::Blessed;
-                                let is_cursed = item.buc == Buc::Cursed;
-                                let res = netrust_core::enchantment::enchant_item(wielded.enchantment, is_blessed, is_cursed);
-                                if res.evaporated {
-                                    let name = wielded.name.clone();
-                                    self.arena.destroy_item(wielded_id);
-                                    self.wielded_item = None;
-                                    events.push(GameEvent::LogMessage {
-                                        text: format!("Your {} glows violently and evaporates!", name),
-                                    });
-                                } else {
-                                    wielded.enchantment = res.new_ench;
-                                    events.push(GameEvent::LogMessage {
-                                        text: format!("Your {} glows with a silvery aura! ({:+})", wielded.name, res.new_ench),
-                                    });
-                                }
-                            }
+                        let wielded = self
+                            .wielded_item
+                            .and_then(|id| self.arena.items.get(id).map(|w| (id, w.enchantment)));
+                        if let Some((wielded_id, spe)) = wielded {
+                            // C draws the amount (read.c:1667) before chwepon's
+                            // evaporation roll (wield.c:999-1000).
+                            let gain_roll =
+                                self.draw_enchant(netrust_core::weapon_gain_draw(spe, item.buc));
+                            let evaporate_roll = self
+                                .draw_enchant(netrust_core::weapon_evaporation_draw(spe, item.buc));
+                            let outcome = netrust_core::enchant_weapon(
+                                spe,
+                                item.buc,
+                                evaporate_roll,
+                                gain_roll,
+                            );
+                            self.apply_enchant_outcome(wielded_id, outcome, false, &mut events);
                         } else {
-                            events.push(GameEvent::LogMessage { text: "Your hands itch for a moment.".into() });
+                            events.push(GameEvent::LogMessage {
+                                text: "Your hands itch for a moment.".into(),
+                            });
                         }
                     } else if item.name.contains("enchant armor") {
-                        let armor_id = self.arena.items_carried_by(self.player_id).into_iter().find(|&id| {
-                            self.arena.items.get(id).map(|it| it.class == ItemClass::Armor).unwrap_or(false)
-                        });
-                        if let Some(aid) = armor_id {
-                            if let Some(armor) = self.arena.items.get_mut(aid) {
-                                let is_blessed = item.buc == Buc::Blessed;
-                                let is_cursed = item.buc == Buc::Cursed;
-                                let res = netrust_core::enchantment::enchant_item(armor.enchantment, is_blessed, is_cursed);
-                                if res.evaporated {
-                                    let name = armor.name.clone();
-                                    self.arena.destroy_item(aid);
-                                    events.push(GameEvent::LogMessage {
-                                        text: format!("Your {} glows violently and evaporates!", name),
-                                    });
-                                } else {
-                                    armor.enchantment = res.new_ench;
-                                    events.push(GameEvent::LogMessage {
-                                        text: format!("Your {} glows with a protective silver sheen! ({:+})", armor.name, res.new_ench),
-                                    });
+                        // Carried armor stands in for C `some_armor` (no worn slots).
+                        let armor = self
+                            .arena
+                            .items_carried_by(self.player_id)
+                            .into_iter()
+                            .find_map(|id| {
+                                self.arena
+                                    .items
+                                    .get(id)
+                                    .filter(|it| it.class == ItemClass::Armor)
+                                    .map(|it| (id, it.enchantment, it.name.clone()))
+                            });
+                        if let Some((aid, spe, name)) = armor {
+                            // Item records carry no object kind: elven / oc_magic are
+                            // classified by name; the cornuthaum is special for Wizards.
+                            let special = netrust_core::armor_is_elven(&name)
+                                || (self.role_name == "Wizard" && name == "cornuthaum");
+                            let magical = netrust_core::armor_is_magical(&name);
+                            let evaporate_roll = self.draw_enchant(
+                                netrust_core::armor_evaporation_draw(spe, item.buc, special),
+                            );
+                            // C draws the gain only when the armor survives (read.c:1179).
+                            let gain_roll = if netrust_core::armor_evaporates(
+                                spe,
+                                item.buc,
+                                special,
+                                evaporate_roll,
+                            ) {
+                                0
+                            } else {
+                                self.draw_enchant(netrust_core::armor_gain_draw(
+                                    spe, item.buc, special, magical,
+                                ))
+                            };
+                            let outcome = netrust_core::enchant_armor(
+                                spe,
+                                item.buc,
+                                special,
+                                magical,
+                                evaporate_roll,
+                                gain_roll,
+                            );
+                            if let netrust_core::EnchantOutcome::Changed(_) = outcome {
+                                // read.c:1115 seffect_enchant_armor: the armor's BUC
+                                // follows the scroll (curse / bless / uncurse).
+                                if let Some(armor) = self.arena.items.get_mut(aid) {
+                                    armor.buc = match (item.buc, armor.buc) {
+                                        (Buc::Cursed, _) => Buc::Cursed,
+                                        (Buc::Blessed, _) => Buc::Blessed,
+                                        (Buc::Uncursed, Buc::Cursed) => Buc::Uncursed,
+                                        (Buc::Uncursed, b) => b,
+                                    };
                                 }
                             }
+                            self.apply_enchant_outcome(aid, outcome, true, &mut events);
                         } else {
-                            events.push(GameEvent::LogMessage { text: "Your skin feels warm for a moment.".into() });
+                            events.push(GameEvent::LogMessage {
+                                text: "Your skin feels warm for a moment.".into(),
+                            });
                         }
                     } else if item.name.contains("charging") {
-                        let wand_id = self.arena.items_carried_by(self.player_id).into_iter().find(|&id| {
-                            self.arena.items.get(id).map(|it| it.class == ItemClass::Wand).unwrap_or(false)
-                        });
+                        let wand_id = self
+                            .arena
+                            .items_carried_by(self.player_id)
+                            .into_iter()
+                            .find(|&id| {
+                                self.arena
+                                    .items
+                                    .get(id)
+                                    .map(|it| it.class == ItemClass::Wand)
+                                    .unwrap_or(false)
+                            });
                         if let Some(wid) = wand_id {
-                            let (wand_name, charges, recharges) = {
+                            let (wand_name, charges, recharges, wand_blessed) = {
                                 let w = self.arena.items.get(wid).unwrap();
-                                (w.name.clone(), w.enchantment.max(0) as u32, w.erosion as u32)
+                                (
+                                    w.name.clone(),
+                                    w.enchantment.max(0) as u32,
+                                    w.recharged as u32,
+                                    w.buc == Buc::Blessed,
+                                )
+                            };
+                            // read.c:737: lim = 1 wishing, 8 directional, 15 non-directional.
+                            let is_wishing = wand_name.contains("wishing");
+                            let nodir = [
+                                "light",
+                                "secret door detection",
+                                "create monster",
+                                "enlightenment",
+                            ]
+                            .iter()
+                            .any(|k| wand_name.contains(k));
+                            let lim: u32 = if is_wishing {
+                                1
+                            } else if nodir {
+                                15
+                            } else {
+                                8
+                            };
+                            // read.c:741: rn2(343) is drawn only when n > 0 && !wishing
+                            // (C short-circuits); then rn1(5, lim-4) and, uncursed, rnd(n).
+                            let roll_343 =
+                                if netrust_core::artifacts_wands::recharge_needs_explosion_roll(
+                                    recharges, is_wishing,
+                                ) {
+                                    self.rng.random_range(0..343u32)
+                                } else {
+                                    0
+                                };
+                            let rn5 = if lim > 1 && item.buc != Buc::Cursed {
+                                self.rng.random_range(0..5u32)
+                            } else {
+                                0
+                            };
+                            let rnd_roll = if lim > 1 && item.buc == Buc::Uncursed {
+                                self.rng.random_range(1..=(lim - 4 + rn5))
+                            } else {
+                                1
                             };
                             let wand_state = netrust_types::WandCharges { charges, recharges };
-                            match netrust_core::artifacts_wands::recharge_wand(wand_state, 5) {
+                            match netrust_core::artifacts_wands::recharge_wand(
+                                wand_state,
+                                item.buc,
+                                lim,
+                                is_wishing,
+                                wand_blessed,
+                                roll_343,
+                                rn5,
+                                rnd_roll,
+                            ) {
                                 netrust_types::RechargeResult::Exploded => {
                                     self.arena.destroy_item(wid);
+                                    // read.c:763 wand_explode(obj, rnd(lim)); :2420-2445 dmg = d(n, k)
+                                    // with n = max(2, spe + chg).
+                                    let chg = self.rng.random_range(1..=lim);
+                                    let dice = netrust_core::artifacts_wands::wand_explode_dice(
+                                        charges as i32,
+                                        chg,
+                                    );
+                                    let k = netrust_core::artifacts_wands::wand_explode_die_size(
+                                        &wand_name,
+                                    );
+                                    let dmg: i32 = (0..dice)
+                                        .map(|_| self.rng.random_range(1..=k) as i32)
+                                        .sum();
                                     if let Some(p) = self.arena.actors.get_mut(self.player_id) {
-                                        p.hp = p.hp.saturating_sub(20);
+                                        p.hp = p.hp.saturating_sub(dmg.max(0) as u32);
                                         if p.hp == 0 {
                                             p.is_dead = true;
                                         }
                                     }
                                     events.push(GameEvent::LogMessage {
-                                        text: netrust_i18n::Messages::wand_exploded(&wand_name, self.locale),
+                                        text: netrust_i18n::Messages::wand_exploded(
+                                            &wand_name,
+                                            self.locale,
+                                        ),
                                     });
                                 }
                                 netrust_types::RechargeResult::Success(new_w) => {
                                     if let Some(w_mut) = self.arena.items.get_mut(wid) {
-                                        w_mut.enchantment = new_w.charges.min(i8::MAX as u32) as i8;
-                                        w_mut.erosion = new_w.recharges as u8;
+                                        let charges_now = new_w.charges;
+                                        w_mut.enchantment = charges_now.min(i8::MAX as u32) as i8;
+                                        w_mut.recharged = new_w.recharges.min(u8::MAX as u32) as u8;
                                         events.push(GameEvent::LogMessage {
-                                            text: netrust_i18n::Messages::wand_recharged(&wand_name, new_w.charges, new_w.recharges, self.locale),
+                                            text: netrust_i18n::Messages::wand_recharged(
+                                                &wand_name,
+                                                charges_now,
+                                                new_w.recharges,
+                                                self.locale,
+                                            ),
                                         });
                                     }
                                 }
                             }
                         } else {
-                            events.push(GameEvent::LogMessage { text: "You have no wands to recharge.".into() });
+                            events.push(GameEvent::LogMessage {
+                                text: "You have no wands to recharge.".into(),
+                            });
                         }
                     } else if item.name.contains("genocide") {
                         self.conducts.genocideless = false;
                         match item.buc {
                             Buc::Cursed => {
-                                let summon_count = netrust_core::genocide::cursed_genocide_summon_count();
-                                let player_c = self.arena.actors.get(self.player_id).map(|p| p.coord).unwrap_or(Coord::new_unchecked(1, 1));
+                                let summon_count =
+                                    netrust_core::genocide::cursed_genocide_summon_count();
+                                let player_c = self
+                                    .arena
+                                    .actors
+                                    .get(self.player_id)
+                                    .map(|p| p.coord)
+                                    .unwrap_or(Coord::new_unchecked(1, 1));
                                 for _ in 0..summon_count {
-                                    let spawn_c = player_c.neighbors().into_iter().find(|&c| self.level.is_passable(c) && self.actor_at(c).is_none()).unwrap_or(player_c);
-                                    let mut mon = netrust_data::create_monster_record(netrust_data::MonsterSpeciesId::Goblin, spawn_c);
+                                    let spawn_c = player_c
+                                        .neighbors()
+                                        .into_iter()
+                                        .find(|&c| {
+                                            self.level.is_passable(c) && self.actor_at(c).is_none()
+                                        })
+                                        .unwrap_or(player_c);
+                                    let mut mon = netrust_data::create_monster_record(
+                                        netrust_data::MonsterSpeciesId::Goblin,
+                                        spawn_c,
+                                    );
                                     mon.name = "hostile goblin".into();
                                     self.arena.spawn_actor(mon);
                                 }
-                                events.push(GameEvent::LogMessage { text: "You read the cursed scroll of genocide. Monsters appear!".into() });
+                                events.push(GameEvent::LogMessage {
+                                    text:
+                                        "You read the cursed scroll of genocide. Monsters appear!"
+                                            .into(),
+                                });
                             }
                             Buc::Uncursed => {
-                                let target = netrust_types::GenocideTarget::Species("goblin".to_string());
-                                netrust_core::genocide::apply_genocide(&mut self.genocide_registry, target.clone());
+                                let target =
+                                    netrust_types::GenocideTarget::Species("goblin".to_string());
+                                netrust_core::genocide::apply_genocide(
+                                    &mut self.genocide_registry,
+                                    target.clone(),
+                                );
                                 // Wipe from current floor
                                 let mut to_remove = Vec::new();
                                 for (aid, actor) in self.arena.actors.iter() {
@@ -361,11 +628,18 @@ impl SimulationWorld {
                                 for aid in to_remove {
                                     self.remove_actor_dropping_items(aid);
                                 }
-                                events.push(GameEvent::LogMessage { text: "You read the scroll of genocide. A species is wiped out!".into() });
+                                events.push(GameEvent::LogMessage {
+                                    text:
+                                        "You read the scroll of genocide. A species is wiped out!"
+                                            .into(),
+                                });
                             }
                             Buc::Blessed => {
                                 let target = netrust_types::GenocideTarget::Class('L'); // Lich class for example
-                                netrust_core::genocide::apply_genocide(&mut self.genocide_registry, target.clone());
+                                netrust_core::genocide::apply_genocide(
+                                    &mut self.genocide_registry,
+                                    target.clone(),
+                                );
                                 // Wipe from current floor
                                 let mut to_remove = Vec::new();
                                 for (aid, actor) in self.arena.actors.iter() {
@@ -380,13 +654,20 @@ impl SimulationWorld {
                             }
                         }
                     } else {
-                        events.push(GameEvent::LogMessage { text: format!("You read the {}. Knowledge fills your mind!", item.name) });
+                        events.push(GameEvent::LogMessage {
+                            text: format!("You read the {}. Knowledge fills your mind!", item.name),
+                        });
                     }
                     self.scheduler.hero_act(NORMAL_SPEED);
                 } else if item.class == ItemClass::Spellbook {
                     netrust_core::conducts::record_read(&mut self.conducts);
                     if item.name.contains("Book of the Dead") {
-                        let player_coord = self.arena.actors.get(self.player_id).map(|p| p.coord).unwrap_or(Coord::new_unchecked(0, 0));
+                        let player_coord = self
+                            .arena
+                            .actors
+                            .get(self.player_id)
+                            .map(|p| p.coord)
+                            .unwrap_or(Coord::new_unchecked(0, 0));
                         let on_vs = self.vibrating_square == Some(player_coord);
                         self.ritual_progress = netrust_core::step_ritual(
                             self.ritual_progress,
@@ -416,15 +697,21 @@ impl SimulationWorld {
                         if !self.known_spells.iter().any(|(s, _)| *s == spell) {
                             self.known_spells.push((spell, 20000));
                         }
-                        events.push(GameEvent::LogMessage { text: format!("You study the {} and memorize the spell!", item.name) });
+                        events.push(GameEvent::LogMessage {
+                            text: format!("You study the {} and memorize the spell!", item.name),
+                        });
                     }
                     self.scheduler.hero_act(NORMAL_SPEED);
                 } else {
-                    events.push(GameEvent::LogMessage { text: "You can only read scrolls or spellbooks!".into() });
+                    events.push(GameEvent::LogMessage {
+                        text: "You can only read scrolls or spellbooks!".into(),
+                    });
                 }
             }
         } else {
-            events.push(GameEvent::LogMessage { text: "You have no such scroll or book to read.".into() });
+            events.push(GameEvent::LogMessage {
+                text: "You have no such scroll or book to read.".into(),
+            });
         }
         events
     }
@@ -451,14 +738,23 @@ impl SimulationWorld {
                         netrust_core::conducts::record_eat_meat(&mut self.conducts);
                         let corpse_race = item.corpse_race.as_deref().unwrap_or("unknown");
                         if netrust_core::nutrition::is_cannibalism(corpse_race, "human") {
-                            events.push(GameEvent::LogMessage { text: "You cannibal! You feel deeply ashamed.".into() });
+                            events.push(GameEvent::LogMessage {
+                                text: "You cannibal! You feel deeply ashamed.".into(),
+                            });
                         }
-                        if netrust_core::nutrition::is_corpse_tainted(item.corpse_age, item.rot_threshold) {
-                            events.push(GameEvent::LogMessage { text: "Ugh, this corpse is tainted!".into() });
+                        if netrust_core::nutrition::is_corpse_tainted(
+                            item.corpse_age,
+                            item.rot_threshold,
+                        ) {
+                            events.push(GameEvent::LogMessage {
+                                text: "Ugh, this corpse is tainted!".into(),
+                            });
                         }
-                        
+
                         let monster_name = item.name.replace(" corpse", "");
-                        if let Some(intrinsic) = netrust_core::nutrition::intrinsic_from_corpse(&monster_name) {
+                        if let Some(intrinsic) =
+                            netrust_core::nutrition::intrinsic_from_corpse(&monster_name)
+                        {
                             if let Some(p) = self.arena.actors.get_mut(self.player_id) {
                                 match intrinsic.as_str() {
                                     "fire_resistance" => p.intrinsics.fire_resistance = true,
@@ -471,7 +767,9 @@ impl SimulationWorld {
                                     _ => {}
                                 }
                             }
-                            events.push(GameEvent::LogMessage { text: format!("You gained {}!", intrinsic) });
+                            events.push(GameEvent::LogMessage {
+                                text: format!("You gained {intrinsic}!"),
+                            });
                         }
 
                         if item.name.contains("lizard") {
@@ -479,7 +777,10 @@ impl SimulationWorld {
                             events.push(GameEvent::LogMessage {
                                 text: "You eat the lizard corpse. You feel limber!".into(),
                             });
-                        } else if item.name.contains("ant") || item.name.contains("kobold") || item.name.contains("orc") {
+                        } else if item.name.contains("ant")
+                            || item.name.contains("kobold")
+                            || item.name.contains("orc")
+                        {
                             if let Some(p) = self.arena.actors.get_mut(self.player_id) {
                                 p.intrinsics.poison_resistance = true;
                             }
@@ -488,14 +789,20 @@ impl SimulationWorld {
                             });
                         }
                     }
-                    events.push(GameEvent::LogMessage { text: format!("You eat the {}. Delicious!", item.name) });
+                    events.push(GameEvent::LogMessage {
+                        text: format!("You eat the {}. Delicious!", item.name),
+                    });
                     self.scheduler.hero_act(NORMAL_SPEED);
                 } else {
-                    events.push(GameEvent::LogMessage { text: "That is not edible!".into() });
+                    events.push(GameEvent::LogMessage {
+                        text: "That is not edible!".into(),
+                    });
                 }
             }
         } else {
-            events.push(GameEvent::LogMessage { text: "You have nothing to eat in that slot.".into() });
+            events.push(GameEvent::LogMessage {
+                text: "You have nothing to eat in that slot.".into(),
+            });
         }
         events
     }
@@ -510,14 +817,23 @@ impl SimulationWorld {
             let (spell, _) = self.known_spells[spell_index];
             let cost = netrust_core::magic::mana_cost(spell);
             if self.player_pw < cost {
-                events.push(GameEvent::LogMessage { text: format!("You don't have enough mana! Requires {} Pw, you have {}.", cost, self.player_pw) });
+                events.push(GameEvent::LogMessage {
+                    text: format!(
+                        "You don't have enough mana! Requires {} Pw, you have {}.",
+                        cost, self.player_pw
+                    ),
+                });
             } else {
                 self.player_pw -= cost;
                 match spell {
                     SpellKind::ForceBolt | SpellKind::MagicMissile => {
                         let path = trace_beam_path(&self.level, player.coord, dir, 6);
                         events.push(GameEvent::BeamPropagated { path: path.clone() });
-                        let spell_damage = if spell == SpellKind::ForceBolt { 18 } else { 14 };
+                        let spell_damage = if spell == SpellKind::ForceBolt {
+                            18
+                        } else {
+                            14
+                        };
                         for coord in path {
                             if let Some(target_id) = self.actor_at(coord) {
                                 if target_id != self.player_id {
@@ -533,8 +849,14 @@ impl SimulationWorld {
                                             lethal: target.is_dead,
                                         });
                                         if target.is_dead {
-                                            events.push(GameEvent::LogMessage { text: format!("{} is slain by magic!", target.name) });
-                                            let corpse = create_item_record(ItemKindId::Corpse, ItemLocation::Floor(target.coord), Buc::Uncursed);
+                                            events.push(GameEvent::LogMessage {
+                                                text: format!("{} is slain by magic!", target.name),
+                                            });
+                                            let corpse = create_item_record(
+                                                ItemKindId::Corpse,
+                                                ItemLocation::Floor(target.coord),
+                                                Buc::Uncursed,
+                                            );
                                             self.arena.spawn_item(corpse);
                                         }
                                     }
@@ -542,25 +864,34 @@ impl SimulationWorld {
                                 }
                             }
                         }
-                        events.push(GameEvent::LogMessage { text: format!("You cast {:?}!", spell) });
+                        events.push(GameEvent::LogMessage {
+                            text: format!("You cast {spell:?}!"),
+                        });
                     }
                     SpellKind::CureLightWounds => {
                         if let Some(p) = self.arena.actors.get_mut(self.player_id) {
                             p.hp = (p.hp + 12).min(p.max_hp);
                         }
-                        events.push(GameEvent::LogMessage { text: "You cast Cure Light Wounds! Your wounds close.".into() });
+                        events.push(GameEvent::LogMessage {
+                            text: "You cast Cure Light Wounds! Your wounds close.".into(),
+                        });
                     }
                     SpellKind::ExtraHealing => {
                         if let Some(p) = self.arena.actors.get_mut(self.player_id) {
                             p.hp = (p.hp + 30).min(p.max_hp);
                         }
-                        events.push(GameEvent::LogMessage { text: "You cast Extra Healing! Divine vitality surges through you.".into() });
+                        events.push(GameEvent::LogMessage {
+                            text: "You cast Extra Healing! Divine vitality surges through you."
+                                .into(),
+                        });
                     }
                 }
                 self.scheduler.hero_act(NORMAL_SPEED);
             }
         } else {
-            events.push(GameEvent::LogMessage { text: "You do not know that spell.".into() });
+            events.push(GameEvent::LogMessage {
+                text: "You do not know that spell.".into(),
+            });
         }
         events
     }
@@ -572,12 +903,22 @@ impl SimulationWorld {
         };
 
         // Find carried wand (or default)
-        let wand_id = self.arena.items_carried_by(self.player_id).into_iter().find(|&id| {
-            self.arena.items.get(id).map(|it| it.class == ItemClass::Wand).unwrap_or(false)
-        });
+        let wand_id = self
+            .arena
+            .items_carried_by(self.player_id)
+            .into_iter()
+            .find(|&id| {
+                self.arena
+                    .items
+                    .get(id)
+                    .map(|it| it.class == ItemClass::Wand)
+                    .unwrap_or(false)
+            });
 
         let Some(wid) = wand_id else {
-            events.push(GameEvent::LogMessage { text: "You have no wand to zap.".into() });
+            events.push(GameEvent::LogMessage {
+                text: "You have no wand to zap.".into(),
+            });
             return events;
         };
         let Some(wand_item) = self.arena.items.get_mut(wid) else {
@@ -585,18 +926,19 @@ impl SimulationWorld {
         };
         let current_charges = netrust_types::WandCharges {
             charges: wand_item.enchantment.max(0) as u32,
-            recharges: wand_item.erosion as u32,
+            recharges: wand_item.recharged as u32,
         };
-        let wand_name = if let Some(new_charges) = netrust_core::artifacts_wands::zap_wand(current_charges) {
-            wand_item.enchantment = new_charges.charges.min(i8::MAX as u32) as i8;
-            wand_item.name.clone()
-        } else {
-            events.push(GameEvent::LogMessage {
-                text: netrust_i18n::Messages::wand_empty(self.locale).into(),
-            });
-            self.scheduler.hero_act(NORMAL_SPEED);
-            return events;
-        };
+        let wand_name =
+            if let Some(new_charges) = netrust_core::artifacts_wands::zap_wand(current_charges) {
+                wand_item.enchantment = new_charges.charges.min(i8::MAX as u32) as i8;
+                wand_item.name.clone()
+            } else {
+                events.push(GameEvent::LogMessage {
+                    text: netrust_i18n::Messages::wand_empty(self.locale).into(),
+                });
+                self.scheduler.hero_act(NORMAL_SPEED);
+                return events;
+            };
 
         // If Wand of Secret Door Detection: reveals secret doors in 5x5 radius
         if wand_name.contains("secret door") {
@@ -605,7 +947,11 @@ impl SimulationWorld {
                 for dx in -3..=3 {
                     let nx = player.coord.x as i32 + dx;
                     let ny = player.coord.y as i32 + dy;
-                    if nx >= 0 && nx < netrust_types::COLNO as i32 && ny >= 0 && ny < netrust_types::ROWNO as i32 {
+                    if nx >= 0
+                        && nx < netrust_types::COLNO as i32
+                        && ny >= 0
+                        && ny < netrust_types::ROWNO as i32
+                    {
                         let c = Coord::new_unchecked(nx as usize, ny as usize);
                         let tile = self.level.get_tile_mut(c);
                         if matches!(tile, netrust_types::Tile::SecretDoor { .. }) {
@@ -637,7 +983,11 @@ impl SimulationWorld {
             let last_c = hit_coords.last().copied().unwrap_or(player.coord);
             let tx = last_c.x as i32 + dx as i32;
             let ty = last_c.y as i32 + dy as i32;
-            if tx >= 0 && tx < netrust_types::COLNO as i32 && ty >= 0 && ty < netrust_types::ROWNO as i32 {
+            if tx >= 0
+                && tx < netrust_types::COLNO as i32
+                && ty >= 0
+                && ty < netrust_types::ROWNO as i32
+            {
                 hit_coords.push(Coord::new_unchecked(tx as usize, ty as usize));
             }
         }
@@ -659,13 +1009,14 @@ impl SimulationWorld {
                         text: netrust_i18n::Messages::door_splinters(self.locale).into(),
                     });
                 }
-            } else if wand_name.contains("cold") {
-                if matches!(current_tile, netrust_types::Tile::Pool { .. }) {
-                    self.level.set_tile(coord, netrust_types::Tile::Pool { frozen: true });
-                    events.push(GameEvent::LogMessage {
-                        text: netrust_i18n::Messages::pool_frozen(self.locale).into(),
-                    });
-                }
+            } else if wand_name.contains("cold")
+                && matches!(current_tile, netrust_types::Tile::Pool { .. })
+            {
+                self.level
+                    .set_tile(coord, netrust_types::Tile::Pool { frozen: true });
+                events.push(GameEvent::LogMessage {
+                    text: netrust_i18n::Messages::pool_frozen(self.locale).into(),
+                });
             }
 
             // Actor interaction
@@ -711,8 +1062,14 @@ impl SimulationWorld {
                             });
                         }
                         if target.is_dead {
-                            events.push(GameEvent::LogMessage { text: format!("{} is destroyed by the wand beam!", target.name) });
-                            let corpse = create_item_record(ItemKindId::Corpse, ItemLocation::Floor(target.coord), Buc::Uncursed);
+                            events.push(GameEvent::LogMessage {
+                                text: format!("{} is destroyed by the wand beam!", target.name),
+                            });
+                            let corpse = create_item_record(
+                                ItemKindId::Corpse,
+                                ItemLocation::Floor(target.coord),
+                                Buc::Uncursed,
+                            );
                             self.arena.spawn_item(corpse);
                         }
                     }
@@ -731,12 +1088,22 @@ impl SimulationWorld {
         };
 
         // Find carried wand of wishing
-        let wow_id = self.arena.items_carried_by(self.player_id).into_iter().find(|&id| {
-            self.arena.items.get(id).map(|it| it.class == ItemClass::Wand && it.name == "wand of wishing").unwrap_or(false)
-        });
+        let wow_id = self
+            .arena
+            .items_carried_by(self.player_id)
+            .into_iter()
+            .find(|&id| {
+                self.arena
+                    .items
+                    .get(id)
+                    .map(|it| it.class == ItemClass::Wand && it.name == "wand of wishing")
+                    .unwrap_or(false)
+            });
 
         let Some(wid) = wow_id else {
-            events.push(GameEvent::LogMessage { text: "You have no means of wishing.".into() });
+            events.push(GameEvent::LogMessage {
+                text: "You have no means of wishing.".into(),
+            });
             return events;
         };
         {
@@ -744,37 +1111,55 @@ impl SimulationWorld {
                 return events;
             };
             let charges = wand_item.enchantment.max(0) as u32;
-            let recharges = wand_item.erosion as u32;
-            if let Some(new_w) = netrust_core::artifacts_wands::zap_wand(netrust_types::WandCharges { charges, recharges }) {
+            let recharges = wand_item.recharged as u32;
+            if let Some(new_w) =
+                netrust_core::artifacts_wands::zap_wand(netrust_types::WandCharges {
+                    charges,
+                    recharges,
+                })
+            {
                 wand_item.enchantment = new_w.charges.min(i8::MAX as u32) as i8;
             } else {
-                events.push(GameEvent::LogMessage { text: netrust_i18n::Messages::wish_empty(self.locale).into() });
+                events.push(GameEvent::LogMessage {
+                    text: netrust_i18n::Messages::wish_empty(self.locale).into(),
+                });
                 self.scheduler.hero_act(NORMAL_SPEED);
                 return events;
             }
         }
         netrust_core::conducts::record_wish(&mut self.conducts);
 
-        if let Some((item_query, ench, buc)) = netrust_core::artifacts_wands::parse_wish(&wish_str) {
+        if let Some((item_query, ench, buc)) = netrust_core::artifacts_wands::parse_wish(&wish_str)
+        {
             let wanted = normalize_wish_name(&item_query);
-            let matched_arch = netrust_data::ITEM_CATALOG.iter().find(|arch| arch.name.to_lowercase() == wanted);
+            let matched_arch = netrust_data::ITEM_CATALOG
+                .iter()
+                .find(|arch| arch.name.to_lowercase() == wanted);
 
             match matched_arch {
                 Some(arch) if arch.id == ItemKindId::AmuletOfYendor => {
-                    let mut fake = create_item_record(arch.id, ItemLocation::Floor(player.coord), buc);
+                    let mut fake =
+                        create_item_record(arch.id, ItemLocation::Floor(player.coord), buc);
                     fake.name = "cheap plastic imitation of the Amulet of Yendor".into();
                     self.arena.spawn_item(fake);
                     events.push(GameEvent::LogMessage {
-                        text: netrust_i18n::Messages::wish_granted("cheap plastic imitation of the Amulet of Yendor", self.locale),
+                        text: netrust_i18n::Messages::wish_granted(
+                            "cheap plastic imitation of the Amulet of Yendor",
+                            self.locale,
+                        ),
                     });
                 }
                 Some(arch) if UNWISHABLE.contains(&arch.id) => {
                     events.push(GameEvent::LogMessage {
-                        text: format!("You feel a vague sense of loss. The {} cannot be wished for.", arch.name),
+                        text: format!(
+                            "You feel a vague sense of loss. The {} cannot be wished for.",
+                            arch.name
+                        ),
                     });
                 }
                 Some(arch) => {
-                    let mut record = create_item_record(arch.id, ItemLocation::Floor(player.coord), buc);
+                    let mut record =
+                        create_item_record(arch.id, ItemLocation::Floor(player.coord), buc);
                     // Wands keep their initial charges; the parsed enchantment applies to other items.
                     if record.class != ItemClass::Wand {
                         record.enchantment = ench;

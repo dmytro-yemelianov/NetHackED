@@ -1,6 +1,6 @@
 //! Magic spells and power (mana) expenditure.
 //!
-//! Formally verified in `NetMechanics.Magic`.
+//! Modeled in Lean 4 (`NetMechanics.Magic`).
 
 use serde::{Deserialize, Serialize};
 

@@ -12,7 +12,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("====================================================================================================");
     println!("                        NETRUST AUTOMATED AI BENCHMARK & EVALUATION ARENA                           ");
-    println!("                        Formally Verified NetHack Simulation Engine                                 ");
+    println!("                        NetHack Mechanics Simulation Engine                                 ");
     println!("====================================================================================================");
 
     let seeds: Vec<u64> = (1..=25).collect();
@@ -69,12 +69,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         runs,
     };
 
-    let report_path = "benchmark_report.json";
+    let report_path = "web/benchmark_report.json";
     let json_bytes = serde_json::to_string_pretty(&report)?;
     let mut file = File::create(report_path)?;
     file.write_all(json_bytes.as_bytes())?;
 
-    println!("Benchmark report successfully written to `{}`.", report_path);
+    println!("Benchmark report successfully written to `{report_path}`.");
     println!("====================================================================================================");
 
     Ok(())

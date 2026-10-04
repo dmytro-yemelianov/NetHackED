@@ -1,13 +1,19 @@
 //! Core SimulationWorld state definition and character initialization.
 
 use netrust_arena::{ActorId, EntityArena, ItemId, ItemLocation};
-use netrust_core::{energy::SchedulerState, nutrition::hunger_of_nutrition, HungerState, SpellKind};
+use netrust_core::{
+    energy::SchedulerState, nutrition::hunger_of_nutrition, HungerState, SpellKind,
+};
 use netrust_data::{
     create_item_record, create_monster_record, spawn_player_character, CharacterConfig, ItemKindId,
     MonsterSpeciesId, RoleId,
 };
 use netrust_dungeon::{generate_dungeon_level, DungeonLevel, RoomType};
 use netrust_types::{Buc, Coord, ItemClass};
+/// Constitution used for starvation thresholds (`eat.c:3437`); the sim has no
+/// Con attribute yet, so every hero uses this documented default.
+pub const DEFAULT_PLAYER_CON: i32 = 10;
+
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use serde::{Deserialize, Serialize};
@@ -35,14 +41,18 @@ pub struct SimulationWorld {
     pub player_id: ActorId,
     pub wielded_item: Option<ItemId>,
     pub scheduler: SchedulerState,
+    /// Unpaid shop merchandise as `(item, base cost)`; see [`Self::get_unpaid_cost`].
     pub unpaid_items: Vec<(ItemId, u32)>,
     pub player_gold: u32,
-    pub player_nutrition: u32,
+    pub player_nutrition: i32,
     pub player_pw: u32,
     pub player_max_pw: u32,
     pub known_spells: Vec<(SpellKind, u32)>,
     pub divine_state: netrust_types::DivineState,
     pub divine_protection: u32,
+    /// Temple priest `cheapskate_count` (C `priest.c:562`); one counter for all priests.
+    #[serde(default)]
+    pub priest_cheapskate: u32,
     pub player_luck: i32,
     pub hero: netrust_types::Hero,
     pub locale: netrust_types::Locale,
@@ -57,6 +67,10 @@ pub struct SimulationWorld {
     pub quest_state: netrust_core::QuestState,
     #[serde(default)]
     pub alignment_record: i32,
+    /// C `context.mysteryforce`: decay counter of the Mysterious Force
+    /// (`do.c:1543,1563`); grows by `rn2(diff + 2)` each time it triggers.
+    #[serde(default)]
+    pub mysterious_force_count: u32,
     #[serde(default)]
     pub role_name: String,
     #[serde(default = "default_rng")]
@@ -76,7 +90,9 @@ pub fn default_rng() -> ChaCha8Rng {
 impl SimulationWorld {
     /// Remove an actor, leaving anything it carried on the floor where it stood.
     pub(crate) fn remove_actor_dropping_items(&mut self, id: ActorId) {
-        let Some(coord) = self.arena.actors.get(id).map(|a| a.coord) else { return };
+        let Some(coord) = self.arena.actors.get(id).map(|a| a.coord) else {
+            return;
+        };
         for item_id in self.arena.items_carried_by(id) {
             if let Some(item) = self.arena.items.get_mut(item_id) {
                 item.location = ItemLocation::Floor(coord);
@@ -89,7 +105,9 @@ impl SimulationWorld {
         let lower = name.to_lowercase();
         let class = netrust_data::monster_class_of(name);
         self.genocide_registry.genocided_species.contains(&lower)
-            || class.map(|c| self.genocide_registry.genocided_classes.contains(&c)).unwrap_or(false)
+            || class
+                .map(|c| self.genocide_registry.genocided_classes.contains(&c))
+                .unwrap_or(false)
     }
 
     /// Initialize a new deterministic simulation world with a custom character configuration.
@@ -99,13 +117,18 @@ impl SimulationWorld {
         let mut arena = EntityArena::new();
 
         // Spawn player with character configuration (role, race, starting items)
-        let (player_id, starting_items) = spawn_player_character(&config, level.stairs_up, &mut arena);
+        let (player_id, starting_items) =
+            spawn_player_character(&config, level.stairs_up, &mut arena);
 
         let mut unpaid_items = Vec::new();
-        let player_gold = if config.role == RoleId::Tourist { 200 } else { 50 };
+        let player_gold = if config.role == RoleId::Tourist {
+            200
+        } else {
+            50
+        };
 
         // Nutrition & Mana by role
-        let player_nutrition = 900u32;
+        let player_nutrition = 900i32;
         let (player_pw, player_max_pw, known_spells) = match config.role {
             RoleId::Wizard => (25, 25, vec![(SpellKind::ForceBolt, 20000)]),
             RoleId::Healer => (20, 20, vec![(SpellKind::CureLightWounds, 20000)]),
@@ -142,8 +165,13 @@ impl SimulationWorld {
                         let iy = (room.y1 + 1).min(room.y2.saturating_sub(1));
                         let ic = Coord::new_unchecked(ix, iy);
                         if ic != room.center() {
-                            let item_rec = create_item_record(kind, ItemLocation::Floor(ic), Buc::Uncursed);
-                            let cost = netrust_data::items::ITEM_CATALOG.iter().find(|it| it.id == kind).map(|it| it.cost).unwrap_or(30);
+                            let item_rec =
+                                create_item_record(kind, ItemLocation::Floor(ic), Buc::Uncursed);
+                            let cost = netrust_data::items::ITEM_CATALOG
+                                .iter()
+                                .find(|it| it.id == kind)
+                                .map(|it| it.cost)
+                                .unwrap_or(30);
                             let item_id = arena.spawn_item(item_rec);
                             unpaid_items.push((item_id, cost));
                         }
@@ -159,18 +187,37 @@ impl SimulationWorld {
         }
 
         // Spawn starting floor items near stairs from declarative item catalog
-        let item_coord1 = Coord::new(level.stairs_up.x + 1, level.stairs_up.y).unwrap_or(level.stairs_up);
-        arena.spawn_item(create_item_record(ItemKindId::SilverSaber, ItemLocation::Floor(item_coord1), Buc::Uncursed));
+        let item_coord1 =
+            Coord::new(level.stairs_up.x + 1, level.stairs_up.y).unwrap_or(level.stairs_up);
+        arena.spawn_item(create_item_record(
+            ItemKindId::SilverSaber,
+            ItemLocation::Floor(item_coord1),
+            Buc::Uncursed,
+        ));
 
-        let item_coord2 = Coord::new(level.stairs_up.x, level.stairs_up.y + 1).unwrap_or(level.stairs_up);
-        arena.spawn_item(create_item_record(ItemKindId::PotionOfHealing, ItemLocation::Floor(item_coord2), Buc::Blessed));
+        let item_coord2 =
+            Coord::new(level.stairs_up.x, level.stairs_up.y + 1).unwrap_or(level.stairs_up);
+        arena.spawn_item(create_item_record(
+            ItemKindId::PotionOfHealing,
+            ItemLocation::Floor(item_coord2),
+            Buc::Blessed,
+        ));
 
-        let item_coord3 = Coord::new(level.stairs_up.x + 1, level.stairs_up.y + 1).unwrap_or(level.stairs_up);
-        arena.spawn_item(create_item_record(ItemKindId::BagOfHolding, ItemLocation::Floor(item_coord3), Buc::Uncursed));
+        let item_coord3 =
+            Coord::new(level.stairs_up.x + 1, level.stairs_up.y + 1).unwrap_or(level.stairs_up);
+        arena.spawn_item(create_item_record(
+            ItemKindId::BagOfHolding,
+            ItemLocation::Floor(item_coord3),
+            Buc::Uncursed,
+        ));
 
         // Auto-wield first starting weapon if any
         let wielded_item = starting_items.into_iter().find(|&id| {
-            arena.items.get(id).map(|i| i.class == ItemClass::Weapon).unwrap_or(false)
+            arena
+                .items
+                .get(id)
+                .map(|i| i.class == ItemClass::Weapon)
+                .unwrap_or(false)
         });
 
         Self {
@@ -190,12 +237,20 @@ impl SimulationWorld {
             known_spells,
             divine_state: netrust_types::DivineState::default(),
             divine_protection: 0,
+            priest_cheapskate: 0,
             player_luck: 0,
             hero: netrust_types::Hero {
                 base_hp: arena.actors[player_id].hp as i32,
                 base_max_hp: arena.actors[player_id].max_hp as i32,
                 polymorph: None,
-                lycanthropy: None, afflictions: netrust_types::AfflictionState::default(), skills: netrust_types::SkillTree::default(),
+                lycanthropy: None,
+                afflictions: netrust_types::AfflictionState::default(),
+                skills: netrust_types::SkillTree {
+                    skills: netrust_data::starting_skills(config.role)
+                        .into_iter()
+                        .collect(),
+                    ..netrust_types::SkillTree::default()
+                },
                 mount: None,
                 quivered_item: None,
             },
@@ -207,6 +262,7 @@ impl SimulationWorld {
             vibrating_square: None,
             quest_state: netrust_core::QuestState::default(),
             alignment_record: 25, // Hero starts with pious devotion
+            mysterious_force_count: 0,
             role_name: format!("{:?}", config.role),
             rng,
             seed,
@@ -231,9 +287,13 @@ impl SimulationWorld {
         Self::new_with_character(seed, CharacterConfig::default())
     }
 
-    /// Retrieve the unpaid debt cost for a shop item, if any.
+    /// Retrieve the price owed for an unpaid shop item, if any: the ledger holds the base
+    /// cost (`oc_cost`), priced through C `get_cost` (`shk.c:2877`) for the current hero.
     pub fn get_unpaid_cost(&self, id: ItemId) -> Option<u32> {
-        self.unpaid_items.iter().find(|(i, _)| *i == id).map(|(_, c)| *c)
+        self.unpaid_items
+            .iter()
+            .find(|(i, _)| *i == id)
+            .map(|(_, base)| self.shop_buy_price(*base))
     }
 
     /// Check if an item is unpaid store merchandise.
@@ -248,35 +308,54 @@ impl SimulationWorld {
 
     /// Find actor occupying a specific coordinate.
     pub fn actor_at(&self, coord: Coord) -> Option<ActorId> {
-        self.arena
-            .actors
-            .iter()
-            .find_map(|(id, actor)| {
-                if actor.coord == coord && !actor.is_dead {
-                    Some(id)
-                } else {
-                    None
-                }
-            })
+        self.arena.actors.iter().find_map(|(id, actor)| {
+            if actor.coord == coord && !actor.is_dead {
+                Some(id)
+            } else {
+                None
+            }
+        })
     }
 
     /// Return the current hunger state based on nutrition points.
     pub fn hunger_state(&self) -> HungerState {
-        hunger_of_nutrition(self.player_nutrition)
+        hunger_of_nutrition(self.player_nutrition, DEFAULT_PLAYER_CON)
     }
 
-    /// Progress one tick of luck decay based on carried luckstone.
+    /// Luck timeout period in turns for the hero's current state (C `timeout.c:595-620`).
+    ///
+    /// The Amulet of Yendor must be carried. `divine_state` has no god-anger field yet,
+    /// so `god_angry` is always false (documented limitation).
+    pub fn luck_timeout_period(&self) -> u64 {
+        let has_amulet = self
+            .arena
+            .items_carried_by(self.player_id)
+            .into_iter()
+            .any(|iid| {
+                self.arena
+                    .items
+                    .get(iid)
+                    .is_some_and(crate::actions::items::is_real_amulet)
+            });
+        netrust_core::luck_decay_period(has_amulet, false)
+    }
+
+    /// Progress one tick of luck decay based on carried luckstone (C `timeout.c:595-620`).
+    ///
+    /// Base luck is 0: moon phase / Friday 13th are not tracked.
     pub fn tick_luck_decay(&mut self) {
-        let luckstone = self.arena.items_carried_by(self.player_id).into_iter().find_map(|iid| {
-            self.arena.items.get(iid).filter(|it| it.name.to_lowercase().contains("luckstone")).map(|it| it.buc)
-        });
-        let stone_status = match luckstone {
-            Some(Buc::Blessed) => netrust_core::mines::LuckstoneStatus::Blessed,
-            Some(Buc::Uncursed) => netrust_core::mines::LuckstoneStatus::Uncursed,
-            Some(Buc::Cursed) => netrust_core::mines::LuckstoneStatus::Cursed,
-            None => netrust_core::mines::LuckstoneStatus::None,
-        };
-        self.player_luck = netrust_core::mines::step_luck_decay(self.player_luck, stone_status);
+        let luckstone = self
+            .arena
+            .items_carried_by(self.player_id)
+            .into_iter()
+            .find_map(|iid| {
+                self.arena
+                    .items
+                    .get(iid)
+                    .filter(|it| it.name.eq_ignore_ascii_case("luckstone"))
+                    .map(|it| it.buc)
+            });
+        self.player_luck = netrust_core::mines::step_luck_decay(self.player_luck, 0, luckstone);
     }
 
     /// Compute tile visibility and monster perception for the hero, taking into account:
@@ -285,7 +364,12 @@ impl SimulationWorld {
     /// - Room darkness
     /// - Blindness intrinsic
     /// - Telepathy intrinsic (sensing minded monsters when blind or in darkness)
-    pub fn compute_perception(&self) -> (std::collections::HashSet<Coord>, std::collections::HashSet<ActorId>) {
+    pub fn compute_perception(
+        &self,
+    ) -> (
+        std::collections::HashSet<Coord>,
+        std::collections::HashSet<ActorId>,
+    ) {
         use std::collections::HashSet;
 
         let Some(player) = self.arena.actors.get(self.player_id) else {
@@ -302,7 +386,9 @@ impl SimulationWorld {
         let carried = self.arena.items_carried_by(self.player_id);
         for iid in carried {
             if let Some(it) = self.arena.items.get(iid) {
-                if (it.name.contains("lamp") || it.name.contains("lantern") || it.name.contains("candle"))
+                if (it.name.contains("lamp")
+                    || it.name.contains("lantern")
+                    || it.name.contains("candle"))
                     && it.enchantment > 0
                 {
                     let radius = if it.name.contains("lantern") {
@@ -341,7 +427,12 @@ impl SimulationWorld {
             }
             let tile_vis = visible_tiles.contains(&actor.coord);
             let has_mind = netrust_core::lighting::monster_has_mind(&actor.name);
-            if netrust_core::lighting::can_detect_monster(is_blind, has_telepathy, has_mind, tile_vis) {
+            if netrust_core::lighting::can_detect_monster(
+                is_blind,
+                has_telepathy,
+                has_mind,
+                tile_vis,
+            ) {
                 detected_monsters.insert(aid);
             }
         }
@@ -356,7 +447,9 @@ impl SimulationWorld {
             p.hp = p.hp.saturating_sub(amount);
             if p.hp == 0 && !p.is_dead {
                 p.is_dead = true;
-                events.push(GameEvent::LogMessage { text: format!("You die... killed by {cause}.") });
+                events.push(GameEvent::LogMessage {
+                    text: format!("You die... killed by {cause}."),
+                });
             }
         }
         events

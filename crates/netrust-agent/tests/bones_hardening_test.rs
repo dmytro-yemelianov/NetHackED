@@ -1,11 +1,11 @@
 //! Hardening tests for the bones HTTP server: validation, poisoning resistance, caps, auth.
 
-use std::io::{Read, Write};
-use std::net::TcpStream;
-use std::sync::{Arc, Mutex};
 use netrust_agent::bones::{create_bones_router_with_token, GraveyardState};
 use netrust_agent::netconfig::resolve_bind_addr;
 use serde_json::json;
+use std::io::{Read, Write};
+use std::net::TcpStream;
+use std::sync::{Arc, Mutex};
 
 async fn spawn(token: Option<&str>) -> (String, Arc<Mutex<GraveyardState>>) {
     let state = Arc::new(Mutex::new(GraveyardState::default()));
@@ -32,17 +32,30 @@ fn raw(addr: &str, method: &str, path: &str, extra_headers: &str, body: &str) ->
 
 fn bones(name: &str, depth: u32) -> String {
     json!({"depth":depth,"hero_name":name,"hero_level":3,"max_hp":20,"ac":5,
-           "death_coord":{"x":10,"y":5},"items":[],"killer":"jackal"}).to_string()
+           "death_coord":{"x":10,"y":5},"items":[],"killer":"jackal"})
+    .to_string()
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn multibyte_name_does_not_brick_server() {
     let (addr, _) = spawn(None).await;
     let a = addr.clone();
-    let (code, _) = tokio::task::spawn_blocking(move || raw(&a, "POST", "/api/v1/bones", "", &bones("Святослав Хоробрий", 3))).await.unwrap();
+    let (code, _) = tokio::task::spawn_blocking(move || {
+        raw(
+            &a,
+            "POST",
+            "/api/v1/bones",
+            "",
+            &bones("Святослав Хоробрий", 3),
+        )
+    })
+    .await
+    .unwrap();
     assert_eq!(code, 201);
     let a = addr.clone();
-    let (code, _) = tokio::task::spawn_blocking(move || raw(&a, "GET", "/api/v1/stats", "", "")).await.unwrap();
+    let (code, _) = tokio::task::spawn_blocking(move || raw(&a, "GET", "/api/v1/stats", "", ""))
+        .await
+        .unwrap();
     assert_eq!(code, 200);
 }
 
@@ -63,7 +76,9 @@ async fn validation_rejects_bad_payloads() {
     // Out-of-range coordinate fails JSON extraction (4xx), never panics.
     let a = addr.clone();
     let bad = bones("Ok", 3).replace(r#""x":10"#, r#""x":1000"#);
-    let (code, _) = tokio::task::spawn_blocking(move || raw(&a, "POST", "/api/v1/bones", "", &bad)).await.unwrap();
+    let (code, _) = tokio::task::spawn_blocking(move || raw(&a, "POST", "/api/v1/bones", "", &bad))
+        .await
+        .unwrap();
     assert!((400..500).contains(&code));
 }
 
@@ -72,11 +87,19 @@ async fn per_depth_cap_and_poison_recovery() {
     let (addr, state) = spawn(None).await;
     for i in 0..16 {
         let a = addr.clone();
-        let (code, _) = tokio::task::spawn_blocking(move || raw(&a, "POST", "/api/v1/bones", "", &bones(&format!("H{i}"), 4))).await.unwrap();
+        let (code, _) = tokio::task::spawn_blocking(move || {
+            raw(&a, "POST", "/api/v1/bones", "", &bones(&format!("H{i}"), 4))
+        })
+        .await
+        .unwrap();
         assert_eq!(code, 201);
     }
     let a = addr.clone();
-    let (code, _) = tokio::task::spawn_blocking(move || raw(&a, "POST", "/api/v1/bones", "", &bones("Overflow", 4))).await.unwrap();
+    let (code, _) = tokio::task::spawn_blocking(move || {
+        raw(&a, "POST", "/api/v1/bones", "", &bones("Overflow", 4))
+    })
+    .await
+    .unwrap();
     assert_eq!(code, 409);
 
     // Poison the mutex from another thread; server must keep serving.
@@ -87,7 +110,9 @@ async fn per_depth_cap_and_poison_recovery() {
     })
     .join();
     let a = addr.clone();
-    let (code, _) = tokio::task::spawn_blocking(move || raw(&a, "GET", "/api/v1/stats", "", "")).await.unwrap();
+    let (code, _) = tokio::task::spawn_blocking(move || raw(&a, "GET", "/api/v1/stats", "", ""))
+        .await
+        .unwrap();
     assert_eq!(code, 200);
 }
 
@@ -95,32 +120,68 @@ async fn per_depth_cap_and_poison_recovery() {
 async fn token_protects_mutating_routes() {
     let (addr, _) = spawn(Some("s3cret")).await;
     let a = addr.clone();
-    let (code, _) = tokio::task::spawn_blocking(move || raw(&a, "POST", "/api/v1/reset", "", "")).await.unwrap();
+    let (code, _) = tokio::task::spawn_blocking(move || raw(&a, "POST", "/api/v1/reset", "", ""))
+        .await
+        .unwrap();
     assert_eq!(code, 401);
     let a = addr.clone();
-    let (code, _) = tokio::task::spawn_blocking(move || raw(&a, "POST", "/api/v1/bones", "", &bones("Ok", 3))).await.unwrap();
+    let (code, _) =
+        tokio::task::spawn_blocking(move || raw(&a, "POST", "/api/v1/bones", "", &bones("Ok", 3)))
+            .await
+            .unwrap();
     assert_eq!(code, 401);
     let a = addr.clone();
-    let (code, _) = tokio::task::spawn_blocking(move || raw(&a, "POST", "/api/v1/bones", "Authorization: Bearer s3cret\r\n", &bones("Ok", 3))).await.unwrap();
+    let (code, _) = tokio::task::spawn_blocking(move || {
+        raw(
+            &a,
+            "POST",
+            "/api/v1/bones",
+            "Authorization: Bearer s3cret\r\n",
+            &bones("Ok", 3),
+        )
+    })
+    .await
+    .unwrap();
     assert_eq!(code, 201);
     let a = addr.clone();
-    let (code, _) = tokio::task::spawn_blocking(move || raw(&a, "GET", "/api/v1/stats", "", "")).await.unwrap();
+    let (code, _) = tokio::task::spawn_blocking(move || raw(&a, "GET", "/api/v1/stats", "", ""))
+        .await
+        .unwrap();
     assert_eq!(code, 200);
 }
 
 #[test]
 fn bind_addr_resolution() {
-    let args = vec!["bin".to_string(), "--bind".to_string(), "0.0.0.0:9".to_string()];
-    assert_eq!(resolve_bind_addr(&args, Some("1.2.3.4:5".into()), "127.0.0.1:7777"), "0.0.0.0:9");
-    assert_eq!(resolve_bind_addr(&[], Some("1.2.3.4:5".into()), "127.0.0.1:7777"), "1.2.3.4:5");
-    assert_eq!(resolve_bind_addr(&[], Some("".into()), "127.0.0.1:7777"), "127.0.0.1:7777");
-    assert_eq!(resolve_bind_addr(&[], None, "127.0.0.1:7777"), "127.0.0.1:7777");
+    let args = vec![
+        "bin".to_string(),
+        "--bind".to_string(),
+        "0.0.0.0:9".to_string(),
+    ];
+    assert_eq!(
+        resolve_bind_addr(&args, Some("1.2.3.4:5".into()), "127.0.0.1:7777"),
+        "0.0.0.0:9"
+    );
+    assert_eq!(
+        resolve_bind_addr(&[], Some("1.2.3.4:5".into()), "127.0.0.1:7777"),
+        "1.2.3.4:5"
+    );
+    assert_eq!(
+        resolve_bind_addr(&[], Some("".into()), "127.0.0.1:7777"),
+        "127.0.0.1:7777"
+    );
+    assert_eq!(
+        resolve_bind_addr(&[], None, "127.0.0.1:7777"),
+        "127.0.0.1:7777"
+    );
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn oversized_body_rejected() {
     let (addr, _s) = spawn(None).await;
     let big = "x".repeat(70 * 1024);
-    let (code, _) = tokio::task::spawn_blocking(move || raw(&addr, "POST", "/api/v1/bones", "", &big)).await.unwrap();
+    let (code, _) =
+        tokio::task::spawn_blocking(move || raw(&addr, "POST", "/api/v1/bones", "", &big))
+            .await
+            .unwrap();
     assert_eq!(code, 413);
 }

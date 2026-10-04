@@ -199,7 +199,9 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         intrinsics: Intrinsics::empty().with_see_invisible(),
         damage_dice: (0, 0),
         ai_behavior: AiBehavior::Stationary,
-        abilities: &[MonsterAbility::Gaze { gaze: GazeType::Paralysis }],
+        abilities: &[MonsterAbility::Gaze {
+            gaze: GazeType::Paralysis,
+        }],
     },
     MonsterArchetype {
         id: MonsterSpeciesId::Skeleton,
@@ -241,7 +243,10 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         level: 15,
         speed: 12,
         alignment: Alignment::Lawful,
-        intrinsics: Intrinsics::empty().with_cold_resistance().with_fire_resistance().with_reflection(),
+        intrinsics: Intrinsics::empty()
+            .with_cold_resistance()
+            .with_fire_resistance()
+            .with_reflection(),
         damage_dice: (4, 8),
         ai_behavior: AiBehavior::MeleeHunter,
         abilities: &[MonsterAbility::Breath {
@@ -282,7 +287,9 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         intrinsics: Intrinsics::empty().with_poison_resistance(),
         damage_dice: (2, 6),
         ai_behavior: AiBehavior::MeleeHunter,
-        abilities: &[MonsterAbility::Gaze { gaze: GazeType::Petrification }],
+        abilities: &[MonsterAbility::Gaze {
+            gaze: GazeType::Petrification,
+        }],
     },
     MonsterArchetype {
         id: MonsterSpeciesId::Lich,
@@ -417,7 +424,9 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         level: 10,
         speed: 12,
         alignment: Alignment::Neutral,
-        intrinsics: Intrinsics::empty().with_cold_resistance().with_see_invisible(),
+        intrinsics: Intrinsics::empty()
+            .with_cold_resistance()
+            .with_see_invisible(),
         damage_dice: (1, 8),
         ai_behavior: AiBehavior::MeleeHunter,
         abilities: &[],
@@ -846,7 +855,10 @@ pub static BESTIARY: &[MonsterArchetype] = &[
 
 /// NetHack monster class letter (bestiary glyph) for a species name, case-insensitive.
 pub fn monster_class_of(name: &str) -> Option<char> {
-    BESTIARY.iter().find(|m| m.name.eq_ignore_ascii_case(name)).map(|m| m.glyph)
+    BESTIARY
+        .iter()
+        .find(|m| m.name.eq_ignore_ascii_case(name))
+        .map(|m| m.glyph)
 }
 
 /// Look up a monster archetype from the bestiary table.
@@ -871,10 +883,14 @@ pub fn create_monster_record(id: MonsterSpeciesId, coord: Coord) -> ActorRecord 
         alignment: arch.alignment,
         intrinsics: arch.intrinsics,
         is_player: false,
-        is_unique: arch.name.chars().next().map_or(false, |c| c.is_uppercase()),
+        is_unique: arch.name.chars().next().is_some_and(|c| c.is_uppercase()),
         is_dead: false,
         is_tame: arch.ai_behavior == AiBehavior::CompanionPet,
-        tameness: if arch.ai_behavior == AiBehavior::CompanionPet { 5 } else { 0 },
+        tameness: if arch.ai_behavior == AiBehavior::CompanionPet {
+            5
+        } else {
+            0
+        },
         abilities: arch.abilities.to_vec(),
     }
 }
@@ -882,7 +898,7 @@ pub fn create_monster_record(id: MonsterSpeciesId, coord: Coord) -> ActorRecord 
 /// Spawns a hostile ghost representing a deceased adventurer from a graveyard bones file.
 pub fn create_ghost_record(name: &str, level: u32, hp: u32, coord: Coord) -> ActorRecord {
     let mut rec = create_monster_record(MonsterSpeciesId::Ghost, coord);
-    rec.name = format!("ghost of {}", name);
+    rec.name = format!("ghost of {name}");
     rec.level = level;
     rec.max_hp = hp;
     rec.hp = hp;
