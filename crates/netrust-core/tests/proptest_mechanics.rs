@@ -7,7 +7,7 @@ use netrust_core::{
     branch_max_depth, buy_price, calculate_damage, calculate_encumbrance, calculate_summon_count,
     calculate_tournament_score, can_detect_monster, can_see_tile, cast_spell, choose_pet_goal,
     clamp_favor, consecrate_water, consult_leader, corrupt_buc_on_death, create_ghost_hp,
-    decide_tactical_action, destroy_drawbridge, dilute_potion, dip_water, enchant_armor,
+    decide_tactical_action, destroy_drawbridge, dilute_potion, dip_water, dmgval, enchant_armor,
     enchant_weapon, enter_branch, exit_branch, feed_pet, hero_damage_after_ac, hunger_of_nutrition,
     hunger_tier, identify_fully, interact_with_occupant, is_candelabrum_ready,
     is_hero_eligible_for_quest, is_hp_critical, is_sanctum_accessible, is_valid_bones_level,
@@ -19,17 +19,18 @@ use netrust_core::{
     protection_purchase_step, push_boulder, quest_progress_rank, recharge_wand, reflect, resisted,
     resolve_breath_damage, resolve_gaze, resolve_sacrifice, return_to_leader_with_artifact,
     rub_lamp, sell_price, step_luck_decay, step_ray, step_ritual, swap_displacement,
-    tick_light_fuel, tick_prayer_timeout, to_hit_value, toggle_drawbridge, uncurse, zap_hit,
-    zap_wand, Alignment, ArtifactLocation, AscensionOutcome, BagCheckItem, BagCheckKind, BeamRay,
-    BranchCoord, BranchId, BreathType, Buc, CandelabrumState, Combatant, Coord, DilutionState,
-    Direction, DivineState, DonationOutcome, DoorState, DrawbridgeState, DrawbridgeTransition,
-    DungeonDepth, EnchantOutcome, EncumbranceTier, Engraving, EngravingMedium, FormStats,
-    GazeEffect, GazeType, HeroInteraction, HeroQuestEligibility, Intrinsics, InvocationStep,
-    KnowledgeLevel, LightSource, MetricState, MysteriousForceOutcome, PetFamily, PetGoal,
-    PetSpeciesTier, PolyEntity, PushOutcome, QuestProgress, QuestState, RechargeResult,
-    RitualProgress, RubResult, SchedulerState, SpellKind, StepAction, StepResult,
-    SurfaceOrientation, TacticalAction, TacticalContext, Tile, Velocity, WandCharges, WaterType,
-    MAX_DIVINE_PROTECTION, NORMAL_SPEED, QUEST_MIN_ALIGNMENT, QUEST_MIN_LEVEL, REQUIRED_CANDLES,
+    tick_light_fuel, tick_prayer_timeout, to_hit_value, toggle_drawbridge, uncurse,
+    weapon_damage_die, zap_hit, zap_wand, Alignment, ArtifactLocation, AscensionOutcome,
+    BagCheckItem, BagCheckKind, BeamRay, BranchCoord, BranchId, BreathType, Buc, CandelabrumState,
+    Combatant, Coord, DilutionState, Direction, DivineState, DonationOutcome, DoorState,
+    DrawbridgeState, DrawbridgeTransition, DungeonDepth, EnchantOutcome, EncumbranceTier,
+    Engraving, EngravingMedium, FormStats, GazeEffect, GazeType, HeroInteraction,
+    HeroQuestEligibility, Intrinsics, InvocationStep, KnowledgeLevel, LightSource, MetricState,
+    MysteriousForceOutcome, PetFamily, PetGoal, PetSpeciesTier, PolyEntity, PushOutcome,
+    QuestProgress, QuestState, RechargeResult, RitualProgress, RubResult, SchedulerState,
+    SpellKind, StepAction, StepResult, SurfaceOrientation, TacticalAction, TacticalContext, Tile,
+    Velocity, WandCharges, WaterType, MAX_DIVINE_PROTECTION, NORMAL_SPEED, QUEST_MIN_ALIGNMENT,
+    QUEST_MIN_LEVEL, REQUIRED_CANDLES,
 };
 use netrust_types::{Attack, AttackType, DamageType};
 use proptest::prelude::*;
@@ -473,6 +474,48 @@ proptest! {
         };
         prop_assert_eq!(zap_hit(ac, chance, rnd10, ac_roll), expected);
     }
+
+    // -------------------------------------------------------------
+    // C reference: weapon.c:216-293 (dmgval) and uhitm.c:847 (bare hands / martial arts).
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_dmgval_matches_c_rule(
+        weapon in proptest::option::of((0u32..50, 0u32..50)),
+        target_large in any::<bool>(),
+        martial_arts in any::<bool>(),
+        roll in 0u32..100,
+    ) {
+        let expected_die = match weapon {
+            Some((small, large)) => {
+                if target_large {
+                    large
+                } else {
+                    small
+                }
+            }
+            None => {
+                if martial_arts {
+                    4
+                } else {
+                    2
+                }
+            }
+        };
+        let die = weapon_damage_die(weapon, target_large, martial_arts);
+        prop_assert_eq!(die, expected_die);
+
+        let expected_dmg = if expected_die == 0 {
+            0
+        } else {
+            roll.clamp(1, expected_die)
+        };
+        let got = dmgval(weapon, target_large, martial_arts, roll);
+        prop_assert_eq!(got, expected_dmg);
+        if expected_die > 0 {
+            prop_assert!(got >= 1 && got <= expected_die);
+        }
+    }
+
 
     // -------------------------------------------------------------
     // Theorem: break_door_idempotent

@@ -1137,7 +1137,9 @@ pub fn get_item_archetype(id: ItemKindId) -> &'static ItemArchetype {
 
 /// Look up an archetype by its catalog name (`ItemRecord::name` stores no kind id).
 pub fn item_archetype_by_name(name: &str) -> Option<&'static ItemArchetype> {
-    ITEM_CATALOG.iter().find(|item| item.name == name)
+    ITEM_CATALOG
+        .iter()
+        .find(|item| item.name.eq_ignore_ascii_case(name))
 }
 
 use netrust_types::Buc;

@@ -117,6 +117,54 @@ pub fn attack_hits(d20: u32, to_hit: i32) -> bool {
 
 /// Damage of a landed melee hit before any hero-AC reduction:
 /// `base_roll + enchant + dmg_bonus`, raised to 1 if lower
+/// The damage die size for a hero melee attack (C `NetHack-5.0.0/src/weapon.c:216`
+/// and `NetHack-5.0.0/src/uhitm.c:847`):
+///
+/// - Weapon (`Some((small, large))`): `large` if `target_large`, else `small`.
+/// - Bare hands (`None`): `4` for martial arts (Monk, C `uhitm.c:847`), else `2` (C `uhitm.c:847`).
+pub fn weapon_damage_die(
+    weapon: Option<(u32, u32)>,
+    target_large: bool,
+    martial_arts: bool,
+) -> u32 {
+    match weapon {
+        Some((small, large)) => {
+            if target_large {
+                large
+            } else {
+                small
+            }
+        }
+        None => {
+            if martial_arts {
+                4
+            } else {
+                2
+            }
+        }
+    }
+}
+
+/// Hero base weapon damage (C `dmgval`, `NetHack-5.0.0/src/weapon.c:216` and
+/// `NetHack-5.0.0/src/uhitm.c:847`):
+///
+/// Draws `rnd(die)` where `die` is from [`weapon_damage_die`].
+/// Returns 0 if `die == 0`, otherwise `roll.clamp(1, die)`.
+pub fn dmgval(
+    weapon: Option<(u32, u32)>,
+    target_large: bool,
+    martial_arts: bool,
+    roll: u32,
+) -> u32 {
+    let die = weapon_damage_die(weapon, target_large, martial_arts);
+    if die == 0 {
+        0
+    } else {
+        roll.clamp(1, die)
+    }
+}
+
+/// Damage of a landed hit before hero-AC reduction, raised to at least 1
 /// (C `hmon_hitmon_dmg_recalc`, `uhitm.c:1505`: "don't let penalty turn a hit into a miss").
 ///
 /// - `base_roll`: the weapon/attack damage dice draw (`dmgval`/`d(n, s)`).
@@ -570,5 +618,51 @@ mod tests {
     fn test_combat_no_absorption_monster_defender() {
         let result = resolve_melee_attack(21, goblin(20, -4), 10, 8, 0, 2, None);
         assert_eq!(result.damage_dealt, 10);
+    }
+
+    #[test]
+    fn weapon_damage_die_c_rules() {
+        // Dagger: (4, 3) per C objects.h
+        assert_eq!(weapon_damage_die(Some((4, 3)), false, false), 4);
+        assert_eq!(weapon_damage_die(Some((4, 3)), true, false), 3);
+        // Long sword: (8, 12) per C objects.h
+        assert_eq!(weapon_damage_die(Some((8, 12)), false, false), 8);
+        assert_eq!(weapon_damage_die(Some((8, 12)), true, false), 12);
+        // Bare hands non-Monk: C uhitm.c:847 rnd(2)
+        assert_eq!(weapon_damage_die(None, false, false), 2);
+        assert_eq!(weapon_damage_die(None, true, false), 2);
+        // Bare hands Monk martial arts: C uhitm.c:847 rnd(4)
+        assert_eq!(weapon_damage_die(None, false, true), 4);
+        assert_eq!(weapon_damage_die(None, true, true), 4);
+    }
+
+    #[test]
+    fn dmgval_c_rules_and_clamping() {
+        // Dagger small target (die 4): rolls clamped to 1..=4
+        assert_eq!(dmgval(Some((4, 3)), false, false, 0), 1);
+        assert_eq!(dmgval(Some((4, 3)), false, false, 1), 1);
+        assert_eq!(dmgval(Some((4, 3)), false, false, 4), 4);
+        assert_eq!(dmgval(Some((4, 3)), false, false, 5), 4);
+
+        // Dagger large target (die 3): rolls clamped to 1..=3
+        assert_eq!(dmgval(Some((4, 3)), true, false, 3), 3);
+        assert_eq!(dmgval(Some((4, 3)), true, false, 4), 3);
+
+        // Long sword large target (die 12)
+        assert_eq!(dmgval(Some((8, 12)), true, false, 12), 12);
+        assert_eq!(dmgval(Some((8, 12)), true, false, 15), 12);
+
+        // Bare hands (die 2): rolls clamped to 1..=2
+        assert_eq!(dmgval(None, false, false, 1), 1);
+        assert_eq!(dmgval(None, false, false, 2), 2);
+        assert_eq!(dmgval(None, false, false, 3), 2);
+
+        // Martial arts (die 4): rolls clamped to 1..=4
+        assert_eq!(dmgval(None, false, true, 3), 3);
+        assert_eq!(dmgval(None, false, true, 4), 4);
+        assert_eq!(dmgval(None, false, true, 10), 4);
+
+        // Zero die gives 0
+        assert_eq!(dmgval(Some((0, 0)), false, false, 5), 0);
     }
 }

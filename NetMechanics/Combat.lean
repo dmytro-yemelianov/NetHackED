@@ -432,4 +432,44 @@ theorem monster_attack_never_hits_le_1 (tmp : Int) (die roll : Nat) (h : tmp ≤
   simp only [decide_eq_false_iff_not]
   omega
 
+/-! ## Hero weapon damage (C `dmgval`, `weapon.c:216-293`, `uhitm.c:847`) -/
+
+/--
+  Weapon damage die (C `weapon.c:216-293`, `uhitm.c:847`):
+  - Bare hands (`none`): `rnd(4)` with martial arts, `rnd(2)` without.
+  - Weapon (`some (small, large)`): `rnd(large)` vs large targets, `rnd(small)` otherwise.
+-/
+def weaponDamageDie (weapon : Option (Nat × Nat)) (targetLarge martialArts : Bool) : Nat :=
+  match weapon with
+  | some (s, l) => if targetLarge then l else s
+  | none => if martialArts then 4 else 2
+
+/--
+  Base weapon damage (C `dmgval`, `weapon.c:216-293` and `uhitm.c:847`).
+  Draws `rnd(die)` with `die = weaponDamageDie weapon targetLarge martialArts`.
+  `0` when `die = 0`.
+-/
+def dmgval (weapon : Option (Nat × Nat)) (targetLarge martialArts : Bool) (roll : Nat) : Nat :=
+  let die := weaponDamageDie weapon targetLarge martialArts
+  if die = 0 then 0 else dieRoll die roll
+
+/-- For any weapon with positive die, `dmgval` is bounded by `1..die`. -/
+theorem dmgval_bounds (weapon : Option (Nat × Nat)) (targetLarge martialArts : Bool) (roll : Nat)
+    (h : 1 ≤ weaponDamageDie weapon targetLarge martialArts) :
+    1 ≤ dmgval weapon targetLarge martialArts roll ∧
+    dmgval weapon targetLarge martialArts roll ≤ weaponDamageDie weapon targetLarge martialArts := by
+  have hd : weaponDamageDie weapon targetLarge martialArts ≠ 0 := by omega
+  unfold dmgval
+  simp only [hd, if_false]
+  exact die_roll_bounds (weaponDamageDie weapon targetLarge martialArts) roll h
+
+/-- For any weapon with positive die, hit damage with dmgval is at least 1 (C `uhitm.c:1505`). -/
+theorem melee_damage_dmgval_pos (weapon : Option (Nat × Nat)) (targetLarge martialArts : Bool)
+    (roll : Nat) (enchant bonus : Int)
+    (h : 1 ≤ weaponDamageDie weapon targetLarge martialArts) :
+    1 ≤ meleeDamage (dmgval weapon targetLarge martialArts roll) enchant bonus := by
+  have hb := (dmgval_bounds weapon targetLarge martialArts roll h).1
+  exact melee_damage_pos _ enchant bonus
+
 end NetMechanics
+

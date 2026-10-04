@@ -9,7 +9,7 @@ This document provides the formal mathematical specification for core NetHack me
 The Lean models and the Rust engine are simplified abstractions of NetHack mechanics and are **not** a faithful transcription of NetHack 5.0. The formulas in this document describe the models, and in several places they differ from the C source. Known divergences:
 
 * **Monster attacks (simplified C `mattacku`/`mattackm`)**: monsters resolve their C `mattk[]` hand-to-hand slots (claw, bite, kick, touch, weapon) in order with `tmp > rnd(20 + i)` and `d(n, d)` damage (`mhitu.c:768-912`, `mhitm.c:375-441`), but: (a) only AD_FIRE/AD_COLD damage is zeroed by resistance; every other AD type deals its dice as physical damage without its side effect (poisoning `rn2(8)`, level drain, slow, stun, stoning, AD_SAMU theft, paralysis), and magic cancellation (`mhitm_mgc_atk_negated`'s `rn2(10)`), item destruction (`rn2(20)`), knockback and the undead midnight double damage are not modelled (their draws are skipped); (b) monsters wield no weapons, so AT_WEAP adds no `hitval`/`dmgval` and never throws at range; (c) the to-hit omits the helpless/confused `+4`, invisible/blind and trapped `-2`, and the elf-vs-orc `+1`; (d) AT_MAGC is not cast in melee (`castmu`); only the summon/curse spellcaster abilities act, on their own cooldowns, for the lich, Dark One, Thoth Amon and Wizard of Yendor; (e) an actor whose name resolves to no bestiary archetype attacks once with a `d(1, 6)` claw; (f) breath (AT_BREA, `breamm` `mthrowu.c:1093`) fires at a lined-up hero 2..7 tiles away on `rn2(3)`, hits per `zap_hit` and deals `d(n, 6)` (resisted by fire/cold resistance), but the `mspec_used` cooldown, beam range `rn1(7,7)`, bounces and the reflected ray's return path are not modelled (a reflected breath hurts no one; every breather resists its own element); (g) Medusa's gaze keeps its 30-damage approximation instead of stoning, and the floating eye's passive paralysis (`passive`, `uhitm.c:5865`) is not modelled.
-* **Bare-handed damage**: bare-handed attacks use the weapon skill damage table (Unskilled $-2$). In C, the bare-handed/martial-arts damage bonus is $0/{+1}/{+1}/{+2}$ for Unskilled/Basic/Skilled/Expert; the martial-arts damage doubling (and the martial-arts user's extra bonus) is not modelled.
+* **Bare-handed damage**: bare-handed base damage draws $R \in [1, 2]$ (or $R \in [1, 4]$ for Monk martial arts) per C `uhitm.c:847`, but the skill damage bonus uses the standard table (Unskilled $-2$) rather than C's $0/{+1}/{+1}/{+2}$, and martial-arts damage doubling is not modelled.
 * **`abon()` omitted**: attributes are not tracked, so the to-hit `abon()` term is 0; C's $+1$ below experience level 3 and the Str/Dex to-hit bonuses are absent.
 * **Temple priest donations**: the NetRust priest additionally uncurses carried items for an offer of at least $200 \times$ level and grants divine favor $+2$ for any donation that is not refused or a cheapskate offer; neither exists in C `priest.c`. The clairvoyance band (`priest.c:671-680`) and the selfless band's alignment gain / cleansing (`priest.c:706-719`) are not applied (message only).
 * **Mysterious Force depth mapping**: C gates the force on `dunlev < dunlevs_in_dungeon - 3` of the real Gehennom (about 20+ levels); NetRust's Gehennom has 6 levels, so the force is only active at depths 1 and 2 (`do.c:1541-1573`).
@@ -195,6 +195,8 @@ $$D = \begin{cases} 0 & \text{if the defender resists AD\_FIRE / AD\_COLD} \\ d(
 ($d(0, x) = 0$), then the hero's negative-AC absorption below (`mhitu.c`:1187-1211). A breath ray hits the hero iff `zap_hit` (`zap.c`:4705): $c = \text{rn2}(20)$; $c = 0 \Rightarrow \text{rnd}(10) < AC$, else $3 - c < \text{AC\_VALUE}(AC)$.
 
 ### Damage Resolution & Negative AC Absorption
+Hero base weapon damage draws $R = \text{dmgval}(W, \text{large}, \text{martial}, \text{roll})$ (`NetHack-5.0.0/src/weapon.c`:216, `uhitm.c`:847): for bare hands, $R \in [1, 2]$ ($[1, 4]$ with Monk martial arts); for a wielded weapon with small die $d_s$ and large die $d_l$ from the catalog, $R \in [1, d_l]$ against large targets ($\ge \text{MZ\_LARGE}$) and $R \in [1, d_s]$ otherwise; non-weapon objects deal $\text{rnd}(2)$ (`uhitm.c`:895).
+
 Given base damage roll $R$, weapon enchantment $S$, and skill bonus $B$, a landed hit deals at least 1 (`uhitm.c`:1505):
 $$D_{\text{raw}} = \max(1, R + S + B)$$
 
@@ -221,10 +223,12 @@ $$\text{isDead} = (HP_{\text{after}} = 0) \lor (D_{\text{final}} \ge HP_{\text{b
 * `hero_absorb_le` / `hero_absorb_pos` / `hero_absorb_nonneg_ac`: hero AC absorption never increases damage, never drops positive damage below 1, and is a no-op for $\text{AC} \ge 0$.
 * `monster_to_hit_pos`: the monster-vs-hero to-hit value is at least 1.
 * `die_roll_bounds` / `melee_damage_die_pos`: a damage die of any size $d \ge 1$ rolls in $[1, d]$, and a landed hit from it deals at least 1.
+* `dmgval_bounds` / `melee_damage_dmgval_pos`: for any weapon with positive die, base weapon damage $R \in [1, d]$ and a landed hit deals at least 1.
 * `dice_damage_bounds`: $n \le d(n, d) \le n \cdot d$ for $d \ge 1$.
 * `resisted_hit_zero` / `resisted_hit_hp_unchanged`: a resisted monster attack deals 0 and leaves the defender's HP unchanged.
 * `unresisted_hit_pos` / `monster_vs_monster_damage_le`: an unresisted landed attack with $n, d \ge 1$ deals at least 1; against a monster it deals at most $n \cdot d$.
 * `mhitm_no_plus_ten` / `monster_attack_never_hits_le_1`: monster-vs-monster $\text{tmp} = AC + m_{lev}$ on the $\text{rnd}(20+i)$ die; $\text{tmp} \le 1$ never hits.
+
 
 ---
 

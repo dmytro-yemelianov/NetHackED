@@ -3,12 +3,15 @@
 use netrust_arena::{ActorId, ActorRecord, ItemLocation};
 use netrust_core::{
     combat::{
-        is_melee_attack, mattacku_die, mhitm_to_hit, monster_attack_damage, monster_attack_hits,
-        monster_hit_damage, monster_to_hit_value, resisted, resolve_melee_attack, to_hit_value,
+        dmgval, is_melee_attack, mattacku_die, mhitm_to_hit, monster_attack_damage,
+        monster_attack_hits, monster_hit_damage, monster_to_hit_value, resisted,
+        resolve_melee_attack, to_hit_value, weapon_damage_die,
     },
     Combatant,
 };
-use netrust_data::{create_item_record, monster_archetype_by_name, ItemKindId};
+use netrust_data::{
+    create_item_record, item_archetype_by_name, monster_archetype_by_name, ItemKindId, MonsterSize,
+};
 use netrust_types::{Attack, AttackType, Buc, DamageType};
 use rand::{Rng, RngCore};
 
@@ -119,6 +122,46 @@ impl SimulationWorld {
             }
         }
 
+        let weapon_dice = if let Some(wid) = self.wielded_item {
+            if let Some(w) = self.arena.items.get(wid) {
+                if let Some(arch) = item_archetype_by_name(&w.name) {
+                    if arch.damage_small.1 > 0 || arch.damage_large.1 > 0 {
+                        Some((arch.damage_small.1, arch.damage_large.1))
+                    } else {
+                        // C uhitm.c:895: non-weapon object wielded as weapon deals rnd(2)
+                        Some((2, 2))
+                    }
+                } else {
+                    let lower = w.name.to_lowercase();
+                    if lower.contains("dagger") {
+                        Some((4, 3))
+                    } else if lower.contains("short sword") {
+                        Some((6, 8))
+                    } else if lower.contains("long sword")
+                        || lower.contains("excalibur")
+                        || lower.contains("vorpal blade")
+                    {
+                        Some((8, 12))
+                    } else if lower.contains("silver saber") {
+                        Some((8, 8))
+                    } else if lower.contains("mace") {
+                        Some((6, 6))
+                    } else {
+                        Some((2, 2))
+                    }
+                }
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        let target_large = monster_archetype_by_name(&defender.name)
+            .map(|m| m.size >= MonsterSize::Large)
+            .unwrap_or(false);
+        let martial_arts = self.role_name.eq_ignore_ascii_case("monk");
+
         let target_ac = def_combat.ac;
         // Hero attacker: C find_roll_to_hit (uhitm.c:365) vs rnd(20) (uhitm.c:780).
         let to_hit = to_hit_value(
@@ -129,7 +172,13 @@ impl SimulationWorld {
             target_ac,
         );
         let d20 = self.rng.random_range(1..=20u32);
-        let base_roll = self.rng.random_range(1..=6u32);
+        let die = weapon_damage_die(weapon_dice, target_large, martial_arts);
+        let roll = if die == 0 {
+            0
+        } else {
+            self.rng.random_range(1..=die)
+        };
+        let base_roll = dmgval(weapon_dice, target_large, martial_arts, roll);
 
         let result = resolve_melee_attack(
             to_hit,
