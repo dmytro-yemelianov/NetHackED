@@ -220,6 +220,60 @@ fn test_zap_wand_beam_propagation_and_damage() {
 }
 
 #[test]
+fn test_wands_of_digging_and_teleportation_do_not_damage() {
+    // C zap.c:3459 (zap_dig) never hurts monsters; teleportation relocates them.
+    for kind in [ItemKindId::WandOfDigging, ItemKindId::WandOfTeleportation] {
+        let mut sim = SimulationWorld::new_with_seed(101);
+        let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+        for dx in 1..=4 {
+            let c = Coord::new(p_coord.x + dx, p_coord.y).unwrap();
+            sim.level.set_tile(c, Tile::Room);
+        }
+
+        let target_coord = Coord::new(p_coord.x + 2, p_coord.y).unwrap();
+        let mon = ActorRecord {
+            name: "Goblin Archer".into(),
+            coord: target_coord,
+            hp: 10,
+            max_hp: 10,
+            ac: 8,
+            level: 1,
+            speed: 10,
+            alignment: Alignment::Chaotic,
+            intrinsics: Intrinsics::default(),
+            is_player: false,
+            is_dead: false,
+            is_tame: false,
+            tameness: 0,
+            is_unique: false,
+            abilities: Vec::new(),
+        };
+        let mon_id = sim.arena.spawn_actor(mon);
+        // Zapping now requires a carried wand.
+        sim.arena.spawn_item(create_item_record(
+            kind,
+            ItemLocation::CarriedBy(sim.player_id),
+            Buc::Uncursed,
+        ));
+
+        let events = sim.step_player_action(ActionAst::ZapWand {
+            dir: Direction::East,
+            energy: 5,
+        });
+
+        assert!(events
+            .iter()
+            .any(|e| matches!(e, GameEvent::BeamPropagated { .. })));
+        assert!(!events
+            .iter()
+            .any(|e| matches!(e, GameEvent::AttackLanded { .. })));
+        let mon_after = sim.arena.actors.get(mon_id).unwrap();
+        assert!(!mon_after.is_dead);
+        assert_eq!(mon_after.hp, 10);
+    }
+}
+
+#[test]
 fn test_pickup_and_drop_lifecycle() {
     let mut sim = SimulationWorld::new_with_seed(102);
     let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;

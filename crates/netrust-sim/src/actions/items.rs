@@ -483,14 +483,19 @@ impl SimulationWorld {
                             };
                             // read.c:737: lim = 1 wishing, 8 directional, 15 non-directional.
                             let is_wishing = wand_name.contains("wishing");
-                            let nodir = [
-                                "light",
-                                "secret door detection",
-                                "create monster",
-                                "enlightenment",
-                            ]
-                            .iter()
-                            .any(|k| wand_name.contains(k));
+                            // Catalog `wand_dir` (objects.h oc_dir); wands outside the catalog
+                            // fall back to the NODIR name list.
+                            let nodir = match netrust_data::item_archetype_by_name(&wand_name) {
+                                Some(a) => a.wand_dir == Some(netrust_data::WandDir::NoDir),
+                                None => [
+                                    "light",
+                                    "secret door detection",
+                                    "create monster",
+                                    "enlightenment",
+                                ]
+                                .iter()
+                                .any(|k| wand_name.contains(k)),
+                            };
                             let lim: u32 = if is_wishing {
                                 1
                             } else if nodir {
@@ -725,12 +730,19 @@ impl SimulationWorld {
             if let Some(item) = item {
                 if item.class == ItemClass::Food {
                     self.arena.destroy_item(item_id);
-                    let nut_gain = if item.name.contains("ration") {
-                        800
-                    } else if item.name.contains("apple") {
-                        50
-                    } else {
-                        400 // corpse
+                    // Catalog `oc_nutrition` (objects.h FOOD); corpses (catalog 0, C takes it
+                    // from the monster) and uncatalogued food keep the flat 400.
+                    let nut_gain = match netrust_data::item_archetype_by_name(&item.name) {
+                        Some(a) if a.nutrition > 0 => a.nutrition as i32,
+                        _ => {
+                            if item.name.contains("ration") {
+                                800
+                            } else if item.name.contains("apple") {
+                                50
+                            } else {
+                                400 // corpse
+                            }
+                        }
                     };
                     self.player_nutrition = (self.player_nutrition + nut_gain).min(2000);
 
@@ -1030,7 +1042,17 @@ impl SimulationWorld {
                         12u32
                     };
                     if let Some(target) = self.arena.actors.get_mut(target_id) {
-                        if wand_name.contains("polymorph") {
+                        if wand_name.contains("digging") || wand_name.contains("teleport") {
+                            // C: zap_dig (zap.c:3459) never hurts monsters, and wand of
+                            // teleportation relocates them (u_teleport_mon, not modelled);
+                            // neither deals beam damage.
+                            events.push(GameEvent::LogMessage {
+                                text: format!(
+                                    "The {} has no effect on {}.",
+                                    wand_name, target.name
+                                ),
+                            });
+                        } else if wand_name.contains("polymorph") {
                             if !target.is_unique && !target.is_player {
                                 // transform monster
                                 let new_species = netrust_data::MonsterSpeciesId::Goblin; // simplified

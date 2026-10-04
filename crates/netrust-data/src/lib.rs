@@ -8,8 +8,8 @@ pub mod pantheons;
 pub mod roles;
 
 pub use items::{
-    create_item_record, get_item_archetype, initial_wand_charges, ItemArchetype, ItemKindId,
-    ITEM_CATALOG,
+    create_item_record, get_item_archetype, initial_wand_charges, item_archetype_by_name,
+    ItemArchetype, ItemKindId, WandDir, ITEM_CATALOG,
 };
 pub use monsters::{
     create_ghost_record, create_monster_record, get_monster_species, monster_archetype_by_name,
