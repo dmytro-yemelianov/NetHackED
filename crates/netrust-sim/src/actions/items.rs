@@ -472,12 +472,13 @@ impl SimulationWorld {
                                     .unwrap_or(false)
                             });
                         if let Some(wid) = wand_id {
-                            let (wand_name, charges, recharges) = {
+                            let (wand_name, charges, recharges, wand_blessed) = {
                                 let w = self.arena.items.get(wid).unwrap();
                                 (
                                     w.name.clone(),
                                     w.enchantment.max(0) as u32,
                                     w.recharged as u32,
+                                    w.buc == Buc::Blessed,
                                 )
                             };
                             // read.c:737: lim = 1 wishing, 8 directional, 15 non-directional.
@@ -519,12 +520,32 @@ impl SimulationWorld {
                             };
                             let wand_state = netrust_types::WandCharges { charges, recharges };
                             match netrust_core::artifacts_wands::recharge_wand(
-                                wand_state, item.buc, lim, is_wishing, roll_343, rn5, rnd_roll,
+                                wand_state,
+                                item.buc,
+                                lim,
+                                is_wishing,
+                                wand_blessed,
+                                roll_343,
+                                rn5,
+                                rnd_roll,
                             ) {
                                 netrust_types::RechargeResult::Exploded => {
                                     self.arena.destroy_item(wid);
+                                    // read.c:763 wand_explode(obj, rnd(lim)); :2420-2445 dmg = d(n, k)
+                                    // with n = max(2, spe + chg).
+                                    let chg = self.rng.random_range(1..=lim);
+                                    let dice = netrust_core::artifacts_wands::wand_explode_dice(
+                                        charges as i32,
+                                        chg,
+                                    );
+                                    let k = netrust_core::artifacts_wands::wand_explode_die_size(
+                                        &wand_name,
+                                    );
+                                    let dmg: i32 = (0..dice)
+                                        .map(|_| self.rng.random_range(1..=k) as i32)
+                                        .sum();
                                     if let Some(p) = self.arena.actors.get_mut(self.player_id) {
-                                        p.hp = p.hp.saturating_sub(20);
+                                        p.hp = p.hp.saturating_sub(dmg.max(0) as u32);
                                         if p.hp == 0 {
                                             p.is_dead = true;
                                         }

@@ -1932,6 +1932,53 @@ fn test_scroll_of_charging_and_explosion() {
 }
 
 #[test]
+fn test_wand_recharge_explosion_damage_is_d_n_k() {
+    // read.c:763,2420-2445: dmg = d(max(2, spe + rnd(8)), 6) for a wand of striking.
+    let mut seen = std::collections::BTreeSet::new();
+    for seed in 0..60u64 {
+        let mut sim = SimulationWorld::new_with_seed(seed);
+        sim.arena.actors.get_mut(sim.player_id).unwrap().hp = 1000;
+        let mut wand = create_item_record(
+            ItemKindId::WandOfStriking,
+            ItemLocation::CarriedBy(sim.player_id),
+            Buc::Uncursed,
+        );
+        wand.enchantment = 2;
+        wand.recharged = 7;
+        let wid = sim.arena.spawn_item(wand);
+        let scroll = sim.arena.spawn_item(ItemRecord {
+            name: "scroll of charging".into(),
+            class: ItemClass::Scroll,
+            weight: 5,
+            buc: Buc::Blessed,
+            is_container: false,
+            is_bag_of_holding: false,
+            enchantment: 0,
+            erosion: 0,
+            proofed: false,
+            location: ItemLocation::CarriedBy(sim.player_id),
+            corpse_race: None,
+            corpse_age: 0,
+            rot_threshold: 50,
+            recharged: 0,
+        });
+        let idx = sim
+            .arena
+            .items_carried_by(sim.player_id)
+            .iter()
+            .position(|&id| id == scroll)
+            .unwrap();
+        sim.step_player_action(ActionAst::Read(idx));
+        assert!(sim.arena.items.get(wid).is_none());
+        let lost = 1000 - sim.arena.actors.get(sim.player_id).unwrap().hp;
+        // n in 3..=10 dice of d6.
+        assert!((3..=60).contains(&lost), "lost {lost}");
+        seen.insert(lost);
+    }
+    assert!(seen.len() > 5, "damage must vary, got {seen:?}");
+}
+
+#[test]
 fn test_artifact_combat_bonus_and_vorpal_blade() {
     let mut sim = SimulationWorld::new_with_seed(42);
     let p_coord = Coord::new_unchecked(10, 10);
@@ -2185,7 +2232,7 @@ fn test_bones_file_generation_and_ghost_encounter() {
     assert_eq!(bones.death_coord, death_coord);
     assert!(!bones.items.is_empty());
     // Odds are covered by test_bones_curse_ratio_over_seeded_deaths. For any roll, the sword
-    // (blessed originally) is either cursed or keeps its BUC, and quest items are cursed.
+    // (blessed originally) is either cursed or keeps its BUC, and the always-cursed items are cursed.
     assert!(bones
         .items
         .iter()
@@ -3893,23 +3940,56 @@ fn test_bones_curse_ratio_over_seeded_deaths() {
 }
 
 #[test]
-fn test_bones_quest_items_always_cursed() {
-    for seed in 0..50u64 {
+fn test_bones_amulet_and_invocation_items_always_cursed() {
+    // C bones.c:173-189: Amulet, Candelabrum, Bell, Book of the Dead always cursed.
+    for kind in [
+        ItemKindId::AmuletOfYendor,
+        ItemKindId::CandelabrumOfInvocation,
+        ItemKindId::BellOfOpening,
+        ItemKindId::BookOfTheDead,
+    ] {
+        for seed in 0..50u64 {
+            let mut sim = SimulationWorld::new_with_seed(seed);
+            sim.depth = 3;
+            sim.arena.spawn_item(create_item_record(
+                kind,
+                ItemLocation::CarriedBy(sim.player_id),
+                Buc::Blessed,
+            ));
+            let bones = sim.save_bones("test").unwrap();
+            let name = netrust_data::get_item_archetype(kind).name;
+            let item = bones.items.iter().find(|i| i.name == name).unwrap();
+            assert_eq!(item.buc, Buc::Cursed, "{kind:?} seed {seed}");
+        }
+    }
+}
+
+#[test]
+fn test_bones_quest_artifact_takes_normal_curse_roll() {
+    // C bones.c:291: quest artifacts are cursed only by the rn2(5) roll (about 4/5).
+    let (mut cursed, mut kept) = (0, 0);
+    for seed in 0..200u64 {
         let mut sim = SimulationWorld::new_with_seed(seed);
         sim.depth = 3;
         sim.arena.spawn_item(create_item_record(
-            ItemKindId::AmuletOfYendor,
+            ItemKindId::OrbOfFate,
             ItemLocation::CarriedBy(sim.player_id),
             Buc::Blessed,
         ));
         let bones = sim.save_bones("test").unwrap();
-        let amulet = bones
+        let orb = bones
             .items
             .iter()
-            .find(|i| i.name == "Amulet of Yendor")
+            .find(|i| i.name == netrust_data::get_item_archetype(ItemKindId::OrbOfFate).name)
             .unwrap();
-        assert_eq!(amulet.buc, Buc::Cursed);
+        match orb.buc {
+            Buc::Cursed => cursed += 1,
+            Buc::Blessed => kept += 1,
+            other => panic!("unexpected {other:?}"),
+        }
     }
+    assert!(kept > 0, "quest artifact must sometimes keep its BUC");
+    assert!(cursed > kept, "most rolls curse");
 }
 
 #[test]
@@ -4128,5 +4208,56 @@ fn test_starvation_death_logs_cause_in_both_locales() {
                 .any(|e| matches!(e, GameEvent::LogMessage { text } if text == expected)),
             "missing starvation message {expected:?}"
         );
+    }
+}
+
+#[test]
+fn test_starvation_message_logged_once_on_transition() {
+    let mut sim = SimulationWorld::new_with_seed(4244);
+    sim.player_nutrition = -1000;
+    let mut events = Vec::new();
+    for _ in 0..30 {
+        events.extend(sim.step_player_action(ActionAst::Wait));
+    }
+    assert!(sim.arena.actors.get(sim.player_id).unwrap().is_dead);
+    let n = events
+        .iter()
+        .filter(
+            |e| matches!(e, GameEvent::LogMessage { text } if text == "You die from starvation."),
+        )
+        .count();
+    assert_eq!(n, 1, "starvation message must be logged only at death");
+}
+
+#[test]
+fn test_fainting_at_zero_hp_logs_death_message_in_both_locales() {
+    for (locale, expected) in [
+        (
+            netrust_types::Locale::En,
+            "You faint from lack of food and die.",
+        ),
+        (
+            netrust_types::Locale::Uk,
+            "Ви непритомнієте від браку їжі й помираєте.",
+        ),
+    ] {
+        let mut sim = SimulationWorld::new_with_seed(4245);
+        sim.locale = locale;
+        sim.player_nutrition = -50;
+        assert_eq!(sim.hunger_state(), netrust_sim::HungerState::Fainting);
+        sim.arena.actors.get_mut(sim.player_id).unwrap().hp = 1;
+        let mut events = Vec::new();
+        for _ in 0..60 {
+            events.extend(sim.step_player_action(ActionAst::Wait));
+            if sim.arena.actors.get(sim.player_id).unwrap().is_dead {
+                break;
+            }
+        }
+        assert!(sim.arena.actors.get(sim.player_id).unwrap().is_dead);
+        let n = events
+            .iter()
+            .filter(|e| matches!(e, GameEvent::LogMessage { text } if text == expected))
+            .count();
+        assert_eq!(n, 1, "missing/duplicate faint death message {expected:?}");
     }
 }

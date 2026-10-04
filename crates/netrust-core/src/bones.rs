@@ -7,12 +7,12 @@ use netrust_types::Buc;
 /// BUC of an item after the hero dies and the bones file is built.
 ///
 /// C `bones.c:290-291` (`drop_upon_death`): `if (rn2(5)) curse(otmp);` so 4/5 of items
-/// become cursed (blessed included) and 1/5 keep their BUC. Converted quest items are
-/// always cursed (`bones.c:173-189`, `resetobjs`).
+/// become cursed (blessed included) and 1/5 keep their BUC. The Amulet of Yendor and the
+/// invocation items are always cursed (`bones.c:173-189`, `resetobjs`); quest artifacts are not.
 ///
 /// `rn2_5` is the `rn2(5)` draw, range `0..=4`; larger values are clamped to 4.
-pub fn corrupt_buc_on_death(original: Buc, is_quest_item: bool, rn2_5: u32) -> Buc {
-    if is_quest_item || rn2_5.min(4) != 0 {
+pub fn corrupt_buc_on_death(original: Buc, always_cursed: bool, rn2_5: u32) -> Buc {
+    if always_cursed || rn2_5.min(4) != 0 {
         Buc::Cursed
     } else {
         original

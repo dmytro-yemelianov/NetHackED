@@ -8,11 +8,11 @@ import NetMechanics.BUC
 namespace NetMechanics
 
 /--
-  BUC after death (bones.c:290-291, :173-189): `if (rn2(5)) curse(otmp)`; quest items
-  are always cursed. `r` is the `rn2(5)` draw.
+  BUC after death (bones.c:290-291, :173-189): `if (rn2(5)) curse(otmp)`; the Amulet and
+  invocation items are always cursed (`alwaysCursed`); quest artifacts are not. `r` is the `rn2(5)` draw.
 -/
-def corruptBucOnDeath (b : BUC) (isQuest : Bool) (r : Nat) : BUC :=
-  if isQuest || r ≠ 0 then BUC.Cursed else b
+def corruptBucOnDeath (b : BUC) (alwaysCursed : Bool) (r : Nat) : BUC :=
+  if alwaysCursed || r ≠ 0 then BUC.Cursed else b
 
 /-- Theorem: Corruption is idempotent for a fixed roll. -/
 theorem corrupt_buc_idempotent (b : BUC) (q : Bool) (r : Nat) :
@@ -25,13 +25,13 @@ theorem corrupt_buc_cursed_when_roll_nonzero (b : BUC) (q : Bool) (r : Nat) (h :
     corruptBucOnDeath b q r = BUC.Cursed := by
   simp [corruptBucOnDeath, h]
 
-/-- Theorem: A zero roll on a non-quest item keeps the original BUC. -/
+/-- Theorem: A zero roll on a item not flagged always-cursed keeps the original BUC. -/
 theorem corrupt_buc_keeps_original_on_zero_roll (b : BUC) :
     corruptBucOnDeath b false 0 = b := by
   simp [corruptBucOnDeath]
 
-/-- Theorem: Quest items are always cursed. -/
-theorem corrupt_buc_quest_always_cursed (b : BUC) (r : Nat) :
+/-- Theorem: Items flagged always-cursed are always cursed. -/
+theorem corrupt_buc_flagged_always_cursed (b : BUC) (r : Nat) :
     corruptBucOnDeath b true r = BUC.Cursed := by
   simp [corruptBucOnDeath]
 

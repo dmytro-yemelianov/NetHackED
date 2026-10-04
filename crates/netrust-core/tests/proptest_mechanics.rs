@@ -1024,18 +1024,22 @@ proptest! {
         roll_343 in 0u32..343,
         rn5 in 0u32..5,
         rnd_roll in 1u32..16,
+        wand_blessed in proptest::bool::ANY,
     ) {
         let buc = [Buc::Cursed, Buc::Uncursed, Buc::Blessed][buc_i as usize];
         let lim: u32 = if wishing { 1 } else if directional { 8 } else { 15 };
         let w = WandCharges { charges, recharges };
-        let res = recharge_wand(w, buc, lim, wishing, roll_343, rn5, rnd_roll);
+        let res = recharge_wand(w, buc, lim, wishing, wand_blessed, roll_343, rn5, rnd_roll);
         // Reference from read.c:737-794.
         let n = recharges.min(7);
         let explode = n > 0 && (wishing || n * n * n > roll_343);
         let expected = if explode {
             RechargeResult::Exploded
         } else if buc == Buc::Cursed {
-            RechargeResult::Success(WandCharges { charges: 0, recharges: recharges + 1 })
+            RechargeResult::Success(WandCharges {
+                charges: if wand_blessed { charges } else { 0 },
+                recharges: recharges + 1,
+            })
         } else {
             let mut amt = if lim == 1 { 1 } else { (lim - 4) + rn5 };
             if buc != Buc::Blessed {
@@ -1136,7 +1140,7 @@ proptest! {
         quest in proptest::bool::ANY,
         roll in 0u32..8,
     ) {
-        // C: `if (rn2(5)) curse(otmp);` rn2(5) in 0..=4; quest items always cursed.
+        // C: `if (rn2(5)) curse(otmp);` rn2(5) in 0..=4; Amulet/invocation items always cursed.
         fn reference(b: Buc, quest: bool, r: u32) -> Buc {
             if quest || r.min(4) != 0 { Buc::Cursed } else { b }
         }

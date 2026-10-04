@@ -74,7 +74,7 @@ _SCALARS = [
     ("depth", 1, 100),
     ("gold", 0, 100_000_000),
     ("turn", 0, 10_000_000),
-    ("nutrition", 0, 5000),
+    ("nutrition", -400, 5000),  # signed: Fainting/Starved go below 0
     ("pw", 0, 1000),
     ("max_pw", 0, 1000),
     ("is_dead", 0, 1),

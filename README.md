@@ -53,7 +53,7 @@ NetRust/
 │   ├── agent-and-mcp-integration.md       # MCP, JSON stream, GraphQL, bones server
 │   ├── master-roadmap-to-nethack-parity.md
 │   └── superpowers/                       # Design specs and implementation plans
-├── NetMechanics/                          # 39 Lean modules (BUC, Inventory, Combat, FOV, Raycast, Polymorph, Nutrition, Religion, Traps, ...)
+├── NetMechanics/                          # 40 Lean modules (BUC, Inventory, Combat, FOV, Raycast, Polymorph, Nutrition, Religion, Traps, ...)
 ├── NetMechanics.lean                      # Lean 4 root module
 ├── Main.lean                              # Demo executable (prints example evaluations; not a verification harness)
 ├── lakefile.toml                          # Lake build definition

@@ -10,22 +10,19 @@ use rand::Rng;
 use crate::events::GameEvent;
 use crate::world::SimulationWorld;
 
-/// Quest artifacts and the Amulet are always cursed in bones (C `bones.c:173-189`).
-/// Bones records do not carry the item kind, so detection is by name.
-pub fn is_quest_item_name(name: &str) -> bool {
-    const QUEST: [&str; 10] = [
+/// Items that `resetobjs` always curses in bones (C `bones.c:170-189`): the Amulet of
+/// Yendor (fake Amulet, `:173`) and the invocation items (Candelabrum `:183`, Bell `:186`,
+/// Book of the Dead `:189`). Quest artifacts are NOT in this list: they take the normal
+/// `rn2(5)` curse roll (`bones.c:291`). Bones records do not carry the item kind, so
+/// detection is by name.
+pub fn always_cursed_in_bones(name: &str) -> bool {
+    const ALWAYS: [&str; 4] = [
         "Amulet of Yendor",
-        "The Orb of Fate",
-        "The Heart of Ahriman",
-        "The Magic Mirror of Merlin",
-        "The Eyes of the Overworld",
-        "The Master Key of Thievery",
-        "The Tsurugi of Muramasa",
-        "The Platinum Yendorian Express Card",
-        "The Staff of Aesculapius",
-        "The Orb of Detection",
+        "Candelabrum of Invocation",
+        "Bell of Opening",
+        "Book of the Dead",
     ];
-    QUEST.iter().any(|q| q.eq_ignore_ascii_case(name))
+    ALWAYS.iter().any(|q| q.eq_ignore_ascii_case(name))
 }
 
 impl SimulationWorld {
@@ -46,7 +43,7 @@ impl SimulationWorld {
                     name: item.name.clone(),
                     class: item.class,
                     weight: item.weight,
-                    buc: corrupt_buc_on_death(item.buc, is_quest_item_name(&item.name), roll),
+                    buc: corrupt_buc_on_death(item.buc, always_cursed_in_bones(&item.name), roll),
                     enchantment: item.enchantment,
                 });
             }

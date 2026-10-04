@@ -58,23 +58,37 @@ impl SimulationWorld {
                         });
                     } else if new_state == HungerState::Fainting && (self.scheduler.turn % 10 == 0)
                     {
+                        // NetRust approximation: C faints (loses turns, `eat.c` newuhs);
+                        // here the hero loses 1 HP and dies at 0 HP.
+                        let mut died = false;
                         if let Some(p) = self.arena.actors.get_mut(self.player_id) {
-                            p.hp = p.hp.saturating_sub(1);
-                            if p.hp == 0 {
-                                p.is_dead = true;
+                            if !p.is_dead {
+                                p.hp = p.hp.saturating_sub(1);
+                                if p.hp == 0 {
+                                    p.is_dead = true;
+                                    died = true;
+                                }
                             }
                         }
                         events.push(GameEvent::LogMessage {
                             text: netrust_i18n::Messages::hunger_fainting(self.locale).into(),
                         });
-                    } else if new_state == HungerState::Starved {
-                        if let Some(p) = self.arena.actors.get_mut(self.player_id) {
-                            p.hp = 0;
-                            p.is_dead = true;
+                        if died {
+                            events.push(GameEvent::LogMessage {
+                                text: netrust_i18n::t("fainted_death", self.locale).into(),
+                            });
                         }
-                        events.push(GameEvent::LogMessage {
-                            text: netrust_i18n::t("starved", self.locale).into(),
-                        });
+                    } else if new_state == HungerState::Starved {
+                        // Kill and log once, on the transition only.
+                        if let Some(p) = self.arena.actors.get_mut(self.player_id) {
+                            if !p.is_dead {
+                                p.hp = 0;
+                                p.is_dead = true;
+                                events.push(GameEvent::LogMessage {
+                                    text: netrust_i18n::t("starved", self.locale).into(),
+                                });
+                            }
+                        }
                     }
 
                     if self.scheduler.monster_can_act() {

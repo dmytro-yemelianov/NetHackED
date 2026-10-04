@@ -69,7 +69,8 @@ pub fn zap_wand(w: WandCharges) -> Option<WandCharges> {
 /// recharges (capped at 7) the wand explodes iff
 /// `n > 0 && (wishing || n*n*n > rn2(343))` (all BUC; the first recharge never
 /// explodes). Otherwise the counter increments and:
-/// - cursed: `stripspe` (charges become 0 if positive);
+/// - cursed: `stripspe` (`read.c:652`): charges become 0 if positive, but a blessed
+///   wand (`wand_blessed`) is left untouched ("nothing happens");
 /// - else `n = (lim == 1) ? 1 : rn1(5, lim - 4)`, and uncursed takes `rnd(n)`;
 ///   `spe = max(spe + 1, n)`; a wishing wand left above 3 charges explodes
 ///   (`read.c:785`).
@@ -82,11 +83,13 @@ pub fn zap_wand(w: WandCharges) -> Option<WandCharges> {
 /// - `rnd_roll`: the uncursed `rnd(n)` draw, range `1..=n` (n = `lim-4+rn5`).
 /// - `lim`: 1 wishing, 8 directional, 15 non-directional (clamped to 5..=15
 ///   unless 1).
+#[allow(clippy::too_many_arguments)] // one parameter per C draw/input, mirrored by the Lean model
 pub fn recharge_wand(
     state: WandCharges,
     buc: Buc,
     lim: u32,
     is_wishing: bool,
+    wand_blessed: bool,
     roll_343: u32,
     rn5: u32,
     rnd_roll: u32,
@@ -97,10 +100,9 @@ pub fn recharge_wand(
     }
     let recharges = state.recharges + 1;
     if buc == Buc::Cursed {
-        return RechargeResult::Success(WandCharges {
-            charges: 0,
-            recharges,
-        });
+        // read.c:652 stripspe: blessed (or spe <= 0) wand keeps its charges.
+        let charges = if wand_blessed { state.charges } else { 0 };
+        return RechargeResult::Success(WandCharges { charges, recharges });
     }
     let amount = if lim <= 1 {
         1
@@ -117,6 +119,32 @@ pub fn recharge_wand(
         return RechargeResult::Exploded;
     }
     RechargeResult::Success(WandCharges { charges, recharges })
+}
+
+/// Die size `k` of `wand_explode` damage by wand name (`read.c:2414-2440`):
+/// wishing 12; cancellation/death/polymorph/undead turning 10; cold/fire/lightning/
+/// magic missile 8; nothing 4; every other wand 6.
+pub fn wand_explode_die_size(wand_name: &str) -> u32 {
+    const K10: [&str; 4] = ["cancellation", "death", "polymorph", "undead turning"];
+    const K8: [&str; 4] = ["cold", "fire", "lightning", "magic missile"];
+    if wand_name.contains("wishing") {
+        12
+    } else if K10.iter().any(|k| wand_name.contains(k)) {
+        10
+    } else if K8.iter().any(|k| wand_name.contains(k)) {
+        8
+    } else if wand_name.contains("nothing") {
+        4
+    } else {
+        6
+    }
+}
+
+/// Number of damage dice of `wand_explode` (`read.c:2420-2423`): `n = spe + chg`,
+/// at least 2. `chg` is `rnd(lim)` when overcharging (a 0 `chg` means 2 in C for
+/// zap/engrave; callers here pass the recharge value, at least 1). Damage is `d(n, k)`.
+pub fn wand_explode_dice(spe: i32, chg: u32) -> u32 {
+    (spe.saturating_add(chg.max(1) as i32)).max(2) as u32
 }
 
 /// Whether C draws `rn2(343)` for this recharge (`read.c:741`: only when
@@ -215,7 +243,52 @@ mod tests {
         rn5: u32,
         rnd: u32,
     ) -> RechargeResult {
-        recharge_wand(w, buc, if wishing { 1 } else { 8 }, wishing, r343, rn5, rnd)
+        recharge_wand(
+            w,
+            buc,
+            if wishing { 1 } else { 8 },
+            wishing,
+            false,
+            r343,
+            rn5,
+            rnd,
+        )
+    }
+
+    #[test]
+    fn test_cursed_scroll_does_not_strip_blessed_wand() {
+        // read.c:652 stripspe: blessed wand -> "nothing happens", charges kept.
+        let w = WandCharges {
+            charges: 5,
+            recharges: 0,
+        };
+        assert_eq!(
+            recharge_wand(w, Buc::Cursed, 8, false, true, 0, 0, 1),
+            RechargeResult::Success(WandCharges {
+                charges: 5,
+                recharges: 1
+            })
+        );
+        assert_eq!(
+            recharge_wand(w, Buc::Cursed, 8, false, false, 0, 0, 1),
+            RechargeResult::Success(WandCharges {
+                charges: 0,
+                recharges: 1
+            })
+        );
+    }
+
+    #[test]
+    fn test_wand_explode_dice_and_size() {
+        // read.c:2420-2445
+        assert_eq!(wand_explode_die_size("wand of wishing"), 12);
+        assert_eq!(wand_explode_die_size("wand of death"), 10);
+        assert_eq!(wand_explode_die_size("wand of fire"), 8);
+        assert_eq!(wand_explode_die_size("wand of nothing"), 4);
+        assert_eq!(wand_explode_die_size("wand of digging"), 6);
+        assert_eq!(wand_explode_dice(0, 1), 2);
+        assert_eq!(wand_explode_dice(-1, 1), 2);
+        assert_eq!(wand_explode_dice(5, 3), 8);
     }
 
     #[test]
