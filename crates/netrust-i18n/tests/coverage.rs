@@ -74,10 +74,14 @@ fn cmd_bar_fits_and_mentions_esc() {
 #[test]
 fn peace_messages_are_translated() {
     assert_eq!(
-        Messages::gets_angry("watchman", Locale::En),
-        "Watchman gets angry!"
+        Messages::gets_angry("watchman", true, Locale::En),
+        "The watchman gets angry!"
     );
-    let uk = Messages::gets_angry("watchman", Locale::Uk);
+    assert_eq!(
+        Messages::gets_angry("Medusa", false, Locale::En),
+        "Medusa gets angry!"
+    );
+    let uk = Messages::gets_angry("watchman", true, Locale::Uk);
     assert!(!uk.contains("watchman"), "{uk}");
     for (en, uk) in [
         (
@@ -89,12 +93,12 @@ fn peace_messages_are_translated() {
             Messages::engraving_fades(Locale::Uk).to_string(),
         ),
         (
-            Messages::peaceful_in_the_way("gnome", Locale::En),
-            Messages::peaceful_in_the_way("gnome", Locale::Uk),
+            Messages::peaceful_in_the_way("gnome", true, Locale::En),
+            Messages::peaceful_in_the_way("gnome", true, Locale::Uk),
         ),
         (
-            Messages::peaceful_wont_swap("priest", Locale::En),
-            Messages::peaceful_wont_swap("priest", Locale::Uk),
+            Messages::peaceful_wont_swap("priest", true, Locale::En),
+            Messages::peaceful_wont_swap("priest", true, Locale::Uk),
         ),
         (
             Messages::swap_with_peaceful("gnome", Locale::En),

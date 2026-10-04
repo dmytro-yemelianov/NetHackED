@@ -15,6 +15,12 @@ use rand::Rng;
 use crate::events::GameEvent;
 use crate::world::SimulationWorld;
 
+/// Whether C `Monnam` (`x_monnam`, `do_name.c`) puts "the" before this monster:
+/// every non-unique monster (unique ones carry proper names).
+pub(crate) fn monnam_article(name: &str) -> bool {
+    !monster_archetype_by_name(name).is_some_and(|a| a.is_unique)
+}
+
 /// C `u.ualign.type` as a number (`A_LAWFUL` 1, `A_NEUTRAL` 0, `A_CHAOTIC` -1).
 pub(crate) fn alignment_type(a: Alignment) -> i32 {
     match a {
@@ -189,7 +195,11 @@ impl SimulationWorld {
         };
         self.alignment_record = adjalign(self.alignment_record, delta, lim);
         events.push(GameEvent::LogMessage {
-            text: netrust_i18n::Messages::gets_angry(&target.name, self.locale),
+            text: netrust_i18n::Messages::gets_angry(
+                &target.name,
+                monnam_article(&target.name),
+                self.locale,
+            ),
         });
 
         let quest_cfg = netrust_core::get_role_quest_config_or_default(&self.role_name);

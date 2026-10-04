@@ -494,8 +494,6 @@ pub fn t_hunger_str(state_str: &str, locale: Locale) -> &'static str {
     }
 }
 
-/// Translates a monster or item name for embedding in a message.
-/// Tries monster names first, then item names; unknown names pass through.
 /// C `upstart`/`Monnam`: upper-case the first character.
 fn capitalize_first(s: &str) -> String {
     let mut c = s.chars();
@@ -505,6 +503,8 @@ fn capitalize_first(s: &str) -> String {
     }
 }
 
+/// Translates a monster or item name for embedding in a message.
+/// Tries monster names first, then item names; unknown names pass through.
 fn tn(name: &str, locale: Locale) -> String {
     if locale == Locale::En {
         return name.to_string();
@@ -514,6 +514,17 @@ fn tn(name: &str, locale: Locale) -> String {
         return m;
     }
     t_item(name, locale)
+}
+
+/// C `Monnam`: the translated name, capitalised; English prefixes "The " when
+/// `article` (non-unique monster). Ukrainian has no articles.
+fn monnam(name: &str, article: bool, locale: Locale) -> String {
+    let n = tn(name, locale);
+    if locale == Locale::En && article {
+        format!("The {n}")
+    } else {
+        capitalize_first(&n)
+    }
 }
 
 /// Message formatters with full locale support.
@@ -606,8 +617,11 @@ impl Messages {
     }
 
     /// C `setmangry` (mon.c:4306): "%s gets angry!" with `Monnam`.
-    pub fn gets_angry(target: &str, locale: Locale) -> String {
-        let target = capitalize_first(&tn(target, locale));
+    ///
+    /// `article` is true for a non-unique monster: English `Monnam` then reads
+    /// "The gnome" (a unique/proper name has no article).
+    pub fn gets_angry(target: &str, article: bool, locale: Locale) -> String {
+        let target = monnam(target, article, locale);
         match locale {
             Locale::En => format!("{target} gets angry!"),
             Locale::Uk => format!("{target} сердиться!"),
@@ -642,8 +656,8 @@ impl Messages {
     }
 
     /// C `do_attack` (uhitm.c:500): "You stop.  %s is in the way!" (`y_monnam`).
-    pub fn peaceful_in_the_way(target: &str, locale: Locale) -> String {
-        let target = capitalize_first(&tn(target, locale));
+    pub fn peaceful_in_the_way(target: &str, article: bool, locale: Locale) -> String {
+        let target = monnam(target, article, locale);
         match locale {
             Locale::En => format!("You stop. {target} is in the way!"),
             Locale::Uk => format!("Ви зупиняєтеся. {target} заважає пройти!"),
@@ -651,8 +665,8 @@ impl Messages {
     }
 
     /// C `domove_swap_with_pet` (hack.c:2160): "You stop.  %s doesn't want to swap places."
-    pub fn peaceful_wont_swap(target: &str, locale: Locale) -> String {
-        let target = capitalize_first(&tn(target, locale));
+    pub fn peaceful_wont_swap(target: &str, article: bool, locale: Locale) -> String {
+        let target = monnam(target, article, locale);
         match locale {
             Locale::En => format!("You stop. {target} doesn't want to swap places."),
             Locale::Uk => format!("Ви зупиняєтеся. {target} не хоче мінятися місцями."),

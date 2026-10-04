@@ -51,7 +51,7 @@ Unlike unit tests that sample specific inputs, Lean 4 proofs are verified by the
 
 ## 3. The Lean 4 to Rust Verification Bridge
 
-The Rust engine is an independent, hand-written implementation. **Nothing machine-links the Lean models to the Rust code**: there is no extraction, translation, or proof that the Rust functions satisfy the Lean theorems. Instead, many Lean theorems are mirrored by hand as Rust property-based tests (`proptest`), so that the Rust code is at least checked against the same stated properties on randomized inputs. `crates/netrust-core/tests/proptest_mechanics.rs` currently holds 105 such `prop_` tests; they cover a selection of the Lean theorems, not all 300. A proptest passing is evidence, not proof, that Rust agrees with the Lean property.
+The Rust engine is an independent, hand-written implementation. **Nothing machine-links the Lean models to the Rust code**: there is no extraction, translation, or proof that the Rust functions satisfy the Lean theorems. Instead, many Lean theorems are mirrored by hand as Rust property-based tests (`proptest`), so that the Rust code is at least checked against the same stated properties on randomized inputs. `crates/netrust-core/tests/proptest_mechanics.rs` currently holds 106 such `prop_` tests; they cover a selection of the Lean theorems, not all 306. A proptest passing is evidence, not proof, that Rust agrees with the Lean property.
 
 ```
     [Lean 4 Formal Specification]               [Rust Implementation]
@@ -119,7 +119,7 @@ Rows marked "(no proptest yet)" have no corresponding proptest at present.
 
 * `HasLOS` (`NetMechanics/FOV.lean`) is connectivity through transparent cells (king-move links, Chebyshev distance 1), not NetHack's straight-line `clear_path` (`vision.c`); it is not a faithful line-of-sight model.
 * `pathfinding_converges_within` assumes an admissible-gradient oracle; it does not prove that the real grid's BFS distance map always offers a strictly closer passable neighbour.
-* About 90 of the 298 theorems are one-line proofs (`rfl`, `simp`, `decide`); many state definitional facts rather than deep invariants.
+* About 90 of the 306 theorems are one-line proofs (`rfl`, `simp`, `decide`); many state definitional facts rather than deep invariants.
 * The models are simplified and are not NetHack 5.0 itself; see `docs/formal-mechanics-spec.md` for known divergences.
 * There is no machine-checked link between Lean and Rust (see Section 3).
 

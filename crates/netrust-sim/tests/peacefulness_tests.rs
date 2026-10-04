@@ -91,7 +91,7 @@ fn test_hero_attack_makes_peaceful_monster_hostile_permanently() {
     let attack_events = sim.step_player_action(ActionAst::MeleeAttack(c_priest));
     assert!(
         attack_events.iter().any(
-            |e| matches!(e, GameEvent::LogMessage { text } if text.contains("Priest gets angry!"))
+            |e| matches!(e, GameEvent::LogMessage { text } if text.contains("The priest gets angry!"))
         ),
         "Attack on peaceful monster must log C setmangry's \"%s gets angry!\" (mon.c:4306)"
     );
@@ -465,7 +465,7 @@ fn test_attacking_peaceful_costs_one_alignment() {
     );
     let ev = sim.step_player_action(ActionAst::MeleeAttack(c));
     assert!(!sim.arena.actors.get(id).unwrap().is_peaceful);
-    assert!(has_msg(&ev, "Watchman gets angry!"), "{ev:?}");
+    assert!(has_msg(&ev, "The watchman gets angry!"), "{ev:?}");
     assert_eq!(sim.alignment_record, 6);
 }
 

@@ -66,7 +66,11 @@ impl SimulationWorld {
             });
         if must_stop || inshop {
             events.push(GameEvent::LogMessage {
-                text: netrust_i18n::Messages::peaceful_in_the_way(&target.name, self.locale),
+                text: netrust_i18n::Messages::peaceful_in_the_way(
+                    &target.name,
+                    crate::peace::monnam_article(&target.name),
+                    self.locale,
+                ),
             });
             return events;
         }
@@ -82,7 +86,11 @@ impl SimulationWorld {
         let trap_at_hero = self.level.traps.contains_key(&hero_from);
         if mundisplaceable || trap_at_hero || !self.level.is_passable(hero_from) {
             events.push(GameEvent::LogMessage {
-                text: netrust_i18n::Messages::peaceful_wont_swap(&target.name, self.locale),
+                text: netrust_i18n::Messages::peaceful_wont_swap(
+                    &target.name,
+                    crate::peace::monnam_article(&target.name),
+                    self.locale,
+                ),
             });
             return events;
         }
