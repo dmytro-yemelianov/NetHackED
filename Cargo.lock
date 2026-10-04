@@ -910,7 +910,6 @@ dependencies = [
  "netrust-sim",
  "netrust-types",
  "pyo3",
- "rand 0.9.5",
  "serde",
  "serde_json",
 ]

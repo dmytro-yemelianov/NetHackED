@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import Any, Dict, Tuple, Optional, List
+from typing import Any, Dict, List, Optional, Tuple
 
 # Dynamically locate netrust_py binary if not installed via pip
 try:
@@ -27,13 +27,9 @@ except ImportError:
             f"Could not load netrust_py extension module. Run 'cargo build -p netrust-py' first. Error: {e}"
         )
 
-# Attempt to import gymnasium if available
-try:
-    import gymnasium as gym
-    from gymnasium import spaces
-    HAS_GYMNASIUM = True
-except ImportError:
-    HAS_GYMNASIUM = False
+import gymnasium as gym
+import numpy as np
+from gymnasium import spaces
 
 ACTION_NAMES = [
     "MOVE_N",
@@ -65,67 +61,116 @@ ACTION_NAMES = [
 ]
 
 
-class NetRustGymEnv:
-    """NetRust Gymnasium Environment wrapper supporting action masks and voluntary conducts."""
+MAP_CELLS = 80 * 21
+WAIT_ACTION = ACTION_NAMES.index("WAIT")
 
-    metadata = {"render_modes": ["ansi", "human"]}
+# Numeric observation scalars: (key, low, high). Values are clipped into range.
+_SCALARS = [
+    ("player_x", 0, 80),
+    ("player_y", 0, 24),
+    ("player_hp", 0, 9999),
+    ("player_max_hp", 0, 9999),
+    ("player_ac", -128, 127),
+    ("depth", 1, 100),
+    ("gold", 0, 100_000_000),
+    ("turn", 0, 10_000_000),
+    ("nutrition", 0, 5000),
+    ("pw", 0, 1000),
+    ("max_pw", 0, 1000),
+    ("is_dead", 0, 1),
+    ("num_visible_actors", 0, 100),
+    ("inventory_count", 0, 52),
+]
+# Everything else the Rust env reports (ascii_map, conducts, ...) goes to `info`.
+_NUMERIC_KEYS = {k for k, _, _ in _SCALARS} | {"map_glyphs"}
+
+
+def sample_masked_action(mask, rng) -> int:
+    """Sample uniformly among valid actions; falls back to WAIT if none are valid."""
+    valid = np.flatnonzero(np.asarray(mask, dtype=bool))
+    if valid.size == 0:
+        return WAIT_ACTION
+    return int(rng.choice(valid))
+
+
+class NetRustGymEnv(gym.Env):
+    """NetRust Gymnasium environment with action masks and voluntary conducts.
+
+    Observations are numeric arrays only; string / structured data (``ascii_map``,
+    ``conducts``, ``action_mask``, ...) is returned in ``info``.
+    """
+
+    metadata = {"render_modes": ["ansi"]}
 
     def __init__(
         self,
-        seed: int = 42,
+        seed: Optional[int] = None,
         max_steps: int = 1000,
-        render_mode: str = "ansi",
         conduct_masking: bool = True,
+        render_mode: Optional[str] = None,
     ):
-        self.seed_val = seed
+        super().__init__()
         self.max_steps = max_steps
         self.render_mode = render_mode
         self.conduct_masking = conduct_masking
+        if seed is not None:
+            # Deterministic stream of per-episode seeds for unseeded resets.
+            super().reset(seed=seed)
         self._env = netrust_py.NetRustEnv(
-            seed=seed, max_steps=max_steps, conduct_masking=conduct_masking
+            seed=0 if seed is None else seed,
+            max_steps=max_steps,
+            conduct_masking=conduct_masking,
         )
 
-        if HAS_GYMNASIUM:
-            self.action_space = spaces.Discrete(len(ACTION_NAMES))
-            self.observation_space = spaces.Dict({
-                "player_x": spaces.Box(low=0, high=80, shape=(), dtype=int),
-                "player_y": spaces.Box(low=0, high=24, shape=(), dtype=int),
-                "player_hp": spaces.Box(low=0, high=9999, shape=(), dtype=int),
-                "player_max_hp": spaces.Box(low=0, high=9999, shape=(), dtype=int),
-                "player_ac": spaces.Box(low=-128, high=127, shape=(), dtype=int),
-                "depth": spaces.Box(low=1, high=100, shape=(), dtype=int),
-                "gold": spaces.Box(low=0, high=100_000_000, shape=(), dtype=int),
-                "turn": spaces.Box(low=0, high=10_000_000, shape=(), dtype=int),
-                "nutrition": spaces.Box(low=0, high=5000, shape=(), dtype=int),
-                "pw": spaces.Box(low=0, high=1000, shape=(), dtype=int),
-                "max_pw": spaces.Box(low=0, high=1000, shape=(), dtype=int),
-                "is_dead": spaces.Discrete(2),
-                "num_visible_actors": spaces.Box(low=0, high=100, shape=(), dtype=int),
-                "inventory_count": spaces.Box(low=0, high=52, shape=(), dtype=int),
-                "map_glyphs": spaces.Box(low=0, high=255, shape=(1680,), dtype=int),
-            })
-        else:
-            self.action_space = list(range(len(ACTION_NAMES)))
+        self.action_space = spaces.Discrete(len(ACTION_NAMES))
+        obs_spaces: Dict[str, spaces.Space] = {
+            k: spaces.Box(low=lo, high=hi, shape=(1,), dtype=np.int64)
+            for k, lo, hi in _SCALARS
+        }
+        obs_spaces["map_glyphs"] = spaces.Box(
+            low=0, high=255, shape=(MAP_CELLS,), dtype=np.uint8
+        )
+        self.observation_space = spaces.Dict(obs_spaces)
+
+    def _split(self, raw: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        obs: Dict[str, Any] = {}
+        for key, lo, hi in _SCALARS:
+            obs[key] = np.array([min(max(int(raw[key]), lo), hi)], dtype=np.int64)
+        glyphs = np.zeros(MAP_CELLS, dtype=np.uint8)
+        flat = np.asarray(raw["map_glyphs"], dtype=np.int64)[:MAP_CELLS]
+        glyphs[: flat.size] = np.clip(flat, 0, 255)
+        obs["map_glyphs"] = glyphs
+        extra = {k: v for k, v in raw.items() if k not in _NUMERIC_KEYS}
+        return obs, extra
 
     def reset(
         self, seed: Optional[int] = None, options: Optional[Dict[str, Any]] = None
     ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-        """Reset environment to initial state."""
-        if seed is not None:
-            self.seed_val = seed
-        obs, info = self._env.reset(seed=self.seed_val)
+        """Reset; uses ``seed`` if given, otherwise draws a fresh one from the env RNG."""
+        super().reset(seed=seed)
+        if seed is None:
+            seed = int(self.np_random.integers(0, 2**31 - 1))
+        raw, info = self._env.reset(seed=seed)
+        obs, extra = self._split(raw)
+        info = dict(info)
+        info.update(extra)
+        info["seed"] = seed
         return obs, info
 
     def step(
         self, action: int
     ) -> Tuple[Dict[str, Any], float, bool, bool, Dict[str, Any]]:
         """Execute a step in the simulation."""
+        action = int(action)
         if not (0 <= action < len(ACTION_NAMES)):
             raise ValueError(
                 f"Action {action} out of bounds (0..{len(ACTION_NAMES)-1})"
             )
-        obs, reward, terminated, truncated, info = self._env.step(action)
-        return obs, reward, terminated, truncated, info
+        raw, reward, terminated, truncated, info = self._env.step(action)
+        obs, extra = self._split(raw)
+        info = dict(info)
+        info.update(extra)
+        return obs, float(reward), bool(terminated), bool(truncated), info
 
     def action_masks(self) -> List[bool]:
         """Return boolean mask of valid actions for the current state."""
@@ -140,13 +185,9 @@ class NetRustGymEnv:
         self.conduct_masking = enabled
         self._env.set_conduct_masking(enabled)
 
-    def render(self) -> Optional[str]:
-        """Render the dungeon map."""
-        ascii_frame = self._env.render()
-        if self.render_mode == "human":
-            print(ascii_frame)
-            return None
-        return ascii_frame
+    def render(self) -> str:
+        """Return the dungeon map as an ASCII string."""
+        return self._env.render()
 
     def get_observation_json(self) -> str:
         """Return the structured observation payload as JSON."""

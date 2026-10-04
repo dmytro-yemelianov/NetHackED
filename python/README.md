@@ -23,14 +23,13 @@ A standard [Gymnasium](https://gymnasium.farama.org/) interface for **NetRust**,
    python3 python/demo_rl.py 42
    ```
 
-## Action Space (Discrete 15)
-| ID | Action | Description |
-|---|---|---|
-| 0..7 | North, East, South, West, NE, SE, SW, NW | Cardinal and diagonal movement / melee attacks |
-| 8 | Wait | Pass turn, regenerate energy |
-| 9 | Descend | Go down stairs (`>`) |
-| 10 | Ascend | Go up stairs (`<`) |
-| 11 | PickUp | Pick up items on the ground (`,` / `g`) |
-| 12 | Pay | Pay shopkeeper for carried items |
-| 13 | Pray | Pray at altar or to god |
-| 14 | EngraveElbereth | Dust ward of Elbereth on the ground |
+## Action Space (Discrete 26)
+`netrust_gym.ACTION_NAMES` lists all 26 actions: 0-7 compass moves, 8 WAIT, 9 DESCEND, 10 ASCEND, 11 PICKUP, 12 SEARCH, 13 UNTRAP, 14-17 FIRE (N/E/S/W), 18 QUIVER, 19 EAT, 20 QUAFF, 21 READ, 22 ZAP_WAND, 23 PRAY, 24 PAY, 25 ENGRAVE_ELBERETH.
+`env.action_masks()` returns the currently valid actions (including voluntary-conduct filtering).
+
+## Observations
+`observation_space` is a `gymnasium.spaces.Dict` of numeric arrays only (`map_glyphs`, `player_hp`, `depth`, `gold`, `turn`, ...). Non-numeric data (`ascii_map`, `conducts`, `afflictions`, `action_mask`, `visible_actors`, `inventory`) is returned in `info`.
+`reset()` without a seed draws a fresh seed from the env RNG (reported as `info["seed"]`); `reset(seed=n)` is deterministic.
+
+## Training
+`python/train_reinforce.py` is a small dependency-free REINFORCE policy-gradient trainer (not PPO) that samples from the action mask and exports `web/policy_weights.json`.

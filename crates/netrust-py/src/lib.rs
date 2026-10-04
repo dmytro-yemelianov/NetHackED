@@ -40,6 +40,40 @@ pub const ACTION_NAMES: [&str; 26] = [
     "ENGRAVE_ELBERETH",
 ];
 
+/// Tracks tiles seen on the current dungeon level; resets when the depth changes.
+#[derive(Default)]
+struct ExplorationTracker {
+    depth: Option<u32>,
+    tiles: std::collections::HashSet<netrust_types::Coord>,
+}
+
+impl ExplorationTracker {
+    /// Record visible tiles at `depth`; returns how many were newly explored.
+    /// A depth change discards the previous level's tiles first.
+    fn observe(
+        &mut self,
+        depth: u32,
+        visible: impl IntoIterator<Item = netrust_types::Coord>,
+    ) -> usize {
+        if self.depth != Some(depth) {
+            self.tiles.clear();
+            self.depth = Some(depth);
+        }
+        let before = self.tiles.len();
+        self.tiles.extend(visible);
+        self.tiles.len() - before
+    }
+
+    fn clear(&mut self) {
+        self.tiles.clear();
+        self.depth = None;
+    }
+
+    fn len(&self) -> usize {
+        self.tiles.len()
+    }
+}
+
 #[pyclass]
 pub struct NetRustEnv {
     session: AgentSession,
@@ -47,7 +81,7 @@ pub struct NetRustEnv {
     step_count: usize,
     max_steps: usize,
     conduct_masking: bool,
-    explored_tiles: std::collections::HashSet<netrust_types::Coord>,
+    explored: ExplorationTracker,
 }
 
 #[pymethods]
@@ -65,7 +99,7 @@ impl NetRustEnv {
             step_count: 0,
             max_steps: max_s,
             conduct_masking: mask,
-            explored_tiles: std::collections::HashSet::new(),
+            explored: ExplorationTracker::default(),
         };
         env.record_exploration();
         env
@@ -84,7 +118,7 @@ impl NetRustEnv {
         }
         self.session = AgentSession::new(self.seed);
         self.step_count = 0;
-        self.explored_tiles.clear();
+        self.explored.clear();
         self.record_exploration();
 
         let obs = self.build_observation(py)?;
@@ -94,6 +128,12 @@ impl NetRustEnv {
         info.set_item("depth", self.session.world.depth)?;
 
         Ok((obs, info))
+    }
+
+    /// Number of tiles explored on the current dungeon level.
+    #[getter]
+    pub fn explored_count(&self) -> usize {
+        self.explored.len()
     }
 
     /// Number of discrete actions.
@@ -126,17 +166,12 @@ impl NetRustEnv {
         let prev_vegan = self.session.world.conducts.vegan;
         let prev_illiterate = self.session.world.conducts.illiterate;
         let prev_atheist = self.session.world.conducts.atheist;
-        let prev_explored_count = self.explored_tiles.len();
 
         let action_ast = self.resolve_action(action);
         let obs_state = self.session.step(action_ast);
         let events = self.session.last_events.clone();
 
-        self.record_exploration();
-        let new_explored = self
-            .explored_tiles
-            .len()
-            .saturating_sub(prev_explored_count);
+        let new_explored = self.record_exploration();
 
         // Compute reward
         let mut reward = -0.01; // Step penalty to encourage efficiency
@@ -235,11 +270,10 @@ impl NetRustEnv {
 }
 
 impl NetRustEnv {
-    fn record_exploration(&mut self) {
+    fn record_exploration(&mut self) -> usize {
         let (visible_tiles, _) = self.session.world.compute_perception();
-        for tile in visible_tiles {
-            self.explored_tiles.insert(tile);
-        }
+        self.explored
+            .observe(self.session.world.depth as u32, visible_tiles)
     }
 
     fn resolve_action(&self, action: usize) -> ActionAst {
@@ -645,4 +679,25 @@ impl NetRustEnv {
 fn netrust_py(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<NetRustEnv>()?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use netrust_types::Coord;
+
+    fn c(x: i32, y: i32) -> Coord {
+        Coord::new_unchecked(x as _, y as _)
+    }
+
+    #[test]
+    fn exploration_resets_per_level() {
+        let mut t = ExplorationTracker::default();
+        assert_eq!(t.observe(1, [c(1, 1), c(2, 2)]), 2);
+        assert_eq!(t.observe(1, [c(1, 1), c(3, 3)]), 1);
+        assert_eq!(t.len(), 3);
+        // Same coordinates on a new level count as newly explored again.
+        assert_eq!(t.observe(2, [c(1, 1), c(2, 2)]), 2);
+        assert_eq!(t.len(), 2);
+    }
 }
