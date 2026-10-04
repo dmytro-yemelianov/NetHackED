@@ -1864,7 +1864,8 @@ fn test_monster_lich_summon_and_curse() {
 
 #[test]
 fn test_bones_file_generation_and_ghost_encounter() {
-    let mut sim1 = SimulationWorld::new_with_seed(42);
+    // Seed 1: every carried item draws a nonzero rn2(5), so all are cursed (bones.c:290).
+    let mut sim1 = SimulationWorld::new_with_seed(1);
     sim1.depth = 3;
     let death_coord = Coord::new_unchecked(15, 12);
     if let Some(p) = sim1.arena.actors.get_mut(sim1.player_id) {
@@ -2180,13 +2181,23 @@ fn test_mines_end_luckstone_preservation() {
         "Uncursed luckstone must prevent positive luck decay"
     );
 
-    // Case 2: Negative luck is healed faster (by 1 toward 0)
+    // Case 2: Uncursed stone freezes negative luck too
     sim.player_luck = -3;
     sim.tick_luck_decay();
     assert_eq!(
-        sim.player_luck, -2,
-        "Uncursed luckstone heals negative luck toward 0"
+        sim.player_luck, -3,
+        "Uncursed luckstone freezes negative luck (timeout.c:595-620)"
     );
+
+    // Case 2b: blessed luckstone lets bad luck recover
+    sim.arena.items.get_mut(luckstone).unwrap().buc = Buc::Blessed;
+    sim.tick_luck_decay();
+    assert_eq!(sim.player_luck, -2);
+    sim.arena.items.get_mut(luckstone).unwrap().buc = Buc::Cursed;
+    sim.player_luck = 3;
+    sim.tick_luck_decay();
+    assert_eq!(sim.player_luck, 2, "Cursed luckstone lets good luck decay");
+    sim.arena.items.get_mut(luckstone).unwrap().buc = Buc::Uncursed;
 
     // Case 3: Without luckstone, positive luck naturally decays by 1 toward 0
     sim.arena.destroy_item(luckstone);
@@ -3363,4 +3374,79 @@ fn test_pacifist_conduct_violation_on_kill() {
         !sim.conducts.pacifist,
         "Pacifist conduct should be violated on kill"
     );
+}
+
+#[test]
+fn test_luck_decay_fires_every_300_with_amulet() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    assert_eq!(sim.luck_timeout_period(), 600);
+    sim.arena.spawn_item(create_item_record(
+        ItemKindId::AmuletOfYendor,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Uncursed,
+    ));
+    assert_eq!(sim.luck_timeout_period(), 300);
+    sim.player_luck = 5;
+    sim.scheduler.turn = 299;
+    // Drive turns until the scheduler crosses turn 300.
+    for _ in 0..200 {
+        if sim.scheduler.turn >= 300 {
+            break;
+        }
+        sim.step_player_action(ActionAst::Wait);
+    }
+    assert!(sim.scheduler.turn >= 300);
+    assert_eq!(
+        sim.player_luck, 4,
+        "luck decays at turn 300 with the Amulet"
+    );
+}
+
+#[test]
+fn test_bones_curse_ratio_over_seeded_deaths() {
+    let mut cursed = 0usize;
+    let mut total = 0usize;
+    for seed in 0..200u64 {
+        let mut sim = SimulationWorld::new_with_seed(seed);
+        sim.depth = 3;
+        for _ in 0..20 {
+            sim.arena.spawn_item(create_item_record(
+                ItemKindId::Luckstone,
+                ItemLocation::CarriedBy(sim.player_id),
+                Buc::Blessed,
+            ));
+        }
+        let bones = sim.save_bones("test").unwrap();
+        for it in &bones.items {
+            total += 1;
+            if it.buc == Buc::Cursed {
+                cursed += 1;
+            }
+        }
+    }
+    let ratio = cursed as f64 / total as f64;
+    assert!(
+        (0.7..=0.9).contains(&ratio),
+        "cursed ratio {ratio} outside 0.7-0.9"
+    );
+}
+
+#[test]
+fn test_bones_quest_items_always_cursed() {
+    for seed in 0..50u64 {
+        let mut sim = SimulationWorld::new_with_seed(seed);
+        sim.depth = 3;
+        sim.arena.spawn_item(create_item_record(
+            ItemKindId::AmuletOfYendor,
+            ItemLocation::CarriedBy(sim.player_id),
+            Buc::Blessed,
+        ));
+        let bones = sim.save_bones("test").unwrap();
+        let amulet = bones
+            .items
+            .iter()
+            .find(|i| i.name == "Amulet of Yendor")
+            .unwrap();
+        assert_eq!(amulet.buc, Buc::Cursed);
+    }
 }

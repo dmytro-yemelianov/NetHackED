@@ -5,7 +5,6 @@
 //! and Luckstone positive luck preservation.
 
 use netrust_types::Buc;
-use serde::{Deserialize, Serialize};
 
 /// Maximum divine AC protection purchasable from a temple priest (+9 AC bonus).
 pub const MAX_DIVINE_PROTECTION: u32 = 9;
@@ -44,51 +43,34 @@ pub fn clamp_luck(luck: i32) -> i32 {
     luck.clamp(-10, 10)
 }
 
-/// Status of a carried luckstone.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum LuckstoneStatus {
-    None,
-    Blessed,
-    Uncursed,
-    Cursed,
+/// Luck timeout period in turns (C `timeout.c:595-620`, `nh_timeout`):
+/// `moves % ((u.uhave.amulet || u.ugangr) ? 300 : 600) == 0`.
+pub fn luck_decay_period(has_amulet: bool, god_angry: bool) -> u64 {
+    if has_amulet || god_angry {
+        300
+    } else {
+        600
+    }
 }
 
-/// Single luck decay step (normally fires every 600 turns in NetHack).
+/// Single luck timeout step toward `base_luck` (C `timeout.c:595-620`, `attrib.c:423`
+/// `stone_luck`). `stone` is the BUC of the carried luckstone, if any.
 ///
-/// Proven in the Lean 4 model (`luckstone_preserves_positive_luck`):
-/// Carrying an uncursed or blessed luckstone guarantees positive luck NEVER decays downward.
-pub fn step_luck_decay(raw_luck: i32, stone: LuckstoneStatus) -> i32 {
-    match stone {
-        LuckstoneStatus::Blessed | LuckstoneStatus::Uncursed => {
-            // Non-cursed luckstone: positive luck NEVER decays; negative luck recovers toward 0!
-            if raw_luck > 0 {
-                raw_luck
-            } else if raw_luck < 0 {
-                raw_luck + 1
-            } else {
-                0
-            }
-        }
-        LuckstoneStatus::Cursed => {
-            // Cursed luckstone: positive luck decays; negative luck NEVER recovers!
-            if raw_luck > 0 {
-                raw_luck - 1
-            } else if raw_luck < 0 {
-                raw_luck
-            } else {
-                0
-            }
-        }
-        LuckstoneStatus::None => {
-            // No luckstone: natural decay toward 0 from both directions
-            if raw_luck > 0 {
-                raw_luck - 1
-            } else if raw_luck < 0 {
-                raw_luck + 1
-            } else {
-                0
-            }
-        }
+/// - No stone: luck moves one step toward `base_luck` from either side.
+/// - Blessed (`time_luck > 0`): only luck below base recovers.
+/// - Uncursed (`time_luck == 0`, stone present): luck is frozen.
+/// - Cursed (`time_luck < 0`): only luck above base decays.
+///
+/// The caller is responsible for the period gate ([`luck_decay_period`]).
+pub fn step_luck_decay(luck: i32, base_luck: i32, stone: Option<Buc>) -> i32 {
+    let can_decay = matches!(stone, None | Some(Buc::Cursed));
+    let can_recover = matches!(stone, None | Some(Buc::Blessed));
+    if luck > base_luck && can_decay {
+        luck - 1
+    } else if luck < base_luck && can_recover {
+        luck + 1
+    } else {
+        luck
     }
 }
 
@@ -122,19 +104,33 @@ mod tests {
     }
 
     #[test]
-    fn test_luckstone_preservation_and_recovery() {
-        // Blessed / Uncursed preserves good luck
-        assert_eq!(step_luck_decay(5, LuckstoneStatus::Blessed), 5);
-        assert_eq!(step_luck_decay(5, LuckstoneStatus::Uncursed), 5);
+    fn test_luck_timeout_table() {
+        use Buc::*;
+        // (luck, base, stone, expected)
+        let table = [
+            (5, 0, None, 4),
+            (-4, 0, None, -3),
+            (0, 0, None, 0),
+            (5, 0, Some(Blessed), 5),
+            (-4, 0, Some(Blessed), -3),
+            (5, 0, Some(Uncursed), 5),
+            (-4, 0, Some(Uncursed), -4),
+            (5, 0, Some(Cursed), 4),
+            (-4, 0, Some(Cursed), -4),
+            (1, 1, None, 1),
+            (3, 1, None, 2),
+            (-1, 1, None, 0),
+        ];
+        for (l, b, st, want) in table {
+            assert_eq!(step_luck_decay(l, b, st), want, "{l} {b} {st:?}");
+        }
+    }
 
-        // Blessed / Uncursed recovers bad luck
-        assert_eq!(step_luck_decay(-4, LuckstoneStatus::Blessed), -3);
-
-        // Without luckstone, good luck decays
-        assert_eq!(step_luck_decay(5, LuckstoneStatus::None), 4);
-
-        // Cursed luckstone traps bad luck and drains good luck
-        assert_eq!(step_luck_decay(5, LuckstoneStatus::Cursed), 4);
-        assert_eq!(step_luck_decay(-4, LuckstoneStatus::Cursed), -4);
+    #[test]
+    fn test_luck_decay_period() {
+        assert_eq!(luck_decay_period(false, false), 600);
+        assert_eq!(luck_decay_period(true, false), 300);
+        assert_eq!(luck_decay_period(false, true), 300);
+        assert_eq!(luck_decay_period(true, true), 300);
     }
 }

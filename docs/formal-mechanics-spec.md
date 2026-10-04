@@ -12,7 +12,6 @@ The Lean models and the Rust engine are simplified abstractions of NetHack mecha
 * **Bare-handed damage**: bare-handed attacks use the weapon skill damage table (Unskilled $-2$). In C, the bare-handed/martial-arts damage bonus is $0/{+1}/{+1}/{+2}$ for Unskilled/Basic/Skilled/Expert.
 * **`abon()` omitted**: attributes are not tracked, so the to-hit `abon()` term is 0; C's $+1$ below experience level 3 and the Str/Dex to-hit bonuses are absent.
 * **Starting weapon skills**: heroes start with no weapon skills (every weapon is Unskilled, $-4$ to hit); C starts each role at Basic in its starting weapons. A follow-up task will address this.
-* **Luckstone decay**: the model treats uncursed luckstones like blessed ones (positive luck never decays and negative luck recovers). In C, an uncursed luckstone prevents both good and bad luck from timing out; only blessed stones let bad luck time out and only cursed stones let good luck time out.
 * **Hunger thresholds**: comparison boundaries (`>` versus `>=`) at the hunger status thresholds differ from C.
 * **Encumbrance boundaries**: the weight-to-tier boundaries differ from C's `calc_burden`/`weight_cap` arithmetic.
 * **Enchantment cap and recharge explosion**: enchant caps and the recharge-explosion outcome are modelled deterministically; C uses random rolls (`rn2`) for these.

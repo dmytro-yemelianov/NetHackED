@@ -4,10 +4,29 @@ use netrust_arena::{ItemLocation, ItemRecord};
 use netrust_core::{corrupt_buc_on_death, is_valid_bones_level};
 use netrust_data::create_ghost_record;
 use netrust_i18n::Messages;
-use netrust_types::{BonesData, BonesItem, Buc};
+use netrust_types::{BonesData, BonesItem};
+use rand::Rng;
 
 use crate::events::GameEvent;
 use crate::world::SimulationWorld;
+
+/// Quest artifacts and the Amulet are always cursed in bones (C `bones.c:173-189`).
+/// Bones records do not carry the item kind, so detection is by name.
+pub fn is_quest_item_name(name: &str) -> bool {
+    const QUEST: [&str; 10] = [
+        "Amulet of Yendor",
+        "The Orb of Fate",
+        "The Heart of Ahriman",
+        "The Magic Mirror of Merlin",
+        "The Eyes of the Overworld",
+        "The Master Key of Thievery",
+        "The Tsurugi of Muramasa",
+        "The Platinum Yendorian Express Card",
+        "The Staff of Aesculapius",
+        "The Orb of Detection",
+    ];
+    QUEST.iter().any(|q| q.eq_ignore_ascii_case(name))
+}
 
 impl SimulationWorld {
     /// Saves dead adventurer state and corrupted gear to the bones graveyard file.
@@ -21,12 +40,13 @@ impl SimulationWorld {
 
         let mut bones_items = Vec::new();
         for id in carried_ids {
+            let roll = self.rng.random_range(0..5u32);
             if let Some(item) = self.arena.items.get(id) {
                 bones_items.push(BonesItem {
                     name: item.name.clone(),
                     class: item.class,
                     weight: item.weight,
-                    buc: corrupt_buc_on_death(item.buc),
+                    buc: corrupt_buc_on_death(item.buc, is_quest_item_name(&item.name), roll),
                     enchantment: item.enchantment,
                 });
             }
@@ -76,7 +96,7 @@ impl SimulationWorld {
                         name: b_item.name,
                         class: b_item.class,
                         weight: b_item.weight,
-                        buc: Buc::Cursed,
+                        buc: b_item.buc,
                         is_container: false,
                         is_bag_of_holding: false,
                         enchantment: b_item.enchantment,

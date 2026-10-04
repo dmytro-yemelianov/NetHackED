@@ -8,25 +8,32 @@ import NetMechanics.BUC
 namespace NetMechanics
 
 /--
-  When an adventurer dies, their equipment corrupts into cursed items
-  when saved to a bones graveyard file (bones.c:52).
+  BUC after death (bones.c:290-291, :173-189): `if (rn2(5)) curse(otmp)`; quest items
+  are always cursed. `r` is the `rn2(5)` draw.
 -/
-def corruptBucOnDeath (_b : BUC) : BUC :=
-  BUC.Cursed
+def corruptBucOnDeath (b : BUC) (isQuest : Bool) (r : Nat) : BUC :=
+  if isQuest || r ≠ 0 then BUC.Cursed else b
 
-/--
-  Theorem: Item corruption upon death is idempotent.
--/
-theorem corrupt_buc_idempotent (b : BUC) :
-    corruptBucOnDeath (corruptBucOnDeath b) = corruptBucOnDeath b := by
-  rfl
+/-- Theorem: Corruption is idempotent for a fixed roll. -/
+theorem corrupt_buc_idempotent (b : BUC) (q : Bool) (r : Nat) :
+    corruptBucOnDeath (corruptBucOnDeath b q r) q r = corruptBucOnDeath b q r := by
+  unfold corruptBucOnDeath
+  split <;> simp_all
 
-/--
-  Theorem: Every corrupted item is strictly cursed.
--/
-theorem corrupt_buc_always_cursed (b : BUC) :
-    corruptBucOnDeath b = BUC.Cursed := by
-  rfl
+/-- Theorem: A nonzero roll curses the item (renamed from `corrupt_buc_always_cursed`). -/
+theorem corrupt_buc_cursed_when_roll_nonzero (b : BUC) (q : Bool) (r : Nat) (h : r ≠ 0) :
+    corruptBucOnDeath b q r = BUC.Cursed := by
+  simp [corruptBucOnDeath, h]
+
+/-- Theorem: A zero roll on a non-quest item keeps the original BUC. -/
+theorem corrupt_buc_keeps_original_on_zero_roll (b : BUC) :
+    corruptBucOnDeath b false 0 = b := by
+  simp [corruptBucOnDeath]
+
+/-- Theorem: Quest items are always cursed. -/
+theorem corrupt_buc_quest_always_cursed (b : BUC) (r : Nat) :
+    corruptBucOnDeath b true r = BUC.Cursed := by
+  simp [corruptBucOnDeath]
 
 /--
   Bones file record specification.

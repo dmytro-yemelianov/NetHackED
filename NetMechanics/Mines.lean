@@ -57,8 +57,10 @@ theorem priest_protection_monotonic (cur : Nat) (amount : Nat) (lvl : Nat) :
     cur ≤ applyPriestDonation cur amount lvl := by
   dsimp [applyPriestDonation, maxDivineProtection]
   split
-  · omega
-  · split <;> omega
+  · rename_i h; omega
+  · split
+    · rename_i h h'; omega
+    · omega
 
 /-- THEOREM: Insufficient gold donation guarantees protection is unchanged -/
 theorem priest_protection_insufficient (cur : Nat) (amount : Nat) (lvl : Nat)
@@ -98,71 +100,69 @@ def clampLuck (luck : Int) : Int :=
 theorem clamp_luck_bounded (l : Int) : -10 ≤ clampLuck l ∧ clampLuck l ≤ 10 := by
   dsimp [clampLuck]
   split
-  · omega
-  · split <;> omega
+  · rename_i h; omega
+  · split
+    · rename_i h h'; omega
+    · omega
 
-/-- Single luck decay step (normally fires every 600 turns) -/
-def stepLuckDecay (rawLuck : Int) (stone : LuckstoneCarried) : Int :=
-  match stone with
-  | LuckstoneCarried.Blessed | LuckstoneCarried.Uncursed =>
-    -- Non-cursed luckstone: positive luck NEVER decays; negative luck recovers!
-    if rawLuck > 0 then rawLuck
-    else if rawLuck < 0 then rawLuck + 1
-    else 0
-  | LuckstoneCarried.Cursed =>
-    -- Cursed luckstone: positive luck decays; negative luck NEVER recovers!
-    if rawLuck > 0 then rawLuck - 1
-    else if rawLuck < 0 then rawLuck
-    else 0
-  | LuckstoneCarried.None =>
-    -- No luckstone: natural decay toward 0 from both directions
-    if rawLuck > 0 then rawLuck - 1
-    else if rawLuck < 0 then rawLuck + 1
-    else 0
+/-- Single luck timeout step toward `baseLuck` (timeout.c:595-620, attrib.c:423).
+    No stone: both directions. Blessed: only luck below base recovers.
+    Uncursed: frozen. Cursed: only luck above base decays. -/
+def luckCanDecay : LuckstoneCarried → Bool
+  | LuckstoneCarried.None => true
+  | LuckstoneCarried.Cursed => true
+  | _ => false
 
-/-- THEOREM: Carrying a non-cursed luckstone strictly preserves positive luck -/
-theorem luckstone_preserves_positive_luck (l : Int) (stone : LuckstoneCarried)
-    (h_pos : l > 0)
+def luckCanRecover : LuckstoneCarried → Bool
+  | LuckstoneCarried.None => true
+  | LuckstoneCarried.Blessed => true
+  | _ => false
+
+def stepLuckDecay (rawLuck baseLuck : Int) (stone : LuckstoneCarried) : Int :=
+  if rawLuck > baseLuck ∧ luckCanDecay stone = true then rawLuck - 1
+  else if rawLuck < baseLuck ∧ luckCanRecover stone = true then rawLuck + 1
+  else rawLuck
+
+/-- THEOREM: A non-cursed luckstone preserves luck above base -/
+theorem luckstone_preserves_positive_luck (l base : Int) (stone : LuckstoneCarried)
+    (h_pos : l > base)
     (h_stone : stone = LuckstoneCarried.Blessed ∨ stone = LuckstoneCarried.Uncursed) :
-    stepLuckDecay l stone = l := by
-  cases h_stone with
-  | inl h =>
-    rw [h]
-    dsimp [stepLuckDecay]
-    rw [if_pos h_pos]
-  | inr h =>
-    rw [h]
-    dsimp [stepLuckDecay]
-    rw [if_pos h_pos]
+    stepLuckDecay l base stone = l := by
+  have h1 : ¬ (l > base ∧ luckCanDecay stone = true) := by
+    rcases h_stone with h | h <;> subst h <;> simp [luckCanDecay]
+  have h2 : ¬ (l < base ∧ luckCanRecover stone = true) := by
+    intro ⟨hl, _⟩; omega
+  simp only [stepLuckDecay, if_neg h1, if_neg h2]
 
-/-- THEOREM: Carrying a non-cursed luckstone strictly improves negative luck toward 0 -/
-theorem luckstone_heals_negative_luck (l : Int) (stone : LuckstoneCarried)
-    (h_neg : l < 0)
-    (h_stone : stone = LuckstoneCarried.Blessed ∨ stone = LuckstoneCarried.Uncursed) :
-    stepLuckDecay l stone = l + 1 := by
-  cases h_stone with
-  | inl h =>
-    rw [h]
-    dsimp [stepLuckDecay]
-    have h_not_pos : ¬(l > 0) := by omega
-    rw [if_neg h_not_pos]
-    rw [if_pos h_neg]
-  | inr h =>
-    rw [h]
-    dsimp [stepLuckDecay]
-    have h_not_pos : ¬(l > 0) := by omega
-    rw [if_neg h_not_pos]
-    rw [if_pos h_neg]
+/-- THEOREM: A blessed luckstone lets luck below base recover by one
+    (renamed from `luckstone_heals_negative_luck`, which wrongly included Uncursed). -/
+theorem blessed_luckstone_heals_negative_luck (l base : Int)
+    (h_neg : l < base) :
+    stepLuckDecay l base LuckstoneCarried.Blessed = l + 1 := by
+  have h1 : ¬ (l > base ∧ luckCanDecay LuckstoneCarried.Blessed = true) := by
+    intro ⟨hl, _⟩; omega
+  have h2 : (l < base ∧ luckCanRecover LuckstoneCarried.Blessed = true) :=
+    ⟨h_neg, by decide⟩
+  simp only [stepLuckDecay, if_neg h1, if_pos h2]
+
+/-- THEOREM: An uncursed luckstone freezes luck entirely (C: neither direction times out) -/
+theorem uncursed_luckstone_freezes_luck (l base : Int) :
+    stepLuckDecay l base LuckstoneCarried.Uncursed = l := by
+  simp [stepLuckDecay, luckCanDecay, luckCanRecover]
 
 /-- THEOREM: Luck decay respects canonical luck bounds [-10, 10] -/
-theorem step_luck_bounds_preserved (l : Int) (stone : LuckstoneCarried)
-    (h_low : -10 ≤ l) (h_high : l ≤ 10) :
-    -10 ≤ stepLuckDecay l stone ∧ stepLuckDecay l stone ≤ 10 := by
-  dsimp [stepLuckDecay]
-  cases stone
-  · split <;> split <;> omega
-  · split <;> split <;> omega
-  · split <;> split <;> omega
-  · split <;> split <;> omega
+theorem step_luck_bounds_preserved (l base : Int) (stone : LuckstoneCarried)
+    (h_low : -10 ≤ l) (h_high : l ≤ 10) (hb_low : -10 ≤ base) (hb_high : base ≤ 10) :
+    -10 ≤ stepLuckDecay l base stone ∧ stepLuckDecay l base stone ≤ 10 := by
+  unfold stepLuckDecay
+  split
+  · rename_i h; omega
+  · split
+    · rename_i h h'; omega
+    · omega
+
+/-- Luck timeout period in turns (timeout.c:595-620): 300 with the Amulet or an angry god. -/
+def luckDecayPeriod (hasAmulet godAngry : Bool) : Nat :=
+  if hasAmulet || godAngry then 300 else 600
 
 end NetMechanics

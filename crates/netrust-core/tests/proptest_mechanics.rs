@@ -12,22 +12,22 @@ use netrust_core::{
     dilute_potion, dip_water, enchant_item, enter_branch, exit_branch, feed_pet,
     hero_damage_after_ac, hunger_of_nutrition, hunger_tier, identify_fully, interact_with_occupant,
     is_candelabrum_ready, is_hero_eligible_for_quest, is_hp_critical, is_sanctum_accessible,
-    is_valid_bones_level, learn_buc, learn_type, mana_cost, melee_damage, mix_alchemy,
-    monster_to_hit_value, offer_amulet_on_high_altar, pet_tile_steppable, pick_up_quest_artifact,
-    priest_uncurse, promote_pet, protection_donation_cost, push_boulder, quest_progress_rank,
-    recharge_wand, reflect, resolve_breath_damage, resolve_gaze, resolve_sacrifice,
-    return_to_leader_with_artifact, rub_lamp, sell_factor, step_luck_decay, step_ray, step_ritual,
-    swap_displacement, tick_light_fuel, tick_prayer_timeout, to_hit_value, toggle_drawbridge,
-    uncurse, zap_wand, Alignment, ArtifactLocation, AscensionOutcome, BeamRay, BranchCoord,
-    BranchId, BreathType, Buc, CandelabrumState, Combatant, Coord, DilutionState, Direction,
-    DivineState, DoorState, DrawbridgeState, DrawbridgeTransition, DungeonDepth, EncumbranceTier,
-    Engraving, EngravingMedium, FormStats, GazeEffect, GazeType, HeroInteraction,
+    is_valid_bones_level, learn_buc, learn_type, luck_decay_period, mana_cost, melee_damage,
+    mix_alchemy, monster_to_hit_value, offer_amulet_on_high_altar, pet_tile_steppable,
+    pick_up_quest_artifact, priest_uncurse, promote_pet, protection_donation_cost, push_boulder,
+    quest_progress_rank, recharge_wand, reflect, resolve_breath_damage, resolve_gaze,
+    resolve_sacrifice, return_to_leader_with_artifact, rub_lamp, sell_factor, step_luck_decay,
+    step_ray, step_ritual, swap_displacement, tick_light_fuel, tick_prayer_timeout, to_hit_value,
+    toggle_drawbridge, uncurse, zap_wand, Alignment, ArtifactLocation, AscensionOutcome, BeamRay,
+    BranchCoord, BranchId, BreathType, Buc, CandelabrumState, Combatant, Coord, DilutionState,
+    Direction, DivineState, DoorState, DrawbridgeState, DrawbridgeTransition, DungeonDepth,
+    EncumbranceTier, Engraving, EngravingMedium, FormStats, GazeEffect, GazeType, HeroInteraction,
     HeroQuestEligibility, Intrinsics, InvocationStep, Item, KnowledgeLevel, LightSource,
-    LuckstoneStatus, MetricState, PetFamily, PetGoal, PetSpeciesTier, PolyEntity, PushOutcome,
-    QuestProgress, QuestState, RechargeResult, RitualProgress, RubResult, SchedulerState,
-    SpellKind, StepAction, StepResult, SurfaceOrientation, TacticalAction, TacticalContext, Tile,
-    Velocity, WandCharges, WaterType, MAX_DIVINE_PROTECTION, NORMAL_SPEED, QUEST_MIN_ALIGNMENT,
-    QUEST_MIN_LEVEL, REQUIRED_CANDLES, SAFE_ENCHANT_CAP,
+    MetricState, PetFamily, PetGoal, PetSpeciesTier, PolyEntity, PushOutcome, QuestProgress,
+    QuestState, RechargeResult, RitualProgress, RubResult, SchedulerState, SpellKind, StepAction,
+    StepResult, SurfaceOrientation, TacticalAction, TacticalContext, Tile, Velocity, WandCharges,
+    WaterType, MAX_DIVINE_PROTECTION, NORMAL_SPEED, QUEST_MIN_ALIGNMENT, QUEST_MIN_LEVEL,
+    REQUIRED_CANDLES, SAFE_ENCHANT_CAP,
 };
 use proptest::prelude::*;
 
@@ -884,13 +884,22 @@ proptest! {
     }
 
     // -------------------------------------------------------------
-    // Theorems: corrupt_buc_idempotent & corrupt_buc_always_cursed
+    // Bones cursing vs reference from bones.c:290-291 / resetobjs
     // -------------------------------------------------------------
     #[test]
-    fn prop_corrupt_buc_theorems(buc in arb_buc()) {
-        let corrupted = corrupt_buc_on_death(buc);
-        prop_assert_eq!(corrupted, Buc::Cursed);
-        prop_assert_eq!(corrupt_buc_on_death(corrupted), Buc::Cursed);
+    fn prop_corrupt_buc_matches_c_reference(
+        buc in arb_buc(),
+        quest in proptest::bool::ANY,
+        roll in 0u32..8,
+    ) {
+        // C: `if (rn2(5)) curse(otmp);` rn2(5) in 0..=4; quest items always cursed.
+        fn reference(b: Buc, quest: bool, r: u32) -> Buc {
+            if quest || r.min(4) != 0 { Buc::Cursed } else { b }
+        }
+        let got = corrupt_buc_on_death(buc, quest, roll);
+        prop_assert_eq!(got, reference(buc, quest, roll));
+        // idempotent for any fixed roll
+        prop_assert_eq!(corrupt_buc_on_death(got, quest, roll), got);
     }
 
     // -------------------------------------------------------------
@@ -1052,38 +1061,37 @@ proptest! {
     }
 
     // -------------------------------------------------------------
-    // Theorem: luckstone_preserves_positive_luck & luckstone_heals_negative_luck
+    // Luck timeout vs reference from timeout.c:595-620 / attrib.c:423
     // -------------------------------------------------------------
     #[test]
-    fn prop_luckstone_theorems(
+    fn prop_luck_timeout_matches_c_reference(
         luck in -10i32..=10,
+        base in -2i32..=2,
         stone_idx in 0u32..4,
+        amulet in proptest::bool::ANY,
+        angry in proptest::bool::ANY,
     ) {
         let stone = match stone_idx {
-            0 => LuckstoneStatus::None,
-            1 => LuckstoneStatus::Blessed,
-            2 => LuckstoneStatus::Uncursed,
-            _ => LuckstoneStatus::Cursed,
+            0 => None,
+            1 => Some(Buc::Blessed),
+            2 => Some(Buc::Uncursed),
+            _ => Some(Buc::Cursed),
         };
-
-        let next_luck = step_luck_decay(luck, stone);
-        // Canonical luck bounds preserved [-10, 10]
-        prop_assert!((-10..=10).contains(&next_luck));
-
-        // Blessed/Uncursed preserves good luck
-        if (stone == LuckstoneStatus::Blessed || stone == LuckstoneStatus::Uncursed) && luck > 0 {
-            prop_assert_eq!(next_luck, luck);
+        // C: time_luck = stone_luck(FALSE) (blessed +1, cursed -1, uncursed 0);
+        // nostone = !carrying(LUCKSTONE) && !stone_luck(TRUE).
+        let time_luck = match stone { Some(Buc::Blessed) => 1, Some(Buc::Cursed) => -1, _ => 0 };
+        let nostone = stone.is_none();
+        let mut want = luck;
+        if luck > base && (nostone || time_luck < 0) {
+            want -= 1;
+        } else if luck < base && (nostone || time_luck > 0) {
+            want += 1;
         }
-
-        // Blessed/Uncursed strictly improves bad luck toward 0
-        if (stone == LuckstoneStatus::Blessed || stone == LuckstoneStatus::Uncursed) && luck < 0 {
-            prop_assert_eq!(next_luck, luck + 1);
-        }
-
-        // Cursed luckstone traps bad luck
-        if stone == LuckstoneStatus::Cursed && luck < 0 {
-            prop_assert_eq!(next_luck, luck);
-        }
+        prop_assert_eq!(step_luck_decay(luck, base, stone), want);
+        prop_assert_eq!(
+            luck_decay_period(amulet, angry),
+            if amulet || angry { 300 } else { 600 }
+        );
     }
 
     // -------------------------------------------------------------

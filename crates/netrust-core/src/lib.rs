@@ -71,8 +71,8 @@ pub use lighting::{
 };
 pub use magic::{can_cast, cast_spell, decay_retention, mana_cost, SpellKind};
 pub use mines::{
-    apply_priest_donation, clamp_luck, priest_uncurse, protection_donation_cost, step_luck_decay,
-    LuckstoneStatus, MAX_DIVINE_PROTECTION,
+    apply_priest_donation, clamp_luck, luck_decay_period, priest_uncurse, protection_donation_cost,
+    step_luck_decay, MAX_DIVINE_PROTECTION,
 };
 pub use monster_abilities::{calculate_summon_count, resolve_breath_damage, resolve_gaze};
 pub use netrust_types::{

@@ -4,9 +4,19 @@
 
 use netrust_types::Buc;
 
-/// Corrupts any item's BUC state into strictly `Cursed` upon adventurer death.
-pub fn corrupt_buc_on_death(_buc: Buc) -> Buc {
-    Buc::Cursed
+/// BUC of an item after the hero dies and the bones file is built.
+///
+/// C `bones.c:290-291` (`drop_upon_death`): `if (rn2(5)) curse(otmp);` so 4/5 of items
+/// become cursed (blessed included) and 1/5 keep their BUC. Converted quest items are
+/// always cursed (`bones.c:173-189`, `resetobjs`).
+///
+/// `rn2_5` is the `rn2(5)` draw, range `0..=4`; larger values are clamped to 4.
+pub fn corrupt_buc_on_death(original: Buc, is_quest_item: bool, rn2_5: u32) -> Buc {
+    if is_quest_item || rn2_5.min(4) != 0 {
+        Buc::Cursed
+    } else {
+        original
+    }
 }
 
 /// Computes ghost maximum HP from former adventurer's maximum HP clamped to at least 1.
@@ -25,9 +35,14 @@ mod tests {
 
     #[test]
     fn test_corrupt_buc_on_death() {
-        assert_eq!(corrupt_buc_on_death(Buc::Blessed), Buc::Cursed);
-        assert_eq!(corrupt_buc_on_death(Buc::Uncursed), Buc::Cursed);
-        assert_eq!(corrupt_buc_on_death(Buc::Cursed), Buc::Cursed);
+        for b in [Buc::Blessed, Buc::Uncursed, Buc::Cursed] {
+            assert_eq!(corrupt_buc_on_death(b, false, 0), b);
+            for r in 1..=4 {
+                assert_eq!(corrupt_buc_on_death(b, false, r), Buc::Cursed);
+            }
+            assert_eq!(corrupt_buc_on_death(b, true, 0), Buc::Cursed);
+            assert_eq!(corrupt_buc_on_death(b, false, 99), Buc::Cursed);
+        }
     }
 
     #[test]

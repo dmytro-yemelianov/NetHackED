@@ -140,7 +140,7 @@ impl SimulationWorld {
 
         if self.scheduler.turn != turn_before
             && self.scheduler.turn > 0
-            && self.scheduler.turn % 600 == 0
+            && self.scheduler.turn % self.luck_timeout_period() == 0
         {
             self.tick_luck_decay();
         }

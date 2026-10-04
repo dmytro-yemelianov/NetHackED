@@ -302,7 +302,27 @@ impl SimulationWorld {
         hunger_of_nutrition(self.player_nutrition)
     }
 
-    /// Progress one tick of luck decay based on carried luckstone.
+    /// Luck timeout period in turns for the hero's current state (C `timeout.c:595-620`).
+    ///
+    /// The Amulet of Yendor must be carried. `divine_state` has no god-anger field yet,
+    /// so `god_angry` is always false (documented limitation).
+    pub fn luck_timeout_period(&self) -> u64 {
+        let has_amulet = self
+            .arena
+            .items_carried_by(self.player_id)
+            .into_iter()
+            .any(|iid| {
+                self.arena
+                    .items
+                    .get(iid)
+                    .is_some_and(crate::actions::items::is_real_amulet)
+            });
+        netrust_core::luck_decay_period(has_amulet, false)
+    }
+
+    /// Progress one tick of luck decay based on carried luckstone (C `timeout.c:595-620`).
+    ///
+    /// Base luck is 0: moon phase / Friday 13th are not tracked.
     pub fn tick_luck_decay(&mut self) {
         let luckstone = self
             .arena
@@ -312,16 +332,10 @@ impl SimulationWorld {
                 self.arena
                     .items
                     .get(iid)
-                    .filter(|it| it.name.to_lowercase().contains("luckstone"))
+                    .filter(|it| it.name.eq_ignore_ascii_case("luckstone"))
                     .map(|it| it.buc)
             });
-        let stone_status = match luckstone {
-            Some(Buc::Blessed) => netrust_core::mines::LuckstoneStatus::Blessed,
-            Some(Buc::Uncursed) => netrust_core::mines::LuckstoneStatus::Uncursed,
-            Some(Buc::Cursed) => netrust_core::mines::LuckstoneStatus::Cursed,
-            None => netrust_core::mines::LuckstoneStatus::None,
-        };
-        self.player_luck = netrust_core::mines::step_luck_decay(self.player_luck, stone_status);
+        self.player_luck = netrust_core::mines::step_luck_decay(self.player_luck, 0, luckstone);
     }
 
     /// Compute tile visibility and monster perception for the hero, taking into account:
