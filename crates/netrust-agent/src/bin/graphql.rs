@@ -1,48 +1,22 @@
 //! NetRust GraphQL HTTP Server & GraphiQL Explorer for autonomous agent swarms.
 
-use async_graphql::http::GraphiQLSource;
-use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
-use axum::{
-    response::{Html, IntoResponse},
-    routing::get,
-    Extension, Router,
-};
-use netrust_agent::graphql::{create_schema, AppState, NetRustSchema};
+use netrust_agent::graphql::{create_router, create_schema, AppState};
+use netrust_agent::netconfig::{resolve_bind_addr, token_from_env};
 use netrust_agent::AgentSession;
-use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
-
-async fn graphql_handler(
-    schema: Extension<NetRustSchema>,
-    req: GraphQLRequest,
-) -> GraphQLResponse {
-    schema.execute(req.into_inner()).await.into()
-}
-
-async fn graphiql() -> impl IntoResponse {
-    Html(GraphiQLSource::build().endpoint("/graphql").finish())
-}
 
 #[tokio::main]
 async fn main() {
     let port = std::env::var("PORT").unwrap_or_else(|_| "4000".to_string());
-    let addr: SocketAddr = format!("0.0.0.0:{}", port)
-        .parse()
-        .expect("Valid socket address");
+    let args: Vec<String> = std::env::args().collect();
+    let addr = resolve_bind_addr(&args, std::env::var("NETRUST_BIND").ok(), &format!("127.0.0.1:{}", port));
 
-    let session = AgentSession::new(42);
-    let state = AppState {
-        session: Arc::new(Mutex::new(session)),
-    };
-    let schema = create_schema(state);
-
-    let app = Router::new()
-        .route("/graphql", get(graphiql).post(graphql_handler))
-        .layer(Extension(schema));
+    let state = AppState { session: Arc::new(Mutex::new(AgentSession::new(42))) };
+    let app = create_router(create_schema(state), token_from_env());
 
     println!("🗡️ NetRust GraphQL Server listening on http://{}", addr);
     println!("📊 GraphiQL Interactive Explorer: http://{}/graphql", addr);
 
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    let listener = tokio::net::TcpListener::bind(&addr).await.expect("bind GraphQL address");
+    axum::serve(listener, app).await.expect("GraphQL server error");
 }

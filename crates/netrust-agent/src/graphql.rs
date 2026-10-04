@@ -185,6 +185,18 @@ impl QueryRoot {
     }
 }
 
+pub const MAX_BODY_BYTES: usize = 64 * 1024;
+
+/// Per-request authorization decision inserted by the HTTP handler.
+pub struct Authorized(pub bool);
+
+fn require_mutation_auth(ctx: &Context<'_>) -> async_graphql::Result<()> {
+    match ctx.data_opt::<Authorized>() {
+        Some(Authorized(false)) => Err("unauthorized: missing or invalid bearer token".into()),
+        _ => Ok(()),
+    }
+}
+
 pub struct MutationRoot;
 
 #[Object]
@@ -198,7 +210,8 @@ impl MutationRoot {
         target_x: Option<usize>,
         target_y: Option<usize>,
         index: Option<usize>,
-    ) -> StepResultGql {
+    ) -> async_graphql::Result<StepResultGql> {
+        require_mutation_auth(ctx)?;
         let state = ctx.data_unchecked::<AppState>();
         let mut session = state.session.lock().unwrap();
 
@@ -243,7 +256,7 @@ impl MutationRoot {
         let obs = session.step(action_ast);
         let ascii_map = render_ascii_map(&session.world);
 
-        StepResultGql {
+        Ok(StepResultGql {
             success: true,
             events: obs.last_events.into_iter().map(|e| format!("{:?}", e)).collect(),
             ascii_map,
@@ -251,15 +264,16 @@ impl MutationRoot {
             max_hp: obs.player_max_hp,
             turn: obs.turn,
             is_game_over: obs.is_game_over,
-        }
+        })
     }
 
     /// Reset game simulation with an optional seed.
-    async fn reset_game(&self, ctx: &Context<'_>, seed: Option<u64>) -> bool {
+    async fn reset_game(&self, ctx: &Context<'_>, seed: Option<u64>) -> async_graphql::Result<bool> {
+        require_mutation_auth(ctx)?;
         let state = ctx.data_unchecked::<AppState>();
         let mut session = state.session.lock().unwrap();
         *session = AgentSession::new(seed.unwrap_or(42));
-        true
+        Ok(true)
     }
 
     /// Reset game simulation with customized character role, race, and attributes.
@@ -272,7 +286,8 @@ impl MutationRoot {
         race: Option<String>,
         gender: Option<String>,
         alignment: Option<String>,
-    ) -> StepResultGql {
+    ) -> async_graphql::Result<StepResultGql> {
+        require_mutation_auth(ctx)?;
         let state = ctx.data_unchecked::<AppState>();
         let mut session = state.session.lock().unwrap();
 
@@ -319,7 +334,7 @@ impl MutationRoot {
         let obs = session.get_observation();
         let ascii_map = render_ascii_map(&session.world);
 
-        StepResultGql {
+        Ok(StepResultGql {
             success: true,
             events: obs.last_events.into_iter().map(|e| format!("{:?}", e)).collect(),
             ascii_map,
@@ -327,14 +342,55 @@ impl MutationRoot {
             max_hp: obs.player_max_hp,
             turn: obs.turn,
             is_game_over: obs.is_game_over,
-        }
+        })
     }
 }
 
 pub fn create_schema(state: AppState) -> NetRustSchema {
     Schema::build(QueryRoot, MutationRoot, EmptySubscription)
         .data(state)
+        .limit_depth(16)
+        .limit_complexity(2000)
         .finish()
+}
+
+use axum::{
+    body::Body,
+    extract::State,
+    http::{HeaderMap, StatusCode},
+    response::{Html, IntoResponse, Response},
+    routing::get,
+    Json, Router,
+};
+
+#[derive(Clone)]
+struct GqlApp {
+    schema: NetRustSchema,
+    token: Option<Arc<str>>,
+}
+
+pub fn create_router(schema: NetRustSchema, token: Option<String>) -> Router {
+    Router::new()
+        .route("/graphql", get(graphiql).post(graphql_post))
+        .with_state(GqlApp { schema, token: token.map(Arc::from) })
+}
+
+async fn graphiql() -> impl IntoResponse {
+    Html(async_graphql::http::GraphiQLSource::build().endpoint("/graphql").finish())
+}
+
+async fn graphql_post(State(app): State<GqlApp>, headers: HeaderMap, body: Body) -> Response {
+    let bytes = match axum::body::to_bytes(body, MAX_BODY_BYTES).await {
+        Ok(b) => b,
+        Err(_) => return (StatusCode::PAYLOAD_TOO_LARGE, "request body too large").into_response(),
+    };
+    let request: async_graphql::Request = match serde_json::from_slice(&bytes) {
+        Ok(r) => r,
+        Err(e) => return (StatusCode::BAD_REQUEST, format!("invalid GraphQL request: {}", e)).into_response(),
+    };
+    let authorized = crate::netconfig::bearer_ok(&headers, app.token.as_deref());
+    let response = app.schema.execute(request.data(Authorized(authorized))).await;
+    Json(response).into_response()
 }
 
 #[cfg(test)]
