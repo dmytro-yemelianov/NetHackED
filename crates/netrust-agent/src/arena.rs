@@ -13,6 +13,9 @@ use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::sync::Arc;
+
+use netrust_data::ruleset::{Ruleset, RulesetRef};
 
 use crate::GameObservation;
 
@@ -700,15 +703,35 @@ pub struct BenchmarkReport {
     pub runs: Vec<RunResult>,
 }
 
-/// Executes a single simulation run under the given policy and configuration.
+/// Executes a single simulation run under the given policy and configuration using vanilla ruleset.
 pub fn run_single_game<P: AgentPolicy>(
-    mut policy: P,
+    policy: P,
     seed: u64,
     config: CharacterConfig,
     max_turns: u64,
 ) -> RunResult {
+    run_single_game_with_ruleset(
+        policy,
+        seed,
+        config,
+        max_turns,
+        Ruleset::vanilla(),
+        RulesetRef::vanilla(),
+    )
+}
+
+/// Executes a single simulation run under the given policy, configuration, and custom ruleset.
+pub fn run_single_game_with_ruleset<P: AgentPolicy>(
+    mut policy: P,
+    seed: u64,
+    config: CharacterConfig,
+    max_turns: u64,
+    ruleset: Arc<Ruleset>,
+    ruleset_ref: RulesetRef,
+) -> RunResult {
     let role_str = format!("{:?}", config.role);
-    let mut world = SimulationWorld::new_with_character(seed, config);
+    let mut world =
+        SimulationWorld::new_with_character_and_ruleset(seed, config, ruleset, ruleset_ref);
     let mut max_depth = 1usize;
     let mut monsters_slain = 0u32;
     let mut food_eaten = 0u32;
@@ -959,45 +982,74 @@ pub fn run_game_with_trajectory<P: AgentPolicy>(
     (run_res, recording)
 }
 
-/// Runs every built-in policy for one seed across the given roles.
+/// Runs every built-in policy for one seed across the given roles using vanilla ruleset.
 pub fn run_seed_games(seed: u64, roles: &[RoleId], max_turns: u64) -> Vec<RunResult> {
+    run_seed_games_with_ruleset(
+        seed,
+        roles,
+        max_turns,
+        Ruleset::vanilla(),
+        RulesetRef::vanilla(),
+    )
+}
+
+/// Runs every built-in policy for one seed across the given roles with a custom ruleset.
+pub fn run_seed_games_with_ruleset(
+    seed: u64,
+    roles: &[RoleId],
+    max_turns: u64,
+    ruleset: Arc<Ruleset>,
+    ruleset_ref: RulesetRef,
+) -> Vec<RunResult> {
     let mut results = Vec::new();
     for &role in roles {
+        let def_align = ruleset
+            .role(role)
+            .map(|r| r.default_alignment)
+            .unwrap_or(netrust_types::Alignment::Neutral);
         let config = CharacterConfig {
             name: format!("{role:?}"),
             role,
             race: netrust_data::roles::RaceId::Human,
             gender: netrust_data::roles::Gender::Female,
-            alignment: netrust_data::roles::get_role(role).default_alignment,
+            alignment: def_align,
         };
 
         // 1. Random policy
-        results.push(run_single_game(
+        results.push(run_single_game_with_ruleset(
             RandomPolicy::new(seed),
             seed,
             config.clone(),
             max_turns,
+            Arc::clone(&ruleset),
+            ruleset_ref.clone(),
         ));
         // 2. Survival policy
-        results.push(run_single_game(
+        results.push(run_single_game_with_ruleset(
             SurvivalPolicy::new(),
             seed,
             config.clone(),
             max_turns,
+            Arc::clone(&ruleset),
+            ruleset_ref.clone(),
         ));
         // 3. Speedrunner policy
-        results.push(run_single_game(
+        results.push(run_single_game_with_ruleset(
             SpeedrunPolicy::new(),
             seed,
             config.clone(),
             max_turns,
+            Arc::clone(&ruleset),
+            ruleset_ref.clone(),
         ));
         // 4. PetTester Tactical policy
-        results.push(run_single_game(
+        results.push(run_single_game_with_ruleset(
             PetTesterTacticalPolicy::new(),
             seed,
             config,
             max_turns,
+            Arc::clone(&ruleset),
+            ruleset_ref.clone(),
         ));
     }
     results

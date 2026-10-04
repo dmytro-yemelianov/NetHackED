@@ -3,6 +3,7 @@
 pub mod format;
 pub mod merge;
 pub mod nrpack;
+pub mod simulate;
 pub mod validate;
 
 pub use format::{
@@ -13,6 +14,7 @@ pub use merge::resolve;
 pub use nrpack::{
     build, diff, load_nrpack, ruleset_hash, write_nrpack, DiffEntry, NrPack, PACK_FORMAT_VERSION,
 };
+pub use simulate::{run_simulation, RoleStats, SimulationReport};
 pub use validate::{validate, Diagnostic, Report};
 
 /// Enumeration of all rule pack parsing, resolution, validation, or integrity errors.
