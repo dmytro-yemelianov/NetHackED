@@ -147,6 +147,7 @@ fn test_melee_attack_action() {
         tameness: 0,
         is_unique: false,
         abilities: Vec::new(),
+        is_peaceful: false,
     };
     let mon_id = sim.arena.spawn_actor(goblin);
 
@@ -195,6 +196,7 @@ fn test_zap_wand_beam_propagation_and_damage() {
         tameness: 0,
         is_unique: false,
         abilities: Vec::new(),
+        is_peaceful: false,
     };
     let mon_id = sim.arena.spawn_actor(mon);
     // Zapping now requires a carried wand.
@@ -247,6 +249,7 @@ fn test_wands_of_digging_and_teleportation_do_not_damage() {
             tameness: 0,
             is_unique: false,
             abilities: Vec::new(),
+            is_peaceful: false,
         };
         let mon_id = sim.arena.spawn_actor(mon);
         // Zapping now requires a carried wand.
@@ -883,7 +886,8 @@ fn test_shop_and_shopkeeper_mechanics() {
             .iter()
             .any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("Stop, thief!"))));
         let sk_after = sim.arena.actors.get(sk_id).unwrap();
-        assert_eq!(sk_after.alignment, Alignment::Chaotic);
+        assert!(!sk_after.is_peaceful);
+        assert_eq!(sk_after.alignment, Alignment::Neutral);
     }
 }
 
@@ -2060,6 +2064,7 @@ fn test_artifact_combat_bonus_and_vorpal_blade() {
         tameness: 0,
         is_unique: false,
         abilities: Vec::new(),
+        is_peaceful: false,
     });
 
     let excalibur = sim.arena.spawn_item(ItemRecord {
@@ -2113,6 +2118,7 @@ fn test_ukrainian_i18n_simulation_logging() {
         tameness: 0,
         is_unique: false,
         abilities: Vec::new(),
+        is_peaceful: false,
     });
 
     let combat_events = sim.step_player_action(ActionAst::MeleeAttack(mon_coord));
@@ -3229,6 +3235,7 @@ fn test_hero_polymorph_potion_and_damage_reversion() {
         tameness: 0,
         is_unique: false,
         abilities: Vec::new(),
+        is_peaceful: false,
     };
     sim.arena.spawn_actor(mon);
 
@@ -3280,6 +3287,7 @@ fn test_wand_of_polymorph_unique_monster_invariant() {
         tameness: 0,
         is_unique: true,
         abilities: Vec::new(),
+        is_peaceful: false,
     });
     sim1.arena.spawn_item(ItemRecord {
         name: "wand of polymorph".into(),
@@ -3331,6 +3339,7 @@ fn test_wand_of_polymorph_unique_monster_invariant() {
         tameness: 0,
         is_unique: false,
         abilities: Vec::new(),
+        is_peaceful: false,
     });
     sim2.arena.spawn_item(ItemRecord {
         name: "wand of polymorph".into(),
@@ -3384,6 +3393,7 @@ fn test_scroll_of_genocide_conduct_and_level_wipe() {
         tameness: 0,
         is_unique: false,
         abilities: Vec::new(),
+        is_peaceful: false,
     });
 
     let scroll_id = sim.arena.spawn_item(ItemRecord {
@@ -3614,6 +3624,7 @@ fn test_weapon_skill_combat_bonus() {
         tameness: 0,
         is_unique: false,
         abilities: Vec::new(),
+        is_peaceful: false,
     });
 
     let hp_before = sim.arena.actors.get(mon_id).unwrap().hp;
@@ -3657,6 +3668,7 @@ fn test_ranged_fire_arrow_hits_monster() {
         tameness: 0,
         is_unique: false,
         abilities: Vec::new(),
+        is_peaceful: false,
     });
 
     // Put arrow in hero inventory
@@ -3721,6 +3733,7 @@ fn test_steed_mounting_and_effective_movement() {
         tameness: 10,
         is_unique: false,
         abilities: Vec::new(),
+        is_peaceful: false,
     });
 
     // Mount the steed
@@ -3941,6 +3954,7 @@ fn test_pacifist_conduct_violation_on_kill() {
         is_tame: false,
         tameness: 0,
         abilities: vec![],
+        is_peaceful: false,
     };
 
     sim.arena.actors.insert(monster);
@@ -4250,6 +4264,7 @@ fn valkyrie_first_swing_hits(ac: i32, seeds: u64) -> u64 {
             tameness: 0,
             is_unique: false,
             abilities: Vec::new(),
+            is_peaceful: false,
         };
         let mid = sim.arena.spawn_actor(mon);
         let events = sim.step_player_action(ActionAst::MeleeAttack(mc));

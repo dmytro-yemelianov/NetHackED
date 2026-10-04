@@ -3,10 +3,11 @@
 
 use netrust_arena::ActorId;
 use netrust_core::pathfinding::DijkstraField;
+use netrust_data::AiBehavior;
 use netrust_i18n::Messages;
 use netrust_types::{
-    Alignment, Attack, AttackType, BreathType, Buc, Coord, DamageType, GazeEffect, GazeType,
-    MonsterAbility, MonsterSpell, Tile, COLNO, ROWNO,
+    Attack, AttackType, BreathType, Buc, Coord, DamageType, GazeEffect, GazeType, MonsterAbility,
+    MonsterSpell, Tile, COLNO, ROWNO,
 };
 use rand::Rng;
 
@@ -55,9 +56,7 @@ impl SimulationWorld {
             .map(|p| p.coord);
         if let Some(pc) = player_coord {
             let dijkstra = DijkstraField::compute(pc, |c| self.level.is_passable(c));
-            let player_engraving = self.level.get_engraving(pc);
-            let is_elbereth_active =
-                netrust_core::engraving::is_elbereth_ward_active(player_engraving, false, false);
+            let player_engraving = self.level.get_engraving(pc).cloned();
 
             let mon_ids: Vec<ActorId> = self
                 .arena
@@ -84,7 +83,7 @@ impl SimulationWorld {
                                     .arena
                                     .actors
                                     .get(other_id)
-                                    .map(|a| a.is_tame)
+                                    .map(|a| a.is_tame || a.is_peaceful)
                                     .unwrap_or(false)
                             {
                                 Some(other_id)
@@ -104,7 +103,7 @@ impl SimulationWorld {
                                     .arena
                                     .actors
                                     .get(other_id)
-                                    .map(|a| a.is_tame)
+                                    .map(|a| a.is_tame || a.is_peaceful)
                                     .unwrap_or(false)
                             {
                                 Some(other_id)
@@ -215,13 +214,40 @@ impl SimulationWorld {
                     continue;
                 }
 
-                // Peaceful shopkeeper will not attack unless provoked or shoplifted
-                if mon.name == "shopkeeper" && mon.alignment == Alignment::Neutral {
+                let archetype = netrust_data::monster_archetype_by_name(&mon.name);
+
+                if mon.is_peaceful {
+                    // Peaceful monsters do not attack or approach the hero.
+                    // Stationary monsters (shopkeepers, priests, watchmen, quest leaders/guardians) stay put.
+                    let is_stationary = archetype
+                        .map(|a| a.ai_behavior == AiBehavior::Stationary)
+                        .unwrap_or(false)
+                        || mon.name == "shopkeeper"
+                        || mon.name == "priest";
+                    if !is_stationary {
+                        let neighbors = mon.coord.neighbors();
+                        let passable_neighbors: Vec<Coord> = neighbors
+                            .into_iter()
+                            .filter(|&c| {
+                                c != pc && self.level.is_passable(c) && self.actor_at(c).is_none()
+                            })
+                            .collect();
+                        if !passable_neighbors.is_empty() {
+                            let idx = self.rng.random_range(0..passable_neighbors.len());
+                            let next_c = passable_neighbors[idx];
+                            let from = mon.coord;
+                            if let Some(m) = self.arena.actors.get_mut(mon_id) {
+                                m.coord = next_c;
+                            }
+                            events.push(GameEvent::ActorMoved {
+                                actor: mon_id,
+                                from,
+                                to: next_c,
+                            });
+                        }
+                    }
                     continue;
                 }
-
-                // Special Monster Tactical Abilities
-                let archetype = netrust_data::monster_archetype_by_name(&mon.name);
                 // An ability acts only when the C attack list has the matching
                 // attack type (actors without an archetype keep their abilities).
                 let has_attack = |at: AttackType| {
@@ -400,7 +426,28 @@ impl SimulationWorld {
                 }
 
                 if mon.coord.chebyshev_distance(pc) == 1 {
-                    if is_elbereth_active {
+                    let is_human =
+                        archetype.map(|a| a.is_human).unwrap_or(false) || mon.name == "human";
+                    let is_minotaur = mon.name == "minotaur";
+                    let is_shk_priest_guard =
+                        mon.name == "shopkeeper" || mon.name == "priest" || mon.name == "watchman";
+                    let is_rider =
+                        mon.name == "Death" || mon.name == "Famine" || mon.name == "Pestilence";
+                    let monster_exempt = netrust_core::engraving::onscary_exempt(
+                        is_human,
+                        is_minotaur,
+                        is_shk_priest_guard,
+                        is_rider,
+                    );
+                    let repelled = netrust_core::engraving::is_elbereth_ward_active(
+                        player_engraving.as_ref(),
+                        mon.intrinsics.blind,
+                        mon.is_unique,
+                        mon.is_peaceful,
+                        monster_exempt,
+                    );
+
+                    if repelled {
                         // Monster repelled by Elbereth! Cannot attack, forced to retreat!
                         events.push(GameEvent::LogMessage {
                             text: format!(
@@ -427,8 +474,8 @@ impl SimulationWorld {
                         events.extend(combat_events);
                     }
                 } else {
-                    // Dijkstra metric gradient step: flee if low on HP or facing active Elbereth
-                    let should_flee = is_elbereth_active || (mon.hp <= (mon.max_hp / 3).max(1));
+                    // Dijkstra metric gradient step: flee if low on HP
+                    let should_flee = mon.hp <= (mon.max_hp / 3).max(1);
                     let target_opt = if should_flee {
                         dijkstra.steepest_ascent(mon.coord)
                     } else {

@@ -10,21 +10,22 @@ use netrust_core::{
     corrupt_buc_on_death, create_ghost_hp, decide_tactical_action, destroy_drawbridge,
     dilute_potion, dip_water, dmgval, enchant_armor, enchant_weapon, enter_branch, exit_branch,
     feed_pet, find_ac, hero_damage_after_ac, hunger_of_nutrition, hunger_tier, identify_fully,
-    interact_with_occupant, is_candelabrum_ready, is_hero_eligible_for_quest, is_hp_critical,
-    is_sanctum_accessible, is_valid_bones_level, learn_buc, learn_type, luck_decay_period,
-    mana_cost, mattacku_die, mbag_explodes, melee_damage, mhitm_to_hit, mix_alchemy,
-    monster_attack_damage, monster_attack_hits, monster_hit_damage, monster_to_hit_value,
-    mysterious_force, offer_amulet_on_high_altar, pet_tile_steppable, pick_up_quest_artifact,
-    priest_donation_outcome, priest_donation_quan, priest_suggested_donation, priest_uncurse,
-    promote_pet, protection_purchase_count, protection_purchase_step, push_boulder,
-    quest_progress_rank, recharge_wand, reflect, resisted, resolve_breath_damage, resolve_gaze,
-    resolve_sacrifice, return_to_leader_with_artifact, rub_lamp, sell_price, step_luck_decay,
-    step_ray, step_ritual, swap_displacement, tick_light_fuel, tick_prayer_timeout, to_hit_value,
-    toggle_drawbridge, uncurse, weapon_damage_die, zap_hit, zap_wand, Alignment, ArtifactLocation,
-    AscensionOutcome, BagCheckItem, BagCheckKind, BeamRay, BranchCoord, BranchId, BreathType, Buc,
-    CandelabrumState, Combatant, Coord, DilutionState, Direction, DivineState, DonationOutcome,
-    DoorState, DrawbridgeState, DrawbridgeTransition, DungeonDepth, EnchantOutcome,
-    EncumbranceTier, Engraving, EngravingMedium, FormStats, GazeEffect, GazeType, HeroInteraction,
+    interact_with_occupant, is_candelabrum_ready, is_elbereth_ward_active,
+    is_hero_eligible_for_quest, is_hp_critical, is_sanctum_accessible, is_valid_bones_level,
+    learn_buc, learn_type, luck_decay_period, mana_cost, mattacku_die, mbag_explodes, melee_damage,
+    mhitm_to_hit, mix_alchemy, monster_attack_damage, monster_attack_hits, monster_hit_damage,
+    monster_to_hit_value, mysterious_force, offer_amulet_on_high_altar, onscary_exempt,
+    peace_minded, pet_tile_steppable, pick_up_quest_artifact, priest_donation_outcome,
+    priest_donation_quan, priest_suggested_donation, priest_uncurse, promote_pet,
+    protection_purchase_count, protection_purchase_step, push_boulder, quest_progress_rank,
+    recharge_wand, reflect, resisted, resolve_breath_damage, resolve_gaze, resolve_sacrifice,
+    return_to_leader_with_artifact, rub_lamp, sell_price, step_luck_decay, step_ray, step_ritual,
+    swap_displacement, tick_light_fuel, tick_prayer_timeout, to_hit_value, toggle_drawbridge,
+    uncurse, weapon_damage_die, zap_hit, zap_wand, Alignment, ArtifactLocation, AscensionOutcome,
+    BagCheckItem, BagCheckKind, BeamRay, BranchCoord, BranchId, BreathType, Buc, CandelabrumState,
+    Combatant, Coord, DilutionState, Direction, DivineState, DonationOutcome, DoorState,
+    DrawbridgeState, DrawbridgeTransition, DungeonDepth, EnchantOutcome, EncumbranceTier,
+    Engraving, EngravingMedium, FormStats, GazeEffect, GazeType, HeroInteraction,
     HeroQuestEligibility, Intrinsics, InvocationStep, KnowledgeLevel, LightSource, MetricState,
     MysteriousForceOutcome, PetFamily, PetGoal, PetSpeciesTier, PolyEntity, PushOutcome,
     QuestProgress, QuestState, RechargeResult, RitualProgress, RubResult, SchedulerState,
@@ -562,6 +563,78 @@ proptest! {
         let expected = c_reference_find_ac(base_ac, &worn, protection);
         prop_assert_eq!(got, expected);
         prop_assert!((-99..=99).contains(&got));
+    }
+
+    // -------------------------------------------------------------
+    // Theorem: peace_minded_matches_c_reference
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_peace_minded_matches_c_reference(
+        arch_peaceful in any::<bool>(),
+        always_hostile in any::<bool>(),
+        mal in -2..=2i32,
+        ual in -2..=2i32,
+        rec in -20..=20i32,
+        roll in 0..1000u32,
+    ) {
+        fn c_reference_peace_minded(
+            arch_peaceful: bool,
+            always_hostile: bool,
+            mal: i32,
+            ual: i32,
+            rec: i32,
+            roll: u32,
+        ) -> bool {
+            if arch_peaceful {
+                return true;
+            }
+            if always_hostile {
+                return false;
+            }
+            if mal.signum() != ual.signum() {
+                return false;
+            }
+            let a = (16 + rec.max(-15)) as u32;
+            let b = (2 + mal.abs()) as u32;
+            let peaceful_outcomes = a.saturating_sub(1) * b.saturating_sub(1);
+            roll < peaceful_outcomes
+        }
+
+        let got = peace_minded(arch_peaceful, always_hostile, mal, ual, rec, roll);
+        let expected = c_reference_peace_minded(arch_peaceful, always_hostile, mal, ual, rec, roll);
+        prop_assert_eq!(got, expected);
+    }
+
+    // -------------------------------------------------------------
+    // Theorem: onscary_exempt_and_elbereth
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_onscary_exempt_and_elbereth(
+        is_human in any::<bool>(),
+        is_minotaur in any::<bool>(),
+        is_shk in any::<bool>(),
+        is_rider in any::<bool>(),
+        is_blind in any::<bool>(),
+        is_covetous in any::<bool>(),
+        is_peaceful in any::<bool>(),
+    ) {
+        let exempt = onscary_exempt(is_human, is_minotaur, is_shk, is_rider);
+        prop_assert_eq!(exempt, is_human || is_minotaur || is_shk || is_rider);
+
+        let elbereth = Engraving::new("Elbereth", EngravingMedium::Burned);
+        let active = is_elbereth_ward_active(
+            Some(&elbereth),
+            is_blind,
+            is_covetous,
+            is_peaceful,
+            exempt,
+        );
+
+        if is_blind || is_covetous || is_peaceful || exempt {
+            prop_assert!(!active);
+        } else {
+            prop_assert!(active);
+        }
     }
 
     // -------------------------------------------------------------

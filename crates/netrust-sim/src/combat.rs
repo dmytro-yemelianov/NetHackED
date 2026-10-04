@@ -45,6 +45,15 @@ impl SimulationWorld {
             return events;
         };
 
+        if defender.is_peaceful {
+            if let Some(def_mut) = self.arena.actors.get_mut(defender_id) {
+                def_mut.is_peaceful = false;
+            }
+            events.push(GameEvent::LogMessage {
+                text: format!("{} turns hostile!", defender.name),
+            });
+        }
+
         let def_combat = Combatant {
             hp: defender.hp,
             max_hp: defender.max_hp,

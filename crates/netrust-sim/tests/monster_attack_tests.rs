@@ -265,6 +265,7 @@ fn named_monster(name: &str, at: Coord) -> ActorRecord {
         is_tame: false,
         tameness: 0,
         abilities: Vec::new(),
+        is_peaceful: false,
     }
 }
 

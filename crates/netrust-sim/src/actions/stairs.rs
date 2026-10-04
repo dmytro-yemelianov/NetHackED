@@ -494,7 +494,7 @@ impl SimulationWorld {
                     let leader_species = quest_species_by_name(quest_cfg.leader_name);
                     if let Some(id) = self.spawn_monster_near(leader_species, layout.leader_coord) {
                         if let Some(a) = self.arena.actors.get_mut(id) {
-                            a.is_tame = true;
+                            a.is_peaceful = true;
                         }
                     }
 
@@ -503,7 +503,7 @@ impl SimulationWorld {
                     for gc in layout.guardian_coords {
                         if let Some(id) = self.spawn_monster_near(guardian_species, gc) {
                             if let Some(a) = self.arena.actors.get_mut(id) {
-                                a.is_tame = true;
+                                a.is_peaceful = true;
                             }
                         }
                     }

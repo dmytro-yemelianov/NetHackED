@@ -2106,6 +2106,7 @@ pub fn create_monster_record(id: MonsterSpeciesId, coord: Coord) -> ActorRecord 
             0
         },
         abilities: arch.abilities.to_vec(),
+        is_peaceful: arch.peaceful_by_default,
     }
 }
 

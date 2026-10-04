@@ -2,7 +2,7 @@
 
 use netrust_core::energy::NORMAL_SPEED;
 use netrust_dungeon::RoomType;
-use netrust_types::{Alignment, Coord, Direction, DoorState, Tile};
+use netrust_types::{Coord, Direction, DoorState, Tile};
 use rand::Rng;
 
 use crate::events::GameEvent;
@@ -279,7 +279,7 @@ impl SimulationWorld {
                                 // Turn shopkeeper hostile
                                 for (_, actor) in self.arena.actors.iter_mut() {
                                     if actor.name == "shopkeeper" && !actor.is_dead {
-                                        actor.alignment = Alignment::Chaotic;
+                                        actor.is_peaceful = false;
                                     }
                                 }
                             }

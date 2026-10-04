@@ -53,6 +53,9 @@ pub struct ActorRecord {
     pub is_tame: bool,
     pub tameness: u32,
     pub abilities: Vec<MonsterAbility>,
+    /// NetHack 5.0 C `mpeaceful` (`makemon.c:1299`). Monster does not attack or approach hero.
+    #[serde(default)]
+    pub is_peaceful: bool,
 }
 
 /// The centralized entity arena replacing all ambient pointers.
@@ -225,12 +228,43 @@ mod tests {
             tameness: 0,
             is_unique: false,
             abilities: Vec::new(),
+            is_peaceful: false,
         };
         let id = arena.spawn_actor(actor);
         assert_eq!(arena.actors.get(id).unwrap().hp, 20);
 
         arena.destroy_actor(id);
         assert!(arena.actors.get(id).is_none());
+    }
+
+    #[test]
+    fn test_actor_record_serde_default_is_peaceful() {
+        let mut arena = EntityArena::new();
+        let actor = ActorRecord {
+            name: "priest".into(),
+            coord: Coord::new(5, 5).unwrap(),
+            hp: 60,
+            max_hp: 60,
+            ac: 10,
+            level: 12,
+            speed: 12,
+            alignment: Alignment::Neutral,
+            intrinsics: Intrinsics::default(),
+            is_player: false,
+            is_dead: false,
+            is_tame: false,
+            tameness: 0,
+            is_unique: false,
+            abilities: Vec::new(),
+            is_peaceful: true,
+        };
+        let id = arena.spawn_actor(actor);
+        let mut v = serde_json::to_value(arena.actors.get(id).unwrap()).unwrap();
+        assert_eq!(v["is_peaceful"], true);
+        v.as_object_mut().unwrap().remove("is_peaceful");
+        let back: ActorRecord = serde_json::from_value(v).unwrap();
+        assert!(!back.is_peaceful);
+        assert_eq!(back.name, "priest");
     }
 
     #[test]

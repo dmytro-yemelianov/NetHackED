@@ -26,6 +26,7 @@ pub mod mines;
 pub mod monster_abilities;
 pub mod nutrition;
 pub mod pathfinding;
+pub mod peace;
 pub mod pet;
 pub mod pet_coop;
 pub mod polymorph;
@@ -60,7 +61,7 @@ pub use enchantment::{
 };
 pub use endgame::{destroy_drawbridge, offer_amulet_on_high_altar, toggle_drawbridge};
 pub use energy::{SchedulerState, StepAction, NORMAL_SPEED};
-pub use engraving::{is_elbereth_ward_active, Engraving, EngravingMedium};
+pub use engraving::{is_elbereth_ward_active, onscary_exempt, Engraving, EngravingMedium};
 pub use gehennom::{
     is_candelabrum_ready, is_sanctum_accessible, mysterious_force,
     mysterious_force_counter_increment, step_ritual, CandelabrumState, InvocationStep,
@@ -97,6 +98,7 @@ pub use netrust_types::{
 };
 pub use nutrition::{hunger_of_nutrition, hunger_tier, metabolic_tick, HungerState};
 pub use pathfinding::MetricState;
+pub use peace::peace_minded;
 pub use pet::{feed_pet, interact_with_occupant, swap_displacement, HeroInteraction};
 pub use pet_coop::{
     choose_pet_goal, pet_tile_steppable, promote_pet, PetFamily, PetGoal, PetSpeciesTier,
