@@ -276,7 +276,7 @@ impl SimulationWorld {
         // C priest.c:612: a hero without gold cannot make an offer.
         if self.player_gold == 0 {
             events.push(GameEvent::LogMessage {
-                text: format!("You do not have enough gold to donate {amount} zm."),
+                text: "You do not have enough gold to make a donation.".into(),
             });
             return events;
         }
@@ -288,7 +288,7 @@ impl SimulationWorld {
             netrust_core::priest_suggested_donation(player.level, self.priest_cheapskate, rn2_101);
         let quan = netrust_core::priest_donation_quan(gold_before, suggested);
         // `amount == 0` offers the priest's suggested protection amount (`suggested*quan*2`);
-        // C `bribe` (minion.c:378-381) caps an offer at the hero's gold.
+        // C `bribe` (minion.c:379-382) caps an offer at the hero's gold.
         let requested = if amount == 0 {
             suggested.saturating_mul(quan).saturating_mul(2)
         } else {
@@ -376,7 +376,14 @@ impl SimulationWorld {
             }
         }
 
-        self.divine_state.favor = netrust_core::religion::clamp_favor(self.divine_state.favor + 2);
+        // NetRust extra (not C): favor +2, but never for a refused or cheapskate offer.
+        if !matches!(
+            outcome,
+            netrust_core::DonationOutcome::Refused | netrust_core::DonationOutcome::Cheapskate
+        ) {
+            self.divine_state.favor =
+                netrust_core::religion::clamp_favor(self.divine_state.favor + 2);
+        }
         self.scheduler.hero_act(NORMAL_SPEED);
         events
     }

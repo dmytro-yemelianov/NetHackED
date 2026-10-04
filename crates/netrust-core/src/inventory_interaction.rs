@@ -54,7 +54,7 @@ pub fn rub_lamp(is_magic: bool, has_djinni: bool, buc: Buc, oil_turns: u32) -> (
     }
 }
 
-/// Charisma buy adjustment as `(multiplier, divisor)` (C `shk.c:2971-2984`, `get_cost`):
+/// Charisma buy adjustment as `(multiplier, divisor)` (C `shk.c:2953-2964`, `get_cost`):
 /// `>18`: 1/2; `18`: 2/3; `16-17`: 3/4; `11-15`: 1/1; `8-10`: 4/3; `6-7`: 3/2; `<=5`: 2/1.
 pub fn buy_factor(charisma: i32) -> (u32, u32) {
     if charisma > 18 {
@@ -74,7 +74,7 @@ pub fn buy_factor(charisma: i32) -> (u32, u32) {
     }
 }
 
-/// Sell adjustment as `(multiplier, divisor)` (C `shk.c:3170-3199`, `set_cost`): the
+/// Sell adjustment as `(multiplier, divisor)` (C `shk.c:3148-3175`, `set_cost`): the
 /// shopkeeper offers 1/2, or 1/3 with the dunce/tourist surcharge; a lowballing shopkeeper
 /// takes a further 3/4 (applied only when the pre-adjustment value exceeds 1, see
 /// [`sell_price`]). Charisma and BUC never affect the sell price.
@@ -87,7 +87,7 @@ pub fn sell_factor(dunce_or_tourist: bool, shk_lowball: bool) -> (u32, u32) {
     }
 }
 
-/// Dunce/tourist surcharge predicate (C `shk.c:2964-2969` buy, `shk.c:3176-3181` sell):
+/// Dunce/tourist surcharge predicate (C `shk.c:2947-2951` buy, `shk.c:3154-3160` sell):
 /// a worn dunce cap, or a Tourist below experience level `MAXULEV / 2` (15), or a
 /// visible shirt (`uarmu && !uarm && !uarmc`).
 pub fn dunce_or_tourist_surcharge(
@@ -99,21 +99,21 @@ pub fn dunce_or_tourist_surcharge(
     dunce_cap_worn || (is_tourist && ulevel < 15) || shirt_visible
 }
 
-/// Unidentified-object buy surcharge (C `shk.c:2884-2895`, `oid_price_adjustment`):
+/// Unidentified-object buy surcharge (C `shk.c:2864-2874`, `oid_price_adjustment`):
 /// an object whose type is not known (and is not a glass gem, which is repriced as a
 /// real gem instead) is surcharged 4/3 iff `o_id % 4 == 0`. Deterministic, no RNG.
 pub fn oid_price_adjustment(unidentified: bool, is_glass_gem: bool, o_id: u32) -> bool {
     unidentified && !is_glass_gem && o_id % 4 == 0
 }
 
-/// Sell-side lowball (C `shk.c:3185-3199`): an unidentified non-gem is bought at a further
+/// Sell-side lowball (C `shk.c:3162-3175`): an unidentified non-gem is bought at a further
 /// 3/4 by shopkeepers with `m_id % 4 == 0` (per shopkeeper, deterministic, no RNG).
 /// Unidentified gems use a separate per-shopkeeper table that NetRust does not model.
 pub fn shk_sell_lowball(unidentified: bool, is_gem: bool, shk_m_id: u32) -> bool {
     unidentified && !is_gem && shk_m_id % 4 == 0
 }
 
-/// C rounding `tmp = ((tmp * multiplier * 10 / divisor) + 5) / 10` (shk.c:2988-2995).
+/// C rounding `tmp = ((tmp * multiplier * 10 / divisor) + 5) / 10` (shk.c:2966-2974).
 fn round_mul_div(tmp: u64, multiplier: u64, divisor: u64) -> u64 {
     let tmp = tmp * multiplier;
     if divisor > 1 {
@@ -123,9 +123,9 @@ fn round_mul_div(tmp: u64, multiplier: u64, divisor: u64) -> u64 {
     }
 }
 
-/// Price the shopkeeper charges for one unit (C `shk.c:2899-3009`, `get_cost`).
+/// Price the shopkeeper charges for one unit (C `shk.c:2877-2988`, `get_cost`).
 ///
-/// `base` is `getprice(obj, FALSE)` (`shk.c:4341`); 0 is priced at 5. The unidentified
+/// `base` is `getprice(obj, FALSE)` (`shk.c:4319`); 0 is priced at 5. The unidentified
 /// (`unid_surcharge`, see [`oid_price_adjustment`]), dunce/tourist (see
 /// [`dunce_or_tourist_surcharge`]) and charisma ([`buy_factor`]) adjustments are combined
 /// into one multiplier/divisor with C rounding, floored at 1; artifacts then cost x4 and an
@@ -161,7 +161,7 @@ pub fn buy_price(
     u32::try_from(price).unwrap_or(u32::MAX)
 }
 
-/// Price the shopkeeper offers for a stack (C `shk.c:3170-3212`, `set_cost`).
+/// Price the shopkeeper offers for a stack (C `shk.c:3148-3192`, `set_cost`).
 ///
 /// `base` is `getprice(obj, TRUE) * units`. Divisor 2, or 3 with the dunce/tourist
 /// surcharge; `shk_lowball` (see [`shk_sell_lowball`]) applies a further 3/4 when `base > 1`.
@@ -239,7 +239,7 @@ mod tests {
         assert!(!consumed4);
     }
 
-    /// C shk.c:2971-2984 charisma table at every boundary, base 300, no other adjustment.
+    /// C shk.c:2953-2964 charisma table at every boundary, base 300, no other adjustment.
     #[test]
     fn test_buy_price_charisma_table_boundaries() {
         // (cha, expected): 300*m/d rounded.
@@ -272,7 +272,7 @@ mod tests {
         // 10 * 4/3 = 13.33 -> 13; 5 * 4/3 = 6.67 -> 7 (C rounds via ((x*10/d)+5)/10).
         assert_eq!(buy_price(10, 10, false, false, false, false), 13);
         assert_eq!(buy_price(5, 10, false, false, false, false), 7);
-        // base 0 is priced at 5 (shk.c:2915).
+        // base 0 is priced at 5 (shk.c:2894).
         assert_eq!(buy_price(0, 12, false, false, false, false), 5);
         // 1 / 2 = 0.5 -> rounds to 1; never 0.
         assert_eq!(buy_price(1, 19, false, false, false, false), 1);
@@ -294,18 +294,18 @@ mod tests {
 
     #[test]
     fn test_surcharge_predicates() {
-        // shk.c:2964-2969
+        // shk.c:2947-2951
         assert!(dunce_or_tourist_surcharge(true, false, 30, false));
         assert!(dunce_or_tourist_surcharge(false, true, 14, false));
         assert!(!dunce_or_tourist_surcharge(false, true, 15, false));
         assert!(dunce_or_tourist_surcharge(false, false, 1, true));
         assert!(!dunce_or_tourist_surcharge(false, false, 1, false));
-        // shk.c:2884-2895 oid_price_adjustment
+        // shk.c:2864-2874 oid_price_adjustment
         assert!(oid_price_adjustment(true, false, 8));
         assert!(!oid_price_adjustment(true, false, 9));
         assert!(!oid_price_adjustment(false, false, 8));
         assert!(!oid_price_adjustment(true, true, 8));
-        // shk.c:3190-3199 sell lowball
+        // shk.c:3162-3175 sell lowball
         assert!(shk_sell_lowball(true, false, 4));
         assert!(!shk_sell_lowball(true, false, 5));
         assert!(!shk_sell_lowball(false, false, 4));
@@ -314,7 +314,7 @@ mod tests {
 
     #[test]
     fn test_sell_price_c_rules() {
-        // shk.c:3170: base/2, or base/3 with dunce/tourist; lowball *3/4.
+        // shk.c:3148: base/2, or base/3 with dunce/tourist; lowball *3/4.
         assert_eq!(sell_price(300, false, false), 150);
         assert_eq!(sell_price(300, true, false), 100);
         assert_eq!(sell_price(300, false, true), 113); // 300*3/8 = 112.5 -> 113

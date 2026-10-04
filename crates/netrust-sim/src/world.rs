@@ -278,7 +278,7 @@ impl SimulationWorld {
     }
 
     /// Retrieve the price owed for an unpaid shop item, if any: the ledger holds the base
-    /// cost (`oc_cost`), priced through C `get_cost` (`shk.c:2899`) for the current hero.
+    /// cost (`oc_cost`), priced through C `get_cost` (`shk.c:2877`) for the current hero.
     pub fn get_unpaid_cost(&self, id: ItemId) -> Option<u32> {
         self.unpaid_items
             .iter()

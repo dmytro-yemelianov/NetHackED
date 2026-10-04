@@ -7,11 +7,11 @@ use crate::world::SimulationWorld;
 
 /// Hero charisma used for shop prices. The simulation has no attribute model, so a single
 /// documented default stands in for `ACURR(A_CHA)` (C starting CHA is role-dependent and
-/// rolled; 10 is a typical value and falls in the `8-10` band, buy x4/3, `shk.c:2981`).
+/// rolled; 10 is a typical value and falls in the `8-10` band, buy x4/3, `shk.c:2963`).
 pub const DEFAULT_CHARISMA: i32 = 10;
 
 impl SimulationWorld {
-    /// C `shk.c:2964-2969` dunce/tourist surcharge for the hero. Worn slots are not
+    /// C `shk.c:2947-2951` dunce/tourist surcharge for the hero. Worn slots are not
     /// modelled, so a carried "dunce cap" stands in for a worn one (as carried armor does
     /// for `some_armor`); shirts are not in the item catalog, so the visible-shirt case is
     /// never true.
@@ -40,7 +40,7 @@ impl SimulationWorld {
         )
     }
 
-    /// Price the shopkeeper charges for an item of base cost `base` (C `shk.c:2899`
+    /// Price the shopkeeper charges for an item of base cost `base` (C `shk.c:2877`
     /// `get_cost`). No identification model exists, so the unidentified `o_id` surcharge,
     /// artifact pricing and angry-shopkeeper surcharge are not applied.
     pub(crate) fn shop_buy_price(&self, base: u32) -> u32 {
@@ -54,7 +54,7 @@ impl SimulationWorld {
         )
     }
 
-    /// Price the shopkeeper offers for an item of base cost `base` (C `shk.c:3170`
+    /// Price the shopkeeper offers for an item of base cost `base` (C `shk.c:3148`
     /// `set_cost`); no identification model, so the lowball offer never applies.
     pub(crate) fn shop_sell_price(&self, base: u32) -> u32 {
         netrust_core::sell_price(base, self.hero_dunce_or_tourist(), false)

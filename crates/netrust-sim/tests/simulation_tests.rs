@@ -2160,8 +2160,8 @@ fn test_shopkeeper_price_identification() {
 
 #[test]
 fn test_shop_buy_price_c_get_cost() {
-    // Default CHA 10 (x4/3, shk.c:2981); a level-1 Tourist adds the x4/3 tourist surcharge
-    // (shk.c:2966); a carried dunce cap stands in for a worn one (shk.c:2964).
+    // Default CHA 10 (x4/3, shk.c:2963); a level-1 Tourist adds the x4/3 tourist surcharge
+    // (shk.c:2949); a carried dunce cap stands in for a worn one (shk.c:2947).
     let mut sim = SimulationWorld::new_with_seed(42);
     let item = sim.arena.spawn_item(create_item_record(
         ItemKindId::LongSword,
@@ -2325,6 +2325,7 @@ fn test_priest_donation_below_protection_band() {
 
     // 100 zm is below every suggested amount (>= 150): cheapskate, no protection.
     sim.player_gold = 2000;
+    let favor_before = sim.divine_state.favor;
     let events = sim.step_player_action(ActionAst::Donate(100));
     assert!(events
         .iter()
@@ -2332,6 +2333,7 @@ fn test_priest_donation_below_protection_band() {
     assert_eq!(sim.divine_protection, 0);
     assert_eq!(sim.priest_cheapskate, 1);
     assert_eq!(sim.player_gold, 1900);
+    assert_eq!(sim.divine_state.favor, favor_before); // no favor for a cheapskate offer
 }
 
 #[test]

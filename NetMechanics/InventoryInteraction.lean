@@ -128,7 +128,7 @@ theorem rub_oil_lamp_never_wishes (turns : Nat) (buc : BUC) :
 -- Section 3: Shopkeeper Price Identification Invariants
 -- ============================================================================
 
-/-- Charisma buy adjustment `(multiplier, divisor)` (shk.c:2971-2984, `get_cost`):
+/-- Charisma buy adjustment `(multiplier, divisor)` (shk.c:2953-2964, `get_cost`):
     `>18`: 1/2; `18`: 2/3; `16-17`: 3/4; `11-15`: 1/1; `8-10`: 4/3; `6-7`: 3/2; `≤5`: 2/1. -/
 def buyFactor (cha : Nat) : Nat × Nat :=
   if cha > 18 then (1, 2)
@@ -139,18 +139,18 @@ def buyFactor (cha : Nat) : Nat × Nat :=
   else if cha ≤ 10 then (4, 3)
   else (1, 1)
 
-/-- Sell adjustment `(multiplier, divisor)` (shk.c:3170-3199, `set_cost`): 1/2, or 1/3 with
+/-- Sell adjustment `(multiplier, divisor)` (shk.c:3148-3175, `set_cost`): 1/2, or 1/3 with
     the dunce/tourist surcharge; a lowballing shopkeeper takes a further 3/4.
     Charisma and BUC never enter the sell price. -/
 def sellFactor (dunce lowball : Bool) : Nat × Nat :=
   let d := if dunce then 3 else 2
   if lowball then (3, d * 4) else (1, d)
 
-/-- C rounding `((tmp * mult * 10 / div) + 5) / 10` (shk.c:2988-2995). -/
+/-- C rounding `((tmp * mult * 10 / div) + 5) / 10` (shk.c:2966-2974). -/
 def roundMulDiv (tmp mult div : Nat) : Nat :=
   if div > 1 then (tmp * mult * 10 / div + 5) / 10 else tmp * mult
 
-/-- Buy price (shk.c:2899-3009, `get_cost`): base 0 is priced 5; unidentified (`o_id % 4 = 0`)
+/-- Buy price (shk.c:2877-2988, `get_cost`): base 0 is priced 5; unidentified (`o_id % 4 = 0`)
     and dunce/tourist each ×4/3, then charisma; rounded, floored at 1; artifact ×4;
     angry shopkeeper `+ (p + 2) / 3`. -/
 def calculateBuyPrice (base cha : Nat) (dunce unid artifact angry : Bool) : Nat :=
@@ -161,7 +161,7 @@ def calculateBuyPrice (base cha : Nat) (dunce unid artifact angry : Bool) : Nat 
   let p := if artifact then p * 4 else p
   if angry then p + (p + 2) / 3 else p
 
-/-- Sell price (shk.c:3170-3212, `set_cost`); the lowball applies only when `base > 1`;
+/-- Sell price (shk.c:3148-3192, `set_cost`); the lowball applies only when `base > 1`;
     a zero base stays 0, otherwise floored at 1. -/
 def calculateSellPrice (base : Nat) (dunce lowball : Bool) : Nat :=
   if base = 0 then 0
@@ -218,7 +218,7 @@ theorem sell_ratio_le_half (dunce lowball : Bool) :
   cases dunce <;> cases lowball <;> decide
 
 /-- Theorem: the shopkeeper never offers more than he charges (no arbitrage), for every
-    charisma and every combination of surcharges (shk.c:2899 vs shk.c:3170). -/
+    charisma and every combination of surcharges (shk.c:2877 vs shk.c:3148). -/
 theorem sell_le_buy_price (base cha : Nat) (dunce unid artifact angry lowball : Bool) :
     calculateSellPrice base dunce lowball ≤
       calculateBuyPrice base cha dunce unid artifact angry := by
@@ -250,7 +250,7 @@ theorem sell_le_buy_price (base cha : Nat) (dunce unid artifact angry lowball : 
       cases artifact <;> cases angry <;> simp only [Bool.false_eq_true, ↓reduceIte] <;> omega
     exact hfin _ (Nat.le_trans hbu (Nat.le_max_right _ _))
 
-/-- Lemma: a higher charisma never raises the charisma ratio (shk.c:2971-2984). -/
+/-- Lemma: a higher charisma never raises the charisma ratio (shk.c:2953-2964). -/
 theorem buyFactor_antitone (cha : Nat) :
     (buyFactor (cha + 1)).1 * (buyFactor cha).2 ≤ (buyFactor cha).1 * (buyFactor (cha + 1)).2 := by
   unfold buyFactor

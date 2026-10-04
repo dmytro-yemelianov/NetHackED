@@ -58,6 +58,9 @@ pub enum ActionAst {
     Wish(String),
     Rub(usize),
     PriceCheck(usize),
+    /// Offer gold to a nearby temple priest (C `priest.c:629-723`). `Donate(0)` offers the
+    /// priest's suggested protection amount (`2 * suggested * quan`, `priest.c:645`); any
+    /// offer is capped at the hero's gold (C `bribe`, `minion.c:379-382`).
     Donate(u32),
     Apply(usize),
     Quiver(SlotId),

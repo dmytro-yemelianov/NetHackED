@@ -1279,6 +1279,19 @@ proptest! {
         }
     }
 
+    #[test]
+    fn prop_priest_donation_outcome_matches_c_reference(
+        offer in 0u32..=100_000,
+        suggested in 150u32..=20_000,
+        quan in 1u32..=50,
+        gold_after in 0u32..=200_000,
+    ) {
+        prop_assert_eq!(
+            priest_donation_outcome(offer, suggested, quan, gold_after),
+            c_priest_band(offer, suggested, quan, gold_after)
+        );
+    }
+
     // -------------------------------------------------------------
     // Theorem: priest_uncurse_never_cursed
     // -------------------------------------------------------------
@@ -2088,7 +2101,7 @@ proptest! {
     }
 }
 
-/// C shk.c:2899-3009 `get_cost` (reference transcription for the proptest).
+/// C shk.c:2877-2988 `get_cost` (reference transcription for the proptest).
 fn c_get_cost(base: u32, cha: i32, dunce: bool, unid: bool, artifact: bool, angry: bool) -> u32 {
     let mut tmp: i64 = if base == 0 { 5 } else { base as i64 };
     let (mut multiplier, mut divisor) = (1i64, 1i64);
@@ -2136,7 +2149,7 @@ fn c_get_cost(base: u32, cha: i32, dunce: bool, unid: bool, artifact: bool, angr
     tmp as u32
 }
 
-/// C shk.c:3170-3212 `set_cost` for a non-gem stack (reference transcription).
+/// C shk.c:3148-3192 `set_cost` for a non-gem stack (reference transcription).
 fn c_set_cost(base: u32, dunce: bool, lowball: bool) -> u32 {
     let mut tmp = base as i64;
     let mut multiplier = 1i64;
@@ -2169,5 +2182,29 @@ fn c_ublessed_step(ublessed: u32, roll: u32) -> u32 {
         ublessed + 1
     } else {
         ublessed
+    }
+}
+
+/// C priest.c:654-723: the donation band chosen for `offer` (gold already handed over).
+fn c_priest_band(offer: u32, suggested: u32, quan: u32, gold_after: u32) -> DonationOutcome {
+    let (offer, sq, gold) = (
+        offer as i64,
+        suggested as i64 * quan as i64,
+        gold_after as i64,
+    );
+    if offer == 0 {
+        DonationOutcome::Refused
+    } else if offer < sq {
+        if gold > offer * 2 {
+            DonationOutcome::Cheapskate
+        } else {
+            DonationOutcome::Thanks
+        }
+    } else if offer < sq * 2 {
+        DonationOutcome::Clairvoyance
+    } else if offer < sq * 3 {
+        DonationOutcome::Protection
+    } else {
+        DonationOutcome::Selfless
     }
 }

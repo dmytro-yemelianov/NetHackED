@@ -49,7 +49,7 @@ pub enum DonationOutcome {
 }
 
 /// Classify a donation (C `priest.c:654-723`). `gold_after` is `money_cnt(invent)` after
-/// the offer has been handed over (C `bribe` moves the gold first, `minion.c:384`).
+/// the offer has been handed over (C `bribe` moves the gold first, `minion.c:385`).
 pub fn priest_donation_outcome(
     offer: u32,
     suggested: u32,
