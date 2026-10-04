@@ -6,7 +6,7 @@ This guide details the formal verification architecture of **NetMechanics** in L
 
 ## 1. Project Organization & Verified Modules
 
-The Lean 4 verification project is defined in [lakefile.toml](../lakefile.toml) and root module [NetMechanics.lean](../NetMechanics.lean). All modules compile with zero errors and zero `sorry` placeholders, and the project uses no axioms beyond Lean's standard ones. The table below lists a representative subset (12 of the 39 modules under `NetMechanics/`); the other modules cover areas such as Nutrition, Religion, Traps, Pet, Quest, Sokoban, Skills and Tournament. The Lean models are deliberately simplified abstractions of NetHack mechanics, not a faithful transcription of NetHack 5.0 (see Section 4, Known limitations).
+The Lean 4 verification project is defined in [lakefile.toml](../lakefile.toml) and root module [NetMechanics.lean](../NetMechanics.lean). All modules compile with zero errors and zero `sorry` placeholders, and the project uses no axioms beyond Lean's standard ones. The table below lists a representative subset (16 of the 40 modules under `NetMechanics/`); the other modules cover areas such as Nutrition, Religion, Traps, Pet, Quest, Sokoban, Skills and Tournament. The Lean models are deliberately simplified abstractions of NetHack mechanics, not a faithful transcription of NetHack 5.0 (see Section 4, Known limitations).
 
 | Module | Source File | Key Inductive Types | Key Verified Theorems |
 | :--- | :--- | :--- | :--- |
@@ -25,6 +25,7 @@ The Lean 4 verification project is defined in [lakefile.toml](../lakefile.toml) 
 | **`NetMechanics.Identification`** | [NetMechanics/Identification.lean](../NetMechanics/Identification.lean) | `KnowledgeLevel` | `knowledge_le_refl`<br>`knowledge_le_trans`<br>`knowledge_le_antisymm`<br>`learn_type_monotone`<br>`learn_buc_monotone`<br>`identify_fully_monotone`<br>`identify_fully_idempotent` |
 | **`NetMechanics.Polymorph`** | [NetMechanics/Polymorph.lean](../NetMechanics/Polymorph.lean) | `FormStats`, `PolyEntity` | `poly_fatal_damage_reverts`<br>`poly_exact_depletion_preserves_base_hp`<br>`poly_non_fatal_damage_preserves_poly`<br>`poly_damage_preserves_base_max_hp`<br>`poly_reversion_preserves_base_hp`<br>`poly_reversion_preserves_base_stats`<br>`poly_unchanging_fatal_dies` |
 | **`NetMechanics.Pathfinding`** | [NetMechanics/Pathfinding.lean](../NetMechanics/Pathfinding.lean) | `MetricState` | `target_is_fixed_point`<br>`descent_step_decreases_distance`<br>`pathfinding_step_bounded` |
+| **`NetMechanics.MysteriousForce`** | [NetMechanics/MysteriousForce.lean](../NetMechanics/MysteriousForce.lean) | `MysteriousForceOutcome` | `mysterious_force_push_bounded`<br>`mysterious_force_disabled_bottom`<br>`mf_diff_le` |
 
 
 
@@ -97,6 +98,7 @@ Rows marked "(no proptest yet)" have no corresponding proptest at present.
 | `priest_protection_bounded`, `priest_protection_monotonic`, `priest_protection_insufficient`, `priest_protection_first_gain`, `priest_protection_soft_cap_step` | Priest donation (`priest.c:637-699`): suggested $= \max(L_{peak},1)\cdot \text{rn1}(101, 150+40c)$, quan $=\max(1, g/3s)$; protection only for $2sq \le \text{offer} < 3sq$, $\lfloor \text{offer}/2s \rfloor$ steps: first $2..4$, $+1$ below 9, then $+1$ iff $\text{rn2}(p)=0$, cap 20. | `prop_priest_protection_theorems` (step vs reference transcribed from `priest.c:694-698`). |
 | `depth_zero_boh_explodes`, `cancellation_wand_explodes`, `boh_cannot_contain_boh` | C `mbag_explodes` (`pickup.c:2488`): depth 0 draw is $\text{rn2}(1) = 0 \le 0$, so a BoH or charged wand of cancellation always explodes; a BoH cannot be safely inserted into a BoH | `prop_mbag_explodes_matches_c_reference` (reference from `pickup.c:2488-2507`, random item trees and rolls, same draw count), `prop_depth_zero_boh_always_explodes` |
 | `poly_fatal_damage_reverts`, `poly_exact_depletion_preserves_base_hp`, `poly_reversion_preserves_base_hp`, `poly_unchanging_fatal_dies` | C `hack.c:4256` `losehp` / `polyself.c:1367` `rehumanize`: polyform HP $< 1$ reverts with excess discarded (base HP untouched) unless Unchanging (death); negative damage $= 0$ | `prop_poly_damage_matches_c_reference` (Rust vs a reference written from the C rule, random base/poly HP, damage, `unchanging`), `prop_poly_fatal_damage_reverts` |
+| `mysterious_force_push_bounded`, `mysterious_force_disabled_bottom`, `mf_diff_le` | Mysterious Force (`do.c:1541-1573`): fires iff $\text{rn2}(4+mf)=0$ and $dunlev < bottom-3$; push $=\text{rnd}(\text{rn2}(3+align))$ so $\le 3/2/1$ for lawful/neutral/chaotic, strictly downward. | `prop_mysterious_force_matches_c_reference` (reference from `do.c:1541-1573`; also asserts the push caps and the bottom-4 gate). |
 | `wait_consumes_normal_speed` | $E' = E - 12$ | (no proptest yet) Intended: executing `ActionAst::Wait` decrements energy by `NORMAL_SPEED` (12). |
 
 ---

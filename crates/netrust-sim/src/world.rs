@@ -67,6 +67,10 @@ pub struct SimulationWorld {
     pub quest_state: netrust_core::QuestState,
     #[serde(default)]
     pub alignment_record: i32,
+    /// C `context.mysteryforce`: decay counter of the Mysterious Force
+    /// (`do.c:1543,1563`); grows by `rn2(diff + 2)` each time it triggers.
+    #[serde(default)]
+    pub mysterious_force_count: u32,
     #[serde(default)]
     pub role_name: String,
     #[serde(default = "default_rng")]
@@ -253,6 +257,7 @@ impl SimulationWorld {
             vibrating_square: None,
             quest_state: netrust_core::QuestState::default(),
             alignment_record: 25, // Hero starts with pious devotion
+            mysterious_force_count: 0,
             role_name: format!("{:?}", config.role),
             rng,
             seed,

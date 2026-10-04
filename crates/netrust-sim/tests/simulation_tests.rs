@@ -2849,12 +2849,84 @@ fn test_gehennom_mysterious_force_pushback() {
     let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
     sim.level.set_tile(p_coord, Tile::Stairs { up: true });
 
-    // Test calculate_mysterious_force bounds directly
-    for roll in 0..100 {
-        if let Some(pushed) = netrust_core::calculate_mysterious_force(3, roll) {
-            assert!(pushed > 3 && pushed <= 6);
+    // Pure-function bounds: lawful push is 1..=3 levels down from the current level.
+    for t in 0..100u32 {
+        for a in 0..4u32 {
+            for b in 0..3u32 {
+                if let netrust_core::MysteriousForceOutcome::PushDown(pushed) =
+                    netrust_core::mysterious_force(
+                        1,
+                        6,
+                        0,
+                        netrust_core::Alignment::Lawful,
+                        t,
+                        a,
+                        b,
+                    )
+                {
+                    assert!(pushed > 1 && pushed <= 4);
+                }
+            }
         }
     }
+}
+
+#[test]
+fn mysterious_force_world_trigger_increments_count_and_stays_out_of_sanctum() {
+    use netrust_sim::SANCTUM_DEPTH;
+    let mut triggered = 0;
+    for seed in 0..100u64 {
+        let mut sim = SimulationWorld::new_with_seed(seed);
+        sim.current_branch = netrust_types::BranchId::Gehennom;
+        sim.depth = 1 + (seed as usize % 2); // active band (dunlev < bottom - 3)
+        sim.arena.spawn_item(create_item_record(
+            ItemKindId::AmuletOfYendor,
+            ItemLocation::CarriedBy(sim.player_id),
+            Buc::Blessed,
+        ));
+        let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+        sim.level.set_tile(p_coord, Tile::Stairs { up: true });
+        let before = sim.mysterious_force_count;
+        let events = sim.step_player_action(ActionAst::Ascend);
+        assert_ne!(sim.depth, SANCTUM_DEPTH);
+        if events.iter().any(
+            |e| matches!(e, GameEvent::LogMessage { text } if text.contains("mysterious force")),
+        ) {
+            triggered += 1;
+            assert!(sim.mysterious_force_count >= before);
+        }
+    }
+    assert!(triggered > 0, "force should trigger for some seeds");
+}
+
+#[test]
+fn mysterious_force_never_fires_in_bottom_four_levels() {
+    for seed in 0..100u64 {
+        let mut sim = SimulationWorld::new_with_seed(seed);
+        sim.current_branch = netrust_types::BranchId::Gehennom;
+        sim.depth = 3 + (seed as usize % 4); // 3..=6
+        sim.arena.spawn_item(create_item_record(
+            ItemKindId::AmuletOfYendor,
+            ItemLocation::CarriedBy(sim.player_id),
+            Buc::Blessed,
+        ));
+        let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+        sim.level.set_tile(p_coord, Tile::Stairs { up: true });
+        let events = sim.step_player_action(ActionAst::Ascend);
+        assert_eq!(sim.mysterious_force_count, 0);
+        assert!(!events.iter().any(|e| {
+            matches!(e, GameEvent::LogMessage { text } if text.contains("mysterious force"))
+        }));
+    }
+}
+
+#[test]
+fn mysterious_force_count_serde_default() {
+    let sim = SimulationWorld::new_with_seed(1);
+    let mut v = serde_json::to_value(&sim).unwrap();
+    v.as_object_mut().unwrap().remove("mysterious_force_count");
+    let back: SimulationWorld = serde_json::from_value(v).unwrap();
+    assert_eq!(back.mysterious_force_count, 0);
 }
 
 #[test]

@@ -90,11 +90,18 @@ fn spawned_monsters_never_on_stairs_or_stacked() {
 
 #[test]
 fn mysterious_force_never_reaches_sanctum_without_invocation() {
+    use netrust_core::{Alignment, MysteriousForceOutcome};
     for depth in 1..=5usize {
-        for roll in 0..300u32 {
-            if let Some(pushed) = netrust_core::calculate_mysterious_force(depth, roll) {
-                assert!(clamp_mysterious_force(pushed, false) <= 5);
-                assert_eq!(clamp_mysterious_force(pushed, true), pushed);
+        for t in 0..16u32 {
+            for a in 0..4u32 {
+                for b in 0..3u32 {
+                    let out =
+                        netrust_core::mysterious_force(depth, 6, 0, Alignment::Lawful, t, a, b);
+                    if let MysteriousForceOutcome::PushDown(pushed) = out {
+                        assert!(clamp_mysterious_force(pushed, false) <= 5);
+                        assert_eq!(clamp_mysterious_force(pushed, true), pushed);
+                    }
+                }
             }
         }
     }

@@ -7,7 +7,7 @@ use netrust_dungeon::{
     generate_dungeon_level, generate_gehennom_maze_level, generate_moloch_sanctum_level,
     generate_sokoban_level, generate_valley_of_the_dead,
 };
-use netrust_types::{BranchCoord, BranchId, Buc, Coord, Tile};
+use netrust_types::{BranchCoord, BranchId, Buc, Coord, Tile, COLNO, ROWNO};
 use rand::Rng;
 
 use crate::events::GameEvent;
@@ -25,6 +25,30 @@ pub fn clamp_mysterious_force(pushed: usize, sanctum_open: bool) -> usize {
 }
 
 impl SimulationWorld {
+    /// Same-level random teleport (C `safe_teleds`, `do.c:1566`): move the hero to a
+    /// random passable, unoccupied tile. Approximation: uniform over valid tiles
+    /// rather than C's retry-until-`goodpos` loop; no-op if no tile exists.
+    pub(crate) fn teleport_hero_randomly(&mut self) {
+        let mut spots = Vec::new();
+        for y in 0..ROWNO {
+            for x in 0..COLNO {
+                if let Some(c) = Coord::new(x, y) {
+                    if self.level.is_passable(c) && self.actor_at(c).is_none() {
+                        spots.push(c);
+                    }
+                }
+            }
+        }
+        if spots.is_empty() {
+            return;
+        }
+        let pick = spots[self.rng.random_range(0..spots.len())];
+        if let Some(p) = self.arena.actors.get_mut(self.player_id) {
+            p.coord = pick;
+        }
+        self.place_steed_with_hero();
+    }
+
     /// Spawn a monster at or near `preferred` on a passable, unoccupied, non-stairs tile
     /// (searching outward up to radius 3 in row-major ring order). Returns `None` if no spot.
     pub(crate) fn spawn_monster_near(
@@ -805,14 +829,48 @@ impl SimulationWorld {
                                     .is_some_and(crate::actions::items::is_real_amulet)
                             });
                     if self.current_branch == BranchId::Gehennom && has_amulet {
-                        let roll = self.rng.random::<u32>();
-                        let pushed = netrust_core::calculate_mysterious_force(self.depth, roll)
-                            .map(|p| {
-                                clamp_mysterious_force(
+                        let hero_align = self
+                            .arena
+                            .actors
+                            .get(self.player_id)
+                            .map_or(netrust_core::Alignment::Neutral, |p| p.alignment);
+                        let t = self.rng.random::<u32>();
+                        let a = self.rng.random::<u32>();
+                        let b = self.rng.random::<u32>();
+                        let c = self.rng.random::<u32>();
+                        let outcome = netrust_core::mysterious_force(
+                            self.depth,
+                            SANCTUM_DEPTH,
+                            self.mysterious_force_count,
+                            hero_align,
+                            t,
+                            a,
+                            b,
+                        );
+                        if outcome != netrust_core::MysteriousForceOutcome::NoEffect {
+                            self.mysterious_force_count = self
+                                .mysterious_force_count
+                                .saturating_add(netrust_core::mysterious_force_counter_increment(
+                                    self.depth, outcome, c,
+                                ));
+                            events.push(GameEvent::LogMessage {
+                                text: "A mysterious force momentarily surrounds you...".into(),
+                            });
+                        }
+                        if outcome == netrust_core::MysteriousForceOutcome::SameLevelTeleport {
+                            self.teleport_hero_randomly();
+                            self.scheduler.hero_act(NORMAL_SPEED);
+                            return events;
+                        }
+                        let pushed = match outcome {
+                            netrust_core::MysteriousForceOutcome::PushDown(p) => {
+                                Some(clamp_mysterious_force(
                                     p,
                                     netrust_core::is_sanctum_accessible(self.ritual_progress),
-                                )
-                            });
+                                ))
+                            }
+                            _ => None,
+                        };
                         if let Some(pushed_depth) = pushed.filter(|&p| p != self.depth) {
                             let from_depth = self.depth;
                             self.pack_current_level();

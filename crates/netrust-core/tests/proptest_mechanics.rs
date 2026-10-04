@@ -4,29 +4,29 @@
 
 use netrust_core::{
     apply_erosion, apply_vorpal_strike, attack_hits, attack_nemesis, branch_entrance_depth,
-    branch_max_depth, buy_price, calculate_damage, calculate_encumbrance,
-    calculate_mysterious_force, calculate_summon_count, calculate_tournament_score,
-    can_detect_monster, can_see_tile, cast_spell, choose_pet_goal, clamp_favor, consecrate_water,
-    consult_leader, corrupt_buc_on_death, create_ghost_hp, decide_tactical_action,
-    destroy_drawbridge, dilute_potion, dip_water, enchant_armor, enchant_weapon, enter_branch,
-    exit_branch, feed_pet, hero_damage_after_ac, hunger_of_nutrition, hunger_tier, identify_fully,
-    interact_with_occupant, is_candelabrum_ready, is_hero_eligible_for_quest, is_hp_critical,
-    is_sanctum_accessible, is_valid_bones_level, learn_buc, learn_type, luck_decay_period,
-    mana_cost, mbag_explodes, melee_damage, mix_alchemy, monster_to_hit_value,
-    offer_amulet_on_high_altar, pet_tile_steppable, pick_up_quest_artifact,
-    priest_donation_outcome, priest_donation_quan, priest_suggested_donation, priest_uncurse,
-    promote_pet, protection_purchase_count, protection_purchase_step, push_boulder,
-    quest_progress_rank, recharge_wand, reflect, resolve_breath_damage, resolve_gaze,
-    resolve_sacrifice, return_to_leader_with_artifact, rub_lamp, sell_price, step_luck_decay,
-    step_ray, step_ritual, swap_displacement, tick_light_fuel, tick_prayer_timeout, to_hit_value,
-    toggle_drawbridge, uncurse, zap_wand, Alignment, ArtifactLocation, AscensionOutcome,
-    BagCheckItem, BagCheckKind, BeamRay, BranchCoord, BranchId, BreathType, Buc, CandelabrumState,
-    Combatant, Coord, DilutionState, Direction, DivineState, DonationOutcome, DoorState,
-    DrawbridgeState, DrawbridgeTransition, DungeonDepth, EnchantOutcome, EncumbranceTier,
-    Engraving, EngravingMedium, FormStats, GazeEffect, GazeType, HeroInteraction,
-    HeroQuestEligibility, Intrinsics, InvocationStep, KnowledgeLevel, LightSource, MetricState,
-    PetFamily, PetGoal, PetSpeciesTier, PolyEntity, PushOutcome, QuestProgress, QuestState,
-    RechargeResult, RitualProgress, RubResult, SchedulerState, SpellKind, StepAction, StepResult,
+    branch_max_depth, buy_price, calculate_damage, calculate_encumbrance, calculate_summon_count,
+    calculate_tournament_score, can_detect_monster, can_see_tile, cast_spell, choose_pet_goal,
+    clamp_favor, consecrate_water, consult_leader, corrupt_buc_on_death, create_ghost_hp,
+    decide_tactical_action, destroy_drawbridge, dilute_potion, dip_water, enchant_armor,
+    enchant_weapon, enter_branch, exit_branch, feed_pet, hero_damage_after_ac, hunger_of_nutrition,
+    hunger_tier, identify_fully, interact_with_occupant, is_candelabrum_ready,
+    is_hero_eligible_for_quest, is_hp_critical, is_sanctum_accessible, is_valid_bones_level,
+    learn_buc, learn_type, luck_decay_period, mana_cost, mbag_explodes, melee_damage, mix_alchemy,
+    monster_to_hit_value, mysterious_force, offer_amulet_on_high_altar, pet_tile_steppable,
+    pick_up_quest_artifact, priest_donation_outcome, priest_donation_quan,
+    priest_suggested_donation, priest_uncurse, promote_pet, protection_purchase_count,
+    protection_purchase_step, push_boulder, quest_progress_rank, recharge_wand, reflect,
+    resolve_breath_damage, resolve_gaze, resolve_sacrifice, return_to_leader_with_artifact,
+    rub_lamp, sell_price, step_luck_decay, step_ray, step_ritual, swap_displacement,
+    tick_light_fuel, tick_prayer_timeout, to_hit_value, toggle_drawbridge, uncurse, zap_wand,
+    Alignment, ArtifactLocation, AscensionOutcome, BagCheckItem, BagCheckKind, BeamRay,
+    BranchCoord, BranchId, BreathType, Buc, CandelabrumState, Combatant, Coord, DilutionState,
+    Direction, DivineState, DonationOutcome, DoorState, DrawbridgeState, DrawbridgeTransition,
+    DungeonDepth, EnchantOutcome, EncumbranceTier, Engraving, EngravingMedium, FormStats,
+    GazeEffect, GazeType, HeroInteraction, HeroQuestEligibility, Intrinsics, InvocationStep,
+    KnowledgeLevel, LightSource, MetricState, MysteriousForceOutcome, PetFamily, PetGoal,
+    PetSpeciesTier, PolyEntity, PushOutcome, QuestProgress, QuestState, RechargeResult,
+    RitualProgress, RubResult, SchedulerState, SpellKind, StepAction, StepResult,
     SurfaceOrientation, TacticalAction, TacticalContext, Tile, Velocity, WandCharges, WaterType,
     MAX_DIVINE_PROTECTION, NORMAL_SPEED, QUEST_MIN_ALIGNMENT, QUEST_MIN_LEVEL, REQUIRED_CANDLES,
 };
@@ -1596,21 +1596,54 @@ proptest! {
     }
 
     // -------------------------------------------------------------
-    // Theorem: mysterious_force_bounds
+    // Theorem: mysterious_force_push_bounded (reference from C do.c:1541-1573)
     // -------------------------------------------------------------
     #[test]
-    fn prop_mysterious_force_bounds(
-        depth in 1usize..100,
-        roll in any::<u32>(),
+    fn prop_mysterious_force_matches_c_reference(
+        depth in 0usize..40,
+        bottom in 1usize..40,
+        mf in 0u32..50,
+        al in 0usize..4,
+        t in any::<u32>(),
+        a in any::<u32>(),
+        b in any::<u32>(),
     ) {
-        let result = calculate_mysterious_force(depth, roll);
-        if roll % 3 == 0 {
-            prop_assert!(result.is_some());
-            let pushed_depth = result.unwrap();
-            prop_assert!(pushed_depth > depth);
-            prop_assert!(pushed_depth <= depth + 3);
+        let align = [Alignment::Lawful, Alignment::Neutral, Alignment::Chaotic, Alignment::Unaligned][al];
+        let got = mysterious_force(depth, bottom, mf, align, t, a, b);
+        // C: active iff dunlev < dunlevs - 3; fires iff !rn2(4 + mf)
+        let expected = if depth + 3 >= bottom || t % (4 + mf) != 0 {
+            MysteriousForceOutcome::NoEffect
         } else {
-            prop_assert!(result.is_none());
+            let odds: i64 = match align {
+                Alignment::Lawful => 4,
+                Alignment::Neutral => 3,
+                Alignment::Chaotic => 2,
+                Alignment::Unaligned => 3 - 128,
+            };
+            let mut diff = if odds <= 1 { 0 } else { (a as i64) % odds };
+            if diff != 0 {
+                let dest = (depth as i64 + (b as i64) % diff + 1).min(bottom as i64);
+                diff = dest - depth as i64;
+            }
+            if diff == 0 {
+                MysteriousForceOutcome::SameLevelTeleport
+            } else {
+                MysteriousForceOutcome::PushDown(depth + diff as usize)
+            }
+        };
+        prop_assert_eq!(got, expected);
+        // Bounds: push <= 3 lawful / 2 neutral / 1 chaotic, never in the bottom 4 levels.
+        if let MysteriousForceOutcome::PushDown(d) = got {
+            let cap = match align {
+                Alignment::Lawful => 3,
+                Alignment::Neutral => 2,
+                _ => 1,
+            };
+            prop_assert!(d > depth && d - depth <= cap);
+            prop_assert!(depth + 3 < bottom);
+        }
+        if depth + 3 >= bottom {
+            prop_assert_eq!(got, MysteriousForceOutcome::NoEffect);
         }
     }
 

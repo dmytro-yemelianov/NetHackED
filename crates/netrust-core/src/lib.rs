@@ -58,8 +58,9 @@ pub use endgame::{destroy_drawbridge, offer_amulet_on_high_altar, toggle_drawbri
 pub use energy::{SchedulerState, StepAction, NORMAL_SPEED};
 pub use engraving::{is_elbereth_ward_active, Engraving, EngravingMedium};
 pub use gehennom::{
-    calculate_mysterious_force, is_candelabrum_ready, is_sanctum_accessible, step_ritual,
-    CandelabrumState, InvocationStep, RitualProgress, REQUIRED_CANDLES,
+    is_candelabrum_ready, is_sanctum_accessible, mysterious_force,
+    mysterious_force_counter_increment, step_ritual, CandelabrumState, InvocationStep,
+    MysteriousForceOutcome, RitualProgress, REQUIRED_CANDLES,
 };
 pub use grid::{Alignment, Coord, DoorState, Tile, COLNO, ROWNO};
 pub use identification::{identify_fully, learn_buc, learn_type, KnowledgeLevel};

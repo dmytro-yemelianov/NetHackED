@@ -426,9 +426,11 @@ fn main() {
     // =========================================================================
     print_separator("PHASE 6: The Mysterious Force & Astral Plane Ascension");
     println!("Ascending Gehennom while carrying the real Amulet of Yendor:");
-    let roll = 9; // 9 % 3 == 0 -> pushes down by ((9/3)%3 + 1) = 2 levels
-    if let Some(pushed) = netrust_core::calculate_mysterious_force(4, roll) {
-        println!("  🔮 The Mysterious Force strikes! Attempt to ascend from level 4 pushed hero back down to level {pushed}!");
+    // Lawful hero on Gehennom level 1 of 6: trigger roll 0 (1/4 odds), odds roll 2, rnd roll 1 -> 2 levels
+    if let netrust_core::MysteriousForceOutcome::PushDown(pushed) =
+        netrust_core::mysterious_force(1, 6, 0, netrust_core::Alignment::Lawful, 0, 2, 1)
+    {
+        println!("  🔮 The Mysterious Force strikes! Attempt to ascend from level 1 pushed hero back down to level {pushed}!");
     }
 
     println!(
