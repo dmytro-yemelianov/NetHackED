@@ -471,7 +471,7 @@ fn show_inventory_modal(
                 };
                 queue!(
                     stdout,
-                    MoveTo(ox + 2, oy + 24),
+                    MoveTo(ox + 2, oy + 23),
                     SetForegroundColor(Color::DarkGrey),
                     Print(footer),
                     ResetColor
@@ -487,7 +487,7 @@ fn show_inventory_modal(
                     other => other,
                 };
                 match code {
-                    KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char(' ') => return Ok(None),
+                    KeyCode::Esc | KeyCode::Char(' ') => return Ok(None),
                     KeyCode::Char('>') | KeyCode::Char('.') | KeyCode::PageDown => {
                         pager.next(carried.len())
                     }
@@ -1115,12 +1115,23 @@ fn render(
 
     let visible: HashSet<Coord> = compute_fov(&world.level, p_coord, 8);
 
-    // Line 0: Message banner
+    // Line 0: message banner, with the seed right-aligned inside the 80 columns.
+    let seed_tag = format!(
+        "{}:{}",
+        if world.locale == Locale::Uk {
+            "Зерно"
+        } else {
+            "Seed"
+        },
+        seed
+    );
+    let msg_width = 80usize.saturating_sub(seed_tag.chars().count() + 1);
+    let msg_trunc: String = message.chars().take(msg_width).collect();
     queue!(
         stdout,
         MoveTo(ox, oy),
         SetForegroundColor(Color::Yellow),
-        Print(format!("{message:<80}")),
+        Print(format!("{msg_trunc:<msg_width$} {seed_tag}")),
         ResetColor
     )?;
 
@@ -1369,7 +1380,7 @@ fn render(
     };
 
     let status = format!(
-        "{}:{} {}:{:<2} {}:{} {}:{}({}) {}:{}({}) {}:{:<2} {:<6} T:{:<4} {}:{}{} {}:{}",
+        "{}:{} {}:{:<2} {}:{} {}:{}({}) {}:{}({}) {}:{:<2} {:<6} T:{:<4} {}:{}{}",
         name,
         align_short,
         t("dlvl", locale),
@@ -1392,13 +1403,7 @@ fn render(
             .and_then(|id| world.arena.items.get(id))
             .map(|i| t_item(&i.name, locale))
             .unwrap_or_else(|| none_str.to_string()),
-        aff_str,
-        if locale == Locale::Uk {
-            "Зерно"
-        } else {
-            "Seed"
-        },
-        seed
+        aff_str
     );
     queue!(
         stdout,
