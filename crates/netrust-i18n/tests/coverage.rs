@@ -42,6 +42,15 @@ fn messages_translate_embedded_names() {
     assert!(s.contains(&t_monster("jackal", Locale::Uk)));
     let w = Messages::wish_granted("long sword", Locale::Uk);
     assert!(!w.contains("long sword"), "{w}");
+    let c = Messages::divine_crowning("Excalibur", Locale::Uk);
+    assert!(!c.contains("Excalibur"), "{c}");
+    assert_ne!(
+        t_item(
+            "cheap plastic imitation of the Amulet of Yendor",
+            Locale::Uk
+        ),
+        "cheap plastic imitation of the Amulet of Yendor"
+    );
 }
 
 #[test]

@@ -412,6 +412,7 @@ impl Messages {
     }
 
     pub fn divine_crowning(gift: &str, locale: Locale) -> String {
+        let gift = tn(gift, locale);
         match locale {
             Locale::En => format!("A thunderous celestial horn sounds! Your deity crowns you their champion and gifts you {gift}!"),
             Locale::Uk => format!("Лунає громовий небесний ріг! Ваше божество вінчає вас своїм чемпіоном і дарує {gift}!"),
@@ -907,7 +908,7 @@ pub fn t_item(name: &str, locale: Locale) -> String {
         "mace" => "булава".into(),
         "chain mail" => "кольчуга".into(),
         "silver dragon scale mail" => "обладунок зі срібної драконячої луски".into(),
-        "cloak of magic resistance" => "плащ магічної стійкості".into(),
+        "cloak of magic resistance" => "плащ опору магії".into(),
         "wand of teleportation" => "жезл телепортації".into(),
         "wand of secret door detection" => "жезл виявлення потайних дверей".into(),
         "potion of speed" => "зілля швидкості".into(),
@@ -922,10 +923,13 @@ pub fn t_item(name: &str, locale: Locale) -> String {
         "spellbook of force bolt" => "книга заклять: силовий удар".into(),
         "spellbook of healing" => "книга заклять: зцілення".into(),
         "amulet of reflection" => "амулет відбиття".into(),
+        "cheap plastic imitation of the amulet of yendor" => {
+            "дешева пластикова імітація Амулета Єндора".into()
+        }
         "excalibur" => "Екскалібур".into(),
         "vorpal blade" => "Гостросічний меч".into(),
         "mjollnir" => "Мйольнір".into(),
-        "magicbane" => "Чарогуб".into(),
+        "magicbane" => "Чарозгуба".into(),
         "the eye of the aethiopica" => "Око Етіопіки".into(),
         "gold pieces" => "золоті монети".into(),
         "luckstone" => "камінь удачі".into(),
@@ -934,12 +938,12 @@ pub fn t_item(name: &str, locale: Locale) -> String {
         "the heart of ahriman" => "Серце Аримана".into(),
         "the magic mirror of merlin" => "Чарівне дзеркало Мерліна".into(),
         "the eyes of the overworld" => "Очі Верхнього Світу".into(),
-        "the master key of thievery" => "Майстер-ключ Злодійства".into(),
+        "the master key of thievery" => "Відмичка Злодійства".into(),
         "the tsurugi of muramasa" => "Цуруґі Мурамаси".into(),
         "the platinum yendorian express card" => "Платинова картка «Єндор Експрес»".into(),
         "the staff of aesculapius" => "Посох Асклепія".into(),
         "the orb of detection" => "Сфера Виявлення".into(),
-        "sprig of wolfsbane" => "гілка вовчого лика".into(),
+        "sprig of wolfsbane" => "гілочка аконіту".into(),
         _ => {
             let lower = name.to_lowercase();
             if let Some(stripped) = lower.strip_suffix("corpse") {
@@ -976,7 +980,7 @@ pub fn t_monster(name: &str, locale: Locale) -> String {
         "wizard of yendor" => "Чарівник Єндора".into(),
         "croesus" => "Крез".into(),
         "hobgoblin" => "гобгоблін".into(),
-        "giant ant" => "гігантська мурашка".into(),
+        "giant ant" => "гігантський мураха".into(),
         "skeleton" => "скелет".into(),
         "vampire" => "вампір".into(),
         "silver dragon" => "срібний дракон".into(),
@@ -990,25 +994,25 @@ pub fn t_monster(name: &str, locale: Locale) -> String {
         "ghost" => "привид".into(),
         "djinni" => "джин".into(),
         "gnome" => "гном".into(),
-        "dwarf" => "дварф".into(),
+        "dwarf" => "дворф".into(),
         "watchman" => "вартовий".into(),
         "the norn" => "Норна".into(),
         "neferet the green" => "Неферет Зелена".into(),
-        "pelias" => "Пеліас".into(),
-        "king arthur" => "Король Артур".into(),
+        "pelias" => "Пелій".into(),
+        "king arthur" => "король Артур".into(),
         "grand master" => "Великий Майстер".into(),
         "master assassin" => "Майстер-асасин".into(),
         "hippocrates" => "Гіппократ".into(),
-        "twoflower" => "Твофлавер".into(),
-        "lord carnarvon" => "Лорд Карнарвон".into(),
-        "lord surtur" => "Лорд Сурт".into(),
+        "twoflower" => "Двоквіт".into(),
+        "lord carnarvon" => "лорд Карнарвон".into(),
+        "lord surtur" => "лорд Сурт".into(),
         "the dark one" => "Темний".into(),
         "thoth amon" => "Тот Амон".into(),
-        "ixoth" => "Ікзот".into(),
-        "master kaen" => "Майстер Каен".into(),
+        "ixoth" => "Іксот".into(),
+        "master kaen" => "майстер Каен".into(),
         "master of thieves" => "Майстер Злодіїв".into(),
         "cyclops" => "Циклоп".into(),
-        "minion of huhetotl" => "Слуга Хуетотля".into(),
+        "minion of huhetotl" => "Слуга Хухетотля".into(),
         "quest guardian" => "охоронець завдання".into(),
         _ => {
             if let Some(rest) = name.strip_prefix("ghost of ") {
