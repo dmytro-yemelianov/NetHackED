@@ -146,6 +146,9 @@ pub fn generate_quest_locate_level<R: Rng>(rng: &mut R, _depth: usize) -> Dungeo
         let c = Coord::new_unchecked(px, py);
         if *level.get_tile(c) == Tile::Corr {
             level.set_tile(c, Tile::Pit { filled: false });
+            if !crate::reach::reachable_from(&level, level.stairs_up).contains(&level.stairs_down) {
+                level.set_tile(c, Tile::Corr);
+            }
         }
     }
 

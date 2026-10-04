@@ -10,12 +10,14 @@ pub mod endgame;
 pub mod mines;
 pub mod gehennom;
 pub mod quest;
+pub mod reach;
 
 pub use fov::{compute_fov, compute_illumination};
 pub use generator::{
     carve_h_corr, carve_room, carve_v_corr, generate_dungeon_level, validate_stair_connectivity,
 };
 pub use level::DungeonLevel;
+pub use reach::{find_free_floor, reachable_from, reachable_from_with};
 pub use raycast::trace_beam_path;
 pub use room::{Rect, Room, RoomType};
 pub use sokoban::generate_sokoban_level;

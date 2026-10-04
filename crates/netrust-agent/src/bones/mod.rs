@@ -10,7 +10,7 @@ pub use client::BonesClient;
 pub use headstone::render_headstone;
 
 #[cfg(not(target_arch = "wasm32"))]
-pub use server::{create_bones_router, run_bones_server, GraveyardState, SharedGraveyard};
+pub use server::{create_bones_router, create_bones_router_with_token, run_bones_server, GraveyardState, SharedGraveyard};
 
 use netrust_sim::{GameEvent, SimulationWorld};
 use netrust_types::GraveRecord;

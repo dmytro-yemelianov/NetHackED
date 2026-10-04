@@ -36,7 +36,7 @@ pub fn generate_sokoban_level(_floor: usize) -> (DungeonLevel, Vec<Coord>) {
 
     // Add doorways connecting rooms
     level.set_tile(Coord::new_unchecked(11, 10), Tile::Room);
-    level.set_tile(Coord::new_unchecked(59, 10), Tile::Room);
+    level.set_tile(Coord::new_unchecked(60, 10), Tile::Room);
 
     // 4. Place Pit Chasm blocking the exit to the prize room (at x = 50, y = 9..12)
     for y in 9..=12 {

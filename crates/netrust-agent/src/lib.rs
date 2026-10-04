@@ -7,6 +7,8 @@ pub mod arena;
 pub mod ascii;
 pub mod jsonrpc;
 pub mod mcp;
+pub mod rpc;
+pub mod stdio;
 pub mod observation;
 pub mod session;
 pub mod conducts;
@@ -14,6 +16,9 @@ pub mod bones;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod graphql;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub mod netconfig;
 
 pub use ascii::render_ascii_map;
 pub use jsonrpc::{handle_jsonrpc_request, run_jsonrpc_server};

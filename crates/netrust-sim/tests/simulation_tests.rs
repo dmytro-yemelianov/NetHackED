@@ -164,6 +164,12 @@ fn test_zap_wand_beam_propagation_and_damage() {
         abilities: Vec::new(),
     };
     let mon_id = sim.arena.spawn_actor(mon);
+    // Zapping now requires a carried wand.
+    sim.arena.spawn_item(create_item_record(
+        ItemKindId::WandOfStriking,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Uncursed,
+    ));
 
     let events = sim.step_player_action(ActionAst::ZapWand {
         dir: Direction::East,
@@ -813,6 +819,8 @@ fn test_companion_pet_attacks_hostile() {
         enemy_coord,
     ));
 
+    // Deterministic setup: AC 20 guarantees the dog's d20 attack lands.
+    sim.arena.actors.get_mut(goblin_id).unwrap().ac = 20;
     let goblin_initial_hp = sim.arena.actors.get(goblin_id).unwrap().hp;
 
     // Player waits, allowing monster turn to tick
@@ -2207,7 +2215,7 @@ fn test_scroll_of_genocide_conduct_and_level_wipe() {
     let mon_c = netrust_types::Coord::new_unchecked(player_c.x + 1, player_c.y);
     sim.level.set_tile(mon_c, netrust_types::Tile::Room);
     let goblin_id = sim.arena.spawn_actor(ActorRecord {
-        name: "Goblin".into(),
+        name: "goblin".into(),
         coord: mon_c,
         hp: 10, max_hp: 10, ac: 10, level: 1, speed: 10,
         alignment: netrust_types::Alignment::Chaotic,
@@ -2236,7 +2244,7 @@ fn test_scroll_of_genocide_conduct_and_level_wipe() {
 
     assert!(!sim.conducts.genocideless);
     assert!(!sim.arena.actors.contains_key(goblin_id));
-    assert!(is_genocided(&sim.genocide_registry, "Goblin", 'g'));
+    assert!(is_genocided(&sim.genocide_registry, "goblin", 'o'));
 }
 
 #[test]
@@ -2657,7 +2665,7 @@ fn test_pacifist_conduct_violation_on_kill() {
         coord: monster_pos,
         hp: 1, // 1 HP to ensure a kill
         max_hp: 10,
-        ac: 10,
+        ac: 20, // AC 20 guarantees the d20 melee roll hits
         level: 1,
         speed: 12,
         alignment: Alignment::Chaotic,

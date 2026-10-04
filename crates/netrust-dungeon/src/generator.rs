@@ -1,6 +1,5 @@
 //! Procedural room-and-corridor dungeon generator.
 
-use std::collections::{HashSet, VecDeque};
 use netrust_types::{Alignment, Coord, Tile, COLNO, ROWNO};
 use rand::Rng;
 
@@ -123,31 +122,8 @@ pub fn generate_dungeon_level<R: Rng>(rng: &mut R) -> DungeonLevel {
 
 /// Verify reachability between stairs up and stairs down using BFS.
 pub fn validate_stair_connectivity(level: &DungeonLevel) -> bool {
-    let start = level.stairs_up;
-    let target = level.stairs_down;
-    if start == target {
-        return true;
-    }
-
-    let mut visited = HashSet::new();
-    let mut queue = VecDeque::new();
-    queue.push_back(start);
-    visited.insert(start);
-
-    while let Some(current) = queue.pop_front() {
-        if current == target {
-            return true;
-        }
-
-        for neighbor in current.neighbors() {
-            if level.is_passable(neighbor) && !visited.contains(&neighbor) {
-                visited.insert(neighbor);
-                queue.push_back(neighbor);
-            }
-        }
-    }
-
-    false
+    level.stairs_up == level.stairs_down
+        || crate::reach::reachable_from(level, level.stairs_up).contains(&level.stairs_down)
 }
 
 pub fn generate_wizards_tower<R: Rng>(_rng: &mut R) -> DungeonLevel {

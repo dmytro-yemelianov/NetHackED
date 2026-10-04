@@ -923,6 +923,19 @@ pub fn get_item_archetype(id: ItemKindId) -> &'static ItemArchetype {
 
 use netrust_types::Buc;
 
+/// Initial charges for a freshly generated wand (stored in `enchantment`).
+pub fn initial_wand_charges(id: ItemKindId) -> i8 {
+    let arch = get_item_archetype(id);
+    if arch.class != netrust_types::ItemClass::Wand {
+        return 0;
+    }
+    match id {
+        ItemKindId::WandOfWishing => 1,
+        ItemKindId::WandOfSecretDoorDetection => 13,
+        _ => 6,
+    }
+}
+
 /// Factory function to spawn an ItemRecord from declarative archetype data.
 pub fn create_item_record(id: ItemKindId, location: ItemLocation, buc: Buc) -> ItemRecord {
     let arch = get_item_archetype(id);
@@ -933,7 +946,7 @@ pub fn create_item_record(id: ItemKindId, location: ItemLocation, buc: Buc) -> I
         buc,
         is_container: arch.is_container,
         is_bag_of_holding: arch.is_bag_of_holding,
-        enchantment: 0,
+        enchantment: initial_wand_charges(id),
         erosion: 0,
         proofed: false,
         location,

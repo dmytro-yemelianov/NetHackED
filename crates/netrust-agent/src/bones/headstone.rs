@@ -11,12 +11,10 @@ pub fn render_headstone(
 ) -> String {
     let width = 31;
     let center = |s: &str| -> String {
-        let trimmed = if s.len() > width - 4 {
-            &s[..width - 4]
-        } else {
-            s
-        };
-        let pad_total = (width - 2).saturating_sub(trimmed.len());
+        let max_chars = width - 4;
+        let trimmed: String = s.chars().take(max_chars).collect();
+        let len = trimmed.chars().count();
+        let pad_total = (width - 2).saturating_sub(len);
         let pad_left = pad_total / 2;
         let pad_right = pad_total - pad_left;
         format!("|{}{}{}|", " ".repeat(pad_left), trimmed, " ".repeat(pad_right))
@@ -53,6 +51,14 @@ pub fn render_headstone(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_headstone_multibyte_name_does_not_panic() {
+        let name = "Святослав Хоробрий Великий Київський";
+        let stone = render_headstone(name, 1, 1, "гоблін", "2026-10-04", "");
+        let line = stone.lines().find(|l| l.contains("Святослав")).unwrap();
+        assert_eq!(line.chars().count(), 31);
+    }
 
     #[test]
     fn test_headstone_rendering() {

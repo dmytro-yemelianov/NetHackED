@@ -4,7 +4,7 @@ use netrust_arena::{ActorId, ItemLocation};
 use netrust_core::{combat::resolve_melee_attack, Combatant};
 use netrust_data::{create_item_record, ItemKindId};
 use netrust_types::Buc;
-use rand::RngCore;
+use rand::{Rng, RngCore};
 
 use crate::events::GameEvent;
 use crate::world::SimulationWorld;
@@ -84,10 +84,11 @@ impl SimulationWorld {
         }
 
         let to_hit_bonus = attacker.level as i32 + weapon_ench + skill_hit_bonus;
-        let d20 = 15; // default representative roll
-        let dmg_roll = (6_i32 + skill_dmg_bonus).max(1) as u32;
+        let d20 = self.rng.random_range(1..=20u32);
+        let dmg_roll = (self.rng.random_range(1..=6i32) + skill_dmg_bonus).max(1) as u32;
 
-        let result = resolve_melee_attack(attacker.level as i32, to_hit_bonus, def_combat, d20, dmg_roll, weapon_ench);
+        // skill_dmg_bonus is already folded into dmg_roll; pass 0 to avoid double counting.
+        let result = resolve_melee_attack(to_hit_bonus, 0, def_combat, d20, dmg_roll, weapon_ench);
 
         if result.hit {
             let is_demon_or_undead = defender.name.to_lowercase().contains("demon")

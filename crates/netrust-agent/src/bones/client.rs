@@ -8,16 +8,22 @@ use std::net::TcpStream;
 use std::time::Duration;
 use netrust_types::{BonesData, GraveRecord, GraveyardStats};
 
+pub const MAX_BODY_BYTES: usize = 4 * 1024 * 1024;
+pub const MAX_LINE_BYTES: usize = 8 * 1024;
+
 /// Client for communicating with the networked bones server.
 #[derive(Debug, Clone)]
 pub struct BonesClient {
     pub host_port: String,
     pub host_header: String,
+    pub tls_requested: bool,
 }
 
 impl BonesClient {
     /// Creates a new BonesClient pointing to the given base URL or host:port string.
     pub fn new(base_url: &str) -> Self {
+        let tls_requested = base_url.starts_with("https://");
+
         let trimmed = base_url
             .trim_start_matches("http://")
             .trim_start_matches("https://")
@@ -32,6 +38,7 @@ impl BonesClient {
         Self {
             host_header: trimmed.to_string(),
             host_port,
+            tls_requested,
         }
     }
 
@@ -74,7 +81,7 @@ impl BonesClient {
 
     /// Fetches a specific gravestone memorial by hero name.
     pub fn fetch_grave(&self, hero_name: &str) -> Result<Option<GraveRecord>, String> {
-        let path = format!("/api/v1/graves/{}", hero_name);
+        let path = format!("/api/v1/graves/{}", encode_path_segment(hero_name));
         let (status, resp_body) = self.send_request("GET", &path, None)?;
 
         if status == 200 {
@@ -110,6 +117,10 @@ impl BonesClient {
     }
 
     fn send_request(&self, method: &str, path: &str, body: Option<&str>) -> Result<(u16, String), String> {
+        if self.tls_requested {
+            return Err("https not supported by BonesClient; use http://".into());
+        }
+
         let mut stream = TcpStream::connect(&self.host_port)
             .map_err(|e| format!("Could not connect to bones server at {}: {}", self.host_port, e))?;
 
@@ -130,40 +141,95 @@ impl BonesClient {
         stream.flush().map_err(|e| e.to_string())?;
 
         let mut reader = BufReader::new(stream);
-        let mut status_line = String::new();
-        reader.read_line(&mut status_line).map_err(|e| e.to_string())?;
+        parse_response(&mut reader)
+    }
+}
 
-        let status_code: u16 = status_line
-            .split_whitespace()
-            .nth(1)
-            .and_then(|s| s.parse().ok())
-            .unwrap_or(500);
-
-        // Read headers until blank line
-        let mut content_len: Option<usize> = None;
-        loop {
-            let mut header_line = String::new();
-            let bytes_read = reader.read_line(&mut header_line).map_err(|e| e.to_string())?;
-            if bytes_read == 0 || header_line.trim().is_empty() {
-                break;
-            }
-            if header_line.to_ascii_lowercase().starts_with("content-length:") {
-                if let Some(val_str) = header_line.split(':').nth(1) {
-                    content_len = val_str.trim().parse().ok();
-                }
-            }
+/// Percent-encodes everything except RFC 3986 unreserved characters.
+pub fn encode_path_segment(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for b in s.bytes() {
+        if b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.' | b'~') {
+            out.push(b as char);
+        } else {
+            out.push_str(&format!("%{b:02X}"));
         }
+    }
+    out
+}
 
-        // Read body
-        let mut body_buf = Vec::new();
-        if let Some(len) = content_len {
+fn read_limited_line<R: BufRead>(r: &mut R, max: usize) -> Result<String, String> {
+    let mut buf = Vec::new();
+    r.by_ref().take(max as u64 + 1).read_until(b'\n', &mut buf).map_err(|e| e.to_string())?;
+    if buf.len() > max {
+        return Err("response line too long".into());
+    }
+    Ok(String::from_utf8_lossy(&buf).into_owned())
+}
+
+fn parse_response<R: BufRead>(reader: &mut R) -> Result<(u16, String), String> {
+    let status_line = read_limited_line(reader, MAX_LINE_BYTES)?;
+    let status_code: u16 = status_line.split_whitespace().nth(1).and_then(|s| s.parse().ok()).unwrap_or(500);
+    let mut content_len: Option<usize> = None;
+    loop {
+        let header_line = read_limited_line(reader, MAX_LINE_BYTES)?;
+        if header_line.trim().is_empty() {
+            break;
+        }
+        if header_line.to_ascii_lowercase().starts_with("content-length:") {
+            content_len = header_line.split(':').nth(1).and_then(|v| v.trim().parse().ok());
+        }
+    }
+    let mut body_buf = Vec::new();
+    match content_len {
+        Some(len) if len > MAX_BODY_BYTES => return Err(format!("response body too large: {len} bytes")),
+        Some(len) => {
             body_buf.resize(len, 0);
             reader.read_exact(&mut body_buf).map_err(|e| e.to_string())?;
-        } else {
-            reader.read_to_end(&mut body_buf).map_err(|e| e.to_string())?;
         }
+        None => {
+            reader.by_ref().take(MAX_BODY_BYTES as u64 + 1).read_to_end(&mut body_buf).map_err(|e| e.to_string())?;
+            if body_buf.len() > MAX_BODY_BYTES {
+                return Err("response body too large".into());
+            }
+        }
+    }
+    Ok((status_code, String::from_utf8_lossy(&body_buf).into_owned()))
+}
 
-        let body_str = String::from_utf8_lossy(&body_buf).to_string();
-        Ok((status_code, body_str))
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Cursor;
+
+    #[test]
+    fn encodes_path_segments() {
+        assert_eq!(encode_path_segment("Sir Lancelot"), "Sir%20Lancelot");
+        assert_eq!(encode_path_segment("a/b\r\n"), "a%2Fb%0D%0A");
+        assert_eq!(encode_path_segment("Тарас"), "%D0%A2%D0%B0%D1%80%D0%B0%D1%81");
+        assert_eq!(encode_path_segment("ok-_.~9"), "ok-_.~9");
+    }
+
+    #[test]
+    fn https_is_refused_not_downgraded() {
+        let c = BonesClient::new("https://example.com");
+        assert!(c.tls_requested);
+        let err = c.fetch_stats().unwrap_err();
+        assert!(err.contains("https"));
+    }
+
+    #[test]
+    fn limited_line_rejects_overlong() {
+        let mut r = Cursor::new(vec![b'a'; MAX_LINE_BYTES + 10]);
+        assert!(read_limited_line(&mut r, MAX_LINE_BYTES).is_err());
+        let mut r = Cursor::new(b"HTTP/1.1 200 OK\r\n".to_vec());
+        assert_eq!(read_limited_line(&mut r, MAX_LINE_BYTES).unwrap(), "HTTP/1.1 200 OK\r\n");
+    }
+
+    #[test]
+    fn oversized_content_length_rejected() {
+        let resp = format!("HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n", MAX_BODY_BYTES + 1);
+        let err = parse_response(&mut Cursor::new(resp.into_bytes())).unwrap_err();
+        assert!(err.contains("too large"));
     }
 }

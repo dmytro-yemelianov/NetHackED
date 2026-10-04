@@ -18,8 +18,8 @@ use crate::events::GameEvent;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StoredLevel {
     pub level: DungeonLevel,
-    pub monsters: Vec<netrust_arena::ActorRecord>,
-    pub floor_items: Vec<netrust_arena::ItemRecord>,
+    pub monsters: Vec<(netrust_arena::ActorId, netrust_arena::ActorRecord)>,
+    pub items: Vec<(ItemId, netrust_arena::ItemRecord)>,
     pub unpaid_items: Vec<(ItemId, u32)>,
 }
 
@@ -59,7 +59,7 @@ pub struct SimulationWorld {
     pub alignment_record: i32,
     #[serde(default)]
     pub role_name: String,
-    #[serde(skip, default = "default_rng")]
+    #[serde(default = "default_rng")]
     pub rng: ChaCha8Rng,
     pub seed: u64,
     pub event_log: Vec<GameEvent>,
@@ -74,6 +74,24 @@ pub fn default_rng() -> ChaCha8Rng {
 }
 
 impl SimulationWorld {
+    /// Remove an actor, leaving anything it carried on the floor where it stood.
+    pub(crate) fn remove_actor_dropping_items(&mut self, id: ActorId) {
+        let Some(coord) = self.arena.actors.get(id).map(|a| a.coord) else { return };
+        for item_id in self.arena.items_carried_by(id) {
+            if let Some(item) = self.arena.items.get_mut(item_id) {
+                item.location = ItemLocation::Floor(coord);
+            }
+        }
+        self.arena.actors.remove(id);
+    }
+
+    pub(crate) fn actor_is_genocided(&self, name: &str) -> bool {
+        let lower = name.to_lowercase();
+        let class = netrust_data::monster_class_of(name);
+        self.genocide_registry.genocided_species.contains(&lower)
+            || class.map(|c| self.genocide_registry.genocided_classes.contains(&c)).unwrap_or(false)
+    }
+
     /// Initialize a new deterministic simulation world with a custom character configuration.
     pub fn new_with_character(seed: u64, config: CharacterConfig) -> Self {
         let mut rng = ChaCha8Rng::seed_from_u64(seed);
@@ -329,5 +347,18 @@ impl SimulationWorld {
         }
 
         (visible_tiles, detected_monsters)
+    }
+
+    /// Apply damage to the hero without underflow; marks death at 0 HP.
+    pub fn damage_player(&mut self, amount: u32, cause: &str) -> Vec<GameEvent> {
+        let mut events = Vec::new();
+        if let Some(p) = self.arena.actors.get_mut(self.player_id) {
+            p.hp = p.hp.saturating_sub(amount);
+            if p.hp == 0 && !p.is_dead {
+                p.is_dead = true;
+                events.push(GameEvent::LogMessage { text: format!("You die... killed by {cause}.") });
+            }
+        }
+        events
     }
 }

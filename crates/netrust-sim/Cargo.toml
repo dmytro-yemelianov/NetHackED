@@ -12,7 +12,7 @@ netrust-core = { path = "../netrust-core" }
 netrust-data = { path = "../netrust-data" }
 netrust-i18n = { path = "../netrust-i18n" }
 rand = "0.9"
-rand_chacha = "0.9"
+rand_chacha = { version = "0.9", features = ["serde"] }
 serde = { version = "1.0", features = ["derive"] }
 
 [dev-dependencies]

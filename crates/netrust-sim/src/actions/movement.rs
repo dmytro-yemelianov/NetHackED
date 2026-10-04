@@ -156,29 +156,26 @@ impl SimulationWorld {
                         }
 
                         // Trigger trap if present
-                        if let Some(trap) = self.level.traps.get_mut(&target_coord) {
-                            let is_flying = self.arena.actors.get(self.player_id).map(|a| a.intrinsics.levitation).unwrap_or(false);
-                            if let Some(triggered_type) = netrust_core::traps::trigger_trap(trap, is_flying) {
-                                match triggered_type {
-                                    netrust_types::TrapType::Arrow | netrust_types::TrapType::Dart => {
-                                        events.push(GameEvent::LogMessage { text: format!("A {:?} trap shoots you!", triggered_type).into() });
-                                        if let Some(p) = self.arena.actors.get_mut(self.player_id) {
-                                            p.hp -= 2; // basic damage
-                                        }
-                                    }
-                                    netrust_types::TrapType::Teleport => {
-                                        events.push(GameEvent::LogMessage { text: "You trigger a teleport trap!".into() });
-                                        // Teleport logic omitted for brevity, just send event
-                                    }
-                                    netrust_types::TrapType::LevelTeleport => {
-                                        events.push(GameEvent::LogMessage { text: "You trigger a level teleport trap!".into() });
-                                    }
-                                    netrust_types::TrapType::Pit | netrust_types::TrapType::SpikedPit => {
-                                        events.push(GameEvent::LogMessage { text: "You fall into a pit!".into() });
-                                    }
-                                    _ => {
-                                        events.push(GameEvent::LogMessage { text: format!("You trigger a {:?} trap!", triggered_type).into() });
-                                    }
+                        let is_flying = self.arena.actors.get(self.player_id).map(|a| a.intrinsics.levitation).unwrap_or(false);
+                        let triggered = self.level.traps.get_mut(&target_coord).and_then(|trap| netrust_core::traps::trigger_trap(trap, is_flying));
+                        if let Some(triggered_type) = triggered {
+                            match triggered_type {
+                                netrust_types::TrapType::Arrow | netrust_types::TrapType::Dart => {
+                                    events.push(GameEvent::LogMessage { text: format!("A {triggered_type:?} trap shoots you!").into() });
+                                    events.extend(self.damage_player(2, &format!("{triggered_type:?} trap").to_lowercase()));
+                                }
+                                netrust_types::TrapType::Teleport => {
+                                    events.push(GameEvent::LogMessage { text: "You trigger a teleport trap!".into() });
+                                    // Teleport logic omitted for brevity, just send event
+                                }
+                                netrust_types::TrapType::LevelTeleport => {
+                                    events.push(GameEvent::LogMessage { text: "You trigger a level teleport trap!".into() });
+                                }
+                                netrust_types::TrapType::Pit | netrust_types::TrapType::SpikedPit => {
+                                    events.push(GameEvent::LogMessage { text: "You fall into a pit!".into() });
+                                }
+                                _ => {
+                                    events.push(GameEvent::LogMessage { text: format!("You trigger a {triggered_type:?} trap!").into() });
                                 }
                             }
                         }

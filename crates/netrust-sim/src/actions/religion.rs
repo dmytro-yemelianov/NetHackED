@@ -177,9 +177,7 @@ impl SimulationWorld {
                 let carried = self.arena.items_carried_by(self.player_id);
                 if idx < carried.len() {
                     let item_id = carried[idx];
-                    let item_name = self.arena.items.get(item_id).map(|i| i.name.clone()).unwrap_or_default();
-
-                    let is_amulet = item_name.to_lowercase().contains("amulet of yendor");
+                    let is_amulet = self.arena.items.get(item_id).is_some_and(crate::actions::items::is_real_amulet);
                     if is_amulet {
                         let outcome = netrust_core::endgame::offer_amulet_on_high_altar(true, player.alignment, align);
                         match outcome {

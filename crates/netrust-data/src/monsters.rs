@@ -844,6 +844,11 @@ pub static BESTIARY: &[MonsterArchetype] = &[
     },
 ];
 
+/// NetHack monster class letter (bestiary glyph) for a species name, case-insensitive.
+pub fn monster_class_of(name: &str) -> Option<char> {
+    BESTIARY.iter().find(|m| m.name.eq_ignore_ascii_case(name)).map(|m| m.glyph)
+}
+
 /// Look up a monster archetype from the bestiary table.
 pub fn get_monster_species(id: MonsterSpeciesId) -> &'static MonsterArchetype {
     BESTIARY

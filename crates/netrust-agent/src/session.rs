@@ -73,7 +73,8 @@ impl AgentSession {
         self.get_observation()
     }
 
-    pub fn inspect_tile(&self, coord: Coord) -> TileInspection {
+    pub fn inspect_tile(&self, x: usize, y: usize) -> Result<TileInspection, String> {
+        let coord = Coord::new(x, y).ok_or_else(|| format!("Coordinate ({x}, {y}) is outside the dungeon map"))?;
         let tile = self.world.level.get_tile(coord).clone();
         let occupant = self.world.actor_at(coord).and_then(|id| {
             self.world.arena.actors.get(id).map(|a| ActorObservation {
@@ -85,12 +86,12 @@ impl AgentSession {
             })
         });
 
-        TileInspection {
+        Ok(TileInspection {
             coord,
             is_passable: tile.is_passable(),
             is_transparent: tile.is_transparent(),
             tile,
             occupant,
-        }
+        })
     }
 }
