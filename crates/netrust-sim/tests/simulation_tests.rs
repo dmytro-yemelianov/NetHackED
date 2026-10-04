@@ -3466,3 +3466,23 @@ fn test_bones_quest_items_always_cursed() {
         assert_eq!(amulet.buc, Buc::Cursed);
     }
 }
+
+#[test]
+fn test_player_nutrition_json_compat_and_negative() {
+    // Saves written with the old u32 field (positive numbers) still load.
+    let sim = SimulationWorld::new_with_seed(4242);
+    let json = serde_json::to_string(&sim).expect("serialize");
+    assert!(json.contains("\"player_nutrition\":900"));
+    let restored: SimulationWorld = serde_json::from_str(&json).expect("positive loads");
+    assert_eq!(restored.player_nutrition, 900);
+
+    // Negative nutrition round-trips and maps to Fainting/Starved by C rules.
+    let mut sim = sim;
+    sim.player_nutrition = -50;
+    let restored: SimulationWorld =
+        serde_json::from_str(&serde_json::to_string(&sim).unwrap()).unwrap();
+    assert_eq!(restored.player_nutrition, -50);
+    assert_eq!(restored.hunger_state(), netrust_sim::HungerState::Fainting);
+    sim.player_nutrition = -201;
+    assert_eq!(sim.hunger_state(), netrust_sim::HungerState::Starved);
+}

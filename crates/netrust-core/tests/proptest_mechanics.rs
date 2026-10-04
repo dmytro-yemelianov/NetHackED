@@ -118,6 +118,42 @@ proptest! {
         prop_assert_eq!(calculate_encumbrance(wt, cap), EncumbranceTier::Unencumbered);
     }
 
+    /// Reference from `hack.c:4372` (`calc_capacity`) and `hack.c:4295` (`weight_cap`).
+    #[test]
+    fn prop_encumbrance_matches_c_reference(wt in 0u32..20000, cap in 1u32..5000) {
+        let c_tier: i64 = {
+            let (w, wc) = (wt as i64, cap as i64);
+            let diff = w - wc;
+            if diff <= 0 { 0 } else if wc <= 1 { 5 } else { (diff * 2 / wc + 1).min(5) }
+        };
+        let want = match c_tier {
+            0 => EncumbranceTier::Unencumbered,
+            1 => EncumbranceTier::Burdened,
+            2 => EncumbranceTier::Stressed,
+            3 => EncumbranceTier::Strained,
+            4 => EncumbranceTier::Overtaxed,
+            _ => EncumbranceTier::Overloaded,
+        };
+        prop_assert_eq!(netrust_core::encumbrance_tier(wt, cap), want);
+    }
+
+    #[test]
+    fn prop_weight_cap_matches_c_reference(
+        st in -5i32..40, con in -5i32..40, lev in any::<bool>(), legs in 0u8..4
+    ) {
+        let mut carrcap: i64 = 25 * (st as i64 + con as i64) + 50;
+        if lev {
+            carrcap = 1000;
+        } else {
+            if carrcap > 1000 { carrcap = 1000; }
+            carrcap -= 100 * (legs.min(2) as i64);
+        }
+        if carrcap < 1 { carrcap = 1; }
+        let got = netrust_core::weight_cap(st, con, lev, legs);
+        prop_assert_eq!(got as i64, carrcap);
+        prop_assert!((1..=1000).contains(&got));
+    }
+
     #[test]
     fn prop_encumbrance_monotonic(cap in 1u32..5000, w1 in 0u32..20000, w2 in 0u32..20000) {
         let (lo, hi) = if w1 <= w2 { (w1, w2) } else { (w2, w1) };
@@ -478,10 +514,22 @@ proptest! {
     // Theorem: eating_improves_or_preserves_hunger
     // -------------------------------------------------------------
     #[test]
-    fn prop_eating_improves_hunger(n in 0u32..2000, k in 0u32..2000) {
-        let t1 = hunger_tier(hunger_of_nutrition(n));
-        let t2 = hunger_tier(hunger_of_nutrition(n + k));
+    fn prop_eating_improves_hunger(n in -3000i32..3000, k in 0i32..3000, con in 3i32..26) {
+        let t1 = hunger_tier(hunger_of_nutrition(n, con));
+        let t2 = hunger_tier(hunger_of_nutrition(n + k, con));
         prop_assert!(t1 <= t2);
+    }
+
+    /// Reference from `eat.c:3362` (`newuhs`) and `eat.c:3437` (starvation).
+    #[test]
+    fn prop_hunger_matches_c_reference(h in -3000i32..3000, con in 3i32..26) {
+        let want = if h > 1000 { netrust_core::HungerState::Satiated }
+            else if h > 150 { netrust_core::HungerState::Normal }
+            else if h > 50 { netrust_core::HungerState::Hungry }
+            else if h > 0 { netrust_core::HungerState::Weak }
+            else if h < -(100 + 10 * con) { netrust_core::HungerState::Starved }
+            else { netrust_core::HungerState::Fainting };
+        prop_assert_eq!(hunger_of_nutrition(h, con), want);
     }
 
     // -------------------------------------------------------------

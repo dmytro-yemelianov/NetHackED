@@ -23,7 +23,7 @@ pub struct PlayerStateGql {
     pub max_hp: u32,
     pub ac: i32,
     pub depth: usize,
-    pub nutrition: u32,
+    pub nutrition: i32,
     pub pw: u32,
     pub max_pw: u32,
     pub gold: u32,

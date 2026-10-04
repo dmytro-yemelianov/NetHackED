@@ -104,22 +104,53 @@ pub enum EncumbranceTier {
     Overloaded,
 }
 
-pub fn calculate_encumbrance(weight: u32, capacity: u32) -> EncumbranceTier {
-    if capacity == 0 {
-        EncumbranceTier::Overloaded
-    } else if weight <= capacity {
-        EncumbranceTier::Unencumbered
-    } else if weight <= capacity + capacity / 2 {
-        EncumbranceTier::Burdened
-    } else if weight <= capacity * 2 {
-        EncumbranceTier::Stressed
-    } else if weight <= capacity * 2 + capacity / 2 {
-        EncumbranceTier::Strained
-    } else if weight <= capacity * 3 {
-        EncumbranceTier::Overtaxed
+/// Carrying capacity (C `hack.c:4295`, `weight_cap`).
+///
+/// `str_` is the already-reduced `ACURRSTR` value (`attrib.c:1245`, 3..=25).
+/// `carrcap = 25 * (str + con) + 50`; levitating heroes get `MAX_CARR_CAP`
+/// (1000); otherwise the capacity is clamped to 1000 and reduced by 100 per
+/// wounded leg (`wounded_legs`, clamped to 0..=2). The result is at least 1.
+/// Polymorph size scaling and steeds are not modelled.
+pub fn weight_cap(str_: i32, con: i32, levitating: bool, wounded_legs: u8) -> u32 {
+    const MAX_CARR_CAP: i64 = 1000;
+    let mut cap = 25 * (i64::from(str_) + i64::from(con)) + 50;
+    if levitating {
+        cap = MAX_CARR_CAP;
     } else {
-        EncumbranceTier::Overloaded
+        cap = cap.min(MAX_CARR_CAP);
+        cap -= 100 * i64::from(wounded_legs.min(2));
     }
+    cap.max(1) as u32
+}
+
+/// Encumbrance tier from total carried weight and capacity (C `hack.c:4372`,
+/// `calc_capacity`): Unencumbered if `weight <= cap`; Overloaded if
+/// `cap <= 1`; else tier `min((weight - cap) * 2 / cap + 1, 5)`.
+/// A capacity of 0 (impossible in C, where `weight_cap >= 1`) is Overloaded.
+pub fn encumbrance_tier(weight: u32, cap: u32) -> EncumbranceTier {
+    if cap == 0 {
+        return EncumbranceTier::Overloaded;
+    }
+    if weight <= cap {
+        return EncumbranceTier::Unencumbered;
+    }
+    if cap <= 1 {
+        return EncumbranceTier::Overloaded;
+    }
+    let excess = u64::from(weight - cap);
+    let tier = (excess * 2 / u64::from(cap) + 1).min(5);
+    match tier {
+        1 => EncumbranceTier::Burdened,
+        2 => EncumbranceTier::Stressed,
+        3 => EncumbranceTier::Strained,
+        4 => EncumbranceTier::Overtaxed,
+        _ => EncumbranceTier::Overloaded,
+    }
+}
+
+/// Alias of [`encumbrance_tier`] kept for existing callers (`hack.c:4372`).
+pub fn calculate_encumbrance(weight: u32, capacity: u32) -> EncumbranceTier {
+    encumbrance_tier(weight, capacity)
 }
 
 #[cfg(test)]
@@ -189,19 +220,51 @@ mod tests {
 
     #[test]
     fn test_encumbrance_tiers() {
+        use EncumbranceTier::*;
         let cap = 100;
-        assert_eq!(
-            calculate_encumbrance(50, cap),
-            EncumbranceTier::Unencumbered
-        );
-        assert_eq!(
-            calculate_encumbrance(100, cap),
-            EncumbranceTier::Unencumbered
-        );
-        assert_eq!(calculate_encumbrance(120, cap), EncumbranceTier::Burdened);
-        assert_eq!(calculate_encumbrance(160, cap), EncumbranceTier::Stressed);
-        assert_eq!(calculate_encumbrance(220, cap), EncumbranceTier::Strained);
-        assert_eq!(calculate_encumbrance(280, cap), EncumbranceTier::Overtaxed);
-        assert_eq!(calculate_encumbrance(350, cap), EncumbranceTier::Overloaded);
+        let cases = [
+            (50, Unencumbered),
+            (100, Unencumbered),
+            (101, Burdened),
+            (149, Burdened),
+            (150, Stressed),
+            (199, Stressed),
+            (200, Strained),
+            (249, Strained),
+            (250, Overtaxed),
+            (299, Overtaxed),
+            (300, Overloaded),
+            (500, Overloaded),
+        ];
+        for (w, want) in cases {
+            assert_eq!(encumbrance_tier(w, cap), want, "w={w}");
+            assert_eq!(calculate_encumbrance(w, cap), want, "w={w}");
+        }
+    }
+
+    #[test]
+    fn test_encumbrance_odd_cap() {
+        use EncumbranceTier::*;
+        // cap 101: excess e, tier = 2e/101 + 1.
+        assert_eq!(encumbrance_tier(101, 101), Unencumbered);
+        assert_eq!(encumbrance_tier(102, 101), Burdened); // e=1
+        assert_eq!(encumbrance_tier(151, 101), Burdened); // e=50 -> 100/101=0
+        assert_eq!(encumbrance_tier(152, 101), Stressed); // e=51 -> 102/101=1
+        assert_eq!(encumbrance_tier(404, 101), Overloaded); // 3cap+1
+        assert_eq!(encumbrance_tier(5, 0), Overloaded);
+        assert_eq!(encumbrance_tier(2, 1), Overloaded);
+        assert_eq!(encumbrance_tier(1, 1), Unencumbered);
+    }
+
+    #[test]
+    fn test_weight_cap() {
+        assert_eq!(weight_cap(18, 18, false, 0), 950);
+        assert_eq!(weight_cap(25, 25, false, 0), 1000); // clamp
+        assert_eq!(weight_cap(25, 25, true, 2), 1000); // levitation ignores legs
+        assert_eq!(weight_cap(18, 18, false, 1), 850);
+        assert_eq!(weight_cap(18, 18, false, 2), 750);
+        assert_eq!(weight_cap(25, 25, false, 2), 800); // clamp then legs
+        assert_eq!(weight_cap(5, 5, false, 2), 100);
+        assert_eq!(weight_cap(-100, -100, false, 2), 1); // floor
     }
 }

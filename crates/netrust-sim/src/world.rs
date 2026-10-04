@@ -10,6 +10,10 @@ use netrust_data::{
 };
 use netrust_dungeon::{generate_dungeon_level, DungeonLevel, RoomType};
 use netrust_types::{Buc, Coord, ItemClass};
+/// Constitution used for starvation thresholds (`eat.c:3437`); the sim has no
+/// Con attribute yet, so every hero uses this documented default.
+pub const DEFAULT_PLAYER_CON: i32 = 10;
+
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use serde::{Deserialize, Serialize};
@@ -39,7 +43,7 @@ pub struct SimulationWorld {
     pub scheduler: SchedulerState,
     pub unpaid_items: Vec<(ItemId, u32)>,
     pub player_gold: u32,
-    pub player_nutrition: u32,
+    pub player_nutrition: i32,
     pub player_pw: u32,
     pub player_max_pw: u32,
     pub known_spells: Vec<(SpellKind, u32)>,
@@ -116,7 +120,7 @@ impl SimulationWorld {
         };
 
         // Nutrition & Mana by role
-        let player_nutrition = 900u32;
+        let player_nutrition = 900i32;
         let (player_pw, player_max_pw, known_spells) = match config.role {
             RoleId::Wizard => (25, 25, vec![(SpellKind::ForceBolt, 20000)]),
             RoleId::Healer => (20, 20, vec![(SpellKind::CureLightWounds, 20000)]),
@@ -299,7 +303,7 @@ impl SimulationWorld {
 
     /// Return the current hunger state based on nutrition points.
     pub fn hunger_state(&self) -> HungerState {
-        hunger_of_nutrition(self.player_nutrition)
+        hunger_of_nutrition(self.player_nutrition, DEFAULT_PLAYER_CON)
     }
 
     /// Luck timeout period in turns for the hero's current state (C `timeout.c:595-620`).

@@ -60,7 +60,10 @@ pub use gehennom::{
 };
 pub use grid::{Alignment, Coord, DoorState, Tile, COLNO, ROWNO};
 pub use identification::{identify_fully, learn_buc, learn_type, KnowledgeLevel};
-pub use inventory::{calculate_encumbrance, can_insert_safe, EncumbranceTier, Item, ItemKind};
+pub use inventory::{
+    calculate_encumbrance, can_insert_safe, encumbrance_tier, weight_cap, EncumbranceTier, Item,
+    ItemKind,
+};
 pub use inventory_interaction::{
     buy_factor, calculate_buy_price, calculate_sell_price, dilute_potion, reverse_price_id,
     rub_lamp, sell_factor, DilutionState, RubResult,

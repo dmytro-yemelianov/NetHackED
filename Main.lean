@@ -94,9 +94,9 @@ def main : IO Unit := do
   IO.println s!"[DungeonStack] Transitions: surface={depth1.val} -> descend={depth2.val} -> ascend={backTo1.val}"
 
   -- 12. Nutrition & Hunger Clock demonstration
-  let nut0 := 0
+  let nut0 : Int := 0
   let nutFood := nut0 + 400
-  IO.println s!"[Nutrition] Hunger states: 0 nutrition -> {repr (hungerOfNutrition nut0)}, +400 nutrition -> {repr (hungerOfNutrition nutFood)}"
+  IO.println s!"[Nutrition] Hunger states: 0 nutrition -> {repr (hungerOfNutrition nut0 10)}, +400 nutrition -> {repr (hungerOfNutrition nutFood 10)}"
 
   -- 13. Magic Spells & Mana demonstration
   let casterPw := 12

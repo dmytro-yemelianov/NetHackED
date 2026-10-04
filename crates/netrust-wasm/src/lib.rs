@@ -196,7 +196,7 @@ impl WasmGameSession {
     }
 
     #[wasm_bindgen]
-    pub fn get_player_nutrition(&self) -> u32 {
+    pub fn get_player_nutrition(&self) -> i32 {
         self.session.world.player_nutrition
     }
 

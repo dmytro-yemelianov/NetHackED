@@ -12,8 +12,6 @@ The Lean models and the Rust engine are simplified abstractions of NetHack mecha
 * **Bare-handed damage**: bare-handed attacks use the weapon skill damage table (Unskilled $-2$). In C, the bare-handed/martial-arts damage bonus is $0/{+1}/{+1}/{+2}$ for Unskilled/Basic/Skilled/Expert.
 * **`abon()` omitted**: attributes are not tracked, so the to-hit `abon()` term is 0; C's $+1$ below experience level 3 and the Str/Dex to-hit bonuses are absent.
 * **Starting weapon skills**: heroes start with no weapon skills (every weapon is Unskilled, $-4$ to hit); C starts each role at Basic in its starting weapons. A follow-up task will address this.
-* **Hunger thresholds**: comparison boundaries (`>` versus `>=`) at the hunger status thresholds differ from C.
-* **Encumbrance boundaries**: the weight-to-tier boundaries differ from C's `calc_burden`/`weight_cap` arithmetic.
 * **Enchantment cap and recharge explosion**: enchant caps and the recharge-explosion outcome are modelled deterministically; C uses random rolls (`rn2`) for these.
 * **Shop charisma table**: the charisma-based price adjustment table is simplified relative to `get_cost` in `shk.c`.
 
@@ -84,18 +82,12 @@ In NetHack (`NetHack-5.0.0/src/pickup.c`:2658 `mbag_explodes`), inserting a Bag 
 $$\text{canInsertSafe}(i, c) = \text{false} \quad \text{if } i.\text{isBoH} \land c.\text{isBoH}$$
 
 ### Carrying Capacity & Encumbrance Tiers
-Carrying capacity $C$ for a hero with Strength $S$ and Constitution $K$ (`NetHack-5.0.0/src/attrib.c`):
-$$C = 5 \times (S + K) + 50$$
+Carrying capacity $C$ for a hero with (reduced) Strength $S$ and Constitution $K$ (`hack.c:4295`, `weight_cap`):
+$$C = \max\bigl(1,\; \min(1000,\, 25(S + K) + 50) - 100 \cdot \text{woundedLegs}\bigr), \qquad C = 1000 \text{ if levitating}$$
 
-Encumbrance tier mapping $\mathcal{E}(W, C)$:
-$$\mathcal{E}(W, C) = \begin{cases}
-\text{Unencumbered} & \text{if } W \le C \\
-\text{Burdened} & \text{if } C < W \le C + \lfloor C / 2 \rfloor \\
-\text{Stressed} & \text{if } C + \lfloor C / 2 \rfloor < W \le 2C \\
-\text{Strained} & \text{if } 2C < W \le 2C + \lfloor C / 2 \rfloor \\
-\text{Overtaxed} & \text{if } 2C + \lfloor C / 2 \rfloor < W \le 3C \\
-\text{Overloaded} & \text{if } W > 3C
-\end{cases}$$
+Encumbrance tier $\mathcal{E}(W, C)$ (`hack.c:4372`, `calc_capacity`): Unencumbered if $W \le C$; Overloaded if $C \le 1$; otherwise tier rank
+$$\min\bigl(\lfloor 2(W - C) / C \rfloor + 1,\; 5\bigr)$$
+(1 Burdened, 2 Stressed, 3 Strained, 4 Overtaxed, 5 Overloaded). Hunger (`eat.c:3362`): Satiated $h > 1000$, Normal $h > 150$, Hungry $h > 50$, Weak $h > 0$, Fainting above $-(100 + 10\,\text{Con})$, else Starved; nutrition is signed.
 
 ### Machine-Checked Proofs in [NetMechanics/Inventory.lean](../NetMechanics/Inventory.lean)
 * **Acyclicity by Construction**: Because `Item` is defined inductively, self-containment cycles ($A \in \text{contents}(B) \land B \in \text{contents}(A)$) are impossible.
@@ -103,6 +95,8 @@ $$\mathcal{E}(W, C) = \begin{cases}
   $$\forall x, xs,\; W(x :: xs) \ge W(xs)$$
 * `unencumbered_when_le_cap`: Soundness of unencumbered boundary:
   $$\forall W, C > 0,\; W \le C \implies \mathcal{E}(W, C) = \text{Unencumbered}$$
+* `encumbrance_tier_rank`: for $C \ge 2$, $W > C$: $\text{rank}(\mathcal{E}(W, C)) = \min(\lfloor 2(W-C)/C \rfloor + 1, 5)$.
+* `weight_cap_le_1000`, `weight_cap_pos`: $1 \le C \le 1000$.
 
 ---
 
