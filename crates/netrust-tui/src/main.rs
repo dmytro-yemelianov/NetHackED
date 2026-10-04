@@ -8,7 +8,7 @@
 use crossterm::{
     cursor::{Hide, MoveTo, Show},
     event::{self, Event, KeyCode, KeyEventKind},
-    execute,
+    execute, queue,
     style::{Color, Print, ResetColor, SetForegroundColor},
     terminal::{
         disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen,
@@ -25,19 +25,24 @@ use netrust_sim::{
 };
 use netrust_types::{ItemId, SkillClass, SkillLevel, TrapState};
 mod keys;
+mod pager;
 use keys::{
     confirm_quit_answer, handle_key, help_desc_uk, map_ukrainian_key, InventoryPurpose, KeyContext,
     KeyOutcome, HELP_KEYS,
 };
+use pager::Pager;
 use std::collections::HashSet;
-use std::io::{self, stdout, Stdout};
+use std::io::{self, stdout, Stdout, Write};
 
 struct TerminalGuard;
 
 impl TerminalGuard {
     pub fn new(stdout: &mut Stdout) -> io::Result<Self> {
         enable_raw_mode()?;
-        execute!(stdout, EnterAlternateScreen, Hide)?;
+        if let Err(e) = execute!(stdout, EnterAlternateScreen, Hide) {
+            let _ = disable_raw_mode();
+            return Err(e);
+        }
         Ok(Self)
     }
 }
@@ -388,90 +393,115 @@ fn show_inventory_modal(
     stdout: &mut Stdout,
     world: &SimulationWorld,
 ) -> io::Result<Option<ItemId>> {
-    let (ox, oy) = screen_offsets();
-    execute!(stdout, Clear(ClearType::All))?;
     let loc = world.locale;
-    let title = if loc == Locale::Uk {
-        "=== ІНВЕНТАР ПЕРСОНАЖА (Натисніть букву або Esc для закриття) ==="
-    } else {
-        "=== CHARACTER INVENTORY (Press item letter or Esc to close) ==="
-    };
-
-    execute!(
-        stdout,
-        MoveTo(ox + 2, oy + 1),
-        SetForegroundColor(Color::Cyan),
-        Print(title),
-        ResetColor
-    )?;
-
     let carried = world.arena.items_carried_by(world.player_id);
-    if carried.is_empty() {
-        let empty_msg = if loc == Locale::Uk {
-            "Ваш інвентар порожній."
+    let mut pager = Pager::default();
+
+    loop {
+        let (ox, oy) = screen_offsets();
+        queue!(stdout, Clear(ClearType::All))?;
+        let title = if loc == Locale::Uk {
+            "=== ІНВЕНТАР ПЕРСОНАЖА (Натисніть букву або Esc для закриття) ==="
         } else {
-            "Your pack is empty."
+            "=== CHARACTER INVENTORY (Press item letter or Esc to close) ==="
         };
-        execute!(
+        queue!(
             stdout,
-            MoveTo(ox + 4, oy + 3),
-            SetForegroundColor(Color::DarkGrey),
-            Print(empty_msg),
+            MoveTo(ox + 2, oy + 1),
+            SetForegroundColor(Color::Cyan),
+            Print(title),
             ResetColor
         )?;
-    } else {
-        for (idx, &item_id) in carried.iter().enumerate().take(20) {
-            let letter = (b'a' + idx as u8) as char;
-            if let Some(item) = world.arena.items.get(item_id) {
-                let equipped_tag = if world.wielded_item == Some(item_id) {
-                    if loc == Locale::Uk {
-                        " (в руці)"
+
+        if carried.is_empty() {
+            let empty_msg = if loc == Locale::Uk {
+                "Ваш інвентар порожній."
+            } else {
+                "Your pack is empty."
+            };
+            queue!(
+                stdout,
+                MoveTo(ox + 4, oy + 3),
+                SetForegroundColor(Color::DarkGrey),
+                Print(empty_msg),
+                ResetColor
+            )?;
+        } else {
+            for (idx, &item_id) in pager.page_items(&carried).iter().enumerate() {
+                let letter = (b'a' + idx as u8) as char;
+                if let Some(item) = world.arena.items.get(item_id) {
+                    let equipped_tag = if world.wielded_item == Some(item_id) {
+                        if loc == Locale::Uk {
+                            " (в руці)"
+                        } else {
+                            " (weapon in hand)"
+                        }
                     } else {
-                        " (weapon in hand)"
-                    }
+                        ""
+                    };
+                    let name = t_item(&item.name, loc);
+                    let weight_label = if loc == Locale::Uk {
+                        "вага"
+                    } else {
+                        "weight"
+                    };
+                    let desc = format!(
+                        "  [{}] {} - {}: {}{}",
+                        letter, name, weight_label, item.weight, equipped_tag
+                    );
+                    queue!(
+                        stdout,
+                        MoveTo(ox + 2, oy + 3 + idx as u16),
+                        SetForegroundColor(Color::White),
+                        Print(desc),
+                        ResetColor
+                    )?;
+                }
+            }
+            let pages = Pager::page_count(carried.len());
+            if pages > 1 {
+                let footer = if loc == Locale::Uk {
+                    format!(
+                        "(сторінка {}/{}, > та < для перегортання)",
+                        pager.page + 1,
+                        pages
+                    )
                 } else {
-                    ""
+                    format!("(page {}/{}, >/< to turn)", pager.page + 1, pages)
                 };
-                let name = t_item(&item.name, loc);
-                let weight_label = if loc == Locale::Uk {
-                    "вага"
-                } else {
-                    "weight"
-                };
-                let desc = format!(
-                    "  [{}] {} - {}: {}{}",
-                    letter, name, weight_label, item.weight, equipped_tag
-                );
-                execute!(
+                queue!(
                     stdout,
-                    MoveTo(ox + 2, oy + 3 + idx as u16),
-                    SetForegroundColor(Color::White),
-                    Print(desc),
+                    MoveTo(ox + 2, oy + 24),
+                    SetForegroundColor(Color::DarkGrey),
+                    Print(footer),
                     ResetColor
                 )?;
             }
         }
-    }
+        stdout.flush()?;
 
-    loop {
-        if let Event::Key(key) = event::read()? {
-            if key.kind != KeyEventKind::Press {
-                continue;
-            }
-            let code = match key.code {
-                KeyCode::Char(c) => KeyCode::Char(map_ukrainian_key(c)),
-                other => other,
-            };
-            match code {
-                KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char(' ') => return Ok(None),
-                KeyCode::Char(c) if c.is_ascii_lowercase() => {
-                    let idx = (c as u8 - b'a') as usize;
-                    if idx < carried.len() {
-                        return Ok(Some(carried[idx]));
+        match event::read()? {
+            Event::Key(key) if key.kind == KeyEventKind::Press => {
+                let code = match key.code {
+                    KeyCode::Char(c) => KeyCode::Char(map_ukrainian_key(c)),
+                    other => other,
+                };
+                match code {
+                    KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char(' ') => return Ok(None),
+                    KeyCode::Char('>') | KeyCode::Char('.') | KeyCode::PageDown => {
+                        pager.next(carried.len())
                     }
+                    KeyCode::Char('<') | KeyCode::Char(',') | KeyCode::PageUp => pager.prev(),
+                    KeyCode::Char(c) => {
+                        if let Some(idx) = pager.select(c, carried.len()) {
+                            return Ok(Some(carried[idx]));
+                        }
+                    }
+                    _ => {}
                 }
-                _ => {}
             }
+            // Resize (or any other event) just redraws on the next loop turn.
+            _ => {}
         }
     }
 }
@@ -760,6 +790,26 @@ fn main() -> io::Result<()> {
         }
     }
 
+    let seed = match parse_seed_args(&args) {
+        Ok(Some(seed)) => seed,
+        Ok(None) => std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos() as u64)
+            .unwrap_or(42),
+        Err(msg) => {
+            eprintln!("{msg}");
+            std::process::exit(2);
+        }
+    };
+
+    // Installed before the guard so a panic anywhere restores the terminal first.
+    let prev_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        let _ = disable_raw_mode();
+        let _ = execute!(io::stdout(), Show, LeaveAlternateScreen);
+        prev_hook(info);
+    }));
+
     let mut stdout = stdout();
     let _guard = TerminalGuard::new(&mut stdout)?;
 
@@ -770,7 +820,7 @@ fn main() -> io::Result<()> {
     execute!(stdout, Clear(ClearType::All))?;
 
     let char_name = config.name.clone();
-    let mut world = SimulationWorld::new_with_character(42, config);
+    let mut world = SimulationWorld::new_with_character(seed, config);
     world.set_locale(locale);
     let mut message = if locale == Locale::Uk {
         format!("Ласкаво просимо до NetRust, {char_name}! 100% канонічний NetHack 5.0, формалізований у Lean 4.")
@@ -780,9 +830,15 @@ fn main() -> io::Result<()> {
     let mut last_dir = Direction::East;
 
     loop {
-        render(&mut stdout, &world, &message)?;
+        render(&mut stdout, &world, &message, seed)?;
 
-        if let Event::Key(key) = event::read()? {
+        let ev = event::read()?;
+        if let Event::Resize(..) = ev {
+            // Redraw from scratch at the new size (offsets are recomputed in render).
+            execute!(stdout, Clear(ClearType::All))?;
+            continue;
+        }
+        if let Event::Key(key) = ev {
             if key.kind != KeyEventKind::Press {
                 continue;
             }
@@ -1042,7 +1098,12 @@ fn main() -> io::Result<()> {
     Ok(())
 }
 
-fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Result<()> {
+fn render(
+    stdout: &mut Stdout,
+    world: &SimulationWorld,
+    message: &str,
+    seed: u64,
+) -> io::Result<()> {
     let (ox, oy) = screen_offsets();
 
     let p_coord = world
@@ -1055,7 +1116,7 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
     let visible: HashSet<Coord> = compute_fov(&world.level, p_coord, 8);
 
     // Line 0: Message banner
-    execute!(
+    queue!(
         stdout,
         MoveTo(ox, oy),
         SetForegroundColor(Color::Yellow),
@@ -1065,11 +1126,11 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
 
     // Lines 1..=21: 80x21 Dungeon grid
     for y in 0..ROWNO {
-        execute!(stdout, MoveTo(ox, oy + (y + 1) as u16))?;
+        queue!(stdout, MoveTo(ox, oy + (y + 1) as u16))?;
         for x in 0..COLNO {
             let c = Coord::new_unchecked(x, y);
             if !visible.contains(&c) {
-                execute!(stdout, Print(" "))?;
+                queue!(stdout, Print(" "))?;
                 continue;
             }
 
@@ -1081,7 +1142,7 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
                     } else {
                         "@"
                     };
-                    execute!(
+                    queue!(
                         stdout,
                         SetForegroundColor(Color::White),
                         Print(hero_sym),
@@ -1095,7 +1156,7 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
                         .next()
                         .unwrap_or('m')
                         .to_ascii_lowercase();
-                    execute!(
+                    queue!(
                         stdout,
                         SetForegroundColor(Color::Red),
                         Print(ch),
@@ -1108,7 +1169,7 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
             // Trap priority
             if let Some(trap) = world.level.traps.get(&c) {
                 if trap.state == TrapState::Revealed {
-                    execute!(
+                    queue!(
                         stdout,
                         SetForegroundColor(Color::Cyan),
                         Print("^"),
@@ -1123,7 +1184,7 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
             if let Some(&item_id) = floor_items.first() {
                 if let Some(item) = world.arena.items.get(item_id) {
                     let sym = item.class.symbol();
-                    execute!(
+                    queue!(
                         stdout,
                         SetForegroundColor(Color::Cyan),
                         Print(sym),
@@ -1135,9 +1196,9 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
 
             // Tile rendering
             match world.level.get_tile(c) {
-                Tile::Stone => execute!(stdout, Print(" "))?,
+                Tile::Stone => queue!(stdout, Print(" "))?,
                 Tile::Wall { horizontal } => {
-                    execute!(
+                    queue!(
                         stdout,
                         SetForegroundColor(Color::DarkGrey),
                         Print(if *horizontal { '-' } else { '|' }),
@@ -1145,7 +1206,7 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
                     )?;
                 }
                 Tile::Room => {
-                    execute!(
+                    queue!(
                         stdout,
                         SetForegroundColor(Color::Grey),
                         Print("."),
@@ -1153,7 +1214,7 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
                     )?;
                 }
                 Tile::Corr => {
-                    execute!(
+                    queue!(
                         stdout,
                         SetForegroundColor(Color::DarkGrey),
                         Print("#"),
@@ -1166,16 +1227,16 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
                         DoorState::Closed | DoorState::Locked => '+',
                         DoorState::Broken => '*',
                     };
-                    execute!(
+                    queue!(
                         stdout,
                         SetForegroundColor(Color::Yellow),
                         Print(sym),
                         ResetColor
                     )?;
                 }
-                Tile::SecretDoor { .. } => execute!(stdout, Print(" "))?,
+                Tile::SecretDoor { .. } => queue!(stdout, Print(" "))?,
                 Tile::Stairs { up } => {
-                    execute!(
+                    queue!(
                         stdout,
                         SetForegroundColor(Color::Magenta),
                         Print(if *up { '<' } else { '>' }),
@@ -1183,7 +1244,7 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
                     )?;
                 }
                 Tile::BranchStairs { up, .. } => {
-                    execute!(
+                    queue!(
                         stdout,
                         SetForegroundColor(Color::Cyan),
                         Print(if *up { '<' } else { '>' }),
@@ -1196,10 +1257,10 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
                     } else {
                         ('0', Color::DarkYellow)
                     };
-                    execute!(stdout, SetForegroundColor(col), Print(sym), ResetColor)?;
+                    queue!(stdout, SetForegroundColor(col), Print(sym), ResetColor)?;
                 }
                 Tile::Altar { .. } => {
-                    execute!(
+                    queue!(
                         stdout,
                         SetForegroundColor(Color::White),
                         Print("_"),
@@ -1207,7 +1268,7 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
                     )?;
                 }
                 Tile::HighAltar { .. } => {
-                    execute!(
+                    queue!(
                         stdout,
                         SetForegroundColor(Color::Yellow),
                         Print("_"),
@@ -1216,14 +1277,14 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
                 }
                 Tile::Drawbridge { open } => {
                     if *open {
-                        execute!(
+                        queue!(
                             stdout,
                             SetForegroundColor(Color::DarkGrey),
                             Print("."),
                             ResetColor
                         )?;
                     } else {
-                        execute!(
+                        queue!(
                             stdout,
                             SetForegroundColor(Color::DarkYellow),
                             Print("#"),
@@ -1232,7 +1293,7 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
                     }
                 }
                 Tile::Moat => {
-                    execute!(
+                    queue!(
                         stdout,
                         SetForegroundColor(Color::Cyan),
                         Print("}"),
@@ -1240,7 +1301,7 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
                     )?;
                 }
                 Tile::Pool { frozen } => {
-                    execute!(
+                    queue!(
                         stdout,
                         SetForegroundColor(Color::Blue),
                         Print(if *frozen { '=' } else { '}' }),
@@ -1248,7 +1309,7 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
                     )?;
                 }
                 Tile::Lava => {
-                    execute!(
+                    queue!(
                         stdout,
                         SetForegroundColor(Color::Red),
                         Print("^"),
@@ -1308,7 +1369,7 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
     };
 
     let status = format!(
-        "{}:{} {}:{:<2} {}:{} {}:{}({}) {}:{}({}) {}:{:<2} {:<6} T:{:<4} {}:{}{}",
+        "{}:{} {}:{:<2} {}:{} {}:{}({}) {}:{}({}) {}:{:<2} {:<6} T:{:<4} {}:{}{} {}:{}",
         name,
         align_short,
         t("dlvl", locale),
@@ -1331,9 +1392,15 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
             .and_then(|id| world.arena.items.get(id))
             .map(|i| t_item(&i.name, locale))
             .unwrap_or_else(|| none_str.to_string()),
-        aff_str
+        aff_str,
+        if locale == Locale::Uk {
+            "Зерно"
+        } else {
+            "Seed"
+        },
+        seed
     );
-    execute!(
+    queue!(
         stdout,
         MoveTo(ox, oy + 22),
         SetForegroundColor(Color::Green),
@@ -1347,7 +1414,7 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
     } else {
         "[h/j/k/l: Move | s: Search | f: Fire | Q: Quiver | #: Commands | ?: Help | q: Quit]"
     };
-    execute!(
+    queue!(
         stdout,
         MoveTo(ox, oy + 23),
         SetForegroundColor(Color::DarkGrey),
@@ -1355,5 +1422,37 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
         ResetColor
     )?;
 
-    Ok(())
+    stdout.flush()
+}
+
+/// Parse `--seed N` from the argument list.
+fn parse_seed_args(args: &[String]) -> Result<Option<u64>, String> {
+    let Some(pos) = args.iter().position(|a| a == "--seed") else {
+        return Ok(None);
+    };
+    let val = args
+        .get(pos + 1)
+        .ok_or_else(|| "--seed requires a numeric value".to_string())?;
+    val.parse::<u64>()
+        .map(Some)
+        .map_err(|_| format!("invalid --seed value: {val}"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    fn s(v: &[&str]) -> Vec<String> {
+        v.iter().map(|x| x.to_string()).collect()
+    }
+
+    #[test]
+    fn seed_flag() {
+        assert_eq!(parse_seed_args(&s(&["netrust"])), Ok(None));
+        assert_eq!(
+            parse_seed_args(&s(&["netrust", "--seed", "99"])),
+            Ok(Some(99))
+        );
+        assert!(parse_seed_args(&s(&["netrust", "--seed"])).is_err());
+        assert!(parse_seed_args(&s(&["netrust", "--seed", "x"])).is_err());
+    }
 }
