@@ -99,10 +99,10 @@ pub use pet_coop::{
 };
 pub use polymorph::{FormStats, PolyEntity};
 pub use quest::{
-    attack_nemesis, consult_leader, get_role_quest_config, is_hero_eligible_for_quest,
-    pick_up_quest_artifact, quest_progress_rank, return_to_leader_with_artifact, ArtifactLocation,
-    HeroQuestEligibility, QuestProgress, QuestState, RoleQuestConfig, QUEST_MIN_ALIGNMENT,
-    QUEST_MIN_LEVEL,
+    attack_nemesis, consult_leader, get_role_quest_config, get_role_quest_config_or_default,
+    is_hero_eligible_for_quest, pick_up_quest_artifact, quest_progress_rank,
+    return_to_leader_with_artifact, ArtifactLocation, HeroQuestEligibility, QuestProgress,
+    QuestState, RoleQuestConfig, QUEST_MIN_ALIGNMENT, QUEST_MIN_LEVEL,
 };
 pub use raycast::{reflect, step_ray, BeamRay, StepResult, SurfaceOrientation, Velocity};
 pub use religion::{clamp_favor, consecrate_water, resolve_sacrifice, tick_prayer_timeout};

@@ -24,6 +24,17 @@ pub fn clamp_mysterious_force(pushed: usize, sanctum_open: bool) -> usize {
     }
 }
 
+/// Resolve a quest leader/nemesis display name (from `get_role_quest_config`,
+/// C `role.c` `urole[]`) to its BESTIARY species, so spawning and the
+/// nemesis-kill name check in combat can never disagree.
+pub(crate) fn quest_species_by_name(name: &str) -> MonsterSpeciesId {
+    netrust_data::BESTIARY
+        .iter()
+        .find(|m| m.name.eq_ignore_ascii_case(name))
+        .map(|m| m.id)
+        .unwrap_or_else(|| panic!("quest monster {name} missing from BESTIARY"))
+}
+
 impl SimulationWorld {
     /// Same-level random teleport (C `safe_teleds`, `do.c:1566`): move the hero to a
     /// random passable, unoccupied tile. Approximation: uniform over valid tiles
@@ -479,18 +490,8 @@ impl SimulationWorld {
                         netrust_dungeon::generate_quest_home_level(&mut self.rng, &self.role_name);
                     self.level = layout.level;
 
-                    let quest_cfg = netrust_core::get_role_quest_config(&self.role_name);
-                    let leader_species = match quest_cfg.role_name.to_lowercase().as_str() {
-                        "valkyrie" => MonsterSpeciesId::TheNorn,
-                        "wizard" => MonsterSpeciesId::NeferetTheGreen,
-                        "barbarian" => MonsterSpeciesId::Pelias,
-                        "knight" => MonsterSpeciesId::KingArthur,
-                        "monk" => MonsterSpeciesId::GrandMaster,
-                        "rogue" => MonsterSpeciesId::MasterAssassin,
-                        "tourist" => MonsterSpeciesId::Twoflower,
-                        "healer" => MonsterSpeciesId::Hippocrates,
-                        _ => MonsterSpeciesId::LordCarnarvon,
-                    };
+                    let quest_cfg = netrust_core::get_role_quest_config_or_default(&self.role_name);
+                    let leader_species = quest_species_by_name(quest_cfg.leader_name);
                     if let Some(id) = self.spawn_monster_near(leader_species, layout.leader_coord) {
                         if let Some(a) = self.arena.actors.get_mut(id) {
                             a.is_tame = true;
@@ -539,17 +540,8 @@ impl SimulationWorld {
                         netrust_dungeon::generate_quest_goal_level(&mut self.rng, &self.role_name);
                     self.level = layout.level;
 
-                    let quest_cfg = netrust_core::get_role_quest_config(&self.role_name);
-                    let nemesis_species = match quest_cfg.role_name.to_lowercase().as_str() {
-                        "valkyrie" => MonsterSpeciesId::LordSurtur,
-                        "wizard" => MonsterSpeciesId::TheDarkOne,
-                        "barbarian" => MonsterSpeciesId::ThothAmon,
-                        "knight" => MonsterSpeciesId::Ixoth,
-                        "monk" => MonsterSpeciesId::MasterKaen,
-                        "rogue" => MonsterSpeciesId::MasterOfThieves,
-                        "healer" => MonsterSpeciesId::Cyclops,
-                        _ => MonsterSpeciesId::MinionOfHuhetotl,
-                    };
+                    let quest_cfg = netrust_core::get_role_quest_config_or_default(&self.role_name);
+                    let nemesis_species = quest_species_by_name(quest_cfg.nemesis_name);
                     self.spawn_monster_near(nemesis_species, layout.nemesis_coord);
 
                     events.push(GameEvent::LogMessage {
@@ -724,7 +716,7 @@ impl SimulationWorld {
                         alignment_record: self.alignment_record,
                         is_hostile_to_leader: false,
                     };
-                    let quest_cfg = netrust_core::get_role_quest_config(&self.role_name);
+                    let quest_cfg = netrust_core::get_role_quest_config_or_default(&self.role_name);
                     if self.quest_state.progress == netrust_core::QuestProgress::Unassigned {
                         if netrust_core::consult_leader(&mut self.quest_state, &hero_elig).is_err()
                         {
@@ -978,7 +970,7 @@ impl SimulationWorld {
                 up: true,
             } => {
                 if self.current_branch == BranchId::Quest && self.depth == 1 {
-                    let quest_cfg = netrust_core::get_role_quest_config(&self.role_name);
+                    let quest_cfg = netrust_core::get_role_quest_config_or_default(&self.role_name);
                     if self.quest_state.progress == netrust_core::QuestProgress::NemesisDefeated
                         && self.quest_state.artifact_location
                             == netrust_core::ArtifactLocation::CarriedByHero

@@ -45,7 +45,7 @@ impl SimulationWorld {
                     text: netrust_i18n::Messages::pickup_item(&name, self.locale),
                 });
 
-                let quest_cfg = netrust_core::get_role_quest_config(&self.role_name);
+                let quest_cfg = netrust_core::get_role_quest_config_or_default(&self.role_name);
                 if name.eq_ignore_ascii_case(quest_cfg.artifact_name) {
                     netrust_core::pick_up_quest_artifact(&mut self.quest_state);
                     events.push(GameEvent::LogMessage {

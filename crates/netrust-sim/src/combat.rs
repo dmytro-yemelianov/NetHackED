@@ -263,7 +263,7 @@ impl SimulationWorld {
                 });
                 if defender_id != self.player_id {
                     // Check if the defeated enemy is the unique Class Nemesis
-                    let quest_cfg = netrust_core::get_role_quest_config(&self.role_name);
+                    let quest_cfg = netrust_core::get_role_quest_config_or_default(&self.role_name);
                     if defender.name.eq_ignore_ascii_case(quest_cfg.nemesis_name) {
                         netrust_core::attack_nemesis(&mut self.quest_state, 9999);
                         let art_id = match quest_cfg.role_name.to_lowercase().as_str() {

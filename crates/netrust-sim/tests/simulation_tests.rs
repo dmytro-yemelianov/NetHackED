@@ -3931,3 +3931,104 @@ fn test_player_nutrition_json_compat_and_negative() {
     sim.player_nutrition = -201;
     assert_eq!(sim.hunger_state(), netrust_sim::HungerState::Starved);
 }
+
+/// Kill the configured class nemesis on the Quest goal level for `role` and
+/// check that the quest state advances and the C artifact drops.
+/// C: role.c urole table (nemesis +4, artifact +9).
+fn quest_nemesis_kill_completes_for(role: &str, nemesis: &str, artifact: &str) {
+    let mut sim = SimulationWorld::new_with_seed(889);
+    sim.role_name = role.to_string();
+    sim.quest_state.progress = netrust_core::QuestProgress::Assigned;
+    sim.current_branch = netrust_types::BranchId::Quest;
+    sim.depth = 3;
+    let _ = sim.unpack_or_generate_level(netrust_types::BranchId::Quest, 3);
+
+    let nem_id = sim
+        .arena
+        .actors
+        .iter()
+        .find(|(_, a)| a.name == nemesis)
+        .map(|(id, _)| id)
+        .unwrap_or_else(|| panic!("{nemesis} should be present for {role}"));
+    let nem_coord = sim.arena.actors.get(nem_id).unwrap().coord;
+    let hero_coord = nem_coord.step(netrust_types::Direction::West).unwrap();
+    if let Some(p) = sim.arena.actors.get_mut(sim.player_id) {
+        p.coord = hero_coord;
+        p.level = 15;
+    }
+    let mut vorpal_rec = create_item_record(
+        ItemKindId::VorpalBlade,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Blessed,
+    );
+    vorpal_rec.enchantment = 5;
+    let vorpal = sim.arena.spawn_item(vorpal_rec);
+    sim.wielded_item = Some(vorpal);
+    if let Some(n) = sim.arena.actors.get_mut(nem_id) {
+        n.hp = 1;
+        n.ac = 0;
+    }
+    let events = sim.step_player_action(ActionAst::Move(netrust_types::Direction::East));
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, GameEvent::LogMessage { text }
+            if text.contains(nemesis) && text.contains(artifact))),
+        "{role}: nemesis defeat message missing"
+    );
+    assert_eq!(
+        sim.quest_state.progress,
+        netrust_core::QuestProgress::NemesisDefeated
+    );
+    assert_eq!(
+        sim.quest_state.artifact_location,
+        netrust_core::ArtifactLocation::DroppedOnFloor
+    );
+}
+
+#[test]
+fn test_quest_nemesis_kill_completes_rogue() {
+    // C role.c:332 — Rogue nemesis is Master Assassin.
+    quest_nemesis_kill_completes_for("Rogue", "Master Assassin", "Master Key of Thievery");
+}
+
+#[test]
+fn test_quest_nemesis_kill_completes_tourist() {
+    // C role.c:467 — Tourist nemesis is Master of Thieves.
+    quest_nemesis_kill_completes_for(
+        "Tourist",
+        "Master of Thieves",
+        "Platinum Yendorian Express Card",
+    );
+}
+
+#[test]
+fn test_quest_leader_spawned_per_role_matches_config() {
+    // Leader species spawned on the Quest home level must carry the C leader name.
+    for role in [
+        "Valkyrie",
+        "Wizard",
+        "Barbarian",
+        "Rogue",
+        "Knight",
+        "Monk",
+        "Healer",
+        "Tourist",
+        "Archaeologist",
+    ] {
+        let cfg = netrust_core::get_role_quest_config(role).unwrap();
+        let mut sim = SimulationWorld::new_with_seed(5);
+        sim.role_name = role.to_string();
+        sim.current_branch = netrust_types::BranchId::Quest;
+        sim.depth = 1;
+        let _ = sim.unpack_or_generate_level(netrust_types::BranchId::Quest, 1);
+        assert!(
+            sim.arena
+                .actors
+                .iter()
+                .any(|(_, a)| a.name == cfg.leader_name),
+            "{role}: leader {} not spawned",
+            cfg.leader_name
+        );
+    }
+}
