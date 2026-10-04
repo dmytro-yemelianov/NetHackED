@@ -8,7 +8,7 @@ pub mod monsters;
 pub mod turns;
 pub mod world;
 
-pub use actions::items::normalize_wish_name;
+pub use actions::items::{is_real_amulet, normalize_wish_name};
 pub use actions::stairs::{clamp_mysterious_force, SANCTUM_DEPTH};
 pub use events::GameEvent;
 pub use world::{default_rng, SimulationWorld, StoredLevel};

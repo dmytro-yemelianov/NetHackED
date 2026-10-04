@@ -46,8 +46,8 @@ fn spawned_monsters_never_on_stairs_or_stacked() {
                 if pre.contains(&id) {
                     continue;
                 }
-                assert!(a.coord != sim.level.stairs_up && a.coord != sim.level.stairs_down, "{:?} d{} seed {}: {} on stairs", branch, depth, seed, a.name);
-                assert!(seen.insert(a.coord), "{:?} d{} seed {}: stacked at {:?}", branch, depth, seed, a.coord);
+                assert!(a.coord != sim.level.stairs_up && a.coord != sim.level.stairs_down, "{branch:?} d{depth} seed {seed}: {} on stairs", a.name);
+                assert!(seen.insert(a.coord), "{branch:?} d{depth} seed {seed}: stacked at {:?}", a.coord);
             }
         }
     }

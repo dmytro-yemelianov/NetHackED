@@ -116,3 +116,11 @@ fn bind_addr_resolution() {
     assert_eq!(resolve_bind_addr(&[], Some("".into()), "127.0.0.1:7777"), "127.0.0.1:7777");
     assert_eq!(resolve_bind_addr(&[], None, "127.0.0.1:7777"), "127.0.0.1:7777");
 }
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn oversized_body_rejected() {
+    let (addr, _s) = spawn(None).await;
+    let big = "x".repeat(70 * 1024);
+    let (code, _) = tokio::task::spawn_blocking(move || raw(&addr, "POST", "/api/v1/bones", "", &big)).await.unwrap();
+    assert_eq!(code, 413);
+}

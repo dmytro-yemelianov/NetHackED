@@ -732,7 +732,7 @@ impl SimulationWorld {
 
         // Find carried wand of wishing
         let wow_id = self.arena.items_carried_by(self.player_id).into_iter().find(|&id| {
-            self.arena.items.get(id).map(|it| it.name.contains("wishing")).unwrap_or(false)
+            self.arena.items.get(id).map(|it| it.class == ItemClass::Wand && it.name == "wand of wishing").unwrap_or(false)
         });
 
         let Some(wid) = wow_id else {
@@ -775,7 +775,10 @@ impl SimulationWorld {
                 }
                 Some(arch) => {
                     let mut record = create_item_record(arch.id, ItemLocation::Floor(player.coord), buc);
-                    record.enchantment = ench;
+                    // Wands keep their initial charges; the parsed enchantment applies to other items.
+                    if record.class != ItemClass::Wand {
+                        record.enchantment = ench;
+                    }
                     let spawned_id = self.arena.spawn_item(record);
                     let item_name = self.arena.items.get(spawned_id).unwrap().name.clone();
                     events.push(GameEvent::LogMessage {
@@ -797,4 +800,9 @@ impl SimulationWorld {
         self.scheduler.hero_act(NORMAL_SPEED);
         events
     }
+}
+
+/// True only for the genuine Amulet of Yendor (not the wished-for plastic imitation).
+pub fn is_real_amulet(item: &netrust_arena::ItemRecord) -> bool {
+    item.name == "Amulet of Yendor"
 }

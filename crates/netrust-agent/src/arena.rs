@@ -253,7 +253,7 @@ impl AgentPolicy for SpeedrunPolicy {
 
         // Check if player already holds the Amulet of Yendor
         let has_amulet = carried.iter().any(|&iid| {
-            world.arena.items.get(iid).map(|it| it.name.contains("Amulet of Yendor")).unwrap_or(false)
+            world.arena.items.get(iid).is_some_and(netrust_sim::is_real_amulet)
         });
 
         // Determine destination target coordinate
@@ -266,7 +266,7 @@ impl AgentPolicy for SpeedrunPolicy {
         } else if world.depth == 5 {
             // Locate Amulet of Yendor on this level floor
             let floor_amulet = world.arena.items.iter().find_map(|(_, it)| {
-                if it.name.contains("Amulet of Yendor") {
+                if netrust_sim::is_real_amulet(it) {
                     match it.location {
                         ItemLocation::Floor(c) => Some(c),
                         _ => None,

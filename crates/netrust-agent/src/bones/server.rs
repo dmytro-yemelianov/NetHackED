@@ -77,6 +77,7 @@ pub fn create_bones_router_with_token(state: SharedGraveyard, token: Option<Stri
         .route("/api/v1/graves/:hero_name", get(get_grave))
         .route("/api/v1/stats", get(get_stats))
         .route("/api/v1/reset", post(reset_graveyard))
+        .layer(axum::extract::DefaultBodyLimit::max(64 * 1024))
         .with_state(BonesApp { graveyard: state, token: token.map(Arc::from) })
 }
 

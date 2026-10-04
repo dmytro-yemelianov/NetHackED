@@ -48,7 +48,10 @@ impl SimulationWorld {
         None
     }
 
-    /// Pack non-player actors and floor items of the current floor into StoredLevel cache.
+    /// Pack the current floor into the StoredLevel cache: every non-player, non-steed actor,
+    /// every floor item, items carried by packed monsters and everything transitively inside
+    /// those containers (cycle-safe), plus their unpaid-ledger entries. Items the hero carries
+    /// stay in the arena; stale quiver/wield references are cleared first.
     pub(crate) fn pack_current_level(&mut self) {
         let from_key = (self.current_branch, self.depth);
         let steed_id = self.hero.mount.as_ref().map(|m| m.steed_id);
@@ -61,25 +64,38 @@ impl SimulationWorld {
             }
         }
 
+        // Wielded item must refer to something the hero carries.
+        if let Some(w) = self.wielded_item {
+            let carried = self.arena.items.get(w).map(|it| it.location == ItemLocation::CarriedBy(self.player_id)).unwrap_or(false);
+            if !carried {
+                self.wielded_item = None;
+            }
+        }
+
         let monster_ids: Vec<ActorId> = self.arena.actors.iter()
             .filter(|(id, _)| *id != self.player_id && Some(*id) != steed_id)
             .map(|(id, _)| id)
             .collect();
 
+        let monster_set: std::collections::HashSet<ActorId> = monster_ids.iter().copied().collect();
         // Items belonging to the level: floor items, items carried by packed monsters, and
         // everything transitively inside those.
         let mut item_ids: Vec<ItemId> = self.arena.items.iter()
             .filter(|(_, it)| match it.location {
                 ItemLocation::Floor(_) => true,
-                ItemLocation::CarriedBy(a) => monster_ids.contains(&a),
+                ItemLocation::CarriedBy(a) => monster_set.contains(&a),
                 _ => false,
             })
             .map(|(id, _)| id)
             .collect();
+        let mut item_set: std::collections::HashSet<ItemId> = item_ids.iter().copied().collect();
         let mut i = 0;
         while i < item_ids.len() {
-            let children = self.arena.items_in_container(item_ids[i]);
-            item_ids.extend(children);
+            for child in self.arena.items_in_container(item_ids[i]) {
+                if item_set.insert(child) {
+                    item_ids.push(child);
+                }
+            }
             i += 1;
         }
 
@@ -98,7 +114,7 @@ impl SimulationWorld {
 
         let (level_unpaid, hero_unpaid): (Vec<_>, Vec<_>) = std::mem::take(&mut self.unpaid_items)
             .into_iter()
-            .partition(|(iid, _)| item_ids.contains(iid));
+            .partition(|(iid, _)| item_set.contains(iid));
         self.unpaid_items = hero_unpaid;
 
         let stored_current = StoredLevel {
@@ -607,7 +623,7 @@ impl SimulationWorld {
                 if self.depth > 1 {
                     // Gehennom Mysterious Force when ascending with the real Amulet of Yendor
                     let has_amulet = self.arena.items_carried_by(self.player_id).iter().any(|&iid| {
-                        self.arena.items.get(iid).map(|it| it.name.contains("Amulet of Yendor")).unwrap_or(false)
+                        self.arena.items.get(iid).is_some_and(crate::actions::items::is_real_amulet)
                     });
                     if self.current_branch == BranchId::Gehennom && has_amulet {
                         let roll = self.rng.random::<u32>();
@@ -653,7 +669,7 @@ impl SimulationWorld {
                 } else if self.current_branch == BranchId::DungeonsOfDoom {
                     // Surface check for Victory with Amulet of Yendor
                     let has_amulet = self.arena.items_carried_by(self.player_id).iter().any(|&iid| {
-                        self.arena.items.get(iid).map(|it| it.name.contains("Amulet of Yendor")).unwrap_or(false)
+                        self.arena.items.get(iid).is_some_and(crate::actions::items::is_real_amulet)
                     });
                     if has_amulet {
                         events.push(GameEvent::Victory);

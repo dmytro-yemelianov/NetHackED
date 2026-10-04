@@ -200,3 +200,35 @@ fn bumping_a_wall_does_not_tick_prayer_timeout() {
     assert_eq!(sim.scheduler.turn, turn, "wall bump should take no time");
     assert_eq!(sim.divine_state.prayer_timeout, 100);
 }
+
+#[test]
+fn fake_amulet_does_not_win_the_game() {
+    let mut sim = SimulationWorld::new_with_seed(94);
+    sim.arena.spawn_item(create_item_record(ItemKindId::WandOfWishing, ItemLocation::CarriedBy(sim.player_id), Buc::Uncursed));
+    sim.step_player_action(ActionAst::Wish("the Amulet of Yendor".into()));
+    let fake = sim.arena.items.iter()
+        .find(|(_, it)| it.name == "cheap plastic imitation of the Amulet of Yendor")
+        .map(|(id, _)| id)
+        .expect("fake amulet");
+    sim.arena.items.get_mut(fake).unwrap().location = ItemLocation::CarriedBy(sim.player_id);
+    let up = sim.level.stairs_up;
+    sim.arena.actors.get_mut(sim.player_id).unwrap().coord = up;
+    assert_eq!(sim.depth, 1);
+    let ev = sim.step_player_action(ActionAst::Ascend);
+    assert!(!ev.iter().any(|e| matches!(e, netrust_sim::GameEvent::Victory)));
+}
+
+#[test]
+fn wished_wands_keep_initial_charges() {
+    let mut sim = SimulationWorld::new_with_seed(95);
+    for q in ["wand of striking", "+100 wand of death"] {
+        let mut w = create_item_record(ItemKindId::WandOfWishing, ItemLocation::CarriedBy(sim.player_id), Buc::Uncursed);
+        w.enchantment = 3;
+        sim.arena.spawn_item(w);
+        sim.step_player_action(ActionAst::Wish(q.into()));
+    }
+    for name in ["wand of striking", "wand of death"] {
+        let w = sim.arena.items.values().find(|it| it.name == name && matches!(it.location, ItemLocation::Floor(_))).unwrap_or_else(|| panic!("{name} not wished"));
+        assert_eq!(w.enchantment, 6, "{name}");
+    }
+}

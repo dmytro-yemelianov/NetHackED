@@ -152,3 +152,27 @@ fn quiver_cleared_when_item_left_behind() {
     sim.step_player_action(ActionAst::Descend);
     assert_eq!(sim.hero.quivered_item, None);
 }
+
+#[test]
+fn container_cycle_does_not_hang_pack() {
+    let mut sim = SimulationWorld::new_with_seed(322);
+    let spot = sim.level.stairs_down;
+    let floor = sim.arena.spawn_item(create_item_record(ItemKindId::Sack, ItemLocation::Floor(spot), Buc::Uncursed));
+    let a = sim.arena.spawn_item(create_item_record(ItemKindId::Sack, ItemLocation::InContainer(floor), Buc::Uncursed));
+    let b = sim.arena.spawn_item(create_item_record(ItemKindId::Sack, ItemLocation::InContainer(a), Buc::Uncursed));
+    sim.arena.items.get_mut(a).unwrap().location = ItemLocation::InContainer(b);
+    go_down_and_up(&mut sim);
+    assert_no_dangling_refs(&sim);
+}
+
+#[test]
+fn stale_wielded_item_cleared_on_descend() {
+    let mut sim = SimulationWorld::new_with_seed(323);
+    let spot = sim.level.stairs_down;
+    let d = sim.arena.spawn_item(create_item_record(ItemKindId::Dagger, ItemLocation::Floor(spot), Buc::Uncursed));
+    sim.wielded_item = Some(d);
+    sim.arena.actors.get_mut(sim.player_id).unwrap().coord = spot;
+    sim.step_player_action(ActionAst::Descend);
+    assert_eq!(sim.depth, 2);
+    assert_eq!(sim.wielded_item, None);
+}
