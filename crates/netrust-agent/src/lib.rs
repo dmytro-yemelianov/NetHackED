@@ -6,6 +6,7 @@
 pub mod arena;
 pub mod ascii;
 pub mod bones;
+pub mod commands;
 pub mod conducts;
 pub mod jsonrpc;
 pub mod mcp;
@@ -26,6 +27,7 @@ pub use arena::{
     SurvivalPolicy, TrajectoryRecording, TrajectoryStep,
 };
 pub use ascii::render_ascii_map;
+pub use commands::{parse_action, parse_character, ActionArgs, ZAP_ENERGY};
 pub use jsonrpc::{handle_jsonrpc_request, run_jsonrpc_server};
 pub use mcp::{handle_mcp_request, run_mcp_server};
 pub use observation::{ActorObservation, GameObservation, TileInspection};

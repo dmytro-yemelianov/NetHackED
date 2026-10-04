@@ -1,6 +1,5 @@
 //! Shared JSON-RPC 2.0 request parsing and response builders for stdio servers.
 
-use netrust_sim::Direction;
 use serde_json::{json, Value};
 
 pub const PARSE_ERROR: i64 = -32700;
@@ -53,17 +52,4 @@ pub fn parse_request(line: Result<&str, ()>) -> Result<RpcRequest, Value> {
     })
 }
 
-/// Parse a compass direction name or vi-key.
-pub fn parse_direction(s: &str) -> Option<Direction> {
-    match s.to_lowercase().as_str() {
-        "north" | "k" => Some(Direction::North),
-        "south" | "j" => Some(Direction::South),
-        "east" | "l" => Some(Direction::East),
-        "west" | "h" => Some(Direction::West),
-        "northeast" | "u" => Some(Direction::NorthEast),
-        "northwest" | "y" => Some(Direction::NorthWest),
-        "southeast" | "n" => Some(Direction::SouthEast),
-        "southwest" | "b" => Some(Direction::SouthWest),
-        _ => None,
-    }
-}
+pub use crate::commands::parse_direction;
