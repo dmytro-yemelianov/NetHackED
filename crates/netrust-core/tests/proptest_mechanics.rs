@@ -9,7 +9,7 @@ use netrust_core::{
     calculate_summon_count, calculate_tournament_score, can_detect_monster, can_insert_safe,
     can_see_tile, cast_spell, choose_pet_goal, clamp_favor, consecrate_water, consult_leader,
     corrupt_buc_on_death, create_ghost_hp, decide_tactical_action, destroy_drawbridge,
-    dilute_potion, dip_water, enchant_item, enter_branch, exit_branch, feed_pet,
+    dilute_potion, dip_water, enchant_armor, enchant_weapon, enter_branch, exit_branch, feed_pet,
     hero_damage_after_ac, hunger_of_nutrition, hunger_tier, identify_fully, interact_with_occupant,
     is_candelabrum_ready, is_hero_eligible_for_quest, is_hp_critical, is_sanctum_accessible,
     is_valid_bones_level, learn_buc, learn_type, luck_decay_period, mana_cost, melee_damage,
@@ -21,13 +21,13 @@ use netrust_core::{
     toggle_drawbridge, uncurse, zap_wand, Alignment, ArtifactLocation, AscensionOutcome, BeamRay,
     BranchCoord, BranchId, BreathType, Buc, CandelabrumState, Combatant, Coord, DilutionState,
     Direction, DivineState, DoorState, DrawbridgeState, DrawbridgeTransition, DungeonDepth,
-    EncumbranceTier, Engraving, EngravingMedium, FormStats, GazeEffect, GazeType, HeroInteraction,
-    HeroQuestEligibility, Intrinsics, InvocationStep, Item, KnowledgeLevel, LightSource,
-    MetricState, PetFamily, PetGoal, PetSpeciesTier, PolyEntity, PushOutcome, QuestProgress,
-    QuestState, RechargeResult, RitualProgress, RubResult, SchedulerState, SpellKind, StepAction,
-    StepResult, SurfaceOrientation, TacticalAction, TacticalContext, Tile, Velocity, WandCharges,
-    WaterType, MAX_DIVINE_PROTECTION, NORMAL_SPEED, QUEST_MIN_ALIGNMENT, QUEST_MIN_LEVEL,
-    REQUIRED_CANDLES, SAFE_ENCHANT_CAP,
+    EnchantOutcome, EncumbranceTier, Engraving, EngravingMedium, FormStats, GazeEffect, GazeType,
+    HeroInteraction, HeroQuestEligibility, Intrinsics, InvocationStep, Item, KnowledgeLevel,
+    LightSource, MetricState, PetFamily, PetGoal, PetSpeciesTier, PolyEntity, PushOutcome,
+    QuestProgress, QuestState, RechargeResult, RitualProgress, RubResult, SchedulerState,
+    SpellKind, StepAction, StepResult, SurfaceOrientation, TacticalAction, TacticalContext, Tile,
+    Velocity, WandCharges, WaterType, MAX_DIVINE_PROTECTION, NORMAL_SPEED, QUEST_MIN_ALIGNMENT,
+    QUEST_MIN_LEVEL, REQUIRED_CANDLES,
 };
 use proptest::prelude::*;
 
@@ -71,6 +71,69 @@ prop_compose! {
             is_dead: false,
         }
     }
+}
+
+/// Reference for `seffect_enchant_armor` (read.c:1115-1200), written from the C
+/// with i64 math. `None` = evaporated.
+fn ref_enchant_armor(
+    spe: i8,
+    buc: Buc,
+    special: bool,
+    magical: bool,
+    rn2_s: u32,
+    gain_roll: u32,
+) -> Option<i8> {
+    let scursed = buc == Buc::Cursed;
+    let sblessed = buc == Buc::Blessed;
+    let otmp_spe = i64::from(spe);
+    let mut s = if scursed { -otmp_spe } else { otmp_spe };
+    if s > (if special { 5 } else { 3 }) && i64::from(rn2_s).min(s - 1) != 0 {
+        return None;
+    }
+    s = (4 - s) / 2;
+    if special {
+        s += 1;
+    }
+    if !magical {
+        s += 1;
+    }
+    if sblessed {
+        s += 1;
+    }
+    if s <= 0 {
+        s = 0;
+        if otmp_spe > 0 && i64::from(gain_roll).min(otmp_spe - 1) == 0 {
+            s = 1;
+        }
+    } else {
+        s = i64::from(gain_roll).clamp(1, s);
+    }
+    if s > 11 {
+        s = 11;
+    }
+    if scursed {
+        s = -s;
+    }
+    Some((otmp_spe + s).clamp(-128, 127) as i8)
+}
+
+/// Reference for `seffect_enchant_weapon` (read.c:1667) + `chwepon`
+/// (wield.c:999-1000). `None` = evaporated.
+fn ref_enchant_weapon(spe: i8, buc: Buc, rn2_3: u32, gain_roll: u32) -> Option<i8> {
+    let spe = i64::from(spe);
+    let amount = if buc == Buc::Cursed {
+        -1
+    } else if spe >= 9 {
+        i64::from(i64::from(gain_roll).min(spe - 1) == 0)
+    } else if buc == Buc::Blessed {
+        i64::from(gain_roll).clamp(1, 3 - spe / 3)
+    } else {
+        1
+    };
+    if ((spe > 5 && amount >= 0) || (spe < -5 && amount < 0)) && rn2_3.min(2) != 0 {
+        return None;
+    }
+    Some((spe + amount).clamp(-128, 127) as i8)
 }
 
 proptest! {
@@ -676,20 +739,70 @@ proptest! {
     }
 
     // -------------------------------------------------------------
-    // Theorems: enchant_below_cap_safe & enchant_below_cap_increases
+    // Theorems: enchant_armor_* & enchant_weapon_* (read.c:1115, wield.c:999)
     // -------------------------------------------------------------
     #[test]
-    fn prop_enchant_theorems(cur_ench in -5i8..SAFE_ENCHANT_CAP, blessed in proptest::bool::ANY) {
-        let res = enchant_item(cur_ench, blessed, false);
-        prop_assert!(!res.evaporated);
-        prop_assert!(res.new_ench > cur_ench);
+    fn prop_enchant_armor_matches_c_reference(
+        spe in any::<i8>(),
+        buc in arb_buc(),
+        special in proptest::bool::ANY,
+        magical in proptest::bool::ANY,
+        evap in 0u32..300,
+        gain in 0u32..300,
+    ) {
+        let expected = match ref_enchant_armor(spe, buc, special, magical, evap, gain) {
+            Some(v) => EnchantOutcome::Changed(v),
+            None => EnchantOutcome::Evaporated,
+        };
+        prop_assert_eq!(enchant_armor(spe, buc, special, magical, evap, gain), expected);
     }
 
     #[test]
-    fn prop_enchant_at_or_above_cap(cur_ench in SAFE_ENCHANT_CAP..20i8, blessed in proptest::bool::ANY) {
-        let res = enchant_item(cur_ench, blessed, false);
-        prop_assert!(res.evaporated);
-        prop_assert_eq!(res.new_ench, cur_ench);
+    fn prop_enchant_weapon_matches_c_reference(
+        spe in any::<i8>(),
+        buc in arb_buc(),
+        evap in 0u32..10,
+        gain in 0u32..300,
+    ) {
+        let expected = match ref_enchant_weapon(spe, buc, evap, gain) {
+            Some(v) => EnchantOutcome::Changed(v),
+            None => EnchantOutcome::Evaporated,
+        };
+        prop_assert_eq!(enchant_weapon(spe, buc, evap, gain), expected);
+    }
+
+    #[test]
+    fn prop_enchant_safe_at_or_below_limit(
+        spe in -3i8..=5,
+        buc in arb_buc(),
+        special in proptest::bool::ANY,
+        magical in proptest::bool::ANY,
+        evap in any::<u32>(),
+        gain in any::<u32>(),
+    ) {
+        // enchant_weapon_safe_le_limit: weapon at spe <= 5 never evaporates.
+        prop_assert_ne!(enchant_weapon(spe, buc, evap, gain), EnchantOutcome::Evaporated);
+        // enchant_armor_safe_le_limit: armor at spe <= 3 (5 special) never evaporates.
+        if spe <= if special { 5 } else { 3 } {
+            prop_assert_ne!(
+                enchant_armor(spe, buc, special, magical, evap, gain),
+                EnchantOutcome::Evaporated
+            );
+        }
+    }
+
+    #[test]
+    fn prop_enchant_weapon_increases_below_limit(
+        spe in -100i8..=5,
+        blessed in proptest::bool::ANY,
+        evap in any::<u32>(),
+        gain in any::<u32>(),
+    ) {
+        let buc = if blessed { Buc::Blessed } else { Buc::Uncursed };
+        match enchant_weapon(spe, buc, evap, gain) {
+            EnchantOutcome::Changed(v) => prop_assert!(v > spe),
+            EnchantOutcome::Evaporated => prop_assert!(false, "evaporated below limit"),
+        }
     }
 
     // -------------------------------------------------------------

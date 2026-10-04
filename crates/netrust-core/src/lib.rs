@@ -49,7 +49,10 @@ pub use combat::{
 };
 pub use dungeon_stack::DungeonDepth;
 pub use enchantment::{
-    apply_erosion, enchant_item, mix_alchemy, EnchantResult, MAX_EROSION, SAFE_ENCHANT_CAP,
+    apply_erosion, armor_evaporation_draw, armor_gain_draw, armor_is_elven, armor_is_magical,
+    enchant_armor, enchant_weapon, mix_alchemy, weapon_evaporation_draw, weapon_gain_draw,
+    EnchantDraw, EnchantOutcome, ARMOR_SAFE_LIMIT, MAX_EROSION, SPECIAL_ARMOR_SAFE_LIMIT,
+    WEAPON_SAFE_LIMIT,
 };
 pub use endgame::{destroy_drawbridge, offer_amulet_on_high_altar, toggle_drawbridge};
 pub use energy::{SchedulerState, StepAction, NORMAL_SPEED};

@@ -121,10 +121,12 @@ def main : IO Unit := do
   IO.println s!"[Pet] Hero at {repr heroPos} displaces tame pet at {repr petPos} -> Hero: {repr newH}, Pet: {repr newP}, Action: {repr interaction}"
 
   -- 17. Enchantment, Erosion & Alchemy demonstration
-  let ench0 := enchantItem 2 true false
+  let ench0 := enchantWeapon 2 BUC.Blessed 0 3
   let erosion0 := applyErosion ⟨0, false⟩
   let alchemyRes := mixAlchemy AlchemyPotion.Healing AlchemyPotion.GainEnergy
-  IO.println s!"[Enchantment] +2 sword enchanted with blessed scroll -> {repr ench0}"
+  let ench1 := enchantArmor 4 BUC.Uncursed false false 1 1
+  IO.println s!"[Enchantment] +2 sword enchanted with blessed scroll (rnd(3) = 3) -> {repr ench0}"
+  IO.println s!"[Enchantment] +4 plain armor, uncursed scroll, rn2(4) = 1 -> {repr ench1}"
   IO.println s!"[Erosion] Unproofed armor exposed to acid -> {repr erosion0}"
   IO.println s!"[Alchemy] Dipping healing into gain energy -> {repr alchemyRes}"
 

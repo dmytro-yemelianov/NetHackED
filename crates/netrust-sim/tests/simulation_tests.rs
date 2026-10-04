@@ -1170,7 +1170,8 @@ fn test_companion_pet_feeding_and_growth() {
 
 #[test]
 fn test_scroll_of_enchant_weapon() {
-    let mut sim = SimulationWorld::new_with_seed(42);
+    // Blessed amount is rnd(3) at +0 (read.c:1667); seed 3 draws 2.
+    let mut sim = SimulationWorld::new_with_seed(3);
 
     let sword = sim.arena.spawn_item(create_item_record(
         ItemKindId::LongSword,
@@ -1198,7 +1199,8 @@ fn test_scroll_of_enchant_weapon() {
 
 #[test]
 fn test_scroll_of_enchant_armor() {
-    let mut sim = SimulationWorld::new_with_seed(42);
+    // Uncursed +0 leather armor gains rnd(3) (read.c:1115); seed 5 draws 1.
+    let mut sim = SimulationWorld::new_with_seed(5);
 
     let scroll = sim.arena.spawn_item(create_item_record(
         ItemKindId::ScrollOfEnchantArmor,
@@ -1221,6 +1223,64 @@ fn test_scroll_of_enchant_armor() {
         .find(|it| it.class == ItemClass::Armor)
         .unwrap();
     assert_eq!(enchanted_armor.enchantment, 1);
+}
+
+#[test]
+fn enchant_at_safe_limit_never_evaporates() {
+    for seed in 0..20u64 {
+        // Weapon +5 with an uncursed scroll: amount 1, no evaporation (wield.c:999).
+        let mut sim = SimulationWorld::new_with_seed(seed);
+        let sword = sim.arena.spawn_item(create_item_record(
+            ItemKindId::LongSword,
+            ItemLocation::CarriedBy(sim.player_id),
+            Buc::Uncursed,
+        ));
+        sim.arena.items.get_mut(sword).unwrap().enchantment = 5;
+        sim.wielded_item = Some(sword);
+        let scroll = sim.arena.spawn_item(create_item_record(
+            ItemKindId::ScrollOfEnchantWeapon,
+            ItemLocation::CarriedBy(sim.player_id),
+            Buc::Uncursed,
+        ));
+        let idx = sim
+            .arena
+            .items_carried_by(sim.player_id)
+            .iter()
+            .position(|&id| id == scroll)
+            .unwrap();
+        sim.step_player_action(ActionAst::Read(idx));
+        assert_eq!(sim.arena.items.get(sword).unwrap().enchantment, 6);
+
+        // Cursed leather armor +3 with an uncursed scroll: s = 0 + 1 (non-magic)
+        // -> rnd(1) = 1, no evaporation (read.c:1179), armor becomes uncursed.
+        let mut sim = SimulationWorld::new_with_seed(seed);
+        let armor_id = sim
+            .arena
+            .items_carried_by(sim.player_id)
+            .into_iter()
+            .find(|&id| sim.arena.items.get(id).unwrap().class == ItemClass::Armor)
+            .unwrap();
+        {
+            let armor = sim.arena.items.get_mut(armor_id).unwrap();
+            armor.enchantment = 3;
+            armor.buc = Buc::Cursed;
+        }
+        let scroll = sim.arena.spawn_item(create_item_record(
+            ItemKindId::ScrollOfEnchantArmor,
+            ItemLocation::CarriedBy(sim.player_id),
+            Buc::Uncursed,
+        ));
+        let idx = sim
+            .arena
+            .items_carried_by(sim.player_id)
+            .iter()
+            .position(|&id| id == scroll)
+            .unwrap();
+        sim.step_player_action(ActionAst::Read(idx));
+        let armor = sim.arena.items.get(armor_id).unwrap();
+        assert_eq!(armor.enchantment, 4);
+        assert_eq!(armor.buc, Buc::Uncursed);
+    }
 }
 
 #[test]

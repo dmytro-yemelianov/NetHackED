@@ -5,7 +5,7 @@ use netrust_core::{buc::WaterType, energy::NORMAL_SPEED, SpellKind};
 use netrust_data::{create_item_record, ItemKindId};
 use netrust_dungeon::trace_beam_path;
 use netrust_types::{Buc, Coord, Direction, ItemClass};
-use rand::RngCore;
+use rand::{Rng, RngCore};
 
 use crate::events::GameEvent;
 use crate::world::SimulationWorld;
@@ -37,6 +37,60 @@ const UNWISHABLE: &[ItemKindId] = &[
 ];
 
 impl SimulationWorld {
+    /// Draws one C enchant roll from `self.rng` in the range of `draw`
+    /// (`rn2(n)`: `0..n`, `rnd(n)`: `1..=n`); no draw yields 0.
+    fn draw_enchant(&mut self, draw: netrust_core::EnchantDraw) -> u32 {
+        match draw {
+            netrust_core::EnchantDraw::None => 0,
+            netrust_core::EnchantDraw::Rn2(n) => self.rng.random_range(0..n.max(1)),
+            netrust_core::EnchantDraw::Rnd(n) => self.rng.random_range(1..=n.max(1)),
+        }
+    }
+
+    /// Applies an enchant scroll outcome to item `id` and logs it.
+    fn apply_enchant_outcome(
+        &mut self,
+        id: netrust_arena::ItemId,
+        outcome: netrust_core::EnchantOutcome,
+        is_armor: bool,
+        events: &mut Vec<GameEvent>,
+    ) {
+        match outcome {
+            netrust_core::EnchantOutcome::Evaporated => {
+                let name = self
+                    .arena
+                    .items
+                    .get(id)
+                    .map(|it| it.name.clone())
+                    .unwrap_or_default();
+                self.arena.destroy_item(id);
+                if self.wielded_item == Some(id) {
+                    self.wielded_item = None;
+                }
+                events.push(GameEvent::LogMessage {
+                    text: format!("Your {name} glows violently and evaporates!"),
+                });
+            }
+            netrust_core::EnchantOutcome::Changed(new_spe) => {
+                if let Some(it) = self.arena.items.get_mut(id) {
+                    it.enchantment = new_spe;
+                    let text = if is_armor {
+                        format!(
+                            "Your {} glows with a protective silver sheen! ({:+})",
+                            it.name, new_spe
+                        )
+                    } else {
+                        format!(
+                            "Your {} glows with a silvery aura! ({:+})",
+                            it.name, new_spe
+                        )
+                    };
+                    events.push(GameEvent::LogMessage { text });
+                }
+            }
+        }
+    }
+
     pub(crate) fn handle_dip(
         &mut self,
         item_index: usize,
@@ -322,78 +376,78 @@ impl SimulationWorld {
                         }
                         events.push(GameEvent::LogMessage { text: "You feel as though someone is helping you. Your possessions are uncursed!".into() });
                     } else if item.name.contains("enchant weapon") {
-                        if let Some(wielded_id) = self.wielded_item {
-                            if let Some(wielded) = self.arena.items.get_mut(wielded_id) {
-                                let is_blessed = item.buc == Buc::Blessed;
-                                let is_cursed = item.buc == Buc::Cursed;
-                                let res = netrust_core::enchantment::enchant_item(
-                                    wielded.enchantment,
-                                    is_blessed,
-                                    is_cursed,
-                                );
-                                if res.evaporated {
-                                    let name = wielded.name.clone();
-                                    self.arena.destroy_item(wielded_id);
-                                    self.wielded_item = None;
-                                    events.push(GameEvent::LogMessage {
-                                        text: format!(
-                                            "Your {name} glows violently and evaporates!"
-                                        ),
-                                    });
-                                } else {
-                                    wielded.enchantment = res.new_ench;
-                                    events.push(GameEvent::LogMessage {
-                                        text: format!(
-                                            "Your {} glows with a silvery aura! ({:+})",
-                                            wielded.name, res.new_ench
-                                        ),
-                                    });
-                                }
-                            }
+                        let wielded = self
+                            .wielded_item
+                            .and_then(|id| self.arena.items.get(id).map(|w| (id, w.enchantment)));
+                        if let Some((wielded_id, spe)) = wielded {
+                            // C draws the amount (read.c:1667) before chwepon's
+                            // evaporation roll (wield.c:999-1000).
+                            let gain_roll =
+                                self.draw_enchant(netrust_core::weapon_gain_draw(spe, item.buc));
+                            let evaporate_roll = self
+                                .draw_enchant(netrust_core::weapon_evaporation_draw(spe, item.buc));
+                            let outcome = netrust_core::enchant_weapon(
+                                spe,
+                                item.buc,
+                                evaporate_roll,
+                                gain_roll,
+                            );
+                            self.apply_enchant_outcome(wielded_id, outcome, false, &mut events);
                         } else {
                             events.push(GameEvent::LogMessage {
                                 text: "Your hands itch for a moment.".into(),
                             });
                         }
                     } else if item.name.contains("enchant armor") {
-                        let armor_id = self
+                        // Carried armor stands in for C `some_armor` (no worn slots).
+                        let armor = self
                             .arena
                             .items_carried_by(self.player_id)
                             .into_iter()
-                            .find(|&id| {
+                            .find_map(|id| {
                                 self.arena
                                     .items
                                     .get(id)
-                                    .map(|it| it.class == ItemClass::Armor)
-                                    .unwrap_or(false)
+                                    .filter(|it| it.class == ItemClass::Armor)
+                                    .map(|it| (id, it.enchantment, it.name.clone()))
                             });
-                        if let Some(aid) = armor_id {
-                            if let Some(armor) = self.arena.items.get_mut(aid) {
-                                let is_blessed = item.buc == Buc::Blessed;
-                                let is_cursed = item.buc == Buc::Cursed;
-                                let res = netrust_core::enchantment::enchant_item(
-                                    armor.enchantment,
-                                    is_blessed,
-                                    is_cursed,
-                                );
-                                if res.evaporated {
-                                    let name = armor.name.clone();
-                                    self.arena.destroy_item(aid);
-                                    events.push(GameEvent::LogMessage {
-                                        text: format!(
-                                            "Your {name} glows violently and evaporates!"
-                                        ),
-                                    });
-                                } else {
-                                    armor.enchantment = res.new_ench;
-                                    events.push(GameEvent::LogMessage {
-                                        text: format!(
-                                            "Your {} glows with a protective silver sheen! ({:+})",
-                                            armor.name, res.new_ench
-                                        ),
-                                    });
+                        if let Some((aid, spe, name)) = armor {
+                            // Item records carry no object kind: elven / oc_magic are
+                            // classified by name; the cornuthaum is special for Wizards.
+                            let special = netrust_core::armor_is_elven(&name)
+                                || (self.role_name == "Wizard" && name == "cornuthaum");
+                            let magical = netrust_core::armor_is_magical(&name);
+                            let evaporate_roll = self.draw_enchant(
+                                netrust_core::armor_evaporation_draw(spe, item.buc, special),
+                            );
+                            let outcome = if evaporate_roll == 0 {
+                                let gain_roll = self.draw_enchant(netrust_core::armor_gain_draw(
+                                    spe, item.buc, special, magical,
+                                ));
+                                netrust_core::enchant_armor(
+                                    spe,
+                                    item.buc,
+                                    special,
+                                    magical,
+                                    evaporate_roll,
+                                    gain_roll,
+                                )
+                            } else {
+                                netrust_core::EnchantOutcome::Evaporated
+                            };
+                            if let netrust_core::EnchantOutcome::Changed(_) = outcome {
+                                // read.c:1115 seffect_enchant_armor: the armor's BUC
+                                // follows the scroll (curse / bless / uncurse).
+                                if let Some(armor) = self.arena.items.get_mut(aid) {
+                                    armor.buc = match (item.buc, armor.buc) {
+                                        (Buc::Cursed, _) => Buc::Cursed,
+                                        (Buc::Blessed, _) => Buc::Blessed,
+                                        (Buc::Uncursed, Buc::Cursed) => Buc::Uncursed,
+                                        (Buc::Uncursed, b) => b,
+                                    };
                                 }
                             }
+                            self.apply_enchant_outcome(aid, outcome, true, &mut events);
                         } else {
                             events.push(GameEvent::LogMessage {
                                 text: "Your skin feels warm for a moment.".into(),

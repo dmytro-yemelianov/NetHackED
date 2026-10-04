@@ -12,7 +12,7 @@ The Lean models and the Rust engine are simplified abstractions of NetHack mecha
 * **Bare-handed damage**: bare-handed attacks use the weapon skill damage table (Unskilled $-2$). In C, the bare-handed/martial-arts damage bonus is $0/{+1}/{+1}/{+2}$ for Unskilled/Basic/Skilled/Expert.
 * **`abon()` omitted**: attributes are not tracked, so the to-hit `abon()` term is 0; C's $+1$ below experience level 3 and the Str/Dex to-hit bonuses are absent.
 * **Starting weapon skills**: heroes start with no weapon skills (every weapon is Unskilled, $-4$ to hit); C starts each role at Basic in its starting weapons. A follow-up task will address this.
-* **Enchantment cap and recharge explosion**: enchant caps and the recharge-explosion outcome are modelled deterministically; C uses random rolls (`rn2`) for these.
+* **Recharge explosion**: the recharge-explosion outcome is modelled deterministically; C uses random rolls (`rn2`) for it.
 * **Shop charisma table**: the charisma-based price adjustment table is simplified relative to `get_cost` in `shk.c`.
 
 These divergences are planned to be corrected in a later fidelity pass. Until then, do not treat the formulas in this document as authoritative descriptions of NetHack C behavior.
