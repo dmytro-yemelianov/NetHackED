@@ -1,9 +1,8 @@
 //! JSON-RPC 2.0 standard protocol streaming over stdio for autonomous AI pairs.
 
-use netrust_sim::Coord;
 use serde_json::{json, Value};
 
-use crate::commands::parse_action;
+use crate::commands::{action_args_from_json, parse_action};
 use crate::rpc::{
     self, error_response, result_response, RpcRequest, INVALID_PARAMS, METHOD_NOT_FOUND,
 };
@@ -43,14 +42,8 @@ fn dispatch(
                 .get("action")
                 .and_then(|a| a.as_str())
                 .unwrap_or("wait");
-            let player = session
-                .world
-                .arena
-                .actors
-                .get(session.world.player_id)
-                .map(|p| p.coord)
-                .unwrap_or(Coord::new_unchecked(0, 0));
-            let args = crate::mcp::action_args(params, player).map_err(|m| (INVALID_PARAMS, m))?;
+            let args = action_args_from_json(params, session.player_coord())
+                .map_err(|m| (INVALID_PARAMS, m))?;
             let action = parse_action(action_str, &args).map_err(|m| (INVALID_PARAMS, m))?;
             Ok(json!(session.step(action)))
         }

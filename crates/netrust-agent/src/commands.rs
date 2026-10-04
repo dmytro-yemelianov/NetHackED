@@ -215,11 +215,71 @@ pub fn parse_character(
     Ok(c)
 }
 
+/// Read an optional non-negative integer; a present non-number is an error.
+fn json_number(v: &serde_json::Value, key: &str) -> Result<Option<usize>, String> {
+    match v.get(key) {
+        None | Some(serde_json::Value::Null) => Ok(None),
+        Some(n) => n
+            .as_u64()
+            .map(|n| Some(n as usize))
+            .ok_or_else(|| format!("'{key}' must be a non-negative integer")),
+    }
+}
+
+/// Read an optional string; a present non-string is an error.
+fn json_string(v: &serde_json::Value, key: &str) -> Result<Option<String>, String> {
+    match v.get(key) {
+        None | Some(serde_json::Value::Null) => Ok(None),
+        Some(serde_json::Value::String(s)) => Ok(Some(s.clone())),
+        Some(_) => Err(format!("'{key}' must be a string")),
+    }
+}
+
+/// Build [`ActionArgs`] from a JSON object (MCP arguments / JSON-RPC params).
+///
+/// `index` must be a JSON number; `direction`/`text` must be strings; the target
+/// comes from `x`/`y` or `target_x`/`target_y`. Wrong types are errors.
+pub fn action_args_from_json(
+    args: &serde_json::Value,
+    player: Option<Coord>,
+) -> Result<ActionArgs, String> {
+    let x = json_number(args, "x")?.or(json_number(args, "target_x")?);
+    let y = json_number(args, "y")?.or(json_number(args, "target_y")?);
+    Ok(ActionArgs {
+        index: json_number(args, "index")?,
+        direction: json_string(args, "direction")?,
+        target: x.zip(y),
+        text: json_string(args, "text")?,
+        player,
+    })
+}
+
 #[cfg(test)]
 #[allow(clippy::bool_assert_comparison)]
 mod tests {
     use super::*;
     use netrust_sim::{ActionAst, Coord, Direction};
+
+    #[test]
+    fn action_args_from_json_validates_types() {
+        use serde_json::json;
+        let ok = action_args_from_json(&json!({"index": 3, "direction": "north"}), None).unwrap();
+        assert_eq!(ok.index, Some(3));
+        assert_eq!(ok.direction.as_deref(), Some("north"));
+        assert!(action_args_from_json(&json!({"index": "3"}), None).is_err());
+        assert!(action_args_from_json(&json!({"direction": 5}), None).is_err());
+        assert!(action_args_from_json(&json!({"text": 5}), None).is_err());
+        let t = action_args_from_json(&json!({"x": 4, "y": 7}), None).unwrap();
+        assert_eq!(t.target, Some((4, 7)));
+        let t = action_args_from_json(&json!({"target_x": 1, "target_y": 2}), None).unwrap();
+        assert_eq!(t.target, Some((1, 2)));
+        assert_eq!(
+            action_args_from_json(&json!({"x": 1}), None)
+                .unwrap()
+                .target,
+            None
+        );
+    }
 
     fn a() -> ActionArgs {
         ActionArgs::default()

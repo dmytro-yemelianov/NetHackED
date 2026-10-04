@@ -27,6 +27,15 @@ impl AgentSession {
         }
     }
 
+    /// Current player coordinate, if the player actor exists.
+    pub fn player_coord(&self) -> Option<Coord> {
+        self.world
+            .arena
+            .actors
+            .get(self.world.player_id)
+            .map(|p| p.coord)
+    }
+
     pub fn get_observation(&self) -> GameObservation {
         let player = self.world.arena.actors.get(self.world.player_id);
         let player_coord = player

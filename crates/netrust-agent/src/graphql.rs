@@ -219,12 +219,7 @@ impl MutationRoot {
         let state = ctx.data_unchecked::<AppState>();
         let mut session = state.session.lock().unwrap();
 
-        let player = session
-            .world
-            .arena
-            .actors
-            .get(session.world.player_id)
-            .map(|p| p.coord);
+        let player = session.player_coord();
         let args = ActionArgs {
             index,
             direction,

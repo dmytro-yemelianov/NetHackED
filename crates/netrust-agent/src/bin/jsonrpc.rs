@@ -3,11 +3,9 @@
 //! Feeds continuous structured JSON observations to autonomous agents,
 //! bash pipes, or RL environments.
 
-use netrust_agent::commands::parse_action;
-use netrust_agent::mcp::action_args;
+use netrust_agent::commands::{action_args_from_json, parse_action};
 use netrust_agent::stdio::serve_lines;
 use netrust_agent::AgentSession;
-use netrust_sim::Coord;
 use serde_json::{json, Value};
 use std::io::{self, Write};
 
@@ -34,14 +32,7 @@ fn main() -> io::Result<()> {
         let obs = if action_name == "get_state" {
             session.get_observation()
         } else {
-            let player = session
-                .world
-                .arena
-                .actors
-                .get(session.world.player_id)
-                .map(|p| p.coord)
-                .unwrap_or(Coord::new_unchecked(0, 0));
-            let args = match action_args(&cmd, player) {
+            let args = match action_args_from_json(&cmd, session.player_coord()) {
                 Ok(a) => a,
                 Err(e) => return Some(json!({ "error": e }).to_string()),
             };

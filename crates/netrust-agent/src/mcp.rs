@@ -1,10 +1,10 @@
 //! JSON-RPC 2.0 message parser and dispatcher for Model Context Protocol (MCP).
 
 use netrust_data::roles::{RACES, ROLES};
-use netrust_sim::{ActionAst, Coord, SimulationWorld};
+use netrust_sim::SimulationWorld;
 use serde_json::{json, Value};
 
-use crate::commands::{parse_action, parse_character, ActionArgs};
+use crate::commands::{action_args_from_json, parse_action, parse_character};
 use crate::rpc::{
     self, error_response, result_response, RpcRequest, INVALID_PARAMS, METHOD_NOT_FOUND,
 };
@@ -165,46 +165,6 @@ fn tools_list() -> Value {
     })
 }
 
-/// Read an optional non-negative integer argument; present non-numbers are errors.
-pub(crate) fn number_arg(args: &Value, key: &str) -> Result<Option<usize>, String> {
-    match args.get(key) {
-        None | Some(Value::Null) => Ok(None),
-        Some(v) => v
-            .as_u64()
-            .map(|n| Some(n as usize))
-            .ok_or_else(|| format!("'{key}' must be a non-negative integer")),
-    }
-}
-
-/// Build [`ActionArgs`] from a JSON params/arguments object.
-#[doc(hidden)]
-pub fn action_args(args: &Value, player: Coord) -> Result<ActionArgs, String> {
-    let target = match (
-        number_arg(args, "x")?.or(number_arg(args, "target_x")?),
-        number_arg(args, "y")?.or(number_arg(args, "target_y")?),
-    ) {
-        (Some(x), Some(y)) => Some((x, y)),
-        _ => None,
-    };
-    Ok(ActionArgs {
-        index: number_arg(args, "index")?,
-        direction: args
-            .get("direction")
-            .and_then(|v| v.as_str())
-            .map(str::to_string),
-        target,
-        text: args
-            .get("text")
-            .and_then(|v| v.as_str())
-            .map(str::to_string),
-        player: Some(player),
-    })
-}
-
-fn parse_step_action(act: &str, args: &Value, p: Coord) -> Result<ActionAst, String> {
-    parse_action(act, &action_args(args, p)?)
-}
-
 fn call_tool(session: &mut AgentSession, name: &str, args: &Value) -> Result<String, String> {
     match name {
         "netrust_get_observation" => {
@@ -216,14 +176,8 @@ fn call_tool(session: &mut AgentSession, name: &str, args: &Value) -> Result<Str
                 .get("action")
                 .and_then(|a| a.as_str())
                 .ok_or("missing 'action'")?;
-            let p_coord = session
-                .world
-                .arena
-                .actors
-                .get(session.world.player_id)
-                .map(|p| p.coord)
-                .unwrap_or(Coord::new_unchecked(0, 0));
-            let action = parse_step_action(act_str, args, p_coord)?;
+            let a = action_args_from_json(args, session.player_coord())?;
+            let action = parse_action(act_str, &a)?;
             let obs = session.step(action);
             Ok(serde_json::to_string_pretty(&obs).unwrap_or_default())
         }
