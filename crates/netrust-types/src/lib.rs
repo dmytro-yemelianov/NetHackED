@@ -623,6 +623,7 @@ pub struct Attack {
 /// Intrinsic and Extrinsic flags.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(default)]
 pub struct Intrinsics {
     pub fire_resistance: bool,
     pub cold_resistance: bool,

@@ -630,7 +630,7 @@ pub const ENGINE_REQUIRED_MONSTERS: &[&str] = &[
     "Vlad the Impaler",
     "Croesus",
     "Medusa",
-    "lich",
+    "master lich",
 ];
 
 /// Canonical list of items required by core simulation mechanics.

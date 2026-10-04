@@ -1,0 +1,23 @@
+[package]
+name = "netrust-pack"
+license = "NGPL"
+version = "0.1.0"
+edition = "2021"
+description = "Rule pack library, parser, patch merger, validator, and pack format for NetRust"
+
+[dependencies]
+netrust-types = { path = "../netrust-types" }
+netrust-core = { path = "../netrust-core" }
+netrust-data = { path = "../netrust-data" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.8"
+sha2 = "0.10"
+schemars = { version = "0.8", optional = true }
+
+[dev-dependencies]
+proptest = "1.5"
+
+[features]
+default = []
+schema = ["schemars", "netrust-data/schema", "netrust-types/schema"]
