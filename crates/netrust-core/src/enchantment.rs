@@ -112,6 +112,16 @@ pub fn armor_gain_draw(
     }
 }
 
+/// Whether enchant armor evaporates the armor (C `read.c:1179`):
+/// `s > (special ? 5 : 3) && rn2(s)`, with `s = scursed ? -spe : spe`.
+/// `evaporate_roll` is the `rn2(s)` draw (range `0..s`, clamped to `s-1`); it is
+/// ignored when `s` is within the safe limit. Callers use this to skip the gain draw
+/// after evaporation, as C does.
+pub fn armor_evaporates(spe: i8, buc: Buc, is_elven_or_special: bool, evaporate_roll: u32) -> bool {
+    let evap = armor_evaporation_draw(spe, buc, is_elven_or_special);
+    evap != EnchantDraw::None && evap.clamp(evaporate_roll) != 0
+}
+
 /// Reads a scroll of enchant armor on a piece of armor with enchantment `spe`
 /// (C `read.c:1115` `seffect_enchant_armor`, evaporation `read.c:1179`).
 ///
@@ -137,8 +147,7 @@ pub fn enchant_armor(
     evaporate_roll: u32,
     gain_roll: u32,
 ) -> EnchantOutcome {
-    let evap = armor_evaporation_draw(spe, buc, is_elven_or_special);
-    if evap != EnchantDraw::None && evap.clamp(evaporate_roll) != 0 {
+    if armor_evaporates(spe, buc, is_elven_or_special, evaporate_roll) {
         return EnchantOutcome::Evaporated;
     }
     let gain = match armor_gain_draw(spe, buc, is_elven_or_special, is_magical) {
@@ -215,15 +224,16 @@ pub fn armor_is_elven(name: &str) -> bool {
     name.to_lowercase().contains("elven")
 }
 
-/// Whether armor has `oc_magic` set (C `objects.h`), by item name: dragon scales /
-/// scale mail, cornuthaum, dunce cap, helms of brilliance / opposite alignment /
+/// Whether armor has `oc_magic` set (C `include/objects.h`), by item name: dragon
+/// scale mail (`objects.h:502-525`; plain dragon scales are non-magic, `:528-552`),
+/// cornuthaum, dunce cap, helms of brilliance / caution / opposite alignment /
 /// telepathy, gauntlets of power / fumbling / dexterity, speed / water walking /
 /// jumping / elven / kicking / fumble / levitation boots, magic cloaks (protection,
 /// invisibility, magic resistance, displacement), elven cloak, alchemy smock, robe
-/// and shield of reflection.
+/// and shields of drain resistance / shock resistance / reflection.
 pub fn armor_is_magical(name: &str) -> bool {
     const MAGIC: [&str; 15] = [
-        "dragon scale",
+        "dragon scale mail",
         "cornuthaum",
         "dunce cap",
         "helm of ",
@@ -237,7 +247,7 @@ pub fn armor_is_magical(name: &str) -> bool {
         "levitation boots",
         "cloak of ",
         "elven cloak",
-        "shield of reflection",
+        "shield of ",
     ];
     let n = name.to_lowercase();
     MAGIC.iter().any(|m| n.contains(m)) || n.contains("alchemy smock") || n.ends_with("robe")
@@ -491,6 +501,9 @@ mod tests {
         assert!(!armor_is_elven("plate mail"));
         assert!(armor_is_magical("cloak of magic resistance"));
         assert!(armor_is_magical("silver dragon scale mail"));
+        assert!(!armor_is_magical("silver dragon scales"));
+        assert!(armor_is_magical("shield of drain resistance"));
+        assert!(armor_is_magical("helm of caution"));
         assert!(!armor_is_magical("plate mail"));
         assert!(!armor_is_magical("leather armor"));
     }

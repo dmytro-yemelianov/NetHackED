@@ -420,21 +420,27 @@ impl SimulationWorld {
                             let evaporate_roll = self.draw_enchant(
                                 netrust_core::armor_evaporation_draw(spe, item.buc, special),
                             );
-                            let outcome = if evaporate_roll == 0 {
-                                let gain_roll = self.draw_enchant(netrust_core::armor_gain_draw(
-                                    spe, item.buc, special, magical,
-                                ));
-                                netrust_core::enchant_armor(
-                                    spe,
-                                    item.buc,
-                                    special,
-                                    magical,
-                                    evaporate_roll,
-                                    gain_roll,
-                                )
+                            // C draws the gain only when the armor survives (read.c:1179).
+                            let gain_roll = if netrust_core::armor_evaporates(
+                                spe,
+                                item.buc,
+                                special,
+                                evaporate_roll,
+                            ) {
+                                0
                             } else {
-                                netrust_core::EnchantOutcome::Evaporated
+                                self.draw_enchant(netrust_core::armor_gain_draw(
+                                    spe, item.buc, special, magical,
+                                ))
                             };
+                            let outcome = netrust_core::enchant_armor(
+                                spe,
+                                item.buc,
+                                special,
+                                magical,
+                                evaporate_roll,
+                                gain_roll,
+                            );
                             if let netrust_core::EnchantOutcome::Changed(_) = outcome {
                                 // read.c:1115 seffect_enchant_armor: the armor's BUC
                                 // follows the scroll (curse / bless / uncurse).
