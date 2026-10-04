@@ -160,8 +160,8 @@ pub struct Messages;
 impl Messages {
     pub fn welcome(locale: Locale) -> &'static str {
         match locale {
-            Locale::En => "Welcome to NetRust! Formalized and mathematically verified in Lean 4.",
-            Locale::Uk => "Ласкаво просимо до NetRust! Формалізовано та математично доведено в Lean 4.",
+            Locale::En => "Welcome to NetRust! Core mechanics modeled in Lean 4.",
+            Locale::Uk => "Ласкаво просимо до NetRust! Ключові механіки змодельовано в Lean 4.",
         }
     }
 
