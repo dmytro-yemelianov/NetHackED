@@ -26,7 +26,7 @@ impl SimulationWorld {
             netrust_core::engraving::EngravingMedium::Marked(_) => "with marking ink",
         };
         events.push(GameEvent::LogMessage {
-            text: format!("You write \"{}\" {} on the floor.", text, medium_desc),
+            text: format!("You write \"{text}\" {medium_desc} on the floor."),
         });
         self.scheduler.hero_act(NORMAL_SPEED);
 

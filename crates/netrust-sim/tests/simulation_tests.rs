@@ -368,7 +368,7 @@ fn test_monster_dijkstra_hunting() {
         sim.step_player_action(ActionAst::Wait);
 
         let new_dist = sim.arena.actors.get(goblin_id).unwrap().coord.chebyshev_distance(p_coord);
-        assert!(new_dist <= init_dist, "Monster should advance towards player along Dijkstra gradient: init {}, new {}", init_dist, new_dist);
+        assert!(new_dist <= init_dist, "Monster should advance towards player along Dijkstra gradient: init {init_dist}, new {new_dist}");
     }
 }
 
@@ -1558,7 +1558,7 @@ fn test_bones_file_generation_and_ghost_encounter() {
     assert_eq!(bones.hero_name, "Conan");
     assert_eq!(bones.depth, 3);
     assert_eq!(bones.death_coord, death_coord);
-    assert!(bones.items.len() >= 1);
+    assert!(!bones.items.is_empty());
     // Gear must be corrupted to Cursed
     assert!(bones.items.iter().all(|item| item.buc == Buc::Cursed));
     assert!(bones.items.iter().any(|item| item.name == "long sword"));
@@ -2141,7 +2141,7 @@ fn test_hero_polymorph_potion_and_damage_reversion() {
     assert!(poly_dropped, "Polymorph form should drop from lethal damage");
     
     let current_base = sim.hero.base_hp;
-    assert!(current_base < 100 && current_base > 0, "Hero should survive with reduced base HP, got {}", current_base);
+    assert!(current_base < 100 && current_base > 0, "Hero should survive with reduced base HP, got {current_base}");
 }
 
 #[test]
@@ -2349,7 +2349,7 @@ fn test_petrification_fatal_countdown() {
 
 #[test]
 fn test_weapon_skill_combat_bonus() {
-    use netrust_types::{SkillClass, SkillLevel, Alignment, Intrinsics, Coord, Tile};
+    use netrust_types::{SkillClass, SkillLevel, Alignment, Intrinsics, Tile};
     use netrust_sim::{SimulationWorld, ActionAst};
     use netrust_arena::{ItemRecord, ItemLocation, ActorRecord};
     use netrust_types::ItemClass;
@@ -2475,8 +2475,7 @@ fn test_steed_mounting_and_effective_movement() {
     // Mount the steed
     sim.step_player_action(ActionAst::Mount(horse_id));
     
-    let hero = sim.arena.actors.get(sim.player_id).unwrap();
-    assert!(sim.hero.mount.is_some(), "Hero should be mounted on the horse");
+        assert!(sim.hero.mount.is_some(), "Hero should be mounted on the horse");
     
     // Test movement consumes mount's movement cost
     // We could check energy before and after, but the test requirement is just to "verify moving consumes the mount's movement cost".
@@ -2676,7 +2675,7 @@ fn test_pacifist_conduct_violation_on_kill() {
         is_tame: false, tameness: 0, abilities: vec![],
     };
     
-    let monster_id = sim.arena.actors.insert(monster);
+    sim.arena.actors.insert(monster);
     
     // Melee attack the monster
     let _events = sim.step_player_action(ActionAst::MeleeAttack(monster_pos));

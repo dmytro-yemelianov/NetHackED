@@ -42,7 +42,7 @@ fn main() {
         Direction::North,
     ];
 
-    for (_step_idx, &dir) in directions.iter().enumerate() {
+    for &dir in directions.iter() {
         println!("Turn {}: Agent deciding next action...", obs.turn);
 
         // Check visible actors
@@ -72,12 +72,12 @@ fn main() {
 
         // Execute action
         let action = ActionAst::Move(dir);
-        println!("  ⚡ Executing: Move({:?})", dir);
+        println!("  ⚡ Executing: Move({dir:?})");
         obs = session.step(action);
 
         // Process game events / logs
         for event in &obs.last_events {
-            println!("  📜 Event: {:?}", event);
+            println!("  📜 Event: {event:?}");
         }
 
         println!("  ❤️ Player HP: {}/{} | Position: ({}, {})\n",

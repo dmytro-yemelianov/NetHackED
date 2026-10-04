@@ -24,7 +24,7 @@ fn invocation_items_reachable_on_every_seed() {
         assert_eq!(candles.len(), 7, "seed {seed}");
         for name in ["wax candle", "Candelabrum of Invocation", "Book of the Dead"] {
             for c in floor_coords_named(&sim, name) {
-                assert!(reach.contains(&c), "seed {seed}: {name} at {:?} unreachable", c);
+                assert!(reach.contains(&c), "seed {seed}: {name} at {c:?} unreachable");
             }
         }
         assert!(reach.contains(&sim.vibrating_square.unwrap()), "seed {seed}");

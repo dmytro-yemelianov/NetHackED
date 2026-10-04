@@ -92,12 +92,11 @@ pub fn can_see_tile(blind: bool, dist: u32, is_dark: bool, is_illuminated: bool)
 ///
 /// - Visible directly if the tile is visible.
 /// - Sensed telepathically if hero has telepathy and monster has a mind, even through blindness/darkness.
-pub fn can_detect_monster(blind: bool, telepathy: bool, has_mind: bool, tile_visible: bool) -> bool {
+pub fn can_detect_monster(_blind: bool, telepathy: bool, has_mind: bool, tile_visible: bool) -> bool {
     if tile_visible {
         true
-    } else if blind {
-        telepathy && has_mind
     } else {
+        // Telepathy works regardless of blindness, so no separate `blind` branch is needed.
         telepathy && has_mind
     }
 }

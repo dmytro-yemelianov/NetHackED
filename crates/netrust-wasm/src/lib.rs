@@ -372,8 +372,8 @@ impl WasmGameSession {
             }));
         }
         for (id, actor) in self.session.world.arena.actors.iter() {
-            if id != self.session.world.player_id && !actor.is_dead {
-                if detected_monsters.contains(&id) || visible.contains(&actor.coord) {
+            if id != self.session.world.player_id && !actor.is_dead
+                && (detected_monsters.contains(&id) || visible.contains(&actor.coord)) {
                     actors.push(serde_json::json!({
                         "x": actor.coord.x,
                         "y": actor.coord.y,
@@ -383,7 +383,6 @@ impl WasmGameSession {
                         "max_hp": actor.max_hp,
                     }));
                 }
-            }
         }
 
         let payload = serde_json::json!({

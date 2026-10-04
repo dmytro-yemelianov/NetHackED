@@ -355,7 +355,7 @@ impl SimulationWorld {
                     }
 
                     events.push(GameEvent::LogMessage {
-                        text: format!("You delve through the fiery, twisting corridors of Gehennom (level {}).", d),
+                        text: format!("You delve through the fiery, twisting corridors of Gehennom (level {d})."),
                     });
                 }
                 (BranchId::Quest, 1) => {
@@ -556,7 +556,7 @@ impl SimulationWorld {
                     };
                     let quest_cfg = netrust_core::get_role_quest_config(&self.role_name);
                     if self.quest_state.progress == netrust_core::QuestProgress::Unassigned {
-                        if let Err(_) = netrust_core::consult_leader(&mut self.quest_state, &hero_elig) {
+                        if netrust_core::consult_leader(&mut self.quest_state, &hero_elig).is_err() {
                             events.push(GameEvent::LogMessage {
                                 text: netrust_i18n::Messages::quest_leader_reject_level(quest_cfg.leader_name, netrust_core::QUEST_MIN_LEVEL, self.locale),
                             });
@@ -600,7 +600,7 @@ impl SimulationWorld {
                 self.place_steed_with_hero();
 
                 events.push(GameEvent::LevelChanged { from_depth, to_depth: self.depth });
-                events.push(GameEvent::LogMessage { text: format!("You enter the {:?} branch (level {}).", branch, level) });
+                events.push(GameEvent::LogMessage { text: format!("You enter the {branch:?} branch (level {level}).") });
                 self.scheduler.hero_act(NORMAL_SPEED);
             }
             _ => {
@@ -644,7 +644,7 @@ impl SimulationWorld {
 
                             events.push(GameEvent::LevelChanged { from_depth, to_depth: self.depth });
                             events.push(GameEvent::LogMessage {
-                                text: format!("An eldritch Mysterious Force pushes you downward to level {}!", pushed_depth),
+                                text: format!("An eldritch Mysterious Force pushes you downward to level {pushed_depth}!"),
                             });
                             self.scheduler.hero_act(NORMAL_SPEED);
                             return events;
@@ -733,7 +733,7 @@ impl SimulationWorld {
                 self.place_steed_with_hero();
 
                 events.push(GameEvent::LevelChanged { from_depth, to_depth: self.depth });
-                events.push(GameEvent::LogMessage { text: format!("You return to {:?} level {}.", branch, level) });
+                events.push(GameEvent::LogMessage { text: format!("You return to {branch:?} level {level}.") });
                 self.scheduler.hero_act(NORMAL_SPEED);
             }
             _ => {

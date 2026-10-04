@@ -913,7 +913,6 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
     },
 ];
 /// Look up an item archetype from the catalog table.
-
 pub fn get_item_archetype(id: ItemKindId) -> &'static ItemArchetype {
     ITEM_CATALOG
         .iter()

@@ -167,29 +167,29 @@ impl Messages {
 
     pub fn attack_hit(attacker: &str, target: &str, damage: u32, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("{} hits {} for {} damage!", attacker, target, damage),
-            Locale::Uk => format!("{} влучає у {} на {} шкоди!", attacker, target, damage),
+            Locale::En => format!("{attacker} hits {target} for {damage} damage!"),
+            Locale::Uk => format!("{attacker} влучає у {target} на {damage} шкоди!"),
         }
     }
 
     pub fn attack_miss(attacker: &str, target: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("{} misses {}.", attacker, target),
-            Locale::Uk => format!("{} промахується повз {}.", attacker, target),
+            Locale::En => format!("{attacker} misses {target}."),
+            Locale::Uk => format!("{attacker} промахується повз {target}."),
         }
     }
 
     pub fn killed(target: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("{} is killed!", target),
-            Locale::Uk => format!("{} гине!", target),
+            Locale::En => format!("{target} is killed!"),
+            Locale::Uk => format!("{target} гине!"),
         }
     }
 
     pub fn vorpal_decapitate(target: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("*SNICKER-SNACK!* Vorpal Blade decapitates {}!", target),
-            Locale::Uk => format!("*ХНИК-СНИК!* Гостросічний меч стинає голову {}!", target),
+            Locale::En => format!("*SNICKER-SNACK!* Vorpal Blade decapitates {target}!"),
+            Locale::Uk => format!("*ХНИК-СНИК!* Гостросічний меч стинає голову {target}!"),
         }
     }
 
@@ -216,8 +216,8 @@ impl Messages {
 
     pub fn secret_doors_found(count: usize, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("The wand tingles! {} hidden door(s) are revealed!", count),
-            Locale::Uk => format!("Жезл вібрує! Виявлено {} потаємних дверей!", count),
+            Locale::En => format!("The wand tingles! {count} hidden door(s) are revealed!"),
+            Locale::Uk => format!("Жезл вібрує! Виявлено {count} потаємних дверей!"),
         }
     }
 
@@ -230,22 +230,22 @@ impl Messages {
 
     pub fn wand_recharged(name: &str, charges: u32, recharges: u32, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("Your {} glows with bright light! Recharged to ({}:{})!", name, charges, recharges),
-            Locale::Uk => format!("Ваш {} сяє яскравим світлом! Перезаряджено до ({}:{})!", name, charges, recharges),
+            Locale::En => format!("Your {name} glows with bright light! Recharged to ({charges}:{recharges})!"),
+            Locale::Uk => format!("Ваш {name} сяє яскравим світлом! Перезаряджено до ({charges}:{recharges})!"),
         }
     }
 
     pub fn wand_exploded(name: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("Your {} vibrates violently and explodes in a blast of shards!", name),
-            Locale::Uk => format!("Ваш {} шалено вібрує й вибухає смертоносними уламками!", name),
+            Locale::En => format!("Your {name} vibrates violently and explodes in a blast of shards!"),
+            Locale::Uk => format!("Ваш {name} шалено вібрує й вибухає смертоносними уламками!"),
         }
     }
 
     pub fn wish_granted(item_name: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("A {} miraculously drops from the heavens at your feet!", item_name),
-            Locale::Uk => format!("Дивовижним чином {} падає з небес просто до ваших ніг!", item_name),
+            Locale::En => format!("A {item_name} miraculously drops from the heavens at your feet!"),
+            Locale::Uk => format!("Дивовижним чином {item_name} падає з небес просто до ваших ніг!"),
         }
     }
 
@@ -315,37 +315,37 @@ impl Messages {
     pub fn altar_converted(item_name: &str, new_align: Alignment, locale: Locale) -> String {
         let align_name = t_align(new_align, locale);
         match locale {
-            Locale::En => format!("You sacrifice the {}. An astral flash erupts and the altar converts to {}!", item_name, align_name),
-            Locale::Uk => format!("Ви приносите в жертву {}. Спалахує астральний спалах, і вівтар навертається у {}!", item_name, align_name),
+            Locale::En => format!("You sacrifice the {item_name}. An astral flash erupts and the altar converts to {align_name}!"),
+            Locale::Uk => format!("Ви приносите в жертву {item_name}. Спалахує астральний спалах, і вівтар навертається у {align_name}!"),
         }
     }
 
     pub fn sacrifice_favor_increased(item_name: &str, favor: i32, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("You sacrifice the {}. An aura of divine light envelops the altar. You feel favored by your god (Favor: {}, +1 Max HP)!", item_name, favor),
-            Locale::Uk => format!("Ви приносите в жертву {}. Аура божественного сяйва огортає вівтар. Ви відчуваєте милість свого бога (Милість: {}, +1 Макс Здоров'я)!", item_name, favor),
+            Locale::En => format!("You sacrifice the {item_name}. An aura of divine light envelops the altar. You feel favored by your god (Favor: {favor}, +1 Max HP)!"),
+            Locale::Uk => format!("Ви приносите в жертву {item_name}. Аура божественного сяйва огортає вівтар. Ви відчуваєте милість свого бога (Милість: {favor}, +1 Макс Здоров'я)!"),
         }
     }
 
     pub fn divine_crowning(gift: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("A thunderous celestial horn sounds! Your deity crowns you their champion and gifts you {}!", gift),
-            Locale::Uk => format!("Лунає громовий небесний ріг! Ваше божество вінчає вас своїм чемпіоном і дарує {}!", gift),
+            Locale::En => format!("A thunderous celestial horn sounds! Your deity crowns you their champion and gifts you {gift}!"),
+            Locale::Uk => format!("Лунає громовий небесний ріг! Ваше божество вінчає вас своїм чемпіоном і дарує {gift}!"),
         }
     }
 
     pub fn ascension_victory(god_align: Alignment, locale: Locale) -> String {
         let align_str = t_align(god_align, locale);
         match locale {
-            Locale::En => format!("An astral choir erupts! You offer the Amulet of Yendor on your co-aligned {} High Altar and ascend to immortality as a demigod!", align_str),
-            Locale::Uk => format!("Астральний хор вибухає співом! Ви підносите Амулет Єндора на свій {} Високий Вівтар і підноситеся до безсмертя напівбогом!", align_str),
+            Locale::En => format!("An astral choir erupts! You offer the Amulet of Yendor on your co-aligned {align_str} High Altar and ascend to immortality as a demigod!"),
+            Locale::Uk => format!("Астральний хор вибухає співом! Ви підносите Амулет Єндора на свій {align_str} Високий Вівтар і підноситеся до безсмертя напівбогом!"),
         }
     }
 
     pub fn ascension_rejected(reason: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("Offering rejected! {}", reason),
-            Locale::Uk => format!("Жертвопринесення відхилено! {}", reason),
+            Locale::En => format!("Offering rejected! {reason}"),
+            Locale::Uk => format!("Жертвопринесення відхилено! {reason}"),
         }
     }
 
@@ -400,64 +400,64 @@ impl Messages {
 
     pub fn dragon_breath(monster: &str, breath_name: &str, damage: u32, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("{} breathes a fiery blast of {}! You take {} damage!", monster, breath_name, damage),
-            Locale::Uk => format!("{} вивергає нищівний подих ({})! Ви отримуєте {} шкоди!", monster, breath_name, damage),
+            Locale::En => format!("{monster} breathes a fiery blast of {breath_name}! You take {damage} damage!"),
+            Locale::Uk => format!("{monster} вивергає нищівний подих ({breath_name})! Ви отримуєте {damage} шкоди!"),
         }
     }
 
     pub fn breath_reflected(monster: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("Your reflection bounces the deadly breath back at the {}!", monster),
-            Locale::Uk => format!("Ваше відбиття повертає смертоносний подих назад у {}!", monster),
+            Locale::En => format!("Your reflection bounces the deadly breath back at the {monster}!"),
+            Locale::Uk => format!("Ваше відбиття повертає смертоносний подих назад у {monster}!"),
         }
     }
 
     pub fn breath_absorbed(breath_name: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("You are engulfed in the blast of {}, but your innate resistance absorbs it completely!", breath_name),
-            Locale::Uk => format!("Вас охоплює полум'яний подих ({}), але ваш вроджений опір повністю поглинає його!", breath_name),
+            Locale::En => format!("You are engulfed in the blast of {breath_name}, but your innate resistance absorbs it completely!"),
+            Locale::Uk => format!("Вас охоплює полум'яний подих ({breath_name}), але ваш вроджений опір повністю поглинає його!"),
         }
     }
 
     pub fn gaze_reflected(monster: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("The {}'s terrifying gaze is reflected back into its own eyes!", monster),
-            Locale::Uk => format!("Жахливий погляд {} відбивається просто в його власні очі!", monster),
+            Locale::En => format!("The {monster}'s terrifying gaze is reflected back into its own eyes!"),
+            Locale::Uk => format!("Жахливий погляд {monster} відбивається просто в його власні очі!"),
         }
     }
 
     pub fn gaze_afflicted(monster: &str, gaze_name: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("You meet the gaze of the {}! You are struck by {}!", monster, gaze_name),
-            Locale::Uk => format!("Ви зустрічаєтеся поглядом із {}! Вас охоплює {}!", monster, gaze_name),
+            Locale::En => format!("You meet the gaze of the {monster}! You are struck by {gaze_name}!"),
+            Locale::Uk => format!("Ви зустрічаєтеся поглядом із {monster}! Вас охоплює {gaze_name}!"),
         }
     }
 
     pub fn monster_summon_incantation(monster: &str, count: usize, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("The {} chants an unholy incantation! {} creature(s) rise from the shadows!", monster, count),
-            Locale::Uk => format!("{} вигукує темне заклинання! З тіні повстають {} істот!", monster, count),
+            Locale::En => format!("The {monster} chants an unholy incantation! {count} creature(s) rise from the shadows!"),
+            Locale::Uk => format!("{monster} вигукує темне заклинання! З тіні повстають {count} істот!"),
         }
     }
 
     pub fn monster_curse_item(item_name: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("A malevolent aura sweeps over your pack! Your {} is now cursed!", item_name),
-            Locale::Uk => format!("Зловісна аура торкається вашого наплічника! Ваш {} тепер проклятий!", item_name),
+            Locale::En => format!("A malevolent aura sweeps over your pack! Your {item_name} is now cursed!"),
+            Locale::Uk => format!("Зловісна аура торкається вашого наплічника! Ваш {item_name} тепер проклятий!"),
         }
     }
 
     pub fn ghost_encounter(hero_name: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("You feel an icy chill down your spine... The vengeful ghost of {} haunts this graveyard!", hero_name),
-            Locale::Uk => format!("Крижаний холод сковує ваш подих... Мстивий привид героя {} блукає цим могильником!", hero_name),
+            Locale::En => format!("You feel an icy chill down your spine... The vengeful ghost of {hero_name} haunts this graveyard!"),
+            Locale::Uk => format!("Крижаний холод сковує ваш подих... Мстивий привид героя {hero_name} блукає цим могильником!"),
         }
     }
 
     pub fn potion_diluted(old_name: &str, new_name: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("You dip the {} into the water. It becomes a {}!", old_name, new_name),
-            Locale::Uk => format!("Ви занурюєте {} у воду. Зілля розбавляється і стає {}!", old_name, new_name),
+            Locale::En => format!("You dip the {old_name} into the water. It becomes a {new_name}!"),
+            Locale::Uk => format!("Ви занурюєте {old_name} у воду. Зілля розбавляється і стає {new_name}!"),
         }
     }
 
@@ -492,62 +492,60 @@ impl Messages {
     pub fn price_appraisal(item_name: &str, sell_price: u32, buy_price: u32, base: u32, locale: Locale) -> String {
         match locale {
             Locale::En => format!(
-                "The shopkeeper appraises your {}: 'I'll give you {} zm for it, or sell it for {} zm.' (Base value: ~{} zm)",
-                item_name, sell_price, buy_price, base
+                "The shopkeeper appraises your {item_name}: 'I'll give you {sell_price} zm for it, or sell it for {buy_price} zm.' (Base value: ~{base} zm)"
             ),
             Locale::Uk => format!(
-                "Крамар оцінює ваш {}: 'Я можу дати вам {} зм, або продати за {} зм.' (Базова вартість: ~{} зм)",
-                item_name, sell_price, buy_price, base
+                "Крамар оцінює ваш {item_name}: 'Я можу дати вам {sell_price} зм, або продати за {buy_price} зм.' (Базова вартість: ~{base} зм)"
             ),
         }
     }
 
     pub fn pet_whimpers_at_cursed(pet_name: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("Your {} sniffs the ground and cautiously backs away, whimpering.", pet_name),
-            Locale::Uk => format!("Ваш {} обнюхує землю та обережно сахається назад, жалібно скавулячи.", pet_name),
+            Locale::En => format!("Your {pet_name} sniffs the ground and cautiously backs away, whimpering."),
+            Locale::Uk => format!("Ваш {pet_name} обнюхує землю та обережно сахається назад, жалібно скавулячи."),
         }
     }
 
     pub fn pet_grows(pet_name: &str, new_species: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("Your {} shimmers with vitality and grows into a {}!", pet_name, new_species),
-            Locale::Uk => format!("Ваш {} сповнюється дикою силою та виростає у {}!", pet_name, new_species),
+            Locale::En => format!("Your {pet_name} shimmers with vitality and grows into a {new_species}!"),
+            Locale::Uk => format!("Ваш {pet_name} сповнюється дикою силою та виростає у {new_species}!"),
         }
     }
 
     pub fn pet_defends_hero(pet_name: &str, hostile_name: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("Your {} fiercely attacks {} to protect you!", pet_name, hostile_name),
-            Locale::Uk => format!("Ваш {} люто атакує {}, захищаючи вас!", pet_name, hostile_name),
+            Locale::En => format!("Your {pet_name} fiercely attacks {hostile_name} to protect you!"),
+            Locale::Uk => format!("Ваш {pet_name} люто атакує {hostile_name}, захищаючи вас!"),
         }
     }
 
     pub fn quest_leader_accept(leader_name: &str, artifact_name: &str, nemesis_name: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("{}: 'You have proven your devotion! Seek out {}, defeat them in their lair, and recover {}!'", leader_name, nemesis_name, artifact_name),
-            Locale::Uk => format!("{}: 'Ти довів свою гідність! Знайди {}, подолай їх у лігві та поверни {}!'", leader_name, nemesis_name, artifact_name),
+            Locale::En => format!("{leader_name}: 'You have proven your devotion! Seek out {nemesis_name}, defeat them in their lair, and recover {artifact_name}!'"),
+            Locale::Uk => format!("{leader_name}: 'Ти довів свою гідність! Знайди {nemesis_name}, подолай їх у лігві та поверни {artifact_name}!'"),
         }
     }
 
     pub fn quest_leader_reject_level(leader_name: &str, min_level: u32, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("{}: 'You are not yet experienced enough for the trial. Return when you have achieved level {}.'", leader_name, min_level),
-            Locale::Uk => format!("{}: 'Твій досвід ще занадто малий для цього випробування. Повертайся, коли досягнеш {} рівня.'", leader_name, min_level),
+            Locale::En => format!("{leader_name}: 'You are not yet experienced enough for the trial. Return when you have achieved level {min_level}.'"),
+            Locale::Uk => format!("{leader_name}: 'Твій досвід ще занадто малий для цього випробування. Повертайся, коли досягнеш {min_level} рівня.'"),
         }
     }
 
     pub fn quest_nemesis_defeat(nemesis_name: &str, artifact_name: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("{} collapses with a death rattle! {} clatters to the floor!", nemesis_name, artifact_name),
-            Locale::Uk => format!("{} падає зі смертельним стогоном! {} падає на кам'яну підлогу!", nemesis_name, artifact_name),
+            Locale::En => format!("{nemesis_name} collapses with a death rattle! {artifact_name} clatters to the floor!"),
+            Locale::Uk => format!("{nemesis_name} падає зі смертельним стогоном! {artifact_name} падає на кам'яну підлогу!"),
         }
     }
 
     pub fn quest_completed(leader_name: &str, artifact_name: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("{}: 'Magnificent! You have brought back {}! The gods bless your sacred ascension!'", leader_name, artifact_name),
-            Locale::Uk => format!("{}: 'Чудово! Ти повернув {}! Боги благословляють твоє священне сходження!'", leader_name, artifact_name),
+            Locale::En => format!("{leader_name}: 'Magnificent! You have brought back {artifact_name}! The gods bless your sacred ascension!'"),
+            Locale::Uk => format!("{leader_name}: 'Чудово! Ти повернув {artifact_name}! Боги благословляють твоє священне сходження!'"),
         }
     }
 
@@ -595,8 +593,8 @@ impl Messages {
 
     pub fn quiver_success(item_name: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("You ready {} in your quiver.", item_name),
-            Locale::Uk => format!("Ви вклали {} у сагайдак.", item_name),
+            Locale::En => format!("You ready {item_name} in your quiver."),
+            Locale::Uk => format!("Ви вклали {item_name} у сагайдак."),
         }
     }
 
@@ -623,7 +621,7 @@ impl Messages {
 
     pub fn pickup_item(name: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("You pick up a {}.", name),
+            Locale::En => format!("You pick up a {name}."),
             Locale::Uk => format!("Ви підбираєте {}.", t_item(name, locale)),
         }
     }
@@ -754,8 +752,8 @@ pub fn t_item(name: &str, locale: Locale) -> String {
         "candelabrum of invocation" => "Свічник Поклику".into(),
         "book of the dead" => "Книга Мертвих".into(),
         _ => {
-            if name.ends_with("corpse") {
-                let inner = name[..name.len() - 6].trim();
+            if let Some(stripped) = name.strip_suffix("corpse") {
+                let inner = stripped.trim();
                 format!("труп ({})", t_monster(inner, locale))
             } else {
                 name.to_string()
@@ -788,8 +786,8 @@ pub fn t_monster(name: &str, locale: Locale) -> String {
         "wizard of yendor" => "Чарівник Єндора".into(),
         "croesus" => "Крез".into(),
         _ => {
-            if name.starts_with("ghost of ") {
-                format!("привид героя {}", &name[9..])
+            if let Some(rest) = name.strip_prefix("ghost of ") {
+                format!("привид героя {rest}")
             } else {
                 name.to_string()
             }

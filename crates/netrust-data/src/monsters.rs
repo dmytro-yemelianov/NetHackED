@@ -871,7 +871,7 @@ pub fn create_monster_record(id: MonsterSpeciesId, coord: Coord) -> ActorRecord 
         alignment: arch.alignment,
         intrinsics: arch.intrinsics,
         is_player: false,
-        is_unique: arch.name.chars().next().map_or(false, |c| c.is_uppercase()),
+        is_unique: arch.name.chars().next().is_some_and(|c| c.is_uppercase()),
         is_dead: false,
         is_tame: arch.ai_behavior == AiBehavior::CompanionPet,
         tameness: if arch.ai_behavior == AiBehavior::CompanionPet { 5 } else { 0 },
@@ -882,7 +882,7 @@ pub fn create_monster_record(id: MonsterSpeciesId, coord: Coord) -> ActorRecord 
 /// Spawns a hostile ghost representing a deceased adventurer from a graveyard bones file.
 pub fn create_ghost_record(name: &str, level: u32, hp: u32, coord: Coord) -> ActorRecord {
     let mut rec = create_monster_record(MonsterSpeciesId::Ghost, coord);
-    rec.name = format!("ghost of {}", name);
+    rec.name = format!("ghost of {name}");
     rec.level = level;
     rec.max_hp = hp;
     rec.hp = hp;

@@ -20,18 +20,18 @@ use netrust_sim::{GameEvent, SimulationWorld};
 
 fn print_separator(title: &str) {
     println!("\n{}", "=".repeat(80));
-    println!("  {}", title);
+    println!("  {title}");
     println!("{}\n", "=".repeat(80));
 }
 
 fn print_events(events: &[GameEvent]) {
     for e in events {
         match e {
-            GameEvent::LogMessage { text } => println!("  📜 {}", text),
-            GameEvent::ActorMoved { from, to, .. } => println!("  🚶 Moved from {:?} to {:?}", from, to),
-            GameEvent::LevelChanged { from_depth, to_depth } => println!("  🪜 Transitioned: Dlvl {} -> Dlvl {}", from_depth, to_depth),
-            GameEvent::ItemPickedUp { item, .. } => println!("  🎒 Picked up item {:?}", item),
-            GameEvent::AttackLanded { attacker, target, damage, .. } => println!("  ⚔️  {:?} struck {:?} for {} damage!", attacker, target, damage),
+            GameEvent::LogMessage { text } => println!("  📜 {text}"),
+            GameEvent::ActorMoved { from, to, .. } => println!("  🚶 Moved from {from:?} to {to:?}"),
+            GameEvent::LevelChanged { from_depth, to_depth } => println!("  🪜 Transitioned: Dlvl {from_depth} -> Dlvl {to_depth}"),
+            GameEvent::ItemPickedUp { item, .. } => println!("  🎒 Picked up item {item:?}"),
+            GameEvent::AttackLanded { attacker, target, damage, .. } => println!("  ⚔️  {attacker:?} struck {target:?} for {damage} damage!"),
             GameEvent::Victory => println!("  👑 VICTORY! THE HERO HAS ASCENDED!"),
             _ => {}
         }
@@ -80,7 +80,7 @@ fn main() {
     println!("ASCII Viewport (Level 1):");
     let map = render_ascii_map(&sim);
     for line in map.lines().take(12) {
-        println!("{}", line);
+        println!("{line}");
     }
     println!("... [truncated viewport]");
 
@@ -270,7 +270,7 @@ fn main() {
     let hero_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
     let vs_coord = hero_coord.step(Direction::East).unwrap();
     sim.vibrating_square = Some(vs_coord);
-    println!("The Vibrating Square is located at coordinate {:?}", vs_coord);
+    println!("The Vibrating Square is located at coordinate {vs_coord:?}");
 
     println!("\nAcquiring the Three Canonical Invocation Relics:");
     let bell = sim.arena.spawn_item(create_item_record(ItemKindId::BellOfOpening, ItemLocation::CarriedBy(sim.player_id), Buc::Blessed));
@@ -315,7 +315,7 @@ fn main() {
     print_events(&ev_fail);
     println!("  Ritual Progress remains: {:?}", sim.ritual_progress);
 
-    println!("\nStepping onto the Vibrating Square {:?}", vs_coord);
+    println!("\nStepping onto the Vibrating Square {vs_coord:?}");
     if let Some(p) = sim.arena.actors.get_mut(sim.player_id) {
         p.coord = vs_coord;
     }
@@ -343,7 +343,7 @@ fn main() {
     println!("Ascending Gehennom while carrying the real Amulet of Yendor:");
     let roll = 9; // 9 % 3 == 0 -> pushes down by ((9/3)%3 + 1) = 2 levels
     if let Some(pushed) = netrust_core::calculate_mysterious_force(4, roll) {
-        println!("  🔮 The Mysterious Force strikes! Attempt to ascend from level 4 pushed hero back down to level {}!", pushed);
+        println!("  🔮 The Mysterious Force strikes! Attempt to ascend from level 4 pushed hero back down to level {pushed}!");
     }
 
     println!("\nReaching the Surface (Dungeons of Doom Dlvl 1) and crossing into the Astral Plane:");
@@ -383,13 +383,13 @@ fn main() {
     println!("\nHero in dragon form absorbs incoming combat damage:");
     let hero_max_hp = sim.arena.actors.get(sim.player_id).unwrap().max_hp;
     let base_hp_before = sim.hero.base_hp;
-    println!("  Poly HP before hit: 40 | Base HP: {}", base_hp_before);
+    println!("  Poly HP before hit: 40 | Base HP: {base_hp_before}");
     let res_absorb = netrust_core::polymorph::apply_poly_damage(&mut sim.hero, 15);
     println!("  After 15 damage: {:?} | Remaining Poly HP: {:?}", res_absorb, sim.hero.polymorph.as_ref().map(|p| p.hp));
 
     println!("\nHero takes fatal damage (30 damage) to polymorph form:");
     let res_lethal = netrust_core::polymorph::apply_poly_damage(&mut sim.hero, 30);
-    println!("  Lethal damage result: {:?}", res_lethal);
+    println!("  Lethal damage result: {res_lethal:?}");
     println!("  Polymorph state after reversion: {:?}", sim.hero.polymorph);
     println!("  Base HP preserved (minus excess): {}/{}", sim.hero.base_hp, hero_max_hp);
 
@@ -427,7 +427,7 @@ fn main() {
     if let Some(p) = sim.arena.actors.get_mut(sim.player_id) {
         p.coord = Coord::new_unchecked(11, 10);
     }
-    println!("Hidden arrow trap placed at coordinate {:?}", trap_c);
+    println!("Hidden arrow trap placed at coordinate {trap_c:?}");
     println!("Trap state before search: {:?}", sim.level.traps.get(&trap_c).map(|t| t.state));
 
     println!("\nExecuting ActionAst::Search ('s') to detect hidden hazards:");

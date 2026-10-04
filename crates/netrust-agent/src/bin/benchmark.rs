@@ -74,7 +74,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut file = File::create(report_path)?;
     file.write_all(json_bytes.as_bytes())?;
 
-    println!("Benchmark report successfully written to `{}`.", report_path);
+    println!("Benchmark report successfully written to `{report_path}`.");
     println!("====================================================================================================");
 
     Ok(())

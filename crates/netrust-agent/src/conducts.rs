@@ -61,8 +61,10 @@ mod tests {
             ActionAst::Move(Direction::East),
         ];
         
-        let mut conducts = ConductTracker::default();
-        conducts.pacifist = true;
+        let mut conducts = ConductTracker {
+            pacifist: true,
+            ..Default::default()
+        };
         
         let filtered = filter_conduct_violations(actions.clone(), &conducts);
         assert_eq!(filtered.len(), 2);

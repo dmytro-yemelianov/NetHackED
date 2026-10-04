@@ -34,6 +34,8 @@ pub enum RubResult {
 /// Evaluates the outcome of rubbing a lamp according to canonical NetHack rules.
 /// Proved: magic lamps exhaust their Djinni on wish/release (`rub_magic_lamp_exhausts_djinni`),
 /// and ordinary oil lamps never grant wishes (`rub_oil_lamp_never_wishes`).
+// TODO(fidelity): branches identical; see review
+#[allow(clippy::if_same_then_else)]
 pub fn rub_lamp(is_magic: bool, has_djinni: bool, buc: Buc, oil_turns: u32) -> (RubResult, bool) {
     if is_magic && has_djinni {
         let outcome = match buc {
@@ -159,7 +161,7 @@ mod tests {
                 for base in [10, 50, 100, 300, 1000] {
                     let buy = calculate_buy_price(base, cha, buc);
                     let sell = calculate_sell_price(base, cha, buc);
-                    assert!(sell <= buy, "Arbitrage violation: sell {} > buy {}", sell, buy);
+                    assert!(sell <= buy, "Arbitrage violation: sell {sell} > buy {buy}");
                 }
             }
         }

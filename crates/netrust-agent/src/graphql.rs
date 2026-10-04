@@ -168,7 +168,7 @@ impl QueryRoot {
                 ac: r.ac,
                 speed: r.speed,
                 default_alignment: format!("{:?}", r.default_alignment),
-                starting_items: r.starting_items.iter().map(|item| format!("{:?}", item)).collect(),
+                starting_items: r.starting_items.iter().map(|item| format!("{item:?}")).collect(),
             })
             .collect()
     }
@@ -258,7 +258,7 @@ impl MutationRoot {
 
         Ok(StepResultGql {
             success: true,
-            events: obs.last_events.into_iter().map(|e| format!("{:?}", e)).collect(),
+            events: obs.last_events.into_iter().map(|e| format!("{e:?}")).collect(),
             ascii_map,
             hp: obs.player_hp,
             max_hp: obs.player_max_hp,
@@ -277,6 +277,7 @@ impl MutationRoot {
     }
 
     /// Reset game simulation with customized character role, race, and attributes.
+    #[allow(clippy::too_many_arguments)] // GraphQL resolver signature is public API
     async fn reset_with_character(
         &self,
         ctx: &Context<'_>,
@@ -336,7 +337,7 @@ impl MutationRoot {
 
         Ok(StepResultGql {
             success: true,
-            events: obs.last_events.into_iter().map(|e| format!("{:?}", e)).collect(),
+            events: obs.last_events.into_iter().map(|e| format!("{e:?}")).collect(),
             ascii_map,
             hp: obs.player_hp,
             max_hp: obs.player_max_hp,

@@ -162,7 +162,7 @@ impl SimulationWorld {
                         target_item.name = result_name.to_string();
                     }
                     events.push(GameEvent::LogMessage {
-                        text: format!("The liquids fizz and bubble furiously! You produce a {}.", result_name),
+                        text: format!("The liquids fizz and bubble furiously! You produce a {result_name}."),
                     });
                     self.scheduler.hero_act(NORMAL_SPEED);
                 } else {
@@ -261,7 +261,7 @@ impl SimulationWorld {
                                     self.arena.destroy_item(wielded_id);
                                     self.wielded_item = None;
                                     events.push(GameEvent::LogMessage {
-                                        text: format!("Your {} glows violently and evaporates!", name),
+                                        text: format!("Your {name} glows violently and evaporates!"),
                                     });
                                 } else {
                                     wielded.enchantment = res.new_ench;
@@ -286,7 +286,7 @@ impl SimulationWorld {
                                     let name = armor.name.clone();
                                     self.arena.destroy_item(aid);
                                     events.push(GameEvent::LogMessage {
-                                        text: format!("Your {} glows violently and evaporates!", name),
+                                        text: format!("Your {name} glows violently and evaporates!"),
                                     });
                                 } else {
                                     armor.enchantment = res.new_ench;
@@ -471,7 +471,7 @@ impl SimulationWorld {
                                     _ => {}
                                 }
                             }
-                            events.push(GameEvent::LogMessage { text: format!("You gained {}!", intrinsic) });
+                            events.push(GameEvent::LogMessage { text: format!("You gained {intrinsic}!") });
                         }
 
                         if item.name.contains("lizard") {
@@ -542,7 +542,7 @@ impl SimulationWorld {
                                 }
                             }
                         }
-                        events.push(GameEvent::LogMessage { text: format!("You cast {:?}!", spell) });
+                        events.push(GameEvent::LogMessage { text: format!("You cast {spell:?}!") });
                     }
                     SpellKind::CureLightWounds => {
                         if let Some(p) = self.arena.actors.get_mut(self.player_id) {
@@ -659,14 +659,13 @@ impl SimulationWorld {
                         text: netrust_i18n::Messages::door_splinters(self.locale).into(),
                     });
                 }
-            } else if wand_name.contains("cold") {
-                if matches!(current_tile, netrust_types::Tile::Pool { .. }) {
+            } else if wand_name.contains("cold")
+                && matches!(current_tile, netrust_types::Tile::Pool { .. }) {
                     self.level.set_tile(coord, netrust_types::Tile::Pool { frozen: true });
                     events.push(GameEvent::LogMessage {
                         text: netrust_i18n::Messages::pool_frozen(self.locale).into(),
                     });
                 }
-            }
 
             // Actor interaction
             if let Some(target_id) = self.actor_at(coord) {

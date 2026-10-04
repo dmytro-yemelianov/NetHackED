@@ -48,8 +48,8 @@ impl Item {
                 let inner_wt: u32 = contents.iter().map(|item| item.item_weight()).sum();
                 let effective_inner = if *is_bag_of_holding {
                     match buc {
-                        Buc::Blessed => (inner_wt + 3) / 4,
-                        Buc::Uncursed => (inner_wt + 1) / 2,
+                        Buc::Blessed => inner_wt.div_ceil(4),
+                        Buc::Uncursed => inner_wt.div_ceil(2),
                         Buc::Cursed => inner_wt * 2,
                     }
                 } else {
@@ -69,13 +69,13 @@ pub fn can_insert_safe(item: &Item, container: &Item) -> bool {
         Item::Box {
             is_bag_of_holding: true,
             ..
-        } => match item {
+        } => !matches!(
+            item,
             Item::Box {
                 is_bag_of_holding: true,
                 ..
-            } => false,
-            _ => true,
-        },
+            }
+        ),
         Item::Box {
             is_bag_of_holding: false,
             ..

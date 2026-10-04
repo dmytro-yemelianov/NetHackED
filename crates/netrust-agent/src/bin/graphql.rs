@@ -14,8 +14,8 @@ async fn main() {
     let state = AppState { session: Arc::new(Mutex::new(AgentSession::new(42))) };
     let app = create_router(create_schema(state), token_from_env());
 
-    println!("🗡️ NetRust GraphQL Server listening on http://{}", addr);
-    println!("📊 GraphiQL Interactive Explorer: http://{}/graphql", addr);
+    println!("🗡️ NetRust GraphQL Server listening on http://{addr}");
+    println!("📊 GraphiQL Interactive Explorer: http://{addr}/graphql");
 
     let listener = tokio::net::TcpListener::bind(&addr).await.expect("bind GraphQL address");
     axum::serve(listener, app).await.expect("GraphQL server error");

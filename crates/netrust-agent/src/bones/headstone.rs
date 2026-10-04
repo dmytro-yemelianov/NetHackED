@@ -21,9 +21,9 @@ pub fn render_headstone(
     };
 
     let killer_desc = if killer.starts_with("a ") || killer.starts_with("an ") {
-        format!("killed by {}", killer)
+        format!("killed by {killer}")
     } else {
-        format!("killed by a {}", killer)
+        format!("killed by a {killer}")
     };
 
     let mut lines = Vec::new();
@@ -33,8 +33,8 @@ pub fn render_headstone(
     lines.push(center("REST IN PEACE"));
     lines.push(center(""));
     lines.push(center(hero));
-    lines.push(center(&format!("Level {}", level)));
-    lines.push(center(&format!("Died on Dlvl {}", depth)));
+    lines.push(center(&format!("Level {level}")));
+    lines.push(center(&format!("Died on Dlvl {depth}")));
     lines.push(center(&killer_desc));
     lines.push(center(""));
     if !epitaph.is_empty() {

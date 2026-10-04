@@ -181,7 +181,7 @@ impl SimulationWorld {
                                         GazeEffect::BlindImmune => {}
                                         GazeEffect::Afflicted(g) => {
                                             events.push(GameEvent::LogMessage {
-                                                text: Messages::gaze_afflicted(&mon.name, &format!("{:?}", g), self.locale),
+                                                text: Messages::gaze_afflicted(&mon.name, &format!("{g:?}"), self.locale),
                                             });
                                             let dmg = if g == GazeType::Petrification { 30 } else { 8 };
                                             if let Some(p) = self.arena.actors.get_mut(self.player_id) {
@@ -210,32 +210,30 @@ impl SimulationWorld {
                                         }
                                     } else if dmg == 0 {
                                         events.push(GameEvent::LogMessage {
-                                            text: Messages::breath_absorbed(&format!("{:?}", breath), self.locale),
+                                            text: Messages::breath_absorbed(&format!("{breath:?}"), self.locale),
                                         });
                                     } else {
                                         events.push(GameEvent::LogMessage {
-                                            text: Messages::dragon_breath(&mon.name, &format!("{:?}", breath), dmg, self.locale),
+                                            text: Messages::dragon_breath(&mon.name, &format!("{breath:?}"), dmg, self.locale),
                                         });
                                         if let Some(p) = self.arena.actors.get_mut(self.player_id) {
                                             p.hp = p.hp.saturating_sub(dmg);
                                             if p.hp == 0 { p.is_dead = true; }
                                         }
-                                        if breath == netrust_types::BreathType::Cold {
-                                            if matches!(self.level.get_tile(pc), Tile::Pool { frozen: false } | Tile::Moat) {
+                                        if breath == netrust_types::BreathType::Cold
+                                            && matches!(self.level.get_tile(pc), Tile::Pool { frozen: false } | Tile::Moat) {
                                                 self.level.set_tile(pc, Tile::Pool { frozen: true });
                                                 events.push(GameEvent::LogMessage {
                                                     text: Messages::pool_frozen(self.locale).into(),
                                                 });
                                             }
-                                        }
-                                        if breath == netrust_types::BreathType::Fire {
-                                            if self.hero.afflictions.sliming.is_some() {
+                                        if breath == netrust_types::BreathType::Fire
+                                            && self.hero.afflictions.sliming.is_some() {
                                                 netrust_core::afflictions::cure_sliming(&mut self.hero);
                                                 events.push(GameEvent::LogMessage {
                                                     text: netrust_i18n::Messages::slime_burned(self.locale).to_string(),
                                                 });
                                             }
-                                        }
                                     }
                                     acted_special = true;
                                     break;

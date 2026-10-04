@@ -10,7 +10,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     let args: Vec<String> = env::args().collect();
     let addr = netrust_agent::netconfig::resolve_bind_addr(&args, env::var("NETRUST_BIND").ok(), &format!("{host}:{port}"));
-    println!("Starting NetRust Networked Bones Server on {}", addr);
+    println!("Starting NetRust Networked Bones Server on {addr}");
     run_bones_server(&addr, None).await?;
     Ok(())
 }

@@ -185,7 +185,7 @@ fn select_character(stdout: &mut Stdout, locale: Locale) -> io::Result<Option<Ch
     };
 
     for (idx, (role_name, align_race, details)) in roles.iter().enumerate() {
-        let line = format!("    {:<18} - {:<18} {}", role_name, align_race, details);
+        let line = format!("    {role_name:<18} - {align_race:<18} {details}");
         execute!(
             stdout,
             MoveTo(ox, oy + 6 + idx as u16),
@@ -436,7 +436,7 @@ fn show_conducts_modal(stdout: &mut Stdout, world: &SimulationWorld) -> io::Resu
             stdout,
             MoveTo(ox + 4, oy + 3 + (idx * 2) as u16),
             SetForegroundColor(Color::White),
-            Print(format!("{:<48} ", name)),
+            Print(format!("{name:<48} ")),
             SetForegroundColor(status_color),
             Print(status_str),
             ResetColor
@@ -492,9 +492,9 @@ fn show_enhance_modal(stdout: &mut Stdout, world: &mut SimulationWorld) -> io::R
             let current_lvl = world.hero.skills.skills.get(skill_cls).copied().unwrap_or(SkillLevel::Unskilled);
             let to_hit = skill_to_hit_bonus(current_lvl);
             let dmg = skill_damage_bonus(current_lvl);
-            let lvl_name = format!("{:?}", current_lvl);
+            let lvl_name = format!("{current_lvl:?}");
 
-            let desc = format!("  [{}] {:<14} : {:<9} (To-Hit: {:+2}, Dmg: {:+2})", letter, name, lvl_name, to_hit, dmg);
+            let desc = format!("  [{letter}] {name:<14} : {lvl_name:<9} (To-Hit: {to_hit:+2}, Dmg: {dmg:+2})");
             execute!(stdout, MoveTo(ox + 2, oy + 3 + idx as u16), SetForegroundColor(Color::White), Print(desc), ResetColor)?;
         }
 
@@ -515,7 +515,7 @@ fn show_enhance_modal(stdout: &mut Stdout, world: &mut SimulationWorld) -> io::R
             };
             match code {
                 KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char(' ') => break,
-                KeyCode::Char(c) if c >= 'a' && c <= 'g' => {
+                KeyCode::Char(c) if ('a'..='g').contains(&c) => {
                     let idx = (c as u8 - b'a') as usize;
                     if let Some((skill_cls, _)) = all_skills.get(idx) {
                         let _ = enhance_skill(&mut world.hero.skills, *skill_cls);
@@ -636,9 +636,9 @@ fn main() -> io::Result<()> {
     let mut world = SimulationWorld::new_with_character(42, config);
     world.set_locale(locale);
     let mut message = if locale == Locale::Uk {
-        format!("Ласкаво просимо до NetRust, {}! 100% канонічний NetHack 5.0, формалізований у Lean 4.", char_name)
+        format!("Ласкаво просимо до NetRust, {char_name}! 100% канонічний NetHack 5.0, формалізований у Lean 4.")
     } else {
-        format!("Welcome to NetRust, {}! 100% canonical NetHack 5.0 formalized & verified in Lean 4.", char_name)
+        format!("Welcome to NetRust, {char_name}! 100% canonical NetHack 5.0 formalized & verified in Lean 4.")
     };
     let mut last_dir = Direction::East;
 
@@ -780,9 +780,9 @@ fn main() -> io::Result<()> {
                         let item_name = world.arena.items.get(item_id).map(|i| i.name.as_str()).unwrap_or("item");
                         let localized_name = t_item(item_name, world.locale);
                         message = if world.locale == Locale::Uk {
-                            format!("Ви вклали у сагайдак: {}.", localized_name)
+                            format!("Ви вклали у сагайдак: {localized_name}.")
                         } else {
-                            format!("You ready {} in your quiver.", item_name)
+                            format!("You ready {item_name} in your quiver.")
                         };
                     }
                     None
@@ -866,10 +866,10 @@ fn main() -> io::Result<()> {
                         Some(hit_str)
                     }
                     GameEvent::AttackMissed { .. } => Some(if loc == Locale::Uk { "Ви промахуєтесь повз чудовисько.".into() } else { "You miss the monster.".into() }),
-                    GameEvent::DoorToggled { new_state, .. } => Some(if loc == Locale::Uk { format!("Стан дверей: {:?}.", new_state) } else { format!("The door is now {:?}.", new_state) }),
-                    GameEvent::LevelChanged { to_depth, .. } => Some(if loc == Locale::Uk { format!("Ви переходите на рівень {}.", to_depth) } else { format!("You enter dungeon level {}.", to_depth) }),
+                    GameEvent::DoorToggled { new_state, .. } => Some(if loc == Locale::Uk { format!("Стан дверей: {new_state:?}.") } else { format!("The door is now {new_state:?}.") }),
+                    GameEvent::LevelChanged { to_depth, .. } => Some(if loc == Locale::Uk { format!("Ви переходите на рівень {to_depth}.") } else { format!("You enter dungeon level {to_depth}.") }),
                     _ => None,
-                }).last() {
+                }).next_back() {
                     message = last_msg;
                 }
             }
@@ -896,7 +896,7 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
         stdout,
         MoveTo(ox, oy),
         SetForegroundColor(Color::Yellow),
-        Print(format!("{:<80}", message)),
+        Print(format!("{message:<80}")),
         ResetColor
     )?;
 
@@ -1064,7 +1064,7 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
         stdout,
         MoveTo(ox, oy + 22),
         SetForegroundColor(Color::Green),
-        Print(format!("{:<80}", status)),
+        Print(format!("{status:<80}")),
         ResetColor
     )?;
 
@@ -1078,7 +1078,7 @@ fn render(stdout: &mut Stdout, world: &SimulationWorld, message: &str) -> io::Re
         stdout,
         MoveTo(ox, oy + 23),
         SetForegroundColor(Color::DarkGrey),
-        Print(format!("{:<80}", cmd_help)),
+        Print(format!("{cmd_help:<80}")),
         ResetColor
     )?;
 

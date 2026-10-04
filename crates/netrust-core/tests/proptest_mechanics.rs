@@ -674,7 +674,7 @@ proptest! {
     #[test]
     fn prop_clamp_favor_bounded(f in -100i32..100) {
         let clamped = clamp_favor(f);
-        prop_assert!(clamped >= -20 && clamped <= 20);
+        prop_assert!((-20..=20).contains(&clamped));
     }
 
     #[test]

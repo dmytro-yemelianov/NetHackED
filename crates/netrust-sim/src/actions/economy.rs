@@ -33,7 +33,7 @@ impl SimulationWorld {
                 self.remove_unpaid(id);
             }
             events.push(GameEvent::LogMessage {
-                text: format!("You pay the shopkeeper {} zorkmids. 'Thank you for your business!'", total_due),
+                text: format!("You pay the shopkeeper {total_due} zorkmids. 'Thank you for your business!'"),
             });
             self.scheduler.hero_act(NORMAL_SPEED);
         }

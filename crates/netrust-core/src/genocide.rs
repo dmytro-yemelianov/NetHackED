@@ -24,6 +24,8 @@ pub fn cursed_genocide_summon_count() -> usize {
 
 /// Attempts to write with a magic marker.
 /// Reduces the ink by `cost` if sufficient, returns error otherwise.
+// TODO(fidelity): unit error type kept for API stability; see review
+#[allow(clippy::result_unit_err)]
 pub fn write_with_marker(current_ink: u8, cost: u8) -> Result<u8, ()> {
     if current_ink >= cost {
         Ok(current_ink - cost)

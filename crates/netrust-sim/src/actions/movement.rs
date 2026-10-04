@@ -57,7 +57,7 @@ impl SimulationWorld {
                         to: from,
                     });
                     events.push(GameEvent::LogMessage {
-                        text: format!("You displace {}.", pet_name),
+                        text: format!("You displace {pet_name}."),
                     });
                     self.scheduler.hero_act(move_cost);
                 } else {
@@ -161,7 +161,7 @@ impl SimulationWorld {
                         if let Some(triggered_type) = triggered {
                             match triggered_type {
                                 netrust_types::TrapType::Arrow | netrust_types::TrapType::Dart => {
-                                    events.push(GameEvent::LogMessage { text: format!("A {triggered_type:?} trap shoots you!").into() });
+                                    events.push(GameEvent::LogMessage { text: format!("A {triggered_type:?} trap shoots you!") });
                                     events.extend(self.damage_player(2, &format!("{triggered_type:?} trap").to_lowercase()));
                                 }
                                 netrust_types::TrapType::Teleport => {
@@ -175,7 +175,7 @@ impl SimulationWorld {
                                     events.push(GameEvent::LogMessage { text: "You fall into a pit!".into() });
                                 }
                                 _ => {
-                                    events.push(GameEvent::LogMessage { text: format!("You trigger a {triggered_type:?} trap!").into() });
+                                    events.push(GameEvent::LogMessage { text: format!("You trigger a {triggered_type:?} trap!") });
                                 }
                             }
                         }

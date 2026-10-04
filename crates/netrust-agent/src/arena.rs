@@ -714,7 +714,7 @@ pub fn run_game_with_trajectory<P: AgentPolicy>(
             _ => {}
         }
 
-        let action_str = format!("{:?}", action);
+        let action_str = format!("{action:?}");
         let events = world.step_player_action(action);
 
         let mut log_msgs = Vec::new();
@@ -803,7 +803,7 @@ pub fn run_evaluation_suite(
     for &seed in seeds {
         for &role in roles {
             let config = CharacterConfig {
-                name: format!("{:?}", role),
+                name: format!("{role:?}"),
                 role,
                 race: netrust_data::roles::RaceId::Human,
                 gender: netrust_data::roles::Gender::Female,

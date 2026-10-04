@@ -8,6 +8,9 @@ use netrust_core::engraving::EngravingMedium;
 use netrust_sim::GameEvent;
 use netrust_types::ItemClass;
 
+/// (observation, reward, terminated, truncated, info) as returned by `step`.
+type StepOutput<'py> = (Bound<'py, PyDict>, f64, bool, bool, Bound<'py, PyDict>);
+
 pub const ACTION_NAMES: [&str; 26] = [
     "MOVE_N",
     "MOVE_E",
@@ -115,7 +118,7 @@ impl NetRustEnv {
         &mut self,
         py: Python<'py>,
         action: usize,
-    ) -> PyResult<(Bound<'py, PyDict>, f64, bool, bool, Bound<'py, PyDict>)> {
+    ) -> PyResult<StepOutput<'py>> {
         self.step_count += 1;
         let prev_depth = self.session.world.depth;
         let prev_gold = self.session.world.player_gold;

@@ -40,13 +40,13 @@ impl SimulationWorld {
                 if name.eq_ignore_ascii_case(quest_cfg.artifact_name) {
                     netrust_core::pick_up_quest_artifact(&mut self.quest_state);
                     events.push(GameEvent::LogMessage {
-                        text: format!("A surge of celestial energy surges through your veins as you take hold of {}!", name),
+                        text: format!("A surge of celestial energy surges through your veins as you take hold of {name}!"),
                     });
                 }
 
                 if let Some(cost) = self.get_unpaid_cost(item_id) {
                     events.push(GameEvent::LogMessage {
-                        text: format!("The shopkeeper says: 'That will be {} zorkmids.'", cost),
+                        text: format!("The shopkeeper says: 'That will be {cost} zorkmids.'"),
                     });
                 }
                 self.scheduler.hero_act(NORMAL_SPEED);
@@ -74,7 +74,7 @@ impl SimulationWorld {
                     self.wielded_item = None;
                 }
                 events.push(GameEvent::ItemDropped { actor: self.player_id, item: item_id });
-                events.push(GameEvent::LogMessage { text: format!("You drop the {}.", name) });
+                events.push(GameEvent::LogMessage { text: format!("You drop the {name}.") });
                 self.scheduler.hero_act(NORMAL_SPEED);
             }
         } else {
@@ -92,7 +92,7 @@ impl SimulationWorld {
             self.wielded_item = Some(item_id);
             let name = self.arena.items.get(item_id).map(|i| i.name.clone()).unwrap_or_default();
             events.push(GameEvent::ItemWielded { actor: self.player_id, item: item_id });
-            events.push(GameEvent::LogMessage { text: format!("You wield the {}.", name) });
+            events.push(GameEvent::LogMessage { text: format!("You wield the {name}.") });
             self.scheduler.hero_act(NORMAL_SPEED);
         } else {
             events.push(GameEvent::LogMessage { text: "You don't have that item to wield.".into() });
@@ -165,7 +165,7 @@ impl SimulationWorld {
                     i.location = ItemLocation::CarriedBy(self.player_id);
                 }
                 events.push(GameEvent::LogMessage {
-                    text: format!("You take the {} out of the {}.", item_name, container_name),
+                    text: format!("You take the {item_name} out of the {container_name}."),
                 });
                 self.scheduler.hero_act(NORMAL_SPEED);
             } else {
@@ -265,7 +265,7 @@ impl SimulationWorld {
                 self.scheduler.hero_act(NORMAL_SPEED);
             } else {
                 events.push(GameEvent::LogMessage {
-                    text: format!("You don't know how to apply the {}.", item_name),
+                    text: format!("You don't know how to apply the {item_name}."),
                 });
             }
         } else {

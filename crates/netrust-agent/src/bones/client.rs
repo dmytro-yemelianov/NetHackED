@@ -30,7 +30,7 @@ impl BonesClient {
             .trim_end_matches('/');
 
         let host_port = if !trimmed.contains(':') {
-            format!("{}:80", trimmed)
+            format!("{trimmed}:80")
         } else {
             trimmed.to_string()
         };
@@ -48,23 +48,23 @@ impl BonesClient {
         let (status, resp_body) = self.send_request("POST", "/api/v1/bones", Some(&body))?;
 
         if status == 200 || status == 201 {
-            serde_json::from_str(&resp_body).map_err(|e| format!("Failed to parse GraveRecord: {}", e))
+            serde_json::from_str(&resp_body).map_err(|e| format!("Failed to parse GraveRecord: {e}"))
         } else {
-            Err(format!("Upload failed with status {}: {}", status, resp_body))
+            Err(format!("Upload failed with status {status}: {resp_body}"))
         }
     }
 
     /// Fetches a bones file for the given dungeon depth, if one is available.
     pub fn fetch_bones(&self, depth: u32) -> Result<Option<BonesData>, String> {
-        let path = format!("/api/v1/bones/{}", depth);
+        let path = format!("/api/v1/bones/{depth}");
         let (status, resp_body) = self.send_request("GET", &path, None)?;
 
         if status == 200 {
             let bones: Option<BonesData> = serde_json::from_str(&resp_body)
-                .map_err(|e| format!("Failed to parse BonesData: {}", e))?;
+                .map_err(|e| format!("Failed to parse BonesData: {e}"))?;
             Ok(bones)
         } else {
-            Err(format!("Fetch bones failed with status {}: {}", status, resp_body))
+            Err(format!("Fetch bones failed with status {status}: {resp_body}"))
         }
     }
 
@@ -73,9 +73,9 @@ impl BonesClient {
         let (status, resp_body) = self.send_request("GET", "/api/v1/graves", None)?;
 
         if status == 200 {
-            serde_json::from_str(&resp_body).map_err(|e| format!("Failed to parse graves: {}", e))
+            serde_json::from_str(&resp_body).map_err(|e| format!("Failed to parse graves: {e}"))
         } else {
-            Err(format!("Fetch graves failed with status {}: {}", status, resp_body))
+            Err(format!("Fetch graves failed with status {status}: {resp_body}"))
         }
     }
 
@@ -86,12 +86,12 @@ impl BonesClient {
 
         if status == 200 {
             let grave: Option<GraveRecord> = serde_json::from_str(&resp_body)
-                .map_err(|e| format!("Failed to parse GraveRecord: {}", e))?;
+                .map_err(|e| format!("Failed to parse GraveRecord: {e}"))?;
             Ok(grave)
         } else if status == 404 {
             Ok(None)
         } else {
-            Err(format!("Fetch grave failed with status {}: {}", status, resp_body))
+            Err(format!("Fetch grave failed with status {status}: {resp_body}"))
         }
     }
 
@@ -100,9 +100,9 @@ impl BonesClient {
         let (status, resp_body) = self.send_request("GET", "/api/v1/stats", None)?;
 
         if status == 200 {
-            serde_json::from_str(&resp_body).map_err(|e| format!("Failed to parse GraveyardStats: {}", e))
+            serde_json::from_str(&resp_body).map_err(|e| format!("Failed to parse GraveyardStats: {e}"))
         } else {
-            Err(format!("Fetch stats failed with status {}: {}", status, resp_body))
+            Err(format!("Fetch stats failed with status {status}: {resp_body}"))
         }
     }
 
@@ -112,7 +112,7 @@ impl BonesClient {
         if status == 200 {
             Ok(())
         } else {
-            Err(format!("Reset failed with status {}", status))
+            Err(format!("Reset failed with status {status}"))
         }
     }
 
@@ -130,7 +130,7 @@ impl BonesClient {
             .map_err(|e| e.to_string())?;
 
         let body_bytes = body.unwrap_or("");
-        let content_length = body_bytes.as_bytes().len();
+        let content_length = body_bytes.len();
 
         let request = format!(
             "{} {} HTTP/1.1\r\nHost: {}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",

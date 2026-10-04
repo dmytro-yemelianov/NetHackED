@@ -252,7 +252,7 @@ impl SimulationWorld {
 
         if self.player_gold < donation {
             events.push(GameEvent::LogMessage {
-                text: format!("You do not have enough gold to donate {} zm.", donation),
+                text: format!("You do not have enough gold to donate {donation} zm."),
             });
             return events;
         }
@@ -269,7 +269,7 @@ impl SimulationWorld {
                 p.ac -= gained as i32; // Lower AC is better in NetHack
             }
             events.push(GameEvent::LogMessage {
-                text: format!("You feel much safer! You are granted +{} divine AC protection (total: +{}).", gained, new_prot),
+                text: format!("You feel much safer! You are granted +{gained} divine AC protection (total: +{new_prot})."),
             });
         } else if prev_prot >= netrust_core::mines::MAX_DIVINE_PROTECTION {
             events.push(GameEvent::LogMessage {
@@ -296,7 +296,7 @@ impl SimulationWorld {
             }
             if uncursed_count > 0 {
                 events.push(GameEvent::LogMessage {
-                    text: format!("The priest sprinkles holy water! {} cursed items glow and are uncursed.", uncursed_count),
+                    text: format!("The priest sprinkles holy water! {uncursed_count} cursed items glow and are uncursed."),
                 });
             }
         }

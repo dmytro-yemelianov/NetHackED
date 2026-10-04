@@ -138,7 +138,7 @@ impl EntityArena {
                 if child == target {
                     return true;
                 }
-                if self.items.get(child).map_or(false, |it| it.is_container) {
+                if self.items.get(child).is_some_and(|it| it.is_container) {
                     queue.push(child);
                 }
             }
@@ -164,7 +164,7 @@ impl EntityArena {
 
         let effective_inner = if item.is_bag_of_holding {
             // NetHack 5.0 rounding up: (cwt + 1) / 2 for uncursed default
-            (inner_weight + 1) / 2
+            inner_weight.div_ceil(2)
         } else {
             inner_weight
         };
