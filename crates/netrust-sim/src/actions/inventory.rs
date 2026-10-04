@@ -133,6 +133,8 @@ impl SimulationWorld {
 
     /// Builds the C `mbag_explodes` view of an arena item and its recursive
     /// contents. Kind is detected by name; charges are `enchantment` (`obj->spe`).
+    /// STOPGAP: name matching stands in for real item kinds, which the data
+    /// catalog lacks for wand of cancellation / bag of tricks.
     fn bag_check_tree(&self, id: netrust_arena::ItemId) -> netrust_core::BagCheckItem {
         use netrust_core::{BagCheckItem, BagCheckKind};
         let rec = self.arena.items.get(id);
@@ -156,6 +158,23 @@ impl SimulationWorld {
                 .into_iter()
                 .map(|c| self.bag_check_tree(c))
                 .collect(),
+        }
+    }
+
+    /// C `do_boh_explosion` (`pickup.c:2517-2532`): each content item is
+    /// destroyed with probability 1/13 (`is_boh_item_gone`, `pickup.c:2509`),
+    /// otherwise scattered. Scatter is approximated by dropping the item at the
+    /// hero's square (no `scatter()` flight/damage model in the sim).
+    fn do_boh_explosion(&mut self, bag: netrust_arena::ItemId) {
+        let hero_coord = self.arena.actors.get(self.player_id).map(|p| p.coord);
+        for content in self.arena.items_in_container(bag) {
+            if self.rng.random_range(0..13u32) != 0 {
+                if let (Some(c), Some(rec)) = (hero_coord, self.arena.items.get_mut(content)) {
+                    rec.location = ItemLocation::Floor(c);
+                    continue;
+                }
+            }
+            self.destroy_item_tree(content);
         }
     }
 
@@ -204,26 +223,19 @@ impl SimulationWorld {
                     {
                         self.wielded_item = None;
                     }
-                    // do_boh_explosion (pickup.c:2517): each content item is
-                    // destroyed with probability 1/13 (is_boh_item_gone), the rest
-                    // are scattered (approximated: dropped at the hero's square).
-                    let hero_coord = self.arena.actors.get(self.player_id).map(|p| p.coord);
-                    for content in self.arena.items_in_container(container_id) {
-                        if self.rng.random_range(0..13u32) != 0 {
-                            if let (Some(c), Some(rec)) =
-                                (hero_coord, self.arena.items.get_mut(content))
-                            {
-                                rec.location = ItemLocation::Floor(c);
-                                continue;
-                            }
-                        }
-                        self.destroy_item_tree(content);
+                    // pickup.c:2667-2668: an inserted BoH scatters its own contents
+                    // first, then the outer bag's (pickup.c:2683).
+                    if item.is_bag_of_holding {
+                        self.do_boh_explosion(item_id);
                     }
-                    // The inserted object was never inserted: it is deleted with its contents.
-                    self.destroy_item_tree(item_id);
+                    self.do_boh_explosion(container_id);
+                    // The inserted object was never inserted: obfree() deletes it.
+                    self.arena.destroy_item(item_id);
                     self.arena.destroy_item(container_id);
+                    // pickup.c:2693: losehp(d(6, 6), "magical explosion").
+                    let damage: u32 = (0..6).map(|_| self.rng.random_range(1..=6u32)).sum();
                     if let Some(p) = self.arena.actors.get_mut(self.player_id) {
-                        p.hp = p.hp.saturating_sub(15);
+                        p.hp = p.hp.saturating_sub(damage);
                         if p.hp == 0 {
                             p.is_dead = true;
                         }

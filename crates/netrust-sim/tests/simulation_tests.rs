@@ -493,6 +493,78 @@ fn test_boh_into_plain_sack_is_safe() {
 }
 
 #[test]
+fn test_boh_explosion_scatters_inserted_boh_contents_per_item() {
+    // pickup.c:2667: the inserted BoH's contents get the per-item 1/13 treatment
+    // (most survive on the floor) instead of being destroyed wholesale.
+    let mut sim = SimulationWorld::new_with_seed(110);
+    let outer = sim.arena.spawn_item(create_item_record(
+        ItemKindId::BagOfHolding,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Uncursed,
+    ));
+    let inner = sim.arena.spawn_item(create_item_record(
+        ItemKindId::BagOfHolding,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Uncursed,
+    ));
+    let daggers: Vec<_> = (0..20)
+        .map(|_| {
+            sim.arena.spawn_item(create_item_record(
+                ItemKindId::Dagger,
+                ItemLocation::InContainer(inner),
+                Buc::Uncursed,
+            ))
+        })
+        .collect();
+    let events = put_in(&mut sim, inner, outer);
+    assert!(events
+        .iter()
+        .any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("explodes"))));
+    let survivors = daggers
+        .iter()
+        .filter(|&&d| {
+            matches!(
+                sim.arena.items.get(d).map(|r| r.location.clone()),
+                Some(ItemLocation::Floor(_))
+            )
+        })
+        .count();
+    assert!(
+        survivors >= 10,
+        "most inner contents scatter, got {survivors}"
+    );
+    assert!(sim.arena.items.get(inner).is_none());
+}
+
+#[test]
+fn test_boh_explodes_on_charged_bag_of_tricks() {
+    let mut sim = SimulationWorld::new_with_seed(111);
+    let boh = sim.arena.spawn_item(create_item_record(
+        ItemKindId::BagOfHolding,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Uncursed,
+    ));
+    let mut rec = create_item_record(
+        ItemKindId::Sack,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Uncursed,
+    );
+    rec.name = "bag of tricks".into();
+    rec.enchantment = 0;
+    let empty = sim.arena.spawn_item(rec.clone());
+    let events = put_in(&mut sim, empty, boh);
+    assert!(events
+        .iter()
+        .any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("You put"))));
+    rec.enchantment = 3;
+    let charged = sim.arena.spawn_item(rec);
+    let events = put_in(&mut sim, charged, boh);
+    assert!(events
+        .iter()
+        .any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("explodes"))));
+}
+
+#[test]
 fn test_water_dipping() {
     use netrust_types::WaterType;
     let mut sim = SimulationWorld::new_with_seed(107);
