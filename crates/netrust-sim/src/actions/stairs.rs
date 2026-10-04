@@ -17,40 +17,78 @@ impl SimulationWorld {
     /// Pack non-player actors and floor items of the current floor into StoredLevel cache.
     pub(crate) fn pack_current_level(&mut self) {
         let from_key = (self.current_branch, self.depth);
+        let steed_id = self.hero.mount.as_ref().map(|m| m.steed_id);
 
-        let mut level_monsters = Vec::new();
+        // Quiver must refer to something the hero carries.
+        if let Some(q) = self.hero.quivered_item {
+            let carried = self.arena.items.get(q).map(|it| it.location == ItemLocation::CarriedBy(self.player_id)).unwrap_or(false);
+            if !carried {
+                self.hero.quivered_item = None;
+            }
+        }
+
         let monster_ids: Vec<ActorId> = self.arena.actors.iter()
-            .filter(|(id, _)| *id != self.player_id)
+            .filter(|(id, _)| *id != self.player_id && Some(*id) != steed_id)
             .map(|(id, _)| id)
             .collect();
+
+        // Items belonging to the level: floor items, items carried by packed monsters, and
+        // everything transitively inside those.
+        let mut item_ids: Vec<ItemId> = self.arena.items.iter()
+            .filter(|(_, it)| match it.location {
+                ItemLocation::Floor(_) => true,
+                ItemLocation::CarriedBy(a) => monster_ids.contains(&a),
+                _ => false,
+            })
+            .map(|(id, _)| id)
+            .collect();
+        let mut i = 0;
+        while i < item_ids.len() {
+            let children = self.arena.items_in_container(item_ids[i]);
+            item_ids.extend(children);
+            i += 1;
+        }
+
+        let mut monsters = Vec::with_capacity(monster_ids.len());
         for mid in monster_ids {
             if let Some(actor) = self.arena.destroy_actor(mid) {
-                level_monsters.push(actor);
+                monsters.push((mid, actor));
+            }
+        }
+        let mut items = Vec::with_capacity(item_ids.len());
+        for iid in &item_ids {
+            if let Some(item) = self.arena.destroy_item(*iid) {
+                items.push((*iid, item));
             }
         }
 
-        let mut level_floor_items = Vec::new();
-        let floor_item_ids: Vec<ItemId> = self.arena.items.iter()
-            .filter(|(_, it)| matches!(it.location, ItemLocation::Floor(_)))
-            .map(|(id, _)| id)
-            .collect();
-        for iid in floor_item_ids {
-            if let Some(item) = self.arena.destroy_item(iid) {
-                level_floor_items.push(item);
-            }
-        }
+        let (level_unpaid, hero_unpaid): (Vec<_>, Vec<_>) = std::mem::take(&mut self.unpaid_items)
+            .into_iter()
+            .partition(|(iid, _)| item_ids.contains(iid));
+        self.unpaid_items = hero_unpaid;
 
         let stored_current = StoredLevel {
             level: self.level.clone(),
-            monsters: level_monsters,
-            floor_items: level_floor_items,
-            unpaid_items: std::mem::take(&mut self.unpaid_items),
+            monsters,
+            items,
+            unpaid_items: level_unpaid,
         };
 
         if let Some(pos) = self.stored_levels.iter().position(|(k, _)| *k == from_key) {
             self.stored_levels[pos] = (from_key, stored_current);
         } else {
             self.stored_levels.push((from_key, stored_current));
+        }
+    }
+
+    /// A mounted hero's steed arrives on the same square as the hero.
+    pub(crate) fn place_steed_with_hero(&mut self) {
+        let Some(steed_id) = self.hero.mount.as_ref().map(|m| m.steed_id) else { return };
+        let Some(hero_coord) = self.arena.actors.get(self.player_id).map(|p| p.coord) else { return };
+        if let Some(steed) = self.arena.actors.get_mut(steed_id) {
+            steed.coord = hero_coord;
+        } else {
+            self.hero.mount = None;
         }
     }
 
@@ -62,13 +100,33 @@ impl SimulationWorld {
         if let Some(pos) = self.stored_levels.iter().position(|(k, _)| *k == target_key) {
             let (_, stored) = self.stored_levels.remove(pos);
             self.level = stored.level;
-            for m in stored.monsters {
-                self.arena.spawn_actor(m);
+
+            let mut actor_map = std::collections::HashMap::new();
+            for (old, m) in stored.monsters {
+                actor_map.insert(old, self.arena.spawn_actor(m));
             }
-            for it in stored.floor_items {
-                self.arena.spawn_item(it);
+            let mut item_map = std::collections::HashMap::new();
+            let mut spawned = Vec::with_capacity(stored.items.len());
+            for (old, it) in stored.items {
+                let new = self.arena.spawn_item(it);
+                item_map.insert(old, new);
+                spawned.push(new);
             }
-            self.unpaid_items = stored.unpaid_items;
+            let fallback = ItemLocation::Floor(self.level.stairs_up);
+            for new in spawned {
+                if let Some(it) = self.arena.items.get_mut(new) {
+                    it.location = match it.location.clone() {
+                        ItemLocation::InContainer(old) => item_map.get(&old).map(|n| ItemLocation::InContainer(*n)).unwrap_or(fallback.clone()),
+                        ItemLocation::CarriedBy(old) => actor_map.get(&old).map(|n| ItemLocation::CarriedBy(*n)).unwrap_or(fallback.clone()),
+                        other => other,
+                    };
+                }
+            }
+            for (old, cost) in stored.unpaid_items {
+                if let Some(new) = item_map.get(&old) {
+                    self.unpaid_items.push((*new, cost));
+                }
+            }
         } else {
             match (branch, depth) {
                 (BranchId::Sokoban, _) => {
@@ -408,6 +466,7 @@ impl SimulationWorld {
                 if let Some(p) = self.arena.actors.get_mut(self.player_id) {
                     p.coord = new_coord;
                 }
+                self.place_steed_with_hero();
 
                 events.push(GameEvent::LevelChanged { from_depth, to_depth: self.depth });
                 events.push(GameEvent::LogMessage {
@@ -458,6 +517,7 @@ impl SimulationWorld {
                 if let Some(p) = self.arena.actors.get_mut(self.player_id) {
                     p.coord = new_coord;
                 }
+                self.place_steed_with_hero();
 
                 events.push(GameEvent::LevelChanged { from_depth, to_depth: self.depth });
                 events.push(GameEvent::LogMessage { text: format!("You descend deeper into dungeon level {}.", self.depth) });
@@ -475,6 +535,7 @@ impl SimulationWorld {
                 if let Some(p) = self.arena.actors.get_mut(self.player_id) {
                     p.coord = new_coord;
                 }
+                self.place_steed_with_hero();
 
                 events.push(GameEvent::LevelChanged { from_depth, to_depth: self.depth });
                 events.push(GameEvent::LogMessage { text: format!("You enter the {:?} branch (level {}).", branch, level) });
@@ -515,6 +576,7 @@ impl SimulationWorld {
                             if let Some(p) = self.arena.actors.get_mut(self.player_id) {
                                 p.coord = new_coord;
                             }
+                            self.place_steed_with_hero();
 
                             events.push(GameEvent::LevelChanged { from_depth, to_depth: self.depth });
                             events.push(GameEvent::LogMessage {
@@ -535,6 +597,7 @@ impl SimulationWorld {
                     if let Some(p) = self.arena.actors.get_mut(self.player_id) {
                         p.coord = new_coord;
                     }
+                    self.place_steed_with_hero();
 
                     events.push(GameEvent::LevelChanged { from_depth, to_depth: self.depth });
                     events.push(GameEvent::LogMessage { text: format!("You ascend to dungeon level {}.", self.depth) });
@@ -571,6 +634,7 @@ impl SimulationWorld {
                         if let Some(p) = self.arena.actors.get_mut(self.player_id) {
                             p.coord = new_coord;
                         }
+                        self.place_steed_with_hero();
 
                         events.push(GameEvent::LevelChanged { from_depth, to_depth: self.depth });
                         events.push(GameEvent::LogMessage { text: format!("You return to {:?} level {}.", parent.branch, parent.depth) });
@@ -602,6 +666,7 @@ impl SimulationWorld {
                 if let Some(p) = self.arena.actors.get_mut(self.player_id) {
                     p.coord = new_coord;
                 }
+                self.place_steed_with_hero();
 
                 events.push(GameEvent::LevelChanged { from_depth, to_depth: self.depth });
                 events.push(GameEvent::LogMessage { text: format!("You return to {:?} level {}.", branch, level) });

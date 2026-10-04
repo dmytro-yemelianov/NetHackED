@@ -18,8 +18,8 @@ use crate::events::GameEvent;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StoredLevel {
     pub level: DungeonLevel,
-    pub monsters: Vec<netrust_arena::ActorRecord>,
-    pub floor_items: Vec<netrust_arena::ItemRecord>,
+    pub monsters: Vec<(netrust_arena::ActorId, netrust_arena::ActorRecord)>,
+    pub items: Vec<(ItemId, netrust_arena::ItemRecord)>,
     pub unpaid_items: Vec<(ItemId, u32)>,
 }
 
