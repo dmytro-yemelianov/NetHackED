@@ -8,6 +8,10 @@ This document provides the formal mathematical specification for core NetHack me
 
 The Lean models and the Rust engine are simplified abstractions of NetHack mechanics and are **not** a faithful transcription of NetHack 5.0. The formulas in this document describe the models, and in several places they differ from the C source. Known divergences:
 
+* **Monster-vs-monster to-hit**: pet and other monster-vs-monster attacks use the monster-vs-hero formula (`mhitu.c`: $\text{AC\_VALUE}(\text{AC}) + 10 + m_{\text{lev}}$). C `mhitm.c` uses $\text{find\_mac}(mdef) + m_{\text{lev}}$ (no $+10$) against $\text{rnd}(20 + i)$.
+* **Bare-handed damage**: bare-handed attacks use the weapon skill damage table (Unskilled $-2$). In C, the bare-handed/martial-arts damage bonus is $0/{+1}/{+1}/{+2}$ for Unskilled/Basic/Skilled/Expert.
+* **`abon()` omitted**: attributes are not tracked, so the to-hit `abon()` term is 0; C's $+1$ below experience level 3 and the Str/Dex to-hit bonuses are absent.
+* **Starting weapon skills**: heroes start with no weapon skills (every weapon is Unskilled, $-4$ to hit); C starts each role at Basic in its starting weapons. A follow-up task will address this.
 * **Floor-trap set**: the set of traps that fly-over and trigger rules cover is a simplified subset of C's trap types.
 * **Luckstone decay**: the model treats uncursed luckstones like blessed ones (positive luck never decays and negative luck recovers). In C, an uncursed luckstone prevents both good and bad luck from timing out; only blessed stones let bad luck time out and only cursed stones let good luck time out.
 * **Hunger thresholds**: comparison boundaries (`>` versus `>=`) at the hunger status thresholds differ from C.
@@ -208,9 +212,9 @@ $$\text{isDead} = (HP_{\text{after}} = 0) \lor (D_{\text{final}} \ge HP_{\text{b
 * `apply_damage_preserves_max_hp`: $HP_{\max}$ is invariant under damage application.
 * `miss_leaves_defender_unchanged`: A missed attack roll guarantees zero damage and identity preservation.
 * `hit_monotone_target_ac` / `hit_monotone_luck`: raising target AC or Luck never turns a hit into a miss.
-* `attack_always_hits_above_20` / `attack_never_hits_le_1`: $	ext{tmp} > 20$ always hits; $	ext{tmp} \le 1$ never hits.
+* `attack_always_hits_above_20` / `attack_never_hits_le_1`: $\text{tmp} > 20$ always hits; $\text{tmp} \le 1$ never hits.
 * `melee_damage_pos`, `calculate_damage_pos`, `hit_deals_positive_damage`: a landed hit deals at least 1 damage.
-* `hero_absorb_le` / `hero_absorb_pos` / `hero_absorb_nonneg_ac`: hero AC absorption never increases damage, never drops positive damage below 1, and is a no-op for $	ext{AC} \ge 0$.
+* `hero_absorb_le` / `hero_absorb_pos` / `hero_absorb_nonneg_ac`: hero AC absorption never increases damage, never drops positive damage below 1, and is a no-op for $\text{AC} \ge 0$.
 * `monster_to_hit_pos`: the monster-vs-hero to-hit value is at least 1.
 
 ---
