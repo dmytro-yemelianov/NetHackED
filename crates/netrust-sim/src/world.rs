@@ -330,4 +330,17 @@ impl SimulationWorld {
 
         (visible_tiles, detected_monsters)
     }
+
+    /// Apply damage to the hero without underflow; marks death at 0 HP.
+    pub fn damage_player(&mut self, amount: u32, cause: &str) -> Vec<GameEvent> {
+        let mut events = Vec::new();
+        if let Some(p) = self.arena.actors.get_mut(self.player_id) {
+            p.hp = p.hp.saturating_sub(amount);
+            if p.hp == 0 && !p.is_dead {
+                p.is_dead = true;
+                events.push(GameEvent::LogMessage { text: format!("You die... killed by {}.", cause) });
+            }
+        }
+        events
+    }
 }
