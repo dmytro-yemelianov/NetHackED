@@ -14,9 +14,7 @@ The Lean models and the Rust engine are simplified abstractions of NetHack mecha
 * **Temple priest donations**: the NetRust priest additionally uncurses carried items for an offer of at least $200 \times$ level and grants divine favor $+2$ for any donation that is not refused or a cheapskate offer; neither exists in C `priest.c`. The clairvoyance band (`priest.c:671-680`) and the selfless band's alignment gain / cleansing (`priest.c:706-719`) are not applied (message only).
 * **Mysterious Force depth mapping**: C gates the force on `dunlev < dunlevs_in_dungeon - 3` of the real Gehennom (about 20+ levels); NetRust's Gehennom has 6 levels, so the force is only active at depths 1 and 2 (`do.c:1541-1573`).
 * **Mysterious Force RNG and teleport**: the sim draws four random values unconditionally on every Amulet ascent attempt in Gehennom (trigger, push, and counter draws are not consumed lazily as in C), and the same-level outcome teleports the hero to a uniformly random passable, unoccupied tile instead of C `safe_teleds` (`do.c:1555`).
-* **Bag of Holding explosion scatter**: surviving contents are dropped at the hero's square; C `scatter()` flies them outward with damage (`pickup.c:2517-2532`).
-* **Starting inventories**: NetRust role inventories differ from C `u_init.c` (e.g. the NetRust Valkyrie starts with a long sword +0, leather armor and a healing potion; C gives a +1 spear, a +0 dagger, a +3 small shield and a food ration).
-* **Attributes**: there is no Charisma, Constitution or Unchanging tracking; constants are used (`DEFAULT_PLAYER_CON` for the starvation threshold, a fixed Charisma for shop prices, Unchanging is a parameter of the core polymorph function, not a tracked hero property).
+* **Starting inventories and worn armor**: Starting roles have base AC 10 (`NetHack-5.0.0/src/do_wear.c`:2475). Role starting armor aligns with C `u_init.c` where NetRust has the item kind (Valkyrie starts naked with no body armor, AC 10; Rogue starts with leather armor +0, AC 8; Wizard starts with cloak of magic resistance, AC 9). Carried armor items count as worn, at most one per slot (first carried piece wins; extra pieces of the same slot do not stack). Explicit equipment slots and armor wearing/taking off are deferred to D3.
 * **Fainting**: while Fainting, NetRust drains 1 HP every 10 turns and the hero dies at 0 HP (with a death message); this is an approximation, C instead makes the hero faint and lose turns (`eat.c` `newuhs`/`done_in_by` starvation only below the Starved threshold).
 * **Shop, priest, luck and headgear simplifications**: the shop price is computed at payment time rather than stored when the item is billed; the priest uses the hero's current level as the peak level and a single global cheapskate counter; a carried dunce cap counts as worn; luck ignores every source other than the luckstone (base luck is 0).
 * **Bestiary data**: archetype stats (level, speed, AC, alignment, class glyph, size, uniqueness via G_UNIQ) follow C `monsters.h` (pinned by `crates/netrust-data/tests/bestiary_c_table.rs`) and flow into spawned actors. The archetype `attacks` (`mattk[]`) lists drive monster melee and breath (see *Monster attacks*). HP is a fixed `base_hp` rather than C's rolled `d(lvl, 8)`. Intrinsics cover only what `Intrinsics` can represent (no stone resistance, no per-monster MR percentage; shopkeeper keeps `magic_resistance`, silver dragon keeps `reflection`). The per-monster MR percentages (e.g. guardians 10-30%) and `M2_MAGIC` (guide, apprentice) are not modelled. Names "The Norn"/"The Dark One" remain approximations; the invented floating-eye active gaze and Surtur/Huhetotl breath were removed, and spell summoning/cursing is an approximation of AT_MAGC. Pets promote at levels 4/7 instead of C's 4/6 (`makemon.c:2121`).
@@ -210,6 +208,15 @@ HP state transition:
 $$HP_{\text{after}} = \max(0, HP_{\text{before}} - D_{\text{final}})$$
 $$\text{isDead} = (HP_{\text{after}} = 0) \lor (D_{\text{final}} \ge HP_{\text{before}})$$
 
+### Armor Class & ARM_BONUS Calculation
+Hero AC is determined by `find_ac(void)` (`NetHack-5.0.0/src/do_wear.c`:2473-2507). In human form, base AC is 10:
+$$\text{AC}_{\text{uncurbed}} = \text{baseAC} - \sum_{i \in \text{worn}} \text{ARM\_BONUS}(i) - \text{protection}$$
+$$\text{AC}_{\text{hero}} = \min(99, \max(-99, \text{AC}_{\text{uncurbed}}))$$
+with $\text{ARM\_BONUS}(i)$ (`NetHack-5.0.0/include/hack.h`:1526-1528) for an armor item with base AC bonus $a_{\text{ac}}$, enchantment $\text{spe}$, and erosion $e$:
+$$\text{ARM\_BONUS}(i) = a_{\text{ac}} + \text{spe} - \min(e, \max(0, a_{\text{ac}}))$$
+Erosion degrades only the intrinsic base bonus of the piece ($a_{\text{ac}}$ down to 0) and never erodes magical enchantment ($\text{spe}$).
+Worn armor items are partitioned into slots ($\text{Suit}, \text{Cloak}, \text{Helmet}, \text{Shield}, \text{Gloves}, \text{Boots}, \text{Shirt}$), with at most one item contributing per slot.
+
 ### Machine-Checked Proofs in [NetMechanics/Combat.lean](../NetMechanics/Combat.lean)
 * `apply_damage_monotone_hp`: Damage application is strictly monotonic:
   $$\forall c, D,\; HP(\text{applyDamage}(c, D)) \le HP(c)$$
@@ -228,6 +235,10 @@ $$\text{isDead} = (HP_{\text{after}} = 0) \lor (D_{\text{final}} \ge HP_{\text{b
 * `resisted_hit_zero` / `resisted_hit_hp_unchanged`: a resisted monster attack deals 0 and leaves the defender's HP unchanged.
 * `unresisted_hit_pos` / `monster_vs_monster_damage_le`: an unresisted landed attack with $n, d \ge 1$ deals at least 1; against a monster it deals at most $n \cdot d$.
 * `mhitm_no_plus_ten` / `monster_attack_never_hits_le_1`: monster-vs-monster $\text{tmp} = AC + m_{lev}$ on the $\text{rnd}(20+i)$ die; $\text{tmp} \le 1$ never hits.
+* `arm_bonus_bounds`: for non-negative $a_{\text{ac}}$, $\text{spe} \le \text{armBonus}(a_{\text{ac}}, \text{spe}, e) \le a_{\text{ac}} + \text{spe}$.
+* `find_ac_monotonic_armor_piece`: adding an armor piece with non-negative bonus never increases AC ($\forall p,\; 0 \le \text{armBonus}(p) \implies \text{findAc}(\text{baseAc}, p :: \text{worn}, \text{prot}) \le \text{findAc}(\text{baseAc}, \text{worn}, \text{prot})$).
+* `find_ac_monotonic_protection`: divine protection monotonically decreases or preserves AC ($\text{prot}_1 \le \text{prot}_2 \implies \text{findAc}(\text{worn}, \text{prot}_2) \le \text{findAc}(\text{worn}, \text{prot}_1)$).
+* `find_ac_bounds`: hero AC is unconditionally clamped within $[-99, 99]$ (`AC_MAX`).
 
 
 ---

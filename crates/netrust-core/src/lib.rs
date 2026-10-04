@@ -2,6 +2,7 @@
 //!
 //! Formally defined and verified in Lean 4 (`NetMechanics`).
 
+pub mod ac;
 pub mod artifacts_wands;
 pub mod ast;
 pub mod bones;
@@ -36,6 +37,7 @@ pub mod sokoban;
 pub mod tournament;
 pub mod traps;
 
+pub use ac::{arm_bonus, armor_base_ac, armor_slot, find_ac, ArmorSlot, AC_MAX};
 pub use artifacts_wands::{
     apply_vorpal_strike, parse_wish, recharge_wand, resolve_artifact_damage, zap_wand,
 };

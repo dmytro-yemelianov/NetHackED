@@ -361,18 +361,25 @@ impl SimulationWorld {
         lethal
     }
 
-    /// Defender AC as the sim models `find_mac`/`u.uac`: base AC minus the
-    /// enchantment of carried armor.
+    /// Defender AC as the sim models `find_mac`/`u.uac`.
+    ///
+    /// For the hero (`self.player_id`), `defender.ac` is maintained by
+    /// [`SimulationWorld::recompute_hero_ac`]. For monsters, returns base AC minus
+    /// the enchantment of carried armor (C `find_mac`, `worn.c:717`).
     pub(crate) fn defender_ac(&self, defender_id: ActorId, defender: &ActorRecord) -> i32 {
-        let armor_ench: i32 = self
-            .arena
-            .items_carried_by(defender_id)
-            .into_iter()
-            .filter_map(|id| self.arena.items.get(id))
-            .filter(|it| it.class == netrust_types::ItemClass::Armor)
-            .map(|a| a.enchantment as i32)
-            .sum();
-        defender.ac - armor_ench
+        if defender_id == self.player_id {
+            defender.ac
+        } else {
+            let armor_ench: i32 = self
+                .arena
+                .items_carried_by(defender_id)
+                .into_iter()
+                .filter_map(|id| self.arena.items.get(id))
+                .filter(|it| it.class == netrust_types::ItemClass::Armor)
+                .map(|a| a.enchantment as i32)
+                .sum();
+            defender.ac - armor_ench
+        }
     }
 
     /// A monster's full melee attack round against the hero (C `mattacku`,

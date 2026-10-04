@@ -3,28 +3,28 @@
 //! Every property test here corresponds to a machine-checked theorem in `NetMechanics`.
 
 use netrust_core::{
-    apply_erosion, apply_vorpal_strike, attack_hits, attack_nemesis, branch_entrance_depth,
-    branch_max_depth, buy_price, calculate_damage, calculate_encumbrance, calculate_summon_count,
-    calculate_tournament_score, can_detect_monster, can_see_tile, cast_spell, choose_pet_goal,
-    clamp_favor, consecrate_water, consult_leader, corrupt_buc_on_death, create_ghost_hp,
-    decide_tactical_action, destroy_drawbridge, dilute_potion, dip_water, dmgval, enchant_armor,
-    enchant_weapon, enter_branch, exit_branch, feed_pet, hero_damage_after_ac, hunger_of_nutrition,
-    hunger_tier, identify_fully, interact_with_occupant, is_candelabrum_ready,
-    is_hero_eligible_for_quest, is_hp_critical, is_sanctum_accessible, is_valid_bones_level,
-    learn_buc, learn_type, luck_decay_period, mana_cost, mattacku_die, mbag_explodes, melee_damage,
-    mhitm_to_hit, mix_alchemy, monster_attack_damage, monster_attack_hits, monster_hit_damage,
-    monster_to_hit_value, mysterious_force, offer_amulet_on_high_altar, pet_tile_steppable,
-    pick_up_quest_artifact, priest_donation_outcome, priest_donation_quan,
-    priest_suggested_donation, priest_uncurse, promote_pet, protection_purchase_count,
-    protection_purchase_step, push_boulder, quest_progress_rank, recharge_wand, reflect, resisted,
-    resolve_breath_damage, resolve_gaze, resolve_sacrifice, return_to_leader_with_artifact,
-    rub_lamp, sell_price, step_luck_decay, step_ray, step_ritual, swap_displacement,
-    tick_light_fuel, tick_prayer_timeout, to_hit_value, toggle_drawbridge, uncurse,
-    weapon_damage_die, zap_hit, zap_wand, Alignment, ArtifactLocation, AscensionOutcome,
-    BagCheckItem, BagCheckKind, BeamRay, BranchCoord, BranchId, BreathType, Buc, CandelabrumState,
-    Combatant, Coord, DilutionState, Direction, DivineState, DonationOutcome, DoorState,
-    DrawbridgeState, DrawbridgeTransition, DungeonDepth, EnchantOutcome, EncumbranceTier,
-    Engraving, EngravingMedium, FormStats, GazeEffect, GazeType, HeroInteraction,
+    apply_erosion, apply_vorpal_strike, arm_bonus, attack_hits, attack_nemesis,
+    branch_entrance_depth, branch_max_depth, buy_price, calculate_damage, calculate_encumbrance,
+    calculate_summon_count, calculate_tournament_score, can_detect_monster, can_see_tile,
+    cast_spell, choose_pet_goal, clamp_favor, consecrate_water, consult_leader,
+    corrupt_buc_on_death, create_ghost_hp, decide_tactical_action, destroy_drawbridge,
+    dilute_potion, dip_water, dmgval, enchant_armor, enchant_weapon, enter_branch, exit_branch,
+    feed_pet, find_ac, hero_damage_after_ac, hunger_of_nutrition, hunger_tier, identify_fully,
+    interact_with_occupant, is_candelabrum_ready, is_hero_eligible_for_quest, is_hp_critical,
+    is_sanctum_accessible, is_valid_bones_level, learn_buc, learn_type, luck_decay_period,
+    mana_cost, mattacku_die, mbag_explodes, melee_damage, mhitm_to_hit, mix_alchemy,
+    monster_attack_damage, monster_attack_hits, monster_hit_damage, monster_to_hit_value,
+    mysterious_force, offer_amulet_on_high_altar, pet_tile_steppable, pick_up_quest_artifact,
+    priest_donation_outcome, priest_donation_quan, priest_suggested_donation, priest_uncurse,
+    promote_pet, protection_purchase_count, protection_purchase_step, push_boulder,
+    quest_progress_rank, recharge_wand, reflect, resisted, resolve_breath_damage, resolve_gaze,
+    resolve_sacrifice, return_to_leader_with_artifact, rub_lamp, sell_price, step_luck_decay,
+    step_ray, step_ritual, swap_displacement, tick_light_fuel, tick_prayer_timeout, to_hit_value,
+    toggle_drawbridge, uncurse, weapon_damage_die, zap_hit, zap_wand, Alignment, ArtifactLocation,
+    AscensionOutcome, BagCheckItem, BagCheckKind, BeamRay, BranchCoord, BranchId, BreathType, Buc,
+    CandelabrumState, Combatant, Coord, DilutionState, Direction, DivineState, DonationOutcome,
+    DoorState, DrawbridgeState, DrawbridgeTransition, DungeonDepth, EnchantOutcome,
+    EncumbranceTier, Engraving, EngravingMedium, FormStats, GazeEffect, GazeType, HeroInteraction,
     HeroQuestEligibility, Intrinsics, InvocationStep, KnowledgeLevel, LightSource, MetricState,
     MysteriousForceOutcome, PetFamily, PetGoal, PetSpeciesTier, PolyEntity, PushOutcome,
     QuestProgress, QuestState, RechargeResult, RitualProgress, RubResult, SchedulerState,
@@ -516,6 +516,53 @@ proptest! {
         }
     }
 
+    // -------------------------------------------------------------
+    // C reference: hack.h:1526-1528 (ARM_BONUS) and do_wear.c:2473-2507 (find_ac).
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_find_ac_matches_c_reference(
+        base_ac in -20i32..=30,
+        protection in -10i32..=50,
+        worn in proptest::collection::vec(
+            (0i32..=15, -10i32..=15, 0u8..=5),
+            0..=7,
+        ),
+    ) {
+        fn c_reference_arm_bonus(a_ac: i32, spe: i32, erosion: u8) -> i32 {
+            let ero = if a_ac > 0 {
+                (erosion as i32).min(a_ac)
+            } else {
+                0
+            };
+            a_ac + spe - ero
+        }
+
+        fn c_reference_find_ac(
+            base_ac: i32,
+            worn: &[(i32, i32, u8)],
+            protection: i32,
+        ) -> i32 {
+            let mut uac = base_ac;
+            for &(a_ac, spe, erosion) in worn {
+                uac -= c_reference_arm_bonus(a_ac, spe, erosion);
+            }
+            uac -= protection;
+            if uac.abs() > 99 {
+                uac.signum() * 99
+            } else {
+                uac
+            }
+        }
+
+        for &(a, s, e) in &worn {
+            prop_assert_eq!(arm_bonus(a, s, e), c_reference_arm_bonus(a, s, e));
+        }
+
+        let got = find_ac(base_ac, &worn, protection);
+        let expected = c_reference_find_ac(base_ac, &worn, protection);
+        prop_assert_eq!(got, expected);
+        prop_assert!((-99..=99).contains(&got));
+    }
 
     // -------------------------------------------------------------
     // Theorem: break_door_idempotent

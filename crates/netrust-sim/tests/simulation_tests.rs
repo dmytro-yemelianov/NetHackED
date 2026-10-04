@@ -1464,6 +1464,11 @@ fn test_scroll_of_enchant_weapon() {
 fn test_scroll_of_enchant_armor() {
     // Uncursed +0 leather armor gains rnd(3) (read.c:1115); seed 5 draws 1.
     let mut sim = SimulationWorld::new_with_seed(5);
+    sim.arena.spawn_item(create_item_record(
+        ItemKindId::LeatherArmor,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Uncursed,
+    ));
 
     let scroll = sim.arena.spawn_item(create_item_record(
         ItemKindId::ScrollOfEnchantArmor,
@@ -1517,17 +1522,13 @@ fn enchant_at_safe_limit_never_evaporates() {
         // Cursed leather armor +3 with an uncursed scroll: s = 0 + 1 (non-magic)
         // -> rnd(1) = 1, no evaporation (read.c:1179), armor becomes uncursed.
         let mut sim = SimulationWorld::new_with_seed(seed);
-        let armor_id = sim
-            .arena
-            .items_carried_by(sim.player_id)
-            .into_iter()
-            .find(|&id| sim.arena.items.get(id).unwrap().class == ItemClass::Armor)
-            .unwrap();
-        {
-            let armor = sim.arena.items.get_mut(armor_id).unwrap();
-            armor.enchantment = 3;
-            armor.buc = Buc::Cursed;
-        }
+        let mut armor_rec = create_item_record(
+            ItemKindId::LeatherArmor,
+            ItemLocation::CarriedBy(sim.player_id),
+            Buc::Cursed,
+        );
+        armor_rec.enchantment = 3;
+        let armor_id = sim.arena.spawn_item(armor_rec);
         let scroll = sim.arena.spawn_item(create_item_record(
             ItemKindId::ScrollOfEnchantArmor,
             ItemLocation::CarriedBy(sim.player_id),

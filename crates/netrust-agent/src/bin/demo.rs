@@ -62,7 +62,7 @@ fn print_status_bar(sim: &SimulationWorld) {
         p.max_hp,
         sim.player_pw,
         sim.player_max_pw,
-        p.ac - sim.divine_protection as i32,
+        p.ac,
         sim.scheduler.turn
     );
     println!("--------------------------------------------------------------------------------");
@@ -140,7 +140,7 @@ fn main() {
     println!(
         "Divine Protection Level: +{} AC (Total AC: {})",
         sim.divine_protection,
-        sim.arena.actors.get(sim.player_id).unwrap().ac - sim.divine_protection as i32
+        sim.arena.actors.get(sim.player_id).unwrap().ac
     );
 
     println!("\nPriest performing uncursing ritual on a cursed potion:");

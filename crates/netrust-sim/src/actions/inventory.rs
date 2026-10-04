@@ -58,6 +58,7 @@ impl SimulationWorld {
                         text: format!("The shopkeeper says: 'That will be {cost} zorkmids.'"),
                     });
                 }
+                self.recompute_hero_ac();
                 self.scheduler.hero_act(NORMAL_SPEED);
             }
         } else {
@@ -91,6 +92,7 @@ impl SimulationWorld {
                 events.push(GameEvent::LogMessage {
                     text: format!("You drop the {name}."),
                 });
+                self.recompute_hero_ac();
                 self.scheduler.hero_act(NORMAL_SPEED);
             }
         } else {
@@ -241,6 +243,7 @@ impl SimulationWorld {
                             p.is_dead = true;
                         }
                     }
+                    self.recompute_hero_ac();
                     self.scheduler.hero_act(NORMAL_SPEED);
                 } else {
                     if let Some(i) = self.arena.items.get_mut(item_id) {
@@ -252,6 +255,7 @@ impl SimulationWorld {
                     events.push(GameEvent::LogMessage {
                         text: format!("You put the {} into the {}.", item.name, container.name),
                     });
+                    self.recompute_hero_ac();
                     self.scheduler.hero_act(NORMAL_SPEED);
                 }
             }
@@ -294,6 +298,7 @@ impl SimulationWorld {
                 events.push(GameEvent::LogMessage {
                     text: format!("You take the {item_name} out of the {container_name}."),
                 });
+                self.recompute_hero_ac();
                 self.scheduler.hero_act(NORMAL_SPEED);
             } else {
                 events.push(GameEvent::LogMessage {

@@ -471,5 +471,59 @@ theorem melee_damage_dmgval_pos (weapon : Option (Nat × Nat)) (targetLarge mart
   have hb := (dmgval_bounds weapon targetLarge martialArts roll h).1
   exact melee_damage_pos _ enchant bonus
 
+/-! ## Armor Class and ARM_BONUS (C `ARM_BONUS`, `hack.h:1526-1528`, `find_ac`, `do_wear.c:2473-2507`) -/
+
+/--
+  NetHack 5.0 C `ARM_BONUS(obj)` (`include/hack.h:1526-1528`):
+  `a_ac + spe - min(erosion, a_ac)` (erosion cannot reduce `a_ac` below 0).
+-/
+def armBonus (a_ac : Int) (spe : Int) (erosion : Nat) : Int :=
+  let ero := min (erosion : Int) (max 0 a_ac)
+  a_ac + spe - ero
+
+/-- For non-negative `a_ac`, `armBonus` is bounded below by `spe` and above by `a_ac + spe`. -/
+theorem arm_bonus_bounds (a_ac spe : Int) (erosion : Nat) (ha : 0 ≤ a_ac) :
+    spe ≤ armBonus a_ac spe erosion ∧ armBonus a_ac spe erosion ≤ a_ac + spe := by
+  have he : 0 ≤ (erosion : Int) := by omega
+  unfold armBonus
+  simp only []
+  omega
+
+/-- Total AC bonus of a list of worn armor items `(a_ac, spe, erosion)`. -/
+def armorListBonus (worn : List (Int × Int × Nat)) : Int :=
+  (worn.map (fun p => armBonus p.1 p.2.1 p.2.2)).sum
+
+/--
+  NetHack 5.0 C `find_ac(void)` (`src/do_wear.c:2473-2507`):
+  Hero AC computed from `baseAc` (10 for human form), worn armor pieces, and divine `protection`.
+  Clamped to `[-99, 99]` (C `AC_MAX`, `include/you.h:472`).
+-/
+def findAc (baseAc : Int) (worn : List (Int × Int × Nat)) (protection : Int) : Int :=
+  let uncurbed := baseAc - armorListBonus worn - protection
+  if uncurbed < -99 then -99 else if uncurbed > 99 then 99 else uncurbed
+
+/-- Adding an armor piece with non-negative bonus never increases AC (monotone in worn armor). -/
+theorem find_ac_monotonic_armor_piece (baseAc : Int) (worn : List (Int × Int × Nat)) (protection : Int)
+    (p : Int × Int × Nat) (hp : 0 ≤ armBonus p.1 p.2.1 p.2.2) :
+    findAc baseAc (p :: worn) protection ≤ findAc baseAc worn protection := by
+  unfold findAc armorListBonus
+  simp only [List.map_cons, List.sum_cons]
+  repeat (split <;> try omega)
+
+/-- Divine protection never increases AC (monotone in protection). -/
+theorem find_ac_monotonic_protection (baseAc : Int) (worn : List (Int × Int × Nat)) (prot1 prot2 : Int)
+    (h : prot1 ≤ prot2) :
+    findAc baseAc worn prot2 ≤ findAc baseAc worn prot1 := by
+  unfold findAc
+  dsimp only []
+  repeat (split <;> try omega)
+
+/-- `findAc` is always clamped within `[-99, 99]` (C `AC_MAX`). -/
+theorem find_ac_bounds (baseAc : Int) (worn : List (Int × Int × Nat)) (protection : Int) :
+    -99 ≤ findAc baseAc worn protection ∧ findAc baseAc worn protection ≤ 99 := by
+  unfold findAc
+  dsimp only []
+  constructor <;> (split <;> (try split) <;> omega)
+
 end NetMechanics
 
