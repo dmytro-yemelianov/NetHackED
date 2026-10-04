@@ -567,18 +567,52 @@ pub enum WaterType {
     Unholy,
 }
 
-/// Damage and attack types.
+/// C attack type (`AT_*`, include/monattk.h). `Passive` is `AT_NONE`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum AttackType {
+    Claw,
+    Bite,
+    Kick,
+    Touch,
+    Breath,
+    Gaze,
+    Weapon,
+    Magic,
+    Passive,
+}
+
+/// C damage type (`AD_*`) for the subset used by the bestiary.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum DamageType {
-    Physical,
-    Magic,
+    Phys,
     Fire,
     Cold,
-    Electric,
-    Poison,
-    Acid,
-    Disintegration,
-    LevelDrain,
+    /// `AD_DRST`: poisonous (Str drain).
+    DrainStr,
+    /// `AD_STON`: stoning.
+    Stone,
+    Slow,
+    /// `AD_PLYS`: paralysis.
+    Paralyze,
+    /// `AD_DRLI`: level drain.
+    DrainLife,
+    /// `AD_SAMU`: steal quest artifact / Amulet.
+    StealAmulet,
+    /// `AD_CLRC`: clerical spell.
+    Clerical,
+    /// `AD_SPEL`: mage spell.
+    Spell,
+    /// `AD_STUN`: stuns the defender.
+    Stun,
+}
+
+/// One C `ATTK(at, ad, n, d)` entry: `n`d`d` damage dice.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct Attack {
+    pub at: AttackType,
+    pub ad: DamageType,
+    pub n: u8,
+    pub d: u8,
 }
 
 /// Intrinsic and Extrinsic flags.
@@ -709,10 +743,12 @@ pub enum MonsterSpell {
 /// Special tactical attack ability of a monster.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MonsterAbility {
+    /// Legacy marker: breath is driven by the archetype's C AT_BREA attack
+    /// (dice and range included), so this variant carries only the element.
+    /// Older saves also stored `range` and `damage_dice`; serde ignores those
+    /// unknown fields on load.
     Breath {
         breath: BreathType,
-        range: usize,
-        damage_dice: (u32, u32),
     },
     Gaze {
         gaze: GazeType,
@@ -770,6 +806,23 @@ pub struct GraveyardStats {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// `MonsterAbility::Breath` lost its dead `range`/`damage_dice` fields;
+    /// an older save that still has them loads (unknown fields are ignored).
+    #[test]
+    fn old_breath_ability_with_range_and_dice_still_loads() {
+        let old = r#"{"Breath":{"breath":"Fire","range":8,"damage_dice":[6,6]}}"#;
+        let ab: MonsterAbility = serde_json::from_str(old).expect("old save loads");
+        assert_eq!(
+            ab,
+            MonsterAbility::Breath {
+                breath: BreathType::Fire
+            }
+        );
+        let round: MonsterAbility =
+            serde_json::from_str(&serde_json::to_string(&ab).unwrap()).unwrap();
+        assert_eq!(round, ab);
+    }
 
     #[test]
     fn test_coord_bounds_and_distance() {

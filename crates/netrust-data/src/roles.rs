@@ -20,8 +20,9 @@ pub enum RoleId {
 }
 
 /// Player Character Races.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum RaceId {
+    #[default]
     Human,
     Elf,
     Dwarf,
@@ -52,14 +53,10 @@ pub static ROLES: &[RoleSpec] = &[
         id: RoleId::Valkyrie,
         name: "Valkyrie",
         base_hp: 18,
-        ac: 7,
+        ac: 10,
         speed: 12,
         default_alignment: Alignment::Neutral,
-        starting_items: &[
-            ItemKindId::LongSword,
-            ItemKindId::LeatherArmor,
-            ItemKindId::PotionOfHealing,
-        ],
+        starting_items: &[ItemKindId::LongSword, ItemKindId::PotionOfHealing],
     },
     RoleSpec {
         id: RoleId::Wizard,
@@ -78,28 +75,33 @@ pub static ROLES: &[RoleSpec] = &[
         id: RoleId::Barbarian,
         name: "Barbarian",
         base_hp: 20,
-        ac: 6,
+        ac: 10,
         speed: 12,
         default_alignment: Alignment::Chaotic,
-        starting_items: &[ItemKindId::LongSword, ItemKindId::LeatherArmor],
+        starting_items: &[ItemKindId::LongSword],
     },
     RoleSpec {
         id: RoleId::Rogue,
         name: "Rogue",
         base_hp: 14,
-        ac: 8,
+        ac: 10,
         speed: 12,
         default_alignment: Alignment::Chaotic,
-        starting_items: &[ItemKindId::Dagger, ItemKindId::ShortSword, ItemKindId::Sack],
+        starting_items: &[
+            ItemKindId::Dagger,
+            ItemKindId::ShortSword,
+            ItemKindId::LeatherArmor,
+            ItemKindId::Sack,
+        ],
     },
     RoleSpec {
         id: RoleId::Knight,
         name: "Knight",
         base_hp: 16,
-        ac: 5,
+        ac: 10,
         speed: 12,
         default_alignment: Alignment::Lawful,
-        starting_items: &[ItemKindId::LongSword, ItemKindId::ChainMail],
+        starting_items: &[ItemKindId::LongSword],
     },
     RoleSpec {
         id: RoleId::Monk,
@@ -117,7 +119,7 @@ pub static ROLES: &[RoleSpec] = &[
         id: RoleId::Healer,
         name: "Healer",
         base_hp: 14,
-        ac: 9,
+        ac: 10,
         speed: 12,
         default_alignment: Alignment::Neutral,
         starting_items: &[
@@ -142,14 +144,10 @@ pub static ROLES: &[RoleSpec] = &[
         id: RoleId::Archaeologist,
         name: "Archaeologist",
         base_hp: 14,
-        ac: 8,
+        ac: 10,
         speed: 12,
         default_alignment: Alignment::Lawful,
-        starting_items: &[
-            ItemKindId::ShortSword,
-            ItemKindId::LeatherArmor,
-            ItemKindId::Sack,
-        ],
+        starting_items: &[ItemKindId::ShortSword, ItemKindId::Sack],
     },
 ];
 
@@ -290,6 +288,38 @@ pub fn get_race(id: RaceId) -> &'static RaceSpec {
     RACES.iter().find(|r| r.id == id).expect("Race must exist")
 }
 
+/// C `urace.lovemask` (`role.c`: human :594, elf :614, dwarf :634, gnome :654, orc :674).
+pub fn race_lovemask(hero: RaceId) -> &'static [RaceId] {
+    match hero {
+        RaceId::Human => &[],
+        RaceId::Elf => &[RaceId::Elf],
+        RaceId::Dwarf | RaceId::Gnome => &[RaceId::Dwarf, RaceId::Gnome],
+        RaceId::Orc => &[],
+    }
+}
+
+/// C `urace.hatemask` (`role.c`: human :595, elf :615, dwarf :635, gnome :655, orc :675).
+pub fn race_hatemask(hero: RaceId) -> &'static [RaceId] {
+    match hero {
+        RaceId::Human => &[RaceId::Gnome, RaceId::Orc],
+        RaceId::Elf | RaceId::Dwarf => &[RaceId::Orc],
+        RaceId::Gnome => &[RaceId::Human],
+        RaceId::Orc => &[RaceId::Human, RaceId::Elf, RaceId::Dwarf],
+    }
+}
+
+/// C `race_peaceful(ptr)` (mondata.h:119): the monster's race flag is in the
+/// hero race's love mask.
+pub fn race_peaceful(hero: RaceId, monster_race: Option<RaceId>) -> bool {
+    monster_race.is_some_and(|r| race_lovemask(hero).contains(&r))
+}
+
+/// C `race_hostile(ptr)` (mondata.h:118): the monster's race flag is in the
+/// hero race's hate mask.
+pub fn race_hostile(hero: RaceId, monster_race: Option<RaceId>) -> bool {
+    monster_race.is_some_and(|r| race_hatemask(hero).contains(&r))
+}
+
 /// User-selected character creation profile.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CharacterConfig {
@@ -337,17 +367,41 @@ pub fn spawn_player_character(
         is_tame: false,
         tameness: 0,
         abilities: Vec::new(),
+        is_peaceful: false,
+        mspec_used: 0,
     };
     let player_id = arena.spawn_actor(actor);
 
     let mut item_ids = Vec::new();
     for &kind in role.starting_items {
-        let item = create_item_record(kind, ItemLocation::CarriedBy(player_id), Buc::Uncursed);
+        let mut item = create_item_record(kind, ItemLocation::CarriedBy(player_id), Buc::Uncursed);
+        if let Some(spe) = starting_item_spe(config.role, kind) {
+            item.enchantment = spe;
+        }
         let id = arena.spawn_item(item);
         item_ids.push(id);
     }
 
     (player_id, item_ids)
+}
+
+/// C `trobj.trspe` of a role's starting weapon or armor (`u_init.c:42-176`), for
+/// the weapon/armor role/item pairs NetRust's starting inventories share with C. Returns `None`
+/// for items C does not give that role (NetRust-only substitutes keep the
+/// catalog enchantment). `ini_inv` applies `trspe` to the created object
+/// (`u_init.c:1233-1234`).
+pub fn starting_item_spe(role: RoleId, kind: ItemKindId) -> Option<i8> {
+    match (role, kind) {
+        // Knight[]: { LONG_SWORD, 1, ... } (u_init.c:91)
+        (RoleId::Knight, ItemKindId::LongSword) => Some(1),
+        // Rogue[]: SHORT_SWORD +0, DAGGER +0, LEATHER_ARMOR +1 (u_init.c:134-136)
+        (RoleId::Rogue, ItemKindId::ShortSword) => Some(0),
+        (RoleId::Rogue, ItemKindId::Dagger) => Some(0),
+        (RoleId::Rogue, ItemKindId::LeatherArmor) => Some(1),
+        // Wizard[]: { CLOAK_OF_MAGIC_RESISTANCE, 0, ... } (u_init.c:169)
+        (RoleId::Wizard, ItemKindId::CloakOfMagicResistance) => Some(0),
+        _ => None,
+    }
 }
 
 /// Spawns an initial companion pet (Little Dog or Kitten) adjacent to the hero.

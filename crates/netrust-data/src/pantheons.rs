@@ -48,15 +48,15 @@ pub fn get_pantheon_for_role(role: RoleId) -> Pantheon {
         },
         RoleId::Rogue => Pantheon {
             lawful: Deity {
-                name: "Ishtar".into(),
+                name: "Issek".into(),
                 align: Alignment::Lawful,
             },
             neutral: Deity {
-                name: "Kos".into(),
+                name: "Mog".into(),
                 align: Alignment::Neutral,
             },
             chaotic: Deity {
-                name: "Mog".into(),
+                name: "Kos".into(),
                 align: Alignment::Chaotic,
             },
         },
@@ -147,6 +147,35 @@ pub fn get_patron_deity(role: RoleId, align: Alignment) -> Deity {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// (role, lawful, neutral, chaotic) from NetHack C `role.c` urole[] god fields.
+    const C_PANTHEONS: [(RoleId, &str, &str, &str); 9] = [
+        (
+            RoleId::Archaeologist,
+            "Quetzalcoatl",
+            "Camaxtli",
+            "Huhetotl",
+        ),
+        (RoleId::Barbarian, "Mitra", "Crom", "Set"),
+        (RoleId::Healer, "Athena", "Hermes", "Poseidon"),
+        (RoleId::Knight, "Lugh", "Brigit", "Manannan Mac Lir"),
+        (RoleId::Monk, "Shan Lai Ching", "Chih Sung-tzu", "Huan Ti"),
+        (RoleId::Rogue, "Issek", "Mog", "Kos"),
+        (RoleId::Tourist, "Blind Io", "The Lady", "Offler"),
+        (RoleId::Valkyrie, "Tyr", "Odin", "Loki"),
+        (RoleId::Wizard, "Ptah", "Thoth", "Anhur"),
+    ];
+
+    #[test]
+    fn pantheons_match_role_c() {
+        for (r, l, n, c) in C_PANTHEONS {
+            let p = get_pantheon_for_role(r);
+            assert_eq!(p.lawful.name, l, "{r:?} lawful");
+            assert_eq!(p.neutral.name, n, "{r:?} neutral");
+            assert_eq!(p.chaotic.name, c, "{r:?} chaotic");
+            assert_eq!(get_patron_deity(r, Alignment::Chaotic).name, c);
+        }
+    }
 
     #[test]
     fn test_all_roles_have_valid_pantheons() {

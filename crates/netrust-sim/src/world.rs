@@ -2,7 +2,8 @@
 
 use netrust_arena::{ActorId, EntityArena, ItemId, ItemLocation};
 use netrust_core::{
-    energy::SchedulerState, nutrition::hunger_of_nutrition, HungerState, SpellKind,
+    armor_base_ac, armor_slot, energy::SchedulerState, find_ac, nutrition::hunger_of_nutrition,
+    HungerState, SpellKind,
 };
 use netrust_data::{
     create_item_record, create_monster_record, spawn_player_character, CharacterConfig, ItemKindId,
@@ -67,6 +68,10 @@ pub struct SimulationWorld {
     pub quest_state: netrust_core::QuestState,
     #[serde(default)]
     pub alignment_record: i32,
+    /// Hero race (C `gu.urace`), used by `peace_minded`'s race rules
+    /// (`race_peaceful`/`race_hostile`, makemon.c:2283-2286).
+    #[serde(default)]
+    pub hero_race: netrust_data::RaceId,
     /// C `context.mysteryforce`: decay counter of the Mysterious Force
     /// (`do.c:1543,1563`); grows by `rn2(diff + 2)` each time it triggers.
     #[serde(default)]
@@ -82,6 +87,10 @@ pub struct SimulationWorld {
     #[serde(default)]
     pub conducts: netrust_types::ConductTracker,
 }
+
+/// The sim's starting alignment record (C starts at `urole.initrecord`,
+/// attrib.c:1094; documented divergence).
+pub const INITIAL_ALIGNMENT_RECORD: i32 = 25;
 
 pub fn default_rng() -> ChaCha8Rng {
     ChaCha8Rng::seed_from_u64(0)
@@ -179,7 +188,17 @@ impl SimulationWorld {
                     }
                 }
                 RoomType::Normal if i > 0 && i != level.rooms.len() - 1 => {
-                    let goblin = create_monster_record(MonsterSpeciesId::Goblin, room.center());
+                    let mut goblin = create_monster_record(MonsterSpeciesId::Goblin, room.center());
+                    // makemon.c:1299 `mpeaceful = peace_minded(ptr)`; the hero
+                    // starts with the initial record and no Amulet.
+                    let input = crate::peace::peace_input(
+                        netrust_data::get_monster_species(MonsterSpeciesId::Goblin),
+                        config.alignment,
+                        config.race,
+                        INITIAL_ALIGNMENT_RECORD,
+                        false,
+                    );
+                    goblin.is_peaceful = crate::peace::roll_peace_minded(&input, &mut rng);
                     arena.spawn_actor(goblin);
                 }
                 _ => {}
@@ -220,7 +239,7 @@ impl SimulationWorld {
                 .unwrap_or(false)
         });
 
-        Self {
+        let mut sim = Self {
             levels: vec![level.clone()],
             current_branch: netrust_types::BranchId::DungeonsOfDoom,
             stored_levels: Vec::new(),
@@ -261,7 +280,8 @@ impl SimulationWorld {
             ritual_progress: netrust_core::RitualProgress::Uninitiated,
             vibrating_square: None,
             quest_state: netrust_core::QuestState::default(),
-            alignment_record: 25, // Hero starts with pious devotion
+            alignment_record: INITIAL_ALIGNMENT_RECORD,
+            hero_race: config.race,
             mysterious_force_count: 0,
             role_name: format!("{:?}", config.role),
             rng,
@@ -269,6 +289,45 @@ impl SimulationWorld {
             event_log: Vec::new(),
             genocide_registry: netrust_types::GenocideRegistry::default(),
             conducts: netrust_types::ConductTracker::default(),
+        };
+        sim.recompute_hero_ac();
+        sim
+    }
+
+    /// Compute hero's current AC according to NetHack 5.0 C `find_ac(void)` (`do_wear.c:2473-2507`).
+    ///
+    /// Human hero has base AC 10 (`mons[u.umonnum].ac`, `do_wear.c:2475`).
+    /// Worn armor pieces are gathered from the hero's carried items: for each
+    /// [`netrust_core::ArmorSlot`], at most one piece is counted as worn (the first carried item
+    /// matching that slot wins; additional carried items in the same slot do not stack).
+    /// Divine protection is subtracted as C `u.ublessed`.
+    pub fn compute_hero_ac(&self) -> i32 {
+        let mut worn_slots = std::collections::HashSet::new();
+        let mut worn_armor = Vec::new();
+
+        for item_id in self.arena.items_carried_by(self.player_id) {
+            if let Some(item) = self.arena.items.get(item_id) {
+                if item.class == ItemClass::Armor {
+                    if let Some(slot) = armor_slot(&item.name) {
+                        if worn_slots.insert(slot) {
+                            let a_ac = netrust_data::item_archetype_by_name(&item.name)
+                                .map(|arch| arch.ac_bonus)
+                                .unwrap_or_else(|| armor_base_ac(&item.name));
+                            worn_armor.push((a_ac, item.enchantment as i32, item.erosion));
+                        }
+                    }
+                }
+            }
+        }
+
+        find_ac(10, &worn_armor, self.divine_protection as i32)
+    }
+
+    /// Recomputes the hero's AC and updates `player.ac`.
+    pub fn recompute_hero_ac(&mut self) {
+        let ac = self.compute_hero_ac();
+        if let Some(player) = self.arena.actors.get_mut(self.player_id) {
+            player.ac = ac;
         }
     }
 
@@ -327,17 +386,7 @@ impl SimulationWorld {
     /// The Amulet of Yendor must be carried. `divine_state` has no god-anger field yet,
     /// so `god_angry` is always false (documented limitation).
     pub fn luck_timeout_period(&self) -> u64 {
-        let has_amulet = self
-            .arena
-            .items_carried_by(self.player_id)
-            .into_iter()
-            .any(|iid| {
-                self.arena
-                    .items
-                    .get(iid)
-                    .is_some_and(crate::actions::items::is_real_amulet)
-            });
-        netrust_core::luck_decay_period(has_amulet, false)
+        netrust_core::luck_decay_period(self.hero_has_amulet(), false)
     }
 
     /// Progress one tick of luck decay based on carried luckstone (C `timeout.c:595-620`).

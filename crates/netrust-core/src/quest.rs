@@ -141,6 +141,8 @@ pub struct RoleQuestConfig {
     pub role_name: &'static str,
     pub leader_name: &'static str,
     pub nemesis_name: &'static str,
+    /// Quest guardian species name (C `role.c` `guardnum`); a BESTIARY name.
+    pub guardian_name: &'static str,
     pub artifact_name: &'static str,
     pub home_desc: &'static str,
     pub goal_desc: &'static str,
@@ -156,85 +158,96 @@ pub struct RoleQuestConfig {
 /// names. Matching is case-insensitive. Returns `None` for roles NetRust has
 /// no quest data for (previously a silent Archaeologist fallback).
 pub fn get_role_quest_config(role_name: &str) -> Option<RoleQuestConfig> {
-    let (role, leader, nemesis, artifact, home, goal) = match role_name.to_lowercase().as_str() {
-        "valkyrie" => (
-            "Valkyrie",
-            "The Norn",
-            "Lord Surtur",
-            "The Orb of Fate",
-            "the Shrine of Destiny",
-            "the cave of Surtur",
-        ),
-        "wizard" => (
-            "Wizard",
-            "Neferet the Green",
-            "The Dark One",
-            "The Eye of the Aethiopica",
-            "the Lonely Tower",
-            "the Tower of Darkness",
-        ),
-        "barbarian" => (
-            "Barbarian",
-            "Pelias",
-            "Thoth Amon",
-            "The Heart of Ahriman",
-            "the Camp of the Duali Tribe",
-            "the Duali Oasis",
-        ),
-        "knight" => (
-            "Knight",
-            "King Arthur",
-            "Ixoth",
-            "The Magic Mirror of Merlin",
-            "Camelot Castle",
-            "the Isle of Glass",
-        ),
-        "monk" => (
-            "Monk",
-            "Grand Master",
-            "Master Kaen",
-            "The Eyes of the Overworld",
-            "the Monastery of Chan-Sune",
-            "the Monastery of the Earth-Lord",
-        ),
-        "rogue" => (
-            "Rogue",
-            "Master of Thieves",
-            "Master Assassin",
-            "The Master Key of Thievery",
-            "the Thieves' Guild Hall",
-            "the Assassins' Guild Hall",
-        ),
-        "tourist" => (
-            "Tourist",
-            "Twoflower",
-            "Master of Thieves",
-            "The Platinum Yendorian Express Card",
-            "Ankh-Morpork",
-            "the Thieves' Guild Hall",
-        ),
-        "healer" => (
-            "Healer",
-            "Hippocrates",
-            "Cyclops",
-            "The Staff of Aesculapius",
-            "the Temple of Epidaurus",
-            "the Temple of Coeus",
-        ),
-        "archaeologist" => (
-            "Archaeologist",
-            "Lord Carnarvon",
-            "Minion of Huhetotl",
-            "The Orb of Detection",
-            "the College of Archeology",
-            "the Tomb of the Toltec Kings",
-        ),
-        _ => return None,
-    };
+    let (role, leader, nemesis, artifact, home, goal, guardian) =
+        match role_name.to_lowercase().as_str() {
+            "valkyrie" => (
+                "Valkyrie",
+                "The Norn",
+                "Lord Surtur",
+                "The Orb of Fate",
+                "the Shrine of Destiny",
+                "the cave of Surtur",
+                "warrior",
+            ),
+            "wizard" => (
+                "Wizard",
+                "Neferet the Green",
+                "The Dark One",
+                "The Eye of the Aethiopica",
+                "the Lonely Tower",
+                "the Tower of Darkness",
+                "apprentice",
+            ),
+            "barbarian" => (
+                "Barbarian",
+                "Pelias",
+                "Thoth Amon",
+                "The Heart of Ahriman",
+                "the Camp of the Duali Tribe",
+                "the Duali Oasis",
+                "chieftain",
+            ),
+            "knight" => (
+                "Knight",
+                "King Arthur",
+                "Ixoth",
+                "The Magic Mirror of Merlin",
+                "Camelot Castle",
+                "the Isle of Glass",
+                "page",
+            ),
+            "monk" => (
+                "Monk",
+                "Grand Master",
+                "Master Kaen",
+                "The Eyes of the Overworld",
+                "the Monastery of Chan-Sune",
+                "the Monastery of the Earth-Lord",
+                "abbot",
+            ),
+            "rogue" => (
+                "Rogue",
+                "Master of Thieves",
+                "Master Assassin",
+                "The Master Key of Thievery",
+                "the Thieves' Guild Hall",
+                "the Assassins' Guild Hall",
+                "thug",
+            ),
+            "tourist" => (
+                "Tourist",
+                "Twoflower",
+                "Master of Thieves",
+                "The Platinum Yendorian Express Card",
+                "Ankh-Morpork",
+                "the Thieves' Guild Hall",
+                "guide",
+            ),
+            "healer" => (
+                "Healer",
+                "Hippocrates",
+                "Cyclops",
+                "The Staff of Aesculapius",
+                "the Temple of Epidaurus",
+                "the Temple of Coeus",
+                "attendant",
+            ),
+            "archaeologist" => (
+                "Archaeologist",
+                "Lord Carnarvon",
+                "Minion of Huhetotl",
+                "The Orb of Detection",
+                "the College of Archeology",
+                "the Tomb of the Toltec Kings",
+                "student",
+            ),
+            _ => return None,
+        };
     Some(RoleQuestConfig {
         role_name: role,
         leader_name: leader,
         nemesis_name: nemesis,
+        guardian_name: guardian,
         artifact_name: artifact,
         home_desc: home,
         goal_desc: goal,
@@ -310,6 +323,29 @@ mod tests {
             assert_eq!(c.leader_name, leader, "{role} leader");
             assert_eq!(c.nemesis_name, nemesis, "{role} nemesis");
             assert_eq!(c.artifact_name, artifact, "{role} artifact");
+        }
+    }
+
+    /// (role, guardian) from role.c `guardnum` (Arc :48, Bar :89, Hea :171, Kni :211,
+    /// Mon :251, Rog :335, Tou :470, Val :510, Wiz :550).
+    #[test]
+    fn guardian_names_match_c() {
+        for (role, g) in [
+            ("Archaeologist", "student"),
+            ("Barbarian", "chieftain"),
+            ("Healer", "attendant"),
+            ("Knight", "page"),
+            ("Monk", "abbot"),
+            ("Rogue", "thug"),
+            ("Tourist", "guide"),
+            ("Valkyrie", "warrior"),
+            ("Wizard", "apprentice"),
+        ] {
+            assert_eq!(
+                get_role_quest_config(role).unwrap().guardian_name,
+                g,
+                "{role}"
+            );
         }
     }
 

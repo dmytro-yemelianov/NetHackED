@@ -129,6 +129,11 @@ impl SimulationWorld {
 
         let spent_time = self.scheduler.hero_energy != energy_before;
 
+        // Hero AC is derived state (C `find_ac`, `do_wear.c:2473-2507`): refresh it
+        // once after any action so monster attacks this turn see the current worn
+        // armor, enchantment and divine protection.
+        self.recompute_hero_ac();
+
         // Process monster actions and turn scheduler ticks
         let sim_events = self.process_turn_ticks();
         events.extend(sim_events);
@@ -144,6 +149,10 @@ impl SimulationWorld {
         {
             self.tick_luck_decay();
         }
+
+        // Monster turns can also change worn armor (theft, erosion); refresh again
+        // so `ActorRecord::ac` is never stale between steps.
+        self.recompute_hero_ac();
 
         self.event_log.extend(events.clone());
         events

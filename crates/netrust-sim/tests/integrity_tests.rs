@@ -119,6 +119,11 @@ fn monster_class_lookup() {
     assert_eq!(netrust_data::monster_class_of("master lich"), Some('L'));
     assert_eq!(netrust_data::monster_class_of("GOBLIN"), Some('o'));
     assert_eq!(netrust_data::monster_class_of("no such thing"), None);
+    // Class letters follow C defsym.h: skeleton is S_ZOMBIE 'Z', gnome S_GNOME 'G', ghost S_GHOST ' '.
+    assert_eq!(netrust_data::monster_class_of("skeleton"), Some('Z'));
+    assert_eq!(netrust_data::monster_class_of("gnome"), Some('G'));
+    assert_eq!(netrust_data::monster_class_of("ghost"), Some(' '));
+    assert_eq!(netrust_data::monster_class_of("dwarf"), Some('h'));
 }
 
 fn has_item(sim: &SimulationWorld, name: &str) -> bool {

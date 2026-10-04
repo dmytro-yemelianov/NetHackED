@@ -2,13 +2,120 @@
 
 use netrust_core::energy::NORMAL_SPEED;
 use netrust_dungeon::RoomType;
-use netrust_types::{Alignment, Coord, Direction, DoorState, Tile};
+use netrust_types::{Coord, Direction, DoorState, Tile};
 use rand::Rng;
 
 use crate::events::GameEvent;
 use crate::world::SimulationWorld;
 
 impl SimulationWorld {
+    /// C `is_safemon(mon)` (display.h:159-161): `flags.safe_dog` (on by default),
+    /// a peaceful monster the hero can spot, and the hero not confused,
+    /// hallucinating or stunned. "Can spot" is approximated by "hero not blind".
+    /// Pets keep the sim's own displacement (handled before this check).
+    pub(crate) fn is_safemon(&self, target_id: netrust_arena::ActorId) -> bool {
+        let Some(target) = self.arena.actors.get(target_id) else {
+            return false;
+        };
+        let hero_blind = self
+            .arena
+            .actors
+            .get(self.player_id)
+            .is_some_and(|p| p.intrinsics.blind);
+        let t = &self.hero.afflictions.transient;
+        target.is_peaceful
+            && !hero_blind
+            && t.confused == 0
+            && t.hallucinating == 0
+            && t.stunned == 0
+    }
+
+    /// The hero walks into a safe peaceful monster (`!context.forcefight`).
+    ///
+    /// C `do_attack` (uhitm.c:462-509): `foo = Punished || !rn2(7) || ...`; if
+    /// `foo` or the monster is in a tended shop, "You stop.  <Mon> is in the
+    /// way!". Otherwise C `domove_swap_with_pet` (hack.c:2154-2176): a
+    /// `mundisplaceable` monster (temple priest, shopkeeper, vault guard, Oracle,
+    /// the quest leader; monst.h:227-230), or one that would be moved onto a
+    /// trap, refuses ("You stop.  <Mon> doesn't want to swap places."); anyone
+    /// else swaps places with the hero ("You swap places with the peaceful <mon>.").
+    ///
+    /// Not modelled: Punished, long worms, the `dopay()` bump on a blocking
+    /// shopkeeper (uhitm.c:492-494), the `mmove == 0 && rn2(6)` "doesn't seem to
+    /// move" case (no BESTIARY entry has speed 0), monster traps/liquids after
+    /// the swap. Every branch uses the hero's move.
+    pub(crate) fn bump_peaceful(
+        &mut self,
+        target_id: netrust_arena::ActorId,
+        hero_from: Coord,
+        target_coord: Coord,
+    ) -> Vec<GameEvent> {
+        let mut events = Vec::new();
+        let Some(target) = self.arena.actors.get(target_id).cloned() else {
+            return events;
+        };
+        // uhitm.c:475 `!rn2(7)` (Punished is not modelled).
+        let must_stop = self.rng.random_range(0..7u32) == 0; // C `foo`
+                                                             // uhitm.c:481-486: only checked when there is no other reason to stop.
+        let inshop = !must_stop
+            && self.level.room_at(target_coord).is_some_and(|room| {
+                room.room_type == RoomType::Shop
+                    && self.arena.actors.values().any(|a| {
+                        !a.is_dead && a.name == "shopkeeper" && room.contains_inner(a.coord)
+                    })
+            });
+        if must_stop || inshop {
+            events.push(GameEvent::LogMessage {
+                text: netrust_i18n::Messages::peaceful_in_the_way(
+                    &target.name,
+                    crate::peace::monnam_article(&target.name),
+                    self.locale,
+                ),
+            });
+            return events;
+        }
+        let quest_cfg = netrust_core::get_role_quest_config_or_default(&self.role_name);
+        let mundisplaceable =
+            netrust_data::monster_archetype_by_name(&target.name).is_some_and(|a| {
+                matches!(
+                    a.id,
+                    netrust_data::MonsterSpeciesId::Priest
+                        | netrust_data::MonsterSpeciesId::Shopkeeper
+                )
+            }) || target.name.eq_ignore_ascii_case(quest_cfg.leader_name);
+        let trap_at_hero = self.level.traps.contains_key(&hero_from);
+        if mundisplaceable || trap_at_hero || !self.level.is_passable(hero_from) {
+            events.push(GameEvent::LogMessage {
+                text: netrust_i18n::Messages::peaceful_wont_swap(
+                    &target.name,
+                    crate::peace::monnam_article(&target.name),
+                    self.locale,
+                ),
+            });
+            return events;
+        }
+        if let Some(p) = self.arena.actors.get_mut(self.player_id) {
+            p.coord = target_coord;
+        }
+        if let Some(m) = self.arena.actors.get_mut(target_id) {
+            m.coord = hero_from;
+        }
+        events.push(GameEvent::ActorMoved {
+            actor: self.player_id,
+            from: hero_from,
+            to: target_coord,
+        });
+        events.push(GameEvent::ActorMoved {
+            actor: target_id,
+            from: target_coord,
+            to: hero_from,
+        });
+        events.push(GameEvent::LogMessage {
+            text: netrust_i18n::Messages::swap_with_peaceful(&target.name, self.locale),
+        });
+        events
+    }
+
     pub(crate) fn handle_move(&mut self, dir: Direction) -> Vec<GameEvent> {
         let mut events = Vec::new();
         let Some(player) = self.arena.actors.get(self.player_id).cloned() else {
@@ -74,6 +181,10 @@ impl SimulationWorld {
                     events.push(GameEvent::LogMessage {
                         text: format!("You displace {pet_name}."),
                     });
+                    self.scheduler.hero_act(move_cost);
+                } else if self.is_safemon(target_id) {
+                    // Walking into a peaceful never attacks it (C `is_safemon`).
+                    events.extend(self.bump_peaceful(target_id, player.coord, target_coord));
                     self.scheduler.hero_act(move_cost);
                 } else {
                     let combat_events = self.resolve_combat(self.player_id, target_id);
@@ -279,7 +390,7 @@ impl SimulationWorld {
                                 // Turn shopkeeper hostile
                                 for (_, actor) in self.arena.actors.iter_mut() {
                                     if actor.name == "shopkeeper" && !actor.is_dead {
-                                        actor.alignment = Alignment::Chaotic;
+                                        actor.is_peaceful = false;
                                     }
                                 }
                             }

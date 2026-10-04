@@ -23,7 +23,7 @@ pub enum PetFamily {
 pub enum PetSpeciesTier {
     LittleDog,
     Dog,
-    WarDog,
+    LargeDog,
     Kitten,
     Housecat,
     LargeCat,
@@ -32,7 +32,7 @@ pub enum PetSpeciesTier {
 impl PetSpeciesTier {
     pub fn family(self) -> PetFamily {
         match self {
-            PetSpeciesTier::LittleDog | PetSpeciesTier::Dog | PetSpeciesTier::WarDog => {
+            PetSpeciesTier::LittleDog | PetSpeciesTier::Dog | PetSpeciesTier::LargeDog => {
                 PetFamily::Canine
             }
             PetSpeciesTier::Kitten | PetSpeciesTier::Housecat | PetSpeciesTier::LargeCat => {
@@ -45,7 +45,7 @@ impl PetSpeciesTier {
         match self {
             PetSpeciesTier::LittleDog | PetSpeciesTier::Kitten => 0,
             PetSpeciesTier::Dog | PetSpeciesTier::Housecat => 1,
-            PetSpeciesTier::WarDog | PetSpeciesTier::LargeCat => 2,
+            PetSpeciesTier::LargeDog | PetSpeciesTier::LargeCat => 2,
         }
     }
 }
@@ -57,7 +57,7 @@ pub fn promote_pet(species: PetSpeciesTier, level: u32) -> PetSpeciesTier {
     match species {
         PetSpeciesTier::LittleDog => {
             if level >= 7 {
-                PetSpeciesTier::WarDog
+                PetSpeciesTier::LargeDog
             } else if level >= 4 {
                 PetSpeciesTier::Dog
             } else {
@@ -66,12 +66,12 @@ pub fn promote_pet(species: PetSpeciesTier, level: u32) -> PetSpeciesTier {
         }
         PetSpeciesTier::Dog => {
             if level >= 7 {
-                PetSpeciesTier::WarDog
+                PetSpeciesTier::LargeDog
             } else {
                 PetSpeciesTier::Dog
             }
         }
-        PetSpeciesTier::WarDog => PetSpeciesTier::WarDog,
+        PetSpeciesTier::LargeDog => PetSpeciesTier::LargeDog,
         PetSpeciesTier::Kitten => {
             if level >= 7 {
                 PetSpeciesTier::LargeCat
@@ -138,7 +138,7 @@ mod tests {
         );
         assert_eq!(
             promote_pet(PetSpeciesTier::LittleDog, 7),
-            PetSpeciesTier::WarDog
+            PetSpeciesTier::LargeDog
         );
         assert_eq!(
             promote_pet(PetSpeciesTier::Kitten, 5),
@@ -149,8 +149,8 @@ mod tests {
             PetSpeciesTier::LargeCat
         );
         assert_eq!(
-            promote_pet(PetSpeciesTier::WarDog, 10),
-            PetSpeciesTier::WarDog
+            promote_pet(PetSpeciesTier::LargeDog, 10),
+            PetSpeciesTier::LargeDog
         );
     }
 

@@ -494,6 +494,15 @@ pub fn t_hunger_str(state_str: &str, locale: Locale) -> &'static str {
     }
 }
 
+/// C `upstart`/`Monnam`: upper-case the first character.
+fn capitalize_first(s: &str) -> String {
+    let mut c = s.chars();
+    match c.next() {
+        Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
+        None => String::new(),
+    }
+}
+
 /// Translates a monster or item name for embedding in a message.
 /// Tries monster names first, then item names; unknown names pass through.
 fn tn(name: &str, locale: Locale) -> String {
@@ -505,6 +514,17 @@ fn tn(name: &str, locale: Locale) -> String {
         return m;
     }
     t_item(name, locale)
+}
+
+/// C `Monnam`: the translated name, capitalised; English prefixes "The " when
+/// `article` (non-unique monster). Ukrainian has no articles.
+fn monnam(name: &str, article: bool, locale: Locale) -> String {
+    let n = tn(name, locale);
+    if locale == Locale::En && article {
+        format!("The {n}")
+    } else {
+        capitalize_first(&n)
+    }
 }
 
 /// Message formatters with full locale support.
@@ -593,6 +613,88 @@ impl Messages {
         match locale {
             Locale::En => format!("{target} is killed!"),
             Locale::Uk => format!("{target} гине!"),
+        }
+    }
+
+    /// C `setmangry` (mon.c:4306): "%s gets angry!" with `Monnam`.
+    ///
+    /// `article` is true for a non-unique monster: English `Monnam` then reads
+    /// "The gnome" (a unique/proper name has no article).
+    pub fn gets_angry(target: &str, article: bool, locale: Locale) -> String {
+        let target = monnam(target, article, locale);
+        match locale {
+            Locale::En => format!("{target} gets angry!"),
+            Locale::Uk => format!("{target} сердиться!"),
+        }
+    }
+
+    /// C `intemple` (priest.c:451): the Sanctum priest's first greeting.
+    pub fn sanctum_infidel(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "\"Infidel, you have entered Moloch's Sanctum!\"",
+            Locale::Uk => "«Невірний, ти ввійшов до Святилища Молоха!»",
+        }
+    }
+
+    /// C `intemple` (priest.c:452): spoken after [`Messages::sanctum_infidel`].
+    pub fn sanctum_be_gone(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "\"Be gone!\"",
+            Locale::Uk => "«Геть звідси!»",
+        }
+    }
+
+    /// C `setmangry` (mon.c:4271): attacking from an Elbereth square.
+    pub fn feel_hypocrite(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You feel like a hypocrite.",
+            Locale::Uk => "Ви почуваєтеся лицеміром.",
+        }
+    }
+
+    /// C `setmangry` (mon.c:4283): the Elbereth under the hero is erased.
+    pub fn engraving_fades(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "The engraving beneath you fades.",
+            Locale::Uk => "Напис під вами тьмяніє й зникає.",
+        }
+    }
+
+    /// C `qst_guardians_respond` (mon.c:4156-4157): "The %s appear(s) to be angry too...".
+    pub fn guardians_angry_too(guardian: &str, plural: bool, locale: Locale) -> String {
+        let name = tn(guardian, locale);
+        match (locale, plural) {
+            (Locale::En, false) => format!("The {name} appears to be angry too..."),
+            (Locale::En, true) => format!("The {name}s appear to be angry too..."),
+            (Locale::Uk, false) => format!("Схоже, {name} теж сердиться..."),
+            (Locale::Uk, true) => format!("Схоже, охоронці ({name}) теж сердяться..."),
+        }
+    }
+
+    /// C `do_attack` (uhitm.c:500): "You stop.  %s is in the way!" (`y_monnam`).
+    pub fn peaceful_in_the_way(target: &str, article: bool, locale: Locale) -> String {
+        let target = monnam(target, article, locale);
+        match locale {
+            Locale::En => format!("You stop. {target} is in the way!"),
+            Locale::Uk => format!("Ви зупиняєтеся. {target} заважає пройти!"),
+        }
+    }
+
+    /// C `domove_swap_with_pet` (hack.c:2160): "You stop.  %s doesn't want to swap places."
+    pub fn peaceful_wont_swap(target: &str, article: bool, locale: Locale) -> String {
+        let target = monnam(target, article, locale);
+        match locale {
+            Locale::En => format!("You stop. {target} doesn't want to swap places."),
+            Locale::Uk => format!("Ви зупиняєтеся. {target} не хоче мінятися місцями."),
+        }
+    }
+
+    /// C `domove_swap_with_pet` (hack.c:2169): "You swap places with the peaceful %s."
+    pub fn swap_with_peaceful(target: &str, locale: Locale) -> String {
+        let target = tn(target, locale);
+        match locale {
+            Locale::En => format!("You swap places with the peaceful {target}."),
+            Locale::Uk => format!("Ви міняєтеся місцями з мирною істотою: {target}."),
         }
     }
 
@@ -854,6 +956,14 @@ impl Messages {
                 format!("Your reflection bounces the deadly breath back at the {monster}!")
             }
             Locale::Uk => format!("Ваше відбиття повертає смертоносний подих назад у {monster}!"),
+        }
+    }
+
+    /// C `buzz` (zap.c:4984): the breath beam missed the hero (`zap_hit` failed).
+    pub fn breath_misses(breath_name: &str, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!("The blast of {breath_name} whizzes by you!"),
+            Locale::Uk => format!("Подих ({breath_name}) пролітає повз вас!"),
         }
     }
 
@@ -1339,7 +1449,7 @@ pub fn t_monster(name: &str, locale: Locale) -> String {
         "master lich" => "верховний ліч".into(),
         "little dog" => "песик".into(),
         "dog" => "пес".into(),
-        "war dog" => "бойовий пес".into(),
+        "large dog" => "великий пес".into(),
         "kitten" => "кошеня".into(),
         "housecat" => "домашній кіт".into(),
         "large cat" => "великий кіт".into(),
@@ -1365,7 +1475,15 @@ pub fn t_monster(name: &str, locale: Locale) -> String {
         "master of thieves" => "Майстер Злодіїв".into(),
         "cyclops" => "Циклоп".into(),
         "minion of huhetotl" => "Слуга Хухетотля".into(),
-        "quest guardian" => "охоронець завдання".into(),
+        "student" => "студент".into(),
+        "chieftain" => "вождь".into(),
+        "attendant" => "санітар".into(),
+        "page" => "паж".into(),
+        "abbot" => "абат".into(),
+        "thug" => "головоріз".into(),
+        "guide" => "гід".into(),
+        "warrior" => "воїн".into(),
+        "apprentice" => "учень".into(),
         _ => {
             if let Some(rest) = name.strip_prefix("ghost of ") {
                 format!("привид героя {rest}")

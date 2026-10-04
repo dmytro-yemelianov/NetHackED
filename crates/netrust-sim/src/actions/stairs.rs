@@ -62,7 +62,10 @@ impl SimulationWorld {
 
     /// Spawn a monster at or near `preferred` on a passable, unoccupied, non-stairs tile
     /// (searching outward up to radius 3 in row-major ring order). Returns `None` if no spot.
-    pub(crate) fn spawn_monster_near(
+    ///
+    /// Like C `makemon` (`makemon.c:1299`), the new monster's peacefulness is
+    /// `peace_minded(ptr)`, drawn from the sim RNG only when C draws.
+    pub fn spawn_monster_near(
         &mut self,
         species: MonsterSpeciesId,
         preferred: Coord,
@@ -85,7 +88,9 @@ impl SimulationWorld {
                         && c != self.level.stairs_down
                         && self.actor_at(c).is_none()
                     {
-                        return Some(self.arena.spawn_actor(create_monster_record(species, c)));
+                        let mut rec = create_monster_record(species, c);
+                        rec.is_peaceful = self.roll_spawn_peaceful(species);
+                        return Some(self.arena.spawn_actor(rec));
                     }
                 }
             }
@@ -451,7 +456,16 @@ impl SimulationWorld {
                     let (lvl, _spawn) = generate_moloch_sanctum_level(&mut self.rng);
                     self.level = lvl;
 
-                    self.spawn_monster_near(MonsterSpeciesId::Priest, self.level.stairs_down);
+                    // C `priestini` makes the high priest peaceful; `intemple`
+                    // (priest.c:449-456) turns him hostile the first time the
+                    // hero enters the temple, with no alignment penalty
+                    // (`set_malign`). The sim has no temple-entry hook, so it
+                    // applies this on arrival (documented divergence).
+                    let priest =
+                        self.spawn_monster_near(MonsterSpeciesId::Priest, self.level.stairs_down);
+                    if let Some(m) = priest.and_then(|id| self.arena.actors.get_mut(id)) {
+                        m.is_peaceful = false;
+                    }
 
                     let amulet = create_item_record(
                         ItemKindId::AmuletOfYendor,
@@ -463,6 +477,15 @@ impl SimulationWorld {
                     events.push(GameEvent::LogMessage {
                         text: "You enter Moloch's Sanctum! Rivers of boiling lava surround the unholy high altar!".into(),
                     });
+                    if priest.is_some() {
+                        // priest.c:451-452, spoken with `verbalize1`.
+                        events.push(GameEvent::LogMessage {
+                            text: netrust_i18n::Messages::sanctum_infidel(self.locale).into(),
+                        });
+                        events.push(GameEvent::LogMessage {
+                            text: netrust_i18n::Messages::sanctum_be_gone(self.locale).into(),
+                        });
+                    }
                 }
                 (BranchId::Gehennom, d) => {
                     // Intermediate Gehennom Mazes
@@ -492,20 +515,14 @@ impl SimulationWorld {
 
                     let quest_cfg = netrust_core::get_role_quest_config_or_default(&self.role_name);
                     let leader_species = quest_species_by_name(quest_cfg.leader_name);
-                    if let Some(id) = self.spawn_monster_near(leader_species, layout.leader_coord) {
-                        if let Some(a) = self.arena.actors.get_mut(id) {
-                            a.is_tame = true;
-                        }
-                    }
+                    // Leader and guardians are M2_PEACEFUL (and MS_LEADER /
+                    // MS_GUARDIAN), so peace_minded makes them peaceful.
+                    self.spawn_monster_near(leader_species, layout.leader_coord);
 
+                    // C role.c `guardnum`: one guardian species per role.
+                    let guardian_species = quest_species_by_name(quest_cfg.guardian_name);
                     for gc in layout.guardian_coords {
-                        if let Some(id) =
-                            self.spawn_monster_near(MonsterSpeciesId::QuestGuardian, gc)
-                        {
-                            if let Some(a) = self.arena.actors.get_mut(id) {
-                                a.is_tame = true;
-                            }
-                        }
+                        self.spawn_monster_near(guardian_species, gc);
                     }
 
                     events.push(GameEvent::LogMessage {
@@ -542,7 +559,15 @@ impl SimulationWorld {
 
                     let quest_cfg = netrust_core::get_role_quest_config_or_default(&self.role_name);
                     let nemesis_species = quest_species_by_name(quest_cfg.nemesis_name);
-                    self.spawn_monster_near(nemesis_species, layout.nemesis_coord);
+                    if let Some(id) = self.spawn_monster_near(nemesis_species, layout.nemesis_coord)
+                    {
+                        // The Tourist nemesis is the (M2_PEACEFUL) Master of Thieves;
+                        // the quest goal level creates it with `peaceful = 0`
+                        // (Tou-goal.lua:117). Every other nemesis is M2_HOSTILE.
+                        if let Some(a) = self.arena.actors.get_mut(id) {
+                            a.is_peaceful = false;
+                        }
+                    }
 
                     events.push(GameEvent::LogMessage {
                         text: format!("You arrive at the inner sanctum: {}! {} glares at you with burning hatred!", quest_cfg.goal_desc, quest_cfg.nemesis_name),

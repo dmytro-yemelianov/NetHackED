@@ -8,18 +8,29 @@ This document provides the formal mathematical specification for core NetHack me
 
 The Lean models and the Rust engine are simplified abstractions of NetHack mechanics and are **not** a faithful transcription of NetHack 5.0. The formulas in this document describe the models, and in several places they differ from the C source. Known divergences:
 
-* **Monster-vs-monster to-hit**: pet and other monster-vs-monster attacks use the monster-vs-hero formula (`mhitu.c`: $\text{AC\_VALUE}(\text{AC}) + 10 + m_{\text{lev}}$). C `mhitm.c` uses $\text{find\_mac}(mdef) + m_{\text{lev}}$ (no $+10$) against $\text{rnd}(20 + i)$.
-* **Bare-handed damage**: bare-handed attacks use the weapon skill damage table (Unskilled $-2$). In C, the bare-handed/martial-arts damage bonus is $0/{+1}/{+1}/{+2}$ for Unskilled/Basic/Skilled/Expert; the martial-arts damage doubling (and the martial-arts user's extra bonus) is not modelled.
+* **Monster attacks (simplified C `mattacku`/`mattackm`)**: monsters resolve their C `mattk[]` hand-to-hand slots (claw, bite, kick, touch, weapon) in order with `tmp > rnd(20 + i)` and `d(n, d)` damage (`mhitu.c:768-912`, `mhitm.c:375-441`), but: (a) only AD_FIRE/AD_COLD damage is zeroed by resistance; every other AD type deals its dice as physical damage without its side effect (poisoning `rn2(8)`, level drain, slow, stun, stoning, AD_SAMU theft, paralysis), and magic cancellation (`mhitm_mgc_atk_negated`'s `rn2(10)`), item destruction (`rn2(20)`), knockback and the undead midnight double damage are not modelled (their draws are skipped); (b) monsters wield no weapons, so AT_WEAP adds no `hitval`/`dmgval` and never throws at range; (c) the to-hit omits the helpless/confused `+4`, invisible/blind and trapped `-2`, and the elf-vs-orc `+1`; (d) AT_MAGC is not `castmu`/`buzzmu`; only the summon/curse spellcaster abilities act, on their own cooldowns, for the master lich, Dark One, Thoth Amon and Wizard of Yendor. An adjacent caster resolves its hand-to-hand slots and then its spell ability in the same round (C `castmu` is a slot of the `mattacku` loop, `mhitu.c:926-931`); Thoth Amon's claw (slot 3, after his two AT_MAGC slots) therefore resolves before his spell instead of after it. A caster 2..6 tiles away on its cooldown turn casts instead of moving; (e) actor records carry no species id, so the archetype is found by name (`monster_archetype_by_name`, case-insensitive, after stripping the runtime `hostile `/`ghost of ` decorations); an actor whose name resolves to no bestiary archetype attacks once with a `d(1, 6)` claw; (f) breath (AT_BREA, `breamm` `mthrowu.c:1093`): a breather in range of the hero (`dist2 <= BOLT_LIM * BOLT_LIM`, `monmove.c:540`) but not adjacent draws `mattacku`'s `AC_VALUE(u.uac)` (`rnd(-u.uac)` when `u.uac < 0`, `mhitu.c:709`) before the breath check, before rather than after its move; the ranged `mattacku` calls of other monsters (AT_WEAP `thrwmu`, monsters that did not move) are not modelled, so their `AC_VALUE` draw is skipped. The breath fires at a lined-up hero 2..7 tiles away on `rn2(3)`, hits per `zap_hit` and deals `d(n, 6)` (resisted by fire/cold resistance; a fire breath burns away sliming even when resisted, `zap.c:4432`), and after breathing at the hero `!rn2(3)` sets the `mspec_used` cooldown to `8 + rn2(18)` turns (`mthrowu.c:1131-1132`, decremented once per turn as in `mon_regen` `monmove.c:311`), but the sleep-breath `rnd(20)` cooldown extra, beam range `rn1(7,7)`, bounces and the reflected ray's return path are not modelled (a reflected breath hurts no one; every breather resists its own element); (g) Medusa's gaze (C `m_respond_medusa`, `mon.c:4109-4118`, run in `dochug` before the move and attack phases, `monmove.c:753`) fires when she is within 4 tiles in a clear line (C: whenever `couldsee`), then she moves or resolves her W/C/B melee slots in the same turn (`mattacku` skips her AT_GAZE slot, `mhitu.c:832-836`); the gaze keeps its 30-damage approximation instead of stoning, and the floating eye's passive paralysis (`passive`, `uhitm.c:5865`) is not modelled.
+* **Bare-handed damage**: bare-handed base damage draws $R \in [1, 2]$ (or $R \in [1, 4]$ for Monk martial arts) per C `uhitm.c:847`, but the skill damage bonus uses the standard table (Unskilled $-2$) rather than C's $0/{+1}/{+1}/{+2}$, and martial-arts damage doubling is not modelled.
+* **Hero weapon damage (simplified C `dmgval`, `weapon.c:216-356`)**: the hero's base weapon damage is only `rnd(oc_wsdam)` / `rnd(oc_wldam)` (drawn only on a hit, as in `hmon_hitmon` after `tmp > rnd(20)`). Omitted terms: (a) the per-weapon extras (`weapon.c:228-295`; e.g. mace/war hammer/flail `+1` vs small, broadsword/morning star `+rnd(4)` vs small, Tsurugi/two-handed sword/dwarvish mattock `+d(2,6)` vs large, halberd `+rnd(6)` vs large); (b) C adds `spe` inside `dmgval` and clamps the result to $\ge 0$ (`weapon.c:297-301`), while NetRust adds the enchantment with the skill bonus in `melee_damage` and clamps once to $\ge 1$ (`uhitm.c:1505`); (c) the erosion reduction (`weapon.c:344-353`); (d) the blessed-vs-undead/demon `rnd(4)`, axe-vs-wooden `rnd(4)`, silver `rnd(20)` and light-hating `rnd(8)` bonuses (`weapon.c:322-341`), thick-skinned and shade zeroing, and the heavy iron ball weight bonus. C's `martial_bonus()` (`skills.h:81`) covers Samurai and Monk; only Monk gets the `rnd(4)` bare-handed die because NetRust has no Samurai role.
 * **`abon()` omitted**: attributes are not tracked, so the to-hit `abon()` term is 0; C's $+1$ below experience level 3 and the Str/Dex to-hit bonuses are absent.
 * **Temple priest donations**: the NetRust priest additionally uncurses carried items for an offer of at least $200 \times$ level and grants divine favor $+2$ for any donation that is not refused or a cheapskate offer; neither exists in C `priest.c`. The clairvoyance band (`priest.c:671-680`) and the selfless band's alignment gain / cleansing (`priest.c:706-719`) are not applied (message only).
 * **Mysterious Force depth mapping**: C gates the force on `dunlev < dunlevs_in_dungeon - 3` of the real Gehennom (about 20+ levels); NetRust's Gehennom has 6 levels, so the force is only active at depths 1 and 2 (`do.c:1541-1573`).
 * **Mysterious Force RNG and teleport**: the sim draws four random values unconditionally on every Amulet ascent attempt in Gehennom (trigger, push, and counter draws are not consumed lazily as in C), and the same-level outcome teleports the hero to a uniformly random passable, unoccupied tile instead of C `safe_teleds` (`do.c:1555`).
 * **Bag of Holding explosion scatter**: surviving contents are dropped at the hero's square; C `scatter()` flies them outward with damage (`pickup.c:2517-2532`).
-* **Starting inventories**: NetRust role inventories differ from C `u_init.c` (e.g. the NetRust Valkyrie starts with a long sword +0, leather armor and a healing potion; C gives a +1 spear, a +0 dagger, a +3 small shield and a food ration).
+* **Starting inventories**: NetRust role inventories still differ from C `u_init.c` (e.g. the NetRust Valkyrie starts with a long sword +0 and a healing potion; C gives a +1 spear, a +0 dagger, a +3 small shield and a food ration, `u_init.c:160-165`). Starting enchantment (`trspe`, applied by `ini_inv`, `u_init.c:1233-1234`) is copied only for the weapon/armor role items NetRust shares with C: Knight long sword +1 (`u_init.c:91`), Rogue short sword +0, dagger +0 and leather armor +1 (`u_init.c:134-136`), Wizard cloak of magic resistance +0 (`u_init.c:169`); every other starting item keeps its catalog enchantment.
 * **Attributes**: there is no Charisma, Constitution or Unchanging tracking; constants are used (`DEFAULT_PLAYER_CON` for the starvation threshold, a fixed Charisma for shop prices, Unchanging is a parameter of the core polymorph function, not a tracked hero property).
+* **Worn armor and hero AC**: hero AC follows C `find_ac` (`do_wear.c:2473-2507`) with base AC 10 (`do_wear.c:2475`) and `a_ac` from the C armor table (`objects.h:445-725`). Because the Valkyrie lacks the C small shield, she starts at AC 10; the Rogue's +1 leather armor gives AC 7 and the Wizard's +0 cloak AC 9. Carried armor counts as worn, at most one per slot (the first carried piece wins; extra pieces in the same slot do not stack); explicit equipment slots and wearing/taking off armor are deferred to D3. `find_ac` terms that are not modelled: ring of protection `spe` (`do_wear.c:2492-2495`), amulet of guarding $-2$ (`do_wear.c:2496-2497`) and spell protection `u.uspellprot` (`do_wear.c:2502`); divine protection `u.ublessed` is always subtracted, without C's `HProtection & INTRINSIC` gate (`do_wear.c:2500-2501`). Hero AC is recomputed after every player action and again after the monster turns of that step. A polymorphed hero still starts from base AC 10: C starts from the form's `mons[u.umonnum].ac` (`do_wear.c:2475`), but the sim's `PolymorphForm` stores only a placeholder `monster_id` with no bestiary archetype.
 * **Fainting**: while Fainting, NetRust drains 1 HP every 10 turns and the hero dies at 0 HP (with a death message); this is an approximation, C instead makes the hero faint and lose turns (`eat.c` `newuhs`/`done_in_by` starvation only below the Starved threshold).
 * **Shop, priest, luck and headgear simplifications**: the shop price is computed at payment time rather than stored when the item is billed; the priest uses the hero's current level as the peak level and a single global cheapskate counter; a carried dunce cap counts as worn; luck ignores every source other than the luckstone (base luck is 0).
+* **Bestiary data**: archetype stats (level, speed, AC, alignment, class glyph, size, uniqueness via G_UNIQ) follow C `monsters.h` (pinned by `crates/netrust-data/tests/bestiary_c_table.rs`) and flow into spawned actors. The archetype `attacks` (`mattk[]`) lists drive monster melee and breath (see *Monster attacks*). HP is a fixed `base_hp` rather than C's rolled `d(lvl, 8)`. Intrinsics cover only what `Intrinsics` can represent (no stone resistance, no per-monster MR percentage; shopkeeper keeps `magic_resistance`, silver dragon keeps `reflection`). The per-monster MR percentages (e.g. guardians 10-30%) and `M2_MAGIC` (guide, apprentice) are not modelled. Names "The Norn"/"The Dark One" remain approximations; the invented floating-eye active gaze and Surtur/Huhetotl breath were removed, and spell summoning/cursing is an approximation of AT_MAGC. Pets promote at levels 4/7 instead of C's 4/6 (`makemon.c:2121`).
+* **Ghost class letter**: the ghost's class letter is `' '` per C `S_GHOST` (`defsym.h`); display paths use their own glyphs, so only class genocide and `monster_class_of` see it.
+* **Peacefulness, Elbereth and attacking peacefuls**: monsters created through the sim's generation path (`spawn_monster_near` and the starting-level goblins) get C `peace_minded` (`makemon.c:1299`, `:2268-2308`): `M2_PEACEFUL`/`M2_HOSTILE`, `MS_LEADER`/`MS_GUARDIAN`/`MS_NEMESIS`, the hero race's love/hate masks (`role.c`), the alignment sign, the Amulet rule and the co-aligned `rn2(16 + max(record, -15)) && rn2(2 + |mal|)` (second draw only after a non-zero first). Not ported: (a) the Erinys rule (`u.ualign.abuse`, no Erinys species) and the minion rule (no `M2_MINION` species); (b) the post-creation adjustments of `makemon` (`makemon.c:1333-1340`: orcs hostile to elves, which the elf hate mask already gives for every BESTIARY orc; co-aligned unicorns, none exist); (c) the djinni from a lamp and the cursed-genocide goblins are created hostile without `makemon`'s `peace_minded` draw (C draws for a co-aligned hero); (d) the hero's starting alignment record is 25, not C `urole.initrecord` (`attrib.c:1094`), and temple priests keep the archetype alignment instead of the altar's (`EPRI shralign`). Peaceful monsters do not attack or approach: stationary ones stay put, the others take a random step (not C `m_move`). Pets skip every peaceful target; C skips one only when the pet is below 25% HP or the target is a leader or guardian (`dogmove.c:1119-1128`). Attacking (melee, thrown, force bolt/magic missile, wand) runs C `setmangry` (`mon.c:4265-4318`): the Elbereth hypocrisy penalty `-5`/`-rnd(5)` with the engraving erased, `adjalign(-1)` (temple priest: `-5` co-aligned, `+2` otherwise), "<Mon> gets angry!" and the quest guardians turning hostile when the hero attacks their leader; not ported: `growl()` (every peaceful the sim makes is humanoid), `peacefuls_respond` (the watch's arrest, other peacefuls fleeing), `u.ualign.abuse`, `ghod_hitsu`/`hot_pursuit` for angered priests/shopkeepers, and the penalties for killing a peaceful (`xkilled`). Walking into a peaceful follows C `is_safemon` (`uhitm.c:462-509`, `hack.c:2141-2176`): `!rn2(7)` or a tended shop stops the hero ("You stop. <Mon> is in the way!"), a temple priest, shopkeeper or the quest leader (`mundisplaceable`) or a trap on the hero's square refuses to swap, anyone else swaps places; not ported: Punished, long worms, the `dopay()` bump on a blocking shopkeeper, the speed-0 "doesn't seem to move" case (no speed-0 species), monster traps after the swap. A confused, stunned or hallucinating hero who walks into a peaceful attacks it, as in C (no `is_safemon`, no confirmation); "can spot" is approximated by "the hero is not blind", and a blind hero also attacks, whereas C prints "Wait! There's something there you can't see!" and angers the monster without an attack (`uhitm.c:230-251`). Pets keep the sim's unconditional swap (C applies the same `rn2(7)` stop and `monflee` to pets). The Sanctum's high priest is created by `spawn_monster_near` and made hostile as soon as the hero arrives on the Sanctum level, with "Infidel, you have entered Moloch's Sanctum!" / "Be gone!"; C `priestini` makes him peaceful and `intemple` turns him hostile when the hero first enters the temple room (`priest.c:449-456`, no alignment penalty via `set_malign`). The repeat-visit "You desecrate this place by your presence!" and the `enter_time` `d(10, 100)` draw (`priest.c:471`) are not modelled. Shoplifting angers the shopkeeper (`is_peaceful = false`) without C's `rob_shop`/`hot_pursuit` effects. Elbereth (`onscary`, `monmove.c:240-302`) ignores `@`-class, unique, shopkeeper, blind and peaceful monsters; not ported: the Gehennom/endgame suppression (`:302`), Angels and lawful minions (`:251`; none exist), minotaurs, Riders and vault guards (no such species; the core predicate keeps the flags), the scare-monster scroll and displaced image. A scared adjacent monster steps away for that turn instead of C `monflee(rnd(rn2(7) ? 10 : 100))` (`monmove.c:560-564`).
+* **Starting alignment record**: the sim starts every hero at record 25 (`INITIAL_ALIGNMENT_RECORD`), not C `urole.initrecord` (`attrib.c:1094`; `role.c`: Archeologist, Barbarian, Healer, Knight, Monk, Rogue, Ranger and Samurai 10; Caveman, Priest, Tourist, Valkyrie and Wizard 0). Consequences: the `peace_minded` co-aligned odds `rn2(16 + max(record, -15))` are too favourable to the hero, the Elbereth-hypocrite branch and other record thresholds trigger at different times, and `adjalign`'s `ALIGNLIM` cap (`10 + moves/200`, `align.h:17`, `attrib.c:1314`) can pull a record above the limit down (25 to 10 early in the game, e.g. the `+2` for angering a cross-aligned temple priest), which can drop the hero below the quest entry threshold. The planned fix is C's initial record together with kill-based alignment gains (D3).
+* **Peaceful swap**: swapping places with a peaceful monster (`is_safemon`, `hack.c:2141-2176`) moves the hero without arrival effects (no trap trigger, no object-at-square message), the same shortcut the sim takes for pet displacement.
+* **Older saves**: the save format has no version marker, so nothing is migrated. A save without `hero_race` loads it as Human (the serde default), so its `peace_minded` race masks follow Human, not the original hero's race. A save without `ActorRecord::is_peaceful` (written before the peacefulness port) loads every monster hostile (the serde default `false`), including shopkeepers, which the old sim spared by the rule "named `shopkeeper` and Neutral"; quest leaders, guardians, watchmen and priests in such a save are hostile too.
+* **Quest leader and guardians**: the quest leader and guardians are recognised by name (the role's quest config), not by `MS_LEADER`/`MS_GUARDIAN` on a species; the guardian-anger message counts every guardian that turned hostile, not only those the hero can see (C `qst_guardians_respond`, `mon.c:4156-4157`).
+* **Monster names in messages**: English `Monnam` messages ("The priest gets angry!", "You stop.  The gnome is in the way!") prefix "The" for every non-unique bestiary monster; C also drops the article for named monsters (shopkeepers, guards, temple priests) and uses "the peaceful ..." forms in some places.
 * **Name-based item kind detection**: some sim code (e.g. weapon skill selection in `netrust-sim/src/combat.rs`) infers an item's kind from substrings of its name rather than from its object class/type.
+* **Item catalog simplifications**: catalog cost/weight/AC/`oc_magic`/wand direction/nutrition follow `objects.h`, but (a) dice are a single `(n, sides)` so the mace/Mjollnir `+1` small-target bonus and the Tsurugi's `+2d6` large-target bonus are omitted; (b) corpse weight and nutrition come from the monster in C, the catalog keeps weight 50 and nutrition 0 (the sim eats a corpse for a flat 400); (c) `PotionOfHolyWater` is not a C object (it is blessed `potion of water`; the catalog models it with water's cost 100); (d) wand charges are fixed (13 NODIR, 6 directional, 1 wishing) instead of C `rn1(5,11)` / `rn1(5,4)` (`mkobj.c:1115-1124`); (e) beam wands deal fixed damage (striking 12, cold 18, death 100) instead of `d(2,12)` / `d(6,6)` / instant death with resistance checks, and wands of digging and teleportation deal no damage but do not yet dig through or teleport the target; (f) armour name-based magic detection (`armor_is_magical`) covers items outside the catalog, so it is not driven by `oc_magic`.
 
 These divergences are planned to be corrected in a later fidelity pass. Until then, do not treat the formulas in this document as authoritative descriptions of NetHack C behavior.
 
@@ -187,7 +198,13 @@ with Luck $L$ clamped to $[-13, 13]$ (bonus in $[-5, 5]$). `abon()`, rings of in
 
 Monster attacking the hero (`mhitu.c`:709): $\text{tmp} = \max(1, \text{AC\_VALUE}(\text{AC}_{\text{hero}}) + 10 + m_{\text{lev}})$ with $\text{AC\_VALUE}(a) = a$ for $a \ge 0$ and $-\text{rnd}(-a)$ otherwise (`hack.h`:1538).
 
+Monster attacks use the archetype's C attack list. For the hand-to-hand slot $i$ (0-based C slot index) the hit test is $\text{tmp} > \text{rnd}(20 + i)$ (`mhitu.c`:806, `mhitm.c`:441), with $\text{tmp}$ computed once per round against the hero and $\text{tmp} = \text{find\_mac}(\text{def}) + m_{\text{lev}}$ (no $+10$, no floor; `mhitm.c`:321) against another monster. A landed attack deals
+$$D = \begin{cases} 0 & \text{if the defender resists AD\_FIRE / AD\_COLD} \\ d(n, d) = \textstyle\sum_{k=1}^{n} \text{rnd}(d) & \text{otherwise} \end{cases}$$
+($d(0, x) = 0$), then the hero's negative-AC absorption below (`mhitu.c`:1187-1211). A breath ray hits the hero iff `zap_hit` (`zap.c`:4705): $c = \text{rn2}(20)$; $c = 0 \Rightarrow \text{rnd}(10) < AC$, else $3 - c < \text{AC\_VALUE}(AC)$.
+
 ### Damage Resolution & Negative AC Absorption
+Hero base weapon damage draws $R = \text{dmgval}(W, \text{large}, \text{martial}, \text{roll})$ (`NetHack-5.0.0/src/weapon.c`:216, `uhitm.c`:847): for bare hands, $R \in [1, 2]$ ($[1, 4]$ with Monk martial arts); for a wielded weapon with small die $d_s$ and large die $d_l$ from the catalog, $R \in [1, d_l]$ against large targets ($\ge \text{MZ\_LARGE}$) and $R \in [1, d_s]$ otherwise; non-weapon objects deal $\text{rnd}(2)$ (`uhitm.c`:895).
+
 Given base damage roll $R$, weapon enchantment $S$, and skill bonus $B$, a landed hit deals at least 1 (`uhitm.c`:1505):
 $$D_{\text{raw}} = \max(1, R + S + B)$$
 
@@ -201,6 +218,15 @@ HP state transition:
 $$HP_{\text{after}} = \max(0, HP_{\text{before}} - D_{\text{final}})$$
 $$\text{isDead} = (HP_{\text{after}} = 0) \lor (D_{\text{final}} \ge HP_{\text{before}})$$
 
+### Armor Class & ARM_BONUS Calculation
+Hero AC is determined by `find_ac(void)` (`NetHack-5.0.0/src/do_wear.c`:2473-2507). In human form, base AC is 10:
+$$\text{AC}_{\text{uncurbed}} = \text{baseAC} - \sum_{i \in \text{worn}} \text{ARM\_BONUS}(i) - \text{protection}$$
+$$\text{AC}_{\text{hero}} = \min(99, \max(-99, \text{AC}_{\text{uncurbed}}))$$
+with $\text{ARM\_BONUS}(i)$ (`NetHack-5.0.0/include/hack.h`:1526-1528) for an armor item with base AC bonus $a_{\text{ac}}$, enchantment $\text{spe}$, and erosion $e$:
+$$\text{ARM\_BONUS}(i) = a_{\text{ac}} + \text{spe} - \min(e, \max(0, a_{\text{ac}}))$$
+Erosion degrades only the intrinsic base bonus of the piece ($a_{\text{ac}}$ down to 0) and never erodes magical enchantment ($\text{spe}$).
+Worn armor items are partitioned into slots ($\text{Suit}, \text{Cloak}, \text{Helmet}, \text{Shield}, \text{Gloves}, \text{Boots}, \text{Shirt}$), with at most one item contributing per slot.
+
 ### Machine-Checked Proofs in [NetMechanics/Combat.lean](../NetMechanics/Combat.lean)
 * `apply_damage_monotone_hp`: Damage application is strictly monotonic:
   $$\forall c, D,\; HP(\text{applyDamage}(c, D)) \le HP(c)$$
@@ -213,6 +239,18 @@ $$\text{isDead} = (HP_{\text{after}} = 0) \lor (D_{\text{final}} \ge HP_{\text{b
 * `melee_damage_pos`, `calculate_damage_pos`, `hit_deals_positive_damage`: a landed hit deals at least 1 damage.
 * `hero_absorb_le` / `hero_absorb_pos` / `hero_absorb_nonneg_ac`: hero AC absorption never increases damage, never drops positive damage below 1, and is a no-op for $\text{AC} \ge 0$.
 * `monster_to_hit_pos`: the monster-vs-hero to-hit value is at least 1.
+* `die_roll_bounds` / `melee_damage_die_pos`: a damage die of any size $d \ge 1$ rolls in $[1, d]$, and a landed hit from it deals at least 1.
+* `dmgval_bounds` / `melee_damage_dmgval_pos`: for any weapon with positive die, base weapon damage $R \in [1, d]$ and a landed hit deals at least 1.
+* `dice_damage_bounds`: $n \le d(n, d) \le n \cdot d$ for $d \ge 1$.
+* `resisted_hit_zero` / `resisted_hit_hp_unchanged`: a resisted monster attack deals 0 and leaves the defender's HP unchanged.
+* `unresisted_hit_pos` / `monster_vs_monster_damage_le`: an unresisted landed attack with $n, d \ge 1$ deals at least 1; against a monster it deals at most $n \cdot d$.
+* `mhitm_no_plus_ten` / `monster_attack_never_hits_le_1`: monster-vs-monster $\text{tmp} = AC + m_{lev}$ on the $\text{rnd}(20+i)$ die; $\text{tmp} \le 1$ never hits.
+* `arm_bonus_bounds`: for non-negative $a_{\text{ac}}$, $\text{spe} \le \text{armBonus}(a_{\text{ac}}, \text{spe}, e) \le a_{\text{ac}} + \text{spe}$.
+* `find_ac_monotonic_armor_piece`: adding an armor piece with non-negative bonus never increases AC ($\forall p,\; 0 \le \text{armBonus}(p) \implies \text{findAc}(\text{baseAc}, p :: \text{worn}, \text{prot}) \le \text{findAc}(\text{baseAc}, \text{worn}, \text{prot})$).
+* `find_ac_monotonic_protection`: divine protection monotonically decreases or preserves AC ($\text{prot}_1 \le \text{prot}_2 \implies \text{findAc}(\text{worn}, \text{prot}_2) \le \text{findAc}(\text{worn}, \text{prot}_1)$).
+* `find_ac_bounds`: hero AC is unconditionally clamped within $[-99, 99]$ (`AC_MAX`).
+* `armor_list_bonus_nonneg` / `find_ac_le_base_nonneg_armor`: when every worn piece has $a_{\text{ac}} \ge 0$ and $\text{spe} \ge 0$ and $\text{prot} \ge 0$, the total armor bonus is non-negative and $\text{findAc}(10, \text{worn}, \text{prot}) \le 10$.
+
 
 ---
 
@@ -240,9 +278,9 @@ $$R(\vec{v}, \text{Corner}) = (-dx, -dy)$$
 
 ---
 
-## 7. Floor Engravings & Elbereth Ward Repulsion
+## 7. Floor Engravings, Elbereth Ward Repulsion & Monster Peacefulness
 
-### Mathematical Model
+### Mathematical Model of Floor Engravings
 Floors may hold engravings with medium $M \in \{ \text{Burned}, \text{Carved}(d), \text{Marked}(d), \text{Dust}(d) \}$ where $d \in \mathbb{N}$ denotes remaining durability (`NetHack-5.0.0/src/engrave.c`).
 
 ### Smudge Operator
@@ -253,18 +291,52 @@ e & \text{if } M = \text{Burned} \\
 \text{None} & \text{if } d = 0
 \end{cases}$$
 
-### Elbereth Ward Predicate
-$$\text{isElberethWardActive}(e, \text{blind}, \text{covetous}) = \begin{cases}
-\text{true} & \text{if } e = \text{Some}(\text{"Elbereth"}) \land \neg \text{blind} \land \neg \text{covetous} \\
+### Elbereth Ward Predicate & Monster Exemptions
+The ward under the hero scares an adjacent monster only if it is inscribed with "Elbereth", the monster can see (not blind), is not unique, is not peaceful, and is not otherwise exempt (C `onscary`, `NetHack-5.0.0/src/monmove.c`:240-302). Adjacency is checked by the sim, not by the predicate:
+$$\text{isElberethWardActive}(e, \text{blind}, \text{unique}, \text{peaceful}, \text{exempt}) = \begin{cases}
+\text{true} & \text{if } e = \text{Some}(\text{"Elbereth"}) \land \neg \text{blind} \land \neg \text{unique} \land \neg \text{peaceful} \land \neg \text{exempt} \\
 \text{false} & \text{otherwise}
 \end{cases}$$
+
+Here `unique` is C `unique_corpstat` (`monmove.c:260`, which also covers the Wizard of Yendor). Exempt monsters (`onscary_exempt`):
+* `@`-class monsters (`mlet == S_HUMAN`, `monmove.c:260`): humans, shopkeepers, temple priests, watchmen
+* Minotaurs (`monmove.c:301`)
+* Shopkeepers (anywhere) and vault guards (`isshk || isgd`, `monmove.c:299`)
+* The Riders (`monmove.c:251-252`)
 
 ### Machine-Checked Proofs in [NetMechanics/Engraving.lean](../NetMechanics/Engraving.lean)
 * `burned_engraving_permanent`: Burned engravings are strictly immune to smudge degradation ($\text{smudge}(e_{\text{burned}}) = \text{Some}(e_{\text{burned}})$).
 * `blind_monster_ignores_elbereth`: Blind monsters cannot perceive the ward runes.
-* `covetous_monster_ignores_elbereth`: Covetous quest bosses (e.g., Wizard of Yendor, Riders) disregard Elbereth.
+* `unique_monster_ignores_elbereth`: Unique monsters (`unique_corpstat`) disregard Elbereth.
 * `arbitrary_text_not_warding`: Text other than "Elbereth" produces no ward repulsion.
 * `dust_zero_durability_erased`: Dust engravings with zero durability are completely wiped upon smudging.
+* `peaceful_monster_ignores_elbereth`: Peaceful monsters ignore Elbereth.
+* `exempt_monster_ignores_elbereth`: Exempt monsters ignore Elbereth.
+* `human_onscary_exempt`: Monsters of the `@` class are always exempt.
+* `shopkeeper_onscary_exempt`: Shopkeepers (and vault guards) are always exempt.
+
+### Monster Peacefulness (`peace_minded`)
+Monster creation in NetHack 5.0 C sets `mpeaceful = peace_minded(ptr)` (`NetHack-5.0.0/src/makemon.c`:1299, :2268-2308). With $\text{mal}$ the monster's `maligntyp`, $\text{ual}$ the hero's alignment type and $\text{record}$ the hero's alignment record, the steps are, in order:
+1. `M2_PEACEFUL` $\implies$ peaceful; 2. `M2_HOSTILE` $\implies$ hostile;
+3. `MS_LEADER` or `MS_GUARDIAN` $\implies$ peaceful; `MS_NEMESIS` $\implies$ hostile;
+4. `race_peaceful` (hero race love mask) $\implies$ peaceful; `race_hostile` (hate mask) $\implies$ hostile;
+5. $\text{sgn}(\text{mal}) \ne \text{sgn}(\text{ual}) \implies$ hostile;
+6. $\text{mal} < 0$ and the hero carries the Amulet $\implies$ hostile;
+7. a minion is peaceful iff $\text{record} \ge 0$;
+8. otherwise two draws $r_1 = \text{rn2}(A)$ and, only if $r_1 \ne 0$, $r_2 = \text{rn2}(B)$ with
+   $$A = 16 + \max(-15, \text{record}) \ge 1, \qquad B = 2 + |\text{mal}| \ge 2,$$
+   and the monster is peaceful iff $r_1 \ne 0 \land r_2 \ne 0$. Of the $A \cdot B$ equally likely $(r_1, r_2)$ outcomes exactly $(A-1)(B-1)$ are peaceful; with $\text{record} \le -15$, $A = 1$ and the monster is always hostile.
+
+The Rust core splits this into `peace_decision` (steps 1-7, or the roll arguments $A$, $B$) and `peace_minded`, which draws $r_1$ and $r_2$ through a C `rn2` callback.
+
+### Machine-Checked Proofs in [NetMechanics/Peace.lean](../NetMechanics/Peace.lean)
+* `peace_minded_always_peaceful`, `peace_minded_always_hostile`, `peace_minded_nemesis_hostile`: the flag and `msound` steps, for any rolls.
+* `peace_minded_cross_aligned_hostile`: with no flag, `msound` or race rule, a cross-aligned monster is hostile.
+* `peace_minded_amulet_chaotic_hostile`: a chaotic monster is hostile to a hero carrying the Amulet.
+* `peace_decision_roll_args`, `peace_minded_roll_args_valid`: the roll arguments are $A$ and $B$ above, with $A \ge 1$ and $B \ge 2$.
+* `peace_minded_coaligned_iff`: in the co-aligned case the monster is peaceful iff $r_1 \ne 0 \land r_2 \ne 0$.
+* `peace_minded_first_draw_zero_hostile`: $r_1 = 0$ is hostile whatever $r_2$ (the second draw is never taken).
+* `peace_minded_low_record_always_hostile`: with $\text{record} \le -15$ every $r_1 < A$ gives hostile.
 
 ---
 

@@ -2,6 +2,7 @@
 //!
 //! Formally defined and verified in Lean 4 (`NetMechanics`).
 
+pub mod ac;
 pub mod artifacts_wands;
 pub mod ast;
 pub mod bones;
@@ -25,6 +26,7 @@ pub mod mines;
 pub mod monster_abilities;
 pub mod nutrition;
 pub mod pathfinding;
+pub mod peace;
 pub mod pet;
 pub mod pet_coop;
 pub mod polymorph;
@@ -36,6 +38,7 @@ pub mod sokoban;
 pub mod tournament;
 pub mod traps;
 
+pub use ac::{arm_bonus, armor_base_ac, armor_slot, find_ac, ArmorSlot, AC_MAX};
 pub use artifacts_wands::{
     apply_vorpal_strike, parse_wish, recharge_wand, resolve_artifact_damage, zap_wand,
 };
@@ -44,8 +47,10 @@ pub use bones::{corrupt_buc_on_death, create_ghost_hp, is_valid_bones_level};
 pub use branch::{branch_entrance_depth, branch_max_depth, enter_branch, exit_branch};
 pub use buc::{dip_water, uncurse, Buc, WaterType};
 pub use combat::{
-    attack_hits, calculate_damage, hero_damage_after_ac, luck_to_hit_bonus, melee_damage,
-    monster_to_hit_value, resolve_melee_attack, to_hit_value, AttackResult, Combatant,
+    ac_value, attack_hits, calculate_damage, dmgval, hero_damage_after_ac, is_melee_attack,
+    luck_to_hit_bonus, mattacku_die, melee_damage, mhitm_to_hit, monster_attack_damage,
+    monster_attack_hits, monster_hit_damage, monster_to_hit_value, resisted, resolve_melee_attack,
+    to_hit_value, weapon_damage_die, zap_hit, AttackResult, Combatant,
 };
 pub use dungeon_stack::DungeonDepth;
 pub use enchantment::{
@@ -56,7 +61,7 @@ pub use enchantment::{
 };
 pub use endgame::{destroy_drawbridge, offer_amulet_on_high_altar, toggle_drawbridge};
 pub use energy::{SchedulerState, StepAction, NORMAL_SPEED};
-pub use engraving::{is_elbereth_ward_active, Engraving, EngravingMedium};
+pub use engraving::{is_elbereth_ward_active, onscary_exempt, Engraving, EngravingMedium};
 pub use gehennom::{
     is_candelabrum_ready, is_sanctum_accessible, mysterious_force,
     mysterious_force_counter_increment, step_ritual, CandelabrumState, InvocationStep,
@@ -93,6 +98,9 @@ pub use netrust_types::{
 };
 pub use nutrition::{hunger_of_nutrition, hunger_tier, metabolic_tick, HungerState};
 pub use pathfinding::MetricState;
+pub use peace::{
+    adjalign, alignlim, peace_decision, peace_minded, PeaceDecision, PeaceMindedInput,
+};
 pub use pet::{feed_pet, interact_with_occupant, swap_displacement, HeroInteraction};
 pub use pet_coop::{
     choose_pet_goal, pet_tile_steppable, promote_pet, PetFamily, PetGoal, PetSpeciesTier,
