@@ -72,7 +72,7 @@ async fn per_depth_cap_and_poison_recovery() {
     let (addr, state) = spawn(None).await;
     for i in 0..16 {
         let a = addr.clone();
-        let (code, _) = tokio::task::spawn_blocking(move || raw(&a, "POST", "/api/v1/bones", "", &bones(&format!("H{}", i), 4))).await.unwrap();
+        let (code, _) = tokio::task::spawn_blocking(move || raw(&a, "POST", "/api/v1/bones", "", &bones(&format!("H{i}"), 4))).await.unwrap();
         assert_eq!(code, 201);
     }
     let a = addr.clone();

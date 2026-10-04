@@ -784,7 +784,7 @@ impl SimulationWorld {
                 }
                 None => {
                     events.push(GameEvent::LogMessage {
-                        text: format!("You feel a vague sense of loss. You wished for '{}', but received nothing.", wish_str),
+                        text: format!("You feel a vague sense of loss. You wished for '{wish_str}', but received nothing."),
                     });
                 }
             }

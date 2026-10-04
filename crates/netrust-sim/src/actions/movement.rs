@@ -161,8 +161,8 @@ impl SimulationWorld {
                         if let Some(triggered_type) = triggered {
                             match triggered_type {
                                 netrust_types::TrapType::Arrow | netrust_types::TrapType::Dart => {
-                                    events.push(GameEvent::LogMessage { text: format!("A {:?} trap shoots you!", triggered_type).into() });
-                                    events.extend(self.damage_player(2, &format!("{:?} trap", triggered_type).to_lowercase()));
+                                    events.push(GameEvent::LogMessage { text: format!("A {triggered_type:?} trap shoots you!").into() });
+                                    events.extend(self.damage_player(2, &format!("{triggered_type:?} trap").to_lowercase()));
                                 }
                                 netrust_types::TrapType::Teleport => {
                                     events.push(GameEvent::LogMessage { text: "You trigger a teleport trap!".into() });
@@ -175,7 +175,7 @@ impl SimulationWorld {
                                     events.push(GameEvent::LogMessage { text: "You fall into a pit!".into() });
                                 }
                                 _ => {
-                                    events.push(GameEvent::LogMessage { text: format!("You trigger a {:?} trap!", triggered_type).into() });
+                                    events.push(GameEvent::LogMessage { text: format!("You trigger a {triggered_type:?} trap!").into() });
                                 }
                             }
                         }

@@ -356,7 +356,7 @@ impl SimulationWorld {
             p.hp = p.hp.saturating_sub(amount);
             if p.hp == 0 && !p.is_dead {
                 p.is_dead = true;
-                events.push(GameEvent::LogMessage { text: format!("You die... killed by {}.", cause) });
+                events.push(GameEvent::LogMessage { text: format!("You die... killed by {cause}.") });
             }
         }
         events

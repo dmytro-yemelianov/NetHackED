@@ -21,13 +21,13 @@ fn invocation_items_reachable_on_every_seed() {
         sim.unpack_or_generate_level(BranchId::Gehennom, 5);
         let reach = reachable_from(&sim.level, sim.level.stairs_up);
         let candles = floor_coords_named(&sim, "wax candle");
-        assert_eq!(candles.len(), 7, "seed {}", seed);
+        assert_eq!(candles.len(), 7, "seed {seed}");
         for name in ["wax candle", "Candelabrum of Invocation", "Book of the Dead"] {
             for c in floor_coords_named(&sim, name) {
-                assert!(reach.contains(&c), "seed {}: {} at {:?} unreachable", seed, name, c);
+                assert!(reach.contains(&c), "seed {seed}: {name} at {:?} unreachable", c);
             }
         }
-        assert!(reach.contains(&sim.vibrating_square.unwrap()), "seed {}", seed);
+        assert!(reach.contains(&sim.vibrating_square.unwrap()), "seed {seed}");
     }
 }
 

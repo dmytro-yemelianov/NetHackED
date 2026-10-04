@@ -152,7 +152,7 @@ pub fn encode_path_segment(s: &str) -> String {
         if b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.' | b'~') {
             out.push(b as char);
         } else {
-            out.push_str(&format!("%{:02X}", b));
+            out.push_str(&format!("%{b:02X}"));
         }
     }
     out
@@ -182,7 +182,7 @@ fn parse_response<R: BufRead>(reader: &mut R) -> Result<(u16, String), String> {
     }
     let mut body_buf = Vec::new();
     match content_len {
-        Some(len) if len > MAX_BODY_BYTES => return Err(format!("response body too large: {} bytes", len)),
+        Some(len) if len > MAX_BODY_BYTES => return Err(format!("response body too large: {len} bytes")),
         Some(len) => {
             body_buf.resize(len, 0);
             reader.read_exact(&mut body_buf).map_err(|e| e.to_string())?;

@@ -20,7 +20,7 @@ pub fn serve_lines<R: BufRead, W: Write>(
             continue;
         }
         if let Some(out) = handler(line) {
-            writeln!(writer, "{}", out)?;
+            writeln!(writer, "{out}")?;
             writer.flush()?;
         }
     }

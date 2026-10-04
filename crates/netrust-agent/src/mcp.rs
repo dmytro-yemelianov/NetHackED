@@ -55,7 +55,7 @@ fn dispatch(session: &mut AgentSession, method: &str, params: &Value) -> Result<
             let text = call_tool(session, tool_name, &args).map_err(|m| (INVALID_PARAMS, m))?;
             Ok(json!({ "content": [ { "type": "text", "text": text } ] }))
         }
-        _ => Err((METHOD_NOT_FOUND, format!("Method '{}' not found", method))),
+        _ => Err((METHOD_NOT_FOUND, format!("Method '{method}' not found"))),
     }
 }
 
@@ -145,13 +145,13 @@ fn tools_list() -> Value {
 
 fn parse_step_action(act: &str, args: &Value, p: Coord) -> Result<ActionAst, String> {
     if !STEP_ACTIONS.contains(&act) {
-        return Err(format!("Unknown action '{}'", act));
+        return Err(format!("Unknown action '{act}'"));
     }
     if let Some(dir) = act.strip_prefix("move_") {
-        return parse_direction(dir).map(ActionAst::Move).ok_or_else(|| format!("Unknown action '{}'", act));
+        return parse_direction(dir).map(ActionAst::Move).ok_or_else(|| format!("Unknown action '{act}'"));
     }
     if let Some(dir) = act.strip_prefix("kick_") {
-        let d = parse_direction(dir).ok_or_else(|| format!("Unknown action '{}'", act))?;
+        let d = parse_direction(dir).ok_or_else(|| format!("Unknown action '{act}'"))?;
         let target = p.step(d).ok_or("kick target is off the map")?;
         return Ok(ActionAst::Kick(target));
     }
@@ -165,14 +165,14 @@ fn parse_step_action(act: &str, args: &Value, p: Coord) -> Result<ActionAst, Str
         "eat" => ActionAst::Eat(index),
         "cast" => {
             let dir = match args.get("direction").and_then(|v| v.as_str()) {
-                Some(d) => parse_direction(d).ok_or_else(|| format!("Unknown direction '{}'", d))?,
+                Some(d) => parse_direction(d).ok_or_else(|| format!("Unknown direction '{d}'"))?,
                 None => Direction::East,
             };
             ActionAst::Cast { spell_index: index, dir }
         }
         "ascend" => ActionAst::Ascend,
         "descend" => ActionAst::Descend,
-        _ => return Err(format!("Unknown action '{}'", act)),
+        _ => return Err(format!("Unknown action '{act}'")),
     })
 }
 
@@ -267,7 +267,7 @@ fn call_tool(session: &mut AgentSession, name: &str, args: &Value) -> Result<Str
             let obs = session.get_observation();
             Ok(serde_json::to_string_pretty(&obs).unwrap_or_default())
         }
-        _ => Err(format!("Tool '{}' not found", name)),
+        _ => Err(format!("Tool '{name}' not found")),
     }
 }
 

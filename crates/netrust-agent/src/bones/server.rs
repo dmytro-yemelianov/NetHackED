@@ -48,16 +48,16 @@ fn lock_graveyard(state: &SharedGraveyard) -> std::sync::MutexGuard<'_, Graveyar
 fn validate_bones(b: &BonesData) -> Result<(), String> {
     let name_len = b.hero_name.chars().count();
     if name_len == 0 || name_len > MAX_NAME_CHARS {
-        return Err(format!("hero_name must be 1..={} characters", MAX_NAME_CHARS));
+        return Err(format!("hero_name must be 1..={MAX_NAME_CHARS} characters"));
     }
     if b.killer.chars().count() > MAX_KILLER_CHARS {
-        return Err(format!("killer must be at most {} characters", MAX_KILLER_CHARS));
+        return Err(format!("killer must be at most {MAX_KILLER_CHARS} characters"));
     }
     if b.items.len() > MAX_ITEMS {
-        return Err(format!("items must contain at most {} entries", MAX_ITEMS));
+        return Err(format!("items must contain at most {MAX_ITEMS} entries"));
     }
     if b.depth < 1 || b.depth > MAX_DEPTH {
-        return Err(format!("depth must be 1..={}", MAX_DEPTH));
+        return Err(format!("depth must be 1..={MAX_DEPTH}"));
     }
     Ok(())
 }

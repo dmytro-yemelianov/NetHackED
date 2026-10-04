@@ -49,7 +49,7 @@ async fn query_works_and_oversize_body_rejected() {
 async fn alias_amplification_is_limited() {
     let addr = spawn(None).await;
     // 1500 aliases x 2 fields = complexity 3000 > 2000, body ~36 KiB < 64 KiB.
-    let q: String = (0..1500).map(|i| format!("a{}: playerState {{ hp }} ", i)).collect();
+    let q: String = (0..1500).map(|i| format!("a{i}: playerState {{ hp }} ")).collect();
     let (code, body) = run(&addr, "", json!({"query": format!("{{ {} }}", q)}).to_string()).await;
     assert_eq!(code, 200);
     assert!(body.contains("errors"), "complexity limit not enforced");
@@ -61,7 +61,7 @@ async fn mutations_require_token_when_configured() {
     let addr = spawn(Some("tok")).await;
     let m = json!({"query":"mutation { resetGame(seed: 1) }"}).to_string();
     let (_, body) = run(&addr, "", m.clone()).await;
-    assert!(body.contains("errors"), "unauthenticated mutation succeeded: {}", body);
+    assert!(body.contains("errors"), "unauthenticated mutation succeeded: {body}");
     let (_, body) = run(&addr, "Authorization: Bearer tok\r\n", m).await;
     assert!(body.contains("\"resetGame\":true"), "{}", body);
     let (code, body) = run(&addr, "", json!({"query":"{ playerState { hp } }"}).to_string()).await;

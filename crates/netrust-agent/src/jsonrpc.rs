@@ -43,7 +43,7 @@ fn dispatch(session: &mut AgentSession, method: &str, params: &Value) -> Result<
                 "ascend" => ActionAst::Ascend,
                 other => parse_direction(other)
                     .map(ActionAst::Move)
-                    .ok_or_else(|| (INVALID_PARAMS, format!("Unknown action '{}'", other)))?,
+                    .ok_or_else(|| (INVALID_PARAMS, format!("Unknown action '{other}'")))?,
             };
             Ok(json!(session.step(action)))
         }
@@ -54,7 +54,7 @@ fn dispatch(session: &mut AgentSession, method: &str, params: &Value) -> Result<
                 .ok_or((INVALID_PARAMS, "missing integer 'y'".to_string()))? as usize;
             session.inspect_tile(x, y).map(|i| json!(i)).map_err(|e| (INVALID_PARAMS, e))
         }
-        _ => Err((METHOD_NOT_FOUND, format!("Method '{}' not found", method))),
+        _ => Err((METHOD_NOT_FOUND, format!("Method '{method}' not found"))),
     }
 }
 

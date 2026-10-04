@@ -17,8 +17,8 @@ fn go_down_and_up(sim: &mut SimulationWorld) {
 fn assert_no_dangling_refs(sim: &SimulationWorld) {
     for (id, it) in sim.arena.items.iter() {
         match it.location {
-            ItemLocation::InContainer(c) => assert!(sim.arena.items.contains_key(c), "item {:?} in missing container", id),
-            ItemLocation::CarriedBy(a) => assert!(sim.arena.actors.contains_key(a), "item {:?} carried by missing actor", id),
+            ItemLocation::InContainer(c) => assert!(sim.arena.items.contains_key(c), "item {id:?} in missing container"),
+            ItemLocation::CarriedBy(a) => assert!(sim.arena.actors.contains_key(a), "item {id:?} carried by missing actor"),
             _ => {}
         }
     }
@@ -53,7 +53,7 @@ fn nested_floor_containers_survive_round_trip() {
     assert_eq!(sim.arena.items.get(dagger_ids[0]).unwrap().location, ItemLocation::InContainer(inner_ids[0]));
     match sim.arena.items.get(inner_ids[0]).unwrap().location {
         ItemLocation::InContainer(o) => assert!(matches!(sim.arena.items.get(o).unwrap().location, ItemLocation::Floor(_))),
-        ref other => panic!("inner sack not in outer sack: {:?}", other),
+        ref other => panic!("inner sack not in outer sack: {other:?}"),
     }
 }
 
@@ -118,7 +118,7 @@ fn unpaid_ledger_follows_items_over_seeds() {
             continue;
         }
         go_down_and_up(&mut sim);
-        assert_eq!(sim.unpaid_items.len(), before, "seed {}", seed);
+        assert_eq!(sim.unpaid_items.len(), before, "seed {seed}");
         assert_no_dangling_refs(&sim);
         checked += 1;
     }

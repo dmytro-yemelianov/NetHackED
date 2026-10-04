@@ -29,7 +29,7 @@ pub fn result_response(id: Value, result: Value) -> Value {
 pub fn parse_request(line: Result<&str, ()>) -> Result<RpcRequest, Value> {
     let text = line.map_err(|_| error_response(Value::Null, PARSE_ERROR, "Parse error: invalid UTF-8"))?;
     let req: Value = serde_json::from_str(text)
-        .map_err(|e| error_response(Value::Null, PARSE_ERROR, format!("Parse error: {}", e)))?;
+        .map_err(|e| error_response(Value::Null, PARSE_ERROR, format!("Parse error: {e}")))?;
     let Some(obj) = req.as_object() else {
         return Err(error_response(Value::Null, INVALID_REQUEST, "Invalid Request: expected object"));
     };

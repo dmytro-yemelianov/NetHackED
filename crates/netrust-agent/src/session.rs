@@ -74,7 +74,7 @@ impl AgentSession {
     }
 
     pub fn inspect_tile(&self, x: usize, y: usize) -> Result<TileInspection, String> {
-        let coord = Coord::new(x, y).ok_or_else(|| format!("Coordinate ({}, {}) is outside the dungeon map", x, y))?;
+        let coord = Coord::new(x, y).ok_or_else(|| format!("Coordinate ({x}, {y}) is outside the dungeon map"))?;
         let tile = self.world.level.get_tile(coord).clone();
         let occupant = self.world.actor_at(coord).and_then(|id| {
             self.world.arena.actors.get(id).map(|a| ActorObservation {

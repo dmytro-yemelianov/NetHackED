@@ -22,7 +22,7 @@ fn assert_reach(level: &DungeonLevel, targets: &[Coord], ctx: &str) {
 fn regular_dungeon_levels_connected() {
     for s in 0..SEEDS {
         let l = generate_dungeon_level(&mut rng(s));
-        assert_reach(&l, &[l.stairs_down], &format!("dungeon seed {}", s));
+        assert_reach(&l, &[l.stairs_down], &format!("dungeon seed {s}"));
     }
 }
 
@@ -43,7 +43,7 @@ fn minetown_shops_temple_reachable() {
         let mut targets = vec![lay.level.stairs_down, lay.priest_coord, lay.altar_coord];
         targets.extend(lay.shopkeeper_coords.iter().copied());
         targets.extend(lay.watchmen_coords.iter().copied());
-        assert_reach(&lay.level, &targets, &format!("minetown seed {}", s));
+        assert_reach(&lay.level, &targets, &format!("minetown seed {s}"));
     }
 }
 
@@ -52,10 +52,10 @@ fn mines_levels_connected() {
     for s in 0..SEEDS {
         for d in [1usize, 2, 4] {
             let l = generate_mines_cavern_level(&mut rng(s), d);
-            assert_reach(&l, &[l.stairs_down], &format!("mines d{} seed {}", d, s));
+            assert_reach(&l, &[l.stairs_down], &format!("mines d{d} seed {s}"));
         }
         let (l, luck) = generate_mines_end_level(&mut rng(s));
-        assert_reach(&l, &[luck], &format!("mines end seed {}", s));
+        assert_reach(&l, &[luck], &format!("mines end seed {s}"));
     }
 }
 
@@ -63,9 +63,9 @@ fn mines_levels_connected() {
 fn quest_levels_connected() {
     for s in 0..SEEDS {
         let l = generate_quest_locate_level(&mut rng(s), 2);
-        assert_reach(&l, &[l.stairs_down], &format!("quest locate seed {}", s));
+        assert_reach(&l, &[l.stairs_down], &format!("quest locate seed {s}"));
         let home = generate_quest_home_level(&mut rng(s), "valkyrie");
-        assert_reach(&home.level, &[home.leader_coord], &format!("quest home seed {}", s));
+        assert_reach(&home.level, &[home.leader_coord], &format!("quest home seed {s}"));
     }
 }
 
@@ -75,15 +75,15 @@ fn gehennom_levels_connected() {
         let (l, _) = generate_gehennom_maze_level(&mut rng(s), 3, false);
         let mut targets = vec![l.stairs_down];
         targets.extend(l.rooms.iter().map(|r| r.center()));
-        assert_reach(&l, &targets, &format!("gehennom seed {}", s));
+        assert_reach(&l, &targets, &format!("gehennom seed {s}"));
 
         let (l, vs) = generate_gehennom_maze_level(&mut rng(s), 5, true);
         let mut targets = vec![vs.unwrap()];
         targets.extend(l.rooms.iter().map(|r| r.center()));
-        assert_reach(&l, &targets, &format!("gehennom vs seed {}", s));
+        assert_reach(&l, &targets, &format!("gehennom vs seed {s}"));
 
         let v = generate_valley_of_the_dead(&mut rng(s));
-        assert_reach(&v, &[v.stairs_down], &format!("valley seed {}", s));
+        assert_reach(&v, &[v.stairs_down], &format!("valley seed {s}"));
     }
 }
 

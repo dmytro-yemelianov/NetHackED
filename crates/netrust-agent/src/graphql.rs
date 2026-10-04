@@ -386,7 +386,7 @@ async fn graphql_post(State(app): State<GqlApp>, headers: HeaderMap, body: Body)
     };
     let request: async_graphql::Request = match serde_json::from_slice(&bytes) {
         Ok(r) => r,
-        Err(e) => return (StatusCode::BAD_REQUEST, format!("invalid GraphQL request: {}", e)).into_response(),
+        Err(e) => return (StatusCode::BAD_REQUEST, format!("invalid GraphQL request: {e}")).into_response(),
     };
     let authorized = crate::netconfig::bearer_ok(&headers, app.token.as_deref());
     let response = app.schema.execute(request.data(Authorized(authorized))).await;

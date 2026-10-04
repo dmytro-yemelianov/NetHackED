@@ -54,7 +54,7 @@ fn serve_lines_survives_invalid_utf8() {
     input.extend_from_slice(b"hello\n\n");
     let mut out = Vec::new();
     serve_lines(Cursor::new(input), &mut out, |line| match line {
-        Ok(s) => Some(format!("ok:{}", s)),
+        Ok(s) => Some(format!("ok:{s}")),
         Err(()) => Some("bad".to_string()),
     })
     .unwrap();
@@ -130,12 +130,12 @@ fn mcp_step_enum_matches_accepted_actions() {
     let actions: Vec<String> = step["inputSchema"]["properties"]["action"]["enum"]
         .as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_string()).collect();
     for a in ["descend", "ascend", "eat", "cast", "kick_east"] {
-        assert!(actions.contains(&a.to_string()), "enum missing {}", a);
+        assert!(actions.contains(&a.to_string()), "enum missing {a}");
     }
     for a in &actions {
         let mut fresh = AgentSession::new(42);
         let r = mcp(&mut fresh, json!({"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"netrust_step","arguments":{"action":a}}})).unwrap();
-        assert!(r.get("result").is_some(), "enum action {} rejected: {}", a, r);
+        assert!(r.get("result").is_some(), "enum action {a} rejected: {r}");
     }
 }
 

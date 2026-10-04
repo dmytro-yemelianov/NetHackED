@@ -101,7 +101,7 @@ fn zap_without_wand_is_free_noop() {
     }
     let energy = sim.scheduler.hero_energy;
     let ev = sim.step_player_action(ActionAst::ZapWand { dir: Direction::East, energy: 6 });
-    assert!(ev.iter().any(|e| format!("{:?}", e).contains("no wand")));
+    assert!(ev.iter().any(|e| format!("{e:?}").contains("no wand")));
     assert!(!ev.iter().any(|e| matches!(e, netrust_sim::GameEvent::BeamPropagated { .. })));
     assert_eq!(sim.scheduler.hero_energy, energy);
 }
@@ -182,7 +182,7 @@ fn melee_outcomes_vary_with_seed() {
         let hp = sim.arena.actors.get(mid).map(|m| m.hp).unwrap_or(0);
         outcomes.insert(1000 - hp);
     }
-    assert!(outcomes.len() >= 3, "melee is not random: {:?}", outcomes);
+    assert!(outcomes.len() >= 3, "melee is not random: {outcomes:?}");
 }
 
 #[test]
