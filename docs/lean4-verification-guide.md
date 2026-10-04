@@ -6,22 +6,22 @@ This guide details the formal verification architecture of **NetMechanics** in L
 
 ## 1. Project Organization & Verified Modules
 
-The Lean 4 verification project is defined in [lakefile.toml](lakefile.toml) and root module [NetMechanics.lean](NetMechanics.lean). All modules compile with zero errors and zero `sorry` placeholders.
+The Lean 4 verification project is defined in [lakefile.toml](../lakefile.toml) and root module [NetMechanics.lean](../NetMechanics.lean). All modules compile with zero errors and zero `sorry` placeholders, and the project uses no axioms beyond Lean's standard ones. The table below lists a representative subset (12 of the 39 modules under `NetMechanics/`); the other modules cover areas such as Nutrition, Religion, Traps, Pet, Quest, Sokoban, Skills and Tournament. The Lean models are deliberately simplified abstractions of NetHack mechanics, not a faithful transcription of NetHack 5.0 (see Section 4, Known limitations).
 
 | Module | Source File | Key Inductive Types | Key Verified Theorems |
 | :--- | :--- | :--- | :--- |
-| **`NetMechanics.BUC`** | [NetMechanics/BUC.lean](NetMechanics/BUC.lean) | `BUC`, `WaterType`, `BUCKnowledge` | `buc_not_blessed_and_cursed`<br>`dip_holy_idempotent`<br>`dip_plain_always_uncursed`<br>`uncurse_never_cursed` |
-| **`NetMechanics.Inventory`** | [NetMechanics/Inventory.lean](NetMechanics/Inventory.lean) | `Item`, `ItemKind`, `EncumbranceTier` | `item_weight_ge_zero`<br>`contents_weight_ge_tail`<br>`unencumbered_when_le_cap`<br>`boh_cannot_contain_boh` |
-| **`NetMechanics.Energy`** | [NetMechanics/Energy.lean](NetMechanics/Energy.lean) | `SchedulerState`, `StepAction` | `turn_strictly_increases`<br>`hero_act_reduces_energy`<br>`scheduler_progress` (Progress Theorem) |
-| **`NetMechanics.Grid`** | [NetMechanics/Grid.lean](NetMechanics/Grid.lean) | `Tile`, `DoorState`, `Coord`, `Alignment` | `open_door_is_passable`<br>`secret_door_impassable`<br>`break_door_idempotent`<br>`reveal_secret_door_locked` |
-| **`NetMechanics.Combat`** | [NetMechanics/Combat.lean](NetMechanics/Combat.lean) | `Combatant`, `AttackResult` | `apply_damage_monotone_hp`<br>`apply_damage_preserves_max_hp`<br>`lethal_damage_kills`<br>`miss_leaves_defender_unchanged` |
-| **`NetMechanics.AST`** | [NetMechanics/AST.lean](NetMechanics/AST.lean) | `ActionAST`, `EffectAST`, `WorldState` | `wait_consumes_normal_speed`<br>`inflict_damage_preserves_well_formed`<br>`heal_damage_preserves_well_formed` |
-| **`NetMechanics.FOV`** | [NetMechanics/FOV.lean](NetMechanics/FOV.lean) | `HasLOS` | `los_refl`<br>`open_door_transparent`<br>`closed_door_opaque`<br>`secret_door_opaque` |
-| **`NetMechanics.Raycast`** | [NetMechanics/Raycast.lean](NetMechanics/Raycast.lean) | `SurfaceOrientation`, `Velocity`, `BeamRay` | `reflect_involution`<br>`reflect_preserves_speed_sq`<br>`step_decreases_energy`<br>`beam_terminates_after_energy_steps` |
-| **`NetMechanics.Engraving`** | [NetMechanics/Engraving.lean](NetMechanics/Engraving.lean) | `EngravingMedium`, `Engraving` | `burned_engraving_permanent`<br>`blind_monster_ignores_elbereth`<br>`covetous_monster_ignores_elbereth`<br>`arbitrary_text_not_warding`<br>`dust_zero_durability_erased` |
-| **`NetMechanics.Identification`** | [NetMechanics/Identification.lean](NetMechanics/Identification.lean) | `KnowledgeLevel` | `knowledge_le_refl`<br>`knowledge_le_trans`<br>`knowledge_le_antisymm`<br>`learn_type_monotone`<br>`learn_buc_monotone`<br>`identify_fully_monotone`<br>`identify_fully_idempotent` |
-| **`NetMechanics.Polymorph`** | [NetMechanics/Polymorph.lean](NetMechanics/Polymorph.lean) | `FormStats`, `PolyEntity` | `poly_fatal_damage_reverts`<br>`poly_exact_depletion_preserves_base_hp`<br>`poly_non_fatal_damage_preserves_poly`<br>`poly_damage_preserves_base_max_hp` |
-| **`NetMechanics.Pathfinding`** | [NetMechanics/Pathfinding.lean](NetMechanics/Pathfinding.lean) | `MetricState` | `target_is_fixed_point`<br>`descent_step_decreases_distance`<br>`pathfinding_step_bounded` |
+| **`NetMechanics.BUC`** | [NetMechanics/BUC.lean](../NetMechanics/BUC.lean) | `BUC`, `WaterType`, `BUCKnowledge` | `buc_not_blessed_and_cursed`<br>`dip_holy_idempotent`<br>`dip_plain_always_uncursed`<br>`uncurse_never_cursed` |
+| **`NetMechanics.Inventory`** | [NetMechanics/Inventory.lean](../NetMechanics/Inventory.lean) | `Item`, `ItemKind`, `EncumbranceTier` | `item_weight_ge_zero`<br>`contents_weight_ge_tail`<br>`unencumbered_when_le_cap`<br>`boh_cannot_contain_boh` |
+| **`NetMechanics.Energy`** | [NetMechanics/Energy.lean](../NetMechanics/Energy.lean) | `SchedulerState`, `StepAction` | `turn_strictly_increases`<br>`hero_act_reduces_energy`<br>`scheduler_progress` (Progress Theorem) |
+| **`NetMechanics.Grid`** | [NetMechanics/Grid.lean](../NetMechanics/Grid.lean) | `Tile`, `DoorState`, `Coord`, `Alignment` | `open_door_is_passable`<br>`secret_door_impassable`<br>`break_door_idempotent`<br>`reveal_secret_door_locked` |
+| **`NetMechanics.Combat`** | [NetMechanics/Combat.lean](../NetMechanics/Combat.lean) | `Combatant`, `AttackResult` | `apply_damage_monotone_hp`<br>`apply_damage_preserves_max_hp`<br>`lethal_damage_kills`<br>`miss_leaves_defender_unchanged` |
+| **`NetMechanics.AST`** | [NetMechanics/AST.lean](../NetMechanics/AST.lean) | `ActionAST`, `EffectAST`, `WorldState` | `wait_consumes_normal_speed`<br>`inflict_damage_preserves_well_formed`<br>`heal_damage_preserves_well_formed` |
+| **`NetMechanics.FOV`** | [NetMechanics/FOV.lean](../NetMechanics/FOV.lean) | `HasLOS` | `los_refl`<br>`open_door_transparent`<br>`closed_door_opaque`<br>`secret_door_opaque` |
+| **`NetMechanics.Raycast`** | [NetMechanics/Raycast.lean](../NetMechanics/Raycast.lean) | `SurfaceOrientation`, `Velocity`, `BeamRay` | `reflect_involution`<br>`reflect_preserves_speed_sq`<br>`step_decreases_energy`<br>`beam_terminates_after_energy_steps` |
+| **`NetMechanics.Engraving`** | [NetMechanics/Engraving.lean](../NetMechanics/Engraving.lean) | `EngravingMedium`, `Engraving` | `burned_engraving_permanent`<br>`blind_monster_ignores_elbereth`<br>`covetous_monster_ignores_elbereth`<br>`arbitrary_text_not_warding`<br>`dust_zero_durability_erased` |
+| **`NetMechanics.Identification`** | [NetMechanics/Identification.lean](../NetMechanics/Identification.lean) | `KnowledgeLevel` | `knowledge_le_refl`<br>`knowledge_le_trans`<br>`knowledge_le_antisymm`<br>`learn_type_monotone`<br>`learn_buc_monotone`<br>`identify_fully_monotone`<br>`identify_fully_idempotent` |
+| **`NetMechanics.Polymorph`** | [NetMechanics/Polymorph.lean](../NetMechanics/Polymorph.lean) | `FormStats`, `PolyEntity` | `poly_fatal_damage_reverts`<br>`poly_exact_depletion_preserves_base_hp`<br>`poly_non_fatal_damage_preserves_poly`<br>`poly_damage_preserves_base_max_hp` |
+| **`NetMechanics.Pathfinding`** | [NetMechanics/Pathfinding.lean](../NetMechanics/Pathfinding.lean) | `MetricState` | `target_is_fixed_point`<br>`descent_step_decreases_distance`<br>`pathfinding_step_bounded` |
 
 
 
@@ -35,7 +35,7 @@ The Lean 4 formalization is fully integrated with Lake:
 # Build all Lean 4 libraries and verify all mathematical proofs
 lake build
 
-# Execute the demonstration test harness
+# Run the demonstration executable (`Main.lean`)
 ./.lake/build/bin/netmechanics
 ```
 
@@ -46,7 +46,7 @@ Unlike unit tests that sample specific inputs, Lean 4 proofs are verified by the
 
 ## 3. The Lean 4 to Rust Verification Bridge
 
-To ensure the Rust implementation faithfully reflects the Lean 4 mathematical specifications, every Lean 4 theorem maps to a **Rust Property-Based Test** (`proptest`).
+The Rust engine is an independent, hand-written implementation. **Nothing machine-links the Lean models to the Rust code**: there is no extraction, translation, or proof that the Rust functions satisfy the Lean theorems. Instead, many Lean theorems are mirrored by hand as Rust property-based tests (`proptest`), so that the Rust code is at least checked against the same stated properties on randomized inputs. `crates/netrust-core/tests/proptest_mechanics.rs` currently holds 86 such `prop_` tests; they cover a selection of the Lean theorems, not all 204. A proptest passing is evidence, not proof, that Rust agrees with the Lean property.
 
 ```
     [Lean 4 Formal Specification]               [Rust Implementation]
@@ -68,27 +68,40 @@ To ensure the Rust implementation faithfully reflects the Lean 4 mathematical sp
                      }
 ```
 
-### Direct Theorem-to-Property Mapping Matrix
+### Theorem-to-Property Mapping Matrix
+
+Rows marked "(no proptest yet)" have no corresponding proptest at present.
 
 | Lean 4 Theorem | Mathematical Property | Synthesized Rust Proptest |
 | :--- | :--- | :--- |
-| `buc_not_blessed_and_cursed` | $\neg (\text{isBlessed}(b) \land \text{isCursed}(b))$ | Assert that for any generated `Buc`, exactly one variant query is true. |
+| `buc_not_blessed_and_cursed` | $\neg (\text{isBlessed}(b) \land \text{isCursed}(b))$ | (no proptest yet) Intended: for any generated `Buc`, exactly one variant query is true. |
 | `dip_holy_idempotent` | $\text{dip}(H, \text{dip}(H, b)) = \text{dip}(H, b)$ | `assert_eq!(dip_water(Holy, dip_water(Holy, b)), dip_water(Holy, b))` for all `b: Buc`. |
-| `contents_weight_ge_tail` | $W(x :: xs) \ge W(xs)$ | Assert that prepending any random `Item` to a `Vec<Item>` never decreases total weight. |
+| `contents_weight_ge_tail` | $W(x :: xs) \ge W(xs)$ | (no proptest yet) Intended: prepending any random `Item` to a `Vec<Item>` never decreases total weight. |
 | `unencumbered_when_le_cap` | $W \le C \implies \mathcal{E}(W, C) = \text{Unencumbered}$ | Generate $W \le C$ with $C > 0$, assert result is `EncumbranceTier::Unencumbered`. |
 | `scheduler_progress` | $\Delta E < 0 \lor \Delta \text{turn} > 0$ | Assert that stepping `SchedulerState` either reduces actor action points or increments `turn`. |
 | `apply_damage_monotone_hp` | $HP_{\text{after}} \le HP_{\text{before}}$ | Assert that `c.apply_damage(d)` never increases `c.hp` for any $d \in \mathbb{N}$. |
 | `break_door_idempotent` | $\text{break}(\text{break}(t)) = \text{break}(t)$ | Assert that calling `door.break_door()` twice is identical to calling it once. |
-| `wait_consumes_normal_speed` | $E' = E - 12$ | Assert that executing `ActionAst::Wait` decrements energy by `NORMAL_SPEED` (12). |
+| `wait_consumes_normal_speed` | $E' = E - 12$ | (no proptest yet) Intended: executing `ActionAst::Wait` decrements energy by `NORMAL_SPEED` (12). |
 
 ---
 
-## 4. Extending the Formalization: Developer Guide
+## 4. Known limitations
+
+* `HasLOS.Adjacent` in `NetMechanics/FOV.lean` accepts any two distinct cells, so line of sight holds between every pair of cells; the FOV theorems are therefore much weaker than they appear.
+* `beam_terminates_after_energy_steps` (`Raycast.lean`) and `pathfinding_step_bounded` (`Pathfinding.lean`) prove only one-step facts, not the termination or convergence their names suggest.
+* The to-hit formula in `Combat.lean` (`10 + AC + bonus`) differs from the `uhitm.c` formula it cites.
+* About 90 of the 204 theorems are one-line proofs (`rfl`, `simp`, `decide`); many state definitional facts rather than deep invariants.
+* The models are simplified and are not NetHack 5.0 itself; see `docs/formal-mechanics-spec.md` for known divergences.
+* There is no machine-checked link between Lean and Rust (see Section 3).
+
+---
+
+## 5. Extending the Formalization: Developer Guide
 
 When formalizing a new NetHack mechanic in Lean 4:
 
 1. **Locate the C Origin**:
-   * Identify the corresponding C routines in [NetHack-5.0.0/src/](NetHack-5.0.0/src/).
+   * Identify the corresponding C routines in `NetHack-5.0.0/src/`.
    * Isolate the core mathematical logic from UI printing (`pline`) and window clipping.
 2. **Define Inductive Types**:
    * Define algebraic data types in `NetMechanics/<Subsystem>.lean`.
@@ -99,8 +112,8 @@ When formalizing a new NetHack mechanic in Lean 4:
    * Formulate invariants (safety, idempotency, monotonicity, conservation).
    * Complete the proof using Lean tactics (`rfl`, `simp`, `split`, `decide`, `cases`).
 5. **Update Root Library**:
-   * Add the module import to [NetMechanics.lean](NetMechanics.lean).
+   * Add the module import to [NetMechanics.lean](../NetMechanics.lean).
    * Verify compilation with `lake build`.
 6. **Implement Rust Mirror**:
-   * Mirror the data types and functions in [crates/netrust-core/src/](crates/netrust-core/src/).
+   * Mirror the data types and functions in [crates/netrust-core/src/](../crates/netrust-core/src/).
    * Add property-based tests in `netrust-core` validating the exact same theorem.
