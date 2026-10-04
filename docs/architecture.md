@@ -10,11 +10,11 @@ All numbers were measured on a clean export of `main` (2026-10-04, Apple Silicon
 
 NetRust is a Rust reimplementation of a subset of NetHack. The game runs as a deterministic, serializable simulation library. Terminal, web, Python and network frontends all drive that library through one shared command parser.
 
-The workspace has 11 crates with about 34,600 lines of Rust in 116 files. A separate Lean 4 project (`NetMechanics/`, 40 modules, 273 theorems, no `sorry`) holds simplified models of selected mechanics. 97 Rust property tests mirror those theorems and compare the engine with reference functions written from the C rules.
+The workspace has 11 crates with about 43,400 lines of Rust in 125 files. A separate Lean 4 project (`NetMechanics/`, 41 modules, 306 theorems, no `sorry`) holds simplified models of selected mechanics. 106 Rust property tests mirror those theorems and compare the engine with reference functions written from the C rules.
 
-`cargo test --workspace --exclude netrust-py --locked` runs 481 tests, all passing. These two counts (481 tests, 273 theorems) are as of 2026-10-04; later sections refer back to them. In a single-threaded release build, the benchmark plays 200 full games (about 41,700 game turns) in roughly 2.6 seconds.
+`cargo test --workspace --exclude netrust-py --locked` runs 591 tests, all passing. These two counts (591 tests, 306 theorems) are as of 2026-10-04 (after fidelity pass D2); later sections refer back to them. In a single-threaded release build, the benchmark plays 200 full games (about 41,700 game turns) in roughly 2.6 seconds.
 
-The content covers about 12-15% of NetHack: 47 monster species against 394, 66 item kinds against about 452, and 9 roles against 13. Twelve divergences from C behaviour are documented in the mechanics spec.
+The content covers about 12-15% of NetHack: 55 monster species against 394, 66 item kinds against about 452, and 9 roles against 13. Twenty-three divergences from C behaviour are documented in the mechanics spec.
 
 ---
 
@@ -192,7 +192,7 @@ Each subsection follows the same pattern: what C does, what NetRust does, and wh
 
 - **C:** Large macro tables: `include/monsters.h` (394 `MON(` entries), `include/objects.h`, `include/artilist.h`.
 - **Rust:** `static` slices in [netrust-data](../crates/netrust-data/src/): `BESTIARY` (47 `MonsterArchetype`s), `ITEM_CATALOG` (66 `ItemArchetype`s), `ROLES` (9), `RACES` (5) and pantheons. They are keyed by closed enums (`MonsterSpeciesId`, `ItemKindId`). Lookups use `.iter().find()` with an `expect`, and unit tests spawn every enum variant, so a missing table row fails a test rather than a game.
-- **Why:** The tables are declarative, type-checked and exhaustive. Adding content still requires recompiling (see §9). On `main`, monsters still use a single `damage_dice` pair, and some entries are invented (for example "war dog"). As of 2026-10-04, fidelity pass D2 is replacing these with C attack lists.
+- **Why:** The tables are declarative, type-checked and exhaustive. Adding content still requires recompiling (see §9). Since fidelity pass D2, every entry carries its C values and attack list (`Attack { at, ad, n, d }`), and invented entries such as "war dog" were replaced by C ones ("large dog").
 
 ### 4.8 Dungeon generation with reachability guarantees
 
@@ -287,10 +287,10 @@ The toolchain is pinned to Rust 1.88.0 in [rust-toolchain.toml](../rust-toolchai
 
 ### 6.4 Testing in layers
 
-1. **Unit and integration tests:** the 481 tests from §1. The largest groups are 131 sim unit tests, 101 in `simulation_tests.rs`, and 97 property tests.
+1. **Unit and integration tests:** the 591 tests from §1. The largest groups are 131 sim unit tests, 101 in `simulation_tests.rs`, and 97 property tests.
 2. **Seed sweeps:** 200 seeds per dungeon generator family (§4.8).
-3. **Property tests against reference models:** [proptest_mechanics.rs](../crates/netrust-core/tests/proptest_mechanics.rs) (2,311 lines, 97 `prop_*` tests). Each test corresponds to a theorem in `NetMechanics`. Fidelity pass D1 added a rule: these tests compare the Rust code with an *independent* reference written from the C rule, rather than with a copy of the Rust implementation.
-4. **Lean 4 models:** [NetMechanics/](../NetMechanics/) has 40 modules and the 273 theorems from §1. It contains no `sorry`, `admit` or `native_decide` and declares no axioms of its own; the policy is in [lean4-verification-guide.md](lean4-verification-guide.md).
+3. **Property tests against reference models:** [proptest_mechanics.rs](../crates/netrust-core/tests/proptest_mechanics.rs) (2,311 lines, 106 `prop_*` tests). Each test corresponds to a theorem in `NetMechanics`. Fidelity pass D1 added a rule: these tests compare the Rust code with an *independent* reference written from the C rule, rather than with a copy of the Rust implementation.
+4. **Lean 4 models:** [NetMechanics/](../NetMechanics/) has 41 modules and the 306 theorems from §1. It contains no `sorry`, `admit` or `native_decide` and declares no axioms of its own; the policy is in [lean4-verification-guide.md](lean4-verification-guide.md).
 
 What this does and doesn't establish: the Lean models are **simplified abstractions of selected mechanics**, and their theorems are machine-checked. The Rust code is *tested* against the same properties with proptests. There is **no formal link** between the Lean models and the Rust code, so NetRust is not formally verified. The Lean guide and the mechanics spec both say the models are not a faithful transcription of NetHack 5.0.
 
@@ -310,11 +310,11 @@ What this does and doesn't establish: the Lean models are **simplified abstracti
 
 NetRust brings its mechanics in line with NetHack 5.0 in numbered *fidelity passes*. Each changed function cites the C code it follows as `file.c:line`, and each pass updates the Lean models and proptests along with it. Pass **D1** is merged to `main`. It aligned 16 areas with C: hero to-hit, damage and AC absorption, floor traps, luckstone timeout, hunger, encumbrance, enchantment, wand recharging, shop prices, Bag of Holding explosions, polymorph overkill, bones cursing, the Mysterious Force, priest protection, quest leaders and nemeses, and stronger Lean theorems. It also set starting weapon skills to follow `skill_init` (`weapon.c:1752`). The full table with C line references is in the [D1 design](superpowers/specs/2026-10-04-fidelity-d1-design.md) and [C reference](superpowers/specs/2026-10-04-fidelity-d1-c-reference.md).
 
-As of 2026-10-04, pass **D2** is in progress on a separate branch. It replaces monster and item table values with C values, including attack lists with dice used by the simulation, weapon damage dice, armor AC and peaceful monsters.
+Pass **D2** is also merged. It replaced monster, item and pantheon table values with C values and made the simulation use them: monster attack lists resolved in C order with their own to-hit and dice, hero weapon damage via `dmgval`, hero AC via `find_ac` from worn armor, and peaceful monsters via `peace_minded`, `setmangry` and the Elbereth `onscary` exemptions. Details: [D2 design](superpowers/specs/2026-10-04-fidelity-d2-design.md).
 
 ### 7.2 Known divergences
 
-The [formal mechanics spec](formal-mechanics-spec.md#known-divergences-from-nethack-c) lists 12 divergences that remain. They fall into five groups: combat formulas (monster-vs-monster to-hit, bare-handed damage, the missing `abon()`), economy and religion (priest donations, shop pricing, the cheapskate counter), the Mysterious Force in Gehennom, items (Bag of Holding scatter, name-based kind detection), and the character (starting inventories, untracked attributes, fainting, luck sources, dunce cap). The spec states that its formulas should not be treated as authoritative descriptions of NetHack C behaviour.
+The [formal mechanics spec](formal-mechanics-spec.md#known-divergences-from-nethack-c) lists 23 divergences that remain. They fall into five groups: combat (simplified attack side effects, the missing `abon()`, `dmgval` extras), economy and religion (priest donations, shop pricing, the cheapskate counter), the Mysterious Force in Gehennom, items and data (Bag of Holding scatter, name-based kind and species lookup, catalog simplifications), and the character and monsters (starting inventories and alignment record, untracked attributes, fainting, peacefulness rules not yet ported, old saves loading monsters hostile). The spec states that its formulas should not be treated as authoritative descriptions of NetHack C behaviour.
 
 ### 7.3 Structural simplifications
 
@@ -374,8 +374,6 @@ C supports display back ends through one `window_procs` vtable. NetRust has a se
 - **Character:** no Str/Dex/Con/Int/Wis/Cha attributes and no `abon()`; no XP or level-up.
 - **Monsters:**
   - Shared monster energy pool instead of per-monster speed.
-  - A single `damage_dice` pair per monster instead of attack lists.
-  - No peaceful monsters yet.
   - Pets don't follow the hero to other levels.
 - **Movement:** encumbrance doesn't slow movement.
 - **Dungeon:** the Wizard's Tower, Vlad's Tower and Fort Ludios are stubs (solid stone with one staircase).
@@ -383,13 +381,13 @@ C supports display back ends through one `window_procs` vtable. NetRust has a se
 
 ### 9.2 Next fidelity passes (as of 2026-10-04)
 
-- **D2** (in progress): C values for the monster and item tables, attack lists, weapon dice, armor AC, and peaceful monsters.
-- **D3** (planned): floating-eye paralysis, per-monster speed, XP and level-up, pets following the hero across levels, encumbrance applied to movement, and telepathy while blind.
+- **D2** (merged): C values for the monster, item and pantheon tables, attack lists, weapon dice, armor AC, and peaceful monsters.
+- **D3** (planned): per-role starting alignment record with kill-based alignment, floating-eye paralysis, per-monster speed, XP and level-up, pets following the hero across levels, encumbrance applied to movement, and telepathy while blind.
 - **Later:** the remaining divergences in §7.2.
 
 ### 9.3 Configurability (planned)
 
-Two tools are planned: a settings and algorithm editor, and a generator for rule packages (DLC-style content). No design exists yet.
+Rule packs are designed (umbrella design on the `feat/rule-packs-p1` branch): data-only packs of TOML files that change monster, item and role data on top of vanilla, built by a `netrust-pack` tool into a hashed `.nrpack` that every frontend can load, with typed mechanics knobs, a web editor and RL integration in later phases. Phase P1 (the engine reads a `Ruleset` instead of static tables, plus the pack format and CLI) is in progress.
 
 As of today, all content and rules are compiled-in Rust statics and `match` arms, keyed by closed enums. The only runtime configuration is the seed, the locale and a `CharacterConfig`. Two features of the current code are natural places to attach such tools: the roll-parameterized pure functions in `netrust-core`, and the serializable boundary from `ActionAst` to `GameEvent`.
 
