@@ -598,7 +598,15 @@ mod tests {
 
     #[test]
     fn chunked_tournament_matches_one_shot() {
-        let one = run_tournament_benchmark(3, 30);
+        // Independent one-shot path: the agent crate's suite, not TournamentRun.
+        let (results, _) = netrust_agent::run_evaluation_suite(
+            &[1, 2, 3],
+            &[RoleId::Valkyrie, RoleId::Wizard],
+            30,
+        );
+        let one = serde_json::to_value(summarize(&results))
+            .unwrap()
+            .to_string();
         let mut t = TournamentRun::new(3, 30);
         assert!(!t.step(0));
         assert_eq!(t.progress(), 0);

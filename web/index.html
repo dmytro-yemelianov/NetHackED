@@ -1965,6 +1965,10 @@
     document.getElementById('btnResetArenaMatch').addEventListener('click', resetArenaMatch);
 
     document.getElementById('btnRunTournament').addEventListener('click', async () => {
+      const runBtn = document.getElementById('btnRunTournament');
+      if (runBtn.disabled) return;
+      runBtn.disabled = true;
+      let run = null;
       const container = document.getElementById('tournamentResultsContainer');
       const tbody = document.getElementById('tournamentTableBody');
       container.style.display = 'block';
@@ -1973,7 +1977,7 @@
       await new Promise(r => setTimeout(r, 50));
       {
         try {
-          const run = new TournamentRun(25, 200); // 25 seeds * 2 roles = 50 runs per policy (200 total)
+          run = new TournamentRun(25, 200); // 25 seeds * 2 roles = 50 runs per policy (200 total)
           while (!run.step(1)) {
             updateProgress(run.progress(), run.total());
             await new Promise(r => setTimeout(r));
@@ -2002,6 +2006,9 @@
         } catch (e) {
           console.error(e);
           tbody.innerHTML = `<tr><td colspan="7" style="color:var(--text-red);">Error running tournament: ${escapeHtml(e.message)}</td></tr>`;
+        } finally {
+          if (run) { try { run.free(); } catch (_) {} }
+          runBtn.disabled = false;
         }
       }
     });

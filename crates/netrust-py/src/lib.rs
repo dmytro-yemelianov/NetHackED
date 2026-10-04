@@ -40,35 +40,31 @@ pub const ACTION_NAMES: [&str; 26] = [
     "ENGRAVE_ELBERETH",
 ];
 
-/// Tracks tiles seen on the current dungeon level; resets when the depth changes.
+/// Tracks tiles seen this episode, keyed by `(depth, Coord)`. Nothing is
+/// forgotten on a depth change (so stair-dancing cannot farm reward); only
+/// `clear` (episode reset) empties it. `len` is the total across all depths.
 #[derive(Default)]
 struct ExplorationTracker {
-    depth: Option<u32>,
-    tiles: std::collections::HashSet<netrust_types::Coord>,
+    tiles: std::collections::HashSet<(u32, netrust_types::Coord)>,
 }
 
 impl ExplorationTracker {
     /// Record visible tiles at `depth`; returns how many were newly explored.
-    /// A depth change discards the previous level's tiles first.
     fn observe(
         &mut self,
         depth: u32,
         visible: impl IntoIterator<Item = netrust_types::Coord>,
     ) -> usize {
-        if self.depth != Some(depth) {
-            self.tiles.clear();
-            self.depth = Some(depth);
-        }
         let before = self.tiles.len();
-        self.tiles.extend(visible);
+        self.tiles.extend(visible.into_iter().map(|c| (depth, c)));
         self.tiles.len() - before
     }
 
     fn clear(&mut self) {
         self.tiles.clear();
-        self.depth = None;
     }
 
+    /// Total distinct tiles explored across all depths this episode.
     fn len(&self) -> usize {
         self.tiles.len()
     }
@@ -691,13 +687,21 @@ mod tests {
     }
 
     #[test]
-    fn exploration_resets_per_level() {
+    fn exploration_is_keyed_by_depth_and_never_farmed() {
         let mut t = ExplorationTracker::default();
         assert_eq!(t.observe(1, [c(1, 1), c(2, 2)]), 2);
         assert_eq!(t.observe(1, [c(1, 1), c(3, 3)]), 1);
         assert_eq!(t.len(), 3);
-        // Same coordinates on a new level count as newly explored again.
+        // Same coordinates on a new level count as newly explored.
         assert_eq!(t.observe(2, [c(1, 1), c(2, 2)]), 2);
-        assert_eq!(t.len(), 2);
+        assert_eq!(t.len(), 5);
+        // Stair-dancing back to a visited level does not re-reward.
+        assert_eq!(t.observe(1, [c(1, 1), c(2, 2), c(3, 3)]), 0);
+        assert_eq!(t.observe(2, [c(1, 1)]), 0);
+        assert_eq!(t.len(), 5);
+        // Only an explicit clear (episode reset) forgets everything.
+        t.clear();
+        assert_eq!(t.len(), 0);
+        assert_eq!(t.observe(1, [c(1, 1)]), 1);
     }
 }

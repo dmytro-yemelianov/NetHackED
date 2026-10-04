@@ -202,8 +202,12 @@ pub fn t(key: &'static str, locale: Locale) -> &'static str {
             "role.archaeologist.race" => "Lawful Human",
             "role.archaeologist.desc" => "(Sack, Short Sword, Ancient Lore)",
             "tui.pick_role" => "Who are you? Pick your starting character role:",
-            "tui.role_prompt" => "Press role key [v/w/b/r/k/m/h/t/a] or [Enter] for default Valkyrie: ",
-            "tui.inventory_title" => "=== CHARACTER INVENTORY (Press item letter or Esc to close) ===",
+            "tui.role_prompt" => {
+                "Press role key [v/w/b/r/k/m/h/t/a] or [Enter] for default Valkyrie: "
+            }
+            "tui.inventory_title" => {
+                "=== CHARACTER INVENTORY (Press item letter or Esc to close) ==="
+            }
             "tui.pack_empty" => "Your pack is empty.",
             "tui.in_hand" => " (weapon in hand)",
             "tui.weight" => "weight",
@@ -231,7 +235,9 @@ pub fn t(key: &'static str, locale: Locale) -> &'static str {
             "tui.zap_prompt" => "Zap wand in what direction? [h/j/k/l/y/u/b/n]: ",
             "tui.miss" => "You miss the monster.",
             "tui.none" => "none",
-            "tui.cmd_bar" => "[h/j/k/l: Move | s: Search | f: Fire | Q: Quiver | #: Commands | ?: Help | q: Quit]",
+            "tui.cmd_bar" => {
+                "[hjkl: Move | s: Search | f: Fire | #: Commands | ?: Help | Esc: Quit]"
+            }
             "help.west" => "Move west",
             "help.south" => "Move south",
             "help.north" => "Move north",
@@ -330,7 +336,9 @@ pub fn t(key: &'static str, locale: Locale) -> &'static str {
             "role.archaeologist.desc" => "(Мішок, Меч, Стародавні Знання)",
             "tui.pick_role" => "Хто ви? Оберіть початковий клас персонажа:",
             "tui.role_prompt" => "Оберіть роль [v/w/b/r/k/m/h/t/a] або [Enter] для Валькірії: ",
-            "tui.inventory_title" => "=== ІНВЕНТАР ПЕРСОНАЖА (Натисніть букву або Esc для закриття) ===",
+            "tui.inventory_title" => {
+                "=== ІНВЕНТАР ПЕРСОНАЖА (Натисніть букву або Esc для закриття) ==="
+            }
             "tui.pack_empty" => "Ваш інвентар порожній.",
             "tui.in_hand" => " (в руці)",
             "tui.weight" => "вага",
@@ -346,7 +354,9 @@ pub fn t(key: &'static str, locale: Locale) -> &'static str {
             "conduct.polypileless" => "Без поліпайлу (ніколи не перетворювати купи предметів)",
             "conduct.wishless" => "Без бажань (ніколи не загадувати бажань)",
             "tui.return_prompt" => "Натисніть Esc або Пробіл для повернення до гри...",
-            "tui.enhance_prompt" => "Натисніть букву [a-g] для покращення навички або Esc для закриття.",
+            "tui.enhance_prompt" => {
+                "Натисніть букву [a-g] для покращення навички або Esc для закриття."
+            }
             "tui.help_title" => "=== NETRUST ДОВІДНИК КЛАВІШ ТА КОМАНД ===",
             "tui.help_quit" => "Esc / Ctrl-C : вихід (запитує y/n)",
             "tui.seed" => "Зерно",
@@ -358,7 +368,9 @@ pub fn t(key: &'static str, locale: Locale) -> &'static str {
             "tui.zap_prompt" => "Куди спрямувати жезл? [h/j/k/l/y/u/b/n]: ",
             "tui.miss" => "Ви промахуєтесь повз чудовисько.",
             "tui.none" => "пусто",
-            "tui.cmd_bar" => "[h/j/k/l: Рух | s: Пошук | f: Стріляти | Q: Сагайдак | #: Команди | ?: Довідка | q: Вихід]",
+            "tui.cmd_bar" => {
+                "[hjkl: Рух | s: Пошук | f: Вогонь | #: Команди | ?: Довідка | Esc: Вихід]"
+            }
             "help.west" => "Рух на захід",
             "help.south" => "Рух на південь",
             "help.north" => "Рух на північ",

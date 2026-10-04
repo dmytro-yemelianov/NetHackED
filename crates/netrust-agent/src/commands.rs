@@ -243,8 +243,19 @@ pub fn action_args_from_json(
     args: &serde_json::Value,
     player: Option<Coord>,
 ) -> Result<ActionArgs, String> {
-    let x = json_number(args, "x")?.or(json_number(args, "target_x")?);
-    let y = json_number(args, "y")?.or(json_number(args, "target_y")?);
+    // Pair targets: (x, y) if either is present, else (target_x, target_y).
+    // Mixing the two spellings is an error; the unused pair is not validated.
+    let has = |k: &str| args.get(k).is_some_and(|v| !v.is_null());
+    let (xk, yk) = if has("x") || has("y") {
+        ("x", "y")
+    } else {
+        ("target_x", "target_y")
+    };
+    if (xk == "x") && (has("target_x") || has("target_y")) && !(has("x") && has("y")) {
+        return Err("mixed target spellings: use x/y or target_x/target_y".into());
+    }
+    let x = json_number(args, xk)?;
+    let y = json_number(args, yk)?;
     Ok(ActionArgs {
         index: json_number(args, "index")?,
         direction: json_string(args, "direction")?,
@@ -279,6 +290,40 @@ mod tests {
                 .target,
             None
         );
+    }
+
+    #[test]
+    fn target_pair_selection_and_mixing() {
+        use serde_json::json;
+        // Malformed target_x is ignored when x/y are used.
+        let t = action_args_from_json(&json!({"x": 1, "y": 2, "target_x": "bad"}), None).unwrap();
+        assert_eq!(t.target, Some((1, 2)));
+        // x/y wins over a well-formed target pair too.
+        let t = action_args_from_json(&json!({"x": 1, "y": 2, "target_x": 8, "target_y": 9}), None)
+            .unwrap();
+        assert_eq!(t.target, Some((1, 2)));
+        // Mixing x with target_y is an error.
+        assert!(action_args_from_json(&json!({"x": 1, "target_y": 2}), None).is_err());
+        assert!(action_args_from_json(&json!({"target_x": 1, "y": 2}), None).is_err());
+        // Malformed x/y still errors.
+        assert!(action_args_from_json(&json!({"x": "a", "y": 2}), None).is_err());
+    }
+
+    #[test]
+    fn every_mcp_step_action_parses() {
+        let p = ActionArgs {
+            player: Coord::new(10, 10),
+            direction: Some("north".into()),
+            index: Some(0),
+            target: Some((10, 9)),
+            text: Some("x".into()),
+        };
+        for n in crate::mcp::STEP_ACTIONS {
+            assert!(
+                parse_action(n, &p).is_ok(),
+                "STEP_ACTIONS entry {n} rejected"
+            );
+        }
     }
 
     fn a() -> ActionArgs {

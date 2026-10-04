@@ -27,8 +27,8 @@ use netrust_types::{ItemId, SkillClass, SkillLevel, TrapState};
 mod keys;
 mod pager;
 use keys::{
-    confirm_quit_answer, handle_key, map_ukrainian_key, InventoryPurpose, KeyContext, KeyOutcome,
-    HELP_KEYS,
+    confirm_quit_answer, handle_key, is_cancel, map_ukrainian_key, InventoryPurpose, KeyContext,
+    KeyOutcome, HELP_KEYS,
 };
 use pager::Pager;
 use std::collections::HashSet;
@@ -291,6 +291,9 @@ fn prompt_direction(stdout: &mut Stdout, prompt_msg: &str) -> io::Result<Option<
             if key.kind != KeyEventKind::Press {
                 continue;
             }
+            if is_cancel(&key) {
+                return Ok(None);
+            }
             let code = match key.code {
                 KeyCode::Char(c) => KeyCode::Char(map_ukrainian_key(c)),
                 other => other,
@@ -380,6 +383,9 @@ fn show_inventory_modal(
 
         match event::read()? {
             Event::Key(key) if key.kind == KeyEventKind::Press => {
+                if is_cancel(&key) {
+                    return Ok(None);
+                }
                 let code = match key.code {
                     KeyCode::Char(c) => KeyCode::Char(map_ukrainian_key(c)),
                     other => other,
@@ -463,7 +469,8 @@ fn show_conducts_modal(stdout: &mut Stdout, world: &SimulationWorld) -> io::Resu
                 other => other,
             };
             if key.kind == KeyEventKind::Press
-                && matches!(code, KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char(' '))
+                && (is_cancel(&key)
+                    || matches!(code, KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char(' ')))
             {
                 break;
             }
@@ -534,6 +541,9 @@ fn show_enhance_modal(stdout: &mut Stdout, world: &mut SimulationWorld) -> io::R
         if let Event::Key(key) = event::read()? {
             if key.kind != KeyEventKind::Press {
                 continue;
+            }
+            if is_cancel(&key) {
+                break;
             }
             let code = match key.code {
                 KeyCode::Char(c) => KeyCode::Char(map_ukrainian_key(c)),
@@ -614,10 +624,11 @@ fn show_help_modal(stdout: &mut Stdout, locale: Locale, seed: u64) -> io::Result
                 other => other,
             };
             if key.kind == KeyEventKind::Press
-                && matches!(
-                    code,
-                    KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char(' ') | KeyCode::Char('?')
-                )
+                && (is_cancel(&key)
+                    || matches!(
+                        code,
+                        KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char(' ') | KeyCode::Char('?')
+                    ))
             {
                 break;
             }
@@ -785,7 +796,7 @@ fn main() -> io::Result<()> {
                             ResetColor
                         )?;
                         if let Event::Key(ext_key) = event::read()? {
-                            if ext_key.kind == KeyEventKind::Press {
+                            if ext_key.kind == KeyEventKind::Press && !is_cancel(&ext_key) {
                                 let ext_code = match ext_key.code {
                                     KeyCode::Char(c) => KeyCode::Char(map_ukrainian_key(c)),
                                     other => other,

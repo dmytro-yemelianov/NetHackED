@@ -124,11 +124,15 @@ class NeuralPolicy:
     def sample_action(self, probs: List[float], rng: random.Random) -> int:
         r = rng.random()
         cum = 0.0
+        last = None
         for i, p in enumerate(probs):
+            if p > 0:
+                last = i
             cum += p
-            if r <= cum:
+            if p > 0 and r <= cum:
                 return i
-        return len(probs) - 1
+        # Rounding fallback: never return a masked (zero-probability) action.
+        return last if last is not None else len(probs) - 1
 
     def export_weights(self) -> Dict[str, Any]:
         """Export serialized weights dictionary."""

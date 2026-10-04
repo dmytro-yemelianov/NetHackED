@@ -114,6 +114,12 @@ pub fn confirm_quit_answer(key: KeyEvent) -> bool {
     )
 }
 
+/// True for keys that dismiss any modal or prompt: Esc, or Ctrl plus any key
+/// (so Ctrl-C never selects an item named `c`).
+pub fn is_cancel(key: &KeyEvent) -> bool {
+    key.code == KeyCode::Esc || key.modifiers.contains(KeyModifiers::CONTROL)
+}
+
 fn mv(d: Direction) -> KeyOutcome {
     KeyOutcome::Act(ActionAst::Move(d))
 }
@@ -264,6 +270,24 @@ mod tests {
             player: Coord::new(10, 10).unwrap(),
             last_dir: Direction::East,
         }
+    }
+
+    #[test]
+    fn cancel_is_esc_or_ctrl() {
+        assert!(is_cancel(&KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE)));
+        assert!(is_cancel(&KeyEvent::new(
+            KeyCode::Char('c'),
+            KeyModifiers::CONTROL
+        )));
+        assert!(is_cancel(&KeyEvent::new(
+            KeyCode::Char('a'),
+            KeyModifiers::CONTROL
+        )));
+        assert!(!is_cancel(&k('c')));
+        assert!(!is_cancel(&KeyEvent::new(
+            KeyCode::Char('c'),
+            KeyModifiers::SHIFT
+        )));
     }
 
     #[test]

@@ -144,7 +144,7 @@ Then visit **`http://localhost:8080`** in your browser:
 cargo run --bin netrust
 ```
 * Character selection prompt upon boot.
-* Standard NetHack keyboard controls: Vi-keys, arrows, `o` (open), `c` (close), `K` (kick), `z` (zap wand), `,` (pick up), `p` (pay shopkeeper), `P` (pray at altar), `S` (sacrifice item), `d` (drop), `w` (wield), `<` (ascend), `>` (descend), `.` (wait), `q` (quit).
+* Standard NetHack keyboard controls: Vi-keys, arrows, `o` (open), `c` (close), `K` (kick), `z` (zap wand), `,` (pick up), `p` (pay shopkeeper), `P` (pray at altar), `S` (sacrifice item), `d` (drop), `w` (wield), `<` (ascend), `>` (descend), `.` (wait), `Esc` (quit), `q` (quaff).
 
 ### 3. Model Context Protocol (MCP) Server for LLMs
 For LLM pair programming and autonomous game agents (compatible with Claude Desktop, Cursor, and Antigravity):

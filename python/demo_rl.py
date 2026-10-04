@@ -25,7 +25,7 @@ from netrust_gym import NetRustGymEnv, ACTION_NAMES
 
 def run_agent_episode(policy_name: str = "pacifist", seed: int = 42, max_steps: int = 150):
     env = NetRustGymEnv(seed=seed, max_steps=max_steps, render_mode="ansi", conduct_masking=True)
-    obs, info = env.reset()
+    obs, info = env.reset(seed=seed)
 
     total_reward = 0.0
     steps = 0

@@ -110,6 +110,11 @@ class NetRustGymEnv(gym.Env):
         render_mode: Optional[str] = None,
     ):
         super().__init__()
+        if render_mode is not None and render_mode not in self.metadata["render_modes"]:
+            raise ValueError(
+                f"unsupported render_mode {render_mode!r}; "
+                f"expected None or one of {self.metadata['render_modes']}"
+            )
         self.max_steps = max_steps
         self.render_mode = render_mode
         self.conduct_masking = conduct_masking

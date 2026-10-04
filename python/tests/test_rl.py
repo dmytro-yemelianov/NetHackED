@@ -105,7 +105,26 @@ class TestNetRustGymEnv(unittest.TestCase):
         n = raw.explored_count
         self.assertGreater(n, 0)
         # Per-level reset on depth change is covered by the Rust unit test
-        # `exploration_resets_per_level` in crates/netrust-py/src/lib.rs.
+        # `exploration_is_keyed_by_depth_and_never_farmed` in crates/netrust-py/src/lib.rs.
+
+    def test_invalid_render_mode_rejected(self):
+        with self.assertRaises(ValueError):
+            NetRustGymEnv(seed=1, render_mode="human")
+        NetRustGymEnv(seed=1, render_mode=None)
+        NetRustGymEnv(seed=1, render_mode="ansi")
+
+    def test_sample_action_never_returns_masked(self):
+        import random
+        from train_reinforce import NeuralPolicy
+
+        class Rigged(random.Random):
+            def random(self):
+                return 0.9999999  # beyond cumulative sum after rounding
+
+        pol = NeuralPolicy.__new__(NeuralPolicy)
+        probs = [0.0, 0.5, 0.4999, 0.0, 0.0]  # sums < r; trailing entries masked
+        self.assertEqual(pol.sample_action(probs, Rigged()), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

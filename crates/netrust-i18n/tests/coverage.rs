@@ -57,3 +57,16 @@ fn messages_translate_embedded_names() {
 fn corpse_suffix_is_case_insensitive() {
     assert_ne!(t_item("Jackal Corpse", Locale::Uk), "Jackal Corpse");
 }
+
+#[test]
+fn cmd_bar_fits_and_mentions_esc() {
+    for loc in [Locale::En, Locale::Uk] {
+        let s = t("tui.cmd_bar", loc);
+        assert!(
+            s.chars().count() <= 80,
+            "{loc:?}: {} chars",
+            s.chars().count()
+        );
+        assert!(s.contains("Esc"), "{loc:?}: {s}");
+    }
+}
