@@ -1,13 +1,11 @@
 //! GraphQL Schema and Resolvers for NetRust remote agent swarms.
 
-use crate::{render_ascii_map, AgentSession};
+use crate::{parse_action, parse_character, render_ascii_map, ActionArgs, AgentSession};
 use async_graphql::{Context, EmptySubscription, Object, Schema, SimpleObject};
-use netrust_core::ActionAst;
 use netrust_data::{
-    roles::{CharacterConfig, Gender, RaceId, RoleId, RACES, ROLES},
+    roles::{RACES, ROLES},
     BESTIARY, ITEM_CATALOG,
 };
-use netrust_types::{Alignment, Coord, Direction};
 use std::sync::{Arc, Mutex};
 
 pub type NetRustSchema = Schema<QueryRoot, MutationRoot, EmptySubscription>;
@@ -206,6 +204,7 @@ pub struct MutationRoot;
 #[Object]
 impl MutationRoot {
     /// Step the simulation world with a player action.
+    #[allow(clippy::too_many_arguments)] // GraphQL resolver signature is public API
     async fn step_action(
         &self,
         ctx: &Context<'_>,
@@ -214,55 +213,26 @@ impl MutationRoot {
         target_x: Option<usize>,
         target_y: Option<usize>,
         index: Option<usize>,
+        text: Option<String>,
     ) -> async_graphql::Result<StepResultGql> {
         require_mutation_auth(ctx)?;
         let state = ctx.data_unchecked::<AppState>();
         let mut session = state.session.lock().unwrap();
 
-        let dir = match direction.as_deref() {
-            Some("north") | Some("k") => Direction::North,
-            Some("south") | Some("j") => Direction::South,
-            Some("east") | Some("l") => Direction::East,
-            Some("west") | Some("h") => Direction::West,
-            Some("northeast") | Some("u") => Direction::NorthEast,
-            Some("northwest") | Some("y") => Direction::NorthWest,
-            Some("southeast") | Some("n") => Direction::SouthEast,
-            Some("southwest") | Some("b") => Direction::SouthWest,
-            _ => Direction::None,
+        let player = session
+            .world
+            .arena
+            .actors
+            .get(session.world.player_id)
+            .map(|p| p.coord);
+        let args = ActionArgs {
+            index,
+            direction,
+            target: target_x.zip(target_y),
+            text,
+            player,
         };
-
-        let target_coord = match (target_x, target_y) {
-            (Some(x), Some(y)) => Coord::new(x, y),
-            _ => None,
-        };
-
-        let action_ast = match action.to_lowercase().as_str() {
-            "move" => ActionAst::Move(dir),
-            "open_door" => target_coord
-                .map(ActionAst::OpenDoor)
-                .unwrap_or(ActionAst::Wait),
-            "close_door" => target_coord
-                .map(ActionAst::CloseDoor)
-                .unwrap_or(ActionAst::Wait),
-            "kick" => target_coord.map(ActionAst::Kick).unwrap_or(ActionAst::Wait),
-            "pickup" => ActionAst::PickUp,
-            "drop" => ActionAst::Drop(index.unwrap_or(0)),
-            "wield" => ActionAst::Wield(index.unwrap_or(0)),
-            "quaff" => ActionAst::Quaff(index.unwrap_or(0)),
-            "read" => ActionAst::Read(index.unwrap_or(0)),
-            "pay" => ActionAst::Pay,
-            "pray" => ActionAst::Pray,
-            "sacrifice" => ActionAst::Sacrifice(index.unwrap_or(0)),
-            "eat" => ActionAst::Eat(index.unwrap_or(0)),
-            "cast" => ActionAst::Cast {
-                spell_index: index.unwrap_or(0),
-                dir,
-            },
-            "ascend" => ActionAst::Ascend,
-            "descend" => ActionAst::Descend,
-            "wait" => ActionAst::Wait,
-            _ => ActionAst::Wait,
-        };
+        let action_ast = parse_action(&action, &args).map_err(async_graphql::Error::new)?;
 
         let obs = session.step(action_ast);
         let ascii_map = render_ascii_map(&session.world);
@@ -311,44 +281,14 @@ impl MutationRoot {
         let state = ctx.data_unchecked::<AppState>();
         let mut session = state.session.lock().unwrap();
 
-        let role_id = match role.as_deref().map(|s| s.to_lowercase()).as_deref() {
-            Some("wizard") => RoleId::Wizard,
-            Some("barbarian") => RoleId::Barbarian,
-            Some("rogue") => RoleId::Rogue,
-            Some("knight") => RoleId::Knight,
-            Some("monk") => RoleId::Monk,
-            Some("healer") => RoleId::Healer,
-            Some("tourist") => RoleId::Tourist,
-            Some("archaeologist") => RoleId::Archaeologist,
-            _ => RoleId::Valkyrie,
-        };
-
-        let race_id = match race.as_deref().map(|s| s.to_lowercase()).as_deref() {
-            Some("elf") => RaceId::Elf,
-            Some("dwarf") => RaceId::Dwarf,
-            Some("gnome") => RaceId::Gnome,
-            Some("orc") => RaceId::Orc,
-            _ => RaceId::Human,
-        };
-
-        let gender_enum = match gender.as_deref().map(|s| s.to_lowercase()).as_deref() {
-            Some("male") => Gender::Male,
-            _ => Gender::Female,
-        };
-
-        let align = match alignment.as_deref().map(|s| s.to_lowercase()).as_deref() {
-            Some("lawful") => Alignment::Lawful,
-            Some("chaotic") => Alignment::Chaotic,
-            _ => Alignment::Neutral,
-        };
-
-        let config = CharacterConfig {
-            name: name.unwrap_or_else(|| "Hero".to_string()),
-            role: role_id,
-            race: race_id,
-            gender: gender_enum,
-            alignment: align,
-        };
+        let config = parse_character(
+            Some(name.as_deref().unwrap_or("Hero")),
+            role.as_deref(),
+            race.as_deref(),
+            gender.as_deref(),
+            alignment.as_deref(),
+        )
+        .map_err(async_graphql::Error::new)?;
 
         *session = AgentSession::new_with_character(seed.unwrap_or(42), config);
         let obs = session.get_observation();
@@ -488,5 +428,20 @@ mod tests {
         let data = res.data.into_json().unwrap();
         assert_eq!(data["resetWithCharacter"]["hp"], 20);
         assert_eq!(data["resetWithCharacter"]["maxHp"], 20);
+    }
+
+    #[tokio::test]
+    async fn test_graphql_unknown_action_is_error() {
+        let schema = create_schema(AppState {
+            session: Arc::new(Mutex::new(AgentSession::new(42))),
+        });
+        let res = schema
+            .execute(r#"mutation { stepAction(action: "dance") { success } }"#)
+            .await;
+        assert!(!res.errors.is_empty());
+        let res = schema
+            .execute(r#"mutation { resetWithCharacter(role: "samurai") { hp } }"#)
+            .await;
+        assert!(!res.errors.is_empty());
     }
 }

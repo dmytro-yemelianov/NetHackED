@@ -1,13 +1,12 @@
 //! JSON-RPC 2.0 message parser and dispatcher for Model Context Protocol (MCP).
 
-use netrust_data::roles::{CharacterConfig, Gender, RaceId, RoleId, RACES, ROLES};
-use netrust_sim::{ActionAst, Coord, Direction, SimulationWorld};
-use netrust_types::Alignment;
+use netrust_data::roles::{RACES, ROLES};
+use netrust_sim::{ActionAst, Coord, SimulationWorld};
 use serde_json::{json, Value};
 
+use crate::commands::{parse_action, parse_character, ActionArgs};
 use crate::rpc::{
-    self, error_response, parse_direction, result_response, RpcRequest, INVALID_PARAMS,
-    METHOD_NOT_FOUND,
+    self, error_response, result_response, RpcRequest, INVALID_PARAMS, METHOD_NOT_FOUND,
 };
 use crate::session::AgentSession;
 
@@ -166,42 +165,44 @@ fn tools_list() -> Value {
     })
 }
 
-fn parse_step_action(act: &str, args: &Value, p: Coord) -> Result<ActionAst, String> {
-    if !STEP_ACTIONS.contains(&act) {
-        return Err(format!("Unknown action '{act}'"));
+/// Read an optional non-negative integer argument; present non-numbers are errors.
+pub(crate) fn number_arg(args: &Value, key: &str) -> Result<Option<usize>, String> {
+    match args.get(key) {
+        None | Some(Value::Null) => Ok(None),
+        Some(v) => v
+            .as_u64()
+            .map(|n| Some(n as usize))
+            .ok_or_else(|| format!("'{key}' must be a non-negative integer")),
     }
-    if let Some(dir) = act.strip_prefix("move_") {
-        return parse_direction(dir)
-            .map(ActionAst::Move)
-            .ok_or_else(|| format!("Unknown action '{act}'"));
-    }
-    if let Some(dir) = act.strip_prefix("kick_") {
-        let d = parse_direction(dir).ok_or_else(|| format!("Unknown action '{act}'"))?;
-        let target = p.step(d).ok_or("kick target is off the map")?;
-        return Ok(ActionAst::Kick(target));
-    }
-    let index = args.get("index").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
-    Ok(match act {
-        "wait" => ActionAst::Wait,
-        "pickup" => ActionAst::PickUp,
-        "pay" => ActionAst::Pay,
-        "pray" => ActionAst::Pray,
-        "sacrifice" => ActionAst::Sacrifice(index),
-        "eat" => ActionAst::Eat(index),
-        "cast" => {
-            let dir = match args.get("direction").and_then(|v| v.as_str()) {
-                Some(d) => parse_direction(d).ok_or_else(|| format!("Unknown direction '{d}'"))?,
-                None => Direction::East,
-            };
-            ActionAst::Cast {
-                spell_index: index,
-                dir,
-            }
-        }
-        "ascend" => ActionAst::Ascend,
-        "descend" => ActionAst::Descend,
-        _ => return Err(format!("Unknown action '{act}'")),
+}
+
+/// Build [`ActionArgs`] from a JSON params/arguments object.
+#[doc(hidden)]
+pub fn action_args(args: &Value, player: Coord) -> Result<ActionArgs, String> {
+    let target = match (
+        number_arg(args, "x")?.or(number_arg(args, "target_x")?),
+        number_arg(args, "y")?.or(number_arg(args, "target_y")?),
+    ) {
+        (Some(x), Some(y)) => Some((x, y)),
+        _ => None,
+    };
+    Ok(ActionArgs {
+        index: number_arg(args, "index")?,
+        direction: args
+            .get("direction")
+            .and_then(|v| v.as_str())
+            .map(str::to_string),
+        target,
+        text: args
+            .get("text")
+            .and_then(|v| v.as_str())
+            .map(str::to_string),
+        player: Some(player),
     })
+}
+
+fn parse_step_action(act: &str, args: &Value, p: Coord) -> Result<ActionAst, String> {
+    parse_action(act, &action_args(args, p)?)
 }
 
 fn call_tool(session: &mut AgentSession, name: &str, args: &Value) -> Result<String, String> {
@@ -269,58 +270,14 @@ fn call_tool(session: &mut AgentSession, name: &str, args: &Value) -> Result<Str
                 .and_then(|v| v.as_str())
                 .unwrap_or("Hero")
                 .to_string();
-            let role_str = args
-                .get("role")
-                .and_then(|v| v.as_str())
-                .unwrap_or("valkyrie");
-            let race_str = args.get("race").and_then(|v| v.as_str()).unwrap_or("human");
-            let gender_str = args
-                .get("gender")
-                .and_then(|v| v.as_str())
-                .unwrap_or("female");
-            let align_str = args
-                .get("alignment")
-                .and_then(|v| v.as_str())
-                .unwrap_or("neutral");
-
-            let role_id = match role_str.to_lowercase().as_str() {
-                "wizard" => RoleId::Wizard,
-                "barbarian" => RoleId::Barbarian,
-                "rogue" => RoleId::Rogue,
-                "knight" => RoleId::Knight,
-                "monk" => RoleId::Monk,
-                "healer" => RoleId::Healer,
-                "tourist" => RoleId::Tourist,
-                "archaeologist" => RoleId::Archaeologist,
-                _ => RoleId::Valkyrie,
-            };
-
-            let race_id = match race_str.to_lowercase().as_str() {
-                "elf" => RaceId::Elf,
-                "dwarf" => RaceId::Dwarf,
-                "gnome" => RaceId::Gnome,
-                "orc" => RaceId::Orc,
-                _ => RaceId::Human,
-            };
-
-            let gender = if gender_str.to_lowercase() == "male" {
-                Gender::Male
-            } else {
-                Gender::Female
-            };
-            let alignment = match align_str.to_lowercase().as_str() {
-                "lawful" => Alignment::Lawful,
-                "chaotic" => Alignment::Chaotic,
-                _ => Alignment::Neutral,
-            };
-
-            let config = CharacterConfig {
-                name,
-                role: role_id,
-                race: race_id,
-                gender,
-                alignment,
-            };
+            let field = |k: &str| args.get(k).and_then(|v| v.as_str());
+            let config = parse_character(
+                Some(name.as_str()),
+                field("role"),
+                field("race"),
+                field("gender"),
+                field("alignment"),
+            )?;
 
             session.world = SimulationWorld::new_with_character(seed, config);
             session.last_events.clear();

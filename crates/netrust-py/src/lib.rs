@@ -356,7 +356,7 @@ impl NetRustEnv {
             }
             22 => ActionAst::ZapWand {
                 dir: Direction::East,
-                energy: 100,
+                energy: netrust_agent::commands::ZAP_ENERGY,
             },
             23 => ActionAst::Pray,
             24 => ActionAst::Pay,

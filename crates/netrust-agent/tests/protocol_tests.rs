@@ -235,3 +235,37 @@ fn jsonrpc_robustness() {
     .unwrap();
     assert!(r.get("result").is_some());
 }
+
+#[test]
+fn mcp_index_must_be_a_number() {
+    let mut s = AgentSession::new(42);
+    let r = mcp(&mut s, json!({"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"netrust_step","arguments":{"action":"eat","index":"3"}}})).unwrap();
+    assert_eq!(r["error"]["code"], INVALID_PARAMS);
+}
+
+#[test]
+fn mcp_cast_accepts_diagonal_and_rejects_garbage() {
+    let mut s = AgentSession::new(42);
+    let ok = mcp(&mut s, json!({"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"netrust_step","arguments":{"action":"cast","direction":"northwest"}}})).unwrap();
+    assert!(ok.get("result").is_some());
+    let bad = mcp(&mut s, json!({"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"netrust_step","arguments":{"action":"cast","direction":"sideways"}}})).unwrap();
+    assert_eq!(bad["error"]["code"], INVALID_PARAMS);
+}
+
+#[test]
+fn mcp_reset_with_unknown_role_is_invalid_params() {
+    let mut s = AgentSession::new(42);
+    let r = mcp(&mut s, json!({"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"netrust_reset_with_character","arguments":{"role":"samurai"}}})).unwrap();
+    assert_eq!(r["error"]["code"], INVALID_PARAMS);
+}
+
+#[test]
+fn jsonrpc_accepts_move_prefixed_names() {
+    let mut s = AgentSession::new(42);
+    let r = handle_jsonrpc_request(
+        &mut s,
+        r#"{"jsonrpc":"2.0","id":1,"method":"netrust.step","params":{"action":"move_north"}}"#,
+    )
+    .unwrap();
+    assert!(r.get("result").is_some());
+}
