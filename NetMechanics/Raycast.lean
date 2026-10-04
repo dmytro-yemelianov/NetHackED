@@ -114,13 +114,74 @@ theorem step_decreases_energy (ray : BeamRay) (wall : Option SurfaceOrientation)
       exact Nat.lt_succ_self e
 
 /--
-  Theorem: Guaranteed Termination of Wand Beams.
-  Any ray with initial energy E terminates in at most E steps.
-  Beam bouncing can NEVER loop infinitely, preventing game engine hangs.
+  Helper (one step): a ray with zero energy terminates on its next step.
+  Used as the base case of `beam_terminates_within`.
 -/
 theorem beam_terminates_after_energy_steps (ray : BeamRay) (he : ray.energy = 0)
   (wall : Option SurfaceOrientation) :
   stepRay ray wall = StepResult.Terminated := by
   simp [stepRay, he]
+
+/--
+  Fuel-bounded beam runner: performs at most `fuel` calls of `stepRay`,
+  feeding `walls i` as the obstacle seen on the `i`-th call, and stops as
+  soon as a step returns `Terminated`. If the fuel runs out first the
+  still-live ray is returned as `Advanced`.
+-/
+def runRay (walls : Nat → Option SurfaceOrientation) : Nat → BeamRay → StepResult
+  | 0, ray => StepResult.Advanced ray
+  | fuel + 1, ray =>
+    match stepRay ray (walls 0) with
+    | StepResult.Terminated => StepResult.Terminated
+    | StepResult.Advanced r => runRay (fun i => walls (i + 1)) fuel r
+    | StepResult.Reflected r => runRay (fun i => walls (i + 1)) fuel r
+
+/-- A live step (advance or reflect) consumes exactly one unit of energy. -/
+theorem stepRay_succ (ray : BeamRay) (e : Nat) (he : ray.energy = e + 1)
+    (wall : Option SurfaceOrientation) :
+    ∃ r, r.energy = e ∧
+      (stepRay ray wall = StepResult.Advanced r ∨ stepRay ray wall = StepResult.Reflected r) := by
+  cases wall with
+  | none =>
+    exact ⟨{ x := ray.x + ray.vel.dx, y := ray.y + ray.vel.dy, vel := ray.vel, energy := e },
+      rfl, Or.inl (by simp [stepRay, he])⟩
+  | some o =>
+    exact ⟨{ x := ray.x, y := ray.y, vel := reflect ray.vel o, energy := e },
+      rfl, Or.inr (by simp [stepRay, he])⟩
+
+/--
+  Theorem: Guaranteed Termination of Wand Beams (multi-step).
+  For any wall sequence, a ray with energy E has terminated after at most
+  E + 1 calls of `stepRay` (E energy-consuming advance/reflect steps, then
+  the terminating call). Beam bouncing can never loop forever.
+-/
+theorem beam_terminates_within (walls : Nat → Option SurfaceOrientation)
+    (fuel : Nat) (ray : BeamRay) (hfuel : ray.energy < fuel) :
+    runRay walls fuel ray = StepResult.Terminated := by
+  induction fuel generalizing ray walls with
+  | zero => exact absurd hfuel (Nat.not_lt_zero _)
+  | succ n ih =>
+    cases he : ray.energy with
+    | zero =>
+      simp [runRay, beam_terminates_after_energy_steps ray he]
+    | succ e =>
+      obtain ⟨r, hr, hstep⟩ := stepRay_succ ray e he (walls 0)
+      have hr' : r.energy < n := by omega
+      rcases hstep with hs | hs <;> simp [runRay, hs, ih _ r hr']
+
+/--
+  Theorem: The bound is tight — with fuel at most E the beam is still live,
+  so a ray of energy E performs exactly E non-terminal steps.
+-/
+theorem beam_live_within_energy (walls : Nat → Option SurfaceOrientation)
+    (fuel : Nat) (ray : BeamRay) (hfuel : fuel ≤ ray.energy) :
+    runRay walls fuel ray ≠ StepResult.Terminated := by
+  induction fuel generalizing ray walls with
+  | zero => simp [runRay]
+  | succ n ih =>
+    obtain ⟨e, he⟩ : ∃ e, ray.energy = e + 1 := ⟨ray.energy - 1, by omega⟩
+    obtain ⟨r, hr, hstep⟩ := stepRay_succ ray e he (walls 0)
+    have hr' : n ≤ r.energy := by omega
+    rcases hstep with hs | hs <;> simp [runRay, hs, ih _ r hr']
 
 end NetMechanics

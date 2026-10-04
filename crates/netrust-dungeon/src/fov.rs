@@ -1,6 +1,6 @@
 //! Field of View (FOV) computation via symmetric raycasting.
 //!
-//! Modeled in Lean 4 (`NetMechanics.FOV`); the Lean LOS model is weak (see docs/lean4-verification-guide.md, Known limitations).
+//! Modeled in Lean 4 (`NetMechanics.FOV`); the Lean LOS model is transparent-cell connectivity, not straight-line `clear_path` (see docs/lean4-verification-guide.md, Known limitations).
 
 use crate::level::DungeonLevel;
 use netrust_types::{Coord, COLNO, ROWNO};

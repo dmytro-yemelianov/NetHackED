@@ -53,9 +53,8 @@ theorem descent_step_decreases_distance (s : MetricState) (n : MetricState)
     simp [descentStep, hd, hlt]
 
 /--
-  Theorem: Finite Pathfinding Convergence.
-  Any entity following a strictly descending metric gradient with initial distance D
-  reaches the target (distance 0) in at most D steps.
+  Helper (one step): stepping to a strictly closer neighbour lowers the
+  distance by at least 1. Used by `pathfinding_converges_within`.
 -/
 theorem pathfinding_step_bounded (s : MetricState) (n : MetricState)
   (hn : n.distToTarget < s.distToTarget) :
@@ -69,6 +68,42 @@ theorem pathfinding_step_bounded (s : MetricState) (n : MetricState)
       exact hn
     simp [descentStep, hd, hlt]
     exact Nat.le_of_lt_succ hlt
+
+/--
+  Iterated gradient descent: `descend oracle k s` applies `descentStep`
+  `k` times, asking `oracle` for the reduced neighbour at each state.
+-/
+def descend (oracle : MetricState → Option MetricState) : Nat → MetricState → MetricState
+  | 0, s => s
+  | k + 1, s => descend oracle k (descentStep s (oracle s))
+
+/-- At the target (distance 0) a descent step is the identity. -/
+theorem descentStep_at_target (s : MetricState) (n : Option MetricState)
+    (h : s.distToTarget = 0) : descentStep s n = s := by
+  simp [descentStep, h]
+
+/--
+  Theorem: Finite Pathfinding Convergence.
+  If the oracle always offers a strictly closer neighbour away from the target
+  (an admissible gradient), then iterating the descent step `k ≥ D` times from
+  initial distance `D` reaches the target (distance 0).
+-/
+theorem pathfinding_converges_within (oracle : MetricState → Option MetricState)
+    (hgrad : ∀ s : MetricState, s.distToTarget > 0 →
+      ∃ n, oracle s = some n ∧ n.distToTarget < s.distToTarget)
+    (k : Nat) (s : MetricState) (hk : s.distToTarget ≤ k) :
+    (descend oracle k s).distToTarget = 0 := by
+  induction k generalizing s with
+  | zero => simp [descend]; omega
+  | succ k ih =>
+    simp only [descend]
+    by_cases h0 : s.distToTarget = 0
+    · rw [descentStep_at_target s _ h0]
+      exact ih s (by omega)
+    · obtain ⟨n, hn, hlt⟩ := hgrad s (by omega)
+      have hb := pathfinding_step_bounded s n hlt
+      rw [hn]
+      exact ih _ (by omega)
 
 end NetMechanics
 

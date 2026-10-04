@@ -228,7 +228,8 @@ $$R(\vec{v}, \text{Corner}) = (-dx, -dy)$$
   $$\forall \vec{v}, S,\; \|\vec{v}'\|^2 = \|\vec{v}\|^2$$
 * `step_decreases_energy`: Strict attenuation: Every advance or reflection step strictly decreases beam energy:
   $$\forall \text{ray}, W,\; \text{energy}(\text{stepRay}(\text{ray}, W)) < \text{energy}(\text{ray})$$
-* `beam_terminates_after_energy_steps`: Guaranteed loop termination: Any beam with initial energy $E$ terminates in at most $E$ steps regardless of obstacle geometry, proving freedom from infinite reflection loops.
+* `beam_terminates_after_energy_steps`: One-step helper: a beam with energy 0 terminates on its next step.
+* `beam_terminates_within`: Guaranteed loop termination: for any wall sequence, the fuel-bounded runner `runRay` with fuel greater than the initial energy $E$ returns `Terminated` ($E$ advance/reflect steps, then the terminating call), proving freedom from infinite reflection loops. `beam_live_within_energy` shows the bound is tight.
 
 ---
 
@@ -317,6 +318,7 @@ Monsters without line-of-sight track player scent through integer metric gradien
 * `target_is_fixed_point`: Once distance is 0, entity has arrived at target and remains stationary.
 * `descent_step_decreases_distance`: Stepping to an admissible neighbor strictly decreases distance to target:
   $$\forall s, n,\; n.\text{dist} < s.\text{dist} \implies \text{step}(s, n).\text{dist} < s.\text{dist}$$
-* `pathfinding_step_bounded`: Any step along an admissible gradient decreases distance by at least 1, proving convergence in at most $D$ steps.
+* `pathfinding_step_bounded`: One-step helper: any step along an admissible gradient decreases distance by at least 1.
+* `pathfinding_converges_within`: If the neighbour oracle always offers a strictly closer state away from the target, iterating the descent step $k \ge D$ times from distance $D$ reaches distance 0.
 
 
