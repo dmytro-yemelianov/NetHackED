@@ -68,6 +68,10 @@ pub struct SimulationWorld {
     pub quest_state: netrust_core::QuestState,
     #[serde(default)]
     pub alignment_record: i32,
+    /// Hero race (C `gu.urace`), used by `peace_minded`'s race rules
+    /// (`race_peaceful`/`race_hostile`, makemon.c:2283-2286).
+    #[serde(default)]
+    pub hero_race: netrust_data::RaceId,
     /// C `context.mysteryforce`: decay counter of the Mysterious Force
     /// (`do.c:1543,1563`); grows by `rn2(diff + 2)` each time it triggers.
     #[serde(default)]
@@ -83,6 +87,10 @@ pub struct SimulationWorld {
     #[serde(default)]
     pub conducts: netrust_types::ConductTracker,
 }
+
+/// The sim's starting alignment record (C starts at `urole.initrecord`,
+/// attrib.c:1094; documented divergence).
+pub const INITIAL_ALIGNMENT_RECORD: i32 = 25;
 
 pub fn default_rng() -> ChaCha8Rng {
     ChaCha8Rng::seed_from_u64(0)
@@ -180,7 +188,17 @@ impl SimulationWorld {
                     }
                 }
                 RoomType::Normal if i > 0 && i != level.rooms.len() - 1 => {
-                    let goblin = create_monster_record(MonsterSpeciesId::Goblin, room.center());
+                    let mut goblin = create_monster_record(MonsterSpeciesId::Goblin, room.center());
+                    // makemon.c:1299 `mpeaceful = peace_minded(ptr)`; the hero
+                    // starts with the initial record and no Amulet.
+                    let input = crate::peace::peace_input(
+                        netrust_data::get_monster_species(MonsterSpeciesId::Goblin),
+                        config.alignment,
+                        config.race,
+                        INITIAL_ALIGNMENT_RECORD,
+                        false,
+                    );
+                    goblin.is_peaceful = crate::peace::roll_peace_minded(&input, &mut rng);
                     arena.spawn_actor(goblin);
                 }
                 _ => {}
@@ -262,7 +280,8 @@ impl SimulationWorld {
             ritual_progress: netrust_core::RitualProgress::Uninitiated,
             vibrating_square: None,
             quest_state: netrust_core::QuestState::default(),
-            alignment_record: 25, // Hero starts with pious devotion
+            alignment_record: INITIAL_ALIGNMENT_RECORD,
+            hero_race: config.race,
             mysterious_force_count: 0,
             role_name: format!("{:?}", config.role),
             rng,
@@ -367,17 +386,7 @@ impl SimulationWorld {
     /// The Amulet of Yendor must be carried. `divine_state` has no god-anger field yet,
     /// so `god_angry` is always false (documented limitation).
     pub fn luck_timeout_period(&self) -> u64 {
-        let has_amulet = self
-            .arena
-            .items_carried_by(self.player_id)
-            .into_iter()
-            .any(|iid| {
-                self.arena
-                    .items
-                    .get(iid)
-                    .is_some_and(crate::actions::items::is_real_amulet)
-            });
-        netrust_core::luck_decay_period(has_amulet, false)
+        netrust_core::luck_decay_period(self.hero_has_amulet(), false)
     }
 
     /// Progress one tick of luck decay based on carried luckstone (C `timeout.c:595-620`).

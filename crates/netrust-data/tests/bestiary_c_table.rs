@@ -1012,6 +1012,106 @@ fn bestiary_matches_c_table() {
     assert_eq!(seen, BESTIARY.len());
 }
 
+/// `peace_minded` inputs from `monsters.h` (makemon.c:2268-2308): `M2_HOSTILE`,
+/// `maligntyp` (5th `LVL()` argument, `A_NONE` = -128), `msound` (only
+/// MS_LEADER/MS_GUARDIAN/MS_NEMESIS are distinguished) and the `mflags2` race
+/// flag (M2_HUMAN/ELF/DWARF/GNOME/ORC). Generated from `monsters.h` like `C_TABLE`.
+const PEACE_TABLE: &[(&str, bool, i8, &str, &str)] = &[
+    ("Goblin", false, -3, "Other", "Orc"),
+    ("Hobgoblin", false, -4, "Other", "Orc"),
+    ("Orc", false, -4, "Other", "Orc"),
+    ("Kobold", true, -2, "Other", "None"),
+    ("Jackal", true, 0, "Other", "None"),
+    ("GiantAnt", true, 0, "Other", "None"),
+    ("FloatingEye", true, 0, "Other", "None"),
+    ("Skeleton", true, 0, "Other", "None"),
+    ("Vampire", true, -8, "Other", "None"),
+    ("SilverDragon", true, 4, "Other", "None"),
+    ("RedDragon", true, -4, "Other", "None"),
+    ("Medusa", true, -15, "Other", "None"),
+    ("Lich", true, -15, "Other", "None"),
+    ("Shopkeeper", false, 0, "Other", "Human"),
+    ("LittleDog", false, 0, "Other", "None"),
+    ("Dog", false, 0, "Other", "None"),
+    ("LargeDog", false, 0, "Other", "None"),
+    ("Kitten", false, 0, "Other", "None"),
+    ("Housecat", false, 0, "Other", "None"),
+    ("LargeCat", false, 0, "Other", "None"),
+    ("Ghost", true, -5, "Other", "None"),
+    ("Djinni", false, 0, "Other", "None"),
+    ("Gnome", false, 0, "Other", "Gnome"),
+    ("Dwarf", false, 4, "Other", "Dwarf"),
+    ("Priest", false, 0, "Other", "Human"),
+    ("Watchman", false, -2, "Other", "Human"),
+    ("TheNorn", false, 0, "Leader", "Human"),
+    ("NeferetTheGreen", false, 0, "Leader", "Human"),
+    ("Pelias", false, 0, "Leader", "Human"),
+    ("KingArthur", false, 20, "Leader", "Human"),
+    ("GrandMaster", false, 0, "Leader", "Human"),
+    ("MasterAssassin", true, 18, "Nemesis", "Human"),
+    ("Hippocrates", false, 0, "Leader", "Human"),
+    ("Twoflower", false, 0, "Leader", "Human"),
+    ("LordCarnarvon", false, 20, "Leader", "Human"),
+    ("LordSurtur", true, 12, "Nemesis", "None"),
+    ("TheDarkOne", true, -10, "Nemesis", "Human"),
+    ("ThothAmon", true, -14, "Nemesis", "Human"),
+    ("Ixoth", true, -14, "Nemesis", "None"),
+    ("MasterKaen", true, -20, "Nemesis", "Human"),
+    ("MasterOfThieves", false, -20, "Leader", "Human"),
+    ("Cyclops", true, -15, "Nemesis", "None"),
+    ("MinionOfHuhetotl", true, -14, "Nemesis", "None"),
+    ("Student", false, 3, "Guardian", "Human"),
+    ("Chieftain", false, 0, "Guardian", "Human"),
+    ("Attendant", false, 0, "Guardian", "Human"),
+    ("Page", false, 3, "Guardian", "Human"),
+    ("Abbot", false, 0, "Guardian", "Human"),
+    ("Thug", false, -3, "Guardian", "Human"),
+    ("Guide", false, 0, "Guardian", "Human"),
+    ("Warrior", false, 1, "Guardian", "Human"),
+    ("Apprentice", false, 0, "Guardian", "Human"),
+    ("WizardOfYendor", true, -128, "Other", "Human"),
+    ("VladTheImpaler", true, -10, "Other", "None"),
+    ("Croesus", true, 15, "Other", "Human"),
+];
+
+#[test]
+fn bestiary_peace_fields_match_c_table() {
+    assert_eq!(PEACE_TABLE.len(), BESTIARY.len());
+    for (id, hostile, mal, msound, race) in PEACE_TABLE {
+        let arch = BESTIARY
+            .iter()
+            .find(|a| format!("{:?}", a.id) == *id)
+            .unwrap_or_else(|| panic!("missing species {id}"));
+        assert_eq!(arch.always_hostile, *hostile, "{id} M2_HOSTILE");
+        assert_eq!(arch.maligntyp, *mal, "{id} maligntyp");
+        assert_eq!(format!("{:?}", arch.msound), *msound, "{id} msound");
+        let got_race = arch
+            .m2_race
+            .map(|r| format!("{r:?}"))
+            .unwrap_or_else(|| "None".into());
+        assert_eq!(got_race, *race, "{id} race flag");
+        // M2_HUMAN is also pinned as `is_human`.
+        assert_eq!(
+            arch.is_human,
+            arch.m2_race == Some(netrust_data::RaceId::Human),
+            "{id} is_human vs M2_HUMAN"
+        );
+        // `alignment` is the sign of `maligntyp` (A_NONE counts as chaotic).
+        let sign = match arch.alignment {
+            netrust_types::Alignment::Lawful => 1,
+            netrust_types::Alignment::Neutral => 0,
+            _ => -1,
+        };
+        assert_eq!(
+            sign,
+            (arch.maligntyp as i32).signum(),
+            "{id} alignment sign"
+        );
+        // C never sets both M2_PEACEFUL and M2_HOSTILE.
+        assert!(!(arch.peaceful_by_default && arch.always_hostile), "{id}");
+    }
+}
+
 #[test]
 fn lookup_by_name_strips_prefixes_and_ignores_case() {
     let ghost = monster_archetype_by_name("ghost of Conan").unwrap();

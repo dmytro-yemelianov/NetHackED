@@ -14,12 +14,13 @@ pub use items::{
 pub use monsters::{
     create_ghost_record, create_monster_record, get_monster_species, monster_archetype_by_name,
     monster_class_of, AiBehavior, Attack, AttackType, DamageType, MonsterArchetype, MonsterSize,
-    MonsterSpeciesId, BESTIARY,
+    MonsterSound, MonsterSpeciesId, BESTIARY,
 };
 pub use pantheons::{get_pantheon_for_role, get_patron_deity};
 pub use roles::{
-    get_race, get_role, spawn_player_character, spawn_starting_pet, starting_item_spe,
-    starting_skills, CharacterConfig, Gender, RaceId, RaceSpec, RoleId, RoleSpec, RACES, ROLES,
+    get_race, get_role, race_hatemask, race_hostile, race_lovemask, race_peaceful,
+    spawn_player_character, spawn_starting_pet, starting_item_spe, starting_skills,
+    CharacterConfig, Gender, RaceId, RaceSpec, RoleId, RoleSpec, RACES, ROLES,
 };
 
 #[cfg(test)]

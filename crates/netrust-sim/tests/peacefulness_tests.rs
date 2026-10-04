@@ -90,10 +90,10 @@ fn test_hero_attack_makes_peaceful_monster_hostile_permanently() {
     // Hero attacks the peaceful priest
     let attack_events = sim.step_player_action(ActionAst::MeleeAttack(c_priest));
     assert!(
-        attack_events
-            .iter()
-            .any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("turns hostile"))),
-        "Attack on peaceful monster must log turning hostile"
+        attack_events.iter().any(
+            |e| matches!(e, GameEvent::LogMessage { text } if text.contains("Priest gets angry!"))
+        ),
+        "Attack on peaceful monster must log C setmangry's \"%s gets angry!\" (mon.c:4306)"
     );
 
     let priest_after = sim.arena.actors.get(priest_id).unwrap();
@@ -145,7 +145,8 @@ fn test_quest_leader_and_guardians_are_peaceful_not_tame() {
     assert!(guardian.is_peaceful, "Quest guardian must be peaceful");
     assert!(!guardian.is_tame, "Quest guardian must NOT be tame");
 
-    // Stepping towards the quest leader must attack (not displace like a pet)
+    // Stepping towards the quest leader must not displace it like a pet
+    // (C mundisplaceable, hack.c:2154-2161: "You stop. ... doesn't want to swap places.")
     let leader_coord = leader.coord;
     // Set hero adjacent to leader
     let adj = leader_coord.step(Direction::West).unwrap();
@@ -155,7 +156,6 @@ fn test_quest_leader_and_guardians_are_peaceful_not_tame() {
     }
 
     let move_events = sim.step_player_action(ActionAst::Move(Direction::East));
-    // Must NOT displace: it's a melee attack!
     assert!(
         !move_events
             .iter()
@@ -275,4 +275,443 @@ fn test_serde_default_actor_record_is_peaceful() {
         "Missing is_peaceful must default to false"
     );
     assert_eq!(restored.name, "priest");
+}
+
+// ---------------------------------------------------------------------------
+// D2 fix wave C: peace_minded at spawn, setmangry, bumping peacefuls.
+// ---------------------------------------------------------------------------
+
+use netrust_core::engraving::Engraving;
+use netrust_data::{CharacterConfig, Gender, RaceId, RoleId};
+use netrust_types::Alignment;
+use rand::Rng;
+
+fn sim_with(race: RaceId, alignment: Alignment, role: RoleId, seed: u64) -> SimulationWorld {
+    let mut sim = SimulationWorld::new_with_character(
+        seed,
+        CharacterConfig {
+            name: "Hero".into(),
+            role,
+            race,
+            gender: Gender::Female,
+            alignment,
+        },
+    );
+    let pc = sim.arena.actors.get(sim.player_id).unwrap().coord;
+    for dy in -2..=2isize {
+        for dx in -2..=2isize {
+            if let Some(c) =
+                Coord::new((pc.x as isize + dx) as usize, (pc.y as isize + dy) as usize)
+            {
+                if c != pc {
+                    sim.level.set_tile(c, Tile::Room);
+                    if let Some(id) = sim.actor_at(c) {
+                        sim.arena.destroy_actor(id);
+                    }
+                }
+            }
+        }
+    }
+    sim
+}
+
+fn hero_coord(sim: &SimulationWorld) -> Coord {
+    sim.arena.actors.get(sim.player_id).unwrap().coord
+}
+
+/// Spawn next to the hero (east) through the sim's generation path.
+fn spawn_east(sim: &mut SimulationWorld, species: MonsterSpeciesId) -> netrust_arena::ActorId {
+    let c = hero_coord(sim).step(Direction::East).unwrap();
+    sim.spawn_monster_near(species, c).expect("spawn spot")
+}
+
+/// makemon.c:1299 -> peace_minded (makemon.c:2305-2307): a co-aligned goblin
+/// for an orcish (chaotic) hero is peaceful with probability
+/// (a-1)(b-1)/(ab), a = 16 + record, b = 2 + |mal| = 5.
+#[test]
+fn test_coaligned_spawn_peaceful_rate_matches_c() {
+    let mut sim = sim_with(RaceId::Orc, Alignment::Chaotic, RoleId::Barbarian, 7);
+    sim.alignment_record = 0;
+    let (a, b) = (16.0, 5.0);
+    let expected = (a - 1.0) * (b - 1.0) / (a * b); // 0.75
+    let n = 4000;
+    let mut peaceful = 0;
+    for _ in 0..n {
+        let id = spawn_east(&mut sim, MonsterSpeciesId::Goblin);
+        if sim.arena.actors.get(id).unwrap().is_peaceful {
+            peaceful += 1;
+        }
+        sim.arena.destroy_actor(id);
+    }
+    let rate = peaceful as f64 / n as f64;
+    assert!(
+        (rate - expected).abs() < 0.03,
+        "peaceful rate {rate} vs C {expected}"
+    );
+}
+
+/// record <= -15 makes the first draw rn2(1) == 0: hostile after exactly one draw.
+#[test]
+fn test_coaligned_spawn_with_record_minus_15_is_hostile_after_one_draw() {
+    let mut sim = sim_with(RaceId::Orc, Alignment::Chaotic, RoleId::Barbarian, 8);
+    sim.alignment_record = -20;
+    for _ in 0..50 {
+        let mut expected_rng = sim.rng.clone();
+        let _ = expected_rng.random_range(0..1u32);
+        let id = spawn_east(&mut sim, MonsterSpeciesId::Goblin);
+        assert!(!sim.arena.actors.get(id).unwrap().is_peaceful);
+        assert_eq!(sim.rng, expected_rng, "exactly one rn2(1) draw");
+        sim.arena.destroy_actor(id);
+    }
+}
+
+/// Flag, race and cross-alignment decisions draw nothing and follow C.
+#[test]
+fn test_spawn_decisions_without_a_draw() {
+    // Neutral human hero: kobold M2_HOSTILE, goblin race_hostile (human hates
+    // orcs), gnome race_hostile, dwarf cross-aligned (lawful), shopkeeper and
+    // watchman M2_PEACEFUL, Master Assassin MS_NEMESIS/M2_HOSTILE.
+    let mut sim = sim_with(RaceId::Human, Alignment::Neutral, RoleId::Valkyrie, 9);
+    for (species, want) in [
+        (MonsterSpeciesId::Kobold, false),
+        (MonsterSpeciesId::Goblin, false),
+        (MonsterSpeciesId::Gnome, false),
+        (MonsterSpeciesId::Dwarf, false),
+        (MonsterSpeciesId::Shopkeeper, true),
+        (MonsterSpeciesId::Watchman, true),
+        (MonsterSpeciesId::MasterAssassin, false),
+        (MonsterSpeciesId::Warrior, true),
+    ] {
+        let before = sim.rng.clone();
+        let id = spawn_east(&mut sim, species);
+        assert_eq!(
+            sim.arena.actors.get(id).unwrap().is_peaceful,
+            want,
+            "{species:?}"
+        );
+        assert_eq!(sim.rng, before, "{species:?} must not draw");
+        sim.arena.destroy_actor(id);
+    }
+    // Dwarvish hero: dwarves and gnomes are race_peaceful (role.c:634).
+    let mut sim = sim_with(RaceId::Dwarf, Alignment::Lawful, RoleId::Valkyrie, 10);
+    for species in [MonsterSpeciesId::Dwarf, MonsterSpeciesId::Gnome] {
+        let before = sim.rng.clone();
+        let id = spawn_east(&mut sim, species);
+        assert!(sim.arena.actors.get(id).unwrap().is_peaceful, "{species:?}");
+        assert_eq!(sim.rng, before);
+        sim.arena.destroy_actor(id);
+    }
+}
+
+/// makemon.c:2294: a chaotic monster is hostile to a hero carrying the Amulet.
+#[test]
+fn test_amulet_makes_chaotic_spawns_hostile() {
+    let mut sim = sim_with(RaceId::Orc, Alignment::Chaotic, RoleId::Barbarian, 11);
+    sim.alignment_record = 10;
+    sim.arena.spawn_item(netrust_data::create_item_record(
+        netrust_data::ItemKindId::AmuletOfYendor,
+        netrust_arena::ItemLocation::CarriedBy(sim.player_id),
+        netrust_types::Buc::Blessed,
+    ));
+    for _ in 0..20 {
+        let before = sim.rng.clone();
+        let id = spawn_east(&mut sim, MonsterSpeciesId::Goblin);
+        assert!(!sim.arena.actors.get(id).unwrap().is_peaceful);
+        assert_eq!(sim.rng, before);
+        sim.arena.destroy_actor(id);
+    }
+}
+
+/// Tou-goal.lua:117 creates the Master of Thieves with `peaceful = 0`.
+#[test]
+fn test_tourist_nemesis_master_of_thieves_is_hostile() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    sim.role_name = "Tourist".to_string();
+    sim.current_branch = BranchId::Quest;
+    sim.depth = 3;
+    let _ = sim.unpack_or_generate_level(BranchId::Quest, 3);
+    let nemesis = sim
+        .arena
+        .actors
+        .values()
+        .find(|a| a.name == "Master of Thieves")
+        .expect("nemesis");
+    assert!(!nemesis.is_peaceful);
+}
+
+fn place_east(sim: &mut SimulationWorld, mut rec: ActorRecord) -> netrust_arena::ActorId {
+    rec.coord = hero_coord(sim).step(Direction::East).unwrap();
+    rec.hp = 500;
+    rec.max_hp = 500;
+    sim.arena.spawn_actor(rec)
+}
+
+fn has_msg(events: &[GameEvent], needle: &str) -> bool {
+    events
+        .iter()
+        .any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains(needle)))
+}
+
+/// mon.c:4296-4303 setmangry: attacking a peaceful non-priest costs adjalign(-1)
+/// and prints "<Mon> gets angry!".
+#[test]
+fn test_attacking_peaceful_costs_one_alignment() {
+    let mut sim = sim_with(RaceId::Human, Alignment::Neutral, RoleId::Valkyrie, 12);
+    sim.alignment_record = 7;
+    let c = hero_coord(&sim).step(Direction::East).unwrap();
+    let id = place_east(
+        &mut sim,
+        create_monster_record(MonsterSpeciesId::Watchman, c),
+    );
+    let ev = sim.step_player_action(ActionAst::MeleeAttack(c));
+    assert!(!sim.arena.actors.get(id).unwrap().is_peaceful);
+    assert!(has_msg(&ev, "Watchman gets angry!"), "{ev:?}");
+    assert_eq!(sim.alignment_record, 6);
+}
+
+/// mon.c:4297-4301: a co-aligned temple priest costs -5, a cross-aligned one +2.
+#[test]
+fn test_attacking_priest_alignment_effects() {
+    let mut sim = sim_with(RaceId::Human, Alignment::Neutral, RoleId::Valkyrie, 13);
+    sim.alignment_record = 8;
+    let c = hero_coord(&sim).step(Direction::East).unwrap();
+    place_east(&mut sim, create_monster_record(MonsterSpeciesId::Priest, c));
+    sim.step_player_action(ActionAst::MeleeAttack(c));
+    assert_eq!(sim.alignment_record, 3, "co-aligned priest: adjalign(-5)");
+
+    let mut sim = sim_with(RaceId::Human, Alignment::Neutral, RoleId::Valkyrie, 14);
+    sim.alignment_record = 3;
+    let mut priest = create_monster_record(MonsterSpeciesId::Priest, c);
+    priest.alignment = Alignment::Lawful;
+    let c = hero_coord(&sim).step(Direction::East).unwrap();
+    priest.coord = c;
+    place_east(&mut sim, priest);
+    sim.step_player_action(ActionAst::MeleeAttack(c));
+    assert_eq!(
+        sim.alignment_record, 5,
+        "cross-aligned priest: adjalign(+2)"
+    );
+}
+
+/// mon.c:4267-4285: attacking from an Elbereth square a monster that Elbereth
+/// scares (or a peaceful one) is hypocritical: -5 (record > 5) and the
+/// engraving is erased.
+#[test]
+fn test_attacking_from_elbereth_is_hypocritical() {
+    let mut sim = sim_with(RaceId::Human, Alignment::Neutral, RoleId::Valkyrie, 15);
+    sim.alignment_record = 9;
+    let pc = hero_coord(&sim);
+    sim.level
+        .set_engraving(pc, Engraving::new("Elbereth", EngravingMedium::Burned));
+    let c = pc.step(Direction::East).unwrap();
+    let mut gob = create_monster_record(MonsterSpeciesId::Goblin, c);
+    gob.is_peaceful = false;
+    place_east(&mut sim, gob);
+    let ev = sim.step_player_action(ActionAst::MeleeAttack(c));
+    assert!(has_msg(&ev, "You feel like a hypocrite."), "{ev:?}");
+    assert!(has_msg(&ev, "The engraving beneath you fades."));
+    assert!(sim.level.get_engraving(pc).is_none());
+    assert_eq!(sim.alignment_record, 4, "hostile goblin: only the -5");
+
+    // Peaceful target from Elbereth: -5 then setmangry's -1.
+    let mut sim = sim_with(RaceId::Human, Alignment::Neutral, RoleId::Valkyrie, 16);
+    sim.alignment_record = 9;
+    let pc = hero_coord(&sim);
+    sim.level
+        .set_engraving(pc, Engraving::new("Elbereth", EngravingMedium::Burned));
+    let c = pc.step(Direction::East).unwrap();
+    place_east(
+        &mut sim,
+        create_monster_record(MonsterSpeciesId::Watchman, c),
+    );
+    sim.step_player_action(ActionAst::MeleeAttack(c));
+    assert_eq!(sim.alignment_record, 3);
+
+    // record <= 5: the penalty is -rnd(5).
+    let mut sim = sim_with(RaceId::Human, Alignment::Neutral, RoleId::Valkyrie, 17);
+    sim.alignment_record = 2;
+    let pc = hero_coord(&sim);
+    sim.level
+        .set_engraving(pc, Engraving::new("Elbereth", EngravingMedium::Burned));
+    let c = pc.step(Direction::East).unwrap();
+    let mut gob = create_monster_record(MonsterSpeciesId::Goblin, c);
+    gob.is_peaceful = false;
+    place_east(&mut sim, gob);
+    sim.step_player_action(ActionAst::MeleeAttack(c));
+    assert!((-3..=1).contains(&sim.alignment_record));
+}
+
+/// A blind or exempt (`@`) hostile target is not scared, so no hypocrisy.
+#[test]
+fn test_attacking_unscared_hostile_from_elbereth_is_not_hypocritical() {
+    let mut sim = sim_with(RaceId::Human, Alignment::Neutral, RoleId::Valkyrie, 18);
+    sim.alignment_record = 9;
+    let pc = hero_coord(&sim);
+    sim.level
+        .set_engraving(pc, Engraving::new("Elbereth", EngravingMedium::Burned));
+    let c = pc.step(Direction::East).unwrap();
+    let mut wm = create_monster_record(MonsterSpeciesId::Watchman, c);
+    wm.is_peaceful = false;
+    place_east(&mut sim, wm);
+    let ev = sim.step_player_action(ActionAst::MeleeAttack(c));
+    assert!(!has_msg(&ev, "hypocrite"));
+    assert!(sim.level.get_engraving(pc).is_some());
+    assert_eq!(sim.alignment_record, 9);
+}
+
+/// mon.c:4310-4311 -> qst_guardians_respond (mon.c:4135-4159).
+#[test]
+fn test_attacking_quest_leader_angers_guardians() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    sim.role_name = "Valkyrie".to_string();
+    sim.current_branch = BranchId::Quest;
+    sim.depth = 1;
+    let _ = sim.unpack_or_generate_level(BranchId::Quest, 1);
+    let cfg = netrust_core::get_role_quest_config("Valkyrie").unwrap();
+    let (leader_id, leader_c) = sim
+        .arena
+        .actors
+        .iter()
+        .find(|(_, a)| a.name == cfg.leader_name)
+        .map(|(id, a)| (id, a.coord))
+        .unwrap();
+    if let Some(l) = sim.arena.actors.get_mut(leader_id) {
+        l.hp = 5000;
+        l.max_hp = 5000;
+    }
+    let adj = leader_c.step(Direction::West).unwrap();
+    sim.level.set_tile(adj, Tile::Room);
+    if let Some(id) = sim.actor_at(adj) {
+        sim.arena.destroy_actor(id);
+    }
+    if let Some(p) = sim.arena.actors.get_mut(sim.player_id) {
+        p.coord = adj;
+        p.hp = 5000;
+        p.max_hp = 5000;
+    }
+    let ev = sim.step_player_action(ActionAst::MeleeAttack(leader_c));
+    assert!(has_msg(&ev, "appear to be angry too"), "{ev:?}");
+    assert!(sim
+        .arena
+        .actors
+        .values()
+        .filter(|a| a.name == cfg.guardian_name)
+        .all(|a| !a.is_peaceful));
+}
+
+/// uhitm.c:462-509 + hack.c:2154-2161: walking into a peaceful never attacks
+/// it. The quest leader is mundisplaceable: "You stop. ... doesn't want to swap places."
+#[test]
+fn test_moving_into_peaceful_leader_does_not_attack() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    sim.role_name = "Valkyrie".to_string();
+    sim.current_branch = BranchId::Quest;
+    sim.depth = 1;
+    let _ = sim.unpack_or_generate_level(BranchId::Quest, 1);
+    let cfg = netrust_core::get_role_quest_config("Valkyrie").unwrap();
+    let (leader_id, leader_c) = sim
+        .arena
+        .actors
+        .iter()
+        .find(|(_, a)| a.name == cfg.leader_name)
+        .map(|(id, a)| (id, a.coord))
+        .unwrap();
+    let adj = leader_c.step(Direction::West).unwrap();
+    sim.level.set_tile(adj, Tile::Room);
+    if let Some(id) = sim.actor_at(adj) {
+        sim.arena.destroy_actor(id);
+    }
+    if let Some(p) = sim.arena.actors.get_mut(sim.player_id) {
+        p.coord = adj;
+    }
+    let record = sim.alignment_record;
+    let hp = sim.arena.actors.get(leader_id).unwrap().hp;
+    for _ in 0..10 {
+        let ev = sim.step_player_action(ActionAst::Move(Direction::East));
+        assert!(
+            !ev.iter().any(|e| matches!(
+                e,
+                GameEvent::AttackLanded { target, .. } | GameEvent::AttackMissed { target, .. }
+                if *target == leader_id
+            )),
+            "{ev:?}"
+        );
+        assert!(
+            has_msg(&ev, "You stop."),
+            "leader must not be displaced: {ev:?}"
+        );
+        let leader = sim.arena.actors.get(leader_id).unwrap();
+        assert!(leader.is_peaceful);
+        assert_eq!(leader.hp, hp);
+        assert_eq!(leader.coord, leader_c);
+        assert_eq!(hero_coord(&sim), adj);
+    }
+    assert_eq!(sim.alignment_record, record);
+}
+
+/// A displaceable peaceful (a gnome for a gnomish hero) either blocks
+/// ("You stop. ... is in the way!", `!rn2(7)`) or swaps places; never fought.
+#[test]
+fn test_moving_into_peaceful_gnome_swaps_or_stops() {
+    let mut swapped = 0;
+    let mut stopped = 0;
+    for seed in 0..60 {
+        let mut sim = sim_with(
+            RaceId::Gnome,
+            Alignment::Neutral,
+            RoleId::Wizard,
+            100 + seed,
+        );
+        let pc = hero_coord(&sim);
+        let id = spawn_east(&mut sim, MonsterSpeciesId::Gnome);
+        let gc = sim.arena.actors.get(id).unwrap().coord;
+        assert_eq!(gc, pc.step(Direction::East).unwrap());
+        assert!(sim.arena.actors.get(id).unwrap().is_peaceful);
+        let ev = sim.step_player_action(ActionAst::Move(Direction::East));
+        assert!(!ev.iter().any(|e| matches!(
+            e,
+            GameEvent::AttackLanded { target, .. } | GameEvent::AttackMissed { target, .. }
+            if *target == id
+        )));
+        assert!(sim.arena.actors.get(id).unwrap().is_peaceful);
+        if has_msg(&ev, "You swap places with") {
+            swapped += 1;
+            assert_eq!(hero_coord(&sim), gc);
+        } else {
+            assert!(has_msg(&ev, "is in the way!"), "{ev:?}");
+            stopped += 1;
+        }
+    }
+    assert!(
+        swapped > 0 && stopped > 0,
+        "swapped {swapped}, stopped {stopped}"
+    );
+}
+
+/// The explicit attack action still attacks a peaceful deliberately.
+#[test]
+fn test_explicit_attack_on_peaceful_still_attacks() {
+    let mut sim = sim_with(RaceId::Human, Alignment::Neutral, RoleId::Valkyrie, 19);
+    let c = hero_coord(&sim).step(Direction::East).unwrap();
+    let id = place_east(
+        &mut sim,
+        create_monster_record(MonsterSpeciesId::Watchman, c),
+    );
+    let ev = sim.step_player_action(ActionAst::MeleeAttack(c));
+    assert!(ev.iter().any(|e| matches!(
+        e,
+        GameEvent::AttackLanded { attacker, target, .. } | GameEvent::AttackMissed { attacker, target }
+        if *attacker == sim.player_id && *target == id
+    )));
+}
+
+/// New `SimulationWorld::hero_race` field: absent in old saves -> Human.
+#[test]
+fn test_serde_default_hero_race() {
+    let sim = sim_with(RaceId::Gnome, Alignment::Neutral, RoleId::Wizard, 20);
+    assert_eq!(sim.hero_race, RaceId::Gnome);
+    let mut v = serde_json::to_value(&sim).unwrap();
+    v.as_object_mut().unwrap().remove("hero_race");
+    let restored: SimulationWorld = serde_json::from_value(v).unwrap();
+    assert_eq!(restored.hero_race, RaceId::Human);
 }

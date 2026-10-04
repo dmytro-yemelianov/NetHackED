@@ -20,8 +20,9 @@ pub enum RoleId {
 }
 
 /// Player Character Races.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum RaceId {
+    #[default]
     Human,
     Elf,
     Dwarf,
@@ -285,6 +286,38 @@ pub fn get_role(id: RoleId) -> &'static RoleSpec {
 
 pub fn get_race(id: RaceId) -> &'static RaceSpec {
     RACES.iter().find(|r| r.id == id).expect("Race must exist")
+}
+
+/// C `urace.lovemask` (`role.c`: human :594, elf :614, dwarf :634, gnome :654, orc :674).
+pub fn race_lovemask(hero: RaceId) -> &'static [RaceId] {
+    match hero {
+        RaceId::Human => &[],
+        RaceId::Elf => &[RaceId::Elf],
+        RaceId::Dwarf | RaceId::Gnome => &[RaceId::Dwarf, RaceId::Gnome],
+        RaceId::Orc => &[],
+    }
+}
+
+/// C `urace.hatemask` (`role.c`: human :595, elf :615, dwarf :635, gnome :655, orc :675).
+pub fn race_hatemask(hero: RaceId) -> &'static [RaceId] {
+    match hero {
+        RaceId::Human => &[RaceId::Gnome, RaceId::Orc],
+        RaceId::Elf | RaceId::Dwarf => &[RaceId::Orc],
+        RaceId::Gnome => &[RaceId::Human],
+        RaceId::Orc => &[RaceId::Human, RaceId::Elf, RaceId::Dwarf],
+    }
+}
+
+/// C `race_peaceful(ptr)` (mondata.h:119): the monster's race flag is in the
+/// hero race's love mask.
+pub fn race_peaceful(hero: RaceId, monster_race: Option<RaceId>) -> bool {
+    monster_race.is_some_and(|r| race_lovemask(hero).contains(&r))
+}
+
+/// C `race_hostile(ptr)` (mondata.h:118): the monster's race flag is in the
+/// hero race's hate mask.
+pub fn race_hostile(hero: RaceId, monster_race: Option<RaceId>) -> bool {
+    monster_race.is_some_and(|r| race_hatemask(hero).contains(&r))
 }
 
 /// User-selected character creation profile.

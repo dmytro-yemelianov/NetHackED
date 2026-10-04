@@ -98,7 +98,9 @@ pub use netrust_types::{
 };
 pub use nutrition::{hunger_of_nutrition, hunger_tier, metabolic_tick, HungerState};
 pub use pathfinding::MetricState;
-pub use peace::peace_minded;
+pub use peace::{
+    adjalign, alignlim, peace_decision, peace_minded, PeaceDecision, PeaceMindedInput,
+};
 pub use pet::{feed_pet, interact_with_occupant, swap_displacement, HeroInteraction};
 pub use pet_coop::{
     choose_pet_goal, pet_tile_steppable, promote_pet, PetFamily, PetGoal, PetSpeciesTier,

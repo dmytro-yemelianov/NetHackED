@@ -879,6 +879,13 @@ impl SimulationWorld {
                                             self.arena.spawn_item(corpse);
                                         }
                                     }
+                                    // C bhitm (zap.c:552-554, force bolt) and buzz
+                                    // (zap.c:4948, magic missile): a surviving
+                                    // target is woken with `wakeup(mon, TRUE)`.
+                                    if self.arena.actors.get(target_id).is_some_and(|t| !t.is_dead)
+                                    {
+                                        self.setmangry(target_id, &mut events);
+                                    }
                                     break;
                                 }
                             }
@@ -1101,6 +1108,14 @@ impl SimulationWorld {
                             );
                             self.arena.spawn_item(corpse);
                         }
+                    }
+                    // C bhitm (zap.c:552-554) / buzz (zap.c:4948): a surviving
+                    // target is woken with `wakeup(mon, TRUE)`; digging is
+                    // zap_dig and never touches monsters.
+                    if !wand_name.contains("digging")
+                        && self.arena.actors.get(target_id).is_some_and(|t| !t.is_dead)
+                    {
+                        self.setmangry(target_id, &mut events);
                     }
                     break;
                 }

@@ -27,11 +27,11 @@ use netrust_core::{
     DrawbridgeState, DrawbridgeTransition, DungeonDepth, EnchantOutcome, EncumbranceTier,
     Engraving, EngravingMedium, FormStats, GazeEffect, GazeType, HeroInteraction,
     HeroQuestEligibility, Intrinsics, InvocationStep, KnowledgeLevel, LightSource, MetricState,
-    MysteriousForceOutcome, PetFamily, PetGoal, PetSpeciesTier, PolyEntity, PushOutcome,
-    QuestProgress, QuestState, RechargeResult, RitualProgress, RubResult, SchedulerState,
-    SpellKind, StepAction, StepResult, SurfaceOrientation, TacticalAction, TacticalContext, Tile,
-    Velocity, WandCharges, WaterType, MAX_DIVINE_PROTECTION, NORMAL_SPEED, QUEST_MIN_ALIGNMENT,
-    QUEST_MIN_LEVEL, REQUIRED_CANDLES,
+    MysteriousForceOutcome, PeaceMindedInput, PetFamily, PetGoal, PetSpeciesTier, PolyEntity,
+    PushOutcome, QuestProgress, QuestState, RechargeResult, RitualProgress, RubResult,
+    SchedulerState, SpellKind, StepAction, StepResult, SurfaceOrientation, TacticalAction,
+    TacticalContext, Tile, Velocity, WandCharges, WaterType, MAX_DIVINE_PROTECTION, NORMAL_SPEED,
+    QUEST_MIN_ALIGNMENT, QUEST_MIN_LEVEL, REQUIRED_CANDLES,
 };
 use netrust_types::{Attack, AttackType, DamageType};
 use proptest::prelude::*;
@@ -603,39 +603,58 @@ proptest! {
     // -------------------------------------------------------------
     #[test]
     fn prop_peace_minded_matches_c_reference(
-        arch_peaceful in any::<bool>(),
-        always_hostile in any::<bool>(),
-        mal in -2..=2i32,
-        ual in -2..=2i32,
-        rec in -20..=20i32,
-        roll in 0..1000u32,
+        flags in proptest::collection::vec(any::<bool>(), 9),
+        mal in prop_oneof![-20..=20i32, Just(-128i32)],
+        ual in -1..=1i32,
+        rec in prop_oneof![-40..=40i32, any::<i32>()],
+        script in proptest::collection::vec(any::<u32>(), 2),
     ) {
-        fn c_reference_peace_minded(
-            arch_peaceful: bool,
-            always_hostile: bool,
-            mal: i32,
-            ual: i32,
-            rec: i32,
-            roll: u32,
+        // C makemon.c:2268-2308, transcribed statement by statement; `rn2`
+        // draws from a scripted sequence (each value reduced into 0..n).
+        #[allow(clippy::too_many_arguments)]
+        fn c_peace_minded(
+            always_peaceful: bool, always_hostile: bool, ms_leader_or_guardian: bool,
+            ms_nemesis: bool, race_peaceful: bool, race_hostile: bool, mal: i32, ual: i32,
+            record: i64, has_amulet: bool, is_minion: bool, rn2: &mut dyn FnMut(u32) -> u32,
         ) -> bool {
-            if arch_peaceful {
-                return true;
-            }
-            if always_hostile {
-                return false;
-            }
-            if mal.signum() != ual.signum() {
-                return false;
-            }
-            let a = (16 + rec.max(-15)) as u32;
-            let b = (2 + mal.abs()) as u32;
-            let peaceful_outcomes = a.saturating_sub(1) * b.saturating_sub(1);
-            roll < peaceful_outcomes
+            if always_peaceful { return true; }
+            if always_hostile { return false; }
+            if ms_leader_or_guardian { return true; }
+            if ms_nemesis { return false; }
+            if race_peaceful { return true; }
+            if race_hostile { return false; }
+            if mal.signum() != ual.signum() { return false; }
+            if mal < 0 && has_amulet { return false; }
+            if is_minion { return record >= 0; }
+            let first = rn2((16 + if record < -15 { -15 } else { record }) as u32) != 0;
+            first && rn2((2 + i64::from(mal).abs()) as u32) != 0
         }
-
-        let got = peace_minded(arch_peaceful, always_hostile, mal, ual, rec, roll);
-        let expected = c_reference_peace_minded(arch_peaceful, always_hostile, mal, ual, rec, roll);
+        let mut c_calls = Vec::new();
+        let mut it = script.clone().into_iter();
+        let expected = c_peace_minded(
+            flags[0], flags[1], flags[2], flags[3], flags[4], flags[5], mal, ual,
+            i64::from(rec), flags[6], flags[7],
+            &mut |n| { c_calls.push(n); it.next().unwrap() % n },
+        );
+        let input = PeaceMindedInput {
+            always_peaceful: flags[0],
+            always_hostile: flags[1],
+            leader_or_guardian: flags[2],
+            nemesis: flags[3],
+            race_peaceful: flags[4],
+            race_hostile: flags[5],
+            monster_alignment: mal,
+            hero_alignment: ual,
+            hero_align_record: rec,
+            hero_has_amulet: flags[6],
+            is_minion: flags[7],
+        };
+        let mut calls = Vec::new();
+        let mut it = script.into_iter();
+        let got = peace_minded(&input, |n| { calls.push(n); it.next().unwrap() % n });
         prop_assert_eq!(got, expected);
+        // Same draws, same arguments, same count (the second only after a non-zero first).
+        prop_assert_eq!(calls, c_calls);
     }
 
     // -------------------------------------------------------------
@@ -643,31 +662,33 @@ proptest! {
     // -------------------------------------------------------------
     #[test]
     fn prop_onscary_exempt_and_elbereth(
-        is_human in any::<bool>(),
-        is_minotaur in any::<bool>(),
-        is_shk in any::<bool>(),
         is_rider in any::<bool>(),
-        is_blind in any::<bool>(),
-        is_covetous in any::<bool>(),
+        s_human in any::<bool>(),
+        is_unique in any::<bool>(),
+        is_shk in any::<bool>(),
+        is_guard in any::<bool>(),
+        mcansee in any::<bool>(),
         is_peaceful in any::<bool>(),
+        is_minotaur in any::<bool>(),
+        text_elbereth in any::<bool>(),
     ) {
-        let exempt = onscary_exempt(is_human, is_minotaur, is_shk, is_rider);
-        prop_assert_eq!(exempt, is_human || is_minotaur || is_shk || is_rider);
-
-        let elbereth = Engraving::new("Elbereth", EngravingMedium::Burned);
-        let active = is_elbereth_ward_active(
-            Some(&elbereth),
-            is_blind,
-            is_covetous,
-            is_peaceful,
-            exempt,
+        // C monmove.c:240-302 for a written engraving under the hero
+        // (magical scare, no scare-monster scroll, outside Gehennom/endgame).
+        let c_onscary = || -> bool {
+            if is_rider { return false; }
+            if s_human || is_unique { return false; }
+            text_elbereth
+                && !(is_shk || is_guard || !mcansee || is_peaceful || is_minotaur)
+        };
+        let engraving = Engraving::new(
+            if text_elbereth { "Elbereth" } else { "Elbereth?" },
+            EngravingMedium::Burned,
         );
-
-        if is_blind || is_covetous || is_peaceful || exempt {
-            prop_assert!(!active);
-        } else {
-            prop_assert!(active);
-        }
+        let exempt = onscary_exempt(s_human, is_minotaur, is_shk || is_guard, is_rider);
+        let active =
+            is_elbereth_ward_active(Some(&engraving), !mcansee, is_unique, is_peaceful, exempt);
+        prop_assert_eq!(active, c_onscary());
+        prop_assert!(!is_elbereth_ward_active(None, !mcansee, is_unique, is_peaceful, exempt));
     }
 
     // -------------------------------------------------------------

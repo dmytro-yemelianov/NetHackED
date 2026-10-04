@@ -82,6 +82,10 @@ impl SimulationWorld {
 
                 if lethal {
                     self.arena.destroy_actor(actor_id);
+                } else if actor_id != self.player_id {
+                    // C thitmonst -> hmon -> hmon_hitmon (uhitm.c:1923-1926):
+                    // `wakeup(mon, TRUE)` -> setmangry.
+                    self.setmangry(actor_id, &mut events);
                 }
 
                 // Breakage check

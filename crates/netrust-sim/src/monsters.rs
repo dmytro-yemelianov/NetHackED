@@ -435,26 +435,9 @@ impl SimulationWorld {
                 }
 
                 if mon.coord.chebyshev_distance(pc) == 1 {
-                    let is_human =
-                        archetype.map(|a| a.is_human).unwrap_or(false) || mon.name == "human";
-                    let is_minotaur = mon.name == "minotaur";
-                    let is_shk_priest_guard =
-                        mon.name == "shopkeeper" || mon.name == "priest" || mon.name == "watchman";
-                    let is_rider =
-                        mon.name == "Death" || mon.name == "Famine" || mon.name == "Pestilence";
-                    let monster_exempt = netrust_core::engraving::onscary_exempt(
-                        is_human,
-                        is_minotaur,
-                        is_shk_priest_guard,
-                        is_rider,
-                    );
-                    let repelled = netrust_core::engraving::is_elbereth_ward_active(
-                        player_engraving.as_ref(),
-                        mon.intrinsics.blind,
-                        mon.is_unique,
-                        mon.is_peaceful,
-                        monster_exempt,
-                    );
+                    // C onscary (monmove.c:240-302): `@`-class, unique, shopkeeper,
+                    // blind and peaceful monsters ignore a written Elbereth.
+                    let repelled = self.elbereth_scares(&mon, player_engraving.as_ref());
 
                     if repelled {
                         // Monster repelled by Elbereth! Cannot attack, forced to retreat!

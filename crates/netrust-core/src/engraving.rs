@@ -65,42 +65,47 @@ impl Engraving {
     }
 }
 
-/// NetHack 5.0 C `onscary(x, y, mtmp)` (`src/monmove.c:240-303`).
+/// The monster-specific exemptions of NetHack 5.0 C `onscary(x, y, mtmp)`
+/// (`src/monmove.c:240-302`) for a written Elbereth:
+/// - `mlet == S_HUMAN` (class `@`, :260; covers shopkeepers, temple priests and
+///   watchmen, so the priest-in-own-temple rule :266-267 adds nothing here);
+/// - minotaurs (:301);
+/// - shopkeepers anywhere and vault guards (`isshk || isgd`, :299);
+/// - the Riders (:251-252).
 ///
-/// Certain creatures are immune / exempt from Elbereth ward scaring:
-/// - `@` humans
-/// - minotaurs
-/// - shopkeepers, temple priests, and vault guards
-/// - the Riders (and unique bosses)
+/// Uniques (`unique_corpstat`, :260) are the `monster_unique` argument of
+/// [`is_elbereth_ward_active`]; peaceful and blind monsters are its own arguments.
 #[inline]
 pub fn onscary_exempt(
-    is_human: bool,
+    is_s_human: bool,
     is_minotaur: bool,
-    is_shopkeeper_or_priest_or_guard: bool,
+    is_shopkeeper_or_guard: bool,
     is_rider: bool,
 ) -> bool {
-    is_human || is_minotaur || is_shopkeeper_or_priest_or_guard || is_rider
+    is_s_human || is_minotaur || is_shopkeeper_or_guard || is_rider
 }
 
-/// Checks whether an engraving wards off a monster according to NetHack rules.
+/// Whether a written Elbereth under the hero scares a monster (NetHack 5.0 C
+/// `onscary`, `monmove.c:240-302`):
+/// - the engraving text is "Elbereth" (:295);
+/// - the monster can see (`!mtmp->mcansee`, :299);
+/// - it is not unique (`unique_corpstat`, :260; also covers the Wizard, `iswiz` :251);
+/// - it is not peaceful (:300);
+/// - it is not otherwise exempt ([`onscary_exempt`]).
 ///
-/// NetHack 5.0 C `onscary` (`monmove.c:240-303`):
-/// - Engraving text must be "Elbereth".
-/// - Monster must not be blind (can see the runes).
-/// - Monster must not be covetous (Riders/nemeses ignore).
-/// - Monster must not be peaceful (peacefuls don't fear Elbereth).
-/// - Monster must not be exempt (`onscary_exempt`: humans, minotaurs, shopkeepers/priests/guards, riders).
+/// The Gehennom / endgame suppression (`Inhell || In_endgame`, :302) and the
+/// Angel / lawful-minion immunity (:251) are not modelled.
 pub fn is_elbereth_ward_active(
     engraving: Option<&Engraving>,
     monster_blind: bool,
-    monster_covetous: bool,
+    monster_unique: bool,
     monster_peaceful: bool,
     monster_exempt: bool,
 ) -> bool {
     match engraving {
         None => false,
         Some(e) => {
-            if monster_blind || monster_covetous || monster_peaceful || monster_exempt {
+            if monster_blind || monster_unique || monster_peaceful || monster_exempt {
                 false
             } else {
                 e.text == "Elbereth"
@@ -131,11 +136,11 @@ mod tests {
 
     #[test]
     fn test_onscary_exemptions() {
-        // Human
+        // S_HUMAN class (@)
         assert!(onscary_exempt(true, false, false, false));
         // Minotaur
         assert!(onscary_exempt(false, true, false, false));
-        // Shopkeeper/priest/guard
+        // Shopkeeper/vault guard
         assert!(onscary_exempt(false, false, true, false));
         // Rider
         assert!(onscary_exempt(false, false, false, true));
@@ -166,7 +171,7 @@ mod tests {
             false
         ));
 
-        // Inactive if monster is covetous (e.g. Rodney, demon lords)
+        // Inactive if monster is unique (unique_corpstat, e.g. Rodney, quest nemeses)
         assert!(!is_elbereth_ward_active(
             Some(&elbereth),
             false,
@@ -184,7 +189,7 @@ mod tests {
             false
         ));
 
-        // Inactive if monster is exempt (human, minotaur, shopkeeper, rider)
+        // Inactive if monster is exempt (S_HUMAN, minotaur, shopkeeper/guard, rider)
         assert!(!is_elbereth_ward_active(
             Some(&elbereth),
             false,

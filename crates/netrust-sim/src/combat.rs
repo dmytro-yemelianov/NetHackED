@@ -45,15 +45,6 @@ impl SimulationWorld {
             return events;
         };
 
-        if defender.is_peaceful {
-            if let Some(def_mut) = self.arena.actors.get_mut(defender_id) {
-                def_mut.is_peaceful = false;
-            }
-            events.push(GameEvent::LogMessage {
-                text: format!("{} turns hostile!", defender.name),
-            });
-        }
-
         let def_combat = Combatant {
             hp: defender.hp,
             max_hp: defender.max_hp,
@@ -232,7 +223,7 @@ impl SimulationWorld {
                     text: netrust_i18n::Messages::vorpal_decapitate(&defender.name, self.locale),
                 });
             }
-            self.land_hit(
+            let lethal = self.land_hit(
                 attacker_id,
                 &attacker,
                 defender_id,
@@ -241,8 +232,15 @@ impl SimulationWorld {
                 decap,
                 &mut events,
             );
+            // C hmon_hitmon (uhitm.c:1923-1926): a surviving target is woken
+            // with `wakeup(mon, TRUE)` -> setmangry.
+            if !lethal {
+                self.setmangry(defender_id, &mut events);
+            }
         } else {
             self.push_miss(attacker_id, &attacker, defender_id, &defender, &mut events);
+            // C missum (uhitm.c:5212-5213): `wakeup(mdef, TRUE)` -> setmangry.
+            self.setmangry(defender_id, &mut events);
         }
 
         events

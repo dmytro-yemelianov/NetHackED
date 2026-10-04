@@ -23,7 +23,7 @@ The Lean models and the Rust engine are simplified abstractions of NetHack mecha
 * **Shop, priest, luck and headgear simplifications**: the shop price is computed at payment time rather than stored when the item is billed; the priest uses the hero's current level as the peak level and a single global cheapskate counter; a carried dunce cap counts as worn; luck ignores every source other than the luckstone (base luck is 0).
 * **Bestiary data**: archetype stats (level, speed, AC, alignment, class glyph, size, uniqueness via G_UNIQ) follow C `monsters.h` (pinned by `crates/netrust-data/tests/bestiary_c_table.rs`) and flow into spawned actors. The archetype `attacks` (`mattk[]`) lists drive monster melee and breath (see *Monster attacks*). HP is a fixed `base_hp` rather than C's rolled `d(lvl, 8)`. Intrinsics cover only what `Intrinsics` can represent (no stone resistance, no per-monster MR percentage; shopkeeper keeps `magic_resistance`, silver dragon keeps `reflection`). The per-monster MR percentages (e.g. guardians 10-30%) and `M2_MAGIC` (guide, apprentice) are not modelled. Names "The Norn"/"The Dark One" remain approximations; the invented floating-eye active gaze and Surtur/Huhetotl breath were removed, and spell summoning/cursing is an approximation of AT_MAGC. Pets promote at levels 4/7 instead of C's 4/6 (`makemon.c:2121`).
 * **Ghost class letter**: the ghost's class letter is `' '` per C `S_GHOST` (`defsym.h`); display paths use their own glyphs, so only class genocide and `monster_class_of` see it.
-* **Peacefulness and Elbereth exemptions**: Archetypes with `peaceful_by_default` (shopkeepers, priests, watchmen, quest leaders, guardians) spawn peaceful (`is_peaceful = true`). Attacking a peaceful monster turns it permanently hostile. Shoplifting turns the shopkeeper hostile (while preserving their Neutral alignment). Companion pet AI ignores peaceful actors. Stationary peaceful monsters stay in place; mobile peaceful monsters wander without attacking or pursuing the hero. Elbereth wards scare only adjacent monsters; non-peaceful monsters that are human (`@`), minotaurs, shopkeepers, priests, watchmen, or riders are exempt per C `monmove.c:240-303` (`onscary_exempt`).
+* **Peacefulness, Elbereth and attacking peacefuls**: monsters created through the sim's generation path (`spawn_monster_near` and the starting-level goblins) get C `peace_minded` (`makemon.c:1299`, `:2268-2308`): `M2_PEACEFUL`/`M2_HOSTILE`, `MS_LEADER`/`MS_GUARDIAN`/`MS_NEMESIS`, the hero race's love/hate masks (`role.c`), the alignment sign, the Amulet rule and the co-aligned `rn2(16 + max(record, -15)) && rn2(2 + |mal|)` (second draw only after a non-zero first). Not ported: (a) the Erinys rule (`u.ualign.abuse`, no Erinys species) and the minion rule (no `M2_MINION` species); (b) the post-creation adjustments of `makemon` (`makemon.c:1333-1340`: orcs hostile to elves, which the elf hate mask already gives for every BESTIARY orc; co-aligned unicorns, none exist); (c) the djinni from a lamp and the cursed-genocide goblins are created hostile without `makemon`'s `peace_minded` draw (C draws for a co-aligned hero); (d) the hero's starting alignment record is 25, not C `urole.initrecord` (`attrib.c:1094`), and temple priests keep the archetype alignment instead of the altar's (`EPRI shralign`). Peaceful monsters do not attack or approach: stationary ones stay put, the others take a random step (not C `m_move`). Pets skip every peaceful target; C skips one only when the pet is below 25% HP or the target is a leader or guardian (`dogmove.c:1119-1128`). Attacking (melee, thrown, force bolt/magic missile, wand) runs C `setmangry` (`mon.c:4265-4318`): the Elbereth hypocrisy penalty `-5`/`-rnd(5)` with the engraving erased, `adjalign(-1)` (temple priest: `-5` co-aligned, `+2` otherwise), "<Mon> gets angry!" and the quest guardians turning hostile when the hero attacks their leader; not ported: `growl()` (every peaceful the sim makes is humanoid), `peacefuls_respond` (the watch's arrest, other peacefuls fleeing), `u.ualign.abuse`, `ghod_hitsu`/`hot_pursuit` for angered priests/shopkeepers, and the penalties for killing a peaceful (`xkilled`). Walking into a peaceful follows C `is_safemon` (`uhitm.c:462-509`, `hack.c:2141-2176`): `!rn2(7)` or a tended shop stops the hero ("You stop. <Mon> is in the way!"), a temple priest, shopkeeper or the quest leader (`mundisplaceable`) or a trap on the hero's square refuses to swap, anyone else swaps places; not ported: Punished, long worms, the `dopay()` bump on a blocking shopkeeper, the speed-0 "doesn't seem to move" case (no speed-0 species), monster traps after the swap. A confused, stunned or hallucinating hero who walks into a peaceful attacks it, as in C (no `is_safemon`, no confirmation); "can spot" is approximated by "the hero is not blind", and a blind hero also attacks, whereas C prints "Wait! There's something there you can't see!" and angers the monster without an attack (`uhitm.c:230-251`). Pets keep the sim's unconditional swap (C applies the same `rn2(7)` stop and `monflee` to pets). Shoplifting angers the shopkeeper (`is_peaceful = false`) without C's `rob_shop`/`hot_pursuit` effects. Elbereth (`onscary`, `monmove.c:240-302`) ignores `@`-class, unique, shopkeeper, blind and peaceful monsters; not ported: the Gehennom/endgame suppression (`:302`), Angels and lawful minions (`:251`; none exist), minotaurs, Riders and vault guards (no such species; the core predicate keeps the flags), the scare-monster scroll and displaced image. A scared adjacent monster steps away for that turn instead of C `monflee(rnd(rn2(7) ? 10 : 100))` (`monmove.c:560-564`).
 * **Name-based item kind detection**: some sim code (e.g. weapon skill selection in `netrust-sim/src/combat.rs`) infers an item's kind from substrings of its name rather than from its object class/type.
 * **Item catalog simplifications**: catalog cost/weight/AC/`oc_magic`/wand direction/nutrition follow `objects.h`, but (a) dice are a single `(n, sides)` so the mace/Mjollnir `+1` small-target bonus and the Tsurugi's `+2d6` large-target bonus are omitted; (b) corpse weight and nutrition come from the monster in C, the catalog keeps weight 50 and nutrition 0 (the sim eats a corpse for a flat 400); (c) `PotionOfHolyWater` is not a C object (it is blessed `potion of water`; the catalog models it with water's cost 100); (d) wand charges are fixed (13 NODIR, 6 directional, 1 wishing) instead of C `rn1(5,11)` / `rn1(5,4)` (`mkobj.c:1115-1124`); (e) beam wands deal fixed damage (striking 12, cold 18, death 100) instead of `d(2,12)` / `d(6,6)` / instant death with resistance checks, and wands of digging and teleportation deal no damage but do not yet dig through or teleport the target; (f) armour name-based magic detection (`armor_is_magical`) covers items outside the catalog, so it is not driven by `oc_magic`.
 
@@ -287,47 +287,51 @@ e & \text{if } M = \text{Burned} \\
 \end{cases}$$
 
 ### Elbereth Ward Predicate & Monster Exemptions
-The ward repels a monster only if it is inscribed with "Elbereth", the monster can see it (not blind), is not covetous, is not peaceful, and is not otherwise exempt (`NetHack-5.0.0/src/monmove.c`:240-303):
-$$\text{isElberethWardActive}(e, \text{blind}, \text{covetous}, \text{peaceful}, \text{exempt}) = \begin{cases}
-\text{true} & \text{if } e = \text{Some}(\text{"Elbereth"}) \land \neg \text{blind} \land \neg \text{covetous} \land \neg \text{peaceful} \land \neg \text{exempt} \\
+The ward under the hero scares an adjacent monster only if it is inscribed with "Elbereth", the monster can see (not blind), is not unique, is not peaceful, and is not otherwise exempt (C `onscary`, `NetHack-5.0.0/src/monmove.c`:240-302). Adjacency is checked by the sim, not by the predicate:
+$$\text{isElberethWardActive}(e, \text{blind}, \text{unique}, \text{peaceful}, \text{exempt}) = \begin{cases}
+\text{true} & \text{if } e = \text{Some}(\text{"Elbereth"}) \land \neg \text{blind} \land \neg \text{unique} \land \neg \text{peaceful} \land \neg \text{exempt} \\
 \text{false} & \text{otherwise}
 \end{cases}$$
 
-Exempt monsters (`onscary_exempt`):
-* Monsters with class glyph `'@'` (humans, shopkeepers, priests, watchmen)
-* Minotaurs (`'H'`)
-* Shopkeepers, aligned clerics, priests, high priests, watchmen, watch captains
-* Riders (Death, Pestilence, Famine)
-* Covetous quest bosses
+Here `unique` is C `unique_corpstat` (`monmove.c:260`, which also covers the Wizard of Yendor). Exempt monsters (`onscary_exempt`):
+* `@`-class monsters (`mlet == S_HUMAN`, `monmove.c:260`): humans, shopkeepers, temple priests, watchmen
+* Minotaurs (`monmove.c:301`)
+* Shopkeepers (anywhere) and vault guards (`isshk || isgd`, `monmove.c:299`)
+* The Riders (`monmove.c:251-252`)
 
 ### Machine-Checked Proofs in [NetMechanics/Engraving.lean](../NetMechanics/Engraving.lean)
 * `burned_engraving_permanent`: Burned engravings are strictly immune to smudge degradation ($\text{smudge}(e_{\text{burned}}) = \text{Some}(e_{\text{burned}})$).
 * `blind_monster_ignores_elbereth`: Blind monsters cannot perceive the ward runes.
-* `covetous_monster_ignores_elbereth`: Covetous quest bosses disregard Elbereth.
+* `unique_monster_ignores_elbereth`: Unique monsters (`unique_corpstat`) disregard Elbereth.
 * `arbitrary_text_not_warding`: Text other than "Elbereth" produces no ward repulsion.
 * `dust_zero_durability_erased`: Dust engravings with zero durability are completely wiped upon smudging.
 * `peaceful_monster_ignores_elbereth`: Peaceful monsters ignore Elbereth.
 * `exempt_monster_ignores_elbereth`: Exempt monsters ignore Elbereth.
-* `human_onscary_exempt`: Monsters with human glyph `'@'` are always exempt.
-* `shopkeeper_onscary_exempt`: Shopkeepers are always exempt.
+* `human_onscary_exempt`: Monsters of the `@` class are always exempt.
+* `shopkeeper_onscary_exempt`: Shopkeepers (and vault guards) are always exempt.
 
 ### Monster Peacefulness (`peace_minded`)
-Monster generation in NetHack 5.0 C (`NetHack-5.0.0/src/makemon.c`:2268-2308) determines monster peacefulness via `peace_minded(ptr)`:
-$$\text{peace\_minded}(\text{monster\_align}, \text{hero\_align}, \text{record}, \text{always\_peaceful}, \text{always\_hostile}, \text{roll})$$
-1. If archetype is marked `always_peaceful` (`M2_PEACEFUL`), it is unconditionally peaceful (`true`).
-2. If archetype is marked `always_hostile` (`M2_HOSTILE`), it is unconditionally hostile (`false`).
-3. If cross-aligned ($\text{sgn}(\text{monster\_align}) \ne \text{sgn}(\text{hero\_align})$):
-   - NetHack 5.0 tests `align.record < -5` for cross-aligned monsters, which evaluates to hostile (`false`).
-4. If co-aligned ($\text{sgn}(\text{monster\_align}) = \text{sgn}(\text{hero\_align})$):
-   - Rolls $r_1 < A - 1$ where $A = 16 + \max(-15, \text{record})$, and $r_2 < B - 1$ where $B = 2 + |\text{record}|$.
-   - Combining the two draws into a single uniform integer roll $r \in [0, A \times B)$:
-     $$\text{peaceful} \iff r < (A - 1) \cdot (B - 1)$$
+Monster creation in NetHack 5.0 C sets `mpeaceful = peace_minded(ptr)` (`NetHack-5.0.0/src/makemon.c`:1299, :2268-2308). With $\text{mal}$ the monster's `maligntyp`, $\text{ual}$ the hero's alignment type and $\text{record}$ the hero's alignment record, the steps are, in order:
+1. `M2_PEACEFUL` $\implies$ peaceful; 2. `M2_HOSTILE` $\implies$ hostile;
+3. `MS_LEADER` or `MS_GUARDIAN` $\implies$ peaceful; `MS_NEMESIS` $\implies$ hostile;
+4. `race_peaceful` (hero race love mask) $\implies$ peaceful; `race_hostile` (hate mask) $\implies$ hostile;
+5. $\text{sgn}(\text{mal}) \ne \text{sgn}(\text{ual}) \implies$ hostile;
+6. $\text{mal} < 0$ and the hero carries the Amulet $\implies$ hostile;
+7. a minion is peaceful iff $\text{record} \ge 0$;
+8. otherwise two draws $r_1 = \text{rn2}(A)$ and, only if $r_1 \ne 0$, $r_2 = \text{rn2}(B)$ with
+   $$A = 16 + \max(-15, \text{record}) \ge 1, \qquad B = 2 + |\text{mal}| \ge 2,$$
+   and the monster is peaceful iff $r_1 \ne 0 \land r_2 \ne 0$. Of the $A \cdot B$ equally likely $(r_1, r_2)$ outcomes exactly $(A-1)(B-1)$ are peaceful; with $\text{record} \le -15$, $A = 1$ and the monster is always hostile.
+
+The Rust core splits this into `peace_decision` (steps 1-7, or the roll arguments $A$, $B$) and `peace_minded`, which draws $r_1$ and $r_2$ through a C `rn2` callback.
 
 ### Machine-Checked Proofs in [NetMechanics/Peace.lean](../NetMechanics/Peace.lean)
-* `peace_minded_always_peaceful`: Always-peaceful archetypes are unconditionally peaceful.
-* `peace_minded_always_hostile`: Always-hostile archetypes are unconditionally hostile.
-* `peace_minded_cross_aligned_hostile`: Cross-aligned monsters evaluate to hostile.
-* `peace_minded_coaligned_threshold`: Co-aligned monsters are peaceful iff the uniform roll falls strictly below $(A - 1) \cdot (B - 1)$.
+* `peace_minded_always_peaceful`, `peace_minded_always_hostile`, `peace_minded_nemesis_hostile`: the flag and `msound` steps, for any rolls.
+* `peace_minded_cross_aligned_hostile`: with no flag, `msound` or race rule, a cross-aligned monster is hostile.
+* `peace_minded_amulet_chaotic_hostile`: a chaotic monster is hostile to a hero carrying the Amulet.
+* `peace_decision_roll_args`, `peace_minded_roll_args_valid`: the roll arguments are $A$ and $B$ above, with $A \ge 1$ and $B \ge 2$.
+* `peace_minded_coaligned_iff`: in the co-aligned case the monster is peaceful iff $r_1 \ne 0 \land r_2 \ne 0$.
+* `peace_minded_first_draw_zero_hostile`: $r_1 = 0$ is hostile whatever $r_2$ (the second draw is never taken).
+* `peace_minded_low_record_always_hostile`: with $\text{record} \le -15$ every $r_1 < A$ gives hostile.
 
 ---
 

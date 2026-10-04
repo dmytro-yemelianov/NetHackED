@@ -42,11 +42,13 @@ def smudge (e : Engraving) : Option Engraving :=
     | Nat.succ d' => some { e with medium := EngravingMedium.Dust d' }
 
 /--
-  NetHack 5.0 C `onscary` (`monmove.c:240-303`):
-  Humans, minotaurs, shopkeepers/priests/guards, and riders are exempt from Elbereth.
+  NetHack 5.0 C `onscary` (`monmove.c:240-302`) monster exemptions for a written
+  Elbereth: `@`-class monsters (`mlet == S_HUMAN`, :260; this covers shopkeepers,
+  temple priests and watchmen), minotaurs (:301), shopkeepers and vault guards
+  (`isshk || isgd`, :299) and the Riders (:251-252).
 -/
-def onscaryExempt (isHuman isMinotaur isShopkeeper isRider : Bool) : Bool :=
-  isHuman || isMinotaur || isShopkeeper || isRider
+def onscaryExempt (isSHuman isMinotaur isShopkeeperOrGuard isRider : Bool) : Bool :=
+  isSHuman || isMinotaur || isShopkeeperOrGuard || isRider
 
 theorem human_onscary_exempt (m shk r : Bool) :
   onscaryExempt true m shk r = true := rfl
@@ -60,16 +62,16 @@ theorem shopkeeper_onscary_exempt (h m r : Bool) :
   An engraving wards against a monster if:
   1. The text is exactly "Elbereth"
   2. The monster is NOT blind (can see the runes)
-  3. The monster is NOT covetous (covetous bosses like Rodney and Riders ignore Elbereth)
+  3. The monster is NOT unique (`unique_corpstat`, monmove.c:260; covers Rodney)
   4. The monster is NOT peaceful (peacefuls don't fear Elbereth)
-  5. The monster is NOT exempt (humans, minotaurs, shopkeepers, riders)
+  5. The monster is NOT exempt (`onscaryExempt`)
 -/
-def isElberethWardActive (eng : Option Engraving) (monsterBlind : Bool) (monsterCovetous : Bool)
+def isElberethWardActive (eng : Option Engraving) (monsterBlind : Bool) (monsterUnique : Bool)
     (monsterPeaceful : Bool) (monsterExempt : Bool) : Bool :=
   match eng with
   | none => false
   | some e =>
-    if monsterBlind || monsterCovetous || monsterPeaceful || monsterExempt then
+    if monsterBlind || monsterUnique || monsterPeaceful || monsterExempt then
       false
     else
       e.text == "Elbereth"
@@ -92,10 +94,10 @@ theorem blind_monster_ignores_elbereth (eng : Option Engraving) (cov pfc ex : Bo
   cases eng <;> rfl
 
 /--
-  Theorem: Covetous monsters ignore Elbereth.
-  Special quest bosses and high-ranking demons disregard the ward.
+  Theorem: Unique monsters ignore Elbereth (`unique_corpstat`, monmove.c:260).
+  Uniques "have ascended their base monster instincts".
 -/
-theorem covetous_monster_ignores_elbereth (eng : Option Engraving) (blind pfc ex : Bool) :
+theorem unique_monster_ignores_elbereth (eng : Option Engraving) (blind pfc ex : Bool) :
   isElberethWardActive eng blind true pfc ex = false := by
   cases eng with
   | none => rfl
@@ -111,7 +113,7 @@ theorem peaceful_monster_ignores_elbereth (eng : Option Engraving) (blind cov ex
   | some e => cases blind <;> cases cov <;> rfl
 
 /--
-  Theorem: Exempt monsters (humans, minotaurs, shopkeepers, riders) ignore Elbereth (monmove.c:260-302).
+  Theorem: Exempt monsters (`@` class, minotaurs, shopkeepers/guards, Riders) ignore Elbereth (monmove.c:251-301).
 -/
 theorem exempt_monster_ignores_elbereth (eng : Option Engraving) (blind cov pfc : Bool) :
   isElberethWardActive eng blind cov pfc true = false := by
