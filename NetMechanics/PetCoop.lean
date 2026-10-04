@@ -9,7 +9,7 @@ namespace NetMechanics
 
 Formalizes companion tactical AI mechanics from NetHack (dog.c, dogmove.c):
 1. Pet BUC Detection: Pet refuses to step on cursed items under calm conditions.
-2. Pet Growth & Promotion: Monotone promotion ladder (LittleDog -> Dog -> WarDog; Kitten -> Housecat -> LargeCat).
+2. Pet Growth & Promotion: Monotone promotion ladder (LittleDog -> Dog -> LargeDog; Kitten -> Housecat -> LargeCat).
 3. Co-op Defense Invariant: Threat neutralization priority over wandering.
 -/
 
@@ -62,7 +62,7 @@ inductive PetFamily where
 inductive PetSpeciesTier where
   | LittleDog
   | Dog
-  | WarDog
+  | LargeDog
   | Kitten
   | Housecat
   | LargeCat
@@ -71,7 +71,7 @@ inductive PetSpeciesTier where
 /-- Classify species into family. -/
 def petFamily (p : PetSpeciesTier) : PetFamily :=
   match p with
-  | PetSpeciesTier.LittleDog | PetSpeciesTier.Dog | PetSpeciesTier.WarDog => PetFamily.Canine
+  | PetSpeciesTier.LittleDog | PetSpeciesTier.Dog | PetSpeciesTier.LargeDog => PetFamily.Canine
   | PetSpeciesTier.Kitten | PetSpeciesTier.Housecat | PetSpeciesTier.LargeCat => PetFamily.Feline
 
 /-- Numeric power tier (0, 1, 2) for monotonic growth comparison. -/
@@ -79,7 +79,7 @@ def petPowerTier (p : PetSpeciesTier) : Nat :=
   match p with
   | PetSpeciesTier.LittleDog | PetSpeciesTier.Kitten => 0
   | PetSpeciesTier.Dog | PetSpeciesTier.Housecat => 1
-  | PetSpeciesTier.WarDog | PetSpeciesTier.LargeCat => 2
+  | PetSpeciesTier.LargeDog | PetSpeciesTier.LargeCat => 2
 
 /-- Species promotion based on pet level.
     Level < 4: Base tier
@@ -88,13 +88,13 @@ def petPowerTier (p : PetSpeciesTier) : Nat :=
 def promotePet (species : PetSpeciesTier) (level : Nat) : PetSpeciesTier :=
   match species with
   | PetSpeciesTier.LittleDog =>
-      if level ≥ 7 then PetSpeciesTier.WarDog
+      if level ≥ 7 then PetSpeciesTier.LargeDog
       else if level ≥ 4 then PetSpeciesTier.Dog
       else PetSpeciesTier.LittleDog
   | PetSpeciesTier.Dog =>
-      if level ≥ 7 then PetSpeciesTier.WarDog
+      if level ≥ 7 then PetSpeciesTier.LargeDog
       else PetSpeciesTier.Dog
-  | PetSpeciesTier.WarDog => PetSpeciesTier.WarDog
+  | PetSpeciesTier.LargeDog => PetSpeciesTier.LargeDog
   | PetSpeciesTier.Kitten =>
       if level ≥ 7 then PetSpeciesTier.LargeCat
       else if level ≥ 4 then PetSpeciesTier.Housecat
@@ -120,7 +120,7 @@ theorem promote_preserves_family (p : PetSpeciesTier) (level : Nat) :
       by_cases h7 : level ≥ 7
       · simp [h7, petFamily]
       · simp [h7, petFamily]
-  | WarDog =>
+  | LargeDog =>
       unfold promotePet
       rfl
   | Kitten =>
@@ -161,7 +161,7 @@ theorem promote_monotonic_level (p : PetSpeciesTier) (l1 l2 : Nat) (h : l1 ≤ l
       · have h2_7 : l2 ≥ 7 := by omega
         simp [h1_7, h2_7]
       · by_cases h2_7 : l2 ≥ 7 <;> simp [h1_7, h2_7]
-  | WarDog =>
+  | LargeDog =>
       exact Nat.le_refl _
   | Kitten =>
       unfold promotePet petPowerTier
@@ -184,9 +184,9 @@ theorem promote_monotonic_level (p : PetSpeciesTier) (l1 l2 : Nat) (h : l1 ≤ l
   | LargeCat =>
       exact Nat.le_refl _
 
-/-- Theorem: Apex tier companions (WarDog, LargeCat) are fixed points under promotion. -/
+/-- Theorem: Apex tier companions (LargeDog, LargeCat) are fixed points under promotion. -/
 theorem promote_apex_fixed_point (level : Nat) :
-    promotePet PetSpeciesTier.WarDog level = PetSpeciesTier.WarDog ∧
+    promotePet PetSpeciesTier.LargeDog level = PetSpeciesTier.LargeDog ∧
     promotePet PetSpeciesTier.LargeCat level = PetSpeciesTier.LargeCat := by
   dsimp [promotePet]
   exact ⟨rfl, rfl⟩

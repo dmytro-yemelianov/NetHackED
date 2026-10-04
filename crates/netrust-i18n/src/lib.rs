@@ -1339,7 +1339,7 @@ pub fn t_monster(name: &str, locale: Locale) -> String {
         "master lich" => "верховний ліч".into(),
         "little dog" => "песик".into(),
         "dog" => "пес".into(),
-        "war dog" => "бойовий пес".into(),
+        "large dog" => "великий пес".into(),
         "kitten" => "кошеня".into(),
         "housecat" => "домашній кіт".into(),
         "large cat" => "великий кіт".into(),

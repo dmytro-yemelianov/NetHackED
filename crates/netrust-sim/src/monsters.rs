@@ -521,8 +521,8 @@ impl SimulationWorld {
 
         let cur_tier = if pet.name.contains("little dog") {
             Some(netrust_core::PetSpeciesTier::LittleDog)
-        } else if pet.name.contains("war dog") {
-            Some(netrust_core::PetSpeciesTier::WarDog)
+        } else if pet.name.contains("large dog") {
+            Some(netrust_core::PetSpeciesTier::LargeDog)
         } else if pet.name.contains("dog") {
             Some(netrust_core::PetSpeciesTier::Dog)
         } else if pet.name.contains("kitten") {
@@ -541,7 +541,7 @@ impl SimulationWorld {
                 let old_name = pet.name.clone();
                 let (new_name, new_max_hp) = match promoted {
                     netrust_core::PetSpeciesTier::Dog => ("dog", 24),
-                    netrust_core::PetSpeciesTier::WarDog => ("war dog", 45),
+                    netrust_core::PetSpeciesTier::LargeDog => ("large dog", 45),
                     netrust_core::PetSpeciesTier::Housecat => ("housecat", 20),
                     netrust_core::PetSpeciesTier::LargeCat => ("large cat", 40),
                     _ => (old_name.as_str(), pet.max_hp),

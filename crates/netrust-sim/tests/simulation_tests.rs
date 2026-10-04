@@ -1368,12 +1368,12 @@ fn test_companion_pet_feeding_and_growth() {
     assert_eq!(sim.arena.actors.get(pet_id).unwrap().name, "dog");
     assert_eq!(sim.arena.actors.get(pet_id).unwrap().max_hp, 24);
 
-    // Feed further nutrition to reach level 7 -> promotes to war dog
+    // Feed further nutrition to reach level 7 -> promotes to large dog
     let events2 = sim.feed_companion_pet(pet_id, 150);
     assert!(events2.iter().any(
-        |e| matches!(e, GameEvent::LogMessage { text } if text.contains("grows into a war dog"))
+        |e| matches!(e, GameEvent::LogMessage { text } if text.contains("grows into a large dog"))
     ));
-    assert_eq!(sim.arena.actors.get(pet_id).unwrap().name, "war dog");
+    assert_eq!(sim.arena.actors.get(pet_id).unwrap().name, "large dog");
     assert_eq!(sim.arena.actors.get(pet_id).unwrap().max_hp, 45);
 }
 

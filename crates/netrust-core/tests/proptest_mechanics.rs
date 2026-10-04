@@ -1269,7 +1269,7 @@ proptest! {
         let species = match species_idx {
             0 => PetSpeciesTier::LittleDog,
             1 => PetSpeciesTier::Dog,
-            2 => PetSpeciesTier::WarDog,
+            2 => PetSpeciesTier::LargeDog,
             3 => PetSpeciesTier::Kitten,
             4 => PetSpeciesTier::Housecat,
             _ => PetSpeciesTier::LargeCat,
@@ -1287,7 +1287,7 @@ proptest! {
         }
 
         // Fixed points at apex tier
-        prop_assert_eq!(promote_pet(PetSpeciesTier::WarDog, l1), PetSpeciesTier::WarDog);
+        prop_assert_eq!(promote_pet(PetSpeciesTier::LargeDog, l1), PetSpeciesTier::LargeDog);
         prop_assert_eq!(promote_pet(PetSpeciesTier::LargeCat, l1), PetSpeciesTier::LargeCat);
     }
 

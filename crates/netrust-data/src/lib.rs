@@ -12,8 +12,9 @@ pub use items::{
     ITEM_CATALOG,
 };
 pub use monsters::{
-    create_ghost_record, create_monster_record, get_monster_species, monster_class_of, AiBehavior,
-    MonsterArchetype, MonsterSpeciesId, BESTIARY,
+    create_ghost_record, create_monster_record, get_monster_species, monster_archetype_by_name,
+    monster_class_of, AiBehavior, Attack, AttackType, DamageType, MonsterArchetype, MonsterSize,
+    MonsterSpeciesId, BESTIARY,
 };
 pub use pantheons::{get_pantheon_for_role, get_patron_deity};
 pub use roles::{
