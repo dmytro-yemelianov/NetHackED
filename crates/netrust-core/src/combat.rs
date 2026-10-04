@@ -115,8 +115,6 @@ pub fn attack_hits(d20: u32, to_hit: i32) -> bool {
     (d20.clamp(1, 20) as i32) < to_hit
 }
 
-/// Damage of a landed melee hit before any hero-AC reduction:
-/// `base_roll + enchant + dmg_bonus`, raised to 1 if lower
 /// The damage die size for a hero melee attack (C `NetHack-5.0.0/src/weapon.c:216`
 /// and `NetHack-5.0.0/src/uhitm.c:847`):
 ///

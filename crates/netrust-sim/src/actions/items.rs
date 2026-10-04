@@ -308,7 +308,14 @@ impl SimulationWorld {
                             text: "You quaff the potion. You are moving much faster!".into(),
                         });
                     } else if item.name.contains("polymorph") {
-                        // Apply polymorph to self
+                        // Apply polymorph to self. Save the current (actor)
+                        // HP as the base form first: it is restored on
+                        // rehumanize (C polymon sets only u.mh, polyself.c:872).
+                        if let Some(p) = self.arena.actors.get(self.player_id) {
+                            if self.hero.polymorph.is_none() {
+                                Self::sync_hero_form_from_actor(&mut self.hero, p);
+                            }
+                        }
                         self.hero.polymorph = Some(netrust_types::PolymorphForm {
                             monster_id: 1, // Dummy id
                             hp: 20,

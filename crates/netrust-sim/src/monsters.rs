@@ -262,10 +262,19 @@ impl SimulationWorld {
                     // m_lined_up / linedup (mthrowu.c:1314): straight or diagonal,
                     // distmin < BOLT_LIM, no blocking terrain; not adjacent.
                     if dist > 1 && dist < BOLT_LIM && self.is_line_clear(mon.coord, pc) {
-                        // breamm (mthrowu.c:1117): `!mspec_used && rn2(3)`.
-                        if self.rng.random_range(0..3u32) != 0 {
+                        // breamm (mthrowu.c:1117): `!mspec_used && rn2(3)`;
+                        // `rn2(3)` is drawn only when the cooldown is over.
+                        if mon.mspec_used == 0 && self.rng.random_range(0..3u32) != 0 {
                             events.extend(self.monster_breathes(&mon.name, breath, pc));
                             acted_special = true;
+                            // mthrowu.c:1131-1132 (target is the hero):
+                            // `if (!rn2(3)) mspec_used = 8 + rn2(18)` (8..=25).
+                            if self.rng.random_range(0..3u32) == 0 {
+                                let cooldown = 8 + self.rng.random_range(0..18u8);
+                                if let Some(m) = self.arena.actors.get_mut(mon_id) {
+                                    m.mspec_used = cooldown;
+                                }
+                            }
                         }
                     }
                 }
@@ -510,8 +519,9 @@ impl SimulationWorld {
     /// 2. Not reflected: `d(nd, 6)` with `nd = damn` (`zap.c:4422`/`:4441`;
     ///    `n` draws `rnd(6)`), drawn even when the hero resists.
     ///
-    /// Not modelled (documented): the `rn1(7, 7)` beam range, bounces, the
-    /// `mspec_used` cooldown, item destruction, and the reflected beam's path
+    /// The `mspec_used` cooldown is applied by the caller (`step_monsters`).
+    /// Not modelled (documented): the `rn1(7, 7)` beam range, bounces,
+    /// item destruction, and the reflected beam's path
     /// back (it deals no damage here; every breather resists its own element).
     pub(crate) fn monster_breathes(
         &mut self,
@@ -559,28 +569,30 @@ impl SimulationWorld {
             events.push(GameEvent::LogMessage {
                 text: Messages::breath_absorbed(&format!("{breath:?}"), self.locale),
             });
-            return events;
-        }
-        events.push(GameEvent::LogMessage {
-            text: Messages::dragon_breath(mon_name, &format!("{breath:?}"), dmg, self.locale),
-        });
-        if let Some(p) = self.arena.actors.get_mut(self.player_id) {
-            p.hp = p.hp.saturating_sub(dmg);
-            if p.hp == 0 {
-                p.is_dead = true;
+        } else {
+            events.push(GameEvent::LogMessage {
+                text: Messages::dragon_breath(mon_name, &format!("{breath:?}"), dmg, self.locale),
+            });
+            if let Some(p) = self.arena.actors.get_mut(self.player_id) {
+                p.hp = p.hp.saturating_sub(dmg);
+                if p.hp == 0 {
+                    p.is_dead = true;
+                }
+            }
+            if breath == BreathType::Cold
+                && matches!(
+                    self.level.get_tile(pc),
+                    Tile::Pool { frozen: false } | Tile::Moat
+                )
+            {
+                self.level.set_tile(pc, Tile::Pool { frozen: true });
+                events.push(GameEvent::LogMessage {
+                    text: Messages::pool_frozen(self.locale).into(),
+                });
             }
         }
-        if breath == BreathType::Cold
-            && matches!(
-                self.level.get_tile(pc),
-                Tile::Pool { frozen: false } | Tile::Moat
-            )
-        {
-            self.level.set_tile(pc, Tile::Pool { frozen: true });
-            events.push(GameEvent::LogMessage {
-                text: Messages::pool_frozen(self.locale).into(),
-            });
-        }
+        // C zhitu ZT_FIRE (zap.c:4432): burn_away_slime() runs after the
+        // Fire_resistance check, whether or not the hero resisted.
         if breath == BreathType::Fire && self.hero.afflictions.sliming.is_some() {
             netrust_core::afflictions::cure_sliming(&mut self.hero);
             events.push(GameEvent::LogMessage {

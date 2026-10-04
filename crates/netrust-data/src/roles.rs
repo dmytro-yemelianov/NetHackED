@@ -335,6 +335,7 @@ pub fn spawn_player_character(
         tameness: 0,
         abilities: Vec::new(),
         is_peaceful: false,
+        mspec_used: 0,
     };
     let player_id = arena.spawn_actor(actor);
 

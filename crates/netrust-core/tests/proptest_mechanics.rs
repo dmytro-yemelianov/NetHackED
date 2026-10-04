@@ -385,9 +385,12 @@ proptest! {
     fn prop_monster_attack_damage_matches_c_dice(
         n in 0u8..10,
         d in 0u8..80,
-        rolls in proptest::collection::vec(0u32..100, 0..12)
+        rolls in proptest::collection::vec(0u32..100, 0..12),
+        ad_idx in 0usize..3
     ) {
-        let attack = Attack { at: AttackType::Claw, ad: DamageType::Phys, n, d };
+        // The dice do not depend on the damage type (Phys, Fire and Cold alike).
+        let ad = [DamageType::Phys, DamageType::Fire, DamageType::Cold][ad_idx];
+        let attack = Attack { at: AttackType::Claw, ad, n, d };
         let expected: u32 = if d == 0 {
             0
         } else {
@@ -431,17 +434,25 @@ proptest! {
         n in 1u8..8,
         d in 1u8..12,
         rolls in proptest::collection::vec(1u32..12, 8),
-        fire in any::<bool>(),
+        ad_idx in 0usize..3,
         fire_res in any::<bool>(),
+        cold_res in any::<bool>(),
         hero_ac in proptest::option::of(-20i32..11),
         absorb in 0u32..30
     ) {
-        let ad = if fire { DamageType::Fire } else { DamageType::Phys };
+        let ad = [DamageType::Phys, DamageType::Fire, DamageType::Cold][ad_idx];
         let attack = Attack { at: AttackType::Touch, ad, n, d };
         let mut intr = Intrinsics::empty();
         intr.fire_resistance = fire_res;
+        intr.cold_resistance = cold_res;
         let res = resisted(ad, &intr);
-        prop_assert_eq!(res, fire && fire_res);
+        // mhitm_ad_fire (uhitm.c:2521) / mhitm_ad_cold (uhitm.c:2626).
+        let c_res = match ad {
+            DamageType::Fire => fire_res,
+            DamageType::Cold => cold_res,
+            _ => false,
+        };
+        prop_assert_eq!(res, c_res);
         let mut dmg: u32 = (0..n as usize).map(|i| rolls[i].clamp(1, d as u32)).sum();
         if res {
             dmg = 0;
@@ -477,43 +488,65 @@ proptest! {
     }
 
     // -------------------------------------------------------------
-    // C reference: weapon.c:216-293 (dmgval) and uhitm.c:847 (bare hands / martial arts).
+    // C reference: weapon.c:225-227 / :264-265 (dmgval base draw):
+    //   if (bigmonst(ptr)) { if (oc_wldam) tmp = rnd(oc_wldam); }
+    //   else               { if (oc_wsdam) tmp = rnd(oc_wsdam); }
+    // and uhitm.c:847 (bare hands): tmp = rnd(!martial_bonus() ? 2 : 4).
+    // The reference draws `rnd(x) = 1 + raw % x` (rnd.c RND, range 1..=x)
+    // itself and feeds that in-range draw to `dmgval`.
     // -------------------------------------------------------------
     #[test]
     fn prop_dmgval_matches_c_rule(
         weapon in proptest::option::of((0u32..50, 0u32..50)),
         target_large in any::<bool>(),
         martial_arts in any::<bool>(),
-        roll in 0u32..100,
+        raw in any::<u32>(),
+        out_of_range in 0u32..200,
     ) {
-        let expected_die = match weapon {
-            Some((small, large)) => {
-                if target_large {
-                    large
-                } else {
-                    small
-                }
+        let rnd = |x: u32| 1 + raw % x;
+        // (die, draw) the way C reaches them; die 0 = "no draw, tmp stays 0".
+        let (c_die, c_tmp) = if let Some((oc_wsdam, oc_wldam)) = weapon {
+            if target_large {
+                if oc_wldam != 0 { (oc_wldam, rnd(oc_wldam)) } else { (0, 0) }
+            } else if oc_wsdam != 0 {
+                (oc_wsdam, rnd(oc_wsdam))
+            } else {
+                (0, 0)
             }
-            None => {
-                if martial_arts {
-                    4
-                } else {
-                    2
-                }
-            }
-        };
-        let die = weapon_damage_die(weapon, target_large, martial_arts);
-        prop_assert_eq!(die, expected_die);
-
-        let expected_dmg = if expected_die == 0 {
-            0
+        } else if !martial_arts {
+            (2, rnd(2))
         } else {
-            roll.clamp(1, expected_die)
+            (4, rnd(4))
         };
-        let got = dmgval(weapon, target_large, martial_arts, roll);
-        prop_assert_eq!(got, expected_dmg);
-        if expected_die > 0 {
-            prop_assert!(got >= 1 && got <= expected_die);
+        prop_assert_eq!(weapon_damage_die(weapon, target_large, martial_arts), c_die);
+        prop_assert_eq!(dmgval(weapon, target_large, martial_arts, c_tmp), c_tmp);
+        // An out-of-range draw is clamped into rnd's 1..=die range (0 when no die).
+        let clamped = dmgval(weapon, target_large, martial_arts, out_of_range);
+        if c_die == 0 {
+            prop_assert_eq!(clamped, 0);
+        } else {
+            prop_assert!((1..=c_die).contains(&clamped));
+        }
+    }
+
+    // C weapon.c objects[] table rows (oc_wsdam, oc_wldam) and uhitm.c:847.
+    #[test]
+    fn prop_dmgval_c_die_table(raw in any::<u32>()) {
+        // (weapon (oc_wsdam, oc_wldam), target large, martial arts, die)
+        let cases = [
+            (Some((4, 3)), false, false, 4),   // dagger vs small: d4
+            (Some((4, 3)), true, false, 3),    // dagger vs large: d3
+            (Some((8, 12)), false, false, 8),  // long sword vs small: d8
+            (Some((8, 12)), true, false, 12),  // long sword vs large: d12
+            (Some((6, 8)), true, true, 8),     // short sword vs large (Monk irrelevant)
+            (Some((0, 0)), false, false, 0),   // oc_wsdam 0: no draw
+            (None, false, false, 2),           // bare hands: rnd(2)
+            (None, true, true, 4),             // martial arts: rnd(4)
+        ];
+        for (weapon, large, martial, die) in cases {
+            prop_assert_eq!(weapon_damage_die(weapon, large, martial), die);
+            let draw = if die == 0 { 0 } else { 1 + raw % die };
+            prop_assert_eq!(dmgval(weapon, large, martial, draw), draw);
         }
     }
 

@@ -3,7 +3,7 @@
 use netrust_arena::{ActorId, ActorRecord, ItemLocation};
 use netrust_core::{
     combat::{
-        dmgval, is_melee_attack, mattacku_die, mhitm_to_hit, monster_attack_damage,
+        attack_hits, dmgval, is_melee_attack, mattacku_die, mhitm_to_hit, monster_attack_damage,
         monster_attack_hits, monster_hit_damage, monster_to_hit_value, resisted,
         resolve_melee_attack, to_hit_value, weapon_damage_die,
     },
@@ -181,13 +181,20 @@ impl SimulationWorld {
             target_ac,
         );
         let d20 = self.rng.random_range(1..=20u32);
-        let die = weapon_damage_die(weapon_dice, target_large, martial_arts);
-        let roll = if die == 0 {
-            0
+        // C hmon_hitmon (uhitm.c:944 `dmgval`, uhitm.c:847 bare hands) runs
+        // only after `tmp > dieroll` (uhitm.c:782): the damage die is drawn
+        // only on a hit, so a miss consumes just the rnd(20).
+        let base_roll = if attack_hits(d20, to_hit) {
+            let die = weapon_damage_die(weapon_dice, target_large, martial_arts);
+            let roll = if die == 0 {
+                0
+            } else {
+                self.rng.random_range(1..=die)
+            };
+            dmgval(weapon_dice, target_large, martial_arts, roll)
         } else {
-            self.rng.random_range(1..=die)
+            0
         };
-        let base_roll = dmgval(weapon_dice, target_large, martial_arts, roll);
 
         let result = resolve_melee_attack(
             to_hit,
@@ -241,6 +248,22 @@ impl SimulationWorld {
         events
     }
 
+    /// Copy the player actor's `hp`/`max_hp` (the single source of truth for
+    /// hero HP) into the hero's current form before damage resolution: the
+    /// polyform (`u.mh`/`u.mhmax`) when polymorphed, else the base form
+    /// (`u.uhp`/`u.uhpmax`). C keeps one pair per form (`hack.c:4256` losehp).
+    pub(crate) fn sync_hero_form_from_actor(hero: &mut netrust_types::Hero, actor: &ActorRecord) {
+        let hp = i32::try_from(actor.hp).unwrap_or(i32::MAX);
+        let max_hp = i32::try_from(actor.max_hp).unwrap_or(i32::MAX);
+        if let Some(poly) = &mut hero.polymorph {
+            poly.hp = hp;
+            poly.max_hp = max_hp;
+        } else {
+            hero.base_hp = hp;
+            hero.base_max_hp = max_hp;
+        }
+    }
+
     /// Apply a landed hit's damage to the defender and emit the hit/kill events
     /// (shared by hero, monster and pet attacks). Returns `true` when lethal.
     #[allow(clippy::too_many_arguments)]
@@ -262,6 +285,11 @@ impl SimulationWorld {
                     actual_damage += 9999;
                 } // Force fatal
 
+                // The player actor's hp/max_hp are authoritative (healing,
+                // breath, traps, prayer and regeneration change only them):
+                // copy them into the current form first (C has one `u.uhp` /
+                // `u.mh` pair, hack.c:4256 losehp), then write the result back.
+                Self::sync_hero_form_from_actor(&mut self.hero, target);
                 // Unchanging is not tracked on Hero yet; pass false.
                 let poly_res = netrust_core::polymorph::apply_poly_damage(
                     &mut self.hero,
@@ -523,5 +551,53 @@ impl SimulationWorld {
         events.push(GameEvent::LogMessage {
             text: netrust_i18n::Messages::attack_miss(&attacker.name, &defender.name, self.locale),
         });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use netrust_types::{Alignment, Coord, Intrinsics};
+
+    /// A hero melee miss draws only the to-hit `rnd(20)` (uhitm.c:780); the
+    /// weapon damage roll (`dmgval`, uhitm.c:944) is drawn only on a hit.
+    #[test]
+    fn hero_miss_does_not_draw_the_damage_roll() {
+        let mut sim = SimulationWorld::new_with_seed(77);
+        let pid = sim.player_id;
+        sim.arena.actors.retain(|id, _| id == pid);
+        let at = {
+            let p = &sim.arena.actors[pid];
+            Coord::new_unchecked(p.coord.x + 1, p.coord.y)
+        };
+        // AC -60: find_roll_to_hit `tmp` is far below 1, so every rnd(20) misses.
+        let dummy = sim.arena.spawn_actor(ActorRecord {
+            name: "training dummy".into(),
+            coord: at,
+            hp: 50,
+            max_hp: 50,
+            ac: -60,
+            level: 0,
+            speed: 12,
+            alignment: Alignment::Neutral,
+            intrinsics: Intrinsics::default(),
+            is_player: false,
+            is_unique: false,
+            is_dead: false,
+            is_tame: false,
+            tameness: 0,
+            abilities: Vec::new(),
+            is_peaceful: false,
+            mspec_used: 0,
+        });
+        for _ in 0..20 {
+            let mut expected = sim.rng.clone();
+            let _d20: u32 = expected.random_range(1..=20u32);
+            let events = sim.resolve_combat(pid, dummy);
+            assert!(events
+                .iter()
+                .any(|e| matches!(e, GameEvent::AttackMissed { .. })));
+            assert_eq!(sim.rng, expected, "a miss draws only the rnd(20)");
+        }
     }
 }

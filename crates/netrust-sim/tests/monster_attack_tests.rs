@@ -4,9 +4,10 @@
 //! `d(damn, damd)` :1187), `mattackm` (mhitm.c:293, `tmp = find_mac + m_lev`
 //! :320, `rnd(20 + i)` :441), `breamm` (mthrowu.c:1093).
 
-use netrust_arena::{ActorId, ActorRecord};
+use netrust_arena::{ActorId, ActorRecord, ItemLocation, ItemRecord};
 use netrust_data::{create_monster_record, MonsterSpeciesId};
 use netrust_sim::{ActionAst, Alignment, Coord, GameEvent, Intrinsics, SimulationWorld, Tile};
+use netrust_types::{Buc, ItemClass, SlimingState};
 
 const HERO: Coord = Coord::new_unchecked(10, 10);
 const HERO_HP: i32 = 5000;
@@ -29,8 +30,6 @@ fn arena_world(seed: u64) -> SimulationWorld {
     p.hp = HERO_HP as u32;
     p.max_hp = HERO_HP as u32;
     p.intrinsics = Intrinsics::default();
-    sim.hero.base_hp = HERO_HP;
-    sim.hero.base_max_hp = HERO_HP;
     sim.hero.polymorph = None;
     sim
 }
@@ -41,7 +40,6 @@ fn reset(sim: &mut SimulationWorld, mon: ActorId, at: Coord) {
     let p = sim.arena.actors.get_mut(pid).unwrap();
     p.hp = HERO_HP as u32;
     p.coord = HERO;
-    sim.hero.base_hp = HERO_HP;
     let m = sim.arena.actors.get_mut(mon).unwrap();
     m.coord = at;
     m.hp = m.max_hp;
@@ -266,6 +264,7 @@ fn named_monster(name: &str, at: Coord) -> ActorRecord {
         tameness: 0,
         abilities: Vec::new(),
         is_peaceful: false,
+        mspec_used: 0,
     }
 }
 
@@ -296,4 +295,146 @@ fn unknown_species_falls_back_to_one_d6_attack() {
     // No archetype (renamed / custom actor): a single d(1, 6) attack.
     let max = max_hit("Dummy", 31);
     assert!((5..=6).contains(&max), "fallback d6 max {max}");
+}
+
+fn quaff_healing(sim: &mut SimulationWorld) {
+    let pid = sim.player_id;
+    let potion = sim.arena.spawn_item(ItemRecord {
+        name: "potion of healing".into(),
+        class: ItemClass::Potion,
+        weight: 20,
+        buc: Buc::Uncursed,
+        is_container: false,
+        is_bag_of_holding: false,
+        enchantment: 0,
+        erosion: 0,
+        proofed: false,
+        location: ItemLocation::CarriedBy(pid),
+        corpse_race: None,
+        corpse_age: 0,
+        rot_threshold: 0,
+        recharged: 0,
+    });
+    let idx = sim
+        .arena
+        .items_carried_by(pid)
+        .iter()
+        .position(|&id| id == potion)
+        .unwrap();
+    sim.step_player_action(ActionAst::Quaff(idx));
+}
+
+/// Wait with `mon` kept at `at` until one of its melee hits lands; returns the
+/// total landed melee damage. Asserts every turn's HP loss equals that turn's
+/// landed hits (the hero's HP is never reset from a stale copy).
+fn wait_for_melee_hit(sim: &mut SimulationWorld, mon: ActorId, at: Coord) -> i32 {
+    let mut total = 0;
+    for _ in 0..200 {
+        sim.arena.actors.get_mut(mon).unwrap().coord = at;
+        let before = hero_hp(sim);
+        let events = sim.step_player_action(ActionAst::Wait);
+        let landed: u32 = attack_events(&events, mon).into_iter().flatten().sum();
+        assert_eq!(
+            before - hero_hp(sim),
+            landed as i32,
+            "HP loss must equal the landed melee damage"
+        );
+        total += landed as i32;
+        if landed > 0 {
+            return total;
+        }
+    }
+    panic!("no melee hit landed");
+}
+
+#[test]
+fn healing_persists_through_a_later_melee_hit() {
+    // One HP source of truth: the player actor's hp. A melee hit must
+    // subtract from the healed value, not reset HP from a stale hero copy.
+    let mut sim = arena_world(41);
+    let pid = sim.player_id;
+    sim.arena.actors.get_mut(pid).unwrap().hp = 100;
+    quaff_healing(&mut sim);
+    let healed = hero_hp(&sim);
+    assert_eq!(healed, 110, "potion of healing restores 10 HP");
+    let jackal = spawn(&mut sim, MonsterSpeciesId::Jackal, east(1));
+    let dmg = wait_for_melee_hit(&mut sim, jackal, east(1));
+    assert_eq!(hero_hp(&sim), healed - dmg);
+}
+
+#[test]
+fn breath_damage_persists_through_a_later_melee_hit() {
+    let mut sim = arena_world(43);
+    let dragon = spawn(&mut sim, MonsterSpeciesId::RedDragon, east(3));
+    let mut breathed = false;
+    for _ in 0..200 {
+        sim.arena.actors.get_mut(dragon).unwrap().coord = east(3);
+        sim.step_player_action(ActionAst::Wait);
+        if hero_hp(&sim) < HERO_HP {
+            breathed = true;
+            break;
+        }
+    }
+    assert!(breathed, "the dragon's breath hit");
+    let after_breath = hero_hp(&sim);
+    let dmg = wait_for_melee_hit(&mut sim, dragon, east(1));
+    assert_eq!(hero_hp(&sim), after_breath - dmg, "breath damage persists");
+}
+
+fn is_breath_message(e: &GameEvent) -> bool {
+    matches!(e, GameEvent::LogMessage { text } if text.contains("blast") || text.contains("breath"))
+}
+
+#[test]
+fn breath_cooldown_keeps_breath_rate_far_below_two_thirds() {
+    // C breamm (mthrowu.c:1117-1132): `!mspec_used && rn2(3)` gates the
+    // breath; after breathing at the hero, `!rn2(3)` sets
+    // `mspec_used = 8 + rn2(18)`, decremented once per turn (mon_regen,
+    // monmove.c:311). Without the cooldown a lined-up dragon breathes on
+    // 2/3 of its moves.
+    let mut sim = arena_world(47);
+    let dragon = spawn(&mut sim, MonsterSpeciesId::RedDragon, east(3));
+    let turns = 400;
+    let mut breaths = 0;
+    for _ in 0..turns {
+        reset(&mut sim, dragon, east(3));
+        let events = sim.step_player_action(ActionAst::Wait);
+        breaths += events.iter().filter(|e| is_breath_message(e)).count();
+    }
+    assert!(breaths > 0, "the dragon breathed");
+    let rate = breaths as f64 / turns as f64;
+    assert!(rate < 0.3, "breath rate {rate} should be far below 2/3");
+}
+
+#[test]
+fn fire_breath_burns_away_slime_even_when_resisted() {
+    // C zhitu ZT_FIRE (zap.c:4421-4432): burn_away_slime() runs after the
+    // Fire_resistance check, whether or not the hero resisted.
+    let mut sim = arena_world(53);
+    let pid = sim.player_id;
+    sim.arena
+        .actors
+        .get_mut(pid)
+        .unwrap()
+        .intrinsics
+        .fire_resistance = true;
+    let dragon = spawn(&mut sim, MonsterSpeciesId::RedDragon, east(3));
+    for _ in 0..200 {
+        sim.hero.afflictions.sliming = Some(SlimingState {
+            turns_remaining: 10,
+        });
+        reset(&mut sim, dragon, east(3));
+        let events = sim.step_player_action(ActionAst::Wait);
+        let resisted = events.iter().any(|e| {
+            matches!(e, GameEvent::LogMessage { text } if text.contains("engulfed in the blast"))
+        });
+        if resisted {
+            assert!(
+                sim.hero.afflictions.sliming.is_none(),
+                "a resisted fire breath still burns away the slime"
+            );
+            return;
+        }
+    }
+    panic!("no resisted fire breath hit the hero");
 }

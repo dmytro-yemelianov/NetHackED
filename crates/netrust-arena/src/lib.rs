@@ -56,6 +56,11 @@ pub struct ActorRecord {
     /// NetHack 5.0 C `mpeaceful` (`makemon.c:1299`). Monster does not attack or approach hero.
     #[serde(default)]
     pub is_peaceful: bool,
+    /// C `mspec_used` (`monst.h`): turns until a special attack (breath) can
+    /// be used again. Set by `breamm` (`mthrowu.c:1132`), decremented once per
+    /// turn by `mon_regen` (`monmove.c:311`).
+    #[serde(default)]
+    pub mspec_used: u8,
 }
 
 /// The centralized entity arena replacing all ambient pointers.
@@ -229,6 +234,7 @@ mod tests {
             is_unique: false,
             abilities: Vec::new(),
             is_peaceful: false,
+            mspec_used: 0,
         };
         let id = arena.spawn_actor(actor);
         assert_eq!(arena.actors.get(id).unwrap().hp, 20);
@@ -257,6 +263,7 @@ mod tests {
             is_unique: false,
             abilities: Vec::new(),
             is_peaceful: true,
+            mspec_used: 0,
         };
         let id = arena.spawn_actor(actor);
         let mut v = serde_json::to_value(arena.actors.get(id).unwrap()).unwrap();
@@ -265,6 +272,37 @@ mod tests {
         let back: ActorRecord = serde_json::from_value(v).unwrap();
         assert!(!back.is_peaceful);
         assert_eq!(back.name, "priest");
+    }
+
+    #[test]
+    fn test_actor_record_serde_default_mspec_used() {
+        let mut arena = EntityArena::new();
+        let id = arena.spawn_actor(ActorRecord {
+            name: "red dragon".into(),
+            coord: Coord::new(5, 5).unwrap(),
+            hp: 80,
+            max_hp: 80,
+            ac: -1,
+            level: 15,
+            speed: 9,
+            alignment: Alignment::Chaotic,
+            intrinsics: Intrinsics::default(),
+            is_player: false,
+            is_dead: false,
+            is_tame: false,
+            tameness: 0,
+            is_unique: false,
+            abilities: Vec::new(),
+            is_peaceful: false,
+            mspec_used: 12,
+        });
+        let mut v = serde_json::to_value(arena.actors.get(id).unwrap()).unwrap();
+        assert_eq!(v["mspec_used"], 12);
+        // A save written before the field existed loads with no cooldown.
+        v.as_object_mut().unwrap().remove("mspec_used");
+        let back: ActorRecord = serde_json::from_value(v).unwrap();
+        assert_eq!(back.mspec_used, 0);
+        assert_eq!(back.name, "red dragon");
     }
 
     #[test]
