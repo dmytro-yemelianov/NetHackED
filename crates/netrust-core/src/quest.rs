@@ -1,6 +1,6 @@
 //! The Class Quest Branch, Leader qualification, and Nemesis mechanics.
 //!
-//! Formally verified in `NetMechanics.Quest`.
+//! Modeled in Lean 4 (`NetMechanics.Quest`).
 
 use serde::{Deserialize, Serialize};
 

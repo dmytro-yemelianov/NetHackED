@@ -1,6 +1,6 @@
 //! Religion, Divine Favor, Altar Sacrifices, and Water Consecration.
 //!
-//! Formally verified in `NetMechanics.Religion`.
+//! Modeled in Lean 4 (`NetMechanics.Religion`).
 //! Models piety calculus, prayer cooldowns, altar conversions, and holy water consecration.
 
 use netrust_types::{Alignment, Buc, DivineState, SacrificeResult};

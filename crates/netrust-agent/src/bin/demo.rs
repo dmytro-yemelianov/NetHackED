@@ -69,9 +69,11 @@ fn print_status_bar(sim: &SimulationWorld) {
 }
 
 fn main() {
-    print_separator("NETRUST: Formally Verified Classic NetHack 5.0 in Safe Rust & Lean 4");
-    println!("Lean 4 Mathematical Proofs: 68 Theorems Verified (0 sorrys)");
-    println!("Safe Rust Workspace: 72 Core Tests, 65 Property Tests, 60 Simulation Tests");
+    print_separator(
+        "NETRUST: NetHack mechanics in safe Rust, with Lean 4 models of selected rules",
+    );
+    println!("Lean 4 models: selected mechanics are machine-checked (see `lake build`)");
+    println!("Safe Rust workspace: unit, property and simulation tests (`cargo test --workspace`)");
 
     // =========================================================================
     // PHASE 1: Character Creation & Dungeons of Doom
@@ -640,9 +642,9 @@ fn main() {
         }
     );
 
-    print_separator("GRAND 10-PHASE MASTER DEMO COMPLETE — 100% CANONICAL PARITY VERIFIED");
-    println!("  * Lean 4 Verification: 84/84 compilation jobs verified with 0 sorrys");
-    println!("  * Safe Rust Workspace: 191 Tests (86 Proptests + 76 Simulation Tests, 100% pass)");
+    print_separator("GRAND 10-PHASE MASTER DEMO COMPLETE — COMPLETE");
+    println!("  * Lean 4 models: build with `lake build`");
+    println!("  * Safe Rust workspace: run `cargo test --workspace` for the test suites");
     println!(
         "  * Native TUI Console:  Run `cargo run -p netrust-tui` for interactive terminal play"
     );

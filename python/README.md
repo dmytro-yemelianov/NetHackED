@@ -1,10 +1,10 @@
 # NetRust Gym - Python Reinforcement Learning Environment
 
-A standard [Gymnasium](https://gymnasium.farama.org/) interface for **NetRust**, the formally verified, high-performance NetHack engine written in Rust.
+A standard [Gymnasium](https://gymnasium.farama.org/) interface for **NetRust**, a high-performance Rust reimplementation of NetHack mechanics written in Rust.
 
 ## Features
 - **Blazing Fast**: Native Rust simulation core powered by PyO3 and ABI3 bindings (>100,000 steps/sec).
-- **Formal Verification Guarantees**: Core mechanics (Elbereth, Reflection, Containers, Sokoban, Enchantment, Pets) mathematically verified in Lean 4.
+- **Lean 4 Models**: Core mechanics (Elbereth, Reflection, Containers, Sokoban, Enchantment, Pets) modeled in Lean 4 (the Rust engine is tested against those models, not formally linked).
 - **Gymnasium Standard**: `env.reset()`, `env.step()`, `env.render()` compatible with Stable-Baselines3, CleanRL, and custom PyTorch agents.
 - **Multimodal Observations**: Structured numerical telemetry (HP, AC, depth, nutrition, visible actors) plus raw ASCII viewports.
 

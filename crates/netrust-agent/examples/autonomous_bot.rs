@@ -2,7 +2,7 @@
 //!
 //! Demonstrates how an AI agent, RL model, or autonomous bot connects to NetRust,
 //! perceives structured observations (FOV, tile inspections, visible monsters, logs),
-//! and executes optimal actions in the verified dungeon.
+//! and executes actions in the generated dungeon.
 
 use netrust_agent::AgentSession;
 use netrust_data::roles::{CharacterConfig, Gender, RaceId, RoleId};

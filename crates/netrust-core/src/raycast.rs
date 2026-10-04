@@ -1,6 +1,6 @@
 //! Wand Beam Raycasting, Wall Reflection, and Energy Attenuation.
 //!
-//! Formally verified in `NetMechanics.Raycast`.
+//! Modeled in Lean 4 (`NetMechanics.Raycast`).
 //! Proves reflection involution, discrete kinetic speed preservation, and finite loop termination.
 
 use serde::{Deserialize, Serialize};

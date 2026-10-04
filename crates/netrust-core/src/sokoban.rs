@@ -1,6 +1,6 @@
 //! Sokoban puzzle and boulder pushing mechanics.
 //!
-//! Formally verified in Lean 4 (`NetMechanics.Sokoban`).
+//! Modeled in Lean 4 (`NetMechanics.Sokoban`).
 
 use netrust_types::{Coord, Direction, Tile};
 

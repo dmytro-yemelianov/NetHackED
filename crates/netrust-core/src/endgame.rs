@@ -1,6 +1,6 @@
 //! Castle Drawbridge and Astral Plane Ascension Mechanics.
 //!
-//! Formally verified in `NetMechanics.Endgame`.
+//! Modeled in Lean 4 (`NetMechanics.Endgame`).
 //! Models drawbridge raising/lowering, crushing damage, and the High Altar ascension theorem.
 
 use netrust_types::{Alignment, AscensionOutcome, DrawbridgeState, DrawbridgeTransition};

@@ -1,6 +1,6 @@
 //! Epistemic Item Identification Lattice and Monotonicity.
 //!
-//! Formally verified in `NetMechanics.Identification`.
+//! Modeled in Lean 4 (`NetMechanics.Identification`).
 //! Models the 4-tier knowledge progression and proves knowledge monotonicity.
 
 use serde::{Deserialize, Serialize};

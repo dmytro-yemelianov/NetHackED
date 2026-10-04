@@ -1,6 +1,6 @@
 //! Dynamic lighting, darkness, raycasting, blindness, and telepathy.
 //!
-//! Formally verified in `NetMechanics.Lighting`.
+//! Modeled in Lean 4 (`NetMechanics.Lighting`).
 
 use serde::{Deserialize, Serialize};
 
@@ -91,7 +91,9 @@ pub fn can_see_tile(blind: bool, dist: u32, is_dark: bool, is_illuminated: bool)
 /// Determine whether a monster is detectable by the hero.
 ///
 /// - Visible directly if the tile is visible.
-/// - Sensed telepathically if hero has telepathy and monster has a mind, even through blindness/darkness.
+/// - Sensed telepathically if hero has telepathy and monster has a mind, regardless of blindness
+///   (the `_blind` argument is currently ignored).
+// TODO(fidelity): NetHack intrinsic telepathy only works while blind; see review.
 pub fn can_detect_monster(
     _blind: bool,
     telepathy: bool,

@@ -1,6 +1,6 @@
 //! Signature Artifacts, Wishing, and Wand Mechanics.
 //!
-//! Formally verified in `NetMechanics.ArtifactsWands`.
+//! Modeled in Lean 4 (`NetMechanics.ArtifactsWands`).
 //! Models artifact combat bonuses, wand charge depletion, and recharging explosion limits.
 
 use netrust_types::{ArtifactKind, Buc, RechargeResult, WandCharges};

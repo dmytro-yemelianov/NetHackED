@@ -1,6 +1,6 @@
 //! Dungeon branch topology and entrance mechanics.
 //!
-//! Formally verified in Lean 4 (`NetMechanics.Branch`).
+//! Modeled in Lean 4 (`NetMechanics.Branch`).
 
 use netrust_types::{BranchCoord, BranchId};
 

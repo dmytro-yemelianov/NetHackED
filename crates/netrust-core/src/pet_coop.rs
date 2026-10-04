@@ -1,6 +1,6 @@
 //! Tactical multi-agent cooperation: Pet BUC detection, promotion hierarchy, and tactical goal selection.
 //!
-//! Formally verified in Lean 4 (`NetMechanics/PetCoop.lean`).
+//! Modeled in Lean 4 (`NetMechanics/PetCoop.lean`).
 
 use netrust_types::{Buc, Coord};
 

@@ -1,6 +1,6 @@
 //! Gehennom & Invocation Ritual Mechanics in Safe Rust.
 //!
-//! Formally verified in `NetMechanics.Gehennom`.
+//! Modeled in Lean 4 (`NetMechanics.Gehennom`).
 
 use serde::{Deserialize, Serialize};
 

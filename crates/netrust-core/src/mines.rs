@@ -17,7 +17,7 @@ pub fn protection_donation_cost(hero_level: u32) -> u32 {
 
 /// Calculate resulting divine AC protection after a gold donation to a temple priest.
 ///
-/// Formally proven in Lean 4 to be monotonic and bounded by `MAX_DIVINE_PROTECTION`.
+/// Proven in the Lean 4 model to be monotonic and bounded by `MAX_DIVINE_PROTECTION`.
 pub fn apply_priest_donation(current_prot: u32, donation_amount: u32, hero_level: u32) -> u32 {
     if current_prot >= MAX_DIVINE_PROTECTION {
         current_prot
@@ -30,7 +30,7 @@ pub fn apply_priest_donation(current_prot: u32, donation_amount: u32, hero_level
 
 /// Priest purifies a BUC item when uncursing service is triggered.
 ///
-/// Formally proven in Lean 4 (`priest_uncurse_never_cursed`) that the resulting item is never Cursed.
+/// Proven in the Lean 4 model (`priest_uncurse_never_cursed`) that the resulting item is never Cursed.
 pub fn priest_uncurse(item_buc: Buc) -> Buc {
     if item_buc == Buc::Cursed {
         Buc::Uncursed
@@ -55,7 +55,7 @@ pub enum LuckstoneStatus {
 
 /// Single luck decay step (normally fires every 600 turns in NetHack).
 ///
-/// Formally proven in Lean 4 (`luckstone_preserves_positive_luck`):
+/// Proven in the Lean 4 model (`luckstone_preserves_positive_luck`):
 /// Carrying an uncursed or blessed luckstone guarantees positive luck NEVER decays downward.
 pub fn step_luck_decay(raw_luck: i32, stone: LuckstoneStatus) -> i32 {
     match stone {

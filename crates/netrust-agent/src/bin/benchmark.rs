@@ -12,7 +12,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("====================================================================================================");
     println!("                        NETRUST AUTOMATED AI BENCHMARK & EVALUATION ARENA                           ");
-    println!("                        Formally Verified NetHack Simulation Engine                                 ");
+    println!("                        NetHack Mechanics Simulation Engine                                 ");
     println!("====================================================================================================");
 
     let seeds: Vec<u64> = (1..=25).collect();

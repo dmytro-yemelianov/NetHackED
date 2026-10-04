@@ -88,7 +88,7 @@ impl SimulationWorld {
                     None
                 }
             }) {
-                // Boulder pushing mechanics formally verified in Lean 4
+                // Boulder pushing mechanics are modeled in Lean 4
                 if let Some(next_c) = target_coord.step(dir) {
                     let is_occupied = self.actor_at(next_c).is_some()
                         || self.arena.items.values().any(|it| {

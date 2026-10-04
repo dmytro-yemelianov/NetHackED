@@ -1,6 +1,6 @@
 //! Polymorph HP Buffer and Revert-on-Death Invariant.
 //!
-//! Formally verified in `NetMechanics.Polymorph`.
+//! Modeled in Lean 4 (`NetMechanics.Polymorph`).
 //! Models shape-shifting HP buffer and proves form reversion upon fatal damage.
 
 use serde::{Deserialize, Serialize};

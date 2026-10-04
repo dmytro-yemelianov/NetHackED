@@ -1,6 +1,6 @@
 //! Nutrition and hunger clock state machine.
 //!
-//! Formally verified in `NetMechanics.Nutrition`.
+//! Modeled in Lean 4 (`NetMechanics.Nutrition`).
 
 use serde::{Deserialize, Serialize};
 

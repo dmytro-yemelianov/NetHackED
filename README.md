@@ -35,7 +35,7 @@ The repository includes a comprehensive, formal architectural reference suite in
    * **Property Bridge**: Hand-maintained mapping of selected Lean 4 theorems to Rust property-based tests (`proptest`), plus known limitations of the Lean models.
 
 5. **[docs/agent-and-mcp-integration.md](docs/agent-and-mcp-integration.md)**:
-   * **AI Agent & LLM Guide**: Connecting autonomous agents and subagents via the Model Context Protocol (MCP), JSON-RPC streaming, and GraphQL.
+   * **AI Agent & LLM Guide**: Connecting autonomous agents and subagents via the Model Context Protocol (MCP), JSON line streaming, and GraphQL.
    * **Tool Catalog**: `netrust_get_observation`, `netrust_step`, `netrust_inspect_tile`, `netrust_render_map`, `netrust_reset_game`, `netrust_get_roles`, `netrust_reset_with_character`.
 
 ---
@@ -160,7 +160,7 @@ python3 examples/mcp_agent_client.py
 ```
 
 ### 4. Autonomous Agent Loop Example (Rust)
-Demonstrates an agent perceiving structured FOV state and navigating the verified dungeon:
+Demonstrates an agent perceiving structured FOV state and navigating the generated dungeon:
 ```bash
 cargo run --example autonomous_bot -p netrust-agent
 ```

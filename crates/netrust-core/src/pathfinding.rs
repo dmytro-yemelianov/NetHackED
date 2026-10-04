@@ -1,6 +1,6 @@
 //! Discrete Dijkstra Scent Gradient and Monster Pathfinding Convergence.
 //!
-//! Formally verified in `NetMechanics.Pathfinding`.
+//! Modeled in Lean 4 (`NetMechanics.Pathfinding`).
 //! Models steepest descent gradient stepping and proves target convergence.
 
 use netrust_types::{Coord, COLNO, ROWNO};

@@ -2,10 +2,10 @@
 
 ## 1. Executive Summary & Parity Status
 
-NetRust has migrated and formally verified the core foundation of NetHack:
+NetRust has implemented a core foundation of NetHack mechanics in Rust, with Lean 4 models of selected parts:
 - **Foundational Core**: Turn-based energy loop, coordinate geometry, dungeon branch topology (Main, Mines, Sokoban, Gehennom, Astral, Quest).
 - **Core Systems**: 20-slot inventory, AC/to-hit combat mathematics, prayer & piety, altar sacrifice, shopkeeper economics & anger mechanics, stealth & telepathy, monster AI behaviors, NetHack 3.6+ Sokoban level generation, and Class Quest trials.
-- **Formal Verification**: Lean 4 models of selected mechanics are machine-checked (simplified models; not formally linked to the Rust code) ([NetMechanics.lean](../NetMechanics.lean)) with zero `sorry`s.
+- **Lean 4 models**: models of selected mechanics are machine-checked (simplified models; not formally linked to the Rust code) ([NetMechanics.lean](../NetMechanics.lean)) with zero `sorry`s.
 
 To achieve **100% canonical feature parity** with NetHack (3.6 / 3.7 / 5.0 architecture), the remaining missing systems are organized into **4 Milestones** comprising **9 distinct subsystems**.
 

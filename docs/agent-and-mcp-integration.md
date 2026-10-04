@@ -20,7 +20,7 @@ NetRust decouples the game engine into pure state transitions and presentation a
            │                            │                           │
            ▼                            ▼                           ▼
   [crates/netrust-agent]       [crates/netrust-agent]     [crates/netrust-tui]
-     (MCP Server)                (JSON-RPC Stream)        (Terminal UI)
+     (MCP Server)                (JSON line stream)        (Terminal UI)
    stdio JSON-RPC 2.0             stdin/stdout lines        crossterm/curses
    LLMs, Subagents, IDEs        RL agents, bash pipes       Human players
 ```

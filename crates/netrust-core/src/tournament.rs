@@ -1,6 +1,6 @@
 //! Autonomous agent tournament scoring and tactical decision invariants.
 //!
-//! Formally verified in `NetMechanics.Tournament`.
+//! Modeled in Lean 4 (`NetMechanics.Tournament`).
 
 use serde::{Deserialize, Serialize};
 
