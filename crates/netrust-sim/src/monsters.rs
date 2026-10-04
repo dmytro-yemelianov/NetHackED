@@ -258,26 +258,15 @@ impl SimulationWorld {
                 if let Some(breath) = archetype
                     .and_then(|arch| arch.attacks.iter().find(|a| a.at == AttackType::Breath))
                 {
-                    let dist = mon.coord.chebyshev_distance(pc);
-                    // m_lined_up / linedup (mthrowu.c:1314): straight or diagonal,
-                    // distmin < BOLT_LIM, no blocking terrain; not adjacent.
-                    if dist > 1 && dist < BOLT_LIM && self.is_line_clear(mon.coord, pc) {
-                        // breamm (mthrowu.c:1117): `!mspec_used && rn2(3)`;
-                        // `rn2(3)` is drawn only when the cooldown is over.
-                        if mon.mspec_used == 0 && self.rng.random_range(0..3u32) != 0 {
-                            events.extend(self.monster_breathes(&mon.name, breath, pc));
-                            acted_special = true;
-                            // mthrowu.c:1131-1132 (target is the hero):
-                            // `if (!rn2(3)) mspec_used = 8 + rn2(18)` (8..=25).
-                            if self.rng.random_range(0..3u32) == 0 {
-                                let cooldown = 8 + self.rng.random_range(0..18u8);
-                                if let Some(m) = self.arena.actors.get_mut(mon_id) {
-                                    m.mspec_used = cooldown;
-                                }
-                            }
-                        }
-                    }
+                    acted_special =
+                        self.monster_ranged_breath(mon_id, &mon, breath, pc, &mut events);
                 }
+                let adjacent = mon.coord.chebyshev_distance(pc) == 1;
+                // Spells of an adjacent caster are its AT_MAGC slot(s) in the
+                // same mattacku round (`castmu`, mhitu.c:926-931): every
+                // C caster lists its hand-to-hand slot(s) first, so they are
+                // cast after the melee below.
+                let mut melee_spells: Vec<MonsterSpell> = Vec::new();
                 for ability in &mon.abilities {
                     if acted_special {
                         break;
@@ -288,59 +277,12 @@ impl SimulationWorld {
                                 && mon.coord.chebyshev_distance(pc) <= 4
                                 && self.is_line_clear(mon.coord, pc)
                             {
-                                if let Some(player) = self.arena.actors.get(self.player_id).cloned()
-                                {
-                                    let gaze_effect = netrust_core::resolve_gaze(
-                                        gaze,
-                                        player.intrinsics.reflection,
-                                        false,
-                                    );
-                                    match gaze_effect {
-                                        GazeEffect::ReflectedToAttacker => {
-                                            events.push(GameEvent::LogMessage {
-                                                text: Messages::gaze_reflected(
-                                                    &mon.name,
-                                                    self.locale,
-                                                ),
-                                            });
-                                            if gaze == GazeType::Petrification {
-                                                if let Some(m) = self.arena.actors.get_mut(mon_id) {
-                                                    m.hp = 0;
-                                                    m.is_dead = true;
-                                                }
-                                            } else if gaze == GazeType::Paralysis {
-                                                if let Some(m) = self.arena.actors.get_mut(mon_id) {
-                                                    m.hp = m.hp.saturating_sub(10);
-                                                    if m.hp == 0 {
-                                                        m.is_dead = true;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        GazeEffect::BlindImmune => {}
-                                        GazeEffect::Afflicted(g) => {
-                                            events.push(GameEvent::LogMessage {
-                                                text: Messages::gaze_afflicted(
-                                                    &mon.name,
-                                                    &format!("{g:?}"),
-                                                    self.locale,
-                                                ),
-                                            });
-                                            let dmg =
-                                                if g == GazeType::Petrification { 30 } else { 8 };
-                                            if let Some(p) =
-                                                self.arena.actors.get_mut(self.player_id)
-                                            {
-                                                p.hp = p.hp.saturating_sub(dmg);
-                                                if p.hp == 0 {
-                                                    p.is_dead = true;
-                                                }
-                                            }
-                                        }
-                                    }
-                                    acted_special = true;
-                                    break;
-                                }
+                                // C m_respond_medusa (mon.c:4109-4118) runs in
+                                // dochug before the move/attack phases
+                                // (monmove.c:753): the gaze is not the
+                                // monster's action, mattacku still follows.
+                                self.monster_gazes(mon_id, &mon.name, gaze, &mut events);
+                                break;
                             }
                         }
                         // Breath is driven by the archetype's AT_BREA entry above
@@ -352,78 +294,15 @@ impl SimulationWorld {
                             cooldown_turns,
                         } => {
                             if has_attack(AttackType::Magic)
+                                && cooldown_turns > 0
                                 && self.scheduler.turn % (cooldown_turns as u64) == 0
                                 && mon.coord.chebyshev_distance(pc) <= 6
                             {
-                                match spell {
-                                    MonsterSpell::SummonMonsters => {
-                                        let cur_count = self
-                                            .arena
-                                            .actors
-                                            .iter()
-                                            .filter(|(_, a)| !a.is_player && !a.is_dead)
-                                            .count();
-                                        let spawn_count =
-                                            netrust_core::calculate_summon_count(cur_count, 30, 2);
-                                        let mut spawned = 0;
-                                        for neighbor in mon.coord.neighbors() {
-                                            if spawned >= spawn_count {
-                                                break;
-                                            }
-                                            if self.level.is_passable(neighbor)
-                                                && self.actor_at(neighbor).is_none()
-                                            {
-                                                let skeleton = netrust_data::create_monster_record(
-                                                    netrust_data::MonsterSpeciesId::Skeleton,
-                                                    neighbor,
-                                                );
-                                                let arch = netrust_data::get_monster_species(
-                                                    netrust_data::MonsterSpeciesId::Skeleton,
-                                                );
-                                                if !netrust_core::genocide::is_genocided(
-                                                    &self.genocide_registry,
-                                                    arch.name,
-                                                    arch.glyph,
-                                                ) {
-                                                    self.arena.spawn_actor(skeleton);
-                                                    spawned += 1;
-                                                }
-                                            }
-                                        }
-                                        if spawned > 0 {
-                                            events.push(GameEvent::LogMessage {
-                                                text: Messages::monster_summon_incantation(
-                                                    &mon.name,
-                                                    spawned,
-                                                    self.locale,
-                                                ),
-                                            });
-                                            acted_special = true;
-                                            break;
-                                        }
-                                    }
-                                    MonsterSpell::CurseItems => {
-                                        let carried = self.arena.items_carried_by(self.player_id);
-                                        for item_id in carried {
-                                            if let Some(item) = self.arena.items.get_mut(item_id) {
-                                                if item.buc != Buc::Cursed {
-                                                    item.buc = Buc::Cursed;
-                                                    events.push(GameEvent::LogMessage {
-                                                        text: Messages::monster_curse_item(
-                                                            &item.name,
-                                                            self.locale,
-                                                        ),
-                                                    });
-                                                    acted_special = true;
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        if acted_special {
-                                            break;
-                                        }
-                                    }
-                                    _ => {}
+                                if adjacent {
+                                    melee_spells.push(spell);
+                                } else if self.cast_monster_spell(&mon, spell, &mut events) {
+                                    acted_special = true;
+                                    break;
                                 }
                             }
                         }
@@ -431,6 +310,10 @@ impl SimulationWorld {
                 }
 
                 if acted_special {
+                    continue;
+                }
+                // monmove.c:754-755: a reflected gaze can kill Medusa.
+                if self.arena.actors.get(mon_id).is_none_or(|m| m.is_dead) {
                     continue;
                 }
 
@@ -464,6 +347,19 @@ impl SimulationWorld {
                         // Monster is adjacent to player -> Melee Attack
                         let combat_events = self.resolve_combat(mon_id, self.player_id);
                         events.extend(combat_events);
+                        // Then the AT_MAGC slot(s) of the same round (castmu).
+                        let hero_alive = self
+                            .arena
+                            .actors
+                            .get(self.player_id)
+                            .is_some_and(|p| !p.is_dead);
+                        if hero_alive {
+                            for spell in melee_spells {
+                                if self.cast_monster_spell(&mon, spell, &mut events) {
+                                    break;
+                                }
+                            }
+                        }
                     }
                 } else {
                     // Dijkstra metric gradient step: flee if low on HP
@@ -491,6 +387,175 @@ impl SimulationWorld {
             }
         }
         events
+    }
+
+    /// The ranged part of C `mattacku` for a monster with an AT_BREA attack.
+    ///
+    /// C `dochug` calls `mattacku` when the hero is `inrange`
+    /// (`dist2 <= BOLT_LIM * BOLT_LIM`, monmove.c:540), and `mattacku`
+    /// computes `tmp = AC_VALUE(u.uac) + 10 + m_lev` before its attack loop
+    /// (mhitu.c:709), drawing `rnd(-u.uac)` when `u.uac < 0` even though no
+    /// ranged slot uses `tmp`. Then AT_BREA (mhitu.c:873) breathes only at
+    /// range (`range2`), lined up (`m_lined_up`, mthrowu.c:1314: straight or
+    /// diagonal, `distmin < BOLT_LIM`, no blocking terrain), via `breamm`
+    /// (mthrowu.c:1117): `!mspec_used && rn2(3)`, with `rn2(3)` drawn only
+    /// when the cooldown is over; after breathing at the hero,
+    /// `if (!rn2(3)) mspec_used = 8 + rn2(18)` (mthrowu.c:1131-1132).
+    ///
+    /// Returns `true` when the monster breathed (its action for the turn).
+    pub(crate) fn monster_ranged_breath(
+        &mut self,
+        mon_id: ActorId,
+        mon: &netrust_arena::ActorRecord,
+        breath: &Attack,
+        pc: Coord,
+        events: &mut Vec<GameEvent>,
+    ) -> bool {
+        let dist = mon.coord.chebyshev_distance(pc);
+        if dist <= 1 {
+            return false;
+        }
+        let dx = mon.coord.x.abs_diff(pc.x);
+        let dy = mon.coord.y.abs_diff(pc.y);
+        if dx * dx + dy * dy > BOLT_LIM * BOLT_LIM {
+            return false;
+        }
+        // mhitu.c:709 AC_VALUE(u.uac): rnd(-u.uac) when u.uac < 0.
+        let hero_ac = self
+            .arena
+            .actors
+            .get(self.player_id)
+            .cloned()
+            .map(|p| self.defender_ac(self.player_id, &p))
+            .unwrap_or(10);
+        if hero_ac < 0 {
+            let _ac_value = self.rng.random_range(1..=hero_ac.unsigned_abs());
+        }
+        if !(dist < BOLT_LIM && self.is_line_clear(mon.coord, pc)) {
+            return false;
+        }
+        if mon.mspec_used != 0 || self.rng.random_range(0..3u32) == 0 {
+            return false;
+        }
+        events.extend(self.monster_breathes(&mon.name, breath, pc));
+        if self.rng.random_range(0..3u32) == 0 {
+            let cooldown = 8 + self.rng.random_range(0..18u8);
+            if let Some(m) = self.arena.actors.get_mut(mon_id) {
+                m.mspec_used = cooldown;
+            }
+        }
+        true
+    }
+
+    /// Medusa's gaze at the hero (C `m_respond_medusa` -> `gazemu`; the sim
+    /// keeps its 30/8-damage approximation, see Known divergences). Damage
+    /// goes through [`SimulationWorld::damage_hero`] (C `losehp`).
+    fn monster_gazes(
+        &mut self,
+        mon_id: ActorId,
+        mon_name: &str,
+        gaze: GazeType,
+        events: &mut Vec<GameEvent>,
+    ) {
+        let Some(player) = self.arena.actors.get(self.player_id).cloned() else {
+            return;
+        };
+        let gaze_effect = netrust_core::resolve_gaze(gaze, player.intrinsics.reflection, false);
+        match gaze_effect {
+            GazeEffect::ReflectedToAttacker => {
+                events.push(GameEvent::LogMessage {
+                    text: Messages::gaze_reflected(mon_name, self.locale),
+                });
+                if gaze == GazeType::Petrification {
+                    if let Some(m) = self.arena.actors.get_mut(mon_id) {
+                        m.hp = 0;
+                        m.is_dead = true;
+                    }
+                } else if gaze == GazeType::Paralysis {
+                    if let Some(m) = self.arena.actors.get_mut(mon_id) {
+                        m.hp = m.hp.saturating_sub(10);
+                        if m.hp == 0 {
+                            m.is_dead = true;
+                        }
+                    }
+                }
+            }
+            GazeEffect::BlindImmune => {}
+            GazeEffect::Afflicted(g) => {
+                events.push(GameEvent::LogMessage {
+                    text: Messages::gaze_afflicted(mon_name, &format!("{g:?}"), self.locale),
+                });
+                let dmg = if g == GazeType::Petrification { 30 } else { 8 };
+                self.damage_hero(dmg, events);
+            }
+        }
+    }
+
+    /// The sim's spellcaster approximation of AT_MAGC (summon skeletons or
+    /// curse one carried item). Returns `true` when the spell did something.
+    fn cast_monster_spell(
+        &mut self,
+        mon: &netrust_arena::ActorRecord,
+        spell: MonsterSpell,
+        events: &mut Vec<GameEvent>,
+    ) -> bool {
+        match spell {
+            MonsterSpell::SummonMonsters => {
+                let cur_count = self
+                    .arena
+                    .actors
+                    .iter()
+                    .filter(|(_, a)| !a.is_player && !a.is_dead)
+                    .count();
+                let spawn_count = netrust_core::calculate_summon_count(cur_count, 30, 2);
+                let mut spawned = 0;
+                for neighbor in mon.coord.neighbors() {
+                    if spawned >= spawn_count {
+                        break;
+                    }
+                    if self.level.is_passable(neighbor) && self.actor_at(neighbor).is_none() {
+                        let skeleton = netrust_data::create_monster_record(
+                            netrust_data::MonsterSpeciesId::Skeleton,
+                            neighbor,
+                        );
+                        let arch = netrust_data::get_monster_species(
+                            netrust_data::MonsterSpeciesId::Skeleton,
+                        );
+                        if !netrust_core::genocide::is_genocided(
+                            &self.genocide_registry,
+                            arch.name,
+                            arch.glyph,
+                        ) {
+                            self.arena.spawn_actor(skeleton);
+                            spawned += 1;
+                        }
+                    }
+                }
+                if spawned > 0 {
+                    events.push(GameEvent::LogMessage {
+                        text: Messages::monster_summon_incantation(&mon.name, spawned, self.locale),
+                    });
+                    return true;
+                }
+                false
+            }
+            MonsterSpell::CurseItems => {
+                let carried = self.arena.items_carried_by(self.player_id);
+                for item_id in carried {
+                    if let Some(item) = self.arena.items.get_mut(item_id) {
+                        if item.buc != Buc::Cursed {
+                            item.buc = Buc::Cursed;
+                            events.push(GameEvent::LogMessage {
+                                text: Messages::monster_curse_item(&item.name, self.locale),
+                            });
+                            return true;
+                        }
+                    }
+                }
+                false
+            }
+            _ => false,
+        }
     }
 
     /// A monster breathes its AT_BREA attack at the hero (C `breamm`
@@ -556,12 +621,8 @@ impl SimulationWorld {
             events.push(GameEvent::LogMessage {
                 text: Messages::dragon_breath(mon_name, &format!("{breath:?}"), dmg, self.locale),
             });
-            if let Some(p) = self.arena.actors.get_mut(self.player_id) {
-                p.hp = p.hp.saturating_sub(dmg);
-                if p.hp == 0 {
-                    p.is_dead = true;
-                }
-            }
+            // C zhitu -> losehp (hack.c:4256): a polymorphed hero rehumanizes.
+            self.damage_hero(i32::try_from(dmg).unwrap_or(i32::MAX), &mut events);
             if breath == BreathType::Cold
                 && matches!(
                     self.level.get_tile(pc),
@@ -643,5 +704,55 @@ impl SimulationWorld {
         }
 
         events
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use netrust_data::{create_monster_record, monster_archetype_by_name, MonsterSpeciesId};
+
+    /// C mattacku computes `AC_VALUE(u.uac)` (mhitu.c:709) before its loop,
+    /// so a breather in range draws `rnd(-u.uac)` when `u.uac < 0` even on
+    /// a turn its breath is on cooldown (`mspec_used`, mthrowu.c:1117), and
+    /// draws nothing when `u.uac >= 0`.
+    #[test]
+    fn ranged_breather_draws_ac_value_before_breath_gate() {
+        let mut sim = SimulationWorld::new_with_seed(5);
+        let pid = sim.player_id;
+        sim.arena.actors.retain(|id, _| id == pid);
+        let hero = Coord::new_unchecked(10, 10);
+        for x in 5..=20 {
+            for y in 5..=15 {
+                sim.level.set_tile(Coord::new_unchecked(x, y), Tile::Room);
+            }
+        }
+        sim.arena.actors.get_mut(pid).unwrap().coord = hero;
+        let mut rec =
+            create_monster_record(MonsterSpeciesId::RedDragon, Coord::new_unchecked(13, 10));
+        rec.mspec_used = 5;
+        let id = sim.arena.spawn_actor(rec);
+        let mon = sim.arena.actors.get(id).unwrap().clone();
+        let breath = *monster_archetype_by_name("red dragon")
+            .unwrap()
+            .attacks
+            .iter()
+            .find(|a| a.at == AttackType::Breath)
+            .unwrap();
+
+        for (ac, draws) in [(-5, true), (0, false), (4, false)] {
+            sim.arena.actors.get_mut(pid).unwrap().ac = ac;
+            let mut expected = sim.rng.clone();
+            if draws {
+                let _: u32 = expected.random_range(1..=5u32);
+            }
+            let mut events = Vec::new();
+            let acted = sim.monster_ranged_breath(id, &mon, &breath, hero, &mut events);
+            assert!(!acted, "cooldown blocks the breath");
+            assert_eq!(
+                sim.rng, expected,
+                "AC {ac}: AC_VALUE draw only when u.uac < 0"
+            );
+        }
     }
 }

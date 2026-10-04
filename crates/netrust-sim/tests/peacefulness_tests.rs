@@ -715,3 +715,68 @@ fn test_serde_default_hero_race() {
     let restored: SimulationWorld = serde_json::from_value(v).unwrap();
     assert_eq!(restored.hero_race, RaceId::Human);
 }
+
+// ---------------------------------------------------------------------------
+// D2 final fix wave: the Sanctum's high priest of Moloch.
+// ---------------------------------------------------------------------------
+
+/// C `intemple` (priest.c:449-456): the Sanctum priest is created peaceful by
+/// `priestini` but turns hostile ("Infidel, you have entered Moloch's
+/// Sanctum!" / "Be gone!") when the hero enters; the sim does it on arrival.
+#[test]
+fn test_sanctum_priest_is_hostile_and_attacks() {
+    let mut sim = SimulationWorld::new_with_seed(77);
+    sim.current_branch = BranchId::Gehennom;
+    sim.depth = netrust_sim::actions::stairs::SANCTUM_DEPTH;
+    let pid = sim.player_id;
+    sim.arena.actors.retain(|id, _| id == pid);
+    let events = sim.unpack_or_generate_level(
+        BranchId::Gehennom,
+        netrust_sim::actions::stairs::SANCTUM_DEPTH,
+    );
+    assert!(has_msg(
+        &events,
+        "Infidel, you have entered Moloch's Sanctum!"
+    ));
+    assert!(has_msg(&events, "Be gone!"));
+    let (priest, pcoord) = sim
+        .arena
+        .actors
+        .iter()
+        .find(|(_, a)| a.name == "priest")
+        .map(|(id, a)| (id, a.coord))
+        .expect("Sanctum priest spawned");
+    assert!(!sim.arena.actors.get(priest).unwrap().is_peaceful);
+
+    // Put the hero next to the priest with a huge HP pool.
+    let spot = pcoord
+        .neighbors()
+        .into_iter()
+        .find(|&c| sim.level.is_passable(c) && sim.actor_at(c).is_none())
+        .expect("free square next to the priest");
+    {
+        let p = sim.arena.actors.get_mut(pid).unwrap();
+        p.coord = spot;
+        p.hp = 5000;
+        p.max_hp = 5000;
+    }
+    let mut attacked = false;
+    for _ in 0..30 {
+        let ev = sim.step_player_action(ActionAst::Wait);
+        attacked |= ev.iter().any(|e| matches!(
+            e,
+            GameEvent::AttackLanded { attacker, target, .. } | GameEvent::AttackMissed { attacker, target }
+            if *attacker == priest && *target == pid
+        ));
+        if attacked {
+            break;
+        }
+        // Keep the priest adjacent if it wandered.
+        let pc = sim.arena.actors.get(priest).unwrap().coord;
+        if pc.chebyshev_distance(spot) != 1 {
+            sim.arena.actors.get_mut(priest).unwrap().coord = pcoord;
+        }
+        sim.arena.actors.get_mut(pid).unwrap().coord = spot;
+    }
+    assert!(attacked, "the hostile Sanctum priest attacks the hero");
+}

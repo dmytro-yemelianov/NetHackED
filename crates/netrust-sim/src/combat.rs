@@ -262,6 +262,49 @@ impl SimulationWorld {
         }
     }
 
+    /// Apply `damage` to the hero through C `losehp` (`hack.c:4256`): the
+    /// player actor's hp/max_hp are authoritative (healing, breath, traps,
+    /// prayer and regeneration change only them), so they are copied into the
+    /// current form first, then [`netrust_core::polymorph::apply_poly_damage`]
+    /// runs (`u.mh < 1` -> `rehumanize`, else `u.uhp < 1` -> death) and the
+    /// result is written back. Pushes "You revert to your normal form!" on
+    /// rehumanize. Returns `true` when the hero died. Shared by melee
+    /// (`land_hit`), breath and gaze damage.
+    pub(crate) fn damage_hero(&mut self, damage: i32, events: &mut Vec<GameEvent>) -> bool {
+        let Some(target) = self.arena.actors.get_mut(self.player_id) else {
+            return false;
+        };
+        Self::sync_hero_form_from_actor(&mut self.hero, target);
+        // Unchanging is not tracked on Hero yet; pass false.
+        let poly_res = netrust_core::polymorph::apply_poly_damage(&mut self.hero, damage, false);
+        match poly_res {
+            netrust_core::polymorph::PolyDamageResult::Absorbed
+            | netrust_core::polymorph::PolyDamageResult::BaseDamaged => {
+                if let Some(poly) = &self.hero.polymorph {
+                    target.hp = poly.hp.max(0) as u32;
+                    target.max_hp = poly.max_hp.max(0) as u32;
+                } else {
+                    target.hp = self.hero.base_hp.max(0) as u32;
+                    target.max_hp = self.hero.base_max_hp.max(0) as u32;
+                }
+                false
+            }
+            netrust_core::polymorph::PolyDamageResult::Reverted => {
+                target.hp = self.hero.base_hp.max(0) as u32;
+                target.max_hp = self.hero.base_max_hp.max(0) as u32;
+                events.push(GameEvent::LogMessage {
+                    text: netrust_i18n::Messages::revert_form(self.locale).to_string(),
+                });
+                false
+            }
+            netrust_core::polymorph::PolyDamageResult::Dead => {
+                target.hp = 0;
+                target.is_dead = true;
+                true
+            }
+        }
+    }
+
     /// Apply a landed hit's damage to the defender and emit the hit/kill events
     /// (shared by hero, monster and pet attacks). Returns `true` when lethal.
     #[allow(clippy::too_many_arguments)]
@@ -276,63 +319,24 @@ impl SimulationWorld {
         events: &mut Vec<GameEvent>,
     ) -> bool {
         let mut lethal = false;
-        if let Some(target) = self.arena.actors.get_mut(defender_id) {
-            if defender_id == self.player_id {
-                let mut actual_damage = final_damage as i32;
-                if decap {
-                    actual_damage += 9999;
-                } // Force fatal
-
-                // The player actor's hp/max_hp are authoritative (healing,
-                // breath, traps, prayer and regeneration change only them):
-                // copy them into the current form first (C has one `u.uhp` /
-                // `u.mh` pair, hack.c:4256 losehp), then write the result back.
-                Self::sync_hero_form_from_actor(&mut self.hero, target);
-                // Unchanging is not tracked on Hero yet; pass false.
-                let poly_res = netrust_core::polymorph::apply_poly_damage(
-                    &mut self.hero,
-                    actual_damage,
-                    false,
-                );
-                match poly_res {
-                    netrust_core::polymorph::PolyDamageResult::Absorbed
-                    | netrust_core::polymorph::PolyDamageResult::BaseDamaged => {
-                        if let Some(poly) = &self.hero.polymorph {
-                            target.hp = poly.hp as u32;
-                            target.max_hp = poly.max_hp as u32;
-                        } else {
-                            target.hp = self.hero.base_hp as u32;
-                            target.max_hp = self.hero.base_max_hp as u32;
-                        }
-                        lethal = false;
-                    }
-                    netrust_core::polymorph::PolyDamageResult::Reverted => {
-                        target.hp = self.hero.base_hp as u32;
-                        target.max_hp = self.hero.base_max_hp as u32;
-                        lethal = false;
-                        events.push(GameEvent::LogMessage {
-                            text: netrust_i18n::Messages::revert_form(self.locale).to_string(),
-                        });
-                    }
-                    netrust_core::polymorph::PolyDamageResult::Dead => {
-                        target.hp = 0;
-                        target.is_dead = true;
-                        lethal = true;
-                    }
-                }
-            } else {
-                let (new_hp, dead) = if decap {
-                    netrust_core::artifacts_wands::apply_vorpal_strike(target.hp, decap)
-                } else {
-                    (
-                        target.hp.saturating_sub(final_damage),
-                        target.hp <= final_damage,
-                    )
-                };
-                target.hp = new_hp;
-                target.is_dead = dead || target.hp == 0;
-                lethal = target.is_dead;
+        if defender_id == self.player_id {
+            let mut actual_damage = i32::try_from(final_damage).unwrap_or(i32::MAX);
+            if decap {
+                actual_damage = actual_damage.saturating_add(9999); // Force fatal
             }
+            lethal = self.damage_hero(actual_damage, events);
+        } else if let Some(target) = self.arena.actors.get_mut(defender_id) {
+            let (new_hp, dead) = if decap {
+                netrust_core::artifacts_wands::apply_vorpal_strike(target.hp, decap)
+            } else {
+                (
+                    target.hp.saturating_sub(final_damage),
+                    target.hp <= final_damage,
+                )
+            };
+            target.hp = new_hp;
+            target.is_dead = dead || target.hp == 0;
+            lethal = target.is_dead;
         }
         events.push(GameEvent::AttackLanded {
             attacker: attacker_id,

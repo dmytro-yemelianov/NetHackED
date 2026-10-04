@@ -456,7 +456,16 @@ impl SimulationWorld {
                     let (lvl, _spawn) = generate_moloch_sanctum_level(&mut self.rng);
                     self.level = lvl;
 
-                    self.spawn_monster_near(MonsterSpeciesId::Priest, self.level.stairs_down);
+                    // C `priestini` makes the high priest peaceful; `intemple`
+                    // (priest.c:449-456) turns him hostile the first time the
+                    // hero enters the temple, with no alignment penalty
+                    // (`set_malign`). The sim has no temple-entry hook, so it
+                    // applies this on arrival (documented divergence).
+                    let priest =
+                        self.spawn_monster_near(MonsterSpeciesId::Priest, self.level.stairs_down);
+                    if let Some(m) = priest.and_then(|id| self.arena.actors.get_mut(id)) {
+                        m.is_peaceful = false;
+                    }
 
                     let amulet = create_item_record(
                         ItemKindId::AmuletOfYendor,
@@ -468,6 +477,15 @@ impl SimulationWorld {
                     events.push(GameEvent::LogMessage {
                         text: "You enter Moloch's Sanctum! Rivers of boiling lava surround the unholy high altar!".into(),
                     });
+                    if priest.is_some() {
+                        // priest.c:451-452, spoken with `verbalize1`.
+                        events.push(GameEvent::LogMessage {
+                            text: netrust_i18n::Messages::sanctum_infidel(self.locale).into(),
+                        });
+                        events.push(GameEvent::LogMessage {
+                            text: netrust_i18n::Messages::sanctum_be_gone(self.locale).into(),
+                        });
+                    }
                 }
                 (BranchId::Gehennom, d) => {
                     // Intermediate Gehennom Mazes

@@ -85,6 +85,14 @@ fn peace_messages_are_translated() {
     assert!(!uk.contains("watchman"), "{uk}");
     for (en, uk) in [
         (
+            Messages::sanctum_infidel(Locale::En).to_string(),
+            Messages::sanctum_infidel(Locale::Uk).to_string(),
+        ),
+        (
+            Messages::sanctum_be_gone(Locale::En).to_string(),
+            Messages::sanctum_be_gone(Locale::Uk).to_string(),
+        ),
+        (
             Messages::feel_hypocrite(Locale::En).to_string(),
             Messages::feel_hypocrite(Locale::Uk).to_string(),
         ),

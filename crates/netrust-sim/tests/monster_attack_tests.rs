@@ -438,3 +438,120 @@ fn fire_breath_burns_away_slime_even_when_resisted() {
     }
     panic!("no resisted fire breath hit the hero");
 }
+
+// ---------------------------------------------------------------------------
+// D2 final fix wave: gaze/spell turns still resolve melee; breath vs polyform.
+// ---------------------------------------------------------------------------
+
+/// Remove every actor except the hero and `keep` (e.g. summoned skeletons).
+fn clear_others(sim: &mut SimulationWorld, keep: ActorId) {
+    let pid = sim.player_id;
+    sim.arena.actors.retain(|id, _| id == pid || id == keep);
+}
+
+fn msg_index(events: &[GameEvent], needle: &str) -> Option<usize> {
+    events
+        .iter()
+        .position(|e| matches!(e, GameEvent::LogMessage { text } if text.contains(needle)))
+}
+
+fn first_attack_index(events: &[GameEvent], attacker: ActorId) -> Option<usize> {
+    events.iter().position(|e| {
+        matches!(e, GameEvent::AttackLanded { attacker: a, .. }
+            | GameEvent::AttackMissed { attacker: a, .. } if *a == attacker)
+    })
+}
+
+#[test]
+fn adjacent_medusa_gazes_then_resolves_her_melee_attacks() {
+    // C dochug: m_respond -> m_respond_medusa gazes (monmove.c:753,
+    // mon.c:4109-4118), then mattacku (monmove.c:971) resolves
+    // W 2d4, C 1d8, B 1d6 and skips her AT_GAZE slot (mhitu.c:832-836).
+    let mut sim = arena_world(29);
+    let medusa = spawn(&mut sim, MonsterSpeciesId::Medusa, east(1));
+    let mut turns_with_both = 0;
+    for _ in 0..30 {
+        reset(&mut sim, medusa, east(1));
+        let events = sim.step_player_action(ActionAst::Wait);
+        let Some(gaze) = msg_index(&events, "gaze") else {
+            continue;
+        };
+        let atks = attack_events(&events, medusa);
+        assert_eq!(
+            atks.len(),
+            3,
+            "weapon, claw and bite after the gaze: {atks:?}"
+        );
+        let first = first_attack_index(&events, medusa).unwrap();
+        assert!(gaze < first, "gaze (m_respond) precedes mattacku");
+        turns_with_both += 1;
+    }
+    assert!(
+        turns_with_both > 0,
+        "Medusa gazed and attacked in the same turn"
+    );
+}
+
+#[test]
+fn adjacent_master_lich_touches_on_a_spell_turn() {
+    // C mattacku loop (mhitu.c:768): slot 0 AT_TUCH 3d6 cold resolves
+    // before slot 1 AT_MAGC (`castmu`, mhitu.c:926-931) in the same round.
+    let mut sim = arena_world(31);
+    let lich = spawn(&mut sim, MonsterSpeciesId::Lich, east(1));
+    let mut spell_turns = 0;
+    for _ in 0..80 {
+        clear_others(&mut sim, lich);
+        reset(&mut sim, lich, east(1));
+        let events = sim.step_player_action(ActionAst::Wait);
+        let Some(spell) = msg_index(&events, "incantation") else {
+            continue;
+        };
+        let first = first_attack_index(&events, lich).expect("touch resolved on a spell turn");
+        assert!(first < spell, "AT_TUCH (slot 0) before AT_MAGC (slot 1)");
+        spell_turns += 1;
+    }
+    assert!(
+        spell_turns > 0,
+        "the lich cast at least once while adjacent"
+    );
+}
+
+#[test]
+fn breath_on_a_polymorphed_hero_rehumanizes_instead_of_killing() {
+    // C zhitu -> losehp (hack.c:4256): when polymorphed, damage goes to
+    // u.mh and u.mh < 1 calls rehumanize() (base u.uhp unchanged).
+    let mut sim = arena_world(61);
+    let dragon = spawn(&mut sim, MonsterSpeciesId::RedDragon, east(3));
+    let pid = sim.player_id;
+    for _ in 0..300 {
+        reset(&mut sim, dragon, east(3));
+        sim.hero.base_hp = 40;
+        sim.hero.base_max_hp = 40;
+        sim.hero.polymorph = Some(netrust_types::PolymorphForm {
+            monster_id: 1,
+            hp: 5,
+            max_hp: 20,
+            duration: 100,
+        });
+        {
+            let p = sim.arena.actors.get_mut(pid).unwrap();
+            p.hp = 5;
+            p.max_hp = 20;
+        }
+        let events = sim.step_player_action(ActionAst::Wait);
+        if events
+            .iter()
+            .any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("fiery blast")))
+        {
+            let p = sim.arena.actors.get(pid).unwrap();
+            assert!(
+                !p.is_dead,
+                "6d6 breath on a 5 HP polyform reverts, not kills"
+            );
+            assert!(sim.hero.polymorph.is_none(), "rehumanized");
+            assert_eq!(p.hp, 40, "base HP unchanged after rehumanize");
+            return;
+        }
+    }
+    panic!("the dragon never breathed on the hero");
+}

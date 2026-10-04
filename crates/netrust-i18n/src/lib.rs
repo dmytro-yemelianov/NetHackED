@@ -628,6 +628,22 @@ impl Messages {
         }
     }
 
+    /// C `intemple` (priest.c:451): the Sanctum priest's first greeting.
+    pub fn sanctum_infidel(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "\"Infidel, you have entered Moloch's Sanctum!\"",
+            Locale::Uk => "«Невірний, ти ввійшов до Святилища Молоха!»",
+        }
+    }
+
+    /// C `intemple` (priest.c:452): spoken after [`Messages::sanctum_infidel`].
+    pub fn sanctum_be_gone(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "\"Be gone!\"",
+            Locale::Uk => "«Геть звідси!»",
+        }
+    }
+
     /// C `setmangry` (mon.c:4271): attacking from an Elbereth square.
     pub fn feel_hypocrite(locale: Locale) -> &'static str {
         match locale {
