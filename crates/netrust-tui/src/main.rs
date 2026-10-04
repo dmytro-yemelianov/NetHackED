@@ -15,6 +15,7 @@ use crossterm::{
         LeaveAlternateScreen,
     },
 };
+use netrust_agent::commands::ZAP_ENERGY;
 use netrust_core::skills::{enhance_skill, skill_damage_bonus, skill_to_hit_bonus};
 use netrust_dungeon::compute_fov;
 use netrust_i18n::{t, t_align, t_hunger_str, t_item, Locale};
@@ -23,80 +24,13 @@ use netrust_sim::{
     HungerState, RaceId, RoleId, SimulationWorld, Tile, COLNO, ROWNO,
 };
 use netrust_types::{ItemId, SkillClass, SkillLevel, TrapState};
+mod keys;
+use keys::{
+    confirm_quit_answer, handle_key, help_desc_uk, map_ukrainian_key, InventoryPurpose, KeyContext,
+    KeyOutcome, HELP_KEYS,
+};
 use std::collections::HashSet;
 use std::io::{self, stdout, Stdout};
-
-/// Maps Ukrainian keyboard layout keys to their QWERTY hardware equivalents.
-fn map_ukrainian_key(c: char) -> char {
-    match c {
-        'й' => 'q',
-        'Й' => 'Q',
-        'ц' => 'w',
-        'Ц' => 'W',
-        'у' => 'e',
-        'У' => 'E',
-        'к' => 'r',
-        'К' => 'R',
-        'е' => 't',
-        'Е' => 'T',
-        'н' => 'y',
-        'Н' => 'Y',
-        'г' => 'u',
-        'Г' => 'U',
-        'ш' => 'i',
-        'Ш' => 'I',
-        'щ' => 'o',
-        'Щ' => 'O',
-        'з' => 'p',
-        'З' => 'P',
-        'х' => '[',
-        'Х' => '{',
-        'ї' => ']',
-        'Ї' => '}',
-        'ф' => 'a',
-        'Ф' => 'A',
-        'і' => 's',
-        'І' => 'S',
-        'в' => 'd',
-        'В' => 'D',
-        'а' => 'f',
-        'А' => 'F',
-        'п' => 'g',
-        'П' => 'G',
-        'р' => 'h',
-        'Р' => 'H',
-        'о' => 'j',
-        'О' => 'J',
-        'л' => 'k',
-        'Л' => 'K',
-        'д' => 'l',
-        'Д' => 'L',
-        'ж' => ';',
-        'Ж' => ':',
-        'є' => '\'',
-        'Є' => '"',
-        'я' => 'z',
-        'Я' => 'Z',
-        'ч' => 'x',
-        'Ч' => 'X',
-        'с' => 'c',
-        'С' => 'C',
-        'м' => 'v',
-        'М' => 'V',
-        'и' => 'b',
-        'И' => 'B',
-        'т' => 'n',
-        'Т' => 'N',
-        'ь' => 'm',
-        'Ь' => 'M',
-        'б' => ',',
-        'Б' => '<',
-        'ю' => '.',
-        'Ю' => '>',
-        '№' => '#',
-        other => other,
-    }
-}
 
 struct TerminalGuard;
 
@@ -403,6 +337,15 @@ fn select_character(stdout: &mut Stdout, locale: Locale) -> io::Result<Option<Ch
             }
         }
     }
+}
+
+/// First adjacent door in the given state, scanning compass directions.
+fn adjacent_door(world: &SimulationWorld, from: Coord, want: DoorState) -> Option<Coord> {
+    Direction::all_compass().iter().find_map(|&d| {
+        from.step(d).filter(
+            |&c| matches!(world.level.get_tile(c), Tile::Door { state, .. } if *state == want),
+        )
+    })
 }
 
 fn prompt_direction(stdout: &mut Stdout, prompt_msg: &str) -> io::Result<Option<Direction>> {
@@ -740,53 +683,35 @@ fn show_help_modal(stdout: &mut Stdout, locale: Locale) -> io::Result<()> {
         ResetColor
     )?;
 
-    let help_lines = if locale == Locale::Uk {
-        &[
-            "  h/j/k/l, Стрілки : Рух у 4 сторони світу (Захід, Південь, Північ, Схід)",
-            "  y/u/b/n          : Діагональний рух (NW, NE, SW, SE)",
-            "  . / 5            : Зачекати один хід (пропустити чергу)",
-            "  ,                : Підібрати предмет з поточної клітинки",
-            "  > / <            : Спуститися / піднятися сходами",
-            "  s                : Активний пошук секретних дверей та прихованих пасток",
-            "  t / ^            : Знешкодити сусідню виявлену пастку (#untrap)",
-            "  f                : Вистрілити з сагайдака (із запитом напрямку)",
-            "  Q                : Обрати боєприпаси для сагайдака (#quiver)",
-            "  R                : Осідлати їздову тварину або зійти з коня (#ride)",
-            "  e / q / r / z    : З'їсти / Випити зілля / Прочитати сувій / Застосувати жезл",
-            "  p / P / S        : Заплатити / Помолитися / Пожертвувати на вівтарі",
-            "  o / c / K        : Відкрити двері / Закрити двері / Вдарити ногою (Kick)",
-            "  #e / #c          : Меню покращення навичок (#enhance) / Обітниці (#conduct)",
-            "  i                : Відкрити інвентар | L : Змінити мову (UK/EN) | q : Вихід",
-        ]
-    } else {
-        &[
-            "  h/j/k/l, Arrows  : Cardinal Movement (West, South, North, East)",
-            "  y/u/b/n          : Diagonal Movement (NW, NE, SW, SE)",
-            "  . / 5            : Wait one turn (rest and let energy tick)",
-            "  ,                : Pick up item from floor",
-            "  > / <            : Descend / ascend stairs",
-            "  s                : Actively search for secret doors & hidden traps",
-            "  t / ^            : Untrap / disarm an adjacent revealed trap (#untrap)",
-            "  f                : Fire quivered projectile (prompts direction)",
-            "  Q                : Quiver ammunition selector (#quiver)",
-            "  R                : Mount saddled steed or dismount (#ride)",
-            "  e / q / r / z    : Eat corpse / Quaff potion / Read scroll / Zap wand",
-            "  p / P / S        : Pay shopkeeper / Pray to deity / Sacrifice at altar",
-            "  o / c / K        : Open door / Close door / Kick adjacent target",
-            "  #e / #c          : Enhance skills (#enhance) / Voluntary conducts (#conduct)",
-            "  i                : Open inventory | L : Switch Language (UK/EN) | q : Quit",
-        ]
-    };
-
-    for (idx, line) in help_lines.iter().enumerate() {
+    // Three columns rendered from the single-source key list.
+    const ROWS: usize = 14;
+    for (idx, (c, en)) in HELP_KEYS.iter().enumerate() {
+        let desc = if locale == Locale::Uk {
+            help_desc_uk(*c)
+        } else {
+            en
+        };
+        let (col, row) = (idx / ROWS, idx % ROWS);
         execute!(
             stdout,
-            MoveTo(ox + 2, oy + 3 + idx as u16),
+            MoveTo(ox + 1 + col as u16 * 26, oy + 3 + row as u16),
             SetForegroundColor(Color::White),
-            Print(line),
+            Print(format!("{c} {desc}")),
             ResetColor
         )?;
     }
+    let quit_line = if locale == Locale::Uk {
+        "Esc / Ctrl-C : вихід (запитує y/n)"
+    } else {
+        "Esc / Ctrl-C : quit (asks y/n)"
+    };
+    execute!(
+        stdout,
+        MoveTo(ox + 1, oy + 3 + ROWS as u16 + 1),
+        SetForegroundColor(Color::Yellow),
+        Print(quit_line),
+        ResetColor
+    )?;
 
     let footer = if locale == Locale::Uk {
         "Натисніть Esc або Пробіл для повернення до гри..."
@@ -873,224 +798,198 @@ fn main() -> io::Result<()> {
             };
             if player.is_dead {
                 message = if world.locale == Locale::Uk {
-                    "Ви загинули... Натисніть 'q' для виходу.".into()
+                    "Ви загинули... Натисніть Esc для виходу.".into()
                 } else {
-                    "You have died... Press 'q' to quit.".into()
+                    "You have died... Press Esc to quit.".into()
                 };
-                if code == KeyCode::Char('q') || code == KeyCode::Esc {
+                if matches!(
+                    handle_key(
+                        key,
+                        &KeyContext {
+                            player: player.coord,
+                            last_dir,
+                        }
+                    ),
+                    KeyOutcome::ConfirmQuit
+                ) || code == KeyCode::Char('q')
+                {
                     break;
                 }
                 continue;
             }
 
-            let action = match code {
-                KeyCode::Char('q') | KeyCode::Esc => break,
-                KeyCode::Char('?') => {
-                    show_help_modal(&mut stdout, world.locale)?;
-                    None
-                }
-                KeyCode::Char('L') | KeyCode::Char('\\') => {
-                    let new_loc = if world.locale == Locale::Uk {
-                        Locale::En
-                    } else {
-                        Locale::Uk
-                    };
-                    world.set_locale(new_loc);
-                    message = if new_loc == Locale::Uk {
-                        "Мову інтерфейсу перемкнено на українську (uk-UA).".into()
-                    } else {
-                        "Interface language switched to English (en-US).".into()
-                    };
-                    None
-                }
-                // Cardinal & Diagonal Movement
-                KeyCode::Char('h') | KeyCode::Left => {
-                    last_dir = Direction::West;
-                    Some(ActionAst::Move(Direction::West))
-                }
-                KeyCode::Char('l') | KeyCode::Right => {
-                    last_dir = Direction::East;
-                    Some(ActionAst::Move(Direction::East))
-                }
-                KeyCode::Char('k') | KeyCode::Up => {
-                    last_dir = Direction::North;
-                    Some(ActionAst::Move(Direction::North))
-                }
-                KeyCode::Char('j') | KeyCode::Down => {
-                    last_dir = Direction::South;
-                    Some(ActionAst::Move(Direction::South))
-                }
-                KeyCode::Char('y') => {
-                    last_dir = Direction::NorthWest;
-                    Some(ActionAst::Move(Direction::NorthWest))
-                }
-                KeyCode::Char('u') => {
-                    last_dir = Direction::NorthEast;
-                    Some(ActionAst::Move(Direction::NorthEast))
-                }
-                KeyCode::Char('b') => {
-                    last_dir = Direction::SouthWest;
-                    Some(ActionAst::Move(Direction::SouthWest))
-                }
-                KeyCode::Char('n') => {
-                    last_dir = Direction::SouthEast;
-                    Some(ActionAst::Move(Direction::SouthEast))
-                }
-                KeyCode::Char('.') | KeyCode::Char('5') => Some(ActionAst::Wait),
-                KeyCode::Char(',') => Some(ActionAst::PickUp),
-
-                // Canonical Actions
-                KeyCode::Char('s') => Some(ActionAst::Search),
-                KeyCode::Char('i') => {
-                    let _ = show_inventory_modal(&mut stdout, &world)?;
-                    None
-                }
-                KeyCode::Char('#') => {
-                    let (ox, oy) = screen_offsets();
-                    execute!(
-                        stdout,
-                        MoveTo(ox, oy),
-                        Clear(ClearType::CurrentLine),
-                        SetForegroundColor(Color::Yellow),
-                        Print(if world.locale == Locale::Uk {
-                            "#команда: [e]nhance (навички) | [c]onduct (обітниці): "
+            let outcome = handle_key(
+                key,
+                &KeyContext {
+                    player: player.coord,
+                    last_dir,
+                },
+            );
+            let action =
+                match outcome {
+                    KeyOutcome::Quit => break,
+                    KeyOutcome::ConfirmQuit => {
+                        let (ox, oy) = screen_offsets();
+                        execute!(
+                            stdout,
+                            MoveTo(ox, oy),
+                            Clear(ClearType::CurrentLine),
+                            SetForegroundColor(Color::Yellow),
+                            Print(if world.locale == Locale::Uk {
+                                "Справді вийти? [y/n]"
+                            } else {
+                                "Really quit? [y/n]"
+                            }),
+                            ResetColor
+                        )?;
+                        let quit = loop {
+                            if let Event::Key(ans) = event::read()? {
+                                if ans.kind == KeyEventKind::Press {
+                                    break confirm_quit_answer(ans);
+                                }
+                            }
+                        };
+                        if quit {
+                            break;
+                        }
+                        message = String::new();
+                        None
+                    }
+                    KeyOutcome::OpenHelp => {
+                        show_help_modal(&mut stdout, world.locale)?;
+                        None
+                    }
+                    KeyOutcome::ToggleLanguage => {
+                        let new_loc = if world.locale == Locale::Uk {
+                            Locale::En
                         } else {
-                            "#command: [e]nhance (skills) | [c]onduct (challenges): "
-                        }),
-                        ResetColor
-                    )?;
-                    if let Event::Key(ext_key) = event::read()? {
-                        if ext_key.kind == KeyEventKind::Press {
-                            let ext_code = match ext_key.code {
-                                KeyCode::Char(c) => KeyCode::Char(map_ukrainian_key(c)),
-                                other => other,
-                            };
-                            match ext_code {
-                                KeyCode::Char('e') => {
-                                    show_enhance_modal(&mut stdout, &mut world)?;
+                            Locale::Uk
+                        };
+                        world.set_locale(new_loc);
+                        message = if new_loc == Locale::Uk {
+                            "Мову інтерфейсу перемкнено на українську (uk-UA).".into()
+                        } else {
+                            "Interface language switched to English (en-US).".into()
+                        };
+                        None
+                    }
+                    KeyOutcome::Act(act) => {
+                        if let ActionAst::Move(d) = &act {
+                            last_dir = *d;
+                        }
+                        Some(act)
+                    }
+                    KeyOutcome::ViewInventory => {
+                        let _ = show_inventory_modal(&mut stdout, &world)?;
+                        None
+                    }
+                    KeyOutcome::ExtendedCommand => {
+                        let (ox, oy) = screen_offsets();
+                        execute!(
+                            stdout,
+                            MoveTo(ox, oy),
+                            Clear(ClearType::CurrentLine),
+                            SetForegroundColor(Color::Yellow),
+                            Print(if world.locale == Locale::Uk {
+                                "#команда: [e]nhance (навички) | [c]onduct (обітниці): "
+                            } else {
+                                "#command: [e]nhance (skills) | [c]onduct (challenges): "
+                            }),
+                            ResetColor
+                        )?;
+                        if let Event::Key(ext_key) = event::read()? {
+                            if ext_key.kind == KeyEventKind::Press {
+                                let ext_code = match ext_key.code {
+                                    KeyCode::Char(c) => KeyCode::Char(map_ukrainian_key(c)),
+                                    other => other,
+                                };
+                                match ext_code {
+                                    KeyCode::Char('e') => {
+                                        show_enhance_modal(&mut stdout, &mut world)?;
+                                    }
+                                    KeyCode::Char('c') => {
+                                        show_conducts_modal(&mut stdout, &world)?;
+                                    }
+                                    _ => {}
                                 }
-                                KeyCode::Char('c') => {
-                                    show_conducts_modal(&mut stdout, &world)?;
-                                }
-                                _ => {}
                             }
                         }
+                        None
                     }
-                    None
-                }
-                KeyCode::Char('E') => {
-                    show_enhance_modal(&mut stdout, &mut world)?;
-                    None
-                }
-                KeyCode::Char('C') => {
-                    show_conducts_modal(&mut stdout, &world)?;
-                    None
-                }
-                KeyCode::Char('f') => {
-                    // Fire quivered projectile
-                    let prompt_text = if world.locale == Locale::Uk {
-                        "У якому напрямку вистрілити? [h/j/k/l/y/u/b/n]: "
-                    } else {
-                        "In what direction? [h/j/k/l/y/u/b/n]: "
-                    };
-                    prompt_direction(&mut stdout, prompt_text)?.map(ActionAst::Fire)
-                }
-                KeyCode::Char('Q') => {
-                    // Quiver ammunition
-                    if let Some(item_id) = show_inventory_modal(&mut stdout, &world)? {
-                        world.hero.quivered_item = Some(item_id);
-                        let item_name = world
-                            .arena
-                            .items
-                            .get(item_id)
-                            .map(|i| i.name.as_str())
-                            .unwrap_or("item");
-                        let localized_name = t_item(item_name, world.locale);
-                        message = if world.locale == Locale::Uk {
-                            format!("Ви вклали у сагайдак: {localized_name}.")
+                    KeyOutcome::OpenEnhance => {
+                        show_enhance_modal(&mut stdout, &mut world)?;
+                        None
+                    }
+                    KeyOutcome::OpenConducts => {
+                        show_conducts_modal(&mut stdout, &world)?;
+                        None
+                    }
+                    KeyOutcome::PromptFire => {
+                        let prompt_text = if world.locale == Locale::Uk {
+                            "У якому напрямку вистрілити? [h/j/k/l/y/u/b/n]: "
                         } else {
-                            format!("You ready {item_name} in your quiver.")
+                            "In what direction? [h/j/k/l/y/u/b/n]: "
                         };
+                        prompt_direction(&mut stdout, prompt_text)?.map(ActionAst::Fire)
                     }
-                    None
-                }
-                KeyCode::Char('t') | KeyCode::Char('^') => {
-                    // Untrap in facing direction
-                    player.coord.step(last_dir).map(ActionAst::Untrap)
-                }
-                KeyCode::Char('R') => {
-                    // Mount / Dismount steed
-                    if world.hero.mount.is_some() {
-                        Some(ActionAst::Dismount)
-                    } else {
-                        // Attempt to mount adjacent tame steed
-                        let adj_steed = Direction::all_compass()
-                            .iter()
-                            .find_map(|&d| player.coord.step(d).and_then(|c| world.actor_at(c)));
-                        adj_steed.map(ActionAst::Mount)
+                    KeyOutcome::OpenInventory(InventoryPurpose::Quiver) => {
+                        if let Some(item_id) = show_inventory_modal(&mut stdout, &world)? {
+                            world.hero.quivered_item = Some(item_id);
+                            let item_name = world
+                                .arena
+                                .items
+                                .get(item_id)
+                                .map(|i| i.name.as_str())
+                                .unwrap_or("item");
+                            let localized_name = t_item(item_name, world.locale);
+                            message = if world.locale == Locale::Uk {
+                                format!("Ви вклали у сагайдак: {localized_name}.")
+                            } else {
+                                format!("You ready {item_name} in your quiver.")
+                            };
+                        }
+                        None
                     }
-                }
-                KeyCode::Char('p') => Some(ActionAst::Pay),
-                KeyCode::Char('P') => Some(ActionAst::Pray),
-                KeyCode::Char('S') => Some(ActionAst::Sacrifice(0)),
-                KeyCode::Char('d') => Some(ActionAst::Drop(0)),
-                KeyCode::Char('w') => Some(ActionAst::Wield(0)),
-                KeyCode::Char('e') => Some(ActionAst::Eat(0)),
-                KeyCode::Char('x') => Some(ActionAst::Cast {
-                    spell_index: 0,
-                    dir: last_dir,
-                }),
-                KeyCode::Char('r') => Some(ActionAst::Read(0)),
-                KeyCode::Char('>') => Some(ActionAst::Descend),
-                KeyCode::Char('<') => Some(ActionAst::Ascend),
-                KeyCode::Char('z') => {
-                    let prompt_text = if world.locale == Locale::Uk {
-                        "Куди спрямувати жезл? [h/j/k/l/y/u/b/n]: "
-                    } else {
-                        "Zap wand in what direction? [h/j/k/l/y/u/b/n]: "
-                    };
-                    let dir = prompt_direction(&mut stdout, prompt_text)?.unwrap_or(last_dir);
-                    Some(ActionAst::ZapWand { dir, energy: 6 })
-                }
-                KeyCode::Char('o') => {
-                    let adj_door = Direction::all_compass().iter().find_map(|&d| {
-                        player.coord.step(d).and_then(|c| {
-                            if matches!(
-                                world.level.get_tile(c),
-                                Tile::Door {
-                                    state: DoorState::Closed,
-                                    ..
-                                }
-                            ) {
-                                Some(c)
-                            } else {
-                                None
-                            }
+                    KeyOutcome::OpenInventory(InventoryPurpose::Quaff) => {
+                        // The action takes an index into the carried-items list.
+                        show_inventory_modal(&mut stdout, &world)?.and_then(|item_id| {
+                            world
+                                .arena
+                                .items_carried_by(world.player_id)
+                                .iter()
+                                .position(|&i| i == item_id)
+                                .map(ActionAst::Quaff)
                         })
-                    });
-                    adj_door.map(ActionAst::OpenDoor)
-                }
-                KeyCode::Char('c') => {
-                    let adj_door = Direction::all_compass().iter().find_map(|&d| {
-                        player.coord.step(d).and_then(|c| {
-                            if matches!(
-                                world.level.get_tile(c),
-                                Tile::Door {
-                                    state: DoorState::Open,
-                                    ..
-                                }
-                            ) {
-                                Some(c)
-                            } else {
-                                None
-                            }
+                    }
+                    KeyOutcome::OpenInventory(_) => None,
+                    KeyOutcome::ToggleMount => {
+                        if world.hero.mount.is_some() {
+                            Some(ActionAst::Dismount)
+                        } else {
+                            let adj_steed = Direction::all_compass().iter().find_map(|&d| {
+                                player.coord.step(d).and_then(|c| world.actor_at(c))
+                            });
+                            adj_steed.map(ActionAst::Mount)
+                        }
+                    }
+                    KeyOutcome::PromptZap => {
+                        let prompt_text = if world.locale == Locale::Uk {
+                            "Куди спрямувати жезл? [h/j/k/l/y/u/b/n]: "
+                        } else {
+                            "Zap wand in what direction? [h/j/k/l/y/u/b/n]: "
+                        };
+                        let dir = prompt_direction(&mut stdout, prompt_text)?.unwrap_or(last_dir);
+                        Some(ActionAst::ZapWand {
+                            dir,
+                            energy: ZAP_ENERGY,
                         })
-                    });
-                    adj_door.map(ActionAst::CloseDoor)
-                }
-                KeyCode::Char('K') => player.coord.step(last_dir).map(ActionAst::Kick),
-                _ => None,
-            };
+                    }
+                    KeyOutcome::OpenDoor => adjacent_door(&world, player.coord, DoorState::Closed)
+                        .map(ActionAst::OpenDoor),
+                    KeyOutcome::CloseDoor => adjacent_door(&world, player.coord, DoorState::Open)
+                        .map(ActionAst::CloseDoor),
+                    KeyOutcome::Redraw | KeyOutcome::Nothing => None,
+                };
 
             if let Some(act) = action {
                 let events = world.step_player_action(act);
