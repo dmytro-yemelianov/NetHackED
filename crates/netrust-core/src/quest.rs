@@ -73,7 +73,10 @@ impl Default for QuestState {
 }
 
 /// Consult the Quest Leader to receive assignment and unlock the portal stairs.
-pub fn consult_leader(state: &mut QuestState, hero: &HeroQuestEligibility) -> Result<(), &'static str> {
+pub fn consult_leader(
+    state: &mut QuestState,
+    hero: &HeroQuestEligibility,
+) -> Result<(), &'static str> {
     match state.progress {
         QuestProgress::Unassigned => {
             if hero.is_hostile_to_leader {

@@ -6,7 +6,11 @@ use crate::events::GameEvent;
 use crate::world::SimulationWorld;
 
 impl SimulationWorld {
-    pub(crate) fn handle_engrave(&mut self, text: String, medium: EngravingMedium) -> Vec<GameEvent> {
+    pub(crate) fn handle_engrave(
+        &mut self,
+        text: String,
+        medium: EngravingMedium,
+    ) -> Vec<GameEvent> {
         let mut events = Vec::new();
         let Some(player) = self.arena.actors.get(self.player_id).cloned() else {
             return events;

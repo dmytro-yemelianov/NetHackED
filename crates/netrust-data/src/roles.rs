@@ -55,7 +55,11 @@ pub static ROLES: &[RoleSpec] = &[
         ac: 7,
         speed: 12,
         default_alignment: Alignment::Neutral,
-        starting_items: &[ItemKindId::LongSword, ItemKindId::LeatherArmor, ItemKindId::PotionOfHealing],
+        starting_items: &[
+            ItemKindId::LongSword,
+            ItemKindId::LeatherArmor,
+            ItemKindId::PotionOfHealing,
+        ],
     },
     RoleSpec {
         id: RoleId::Wizard,
@@ -64,7 +68,11 @@ pub static ROLES: &[RoleSpec] = &[
         ac: 10,
         speed: 12,
         default_alignment: Alignment::Neutral,
-        starting_items: &[ItemKindId::WandOfStriking, ItemKindId::ScrollOfIdentify, ItemKindId::CloakOfMagicResistance],
+        starting_items: &[
+            ItemKindId::WandOfStriking,
+            ItemKindId::ScrollOfIdentify,
+            ItemKindId::CloakOfMagicResistance,
+        ],
     },
     RoleSpec {
         id: RoleId::Barbarian,
@@ -100,7 +108,10 @@ pub static ROLES: &[RoleSpec] = &[
         ac: 10,
         speed: 12,
         default_alignment: Alignment::Neutral,
-        starting_items: &[ItemKindId::PotionOfHealing, ItemKindId::ScrollOfTeleportation],
+        starting_items: &[
+            ItemKindId::PotionOfHealing,
+            ItemKindId::ScrollOfTeleportation,
+        ],
     },
     RoleSpec {
         id: RoleId::Healer,
@@ -109,7 +120,10 @@ pub static ROLES: &[RoleSpec] = &[
         ac: 9,
         speed: 12,
         default_alignment: Alignment::Neutral,
-        starting_items: &[ItemKindId::PotionOfHealing, ItemKindId::PotionOfExtraHealing],
+        starting_items: &[
+            ItemKindId::PotionOfHealing,
+            ItemKindId::PotionOfExtraHealing,
+        ],
     },
     RoleSpec {
         id: RoleId::Tourist,
@@ -118,7 +132,11 @@ pub static ROLES: &[RoleSpec] = &[
         ac: 10,
         speed: 12,
         default_alignment: Alignment::Neutral,
-        starting_items: &[ItemKindId::GoldPieces, ItemKindId::PotionOfExtraHealing, ItemKindId::BagOfHolding],
+        starting_items: &[
+            ItemKindId::GoldPieces,
+            ItemKindId::PotionOfExtraHealing,
+            ItemKindId::BagOfHolding,
+        ],
     },
     RoleSpec {
         id: RoleId::Archaeologist,
@@ -127,7 +145,11 @@ pub static ROLES: &[RoleSpec] = &[
         ac: 8,
         speed: 12,
         default_alignment: Alignment::Lawful,
-        starting_items: &[ItemKindId::ShortSword, ItemKindId::LeatherArmor, ItemKindId::Sack],
+        starting_items: &[
+            ItemKindId::ShortSword,
+            ItemKindId::LeatherArmor,
+            ItemKindId::Sack,
+        ],
     },
 ];
 
@@ -245,7 +267,9 @@ pub fn spawn_starting_pet(
         RoleId::Wizard | RoleId::Healer => crate::monsters::MonsterSpeciesId::Kitten,
         _ => crate::monsters::MonsterSpeciesId::LittleDog,
     };
-    let pet_coord = hero_coord.step(netrust_types::Direction::East).unwrap_or(hero_coord);
+    let pet_coord = hero_coord
+        .step(netrust_types::Direction::East)
+        .unwrap_or(hero_coord);
     let pet_record = crate::monsters::create_monster_record(species, pet_coord);
     Some(arena.spawn_actor(pet_record))
 }

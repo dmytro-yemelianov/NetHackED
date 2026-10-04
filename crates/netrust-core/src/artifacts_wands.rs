@@ -129,8 +129,14 @@ mod tests {
 
     #[test]
     fn test_excalibur_damage_bonus() {
-        assert_eq!(resolve_artifact_damage(ArtifactKind::Excalibur, 8, true), 18);
-        assert_eq!(resolve_artifact_damage(ArtifactKind::Excalibur, 8, false), 13);
+        assert_eq!(
+            resolve_artifact_damage(ArtifactKind::Excalibur, 8, true),
+            18
+        );
+        assert_eq!(
+            resolve_artifact_damage(ArtifactKind::Excalibur, 8, false),
+            13
+        );
     }
 
     #[test]

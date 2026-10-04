@@ -26,8 +26,10 @@ fn main() {
 
     // 2. Initial observation
     let mut obs = session.get_observation();
-    println!("📍 Starting position: ({}, {}) | Turn: {} | HP: {}/{}",
-        obs.player_coord.x, obs.player_coord.y, obs.turn, obs.player_hp, obs.player_max_hp);
+    println!(
+        "📍 Starting position: ({}, {}) | Turn: {} | HP: {}/{}",
+        obs.player_coord.x, obs.player_coord.y, obs.turn, obs.player_hp, obs.player_max_hp
+    );
     println!("\n--- Dungeon Viewport ---");
     println!("{}", obs.ascii_map);
     println!("------------------------\n");
@@ -48,8 +50,10 @@ fn main() {
         // Check visible actors
         for actor in &obs.visible_actors {
             if !actor.is_player {
-                println!("  👁️ Monster detected in FOV: {} at ({}, {}) [HP: {}/{}]",
-                    actor.name, actor.coord.x, actor.coord.y, actor.hp, actor.max_hp);
+                println!(
+                    "  👁️ Monster detected in FOV: {} at ({}, {}) [HP: {}/{}]",
+                    actor.name, actor.coord.x, actor.coord.y, actor.hp, actor.max_hp
+                );
             }
         }
 
@@ -66,8 +70,10 @@ fn main() {
         };
 
         if let Ok(inspection) = session.inspect_tile(target_x, target_y) {
-            println!("  🔍 Target Tile ({}, {}): {:?} (passable: {})",
-                target_x, target_y, inspection.tile, inspection.is_passable);
+            println!(
+                "  🔍 Target Tile ({}, {}): {:?} (passable: {})",
+                target_x, target_y, inspection.tile, inspection.is_passable
+            );
         }
 
         // Execute action
@@ -80,8 +86,10 @@ fn main() {
             println!("  📜 Event: {event:?}");
         }
 
-        println!("  ❤️ Player HP: {}/{} | Position: ({}, {})\n",
-            obs.player_hp, obs.player_max_hp, obs.player_coord.x, obs.player_coord.y);
+        println!(
+            "  ❤️ Player HP: {}/{} | Position: ({}, {})\n",
+            obs.player_hp, obs.player_max_hp, obs.player_coord.x, obs.player_coord.y
+        );
 
         if obs.is_game_over {
             println!("💀 Game over!");

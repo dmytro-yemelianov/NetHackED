@@ -14,14 +14,18 @@ impl SimulationWorld {
             return events;
         };
 
-        let move_cost = if true { let pc = &self.hero;
+        let move_cost = if true {
+            let pc = &self.hero;
             let mount_cost = pc.mount.as_ref().and_then(|m| {
                 // Determine mount's movement cost based on its speed
-                // For simplicity, we assume speed acts as cost if it's lower, or we map it. 
-                // The prompt says min(unmounted, mount_cost). 
+                // For simplicity, we assume speed acts as cost if it's lower, or we map it.
+                // The prompt says min(unmounted, mount_cost).
                 // Let's just use 12 for unmounted, and if mounted, we can derive a cost from steed's speed.
                 // A fast mount (speed > 12) should cost less energy. Energy cost = 12 * 12 / speed.
-                self.arena.actors.get(m.steed_id).map(|s| (NORMAL_SPEED * 12) / s.speed.max(1))
+                self.arena
+                    .actors
+                    .get(m.steed_id)
+                    .map(|s| (NORMAL_SPEED * 12) / s.speed.max(1))
             });
             netrust_core::ranged::effective_movement_cost(NORMAL_SPEED, mount_cost)
         } else {
@@ -35,10 +39,20 @@ impl SimulationWorld {
         if let Some(target_coord) = Coord::new(nx as usize, ny as usize) {
             // Check if actor at target
             if let Some(target_id) = self.actor_at(target_coord) {
-                let is_target_tame = self.arena.actors.get(target_id).map(|a| a.is_tame).unwrap_or(false);
+                let is_target_tame = self
+                    .arena
+                    .actors
+                    .get(target_id)
+                    .map(|a| a.is_tame)
+                    .unwrap_or(false);
                 if is_target_tame {
                     // Displacement! Non-violent position swap verified in Lean 4
-                    let pet_name = self.arena.actors.get(target_id).map(|a| a.name.clone()).unwrap_or_else(|| "pet".into());
+                    let pet_name = self
+                        .arena
+                        .actors
+                        .get(target_id)
+                        .map(|a| a.name.clone())
+                        .unwrap_or_else(|| "pet".into());
                     let from = player.coord;
                     if let Some(p) = self.arena.actors.get_mut(self.player_id) {
                         p.coord = target_coord;
@@ -66,7 +80,9 @@ impl SimulationWorld {
                     self.scheduler.hero_act(move_cost);
                 }
             } else if let Some(boulder_id) = self.arena.items.iter().find_map(|(id, item)| {
-                if item.location == netrust_arena::ItemLocation::Floor(target_coord) && item.name == "boulder" {
+                if item.location == netrust_arena::ItemLocation::Floor(target_coord)
+                    && item.name == "boulder"
+                {
                     Some(id)
                 } else {
                     None
@@ -74,35 +90,61 @@ impl SimulationWorld {
             }) {
                 // Boulder pushing mechanics formally verified in Lean 4
                 if let Some(next_c) = target_coord.step(dir) {
-                    let is_occupied = self.actor_at(next_c).is_some() || self.arena.items.values().any(|it| it.location == netrust_arena::ItemLocation::Floor(next_c) && it.name == "boulder");
-                    let outcome = netrust_core::sokoban::push_boulder(target_coord, dir, self.level.get_tile(next_c), is_occupied);
+                    let is_occupied = self.actor_at(next_c).is_some()
+                        || self.arena.items.values().any(|it| {
+                            it.location == netrust_arena::ItemLocation::Floor(next_c)
+                                && it.name == "boulder"
+                        });
+                    let outcome = netrust_core::sokoban::push_boulder(
+                        target_coord,
+                        dir,
+                        self.level.get_tile(next_c),
+                        is_occupied,
+                    );
                     match outcome {
                         netrust_core::sokoban::PushOutcome::Moved(new_pos) => {
                             if let Some(it) = self.arena.items.get_mut(boulder_id) {
                                 it.location = netrust_arena::ItemLocation::Floor(new_pos);
                             }
-                            events.push(GameEvent::LogMessage { text: "You push the boulder.".into() });
+                            events.push(GameEvent::LogMessage {
+                                text: "You push the boulder.".into(),
+                            });
                             self.scheduler.hero_act(move_cost);
                         }
                         netrust_core::sokoban::PushOutcome::FilledPit(pit_pos) => {
                             self.arena.destroy_item(boulder_id);
                             self.level.set_tile(pit_pos, Tile::Pit { filled: true });
-                            events.push(GameEvent::LogMessage { text: "The boulder falls into the pit and fills it!".into() });
+                            events.push(GameEvent::LogMessage {
+                                text: "The boulder falls into the pit and fills it!".into(),
+                            });
                             self.scheduler.hero_act(move_cost);
                         }
                         netrust_core::sokoban::PushOutcome::Blocked => {
-                            events.push(GameEvent::LogMessage { text: "You try to move the boulder, but it won't budge.".into() });
+                            events.push(GameEvent::LogMessage {
+                                text: "You try to move the boulder, but it won't budge.".into(),
+                            });
                         }
                     }
                 } else {
-                    events.push(GameEvent::LogMessage { text: "You try to move the boulder, but it won't budge.".into() });
+                    events.push(GameEvent::LogMessage {
+                        text: "You try to move the boulder, but it won't budge.".into(),
+                    });
                 }
             } else {
                 // Check tile
                 let tile = self.level.get_tile(target_coord).clone();
                 match tile {
-                    Tile::Door { state: DoorState::Closed, trapped } => {
-                        self.level.set_tile(target_coord, Tile::Door { state: DoorState::Open, trapped });
+                    Tile::Door {
+                        state: DoorState::Closed,
+                        trapped,
+                    } => {
+                        self.level.set_tile(
+                            target_coord,
+                            Tile::Door {
+                                state: DoorState::Open,
+                                trapped,
+                            },
+                        );
                         events.push(GameEvent::DoorToggled {
                             coord: target_coord,
                             new_state: DoorState::Open,
@@ -110,7 +152,8 @@ impl SimulationWorld {
                         self.scheduler.hero_act(move_cost);
                     }
                     Tile::Drawbridge { open: false } => {
-                        self.level.set_tile(target_coord, Tile::Drawbridge { open: true });
+                        self.level
+                            .set_tile(target_coord, Tile::Drawbridge { open: true });
                         events.push(GameEvent::LogMessage {
                             text: "You lower the drawbridge over the moat. The portcullis creaks open.".into(),
                         });
@@ -151,43 +194,81 @@ impl SimulationWorld {
                         // If stepping onto a tile with an engraving, notify player!
                         if let Some(e) = self.level.get_engraving(target_coord) {
                             events.push(GameEvent::LogMessage {
-                                text: format!("There is something written on the floor here: \"{}\".", e.text),
+                                text: format!(
+                                    "There is something written on the floor here: \"{}\".",
+                                    e.text
+                                ),
                             });
                         }
 
                         // Trigger trap if present
-                        let is_flying = self.arena.actors.get(self.player_id).map(|a| a.intrinsics.levitation).unwrap_or(false);
-                        let triggered = self.level.traps.get_mut(&target_coord).and_then(|trap| netrust_core::traps::trigger_trap(trap, is_flying));
+                        let is_flying = self
+                            .arena
+                            .actors
+                            .get(self.player_id)
+                            .map(|a| a.intrinsics.levitation)
+                            .unwrap_or(false);
+                        let triggered =
+                            self.level.traps.get_mut(&target_coord).and_then(|trap| {
+                                netrust_core::traps::trigger_trap(trap, is_flying)
+                            });
                         if let Some(triggered_type) = triggered {
                             match triggered_type {
                                 netrust_types::TrapType::Arrow | netrust_types::TrapType::Dart => {
-                                    events.push(GameEvent::LogMessage { text: format!("A {triggered_type:?} trap shoots you!") });
-                                    events.extend(self.damage_player(2, &format!("{triggered_type:?} trap").to_lowercase()));
+                                    events.push(GameEvent::LogMessage {
+                                        text: format!("A {triggered_type:?} trap shoots you!"),
+                                    });
+                                    events.extend(self.damage_player(
+                                        2,
+                                        &format!("{triggered_type:?} trap").to_lowercase(),
+                                    ));
                                 }
                                 netrust_types::TrapType::Teleport => {
-                                    events.push(GameEvent::LogMessage { text: "You trigger a teleport trap!".into() });
+                                    events.push(GameEvent::LogMessage {
+                                        text: "You trigger a teleport trap!".into(),
+                                    });
                                     // Teleport logic omitted for brevity, just send event
                                 }
                                 netrust_types::TrapType::LevelTeleport => {
-                                    events.push(GameEvent::LogMessage { text: "You trigger a level teleport trap!".into() });
+                                    events.push(GameEvent::LogMessage {
+                                        text: "You trigger a level teleport trap!".into(),
+                                    });
                                 }
-                                netrust_types::TrapType::Pit | netrust_types::TrapType::SpikedPit => {
-                                    events.push(GameEvent::LogMessage { text: "You fall into a pit!".into() });
+                                netrust_types::TrapType::Pit
+                                | netrust_types::TrapType::SpikedPit => {
+                                    events.push(GameEvent::LogMessage {
+                                        text: "You fall into a pit!".into(),
+                                    });
                                 }
                                 _ => {
-                                    events.push(GameEvent::LogMessage { text: format!("You trigger a {triggered_type:?} trap!") });
+                                    events.push(GameEvent::LogMessage {
+                                        text: format!("You trigger a {triggered_type:?} trap!"),
+                                    });
                                 }
                             }
                         }
 
                         // Check if player is leaving a shop with unpaid merchandise!
-                        let from_shop = self.level.room_at(from).map(|r| r.room_type == RoomType::Shop).unwrap_or(false);
-                        let to_shop = self.level.room_at(target_coord).map(|r| r.room_type == RoomType::Shop).unwrap_or(false);
+                        let from_shop = self
+                            .level
+                            .room_at(from)
+                            .map(|r| r.room_type == RoomType::Shop)
+                            .unwrap_or(false);
+                        let to_shop = self
+                            .level
+                            .room_at(target_coord)
+                            .map(|r| r.room_type == RoomType::Shop)
+                            .unwrap_or(false);
                         if from_shop && !to_shop {
-                            let has_unpaid = self.arena.items_carried_by(self.player_id).iter().any(|id| self.is_unpaid(*id));
+                            let has_unpaid = self
+                                .arena
+                                .items_carried_by(self.player_id)
+                                .iter()
+                                .any(|id| self.is_unpaid(*id));
                             if has_unpaid {
                                 events.push(GameEvent::LogMessage {
-                                    text: netrust_i18n::Messages::shopkeeper_shout(self.locale).into(),
+                                    text: netrust_i18n::Messages::shopkeeper_shout(self.locale)
+                                        .into(),
                                 });
                                 // Turn shopkeeper hostile
                                 for (_, actor) in self.arena.actors.iter_mut() {

@@ -1,7 +1,7 @@
 //! GraphQL Schema and Resolvers for NetRust remote agent swarms.
 
-use async_graphql::{Context, EmptySubscription, Object, Schema, SimpleObject};
 use crate::{render_ascii_map, AgentSession};
+use async_graphql::{Context, EmptySubscription, Object, Schema, SimpleObject};
 use netrust_core::ActionAst;
 use netrust_data::{
     roles::{CharacterConfig, Gender, RaceId, RoleId, RACES, ROLES},
@@ -168,7 +168,11 @@ impl QueryRoot {
                 ac: r.ac,
                 speed: r.speed,
                 default_alignment: format!("{:?}", r.default_alignment),
-                starting_items: r.starting_items.iter().map(|item| format!("{item:?}")).collect(),
+                starting_items: r
+                    .starting_items
+                    .iter()
+                    .map(|item| format!("{item:?}"))
+                    .collect(),
             })
             .collect()
     }
@@ -234,8 +238,12 @@ impl MutationRoot {
 
         let action_ast = match action.to_lowercase().as_str() {
             "move" => ActionAst::Move(dir),
-            "open_door" => target_coord.map(ActionAst::OpenDoor).unwrap_or(ActionAst::Wait),
-            "close_door" => target_coord.map(ActionAst::CloseDoor).unwrap_or(ActionAst::Wait),
+            "open_door" => target_coord
+                .map(ActionAst::OpenDoor)
+                .unwrap_or(ActionAst::Wait),
+            "close_door" => target_coord
+                .map(ActionAst::CloseDoor)
+                .unwrap_or(ActionAst::Wait),
             "kick" => target_coord.map(ActionAst::Kick).unwrap_or(ActionAst::Wait),
             "pickup" => ActionAst::PickUp,
             "drop" => ActionAst::Drop(index.unwrap_or(0)),
@@ -246,7 +254,10 @@ impl MutationRoot {
             "pray" => ActionAst::Pray,
             "sacrifice" => ActionAst::Sacrifice(index.unwrap_or(0)),
             "eat" => ActionAst::Eat(index.unwrap_or(0)),
-            "cast" => ActionAst::Cast { spell_index: index.unwrap_or(0), dir },
+            "cast" => ActionAst::Cast {
+                spell_index: index.unwrap_or(0),
+                dir,
+            },
             "ascend" => ActionAst::Ascend,
             "descend" => ActionAst::Descend,
             "wait" => ActionAst::Wait,
@@ -258,7 +269,11 @@ impl MutationRoot {
 
         Ok(StepResultGql {
             success: true,
-            events: obs.last_events.into_iter().map(|e| format!("{e:?}")).collect(),
+            events: obs
+                .last_events
+                .into_iter()
+                .map(|e| format!("{e:?}"))
+                .collect(),
             ascii_map,
             hp: obs.player_hp,
             max_hp: obs.player_max_hp,
@@ -268,7 +283,11 @@ impl MutationRoot {
     }
 
     /// Reset game simulation with an optional seed.
-    async fn reset_game(&self, ctx: &Context<'_>, seed: Option<u64>) -> async_graphql::Result<bool> {
+    async fn reset_game(
+        &self,
+        ctx: &Context<'_>,
+        seed: Option<u64>,
+    ) -> async_graphql::Result<bool> {
         require_mutation_auth(ctx)?;
         let state = ctx.data_unchecked::<AppState>();
         let mut session = state.session.lock().unwrap();
@@ -337,7 +356,11 @@ impl MutationRoot {
 
         Ok(StepResultGql {
             success: true,
-            events: obs.last_events.into_iter().map(|e| format!("{e:?}")).collect(),
+            events: obs
+                .last_events
+                .into_iter()
+                .map(|e| format!("{e:?}"))
+                .collect(),
             ascii_map,
             hp: obs.player_hp,
             max_hp: obs.player_max_hp,
@@ -373,11 +396,18 @@ struct GqlApp {
 pub fn create_router(schema: NetRustSchema, token: Option<String>) -> Router {
     Router::new()
         .route("/graphql", get(graphiql).post(graphql_post))
-        .with_state(GqlApp { schema, token: token.map(Arc::from) })
+        .with_state(GqlApp {
+            schema,
+            token: token.map(Arc::from),
+        })
 }
 
 async fn graphiql() -> impl IntoResponse {
-    Html(async_graphql::http::GraphiQLSource::build().endpoint("/graphql").finish())
+    Html(
+        async_graphql::http::GraphiQLSource::build()
+            .endpoint("/graphql")
+            .finish(),
+    )
 }
 
 async fn graphql_post(State(app): State<GqlApp>, headers: HeaderMap, body: Body) -> Response {
@@ -387,10 +417,19 @@ async fn graphql_post(State(app): State<GqlApp>, headers: HeaderMap, body: Body)
     };
     let request: async_graphql::Request = match serde_json::from_slice(&bytes) {
         Ok(r) => r,
-        Err(e) => return (StatusCode::BAD_REQUEST, format!("invalid GraphQL request: {e}")).into_response(),
+        Err(e) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                format!("invalid GraphQL request: {e}"),
+            )
+                .into_response()
+        }
     };
     let authorized = crate::netconfig::bearer_ok(&headers, app.token.as_deref());
-    let response = app.schema.execute(request.data(Authorized(authorized))).await;
+    let response = app
+        .schema
+        .execute(request.data(Authorized(authorized)))
+        .await;
     Json(response).into_response()
 }
 
@@ -406,7 +445,9 @@ mod tests {
         };
         let schema = create_schema(state);
 
-        let res = schema.execute("{ playerState { hp ac } bestiary { name } roles { name baseHp } }").await;
+        let res = schema
+            .execute("{ playerState { hp ac } bestiary { name } roles { name baseHp } }")
+            .await;
         assert!(res.is_ok());
         let data = res.data.into_json().unwrap();
         assert_eq!(data["playerState"]["hp"], 18);
@@ -422,7 +463,9 @@ mod tests {
         };
         let schema = create_schema(state);
 
-        let res = schema.execute(r#"mutation { stepAction(action: "wait") { success turn } }"#).await;
+        let res = schema
+            .execute(r#"mutation { stepAction(action: "wait") { success turn } }"#)
+            .await;
         assert!(res.is_ok());
         let data = res.data.into_json().unwrap();
         assert_eq!(data["stepAction"]["success"], true);
@@ -437,7 +480,9 @@ mod tests {
         let schema = create_schema(state);
 
         let res = schema
-            .execute(r#"mutation { resetWithCharacter(role: "barbarian", race: "orc") { hp maxHp } }"#)
+            .execute(
+                r#"mutation { resetWithCharacter(role: "barbarian", race: "orc") { hp maxHp } }"#,
+            )
             .await;
         assert!(res.is_ok());
         let data = res.data.into_json().unwrap();
@@ -445,4 +490,3 @@ mod tests {
         assert_eq!(data["resetWithCharacter"]["maxHp"], 20);
     }
 }
-

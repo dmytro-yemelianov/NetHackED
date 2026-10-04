@@ -6,12 +6,11 @@
 use crate::buc::{Buc, WaterType};
 use crate::combat::Combatant;
 use crate::energy::NORMAL_SPEED;
-use crate::grid::{Coord, Tile};
 use crate::engraving::EngravingMedium;
+use crate::grid::{Coord, Tile};
 use serde::{Deserialize, Serialize};
 
 pub use netrust_types::{ActorId, Direction, SlotId};
-
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ActionAst {
@@ -23,13 +22,28 @@ pub enum ActionAst {
     PickUp,
     Drop(usize),
     Wield(usize),
-    Dip { item_index: usize, into_water: WaterType },
-    PutInContainer { item_index: usize, container_index: usize },
-    TakeFromContainer { container_index: usize, item_index: usize },
+    Dip {
+        item_index: usize,
+        into_water: WaterType,
+    },
+    PutInContainer {
+        item_index: usize,
+        container_index: usize,
+    },
+    TakeFromContainer {
+        container_index: usize,
+        item_index: usize,
+    },
     Quaff(usize),
     Read(usize),
-    Engrave { text: String, medium: EngravingMedium },
-    ZapWand { dir: Direction, energy: u32 },
+    Engrave {
+        text: String,
+        medium: EngravingMedium,
+    },
+    ZapWand {
+        dir: Direction,
+        energy: u32,
+    },
     Wait,
     Pray,
     Pay,
@@ -37,7 +51,10 @@ pub enum ActionAst {
     Ascend,
     Descend,
     Eat(usize),
-    Cast { spell_index: usize, dir: Direction },
+    Cast {
+        spell_index: usize,
+        dir: Direction,
+    },
     Wish(String),
     Rub(usize),
     PriceCheck(usize),

@@ -52,7 +52,8 @@ pub fn mix_alchemy(pot_a: &str, pot_b: &str) -> Option<&'static str> {
     let a = pot_a.to_lowercase();
     let b = pot_b.to_lowercase();
 
-    if a.contains("healing") && b.contains("speed") || a.contains("speed") && b.contains("healing") {
+    if a.contains("healing") && b.contains("speed") || a.contains("speed") && b.contains("healing")
+    {
         Some("potion of extra healing")
     } else if a.contains("water") || b.contains("water") {
         Some("potion of water")

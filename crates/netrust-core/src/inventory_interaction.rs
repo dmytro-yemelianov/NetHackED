@@ -101,7 +101,12 @@ pub fn calculate_sell_price(base: u32, cha: u32, buc: Buc) -> u32 {
 
 /// Reverse price-identification: given observed shop price and player charisma,
 /// returns possible candidate base costs that could produce this price.
-pub fn reverse_price_id(observed_price: u32, cha: u32, is_buying: bool, candidates: &[u32]) -> Vec<u32> {
+pub fn reverse_price_id(
+    observed_price: u32,
+    cha: u32,
+    is_buying: bool,
+    candidates: &[u32],
+) -> Vec<u32> {
     let mut matches = Vec::new();
     for &base in candidates {
         for &buc in &[Buc::Blessed, Buc::Uncursed, Buc::Cursed] {

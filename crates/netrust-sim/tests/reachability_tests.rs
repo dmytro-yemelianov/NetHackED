@@ -6,10 +6,15 @@ use netrust_sim::{clamp_mysterious_force, SimulationWorld};
 use netrust_types::BranchId;
 
 fn floor_coords_named(sim: &SimulationWorld, name: &str) -> Vec<netrust_sim::Coord> {
-    sim.arena.items.values().filter(|it| it.name == name).filter_map(|it| match it.location {
-        ItemLocation::Floor(c) => Some(c),
-        _ => None,
-    }).collect()
+    sim.arena
+        .items
+        .values()
+        .filter(|it| it.name == name)
+        .filter_map(|it| match it.location {
+            ItemLocation::Floor(c) => Some(c),
+            _ => None,
+        })
+        .collect()
 }
 
 #[test]
@@ -22,18 +27,40 @@ fn invocation_items_reachable_on_every_seed() {
         let reach = reachable_from(&sim.level, sim.level.stairs_up);
         let candles = floor_coords_named(&sim, "wax candle");
         assert_eq!(candles.len(), 7, "seed {seed}");
-        for name in ["wax candle", "Candelabrum of Invocation", "Book of the Dead"] {
+        for name in [
+            "wax candle",
+            "Candelabrum of Invocation",
+            "Book of the Dead",
+        ] {
             for c in floor_coords_named(&sim, name) {
-                assert!(reach.contains(&c), "seed {seed}: {name} at {c:?} unreachable");
+                assert!(
+                    reach.contains(&c),
+                    "seed {seed}: {name} at {c:?} unreachable"
+                );
             }
         }
-        assert!(reach.contains(&sim.vibrating_square.unwrap()), "seed {seed}");
+        assert!(
+            reach.contains(&sim.vibrating_square.unwrap()),
+            "seed {seed}"
+        );
     }
 }
 
 #[test]
 fn spawned_monsters_never_on_stairs_or_stacked() {
-    let cases = [(BranchId::GnomishMines, 1usize), (BranchId::GnomishMines, 5), (BranchId::Gehennom, 1), (BranchId::Gehennom, 3), (BranchId::Gehennom, 5), (BranchId::Quest, 2), (BranchId::Gehennom, 6), (BranchId::GnomishMines, 3), (BranchId::Quest, 1), (BranchId::Quest, 3), (BranchId::DungeonsOfDoom, 2)];
+    let cases = [
+        (BranchId::GnomishMines, 1usize),
+        (BranchId::GnomishMines, 5),
+        (BranchId::Gehennom, 1),
+        (BranchId::Gehennom, 3),
+        (BranchId::Gehennom, 5),
+        (BranchId::Quest, 2),
+        (BranchId::Gehennom, 6),
+        (BranchId::GnomishMines, 3),
+        (BranchId::Quest, 1),
+        (BranchId::Quest, 3),
+        (BranchId::DungeonsOfDoom, 2),
+    ];
     for seed in 0..50u64 {
         for (branch, depth) in cases {
             let mut sim = SimulationWorld::new_with_seed(seed);
@@ -46,8 +73,16 @@ fn spawned_monsters_never_on_stairs_or_stacked() {
                 if pre.contains(&id) {
                     continue;
                 }
-                assert!(a.coord != sim.level.stairs_up && a.coord != sim.level.stairs_down, "{branch:?} d{depth} seed {seed}: {} on stairs", a.name);
-                assert!(seen.insert(a.coord), "{branch:?} d{depth} seed {seed}: stacked at {:?}", a.coord);
+                assert!(
+                    a.coord != sim.level.stairs_up && a.coord != sim.level.stairs_down,
+                    "{branch:?} d{depth} seed {seed}: {} on stairs",
+                    a.name
+                );
+                assert!(
+                    seen.insert(a.coord),
+                    "{branch:?} d{depth} seed {seed}: stacked at {:?}",
+                    a.coord
+                );
             }
         }
     }

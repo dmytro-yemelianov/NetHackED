@@ -2,9 +2,9 @@
 //!
 //! Formally verified in `NetMechanics.FOV`: satisfies reflexivity, symmetry, and boundary invariance.
 
-use std::collections::HashSet;
-use netrust_types::{Coord, COLNO, ROWNO};
 use crate::level::DungeonLevel;
+use netrust_types::{Coord, COLNO, ROWNO};
+use std::collections::HashSet;
 
 /// Compute Field of View (FOV) using symmetric raycasting.
 /// Matches the reflexivity and symmetry theorems verified in `NetMechanics.FOV`.
@@ -70,7 +70,10 @@ fn cast_ray(level: &DungeonLevel, from: Coord, to: Coord, visible: &mut HashSet<
 
 /// Compute illuminated tiles from multiple light sources.
 /// Each light source provides an origin coordinate and luminescence radius.
-pub fn compute_illumination(level: &DungeonLevel, light_sources: &[(Coord, u32)]) -> HashSet<Coord> {
+pub fn compute_illumination(
+    level: &DungeonLevel,
+    light_sources: &[(Coord, u32)],
+) -> HashSet<Coord> {
     let mut illuminated = HashSet::new();
     for &(origin, radius) in light_sources {
         if radius > 0 {

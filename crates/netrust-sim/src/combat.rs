@@ -10,13 +10,24 @@ use crate::events::GameEvent;
 use crate::world::SimulationWorld;
 
 impl SimulationWorld {
-    pub(crate) fn resolve_combat(&mut self, attacker_id: ActorId, defender_id: ActorId) -> Vec<GameEvent> {
+    pub(crate) fn resolve_combat(
+        &mut self,
+        attacker_id: ActorId,
+        defender_id: ActorId,
+    ) -> Vec<GameEvent> {
         let mut events = Vec::new();
-        let Some(attacker) = self.arena.actors.get(attacker_id).cloned() else { return events; };
-        let Some(defender) = self.arena.actors.get(defender_id).cloned() else { return events; };
+        let Some(attacker) = self.arena.actors.get(attacker_id).cloned() else {
+            return events;
+        };
+        let Some(defender) = self.arena.actors.get(defender_id).cloned() else {
+            return events;
+        };
 
         // Check defender armor enchantment
-        let armor_ench: i32 = self.arena.items_carried_by(defender_id).into_iter()
+        let armor_ench: i32 = self
+            .arena
+            .items_carried_by(defender_id)
+            .into_iter()
             .filter_map(|id| self.arena.items.get(id))
             .filter(|it| it.class == netrust_types::ItemClass::Armor)
             .map(|a| a.enchantment as i32)
@@ -41,7 +52,9 @@ impl SimulationWorld {
                         "vorpal blade" => Some(netrust_types::ArtifactKind::VorpalBlade),
                         "mjollnir" => Some(netrust_types::ArtifactKind::Mjollnir),
                         "magicbane" => Some(netrust_types::ArtifactKind::Magicbane),
-                        "the eye of the aethiopica" | "eye of the aethiopica" => Some(netrust_types::ArtifactKind::EyeOfTheAethiopica),
+                        "the eye of the aethiopica" | "eye of the aethiopica" => {
+                            Some(netrust_types::ArtifactKind::EyeOfTheAethiopica)
+                        }
                         _ => None,
                     };
                     (w.enchantment as i32, art)
@@ -55,7 +68,6 @@ impl SimulationWorld {
             (0, None)
         };
 
-
         let mut skill_hit_bonus = 0;
         let mut skill_dmg_bonus = 0;
         if attacker_id == self.player_id {
@@ -64,20 +76,34 @@ impl SimulationWorld {
                     let sk = match w.name.to_lowercase().as_str() {
                         n if n.contains("dagger") => Some(netrust_types::SkillClass::Dagger),
                         n if n.contains("long sword") => Some(netrust_types::SkillClass::LongSword),
-                        n if n.contains("short sword") => Some(netrust_types::SkillClass::ShortSword),
+                        n if n.contains("short sword") => {
+                            Some(netrust_types::SkillClass::ShortSword)
+                        }
                         n if n.contains("bow") => Some(netrust_types::SkillClass::Bow),
                         n if n.contains("crossbow") => Some(netrust_types::SkillClass::Crossbow),
                         n if n.contains("club") => Some(netrust_types::SkillClass::Club),
                         _ => None,
                     };
                     if let Some(skill_class) = sk {
-                        let level = self.hero.skills.skills.get(&skill_class).copied().unwrap_or(netrust_types::SkillLevel::Unskilled);
+                        let level = self
+                            .hero
+                            .skills
+                            .skills
+                            .get(&skill_class)
+                            .copied()
+                            .unwrap_or(netrust_types::SkillLevel::Unskilled);
                         skill_hit_bonus = netrust_core::skills::skill_to_hit_bonus(level);
                         skill_dmg_bonus = netrust_core::skills::skill_damage_bonus(level);
                     }
                 }
             } else {
-                let level = self.hero.skills.skills.get(&netrust_types::SkillClass::BareHanded).copied().unwrap_or(netrust_types::SkillLevel::Unskilled);
+                let level = self
+                    .hero
+                    .skills
+                    .skills
+                    .get(&netrust_types::SkillClass::BareHanded)
+                    .copied()
+                    .unwrap_or(netrust_types::SkillLevel::Unskilled);
                 skill_hit_bonus = netrust_core::skills::skill_to_hit_bonus(level);
                 skill_dmg_bonus = netrust_core::skills::skill_damage_bonus(level);
             }
@@ -99,7 +125,11 @@ impl SimulationWorld {
 
             let mut final_damage = result.damage_dealt;
             if let Some(art) = artifact {
-                final_damage = netrust_core::artifacts_wands::resolve_artifact_damage(art, final_damage, is_demon_or_undead);
+                final_damage = netrust_core::artifacts_wands::resolve_artifact_damage(
+                    art,
+                    final_damage,
+                    is_demon_or_undead,
+                );
             }
 
             let mut lethal = false;
@@ -109,18 +139,24 @@ impl SimulationWorld {
                 } else {
                     false
                 };
-                
+
                 if decap {
                     events.push(GameEvent::LogMessage {
-                        text: netrust_i18n::Messages::vorpal_decapitate(&defender.name, self.locale),
+                        text: netrust_i18n::Messages::vorpal_decapitate(
+                            &defender.name,
+                            self.locale,
+                        ),
                     });
                 }
-                
+
                 if defender_id == self.player_id {
                     let mut actual_damage = final_damage as i32;
-                    if decap { actual_damage += 9999; } // Force fatal
-                    
-                    let poly_res = netrust_core::polymorph::apply_poly_damage(&mut self.hero, actual_damage);
+                    if decap {
+                        actual_damage += 9999;
+                    } // Force fatal
+
+                    let poly_res =
+                        netrust_core::polymorph::apply_poly_damage(&mut self.hero, actual_damage);
                     match poly_res {
                         netrust_core::polymorph::PolyDamageResult::Absorbed => {
                             if let Some(poly) = &self.hero.polymorph {
@@ -132,7 +168,9 @@ impl SimulationWorld {
                             }
                             lethal = false;
                         }
-                        netrust_core::polymorph::PolyDamageResult::Reverted { excess_damage: _ } => {
+                        netrust_core::polymorph::PolyDamageResult::Reverted {
+                            excess_damage: _,
+                        } => {
                             target.hp = self.hero.base_hp as u32;
                             target.max_hp = self.hero.base_max_hp as u32;
                             lethal = false;
@@ -150,7 +188,10 @@ impl SimulationWorld {
                     let (new_hp, dead) = if decap {
                         netrust_core::artifacts_wands::apply_vorpal_strike(target.hp, decap)
                     } else {
-                        (target.hp.saturating_sub(final_damage), target.hp <= final_damage)
+                        (
+                            target.hp.saturating_sub(final_damage),
+                            target.hp <= final_damage,
+                        )
                     };
                     target.hp = new_hp;
                     target.is_dead = dead || target.hp == 0;
@@ -163,13 +204,20 @@ impl SimulationWorld {
                 damage: final_damage,
                 lethal,
             });
-            let attack_msg = netrust_i18n::Messages::attack_hit(&attacker.name, &defender.name, final_damage, self.locale);
+            let attack_msg = netrust_i18n::Messages::attack_hit(
+                &attacker.name,
+                &defender.name,
+                final_damage,
+                self.locale,
+            );
             events.push(GameEvent::LogMessage { text: attack_msg });
             if lethal {
                 if attacker_id == self.player_id {
                     netrust_core::conducts::record_kill(&mut self.conducts);
                 }
-                events.push(GameEvent::LogMessage { text: netrust_i18n::Messages::killed(&defender.name, self.locale) });
+                events.push(GameEvent::LogMessage {
+                    text: netrust_i18n::Messages::killed(&defender.name, self.locale),
+                });
                 if defender_id != self.player_id {
                     // Check if the defeated enemy is the unique Class Nemesis
                     let quest_cfg = netrust_core::get_role_quest_config(&self.role_name);
@@ -186,14 +234,26 @@ impl SimulationWorld {
                             "healer" => ItemKindId::StaffOfAesculapius,
                             _ => ItemKindId::OrbOfDetection,
                         };
-                        let art_rec = create_item_record(art_id, ItemLocation::Floor(defender.coord), Buc::Blessed);
+                        let art_rec = create_item_record(
+                            art_id,
+                            ItemLocation::Floor(defender.coord),
+                            Buc::Blessed,
+                        );
                         self.arena.spawn_item(art_rec);
                         events.push(GameEvent::LogMessage {
-                            text: netrust_i18n::Messages::quest_nemesis_defeat(quest_cfg.nemesis_name, quest_cfg.artifact_name, self.locale),
+                            text: netrust_i18n::Messages::quest_nemesis_defeat(
+                                quest_cfg.nemesis_name,
+                                quest_cfg.artifact_name,
+                                self.locale,
+                            ),
                         });
                     }
 
-                    let corpse = create_item_record(ItemKindId::Corpse, ItemLocation::Floor(defender.coord), Buc::Uncursed);
+                    let corpse = create_item_record(
+                        ItemKindId::Corpse,
+                        ItemLocation::Floor(defender.coord),
+                        Buc::Uncursed,
+                    );
                     self.arena.spawn_item(corpse);
                 }
             }
@@ -203,7 +263,11 @@ impl SimulationWorld {
                 target: defender_id,
             });
             events.push(GameEvent::LogMessage {
-                text: netrust_i18n::Messages::attack_miss(&attacker.name, &defender.name, self.locale),
+                text: netrust_i18n::Messages::attack_miss(
+                    &attacker.name,
+                    &defender.name,
+                    self.locale,
+                ),
             });
         }
 

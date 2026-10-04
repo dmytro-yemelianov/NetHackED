@@ -4,8 +4,8 @@
 //! claiming bones for level generation, inspecting memorials and gravestones,
 //! and tracking graveyard statistics across distributed NetRust game sessions.
 
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use crate::bones::headstone::render_headstone;
+use crate::netconfig::bearer_ok;
 use axum::{
     extract::{Path, State},
     http::{HeaderMap, StatusCode},
@@ -15,8 +15,8 @@ use axum::{
 };
 use netrust_types::{BonesData, GraveRecord, GraveyardStats};
 use serde_json::json;
-use crate::bones::headstone::render_headstone;
-use crate::netconfig::bearer_ok;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 pub const MAX_NAME_CHARS: usize = 32;
 pub const MAX_KILLER_CHARS: usize = 64;
@@ -42,7 +42,9 @@ struct BonesApp {
 }
 
 fn lock_graveyard(state: &SharedGraveyard) -> std::sync::MutexGuard<'_, GraveyardState> {
-    state.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+    state
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
 }
 
 fn validate_bones(b: &BonesData) -> Result<(), String> {
@@ -51,7 +53,9 @@ fn validate_bones(b: &BonesData) -> Result<(), String> {
         return Err(format!("hero_name must be 1..={MAX_NAME_CHARS} characters"));
     }
     if b.killer.chars().count() > MAX_KILLER_CHARS {
-        return Err(format!("killer must be at most {MAX_KILLER_CHARS} characters"));
+        return Err(format!(
+            "killer must be at most {MAX_KILLER_CHARS} characters"
+        ));
     }
     if b.items.len() > MAX_ITEMS {
         return Err(format!("items must contain at most {MAX_ITEMS} entries"));
@@ -78,11 +82,18 @@ pub fn create_bones_router_with_token(state: SharedGraveyard, token: Option<Stri
         .route("/api/v1/stats", get(get_stats))
         .route("/api/v1/reset", post(reset_graveyard))
         .layer(axum::extract::DefaultBodyLimit::max(64 * 1024))
-        .with_state(BonesApp { graveyard: state, token: token.map(Arc::from) })
+        .with_state(BonesApp {
+            graveyard: state,
+            token: token.map(Arc::from),
+        })
 }
 
 fn unauthorized() -> Response {
-    (StatusCode::UNAUTHORIZED, Json(json!({"error": "missing or invalid bearer token"}))).into_response()
+    (
+        StatusCode::UNAUTHORIZED,
+        Json(json!({"error": "missing or invalid bearer token"})),
+    )
+        .into_response()
 }
 
 /// POST /api/v1/bones: Store dead adventurer bones and produce a gravestone record.
@@ -95,7 +106,11 @@ async fn store_bones(
         return unauthorized();
     }
     if let Err(msg) = validate_bones(&bones) {
-        return (StatusCode::UNPROCESSABLE_ENTITY, Json(json!({"error": msg}))).into_response();
+        return (
+            StatusCode::UNPROCESSABLE_ENTITY,
+            Json(json!({"error": msg})),
+        )
+            .into_response();
     }
 
     let headstone = render_headstone(
@@ -121,7 +136,11 @@ async fn store_bones(
     let depth = bones.depth;
     let pool = lock.bones_pool.entry(depth).or_default();
     if pool.len() >= MAX_BONES_PER_DEPTH {
-        return (StatusCode::CONFLICT, Json(json!({"error": "bones pool for this depth is full"}))).into_response();
+        return (
+            StatusCode::CONFLICT,
+            Json(json!({"error": "bones pool for this depth is full"})),
+        )
+            .into_response();
     }
     pool.push(bones);
     lock.graves.push(grave.clone());
@@ -134,10 +153,7 @@ async fn store_bones(
 }
 
 /// GET /api/v1/bones/:depth: Retrieve and claim a bones file for dungeon generation.
-async fn fetch_bones(
-    State(app): State<BonesApp>,
-    Path(depth): Path<u32>,
-) -> impl IntoResponse {
+async fn fetch_bones(State(app): State<BonesApp>, Path(depth): Path<u32>) -> impl IntoResponse {
     let mut lock = lock_graveyard(&app.graveyard);
     if let Some(pool) = lock.bones_pool.get_mut(&depth) {
         if let Some(bones) = pool.pop() {
@@ -148,9 +164,7 @@ async fn fetch_bones(
 }
 
 /// GET /api/v1/graves: List all memorials and gravestones.
-async fn list_graves(
-    State(app): State<BonesApp>,
-) -> impl IntoResponse {
+async fn list_graves(State(app): State<BonesApp>) -> impl IntoResponse {
     let lock = lock_graveyard(&app.graveyard);
     (StatusCode::OK, Json(lock.graves.clone()))
 }
@@ -161,7 +175,11 @@ async fn get_grave(
     Path(hero_name): Path<String>,
 ) -> impl IntoResponse {
     let lock = lock_graveyard(&app.graveyard);
-    if let Some(grave) = lock.graves.iter().find(|g| g.hero_name.eq_ignore_ascii_case(&hero_name)) {
+    if let Some(grave) = lock
+        .graves
+        .iter()
+        .find(|g| g.hero_name.eq_ignore_ascii_case(&hero_name))
+    {
         (StatusCode::OK, Json(Some(grave.clone())))
     } else {
         (StatusCode::NOT_FOUND, Json(None))
@@ -169,12 +187,12 @@ async fn get_grave(
 }
 
 /// GET /api/v1/stats: Return aggregate graveyard statistics.
-async fn get_stats(
-    State(app): State<BonesApp>,
-) -> impl IntoResponse {
+async fn get_stats(State(app): State<BonesApp>) -> impl IntoResponse {
     let lock = lock_graveyard(&app.graveyard);
     let active_bones_count: usize = lock.bones_pool.values().map(|v| v.len()).sum();
-    let mut haunted_depths: Vec<u32> = lock.bones_pool.iter()
+    let mut haunted_depths: Vec<u32> = lock
+        .bones_pool
+        .iter()
         .filter(|(_, v)| !v.is_empty())
         .map(|(&d, _)| d)
         .collect();
@@ -190,10 +208,7 @@ async fn get_stats(
 }
 
 /// POST /api/v1/reset: Reset state (useful for automated testing).
-async fn reset_graveyard(
-    State(app): State<BonesApp>,
-    headers: HeaderMap,
-) -> Response {
+async fn reset_graveyard(State(app): State<BonesApp>, headers: HeaderMap) -> Response {
     if !bearer_ok(&headers, app.token.as_deref()) {
         return unauthorized();
     }
@@ -212,7 +227,10 @@ pub async fn run_bones_server(
     let shared_state = state.unwrap_or_else(|| Arc::new(Mutex::new(GraveyardState::default())));
     let app = create_bones_router(shared_state);
     let listener = tokio::net::TcpListener::bind(addr).await?;
-    println!("NetRust Graveyard & Bones Server listening on http://{}", listener.local_addr()?);
+    println!(
+        "NetRust Graveyard & Bones Server listening on http://{}",
+        listener.local_addr()?
+    );
     axum::serve(listener, app).await?;
     Ok(())
 }

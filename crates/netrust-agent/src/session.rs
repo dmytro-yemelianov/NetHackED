@@ -29,7 +29,9 @@ impl AgentSession {
 
     pub fn get_observation(&self) -> GameObservation {
         let player = self.world.arena.actors.get(self.world.player_id);
-        let player_coord = player.map(|p| p.coord).unwrap_or(Coord::new_unchecked(0, 0));
+        let player_coord = player
+            .map(|p| p.coord)
+            .unwrap_or(Coord::new_unchecked(0, 0));
         let player_hp = player.map(|p| p.hp).unwrap_or(0);
         let player_max_hp = player.map(|p| p.max_hp).unwrap_or(0);
         let player_ac = player.map(|p| p.ac).unwrap_or(10);
@@ -74,7 +76,8 @@ impl AgentSession {
     }
 
     pub fn inspect_tile(&self, x: usize, y: usize) -> Result<TileInspection, String> {
-        let coord = Coord::new(x, y).ok_or_else(|| format!("Coordinate ({x}, {y}) is outside the dungeon map"))?;
+        let coord = Coord::new(x, y)
+            .ok_or_else(|| format!("Coordinate ({x}, {y}) is outside the dungeon map"))?;
         let tile = self.world.level.get_tile(coord).clone();
         let occupant = self.world.actor_at(coord).and_then(|id| {
             self.world.arena.actors.get(id).map(|a| ActorObservation {

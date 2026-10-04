@@ -1,7 +1,7 @@
 //! Reachability analysis and free-floor placement helpers shared by generators and the sim.
 
-use std::collections::{HashSet, VecDeque};
 use netrust_types::{Coord, Tile};
+use std::collections::{HashSet, VecDeque};
 
 use crate::level::DungeonLevel;
 use crate::room::Rect;
@@ -12,7 +12,11 @@ pub fn reachable_from(level: &DungeonLevel, start: Coord) -> HashSet<Coord> {
 }
 
 /// Like [`reachable_from`] but with a caller-supplied passability rule.
-pub fn reachable_from_with(level: &DungeonLevel, start: Coord, passable: impl Fn(&Tile) -> bool) -> HashSet<Coord> {
+pub fn reachable_from_with(
+    level: &DungeonLevel,
+    start: Coord,
+    passable: impl Fn(&Tile) -> bool,
+) -> HashSet<Coord> {
     let mut visited = HashSet::new();
     let mut queue = VecDeque::new();
     visited.insert(start);
@@ -34,7 +38,11 @@ pub fn find_free_floor(level: &DungeonLevel, rect: &Rect, avoid: &[Coord]) -> Ve
     for y in (rect.y1 + 1)..rect.y2 {
         for x in (rect.x1 + 1)..rect.x2 {
             let c = Coord::new_unchecked(x, y);
-            if *level.get_tile(c) == Tile::Room && c != level.stairs_up && c != level.stairs_down && !avoid.contains(&c) {
+            if *level.get_tile(c) == Tile::Room
+                && c != level.stairs_up
+                && c != level.stairs_down
+                && !avoid.contains(&c)
+            {
                 out.push(c);
             }
         }

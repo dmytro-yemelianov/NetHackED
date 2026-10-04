@@ -1,7 +1,10 @@
 use netrust_types::{TrapRecord, TrapState, TrapType};
 
 pub fn is_floor_trap(trap_type: TrapType) -> bool {
-    matches!(trap_type, TrapType::Pit | TrapType::SpikedPit | TrapType::Web)
+    matches!(
+        trap_type,
+        TrapType::Pit | TrapType::SpikedPit | TrapType::Web
+    )
 }
 
 pub fn can_trigger_trap(trap: &TrapRecord, is_flying: bool) -> bool {

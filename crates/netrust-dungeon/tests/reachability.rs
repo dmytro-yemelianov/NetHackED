@@ -14,7 +14,13 @@ fn rng(seed: u64) -> ChaCha8Rng {
 fn assert_reach(level: &DungeonLevel, targets: &[Coord], ctx: &str) {
     let reach = reachable_from(level, level.stairs_up);
     for t in targets {
-        assert!(reach.contains(t), "{}: {:?} unreachable from {:?}", ctx, t, level.stairs_up);
+        assert!(
+            reach.contains(t),
+            "{}: {:?} unreachable from {:?}",
+            ctx,
+            t,
+            level.stairs_up
+        );
     }
 }
 
@@ -29,10 +35,17 @@ fn regular_dungeon_levels_connected() {
 #[test]
 fn sokoban_prize_reachable_once_pits_are_filled() {
     let (l, boulders) = generate_sokoban_level(1);
-    let reach = reachable_from_with(&l, l.stairs_up, |t| t.is_passable() || matches!(t, Tile::Pit { .. }));
+    let reach = reachable_from_with(&l, l.stairs_up, |t| {
+        t.is_passable() || matches!(t, Tile::Pit { .. })
+    });
     assert!(reach.contains(&l.stairs_down), "prize room sealed off");
     assert!(reach.contains(&Coord::new(64, 10).unwrap()));
-    let pits = l.tiles.iter().flatten().filter(|t| matches!(t, Tile::Pit { filled: false })).count();
+    let pits = l
+        .tiles
+        .iter()
+        .flatten()
+        .filter(|t| matches!(t, Tile::Pit { filled: false }))
+        .count();
     assert!(boulders.len() >= pits);
 }
 
@@ -65,7 +78,11 @@ fn quest_levels_connected() {
         let l = generate_quest_locate_level(&mut rng(s), 2);
         assert_reach(&l, &[l.stairs_down], &format!("quest locate seed {s}"));
         let home = generate_quest_home_level(&mut rng(s), "valkyrie");
-        assert_reach(&home.level, &[home.leader_coord], &format!("quest home seed {s}"));
+        assert_reach(
+            &home.level,
+            &[home.leader_coord],
+            &format!("quest home seed {s}"),
+        );
     }
 }
 

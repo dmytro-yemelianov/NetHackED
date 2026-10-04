@@ -51,8 +51,11 @@ impl SimulationWorld {
                     let carried = self.arena.items_carried_by(self.player_id);
                     for item_id in carried {
                         if let Some(item) = self.arena.items.get_mut(item_id) {
-                            if item.name.to_lowercase().contains("potion of water") && item.buc == Buc::Uncursed {
-                                item.buc = consecrate_water(item.buc, true, self.divine_state.favor);
+                            if item.name.to_lowercase().contains("potion of water")
+                                && item.buc == Buc::Uncursed
+                            {
+                                item.buc =
+                                    consecrate_water(item.buc, true, self.divine_state.favor);
                                 events.push(GameEvent::LogMessage {
                                     text: Messages::holy_water_consecrated(self.locale).into(),
                                 });
@@ -113,13 +116,22 @@ impl SimulationWorld {
                 let carried = self.arena.items_carried_by(self.player_id);
                 if idx < carried.len() {
                     let item_id = carried[idx];
-                    let item_name = self.arena.items.get(item_id).map(|i| i.name.clone()).unwrap_or_default();
+                    let item_name = self
+                        .arena
+                        .items
+                        .get(item_id)
+                        .map(|i| i.name.clone())
+                        .unwrap_or_default();
                     self.arena.destroy_item(item_id);
                     if self.wielded_item == Some(item_id) {
                         self.wielded_item = None;
                     }
 
-                    let corpse_nutrition = if item_name.contains("corpse") { 250 } else { 100 };
+                    let corpse_nutrition = if item_name.contains("corpse") {
+                        250
+                    } else {
+                        100
+                    };
                     let (new_div, sac_res) = resolve_sacrifice(
                         self.divine_state,
                         player.alignment,
@@ -130,7 +142,8 @@ impl SimulationWorld {
 
                     match sac_res {
                         SacrificeResult::AltarConverted(new_align) => {
-                            self.level.set_tile(p_coord, Tile::Altar { align: new_align });
+                            self.level
+                                .set_tile(p_coord, Tile::Altar { align: new_align });
                             events.push(GameEvent::LogMessage {
                                 text: Messages::altar_converted(&item_name, new_align, self.locale),
                             });
@@ -141,7 +154,11 @@ impl SimulationWorld {
                                 p.hp += 1;
                             }
                             events.push(GameEvent::LogMessage {
-                                text: Messages::sacrifice_favor_increased(&item_name, fav, self.locale),
+                                text: Messages::sacrifice_favor_increased(
+                                    &item_name,
+                                    fav,
+                                    self.locale,
+                                ),
                             });
                         }
                         SacrificeResult::DivineGift(artifact_name) => {
@@ -177,9 +194,17 @@ impl SimulationWorld {
                 let carried = self.arena.items_carried_by(self.player_id);
                 if idx < carried.len() {
                     let item_id = carried[idx];
-                    let is_amulet = self.arena.items.get(item_id).is_some_and(crate::actions::items::is_real_amulet);
+                    let is_amulet = self
+                        .arena
+                        .items
+                        .get(item_id)
+                        .is_some_and(crate::actions::items::is_real_amulet);
                     if is_amulet {
-                        let outcome = netrust_core::endgame::offer_amulet_on_high_altar(true, player.alignment, align);
+                        let outcome = netrust_core::endgame::offer_amulet_on_high_altar(
+                            true,
+                            player.alignment,
+                            align,
+                        );
                         match outcome {
                             netrust_types::AscensionOutcome::Ascended(god_align) => {
                                 self.arena.destroy_item(item_id);
@@ -229,7 +254,10 @@ impl SimulationWorld {
 
         // Find a priest on the floor near player (distance <= 6)
         let priest_id = self.arena.actors.iter().find_map(|(id, a)| {
-            if !a.is_dead && a.name.to_lowercase().contains("priest") && a.coord.chebyshev_distance(player.coord) <= 6 {
+            if !a.is_dead
+                && a.name.to_lowercase().contains("priest")
+                && a.coord.chebyshev_distance(player.coord) <= 6
+            {
                 Some(id)
             } else {
                 None
@@ -261,7 +289,8 @@ impl SimulationWorld {
 
         // Apply divine protection
         let prev_prot = self.divine_protection;
-        let new_prot = netrust_core::mines::apply_priest_donation(prev_prot, donation, player.level);
+        let new_prot =
+            netrust_core::mines::apply_priest_donation(prev_prot, donation, player.level);
         if new_prot > prev_prot {
             let gained = new_prot - prev_prot;
             self.divine_protection = new_prot;

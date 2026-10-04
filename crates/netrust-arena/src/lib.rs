@@ -8,7 +8,6 @@ use slotmap::SlotMap;
 
 pub use netrust_types::{ActorId, ItemId, LevelId};
 
-
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ItemLocation {
     Floor(Coord),

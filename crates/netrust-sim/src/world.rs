@@ -1,7 +1,9 @@
 //! Core SimulationWorld state definition and character initialization.
 
 use netrust_arena::{ActorId, EntityArena, ItemId, ItemLocation};
-use netrust_core::{energy::SchedulerState, nutrition::hunger_of_nutrition, HungerState, SpellKind};
+use netrust_core::{
+    energy::SchedulerState, nutrition::hunger_of_nutrition, HungerState, SpellKind,
+};
 use netrust_data::{
     create_item_record, create_monster_record, spawn_player_character, CharacterConfig, ItemKindId,
     MonsterSpeciesId, RoleId,
@@ -76,7 +78,9 @@ pub fn default_rng() -> ChaCha8Rng {
 impl SimulationWorld {
     /// Remove an actor, leaving anything it carried on the floor where it stood.
     pub(crate) fn remove_actor_dropping_items(&mut self, id: ActorId) {
-        let Some(coord) = self.arena.actors.get(id).map(|a| a.coord) else { return };
+        let Some(coord) = self.arena.actors.get(id).map(|a| a.coord) else {
+            return;
+        };
         for item_id in self.arena.items_carried_by(id) {
             if let Some(item) = self.arena.items.get_mut(item_id) {
                 item.location = ItemLocation::Floor(coord);
@@ -89,7 +93,9 @@ impl SimulationWorld {
         let lower = name.to_lowercase();
         let class = netrust_data::monster_class_of(name);
         self.genocide_registry.genocided_species.contains(&lower)
-            || class.map(|c| self.genocide_registry.genocided_classes.contains(&c)).unwrap_or(false)
+            || class
+                .map(|c| self.genocide_registry.genocided_classes.contains(&c))
+                .unwrap_or(false)
     }
 
     /// Initialize a new deterministic simulation world with a custom character configuration.
@@ -99,10 +105,15 @@ impl SimulationWorld {
         let mut arena = EntityArena::new();
 
         // Spawn player with character configuration (role, race, starting items)
-        let (player_id, starting_items) = spawn_player_character(&config, level.stairs_up, &mut arena);
+        let (player_id, starting_items) =
+            spawn_player_character(&config, level.stairs_up, &mut arena);
 
         let mut unpaid_items = Vec::new();
-        let player_gold = if config.role == RoleId::Tourist { 200 } else { 50 };
+        let player_gold = if config.role == RoleId::Tourist {
+            200
+        } else {
+            50
+        };
 
         // Nutrition & Mana by role
         let player_nutrition = 900u32;
@@ -142,8 +153,13 @@ impl SimulationWorld {
                         let iy = (room.y1 + 1).min(room.y2.saturating_sub(1));
                         let ic = Coord::new_unchecked(ix, iy);
                         if ic != room.center() {
-                            let item_rec = create_item_record(kind, ItemLocation::Floor(ic), Buc::Uncursed);
-                            let cost = netrust_data::items::ITEM_CATALOG.iter().find(|it| it.id == kind).map(|it| it.cost).unwrap_or(30);
+                            let item_rec =
+                                create_item_record(kind, ItemLocation::Floor(ic), Buc::Uncursed);
+                            let cost = netrust_data::items::ITEM_CATALOG
+                                .iter()
+                                .find(|it| it.id == kind)
+                                .map(|it| it.cost)
+                                .unwrap_or(30);
                             let item_id = arena.spawn_item(item_rec);
                             unpaid_items.push((item_id, cost));
                         }
@@ -159,18 +175,37 @@ impl SimulationWorld {
         }
 
         // Spawn starting floor items near stairs from declarative item catalog
-        let item_coord1 = Coord::new(level.stairs_up.x + 1, level.stairs_up.y).unwrap_or(level.stairs_up);
-        arena.spawn_item(create_item_record(ItemKindId::SilverSaber, ItemLocation::Floor(item_coord1), Buc::Uncursed));
+        let item_coord1 =
+            Coord::new(level.stairs_up.x + 1, level.stairs_up.y).unwrap_or(level.stairs_up);
+        arena.spawn_item(create_item_record(
+            ItemKindId::SilverSaber,
+            ItemLocation::Floor(item_coord1),
+            Buc::Uncursed,
+        ));
 
-        let item_coord2 = Coord::new(level.stairs_up.x, level.stairs_up.y + 1).unwrap_or(level.stairs_up);
-        arena.spawn_item(create_item_record(ItemKindId::PotionOfHealing, ItemLocation::Floor(item_coord2), Buc::Blessed));
+        let item_coord2 =
+            Coord::new(level.stairs_up.x, level.stairs_up.y + 1).unwrap_or(level.stairs_up);
+        arena.spawn_item(create_item_record(
+            ItemKindId::PotionOfHealing,
+            ItemLocation::Floor(item_coord2),
+            Buc::Blessed,
+        ));
 
-        let item_coord3 = Coord::new(level.stairs_up.x + 1, level.stairs_up.y + 1).unwrap_or(level.stairs_up);
-        arena.spawn_item(create_item_record(ItemKindId::BagOfHolding, ItemLocation::Floor(item_coord3), Buc::Uncursed));
+        let item_coord3 =
+            Coord::new(level.stairs_up.x + 1, level.stairs_up.y + 1).unwrap_or(level.stairs_up);
+        arena.spawn_item(create_item_record(
+            ItemKindId::BagOfHolding,
+            ItemLocation::Floor(item_coord3),
+            Buc::Uncursed,
+        ));
 
         // Auto-wield first starting weapon if any
         let wielded_item = starting_items.into_iter().find(|&id| {
-            arena.items.get(id).map(|i| i.class == ItemClass::Weapon).unwrap_or(false)
+            arena
+                .items
+                .get(id)
+                .map(|i| i.class == ItemClass::Weapon)
+                .unwrap_or(false)
         });
 
         Self {
@@ -195,7 +230,9 @@ impl SimulationWorld {
                 base_hp: arena.actors[player_id].hp as i32,
                 base_max_hp: arena.actors[player_id].max_hp as i32,
                 polymorph: None,
-                lycanthropy: None, afflictions: netrust_types::AfflictionState::default(), skills: netrust_types::SkillTree::default(),
+                lycanthropy: None,
+                afflictions: netrust_types::AfflictionState::default(),
+                skills: netrust_types::SkillTree::default(),
                 mount: None,
                 quivered_item: None,
             },
@@ -233,7 +270,10 @@ impl SimulationWorld {
 
     /// Retrieve the unpaid debt cost for a shop item, if any.
     pub fn get_unpaid_cost(&self, id: ItemId) -> Option<u32> {
-        self.unpaid_items.iter().find(|(i, _)| *i == id).map(|(_, c)| *c)
+        self.unpaid_items
+            .iter()
+            .find(|(i, _)| *i == id)
+            .map(|(_, c)| *c)
     }
 
     /// Check if an item is unpaid store merchandise.
@@ -248,16 +288,13 @@ impl SimulationWorld {
 
     /// Find actor occupying a specific coordinate.
     pub fn actor_at(&self, coord: Coord) -> Option<ActorId> {
-        self.arena
-            .actors
-            .iter()
-            .find_map(|(id, actor)| {
-                if actor.coord == coord && !actor.is_dead {
-                    Some(id)
-                } else {
-                    None
-                }
-            })
+        self.arena.actors.iter().find_map(|(id, actor)| {
+            if actor.coord == coord && !actor.is_dead {
+                Some(id)
+            } else {
+                None
+            }
+        })
     }
 
     /// Return the current hunger state based on nutrition points.
@@ -267,9 +304,17 @@ impl SimulationWorld {
 
     /// Progress one tick of luck decay based on carried luckstone.
     pub fn tick_luck_decay(&mut self) {
-        let luckstone = self.arena.items_carried_by(self.player_id).into_iter().find_map(|iid| {
-            self.arena.items.get(iid).filter(|it| it.name.to_lowercase().contains("luckstone")).map(|it| it.buc)
-        });
+        let luckstone = self
+            .arena
+            .items_carried_by(self.player_id)
+            .into_iter()
+            .find_map(|iid| {
+                self.arena
+                    .items
+                    .get(iid)
+                    .filter(|it| it.name.to_lowercase().contains("luckstone"))
+                    .map(|it| it.buc)
+            });
         let stone_status = match luckstone {
             Some(Buc::Blessed) => netrust_core::mines::LuckstoneStatus::Blessed,
             Some(Buc::Uncursed) => netrust_core::mines::LuckstoneStatus::Uncursed,
@@ -285,7 +330,12 @@ impl SimulationWorld {
     /// - Room darkness
     /// - Blindness intrinsic
     /// - Telepathy intrinsic (sensing minded monsters when blind or in darkness)
-    pub fn compute_perception(&self) -> (std::collections::HashSet<Coord>, std::collections::HashSet<ActorId>) {
+    pub fn compute_perception(
+        &self,
+    ) -> (
+        std::collections::HashSet<Coord>,
+        std::collections::HashSet<ActorId>,
+    ) {
         use std::collections::HashSet;
 
         let Some(player) = self.arena.actors.get(self.player_id) else {
@@ -302,7 +352,9 @@ impl SimulationWorld {
         let carried = self.arena.items_carried_by(self.player_id);
         for iid in carried {
             if let Some(it) = self.arena.items.get(iid) {
-                if (it.name.contains("lamp") || it.name.contains("lantern") || it.name.contains("candle"))
+                if (it.name.contains("lamp")
+                    || it.name.contains("lantern")
+                    || it.name.contains("candle"))
                     && it.enchantment > 0
                 {
                     let radius = if it.name.contains("lantern") {
@@ -341,7 +393,12 @@ impl SimulationWorld {
             }
             let tile_vis = visible_tiles.contains(&actor.coord);
             let has_mind = netrust_core::lighting::monster_has_mind(&actor.name);
-            if netrust_core::lighting::can_detect_monster(is_blind, has_telepathy, has_mind, tile_vis) {
+            if netrust_core::lighting::can_detect_monster(
+                is_blind,
+                has_telepathy,
+                has_mind,
+                tile_vis,
+            ) {
                 detected_monsters.insert(aid);
             }
         }
@@ -356,7 +413,9 @@ impl SimulationWorld {
             p.hp = p.hp.saturating_sub(amount);
             if p.hp == 0 && !p.is_dead {
                 p.is_dead = true;
-                events.push(GameEvent::LogMessage { text: format!("You die... killed by {cause}.") });
+                events.push(GameEvent::LogMessage {
+                    text: format!("You die... killed by {cause}."),
+                });
             }
         }
         events

@@ -1,9 +1,9 @@
 //! Complete 80x21 Dungeon Level data structure and tile accessors.
 
-use std::collections::HashMap;
 use netrust_core::engraving::Engraving;
 use netrust_types::{Coord, Tile, COLNO, ROWNO};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 use crate::room::Room;
 
@@ -123,9 +123,9 @@ impl DungeonLevel {
 /// Serializes `HashMap<Coord, V>` as a coordinate-sorted sequence of `(Coord, V)` pairs:
 /// valid JSON (no struct keys) and deterministic ordering.
 mod coord_map {
-    use std::collections::HashMap;
     use netrust_types::Coord;
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
+    use std::collections::HashMap;
 
     pub fn serialize<S, V>(map: &HashMap<Coord, V>, s: S) -> Result<S::Ok, S::Error>
     where

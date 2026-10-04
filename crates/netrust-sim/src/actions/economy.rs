@@ -25,7 +25,10 @@ impl SimulationWorld {
             });
         } else if self.player_gold < total_due {
             events.push(GameEvent::LogMessage {
-                text: format!("You don't have enough gold! You owe {} zorkmids but only have {}.", total_due, self.player_gold),
+                text: format!(
+                    "You don't have enough gold! You owe {} zorkmids but only have {}.",
+                    total_due, self.player_gold
+                ),
             });
         } else {
             self.player_gold -= total_due;
@@ -33,7 +36,9 @@ impl SimulationWorld {
                 self.remove_unpaid(id);
             }
             events.push(GameEvent::LogMessage {
-                text: format!("You pay the shopkeeper {total_due} zorkmids. 'Thank you for your business!'"),
+                text: format!(
+                    "You pay the shopkeeper {total_due} zorkmids. 'Thank you for your business!'"
+                ),
             });
             self.scheduler.hero_act(NORMAL_SPEED);
         }
@@ -51,7 +56,11 @@ impl SimulationWorld {
             return events;
         }
 
-        let has_shopkeeper = self.arena.actors.values().any(|a| a.name == "shopkeeper" && !a.is_dead);
+        let has_shopkeeper = self
+            .arena
+            .actors
+            .values()
+            .any(|a| a.name == "shopkeeper" && !a.is_dead);
         if !has_shopkeeper {
             events.push(GameEvent::LogMessage {
                 text: "There is no shopkeeper here to appraise your goods.".into(),
@@ -70,7 +79,13 @@ impl SimulationWorld {
             let buy = netrust_core::calculate_buy_price(base_cost, cha, item.buc);
             let sell = netrust_core::calculate_sell_price(base_cost, cha, item.buc);
             events.push(GameEvent::LogMessage {
-                text: netrust_i18n::Messages::price_appraisal(&item.name, sell, buy, base_cost, self.locale),
+                text: netrust_i18n::Messages::price_appraisal(
+                    &item.name,
+                    sell,
+                    buy,
+                    base_cost,
+                    self.locale,
+                ),
             });
             self.scheduler.hero_act(NORMAL_SPEED);
         }
@@ -78,4 +93,3 @@ impl SimulationWorld {
         events
     }
 }
-

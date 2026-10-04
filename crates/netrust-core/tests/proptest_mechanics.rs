@@ -3,35 +3,30 @@
 //! Every property test here corresponds to a machine-checked theorem in `NetMechanics`.
 
 use netrust_core::{
-    calculate_damage, calculate_encumbrance, can_insert_safe, dip_water, identify_fully, learn_buc,
-    learn_type, reflect, step_ray, uncurse, BeamRay, Buc, Combatant, DoorState, EncumbranceTier,
-    Engraving, EngravingMedium, FormStats, Item, KnowledgeLevel, MetricState, PolyEntity,
-    SchedulerState, StepAction, StepResult, SurfaceOrientation, Tile, Velocity, WaterType,
-    NORMAL_SPEED, DungeonDepth, hunger_tier, hunger_of_nutrition, SpellKind, cast_spell, mana_cost,
-    push_boulder, PushOutcome, branch_entrance_depth, branch_max_depth, enter_branch, exit_branch,
-    BranchCoord, BranchId, Coord, Direction,
-    feed_pet, interact_with_occupant, swap_displacement, HeroInteraction,
-    apply_erosion, enchant_item, mix_alchemy, SAFE_ENCHANT_CAP,
-    Alignment, AscensionOutcome, DrawbridgeState, DrawbridgeTransition,
-    destroy_drawbridge, offer_amulet_on_high_altar, toggle_drawbridge,
-    clamp_favor, consecrate_water, resolve_sacrifice, tick_prayer_timeout,
-    DivineState,
-    apply_vorpal_strike, zap_wand, recharge_wand, WandCharges, RechargeResult,
-    BreathType, GazeType, GazeEffect, Intrinsics, calculate_summon_count, resolve_breath_damage, resolve_gaze,
-    corrupt_buc_on_death, create_ghost_hp, is_valid_bones_level,
-    buy_factor, calculate_buy_price, calculate_sell_price, dilute_potion, rub_lamp, sell_factor,
-    DilutionState, RubResult,
-    choose_pet_goal, pet_tile_steppable, promote_pet, PetFamily, PetGoal, PetSpeciesTier,
-    apply_priest_donation, MAX_DIVINE_PROTECTION, protection_donation_cost, priest_uncurse,
-    LuckstoneStatus, step_luck_decay,
-    can_see_tile, LightSource, tick_light_fuel, can_detect_monster,
-    calculate_tournament_score, decide_tactical_action, is_hp_critical, TacticalAction,
-    TacticalContext,
-    CandelabrumState, InvocationStep, RitualProgress, REQUIRED_CANDLES, is_candelabrum_ready,
-    step_ritual, is_sanctum_accessible, calculate_mysterious_force,
-    attack_nemesis, consult_leader, is_hero_eligible_for_quest, pick_up_quest_artifact,
-    quest_progress_rank, return_to_leader_with_artifact, ArtifactLocation, HeroQuestEligibility,
-    QuestProgress, QuestState, QUEST_MIN_ALIGNMENT, QUEST_MIN_LEVEL,
+    apply_erosion, apply_priest_donation, apply_vorpal_strike, attack_nemesis,
+    branch_entrance_depth, branch_max_depth, buy_factor, calculate_buy_price, calculate_damage,
+    calculate_encumbrance, calculate_mysterious_force, calculate_sell_price,
+    calculate_summon_count, calculate_tournament_score, can_detect_monster, can_insert_safe,
+    can_see_tile, cast_spell, choose_pet_goal, clamp_favor, consecrate_water, consult_leader,
+    corrupt_buc_on_death, create_ghost_hp, decide_tactical_action, destroy_drawbridge,
+    dilute_potion, dip_water, enchant_item, enter_branch, exit_branch, feed_pet,
+    hunger_of_nutrition, hunger_tier, identify_fully, interact_with_occupant, is_candelabrum_ready,
+    is_hero_eligible_for_quest, is_hp_critical, is_sanctum_accessible, is_valid_bones_level,
+    learn_buc, learn_type, mana_cost, mix_alchemy, offer_amulet_on_high_altar, pet_tile_steppable,
+    pick_up_quest_artifact, priest_uncurse, promote_pet, protection_donation_cost, push_boulder,
+    quest_progress_rank, recharge_wand, reflect, resolve_breath_damage, resolve_gaze,
+    resolve_sacrifice, return_to_leader_with_artifact, rub_lamp, sell_factor, step_luck_decay,
+    step_ray, step_ritual, swap_displacement, tick_light_fuel, tick_prayer_timeout,
+    toggle_drawbridge, uncurse, zap_wand, Alignment, ArtifactLocation, AscensionOutcome, BeamRay,
+    BranchCoord, BranchId, BreathType, Buc, CandelabrumState, Combatant, Coord, DilutionState,
+    Direction, DivineState, DoorState, DrawbridgeState, DrawbridgeTransition, DungeonDepth,
+    EncumbranceTier, Engraving, EngravingMedium, FormStats, GazeEffect, GazeType, HeroInteraction,
+    HeroQuestEligibility, Intrinsics, InvocationStep, Item, KnowledgeLevel, LightSource,
+    LuckstoneStatus, MetricState, PetFamily, PetGoal, PetSpeciesTier, PolyEntity, PushOutcome,
+    QuestProgress, QuestState, RechargeResult, RitualProgress, RubResult, SchedulerState,
+    SpellKind, StepAction, StepResult, SurfaceOrientation, TacticalAction, TacticalContext, Tile,
+    Velocity, WandCharges, WaterType, MAX_DIVINE_PROTECTION, NORMAL_SPEED, QUEST_MIN_ALIGNMENT,
+    QUEST_MIN_LEVEL, REQUIRED_CANDLES, SAFE_ENCHANT_CAP,
 };
 use proptest::prelude::*;
 
@@ -1339,7 +1334,7 @@ proptest! {
     ) {
         use netrust_types::{Hero, PolymorphForm};
         use netrust_core::polymorph::{apply_poly_damage, PolyDamageResult};
-        
+
         let mut hero = Hero { mount: None, quivered_item: None,
             base_hp,
             base_max_hp: base_hp,
@@ -1428,7 +1423,7 @@ proptest! {
         use netrust_types::GenocideRegistry;
         use netrust_core::{is_genocided, apply_genocide};
         use netrust_types::GenocideTarget;
-        
+
         let mut registry = GenocideRegistry {
             genocided_species: std::collections::HashSet::new(),
             genocided_classes: std::collections::HashSet::new(),
@@ -1437,7 +1432,7 @@ proptest! {
         apply_genocide(&mut registry, GenocideTarget::Class(glyph));
 
         prop_assert!(is_genocided(&registry, &species, glyph));
-        
+
         if species != other_species && glyph != other_glyph {
             prop_assert!(!is_genocided(&registry, &other_species, other_glyph));
         }
@@ -1487,7 +1482,7 @@ proptest! {
             let res = tick_afflictions(&mut hero);
             prop_assert_eq!(res, AfflictionTickResult::Survived);
         }
-        
+
         let final_res = tick_afflictions(&mut hero);
         prop_assert_eq!(final_res, AfflictionTickResult::StoneDeath);
 
@@ -1495,7 +1490,7 @@ proptest! {
         hero.afflictions.petrification = Some(PetrificationState { turns_remaining: turns });
         cure_petrification(&mut hero);
         prop_assert!(hero.afflictions.petrification.is_none());
-        
+
         let cured_res = tick_afflictions(&mut hero);
         prop_assert_eq!(cured_res, AfflictionTickResult::Survived);
     }
@@ -1523,7 +1518,7 @@ proptest! {
             let res = tick_afflictions(&mut hero);
             prop_assert_eq!(res, AfflictionTickResult::Survived);
         }
-        
+
         let final_res = tick_afflictions(&mut hero);
         prop_assert_eq!(final_res, AfflictionTickResult::SlimeDeath);
 
@@ -1531,7 +1526,7 @@ proptest! {
         hero.afflictions.sliming = Some(SlimingState { turns_remaining: turns });
         cure_sliming(&mut hero);
         prop_assert!(hero.afflictions.sliming.is_none());
-        
+
         let cured_res = tick_afflictions(&mut hero);
         prop_assert_eq!(cured_res, AfflictionTickResult::Survived);
     }
@@ -1557,7 +1552,7 @@ proptest! {
             for j in i..levels.len() {
                 let li = levels[i];
                 let lj = levels[j];
-                
+
                 prop_assert!(li <= lj);
                 prop_assert!(skill_to_hit_bonus(lj) >= skill_to_hit_bonus(li));
                 prop_assert!(skill_damage_bonus(lj) >= skill_damage_bonus(li));
@@ -1571,20 +1566,20 @@ proptest! {
     ) {
         use netrust_core::skills::enhance_skill;
         use netrust_types::{SkillTree, SkillClass, SkillLevel};
-        
+
         let mut tree = SkillTree {
             skills: std::collections::HashMap::new(),
             available_slots: slots,
         };
 
         let skill = SkillClass::LongSword;
-        
+
         // Unskilled -> Basic
         let res = enhance_skill(&mut tree, skill);
         prop_assert!(res.is_ok());
         prop_assert_eq!(tree.available_slots, slots - 1);
         prop_assert_eq!(tree.skills.get(&skill), Some(&SkillLevel::Basic));
-        
+
         // Basic -> Skilled
         if tree.available_slots > 0 {
             let slots_before = tree.available_slots;
@@ -1592,7 +1587,7 @@ proptest! {
             prop_assert!(res2.is_ok());
             prop_assert_eq!(tree.available_slots, slots_before - 1);
             prop_assert_eq!(tree.skills.get(&skill), Some(&SkillLevel::Skilled));
-            
+
             // Skilled -> Expert
             if tree.available_slots > 0 {
                 let slots_before = tree.available_slots;
@@ -1600,7 +1595,7 @@ proptest! {
                 prop_assert!(res3.is_ok());
                 prop_assert_eq!(tree.available_slots, slots_before - 1);
                 prop_assert_eq!(tree.skills.get(&skill), Some(&SkillLevel::Expert));
-                
+
                 // Expert -> Cannot advance
                 if tree.available_slots > 0 {
                     let slots_before = tree.available_slots;
@@ -1612,12 +1607,6 @@ proptest! {
         }
     }
 }
-
-
-
-
-
-
 
 use netrust_core::ranged::{can_mount, effective_movement_cost, resolve_projectile_impact};
 
@@ -1640,7 +1629,6 @@ proptest! {
         prop_assert_eq!(result, roll < break_prob);
     }
 }
-
 
 prop_compose! {
     fn arb_trap_type()(idx in 0..13) -> netrust_types::TrapType {

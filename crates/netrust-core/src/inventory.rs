@@ -86,7 +86,11 @@ pub fn can_insert_safe(item: &Item, container: &Item) -> bool {
 
 /// Convenience check using boolean flags.
 #[inline]
-pub fn can_insert_safe_flags(item_is_boh: bool, container_is_container: bool, container_is_boh: bool) -> bool {
+pub fn can_insert_safe_flags(
+    item_is_boh: bool,
+    container_is_container: bool,
+    container_is_boh: bool,
+) -> bool {
     container_is_container && !(item_is_boh && container_is_boh)
 }
 
@@ -186,8 +190,14 @@ mod tests {
     #[test]
     fn test_encumbrance_tiers() {
         let cap = 100;
-        assert_eq!(calculate_encumbrance(50, cap), EncumbranceTier::Unencumbered);
-        assert_eq!(calculate_encumbrance(100, cap), EncumbranceTier::Unencumbered);
+        assert_eq!(
+            calculate_encumbrance(50, cap),
+            EncumbranceTier::Unencumbered
+        );
+        assert_eq!(
+            calculate_encumbrance(100, cap),
+            EncumbranceTier::Unencumbered
+        );
         assert_eq!(calculate_encumbrance(120, cap), EncumbranceTier::Burdened);
         assert_eq!(calculate_encumbrance(160, cap), EncumbranceTier::Stressed);
         assert_eq!(calculate_encumbrance(220, cap), EncumbranceTier::Strained);

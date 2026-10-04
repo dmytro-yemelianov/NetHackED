@@ -140,7 +140,7 @@ mod tests {
     }
 }
 
-use netrust_types::{Hero, MonsterId, EquipSlot};
+use netrust_types::{EquipSlot, Hero, MonsterId};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PolyDamageResult {
@@ -161,7 +161,9 @@ pub fn apply_poly_damage(hero: &mut Hero, damage: i32) -> PolyDamageResult {
             if hero.base_hp <= 0 {
                 PolyDamageResult::Dead
             } else {
-                PolyDamageResult::Reverted { excess_damage: excess }
+                PolyDamageResult::Reverted {
+                    excess_damage: excess,
+                }
             }
         }
     } else {
@@ -169,18 +171,24 @@ pub fn apply_poly_damage(hero: &mut Hero, damage: i32) -> PolyDamageResult {
         if hero.base_hp <= 0 {
             PolyDamageResult::Dead
         } else {
-            PolyDamageResult::Absorbed // Or maybe Reverted is not needed here, Absorbed means not dead in base form? Actually, instructions say "If polymorphed..." 
+            PolyDamageResult::Absorbed // Or maybe Reverted is not needed here, Absorbed means not dead in base form? Actually, instructions say "If polymorphed..."
         }
     }
 }
 
 pub fn can_wear_in_form(form: MonsterId, slot: EquipSlot) -> bool {
     // Humanoid forms can wear armor, animal forms unequip armor.
-    // Assuming form is a usize. Let's just say form % 2 == 0 is humanoid for now, 
+    // Assuming form is a usize. Let's just say form % 2 == 0 is humanoid for now,
     // or if MonsterSpeciesId is involved we could map it. But here we have MonsterId as usize.
     match slot {
-        EquipSlot::Helmet | EquipSlot::Suit | EquipSlot::Shirt | EquipSlot::Cloak |
-        EquipSlot::Gloves | EquipSlot::Boots | EquipSlot::Shield | EquipSlot::Weapon => {
+        EquipSlot::Helmet
+        | EquipSlot::Suit
+        | EquipSlot::Shirt
+        | EquipSlot::Cloak
+        | EquipSlot::Gloves
+        | EquipSlot::Boots
+        | EquipSlot::Shield
+        | EquipSlot::Weapon => {
             // Simplified check: if form is even, assume humanoid. In a real impl, look up monster archetype.
             form % 2 == 0
         }

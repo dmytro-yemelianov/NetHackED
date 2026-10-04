@@ -38,17 +38,32 @@ pub fn generate_castle_level<R: Rng>(_rng: &mut R) -> (DungeonLevel, Coord) {
 
     // Inside fortress walls
     for x in (f_x + 2)..(f_x + f_w - 2) {
-        level.set_tile(Coord::new_unchecked(x, f_y + 2), Tile::Wall { horizontal: true });
-        level.set_tile(Coord::new_unchecked(x, f_y + f_h - 3), Tile::Wall { horizontal: true });
+        level.set_tile(
+            Coord::new_unchecked(x, f_y + 2),
+            Tile::Wall { horizontal: true },
+        );
+        level.set_tile(
+            Coord::new_unchecked(x, f_y + f_h - 3),
+            Tile::Wall { horizontal: true },
+        );
     }
     for y in (f_y + 2)..(f_y + f_h - 2) {
-        level.set_tile(Coord::new_unchecked(f_x + 2, y), Tile::Wall { horizontal: false });
-        level.set_tile(Coord::new_unchecked(f_x + f_w - 3, y), Tile::Wall { horizontal: false });
+        level.set_tile(
+            Coord::new_unchecked(f_x + 2, y),
+            Tile::Wall { horizontal: false },
+        );
+        level.set_tile(
+            Coord::new_unchecked(f_x + f_w - 3, y),
+            Tile::Wall { horizontal: false },
+        );
     }
 
     // Drawbridge over western moat
     let bridge_y = f_y + f_h / 2;
-    level.set_tile(Coord::new_unchecked(f_x, bridge_y), Tile::Drawbridge { open: false });
+    level.set_tile(
+        Coord::new_unchecked(f_x, bridge_y),
+        Tile::Drawbridge { open: false },
+    );
     // Fortress gate
     level.set_tile(Coord::new_unchecked(f_x + 2, bridge_y), Tile::Room);
 

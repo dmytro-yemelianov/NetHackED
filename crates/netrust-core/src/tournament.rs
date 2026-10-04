@@ -67,7 +67,10 @@ mod tests {
             has_unchecked_floor_item: false,
             on_stairs_down: false,
         };
-        assert_eq!(decide_tactical_action(&ctx), TacticalAction::EngraveElbereth);
+        assert_eq!(
+            decide_tactical_action(&ctx),
+            TacticalAction::EngraveElbereth
+        );
     }
 
     #[test]

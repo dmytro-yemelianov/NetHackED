@@ -3,10 +3,10 @@
 //! Feeds continuous structured JSON observations to autonomous agents,
 //! bash pipes, or RL environments.
 
+use netrust_agent::stdio::serve_lines;
 use netrust_agent::AgentSession;
 use netrust_sim::{ActionAst, Direction};
 use serde_json::{json, Value};
-use netrust_agent::stdio::serve_lines;
 use std::io::{self, Write};
 
 fn main() -> io::Result<()> {
@@ -47,7 +47,11 @@ fn main() -> io::Result<()> {
             }
             "wait" => session.step(ActionAst::Wait),
             "get_state" => session.get_observation(),
-            _ => return Some(json!({ "error": format!("Unknown action: {}", action_name) }).to_string()),
+            _ => {
+                return Some(
+                    json!({ "error": format!("Unknown action: {}", action_name) }).to_string(),
+                )
+            }
         };
         Some(serde_json::to_string(&obs).unwrap_or_default())
     })

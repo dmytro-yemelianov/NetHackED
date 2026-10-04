@@ -6,9 +6,9 @@ pub mod engrave;
 pub mod inventory;
 pub mod items;
 pub mod movement;
+pub mod ranged;
 pub mod religion;
 pub mod stairs;
-pub mod ranged;
 
 use netrust_core::{energy::NORMAL_SPEED, ActionAst};
 
@@ -42,17 +42,24 @@ impl SimulationWorld {
             ActionAst::PickUp => events.extend(self.handle_pickup()),
             ActionAst::Drop(idx) => events.extend(self.handle_drop(idx)),
             ActionAst::Wield(idx) => events.extend(self.handle_wield(idx)),
-            ActionAst::PutInContainer { item_index, container_index } => {
-                events.extend(self.handle_put_in_container(item_index, container_index))
-            }
-            ActionAst::TakeFromContainer { container_index, item_index } => {
-                events.extend(self.handle_take_from_container(container_index, item_index))
-            }
-            ActionAst::Dip { item_index, into_water } => events.extend(self.handle_dip(item_index, into_water)),
+            ActionAst::PutInContainer {
+                item_index,
+                container_index,
+            } => events.extend(self.handle_put_in_container(item_index, container_index)),
+            ActionAst::TakeFromContainer {
+                container_index,
+                item_index,
+            } => events.extend(self.handle_take_from_container(container_index, item_index)),
+            ActionAst::Dip {
+                item_index,
+                into_water,
+            } => events.extend(self.handle_dip(item_index, into_water)),
             ActionAst::Quaff(idx) => events.extend(self.handle_quaff(idx)),
             ActionAst::Read(idx) => events.extend(self.handle_read(idx)),
             ActionAst::Eat(idx) => events.extend(self.handle_eat(idx)),
-            ActionAst::Cast { spell_index, dir } => events.extend(self.handle_cast(spell_index, dir)),
+            ActionAst::Cast { spell_index, dir } => {
+                events.extend(self.handle_cast(spell_index, dir))
+            }
             ActionAst::ZapWand { dir, energy } => events.extend(self.handle_zap_wand(dir, energy)),
             ActionAst::Wish(wish_str) => events.extend(self.handle_wish(wish_str)),
             ActionAst::Pray => events.extend(self.handle_pray()),
@@ -69,30 +76,49 @@ impl SimulationWorld {
             ActionAst::Dismount => events.extend(self.handle_dismount()),
             ActionAst::Search => {
                 let mut found = false;
-                for neighbor in self.arena.actors.get(self.player_id).unwrap().coord.neighbors() {
+                for neighbor in self
+                    .arena
+                    .actors
+                    .get(self.player_id)
+                    .unwrap()
+                    .coord
+                    .neighbors()
+                {
                     if let Some(trap) = self.level.traps.get_mut(&neighbor) {
                         if trap.state == netrust_types::TrapState::Hidden {
                             trap.state = netrust_types::TrapState::Revealed;
-                            events.push(GameEvent::LogMessage { text: format!("You find a {:?} trap!", trap.trap_type) });
+                            events.push(GameEvent::LogMessage {
+                                text: format!("You find a {:?} trap!", trap.trap_type),
+                            });
                             found = true;
                         }
                     }
                 }
                 if !found {
-                    events.push(GameEvent::LogMessage { text: netrust_i18n::Messages::search_nothing(self.locale).into() });
+                    events.push(GameEvent::LogMessage {
+                        text: netrust_i18n::Messages::search_nothing(self.locale).into(),
+                    });
                 }
                 self.scheduler.hero_act(NORMAL_SPEED);
             }
             ActionAst::Untrap(coord) => {
                 if let Some(trap) = self.level.traps.get_mut(&coord) {
                     if netrust_core::traps::disarm_trap(trap) {
-                        events.push(GameEvent::LogMessage { text: netrust_i18n::Messages::trap_disarmed(self.locale).into() });
+                        events.push(GameEvent::LogMessage {
+                            text: netrust_i18n::Messages::trap_disarmed(self.locale).into(),
+                        });
                     } else {
-                        let text = if self.locale == netrust_i18n::Locale::Uk { "Пастку вже знешкоджено." } else { "The trap is already disarmed." };
+                        let text = if self.locale == netrust_i18n::Locale::Uk {
+                            "Пастку вже знешкоджено."
+                        } else {
+                            "The trap is already disarmed."
+                        };
                         events.push(GameEvent::LogMessage { text: text.into() });
                     }
                 } else {
-                    events.push(GameEvent::LogMessage { text: netrust_i18n::Messages::no_trap(self.locale).into() });
+                    events.push(GameEvent::LogMessage {
+                        text: netrust_i18n::Messages::no_trap(self.locale).into(),
+                    });
                 }
                 self.scheduler.hero_act(NORMAL_SPEED);
             }
@@ -108,10 +134,14 @@ impl SimulationWorld {
         events.extend(sim_events);
 
         if spent_time {
-            self.divine_state.prayer_timeout = netrust_core::religion::tick_prayer_timeout(self.divine_state.prayer_timeout);
+            self.divine_state.prayer_timeout =
+                netrust_core::religion::tick_prayer_timeout(self.divine_state.prayer_timeout);
         }
 
-        if self.scheduler.turn != turn_before && self.scheduler.turn > 0 && self.scheduler.turn % 600 == 0 {
+        if self.scheduler.turn != turn_before
+            && self.scheduler.turn > 0
+            && self.scheduler.turn % 600 == 0
+        {
             self.tick_luck_decay();
         }
 

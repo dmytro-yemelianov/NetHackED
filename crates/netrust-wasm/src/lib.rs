@@ -47,7 +47,11 @@ impl WasmGameSession {
         };
 
         let config = CharacterConfig {
-            name: if name.is_empty() { "Hero".into() } else { name.to_string() },
+            name: if name.is_empty() {
+                "Hero".into()
+            } else {
+                name.to_string()
+            },
             role: role_id,
             race: race_id,
             gender: Gender::Female,
@@ -97,7 +101,9 @@ impl WasmGameSession {
             "quaff" => ActionAst::Quaff(arg.and_then(|s| s.parse().ok()).unwrap_or(0)),
             "read" => ActionAst::Read(arg.and_then(|s| s.parse().ok()).unwrap_or(0)),
             "rub" => ActionAst::Rub(arg.and_then(|s| s.parse().ok()).unwrap_or(0)),
-            "price_check" | "appraise" => ActionAst::PriceCheck(arg.and_then(|s| s.parse().ok()).unwrap_or(0)),
+            "price_check" | "appraise" => {
+                ActionAst::PriceCheck(arg.and_then(|s| s.parse().ok()).unwrap_or(0))
+            }
             "dip" => {
                 let (idx, water) = if let Some(ref s) = arg {
                     if let Some((idx_s, w_s)) = s.split_once(':') {
@@ -114,7 +120,10 @@ impl WasmGameSession {
                 } else {
                     (0, netrust_types::WaterType::Holy)
                 };
-                ActionAst::Dip { item_index: idx, into_water: water }
+                ActionAst::Dip {
+                    item_index: idx,
+                    into_water: water,
+                }
             }
             "engrave" => {
                 let text = arg.unwrap_or_else(|| "Elbereth".to_string());
@@ -128,7 +137,10 @@ impl WasmGameSession {
                 spell_index: arg.and_then(|s| s.parse().ok()).unwrap_or(0),
                 dir: Direction::None,
             },
-            "zap" => ActionAst::ZapWand { dir: Direction::East, energy: 6 },
+            "zap" => ActionAst::ZapWand {
+                dir: Direction::East,
+                energy: 6,
+            },
             "pay" => ActionAst::Pay,
             "pray" => ActionAst::Pray,
             "sacrifice" => ActionAst::Sacrifice(arg.and_then(|s| s.parse().ok()).unwrap_or(0)),
@@ -147,7 +159,11 @@ impl WasmGameSession {
     /// Return carried inventory as JSON array with detailed stats for UI rendering.
     #[wasm_bindgen]
     pub fn get_inventory_json(&self) -> String {
-        let carried_ids = self.session.world.arena.items_carried_by(self.session.world.player_id);
+        let carried_ids = self
+            .session
+            .world
+            .arena
+            .items_carried_by(self.session.world.player_id);
         let items: Vec<serde_json::Value> = carried_ids
             .into_iter()
             .enumerate()
@@ -174,12 +190,24 @@ impl WasmGameSession {
 
     #[wasm_bindgen]
     pub fn get_player_hp(&self) -> u32 {
-        self.session.world.arena.actors.get(self.session.world.player_id).map(|p| p.hp).unwrap_or(0)
+        self.session
+            .world
+            .arena
+            .actors
+            .get(self.session.world.player_id)
+            .map(|p| p.hp)
+            .unwrap_or(0)
     }
 
     #[wasm_bindgen]
     pub fn get_player_max_hp(&self) -> u32 {
-        self.session.world.arena.actors.get(self.session.world.player_id).map(|p| p.max_hp).unwrap_or(0)
+        self.session
+            .world
+            .arena
+            .actors
+            .get(self.session.world.player_id)
+            .map(|p| p.max_hp)
+            .unwrap_or(0)
     }
 
     #[wasm_bindgen]
@@ -204,7 +232,13 @@ impl WasmGameSession {
 
     #[wasm_bindgen]
     pub fn get_player_ac(&self) -> i32 {
-        self.session.world.arena.actors.get(self.session.world.player_id).map(|p| p.ac).unwrap_or(10)
+        self.session
+            .world
+            .arena
+            .actors
+            .get(self.session.world.player_id)
+            .map(|p| p.ac)
+            .unwrap_or(10)
     }
 
     #[wasm_bindgen]
@@ -224,12 +258,24 @@ impl WasmGameSession {
 
     #[wasm_bindgen]
     pub fn get_player_name(&self) -> String {
-        self.session.world.arena.actors.get(self.session.world.player_id).map(|p| p.name.clone()).unwrap_or_default()
+        self.session
+            .world
+            .arena
+            .actors
+            .get(self.session.world.player_id)
+            .map(|p| p.name.clone())
+            .unwrap_or_default()
     }
 
     #[wasm_bindgen]
     pub fn get_player_alignment(&self) -> String {
-        self.session.world.arena.actors.get(self.session.world.player_id).map(|p| format!("{:?}", p.alignment)).unwrap_or_default()
+        self.session
+            .world
+            .arena
+            .actors
+            .get(self.session.world.player_id)
+            .map(|p| format!("{:?}", p.alignment))
+            .unwrap_or_default()
     }
 
     #[wasm_bindgen]
@@ -251,7 +297,13 @@ impl WasmGameSession {
 
     #[wasm_bindgen]
     pub fn get_localized_alignment(&self) -> String {
-        if let Some(p) = self.session.world.arena.actors.get(self.session.world.player_id) {
+        if let Some(p) = self
+            .session
+            .world
+            .arena
+            .actors
+            .get(self.session.world.player_id)
+        {
             netrust_i18n::t_align(p.alignment, self.session.world.locale).to_string()
         } else {
             "".to_string()
@@ -262,10 +314,36 @@ impl WasmGameSession {
     pub fn get_i18n_strings_json(locale_str: &str) -> String {
         let loc = netrust_types::Locale::parse(locale_str);
         let keys = [
-            "hero", "align", "dlvl", "gold", "hp", "pw", "ac", "nutr", "turn",
-            "eat", "cast", "read", "pickup", "pay", "pray", "sacrifice",
-            "wield", "drop", "descend", "ascend", "wait", "leaderboard", "character", "reset",
-            "inventory", "quaff", "dip", "rub", "price_check", "engrave"
+            "hero",
+            "align",
+            "dlvl",
+            "gold",
+            "hp",
+            "pw",
+            "ac",
+            "nutr",
+            "turn",
+            "eat",
+            "cast",
+            "read",
+            "pickup",
+            "pay",
+            "pray",
+            "sacrifice",
+            "wield",
+            "drop",
+            "descend",
+            "ascend",
+            "wait",
+            "leaderboard",
+            "character",
+            "reset",
+            "inventory",
+            "quaff",
+            "dip",
+            "rub",
+            "price_check",
+            "engrave",
         ];
         let mut map = std::collections::HashMap::new();
         for k in keys {
@@ -299,7 +377,12 @@ impl WasmGameSession {
     #[wasm_bindgen]
     pub fn get_canvas_render_data_json(&self) -> String {
         let (visible, detected_monsters) = self.session.world.compute_perception();
-        let player = self.session.world.arena.actors.get(self.session.world.player_id);
+        let player = self
+            .session
+            .world
+            .arena
+            .actors
+            .get(self.session.world.player_id);
         let player_coord = player.map(|p| p.coord);
 
         let mut tiles_data = Vec::with_capacity(netrust_types::ROWNO);
@@ -312,7 +395,13 @@ impl WasmGameSession {
                 let is_dark = self.session.world.level.is_dark_at(c);
                 let tile_kind = match tile {
                     netrust_types::Tile::Stone => "stone",
-                    netrust_types::Tile::Wall { horizontal } => if *horizontal { "wall_h" } else { "wall_v" },
+                    netrust_types::Tile::Wall { horizontal } => {
+                        if *horizontal {
+                            "wall_h"
+                        } else {
+                            "wall_v"
+                        }
+                    }
                     netrust_types::Tile::Room => "room",
                     netrust_types::Tile::Corr => "corr",
                     netrust_types::Tile::Door { state, .. } => match state {
@@ -321,17 +410,48 @@ impl WasmGameSession {
                         _ => "door_closed",
                     },
                     netrust_types::Tile::SecretDoor { .. } => "stone",
-                    netrust_types::Tile::Stairs { up } => if *up { "stairs_up" } else { "stairs_down" },
-                    netrust_types::Tile::BranchStairs { up, .. } => if *up { "stairs_up" } else { "stairs_down" },
-                    netrust_types::Tile::Pit { filled } => if *filled { "room" } else { "pit" },
-                    netrust_types::Tile::Altar { align } | netrust_types::Tile::HighAltar { align } => match align {
+                    netrust_types::Tile::Stairs { up } => {
+                        if *up {
+                            "stairs_up"
+                        } else {
+                            "stairs_down"
+                        }
+                    }
+                    netrust_types::Tile::BranchStairs { up, .. } => {
+                        if *up {
+                            "stairs_up"
+                        } else {
+                            "stairs_down"
+                        }
+                    }
+                    netrust_types::Tile::Pit { filled } => {
+                        if *filled {
+                            "room"
+                        } else {
+                            "pit"
+                        }
+                    }
+                    netrust_types::Tile::Altar { align }
+                    | netrust_types::Tile::HighAltar { align } => match align {
                         netrust_types::Alignment::Lawful => "altar_lawful",
                         netrust_types::Alignment::Neutral => "altar_neutral",
                         _ => "altar_chaotic",
                     },
-                    netrust_types::Tile::Drawbridge { open } => if *open { "bridge_open" } else { "bridge_closed" },
+                    netrust_types::Tile::Drawbridge { open } => {
+                        if *open {
+                            "bridge_open"
+                        } else {
+                            "bridge_closed"
+                        }
+                    }
                     netrust_types::Tile::Moat => "water",
-                    netrust_types::Tile::Pool { frozen } => if *frozen { "ice" } else { "water" },
+                    netrust_types::Tile::Pool { frozen } => {
+                        if *frozen {
+                            "ice"
+                        } else {
+                            "water"
+                        }
+                    }
                     netrust_types::Tile::Lava => "lava",
                 };
                 row.push(serde_json::json!({
@@ -372,17 +492,19 @@ impl WasmGameSession {
             }));
         }
         for (id, actor) in self.session.world.arena.actors.iter() {
-            if id != self.session.world.player_id && !actor.is_dead
-                && (detected_monsters.contains(&id) || visible.contains(&actor.coord)) {
-                    actors.push(serde_json::json!({
-                        "x": actor.coord.x,
-                        "y": actor.coord.y,
-                        "name": actor.name,
-                        "is_player": false,
-                        "hp": actor.hp,
-                        "max_hp": actor.max_hp,
-                    }));
-                }
+            if id != self.session.world.player_id
+                && !actor.is_dead
+                && (detected_monsters.contains(&id) || visible.contains(&actor.coord))
+            {
+                actors.push(serde_json::json!({
+                    "x": actor.coord.x,
+                    "y": actor.coord.y,
+                    "name": actor.name,
+                    "is_player": false,
+                    "hp": actor.hp,
+                    "max_hp": actor.max_hp,
+                }));
+            }
         }
 
         let payload = serde_json::json!({
@@ -402,7 +524,8 @@ impl WasmGameSession {
 pub fn run_tournament_benchmark(num_seeds: u32, max_turns: u32) -> String {
     let seeds: Vec<u64> = (1..=(num_seeds as u64).max(1)).collect();
     let roles = vec![RoleId::Valkyrie, RoleId::Wizard];
-    let (_results, summary) = netrust_agent::run_evaluation_suite(&seeds, &roles, (max_turns as u64).max(10));
+    let (_results, summary) =
+        netrust_agent::run_evaluation_suite(&seeds, &roles, (max_turns as u64).max(10));
     serde_json::to_string(&summary).unwrap_or_default()
 }
 

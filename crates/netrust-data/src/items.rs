@@ -837,7 +837,6 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         is_container: false,
         is_bag_of_holding: false,
     },
-
     ItemArchetype {
         id: ItemKindId::WandOfPolymorph,
         name: "wand of polymorph",
@@ -850,7 +849,6 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         is_container: false,
         is_bag_of_holding: false,
     },
-
     ItemArchetype {
         id: ItemKindId::PotionOfPolymorph,
         name: "potion of polymorph",

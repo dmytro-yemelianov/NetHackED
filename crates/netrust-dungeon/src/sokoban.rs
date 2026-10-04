@@ -1,8 +1,8 @@
 //! Procedural and template generation for Sokoban puzzle levels.
 
-use netrust_types::{BranchId, Coord, Tile};
 use crate::level::DungeonLevel;
 use crate::room::{Rect, Room, RoomType};
+use netrust_types::{BranchId, Coord, Tile};
 
 /// Generates a Sokoban puzzle level with stairs up, puzzle corridors, pits, and boulder positions.
 ///
@@ -15,11 +15,14 @@ pub fn generate_sokoban_level(_floor: usize) -> (DungeonLevel, Vec<Coord>) {
     crate::generator::carve_room(&mut level, &entry_rect);
 
     let stairs_up = Coord::new_unchecked(6, 10);
-    level.set_tile(stairs_up, Tile::BranchStairs {
-        branch: BranchId::DungeonsOfDoom,
-        level: 4,
-        up: true,
-    });
+    level.set_tile(
+        stairs_up,
+        Tile::BranchStairs {
+            branch: BranchId::DungeonsOfDoom,
+            level: 4,
+            up: true,
+        },
+    );
     level.stairs_up = stairs_up;
 
     // 2. Prize Room (right side)

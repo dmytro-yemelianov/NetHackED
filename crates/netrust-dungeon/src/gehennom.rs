@@ -124,7 +124,11 @@ pub fn generate_gehennom_maze_level<R: Rng>(
     keep.push(level.stairs_down);
     for r in &rooms {
         let c = Coord::new_unchecked(r.x1 + 1, r.y1 + 1);
-        if c == level.stairs_up || c == level.stairs_down || Some(c) == vibrating_square || *level.get_tile(c) != Tile::Room {
+        if c == level.stairs_up
+            || c == level.stairs_down
+            || Some(c) == vibrating_square
+            || *level.get_tile(c) != Tile::Room
+        {
             continue;
         }
         level.set_tile(c, Tile::Lava);
@@ -167,12 +171,24 @@ pub fn generate_moloch_sanctum_level<R: Rng>(_rng: &mut R) -> (DungeonLevel, Coo
 
     // Temple outer walls
     for x in s_x..(s_x + s_w) {
-        level.set_tile(Coord::new_unchecked(x, s_y), Tile::Wall { horizontal: true });
-        level.set_tile(Coord::new_unchecked(x, s_y + s_h - 1), Tile::Wall { horizontal: true });
+        level.set_tile(
+            Coord::new_unchecked(x, s_y),
+            Tile::Wall { horizontal: true },
+        );
+        level.set_tile(
+            Coord::new_unchecked(x, s_y + s_h - 1),
+            Tile::Wall { horizontal: true },
+        );
     }
     for y in s_y..(s_y + s_h) {
-        level.set_tile(Coord::new_unchecked(s_x, y), Tile::Wall { horizontal: false });
-        level.set_tile(Coord::new_unchecked(s_x + s_w - 1, y), Tile::Wall { horizontal: false });
+        level.set_tile(
+            Coord::new_unchecked(s_x, y),
+            Tile::Wall { horizontal: false },
+        );
+        level.set_tile(
+            Coord::new_unchecked(s_x + s_w - 1, y),
+            Tile::Wall { horizontal: false },
+        );
     }
 
     // Gate in the western wall
@@ -186,7 +202,12 @@ pub fn generate_moloch_sanctum_level<R: Rng>(_rng: &mut R) -> (DungeonLevel, Coo
 
     // High Altar of Moloch in center of Sanctum
     let altar_coord = Coord::new_unchecked(s_x + s_w / 2, gate_y);
-    level.set_tile(altar_coord, Tile::HighAltar { align: Alignment::Chaotic });
+    level.set_tile(
+        altar_coord,
+        Tile::HighAltar {
+            align: Alignment::Chaotic,
+        },
+    );
 
     // Portal entrance spawn point on western shore
     let entrance_spawn = Coord::new_unchecked(5, gate_y);
@@ -195,7 +216,12 @@ pub fn generate_moloch_sanctum_level<R: Rng>(_rng: &mut R) -> (DungeonLevel, Coo
     level.stairs_down = altar_coord;
 
     let sanctum_rect = Rect::new(s_x, s_y, s_w, s_h);
-    level.rooms = vec![Room::new(sanctum_rect, RoomType::Temple { alignment: Alignment::Chaotic })];
+    level.rooms = vec![Room::new(
+        sanctum_rect,
+        RoomType::Temple {
+            alignment: Alignment::Chaotic,
+        },
+    )];
     level.is_dark = true;
 
     (level, entrance_spawn)
@@ -213,8 +239,14 @@ mod tests {
         let level = generate_valley_of_the_dead(&mut rng);
         assert!(!level.rooms.is_empty());
         assert!(level.is_dark);
-        assert!(matches!(level.get_tile(level.stairs_up), Tile::BranchStairs { .. }));
-        assert!(matches!(level.get_tile(level.stairs_down), Tile::Stairs { up: false }));
+        assert!(matches!(
+            level.get_tile(level.stairs_up),
+            Tile::BranchStairs { .. }
+        ));
+        assert!(matches!(
+            level.get_tile(level.stairs_down),
+            Tile::Stairs { up: false }
+        ));
     }
 
     #[test]

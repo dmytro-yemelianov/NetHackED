@@ -230,22 +230,32 @@ impl Messages {
 
     pub fn wand_recharged(name: &str, charges: u32, recharges: u32, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("Your {name} glows with bright light! Recharged to ({charges}:{recharges})!"),
-            Locale::Uk => format!("Ваш {name} сяє яскравим світлом! Перезаряджено до ({charges}:{recharges})!"),
+            Locale::En => format!(
+                "Your {name} glows with bright light! Recharged to ({charges}:{recharges})!"
+            ),
+            Locale::Uk => format!(
+                "Ваш {name} сяє яскравим світлом! Перезаряджено до ({charges}:{recharges})!"
+            ),
         }
     }
 
     pub fn wand_exploded(name: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("Your {name} vibrates violently and explodes in a blast of shards!"),
+            Locale::En => {
+                format!("Your {name} vibrates violently and explodes in a blast of shards!")
+            }
             Locale::Uk => format!("Ваш {name} шалено вібрує й вибухає смертоносними уламками!"),
         }
     }
 
     pub fn wish_granted(item_name: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("A {item_name} miraculously drops from the heavens at your feet!"),
-            Locale::Uk => format!("Дивовижним чином {item_name} падає з небес просто до ваших ніг!"),
+            Locale::En => {
+                format!("A {item_name} miraculously drops from the heavens at your feet!")
+            }
+            Locale::Uk => {
+                format!("Дивовижним чином {item_name} падає з небес просто до ваших ніг!")
+            }
         }
     }
 
@@ -259,7 +269,9 @@ impl Messages {
     pub fn holy_water_consecrated(locale: Locale) -> &'static str {
         match locale {
             Locale::En => "A flash of divine light consecrates your water into Holy Water!",
-            Locale::Uk => "Спалах божественного світла освячує вашу воду, перетворюючи її на Святу Воду!",
+            Locale::Uk => {
+                "Спалах божественного світла освячує вашу воду, перетворюючи її на Святу Воду!"
+            }
         }
     }
 
@@ -273,14 +285,18 @@ impl Messages {
     pub fn prayer_coaligned(locale: Locale) -> &'static str {
         match locale {
             Locale::En => "You feel devoutly reconciled with your god! You are fully healed.",
-            Locale::Uk => "Ви відчуваєте благоговійне примирення зі своїм божеством! Ви повністю зцілені.",
+            Locale::Uk => {
+                "Ви відчуваєте благоговійне примирення зі своїм божеством! Ви повністю зцілені."
+            }
         }
     }
 
     pub fn prayer_neutral(locale: Locale) -> &'static str {
         match locale {
             Locale::En => "You feel a soothing warmth envelop you. You recover health.",
-            Locale::Uk => "Ви відчуваєте, як вас огортає заспокійливе тепло. Здоров'я відновлюється.",
+            Locale::Uk => {
+                "Ви відчуваєте, як вас огортає заспокійливе тепло. Здоров'я відновлюється."
+            }
         }
     }
 
@@ -307,8 +323,12 @@ impl Messages {
 
     pub fn prayer_general(locale: Locale) -> &'static str {
         match locale {
-            Locale::En => "You pray to the gods of the dungeon. A harmonious chime echoes in the distance.",
-            Locale::Uk => "Ви молитеся до богів підземелля. Вдалині відлунює гармонійний передзвін.",
+            Locale::En => {
+                "You pray to the gods of the dungeon. A harmonious chime echoes in the distance."
+            }
+            Locale::Uk => {
+                "Ви молитеся до богів підземелля. Вдалині відлунює гармонійний передзвін."
+            }
         }
     }
 
@@ -400,14 +420,20 @@ impl Messages {
 
     pub fn dragon_breath(monster: &str, breath_name: &str, damage: u32, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("{monster} breathes a fiery blast of {breath_name}! You take {damage} damage!"),
-            Locale::Uk => format!("{monster} вивергає нищівний подих ({breath_name})! Ви отримуєте {damage} шкоди!"),
+            Locale::En => format!(
+                "{monster} breathes a fiery blast of {breath_name}! You take {damage} damage!"
+            ),
+            Locale::Uk => format!(
+                "{monster} вивергає нищівний подих ({breath_name})! Ви отримуєте {damage} шкоди!"
+            ),
         }
     }
 
     pub fn breath_reflected(monster: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("Your reflection bounces the deadly breath back at the {monster}!"),
+            Locale::En => {
+                format!("Your reflection bounces the deadly breath back at the {monster}!")
+            }
             Locale::Uk => format!("Ваше відбиття повертає смертоносний подих назад у {monster}!"),
         }
     }
@@ -421,15 +447,23 @@ impl Messages {
 
     pub fn gaze_reflected(monster: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("The {monster}'s terrifying gaze is reflected back into its own eyes!"),
-            Locale::Uk => format!("Жахливий погляд {monster} відбивається просто в його власні очі!"),
+            Locale::En => {
+                format!("The {monster}'s terrifying gaze is reflected back into its own eyes!")
+            }
+            Locale::Uk => {
+                format!("Жахливий погляд {monster} відбивається просто в його власні очі!")
+            }
         }
     }
 
     pub fn gaze_afflicted(monster: &str, gaze_name: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("You meet the gaze of the {monster}! You are struck by {gaze_name}!"),
-            Locale::Uk => format!("Ви зустрічаєтеся поглядом із {monster}! Вас охоплює {gaze_name}!"),
+            Locale::En => {
+                format!("You meet the gaze of the {monster}! You are struck by {gaze_name}!")
+            }
+            Locale::Uk => {
+                format!("Ви зустрічаєтеся поглядом із {monster}! Вас охоплює {gaze_name}!")
+            }
         }
     }
 
@@ -442,8 +476,12 @@ impl Messages {
 
     pub fn monster_curse_item(item_name: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("A malevolent aura sweeps over your pack! Your {item_name} is now cursed!"),
-            Locale::Uk => format!("Зловісна аура торкається вашого наплічника! Ваш {item_name} тепер проклятий!"),
+            Locale::En => {
+                format!("A malevolent aura sweeps over your pack! Your {item_name} is now cursed!")
+            }
+            Locale::Uk => format!(
+                "Зловісна аура торкається вашого наплічника! Ваш {item_name} тепер проклятий!"
+            ),
         }
     }
 
@@ -456,8 +494,12 @@ impl Messages {
 
     pub fn potion_diluted(old_name: &str, new_name: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("You dip the {old_name} into the water. It becomes a {new_name}!"),
-            Locale::Uk => format!("Ви занурюєте {old_name} у воду. Зілля розбавляється і стає {new_name}!"),
+            Locale::En => {
+                format!("You dip the {old_name} into the water. It becomes a {new_name}!")
+            }
+            Locale::Uk => {
+                format!("Ви занурюєте {old_name} у воду. Зілля розбавляється і стає {new_name}!")
+            }
         }
     }
 
@@ -489,7 +531,13 @@ impl Messages {
         }
     }
 
-    pub fn price_appraisal(item_name: &str, sell_price: u32, buy_price: u32, base: u32, locale: Locale) -> String {
+    pub fn price_appraisal(
+        item_name: &str,
+        sell_price: u32,
+        buy_price: u32,
+        base: u32,
+        locale: Locale,
+    ) -> String {
         match locale {
             Locale::En => format!(
                 "The shopkeeper appraises your {item_name}: 'I'll give you {sell_price} zm for it, or sell it for {buy_price} zm.' (Base value: ~{base} zm)"
@@ -502,26 +550,41 @@ impl Messages {
 
     pub fn pet_whimpers_at_cursed(pet_name: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("Your {pet_name} sniffs the ground and cautiously backs away, whimpering."),
-            Locale::Uk => format!("Ваш {pet_name} обнюхує землю та обережно сахається назад, жалібно скавулячи."),
+            Locale::En => {
+                format!("Your {pet_name} sniffs the ground and cautiously backs away, whimpering.")
+            }
+            Locale::Uk => format!(
+                "Ваш {pet_name} обнюхує землю та обережно сахається назад, жалібно скавулячи."
+            ),
         }
     }
 
     pub fn pet_grows(pet_name: &str, new_species: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("Your {pet_name} shimmers with vitality and grows into a {new_species}!"),
-            Locale::Uk => format!("Ваш {pet_name} сповнюється дикою силою та виростає у {new_species}!"),
+            Locale::En => {
+                format!("Your {pet_name} shimmers with vitality and grows into a {new_species}!")
+            }
+            Locale::Uk => {
+                format!("Ваш {pet_name} сповнюється дикою силою та виростає у {new_species}!")
+            }
         }
     }
 
     pub fn pet_defends_hero(pet_name: &str, hostile_name: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("Your {pet_name} fiercely attacks {hostile_name} to protect you!"),
+            Locale::En => {
+                format!("Your {pet_name} fiercely attacks {hostile_name} to protect you!")
+            }
             Locale::Uk => format!("Ваш {pet_name} люто атакує {hostile_name}, захищаючи вас!"),
         }
     }
 
-    pub fn quest_leader_accept(leader_name: &str, artifact_name: &str, nemesis_name: &str, locale: Locale) -> String {
+    pub fn quest_leader_accept(
+        leader_name: &str,
+        artifact_name: &str,
+        nemesis_name: &str,
+        locale: Locale,
+    ) -> String {
         match locale {
             Locale::En => format!("{leader_name}: 'You have proven your devotion! Seek out {nemesis_name}, defeat them in their lair, and recover {artifact_name}!'"),
             Locale::Uk => format!("{leader_name}: 'Ти довів свою гідність! Знайди {nemesis_name}, подолай їх у лігві та поверни {artifact_name}!'"),
@@ -558,7 +621,9 @@ impl Messages {
 
     pub fn shopkeeper_shout(locale: Locale) -> &'static str {
         match locale {
-            Locale::En => "You hear the shopkeeper shout: 'Stop, thief! You haven't paid for that!'",
+            Locale::En => {
+                "You hear the shopkeeper shout: 'Stop, thief! You haven't paid for that!'"
+            }
             Locale::Uk => "Ви чуєте крик крамаря: 'Стій, злодію! Ти не заплатив за це!'",
         }
     }
@@ -814,7 +879,10 @@ mod tests {
         assert_eq!(t_align(Alignment::Lawful, Locale::Uk), "Законний");
         assert_eq!(t_buc(Buc::Blessed, Locale::En), "blessed");
         assert_eq!(t_buc(Buc::Blessed, Locale::Uk), "благословенний");
-        assert_eq!(t_branch(BranchId::AstralPlane, Locale::Uk), "Астральний План");
+        assert_eq!(
+            t_branch(BranchId::AstralPlane, Locale::Uk),
+            "Астральний План"
+        );
     }
 
     #[test]
@@ -826,11 +894,26 @@ mod tests {
         assert!(Messages::ascension_victory(Alignment::Neutral, Locale::Uk).contains("безсмертя"));
         assert!(Messages::prayer_timeout(Locale::Uk).contains("блискавка"));
         assert!(Messages::prayer_coaligned(Locale::Uk).contains("примирення"));
-        assert_eq!(Messages::bump_wall(Locale::Uk), "Ой! Ви врізаєтесь у глуху стіну.");
-        assert_eq!(Messages::nothing_to_pickup(Locale::Uk), "Тут немає нічого, що можна підібрати.");
-        assert_eq!(Messages::no_stairs_down(Locale::Uk), "Тут немає сходів, що ведуть вниз.");
-        assert_eq!(Messages::no_stairs_up(Locale::Uk), "Тут немає сходів, що ведуть вгору.");
-        assert_eq!(Messages::revert_form(Locale::Uk), "Ви повертаєтесь до свого звичайного вигляду!");
+        assert_eq!(
+            Messages::bump_wall(Locale::Uk),
+            "Ой! Ви врізаєтесь у глуху стіну."
+        );
+        assert_eq!(
+            Messages::nothing_to_pickup(Locale::Uk),
+            "Тут немає нічого, що можна підібрати."
+        );
+        assert_eq!(
+            Messages::no_stairs_down(Locale::Uk),
+            "Тут немає сходів, що ведуть вниз."
+        );
+        assert_eq!(
+            Messages::no_stairs_up(Locale::Uk),
+            "Тут немає сходів, що ведуть вгору."
+        );
+        assert_eq!(
+            Messages::revert_form(Locale::Uk),
+            "Ви повертаєтесь до свого звичайного вигляду!"
+        );
     }
 
     #[test]
@@ -838,7 +921,10 @@ mod tests {
         assert_eq!(t_item("long sword", Locale::Uk), "довгий меч");
         assert_eq!(t_item("long sword", Locale::En), "long sword");
         assert_eq!(t_item("dagger", Locale::Uk), "кинджал");
-        assert_eq!(t_item("potion of holy water", Locale::Uk), "зілля святої води");
+        assert_eq!(
+            t_item("potion of holy water", Locale::Uk),
+            "зілля святої води"
+        );
         assert_eq!(t_item("scroll of genocide", Locale::Uk), "сувій геноциду");
         assert_eq!(t_item("wand of wishing", Locale::Uk), "жезл бажань");
         assert_eq!(t_item("orc corpse", Locale::Uk), "труп (орк)");

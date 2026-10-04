@@ -28,12 +28,21 @@ pub fn handle_jsonrpc_line(session: &mut AgentSession, line: Result<&str, ()>) -
     })
 }
 
-fn dispatch(session: &mut AgentSession, method: &str, params: &Value) -> Result<Value, (i64, String)> {
+fn dispatch(
+    session: &mut AgentSession,
+    method: &str,
+    params: &Value,
+) -> Result<Value, (i64, String)> {
     match method {
         "netrust.getObservation" => Ok(json!(session.get_observation())),
-        "netrust.renderAscii" => Ok(json!({ "ascii": crate::ascii::render_ascii_map(&session.world) })),
+        "netrust.renderAscii" => {
+            Ok(json!({ "ascii": crate::ascii::render_ascii_map(&session.world) }))
+        }
         "netrust.step" => {
-            let action_str = params.get("action").and_then(|a| a.as_str()).unwrap_or("wait");
+            let action_str = params
+                .get("action")
+                .and_then(|a| a.as_str())
+                .unwrap_or("wait");
             let action = match action_str {
                 "wait" => ActionAst::Wait,
                 "pickup" => ActionAst::PickUp,
@@ -48,11 +57,20 @@ fn dispatch(session: &mut AgentSession, method: &str, params: &Value) -> Result<
             Ok(json!(session.step(action)))
         }
         "netrust.inspectTile" => {
-            let x = params.get("x").and_then(|v| v.as_u64())
-                .ok_or((INVALID_PARAMS, "missing integer 'x'".to_string()))? as usize;
-            let y = params.get("y").and_then(|v| v.as_u64())
-                .ok_or((INVALID_PARAMS, "missing integer 'y'".to_string()))? as usize;
-            session.inspect_tile(x, y).map(|i| json!(i)).map_err(|e| (INVALID_PARAMS, e))
+            let x = params
+                .get("x")
+                .and_then(|v| v.as_u64())
+                .ok_or((INVALID_PARAMS, "missing integer 'x'".to_string()))?
+                as usize;
+            let y = params
+                .get("y")
+                .and_then(|v| v.as_u64())
+                .ok_or((INVALID_PARAMS, "missing integer 'y'".to_string()))?
+                as usize;
+            session
+                .inspect_tile(x, y)
+                .map(|i| json!(i))
+                .map_err(|e| (INVALID_PARAMS, e))
         }
         _ => Err((METHOD_NOT_FOUND, format!("Method '{method}' not found"))),
     }

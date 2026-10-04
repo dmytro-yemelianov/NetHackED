@@ -1,35 +1,37 @@
 //! Dungeon Grid, Field of View (FOV), and Procedural Generation for NetRust.
 
+pub mod endgame;
 pub mod fov;
+pub mod gehennom;
 pub mod generator;
 pub mod level;
+pub mod mines;
+pub mod quest;
 pub mod raycast;
+pub mod reach;
 pub mod room;
 pub mod sokoban;
-pub mod endgame;
-pub mod mines;
-pub mod gehennom;
-pub mod quest;
-pub mod reach;
 
+pub use endgame::{generate_astral_plane, generate_castle_level};
 pub use fov::{compute_fov, compute_illumination};
+pub use gehennom::{
+    generate_gehennom_maze_level, generate_moloch_sanctum_level, generate_valley_of_the_dead,
+};
 pub use generator::{
     carve_h_corr, carve_room, carve_v_corr, generate_dungeon_level, validate_stair_connectivity,
 };
 pub use level::DungeonLevel;
-pub use reach::{find_free_floor, reachable_from, reachable_from_with};
-pub use raycast::trace_beam_path;
-pub use room::{Rect, Room, RoomType};
-pub use sokoban::generate_sokoban_level;
-pub use endgame::{generate_astral_plane, generate_castle_level};
-pub use mines::{generate_mines_cavern_level, generate_minetown_level, generate_mines_end_level, MinetownLayout};
-pub use gehennom::{
-    generate_gehennom_maze_level, generate_moloch_sanctum_level, generate_valley_of_the_dead,
+pub use mines::{
+    generate_mines_cavern_level, generate_mines_end_level, generate_minetown_level, MinetownLayout,
 };
 pub use quest::{
     generate_quest_goal_level, generate_quest_home_level, generate_quest_locate_level,
     QuestGoalLayout, QuestHomeLayout,
 };
+pub use raycast::trace_beam_path;
+pub use reach::{find_free_floor, reachable_from, reachable_from_with};
+pub use room::{Rect, Room, RoomType};
+pub use sokoban::generate_sokoban_level;
 
 #[cfg(test)]
 mod tests {

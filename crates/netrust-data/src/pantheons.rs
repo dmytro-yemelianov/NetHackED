@@ -5,49 +5,130 @@ use netrust_types::{Alignment, Deity, Pantheon};
 pub fn get_pantheon_for_role(role: RoleId) -> Pantheon {
     match role {
         RoleId::Valkyrie => Pantheon {
-            lawful: Deity { name: "Tyr".into(), align: Alignment::Lawful },
-            neutral: Deity { name: "Odin".into(), align: Alignment::Neutral },
-            chaotic: Deity { name: "Loki".into(), align: Alignment::Chaotic },
+            lawful: Deity {
+                name: "Tyr".into(),
+                align: Alignment::Lawful,
+            },
+            neutral: Deity {
+                name: "Odin".into(),
+                align: Alignment::Neutral,
+            },
+            chaotic: Deity {
+                name: "Loki".into(),
+                align: Alignment::Chaotic,
+            },
         },
         RoleId::Wizard => Pantheon {
-            lawful: Deity { name: "Ptah".into(), align: Alignment::Lawful },
-            neutral: Deity { name: "Thoth".into(), align: Alignment::Neutral },
-            chaotic: Deity { name: "Anhur".into(), align: Alignment::Chaotic },
+            lawful: Deity {
+                name: "Ptah".into(),
+                align: Alignment::Lawful,
+            },
+            neutral: Deity {
+                name: "Thoth".into(),
+                align: Alignment::Neutral,
+            },
+            chaotic: Deity {
+                name: "Anhur".into(),
+                align: Alignment::Chaotic,
+            },
         },
         RoleId::Barbarian => Pantheon {
-            lawful: Deity { name: "Mitra".into(), align: Alignment::Lawful },
-            neutral: Deity { name: "Crom".into(), align: Alignment::Neutral },
-            chaotic: Deity { name: "Set".into(), align: Alignment::Chaotic },
+            lawful: Deity {
+                name: "Mitra".into(),
+                align: Alignment::Lawful,
+            },
+            neutral: Deity {
+                name: "Crom".into(),
+                align: Alignment::Neutral,
+            },
+            chaotic: Deity {
+                name: "Set".into(),
+                align: Alignment::Chaotic,
+            },
         },
         RoleId::Rogue => Pantheon {
-            lawful: Deity { name: "Ishtar".into(), align: Alignment::Lawful },
-            neutral: Deity { name: "Kos".into(), align: Alignment::Neutral },
-            chaotic: Deity { name: "Mog".into(), align: Alignment::Chaotic },
+            lawful: Deity {
+                name: "Ishtar".into(),
+                align: Alignment::Lawful,
+            },
+            neutral: Deity {
+                name: "Kos".into(),
+                align: Alignment::Neutral,
+            },
+            chaotic: Deity {
+                name: "Mog".into(),
+                align: Alignment::Chaotic,
+            },
         },
         RoleId::Knight => Pantheon {
-            lawful: Deity { name: "Lugh".into(), align: Alignment::Lawful },
-            neutral: Deity { name: "Brigit".into(), align: Alignment::Neutral },
-            chaotic: Deity { name: "Manannan Mac Lir".into(), align: Alignment::Chaotic },
+            lawful: Deity {
+                name: "Lugh".into(),
+                align: Alignment::Lawful,
+            },
+            neutral: Deity {
+                name: "Brigit".into(),
+                align: Alignment::Neutral,
+            },
+            chaotic: Deity {
+                name: "Manannan Mac Lir".into(),
+                align: Alignment::Chaotic,
+            },
         },
         RoleId::Monk => Pantheon {
-            lawful: Deity { name: "Shan Lai Ching".into(), align: Alignment::Lawful },
-            neutral: Deity { name: "Chih Sung-tzu".into(), align: Alignment::Neutral },
-            chaotic: Deity { name: "Huan Ti".into(), align: Alignment::Chaotic },
+            lawful: Deity {
+                name: "Shan Lai Ching".into(),
+                align: Alignment::Lawful,
+            },
+            neutral: Deity {
+                name: "Chih Sung-tzu".into(),
+                align: Alignment::Neutral,
+            },
+            chaotic: Deity {
+                name: "Huan Ti".into(),
+                align: Alignment::Chaotic,
+            },
         },
         RoleId::Healer => Pantheon {
-            lawful: Deity { name: "Athena".into(), align: Alignment::Lawful },
-            neutral: Deity { name: "Hermes".into(), align: Alignment::Neutral },
-            chaotic: Deity { name: "Poseidon".into(), align: Alignment::Chaotic },
+            lawful: Deity {
+                name: "Athena".into(),
+                align: Alignment::Lawful,
+            },
+            neutral: Deity {
+                name: "Hermes".into(),
+                align: Alignment::Neutral,
+            },
+            chaotic: Deity {
+                name: "Poseidon".into(),
+                align: Alignment::Chaotic,
+            },
         },
         RoleId::Tourist => Pantheon {
-            lawful: Deity { name: "Blind Io".into(), align: Alignment::Lawful },
-            neutral: Deity { name: "The Lady".into(), align: Alignment::Neutral },
-            chaotic: Deity { name: "Offler".into(), align: Alignment::Chaotic },
+            lawful: Deity {
+                name: "Blind Io".into(),
+                align: Alignment::Lawful,
+            },
+            neutral: Deity {
+                name: "The Lady".into(),
+                align: Alignment::Neutral,
+            },
+            chaotic: Deity {
+                name: "Offler".into(),
+                align: Alignment::Chaotic,
+            },
         },
         RoleId::Archaeologist => Pantheon {
-            lawful: Deity { name: "Quetzalcoatl".into(), align: Alignment::Lawful },
-            neutral: Deity { name: "Camaxtli".into(), align: Alignment::Neutral },
-            chaotic: Deity { name: "Huhetotl".into(), align: Alignment::Chaotic },
+            lawful: Deity {
+                name: "Quetzalcoatl".into(),
+                align: Alignment::Lawful,
+            },
+            neutral: Deity {
+                name: "Camaxtli".into(),
+                align: Alignment::Neutral,
+            },
+            chaotic: Deity {
+                name: "Huhetotl".into(),
+                align: Alignment::Chaotic,
+            },
         },
     }
 }

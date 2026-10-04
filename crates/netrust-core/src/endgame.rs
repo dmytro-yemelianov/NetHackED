@@ -70,7 +70,12 @@ mod tests {
     fn test_drawbridge_raised_with_occupant_crushes() {
         let (state, trans) = toggle_drawbridge(DrawbridgeState::Open, true);
         assert_eq!(state, DrawbridgeState::Closed);
-        assert_eq!(trans, DrawbridgeTransition::Raised { crushed_damage: 9999 });
+        assert_eq!(
+            trans,
+            DrawbridgeTransition::Raised {
+                crushed_damage: 9999
+            }
+        );
     }
 
     #[test]

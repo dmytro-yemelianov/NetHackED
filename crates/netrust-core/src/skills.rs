@@ -19,8 +19,12 @@ pub fn skill_damage_bonus(level: SkillLevel) -> i32 {
 }
 
 pub fn enhance_skill(tree: &mut SkillTree, skill: SkillClass) -> Result<(), &'static str> {
-    let current = tree.skills.get(&skill).copied().unwrap_or(SkillLevel::Unskilled);
-    
+    let current = tree
+        .skills
+        .get(&skill)
+        .copied()
+        .unwrap_or(SkillLevel::Unskilled);
+
     if tree.available_slots == 0 {
         return Err("No skill slots available");
     }
@@ -34,6 +38,6 @@ pub fn enhance_skill(tree: &mut SkillTree, skill: SkillClass) -> Result<(), &'st
 
     tree.available_slots -= 1;
     tree.skills.insert(skill, next);
-    
+
     Ok(())
 }

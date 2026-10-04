@@ -17,7 +17,10 @@ impl SimulationWorld {
         let floor_items = self.arena.items_at_floor(player.coord);
         let chosen_item = floor_items.iter().copied().max_by_key(|&iid| {
             if let Some(item) = self.arena.items.get(iid) {
-                if item.name.contains("Amulet") || item.name.starts_with("The ") || item.name.contains("Orb") {
+                if item.name.contains("Amulet")
+                    || item.name.starts_with("The ")
+                    || item.name.contains("Orb")
+                {
                     100
                 } else if item.name == "corpse" {
                     1
@@ -33,8 +36,13 @@ impl SimulationWorld {
             if let Some(item) = self.arena.items.get_mut(item_id) {
                 item.location = ItemLocation::CarriedBy(self.player_id);
                 let name = item.name.clone();
-                events.push(GameEvent::ItemPickedUp { actor: self.player_id, item: item_id });
-                events.push(GameEvent::LogMessage { text: netrust_i18n::Messages::pickup_item(&name, self.locale) });
+                events.push(GameEvent::ItemPickedUp {
+                    actor: self.player_id,
+                    item: item_id,
+                });
+                events.push(GameEvent::LogMessage {
+                    text: netrust_i18n::Messages::pickup_item(&name, self.locale),
+                });
 
                 let quest_cfg = netrust_core::get_role_quest_config(&self.role_name);
                 if name.eq_ignore_ascii_case(quest_cfg.artifact_name) {
@@ -52,7 +60,9 @@ impl SimulationWorld {
                 self.scheduler.hero_act(NORMAL_SPEED);
             }
         } else {
-            events.push(GameEvent::LogMessage { text: netrust_i18n::Messages::nothing_to_pickup(self.locale).into() });
+            events.push(GameEvent::LogMessage {
+                text: netrust_i18n::Messages::nothing_to_pickup(self.locale).into(),
+            });
         }
 
         events
@@ -73,12 +83,19 @@ impl SimulationWorld {
                 if self.wielded_item == Some(item_id) {
                     self.wielded_item = None;
                 }
-                events.push(GameEvent::ItemDropped { actor: self.player_id, item: item_id });
-                events.push(GameEvent::LogMessage { text: format!("You drop the {name}.") });
+                events.push(GameEvent::ItemDropped {
+                    actor: self.player_id,
+                    item: item_id,
+                });
+                events.push(GameEvent::LogMessage {
+                    text: format!("You drop the {name}."),
+                });
                 self.scheduler.hero_act(NORMAL_SPEED);
             }
         } else {
-            events.push(GameEvent::LogMessage { text: "You don't have that item in your pack.".into() });
+            events.push(GameEvent::LogMessage {
+                text: "You don't have that item in your pack.".into(),
+            });
         }
 
         events
@@ -90,36 +107,61 @@ impl SimulationWorld {
         if idx < carried.len() {
             let item_id = carried[idx];
             self.wielded_item = Some(item_id);
-            let name = self.arena.items.get(item_id).map(|i| i.name.clone()).unwrap_or_default();
-            events.push(GameEvent::ItemWielded { actor: self.player_id, item: item_id });
-            events.push(GameEvent::LogMessage { text: format!("You wield the {name}.") });
+            let name = self
+                .arena
+                .items
+                .get(item_id)
+                .map(|i| i.name.clone())
+                .unwrap_or_default();
+            events.push(GameEvent::ItemWielded {
+                actor: self.player_id,
+                item: item_id,
+            });
+            events.push(GameEvent::LogMessage {
+                text: format!("You wield the {name}."),
+            });
             self.scheduler.hero_act(NORMAL_SPEED);
         } else {
-            events.push(GameEvent::LogMessage { text: "You don't have that item to wield.".into() });
+            events.push(GameEvent::LogMessage {
+                text: "You don't have that item to wield.".into(),
+            });
         }
 
         events
     }
 
-    pub(crate) fn handle_put_in_container(&mut self, item_index: usize, container_index: usize) -> Vec<GameEvent> {
+    pub(crate) fn handle_put_in_container(
+        &mut self,
+        item_index: usize,
+        container_index: usize,
+    ) -> Vec<GameEvent> {
         let mut events = Vec::new();
         let carried = self.arena.items_carried_by(self.player_id);
         if item_index < carried.len() && container_index < carried.len() {
             let item_id = carried[item_index];
             let container_id = carried[container_index];
             if item_id == container_id {
-                events.push(GameEvent::LogMessage { text: "You cannot put something inside itself!".into() });
+                events.push(GameEvent::LogMessage {
+                    text: "You cannot put something inside itself!".into(),
+                });
             } else {
                 let item = self.arena.items.get(item_id).unwrap().clone();
                 let container = self.arena.items.get(container_id).unwrap().clone();
                 if !container.is_container {
-                    events.push(GameEvent::LogMessage { text: format!("The {} is not a container.", container.name) });
-                } else if !netrust_core::inventory::can_insert_safe_flags(item.is_bag_of_holding, container.is_container, container.is_bag_of_holding) {
+                    events.push(GameEvent::LogMessage {
+                        text: format!("The {} is not a container.", container.name),
+                    });
+                } else if !netrust_core::inventory::can_insert_safe_flags(
+                    item.is_bag_of_holding,
+                    container.is_container,
+                    container.is_bag_of_holding,
+                ) {
                     // Magical container explosion!
                     events.push(GameEvent::LogMessage {
                         text: "The magical energies rupture the fabric of space! The bag explodes with a blinding flash!".into(),
                     });
-                    if self.wielded_item == Some(item_id) || self.wielded_item == Some(container_id) {
+                    if self.wielded_item == Some(item_id) || self.wielded_item == Some(container_id)
+                    {
                         self.wielded_item = None;
                     }
                     self.arena.destroy_item(item_id);
@@ -145,13 +187,19 @@ impl SimulationWorld {
                 }
             }
         } else {
-            events.push(GameEvent::LogMessage { text: "Invalid item index for container action.".into() });
+            events.push(GameEvent::LogMessage {
+                text: "Invalid item index for container action.".into(),
+            });
         }
 
         events
     }
 
-    pub(crate) fn handle_take_from_container(&mut self, container_index: usize, item_index: usize) -> Vec<GameEvent> {
+    pub(crate) fn handle_take_from_container(
+        &mut self,
+        container_index: usize,
+        item_index: usize,
+    ) -> Vec<GameEvent> {
         let mut events = Vec::new();
         let carried = self.arena.items_carried_by(self.player_id);
         if container_index < carried.len() {
@@ -159,8 +207,18 @@ impl SimulationWorld {
             let in_container = self.arena.items_in_container(container_id);
             if item_index < in_container.len() {
                 let item_id = in_container[item_index];
-                let item_name = self.arena.items.get(item_id).map(|i| i.name.clone()).unwrap_or_default();
-                let container_name = self.arena.items.get(container_id).map(|c| c.name.clone()).unwrap_or_default();
+                let item_name = self
+                    .arena
+                    .items
+                    .get(item_id)
+                    .map(|i| i.name.clone())
+                    .unwrap_or_default();
+                let container_name = self
+                    .arena
+                    .items
+                    .get(container_id)
+                    .map(|c| c.name.clone())
+                    .unwrap_or_default();
                 if let Some(i) = self.arena.items.get_mut(item_id) {
                     i.location = ItemLocation::CarriedBy(self.player_id);
                 }
@@ -169,10 +227,14 @@ impl SimulationWorld {
                 });
                 self.scheduler.hero_act(NORMAL_SPEED);
             } else {
-                events.push(GameEvent::LogMessage { text: "There is no such item in that container.".into() });
+                events.push(GameEvent::LogMessage {
+                    text: "There is no such item in that container.".into(),
+                });
             }
         } else {
-            events.push(GameEvent::LogMessage { text: "Invalid container index.".into() });
+            events.push(GameEvent::LogMessage {
+                text: "Invalid container index.".into(),
+            });
         }
 
         events
@@ -190,7 +252,12 @@ impl SimulationWorld {
             };
 
             let name = item_name.to_lowercase();
-            let player_coord = self.arena.actors.get(self.player_id).map(|p| p.coord).unwrap_or(Coord::new_unchecked(0, 0));
+            let player_coord = self
+                .arena
+                .actors
+                .get(self.player_id)
+                .map(|p| p.coord)
+                .unwrap_or(Coord::new_unchecked(0, 0));
             let on_vs = self.vibrating_square == Some(player_coord);
 
             if name.contains("bell of opening") {
@@ -223,7 +290,11 @@ impl SimulationWorld {
                 self.scheduler.hero_act(NORMAL_SPEED);
             } else if name.contains("candle") {
                 let has_candelabrum = carried.iter().any(|&cid| {
-                    self.arena.items.get(cid).map(|it| it.name.contains("Candelabrum")).unwrap_or(false)
+                    self.arena
+                        .items
+                        .get(cid)
+                        .map(|it| it.name.contains("Candelabrum"))
+                        .unwrap_or(false)
                 });
                 if has_candelabrum && self.candelabrum_state.attach_candle() {
                     self.arena.destroy_item(item_id);
@@ -237,7 +308,10 @@ impl SimulationWorld {
                         if item.enchantment <= 0 {
                             item.enchantment = 1;
                             events.push(GameEvent::LogMessage {
-                                text: format!("You light the {}. It casts a bright illumination.", item.name),
+                                text: format!(
+                                    "You light the {}. It casts a bright illumination.",
+                                    item.name
+                                ),
                             });
                         } else {
                             item.enchantment = 0;
@@ -253,7 +327,10 @@ impl SimulationWorld {
                     if item.enchantment <= 0 {
                         item.enchantment = 1;
                         events.push(GameEvent::LogMessage {
-                            text: format!("You light the {}. It casts a bright illumination.", item.name),
+                            text: format!(
+                                "You light the {}. It casts a bright illumination.",
+                                item.name
+                            ),
                         });
                     } else {
                         item.enchantment = 0;

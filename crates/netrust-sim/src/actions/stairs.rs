@@ -17,13 +17,21 @@ pub const SANCTUM_DEPTH: usize = 6;
 
 /// Without the completed invocation, the push can never land on Moloch's Sanctum.
 pub fn clamp_mysterious_force(pushed: usize, sanctum_open: bool) -> usize {
-    if sanctum_open { pushed } else { pushed.min(SANCTUM_DEPTH - 1) }
+    if sanctum_open {
+        pushed
+    } else {
+        pushed.min(SANCTUM_DEPTH - 1)
+    }
 }
 
 impl SimulationWorld {
     /// Spawn a monster at or near `preferred` on a passable, unoccupied, non-stairs tile
     /// (searching outward up to radius 3 in row-major ring order). Returns `None` if no spot.
-    pub(crate) fn spawn_monster_near(&mut self, species: MonsterSpeciesId, preferred: Coord) -> Option<ActorId> {
+    pub(crate) fn spawn_monster_near(
+        &mut self,
+        species: MonsterSpeciesId,
+        preferred: Coord,
+    ) -> Option<ActorId> {
         for radius in 0..=3isize {
             for dy in -radius..=radius {
                 for dx in -radius..=radius {
@@ -34,7 +42,9 @@ impl SimulationWorld {
                     if x < 0 || y < 0 {
                         continue;
                     }
-                    let Some(c) = Coord::new(x as usize, y as usize) else { continue };
+                    let Some(c) = Coord::new(x as usize, y as usize) else {
+                        continue;
+                    };
                     if self.level.is_passable(c)
                         && c != self.level.stairs_up
                         && c != self.level.stairs_down
@@ -58,7 +68,12 @@ impl SimulationWorld {
 
         // Quiver must refer to something the hero carries.
         if let Some(q) = self.hero.quivered_item {
-            let carried = self.arena.items.get(q).map(|it| it.location == ItemLocation::CarriedBy(self.player_id)).unwrap_or(false);
+            let carried = self
+                .arena
+                .items
+                .get(q)
+                .map(|it| it.location == ItemLocation::CarriedBy(self.player_id))
+                .unwrap_or(false);
             if !carried {
                 self.hero.quivered_item = None;
             }
@@ -66,13 +81,21 @@ impl SimulationWorld {
 
         // Wielded item must refer to something the hero carries.
         if let Some(w) = self.wielded_item {
-            let carried = self.arena.items.get(w).map(|it| it.location == ItemLocation::CarriedBy(self.player_id)).unwrap_or(false);
+            let carried = self
+                .arena
+                .items
+                .get(w)
+                .map(|it| it.location == ItemLocation::CarriedBy(self.player_id))
+                .unwrap_or(false);
             if !carried {
                 self.wielded_item = None;
             }
         }
 
-        let monster_ids: Vec<ActorId> = self.arena.actors.iter()
+        let monster_ids: Vec<ActorId> = self
+            .arena
+            .actors
+            .iter()
             .filter(|(id, _)| *id != self.player_id && Some(*id) != steed_id)
             .map(|(id, _)| id)
             .collect();
@@ -80,7 +103,10 @@ impl SimulationWorld {
         let monster_set: std::collections::HashSet<ActorId> = monster_ids.iter().copied().collect();
         // Items belonging to the level: floor items, items carried by packed monsters, and
         // everything transitively inside those.
-        let mut item_ids: Vec<ItemId> = self.arena.items.iter()
+        let mut item_ids: Vec<ItemId> = self
+            .arena
+            .items
+            .iter()
             .filter(|(_, it)| match it.location {
                 ItemLocation::Floor(_) => true,
                 ItemLocation::CarriedBy(a) => monster_set.contains(&a),
@@ -133,8 +159,12 @@ impl SimulationWorld {
 
     /// A mounted hero's steed arrives on the same square as the hero.
     pub(crate) fn place_steed_with_hero(&mut self) {
-        let Some(steed_id) = self.hero.mount.as_ref().map(|m| m.steed_id) else { return };
-        let Some(hero_coord) = self.arena.actors.get(self.player_id).map(|p| p.coord) else { return };
+        let Some(steed_id) = self.hero.mount.as_ref().map(|m| m.steed_id) else {
+            return;
+        };
+        let Some(hero_coord) = self.arena.actors.get(self.player_id).map(|p| p.coord) else {
+            return;
+        };
         if let Some(steed) = self.arena.actors.get_mut(steed_id) {
             steed.coord = hero_coord;
         } else {
@@ -147,7 +177,11 @@ impl SimulationWorld {
         let mut events = Vec::new();
         let target_key = (branch, depth);
 
-        if let Some(pos) = self.stored_levels.iter().position(|(k, _)| *k == target_key) {
+        if let Some(pos) = self
+            .stored_levels
+            .iter()
+            .position(|(k, _)| *k == target_key)
+        {
             let (_, stored) = self.stored_levels.remove(pos);
             self.level = stored.level;
 
@@ -166,8 +200,14 @@ impl SimulationWorld {
             for new in spawned {
                 if let Some(it) = self.arena.items.get_mut(new) {
                     it.location = match it.location.clone() {
-                        ItemLocation::InContainer(old) => item_map.get(&old).map(|n| ItemLocation::InContainer(*n)).unwrap_or(fallback.clone()),
-                        ItemLocation::CarriedBy(old) => actor_map.get(&old).map(|n| ItemLocation::CarriedBy(*n)).unwrap_or(fallback.clone()),
+                        ItemLocation::InContainer(old) => item_map
+                            .get(&old)
+                            .map(|n| ItemLocation::InContainer(*n))
+                            .unwrap_or(fallback.clone()),
+                        ItemLocation::CarriedBy(old) => actor_map
+                            .get(&old)
+                            .map(|n| ItemLocation::CarriedBy(*n))
+                            .unwrap_or(fallback.clone()),
                         other => other,
                     };
                 }
@@ -185,7 +225,11 @@ impl SimulationWorld {
 
                     // Spawn puzzle boulders
                     for bc in boulder_coords {
-                        let boulder = create_item_record(ItemKindId::Boulder, ItemLocation::Floor(bc), Buc::Uncursed);
+                        let boulder = create_item_record(
+                            ItemKindId::Boulder,
+                            ItemLocation::Floor(bc),
+                            Buc::Uncursed,
+                        );
                         self.arena.spawn_item(boulder);
                     }
 
@@ -196,7 +240,11 @@ impl SimulationWorld {
                     } else {
                         ItemKindId::AmuletOfReflection
                     };
-                    let prize = create_item_record(prize_kind, ItemLocation::Floor(prize_coord), Buc::Blessed);
+                    let prize = create_item_record(
+                        prize_kind,
+                        ItemLocation::Floor(prize_coord),
+                        Buc::Blessed,
+                    );
                     self.arena.spawn_item(prize);
 
                     events.push(GameEvent::LogMessage {
@@ -224,16 +272,25 @@ impl SimulationWorld {
                 }
                 (BranchId::GnomishMines, 5) => {
                     // Mines' End! Sprawling labyrinth with guaranteed Luckstone
-                    let (lvl, luckstone_coord) = netrust_dungeon::generate_mines_end_level(&mut self.rng);
+                    let (lvl, luckstone_coord) =
+                        netrust_dungeon::generate_mines_end_level(&mut self.rng);
                     self.level = lvl;
 
-                    let luckstone = create_item_record(ItemKindId::Luckstone, ItemLocation::Floor(luckstone_coord), Buc::Uncursed);
+                    let luckstone = create_item_record(
+                        ItemKindId::Luckstone,
+                        ItemLocation::Floor(luckstone_coord),
+                        Buc::Uncursed,
+                    );
                     self.arena.spawn_item(luckstone);
 
                     let centers: Vec<Coord> = self.level.rooms.iter().map(|r| r.center()).collect();
                     for (i, &center) in centers.iter().enumerate() {
                         if i > 0 {
-                            let species = if i % 2 == 0 { MonsterSpeciesId::SilverDragon } else { MonsterSpeciesId::Vampire };
+                            let species = if i % 2 == 0 {
+                                MonsterSpeciesId::SilverDragon
+                            } else {
+                                MonsterSpeciesId::Vampire
+                            };
                             self.spawn_monster_near(species, center);
                         }
                     }
@@ -250,13 +307,18 @@ impl SimulationWorld {
                     let centers: Vec<Coord> = self.level.rooms.iter().map(|r| r.center()).collect();
                     for (i, &center) in centers.iter().enumerate() {
                         if i > 0 {
-                            let species = if i % 2 == 0 { MonsterSpeciesId::Gnome } else { MonsterSpeciesId::Dwarf };
+                            let species = if i % 2 == 0 {
+                                MonsterSpeciesId::Gnome
+                            } else {
+                                MonsterSpeciesId::Dwarf
+                            };
                             self.spawn_monster_near(species, center);
                         }
                     }
 
                     events.push(GameEvent::LogMessage {
-                        text: "You descend into the rugged, dark caverns of the Gnomish Mines.".into(),
+                        text: "You descend into the rugged, dark caverns of the Gnomish Mines."
+                            .into(),
                     });
                 }
                 (BranchId::Gehennom, 1) => {
@@ -267,14 +329,22 @@ impl SimulationWorld {
                     let centers: Vec<Coord> = self.level.rooms.iter().map(|r| r.center()).collect();
                     for (i, &center) in centers.iter().enumerate() {
                         if i > 0 {
-                            let species = if i % 2 == 0 { MonsterSpeciesId::Skeleton } else { MonsterSpeciesId::Vampire };
+                            let species = if i % 2 == 0 {
+                                MonsterSpeciesId::Skeleton
+                            } else {
+                                MonsterSpeciesId::Vampire
+                            };
                             self.spawn_monster_near(species, center);
                         }
                     }
 
                     // Spawn Bell of Opening in Valley of the Dead
                     let bell_coord = self.level.rooms[1].center();
-                    let bell = create_item_record(ItemKindId::BellOfOpening, ItemLocation::Floor(bell_coord), Buc::Blessed);
+                    let bell = create_item_record(
+                        ItemKindId::BellOfOpening,
+                        ItemLocation::Floor(bell_coord),
+                        Buc::Blessed,
+                    );
                     self.arena.spawn_item(bell);
 
                     events.push(GameEvent::LogMessage {
@@ -296,12 +366,14 @@ impl SimulationWorld {
 
                     // Invocation items on free floor reachable from the up stairs
                     let vs_avoid: Vec<Coord> = self.vibrating_square.into_iter().collect();
-                    let rects: Vec<netrust_dungeon::Rect> = self.level.rooms.iter().map(|r| r.rect).collect();
+                    let rects: Vec<netrust_dungeon::Rect> =
+                        self.level.rooms.iter().map(|r| r.rect).collect();
                     let reach = netrust_dungeon::reachable_from(&self.level, self.level.stairs_up);
-                    let mut order: Vec<Coord> = netrust_dungeon::find_free_floor(&self.level, &rects[1], &vs_avoid)
-                        .into_iter()
-                        .filter(|c| reach.contains(c))
-                        .collect();
+                    let mut order: Vec<Coord> =
+                        netrust_dungeon::find_free_floor(&self.level, &rects[1], &vs_avoid)
+                            .into_iter()
+                            .filter(|c| reach.contains(c))
+                            .collect();
                     for (i, rect) in rects.iter().enumerate() {
                         if i == 1 {
                             continue;
@@ -314,13 +386,25 @@ impl SimulationWorld {
                     }
                     let mut spots = order.into_iter();
                     if let Some(c) = spots.next() {
-                        self.arena.spawn_item(create_item_record(ItemKindId::CandelabrumOfInvocation, ItemLocation::Floor(c), Buc::Uncursed));
+                        self.arena.spawn_item(create_item_record(
+                            ItemKindId::CandelabrumOfInvocation,
+                            ItemLocation::Floor(c),
+                            Buc::Uncursed,
+                        ));
                     }
                     if let Some(c) = spots.next() {
-                        self.arena.spawn_item(create_item_record(ItemKindId::BookOfTheDead, ItemLocation::Floor(c), Buc::Blessed));
+                        self.arena.spawn_item(create_item_record(
+                            ItemKindId::BookOfTheDead,
+                            ItemLocation::Floor(c),
+                            Buc::Blessed,
+                        ));
                     }
                     for c in spots.take(7) {
-                        self.arena.spawn_item(create_item_record(ItemKindId::WaxCandle, ItemLocation::Floor(c), Buc::Uncursed));
+                        self.arena.spawn_item(create_item_record(
+                            ItemKindId::WaxCandle,
+                            ItemLocation::Floor(c),
+                            Buc::Uncursed,
+                        ));
                     }
 
                     events.push(GameEvent::LogMessage {
@@ -334,7 +418,11 @@ impl SimulationWorld {
 
                     self.spawn_monster_near(MonsterSpeciesId::Priest, self.level.stairs_down);
 
-                    let amulet = create_item_record(ItemKindId::AmuletOfYendor, ItemLocation::Floor(self.level.stairs_down), Buc::Blessed);
+                    let amulet = create_item_record(
+                        ItemKindId::AmuletOfYendor,
+                        ItemLocation::Floor(self.level.stairs_down),
+                        Buc::Blessed,
+                    );
                     self.arena.spawn_item(amulet);
 
                     events.push(GameEvent::LogMessage {
@@ -349,7 +437,11 @@ impl SimulationWorld {
                     let centers: Vec<Coord> = self.level.rooms.iter().map(|r| r.center()).collect();
                     for (i, &center) in centers.iter().enumerate() {
                         if i > 0 {
-                            let species = if i % 2 == 0 { MonsterSpeciesId::SilverDragon } else { MonsterSpeciesId::Vampire };
+                            let species = if i % 2 == 0 {
+                                MonsterSpeciesId::SilverDragon
+                            } else {
+                                MonsterSpeciesId::Vampire
+                            };
                             self.spawn_monster_near(species, center);
                         }
                     }
@@ -359,7 +451,8 @@ impl SimulationWorld {
                     });
                 }
                 (BranchId::Quest, 1) => {
-                    let layout = netrust_dungeon::generate_quest_home_level(&mut self.rng, &self.role_name);
+                    let layout =
+                        netrust_dungeon::generate_quest_home_level(&mut self.rng, &self.role_name);
                     self.level = layout.level;
 
                     let quest_cfg = netrust_core::get_role_quest_config(&self.role_name);
@@ -381,7 +474,9 @@ impl SimulationWorld {
                     }
 
                     for gc in layout.guardian_coords {
-                        if let Some(id) = self.spawn_monster_near(MonsterSpeciesId::QuestGuardian, gc) {
+                        if let Some(id) =
+                            self.spawn_monster_near(MonsterSpeciesId::QuestGuardian, gc)
+                        {
                             if let Some(a) = self.arena.actors.get_mut(id) {
                                 a.is_tame = true;
                             }
@@ -389,7 +484,10 @@ impl SimulationWorld {
                     }
 
                     events.push(GameEvent::LogMessage {
-                        text: format!("You enter the Sanctuary of {}: '{}'.", quest_cfg.leader_name, quest_cfg.home_desc),
+                        text: format!(
+                            "You enter the Sanctuary of {}: '{}'.",
+                            quest_cfg.leader_name, quest_cfg.home_desc
+                        ),
                     });
                 }
                 (BranchId::Quest, 2) => {
@@ -399,7 +497,11 @@ impl SimulationWorld {
                     let centers: Vec<Coord> = self.level.rooms.iter().map(|r| r.center()).collect();
                     for (i, &center) in centers.iter().enumerate() {
                         if i > 0 {
-                            let species = if i % 2 == 0 { MonsterSpeciesId::GiantAnt } else { MonsterSpeciesId::Skeleton };
+                            let species = if i % 2 == 0 {
+                                MonsterSpeciesId::GiantAnt
+                            } else {
+                                MonsterSpeciesId::Skeleton
+                            };
                             self.spawn_monster_near(species, center);
                         }
                     }
@@ -409,7 +511,8 @@ impl SimulationWorld {
                     });
                 }
                 (BranchId::Quest, 3) => {
-                    let layout = netrust_dungeon::generate_quest_goal_level(&mut self.rng, &self.role_name);
+                    let layout =
+                        netrust_dungeon::generate_quest_goal_level(&mut self.rng, &self.role_name);
                     self.level = layout.level;
 
                     let quest_cfg = netrust_core::get_role_quest_config(&self.role_name);
@@ -436,39 +539,51 @@ impl SimulationWorld {
                     if branch == BranchId::DungeonsOfDoom && depth == 3 {
                         if let Some(room) = new_level.rooms.get(1) {
                             let branch_coord = Coord::new_unchecked(room.x1 + 1, room.y1 + 1);
-                            new_level.set_tile(branch_coord, Tile::BranchStairs {
-                                branch: BranchId::GnomishMines,
-                                level: 1,
-                                up: false,
-                            });
+                            new_level.set_tile(
+                                branch_coord,
+                                Tile::BranchStairs {
+                                    branch: BranchId::GnomishMines,
+                                    level: 1,
+                                    up: false,
+                                },
+                            );
                         }
                     }
                     if branch == BranchId::DungeonsOfDoom && depth == 4 {
                         if let Some(room) = new_level.rooms.get(1) {
                             let branch_coord = Coord::new_unchecked(room.x1 + 1, room.y1 + 1);
-                            new_level.set_tile(branch_coord, Tile::BranchStairs {
-                                branch: BranchId::Sokoban,
-                                level: 1,
-                                up: false,
-                            });
+                            new_level.set_tile(
+                                branch_coord,
+                                Tile::BranchStairs {
+                                    branch: BranchId::Sokoban,
+                                    level: 1,
+                                    up: false,
+                                },
+                            );
                         }
                         if let Some(room) = new_level.rooms.get(2) {
                             let quest_coord = Coord::new_unchecked(room.x1 + 1, room.y1 + 1);
-                            new_level.set_tile(quest_coord, Tile::BranchStairs {
-                                branch: BranchId::Quest,
-                                level: 1,
-                                up: false,
-                            });
+                            new_level.set_tile(
+                                quest_coord,
+                                Tile::BranchStairs {
+                                    branch: BranchId::Quest,
+                                    level: 1,
+                                    up: false,
+                                },
+                            );
                         }
                     }
                     if branch == BranchId::DungeonsOfDoom && depth == 5 {
                         if let Some(room) = new_level.rooms.first() {
                             let branch_coord = Coord::new_unchecked(room.x1 + 1, room.y1 + 1);
-                            new_level.set_tile(branch_coord, Tile::BranchStairs {
-                                branch: BranchId::Gehennom,
-                                level: 1,
-                                up: false,
-                            });
+                            new_level.set_tile(
+                                branch_coord,
+                                Tile::BranchStairs {
+                                    branch: BranchId::Gehennom,
+                                    level: 1,
+                                    up: false,
+                                },
+                            );
                         }
                     }
 
@@ -480,13 +595,29 @@ impl SimulationWorld {
                         if i > 0 && i != centers.len() - 1 {
                             let species = match depth {
                                 1 => MonsterSpeciesId::Goblin,
-                                2 => if i % 2 == 0 { MonsterSpeciesId::Hobgoblin } else { MonsterSpeciesId::Orc },
-                                3 => if i % 2 == 0 { MonsterSpeciesId::GiantAnt } else { MonsterSpeciesId::Skeleton },
+                                2 => {
+                                    if i % 2 == 0 {
+                                        MonsterSpeciesId::Hobgoblin
+                                    } else {
+                                        MonsterSpeciesId::Orc
+                                    }
+                                }
+                                3 => {
+                                    if i % 2 == 0 {
+                                        MonsterSpeciesId::GiantAnt
+                                    } else {
+                                        MonsterSpeciesId::Skeleton
+                                    }
+                                }
                                 4 => MonsterSpeciesId::Vampire,
                                 _ => MonsterSpeciesId::SilverDragon,
                             };
                             let arch = netrust_data::get_monster_species(species);
-                            if !netrust_core::genocide::is_genocided(&self.genocide_registry, arch.name, arch.glyph) {
+                            if !netrust_core::genocide::is_genocided(
+                                &self.genocide_registry,
+                                arch.name,
+                                arch.glyph,
+                            ) {
                                 self.spawn_monster_near(species, center);
                             }
                         }
@@ -495,7 +626,11 @@ impl SimulationWorld {
                     // At depth 5 in Dungeons of Doom, spawn the Amulet of Yendor
                     if branch == BranchId::DungeonsOfDoom && depth == 5 {
                         if let Some(deepest_room) = self.level.rooms.last() {
-                            let amulet = create_item_record(ItemKindId::AmuletOfYendor, ItemLocation::Floor(deepest_room.center()), Buc::Blessed);
+                            let amulet = create_item_record(
+                                ItemKindId::AmuletOfYendor,
+                                ItemLocation::Floor(deepest_room.center()),
+                                Buc::Blessed,
+                            );
                             self.arena.spawn_item(amulet);
                             events.push(GameEvent::LogMessage {
                                 text: "A primordial cosmic radiance emanates from the deepest chamber of this floor...".into(),
@@ -516,7 +651,10 @@ impl SimulationWorld {
         };
 
         // Gehennom bottom floor: Vibrating Square subterranean portal
-        if self.current_branch == BranchId::Gehennom && self.depth == 5 && self.vibrating_square == Some(player.coord) {
+        if self.current_branch == BranchId::Gehennom
+            && self.depth == 5
+            && self.vibrating_square == Some(player.coord)
+        {
             if netrust_core::is_sanctum_accessible(self.ritual_progress) {
                 let from_depth = self.depth;
                 self.pack_current_level();
@@ -530,7 +668,10 @@ impl SimulationWorld {
                 }
                 self.place_steed_with_hero();
 
-                events.push(GameEvent::LevelChanged { from_depth, to_depth: self.depth });
+                events.push(GameEvent::LevelChanged {
+                    from_depth,
+                    to_depth: self.depth,
+                });
                 events.push(GameEvent::LogMessage {
                     text: "You step through the subterranean portal into Moloch's Sanctum!".into(),
                 });
@@ -548,7 +689,12 @@ impl SimulationWorld {
         match tile {
             Tile::Stairs { up: false } => {
                 if self.current_branch == BranchId::Quest && self.depth == 1 {
-                    let p_lvl = self.arena.actors.get(self.player_id).map(|p| p.level).unwrap_or(1);
+                    let p_lvl = self
+                        .arena
+                        .actors
+                        .get(self.player_id)
+                        .map(|p| p.level)
+                        .unwrap_or(1);
                     let hero_elig = netrust_core::HeroQuestEligibility {
                         experience_level: p_lvl,
                         alignment_record: self.alignment_record,
@@ -556,14 +702,24 @@ impl SimulationWorld {
                     };
                     let quest_cfg = netrust_core::get_role_quest_config(&self.role_name);
                     if self.quest_state.progress == netrust_core::QuestProgress::Unassigned {
-                        if netrust_core::consult_leader(&mut self.quest_state, &hero_elig).is_err() {
+                        if netrust_core::consult_leader(&mut self.quest_state, &hero_elig).is_err()
+                        {
                             events.push(GameEvent::LogMessage {
-                                text: netrust_i18n::Messages::quest_leader_reject_level(quest_cfg.leader_name, netrust_core::QUEST_MIN_LEVEL, self.locale),
+                                text: netrust_i18n::Messages::quest_leader_reject_level(
+                                    quest_cfg.leader_name,
+                                    netrust_core::QUEST_MIN_LEVEL,
+                                    self.locale,
+                                ),
                             });
                             return events;
                         } else {
                             events.push(GameEvent::LogMessage {
-                                text: netrust_i18n::Messages::quest_leader_accept(quest_cfg.leader_name, quest_cfg.artifact_name, quest_cfg.nemesis_name, self.locale),
+                                text: netrust_i18n::Messages::quest_leader_accept(
+                                    quest_cfg.leader_name,
+                                    quest_cfg.artifact_name,
+                                    quest_cfg.nemesis_name,
+                                    self.locale,
+                                ),
                             });
                         }
                     }
@@ -581,11 +737,20 @@ impl SimulationWorld {
                 }
                 self.place_steed_with_hero();
 
-                events.push(GameEvent::LevelChanged { from_depth, to_depth: self.depth });
-                events.push(GameEvent::LogMessage { text: format!("You descend deeper into dungeon level {}.", self.depth) });
+                events.push(GameEvent::LevelChanged {
+                    from_depth,
+                    to_depth: self.depth,
+                });
+                events.push(GameEvent::LogMessage {
+                    text: format!("You descend deeper into dungeon level {}.", self.depth),
+                });
                 self.scheduler.hero_act(NORMAL_SPEED);
             }
-            Tile::BranchStairs { branch, level, up: false } => {
+            Tile::BranchStairs {
+                branch,
+                level,
+                up: false,
+            } => {
                 let from_depth = self.depth;
                 self.pack_current_level();
                 self.current_branch = branch;
@@ -599,12 +764,19 @@ impl SimulationWorld {
                 }
                 self.place_steed_with_hero();
 
-                events.push(GameEvent::LevelChanged { from_depth, to_depth: self.depth });
-                events.push(GameEvent::LogMessage { text: format!("You enter the {branch:?} branch (level {level}).") });
+                events.push(GameEvent::LevelChanged {
+                    from_depth,
+                    to_depth: self.depth,
+                });
+                events.push(GameEvent::LogMessage {
+                    text: format!("You enter the {branch:?} branch (level {level})."),
+                });
                 self.scheduler.hero_act(NORMAL_SPEED);
             }
             _ => {
-                events.push(GameEvent::LogMessage { text: netrust_i18n::Messages::no_stairs_down(self.locale).into() });
+                events.push(GameEvent::LogMessage {
+                    text: netrust_i18n::Messages::no_stairs_down(self.locale).into(),
+                });
             }
         }
 
@@ -622,18 +794,31 @@ impl SimulationWorld {
             Tile::Stairs { up: true } => {
                 if self.depth > 1 {
                     // Gehennom Mysterious Force when ascending with the real Amulet of Yendor
-                    let has_amulet = self.arena.items_carried_by(self.player_id).iter().any(|&iid| {
-                        self.arena.items.get(iid).is_some_and(crate::actions::items::is_real_amulet)
-                    });
+                    let has_amulet =
+                        self.arena
+                            .items_carried_by(self.player_id)
+                            .iter()
+                            .any(|&iid| {
+                                self.arena
+                                    .items
+                                    .get(iid)
+                                    .is_some_and(crate::actions::items::is_real_amulet)
+                            });
                     if self.current_branch == BranchId::Gehennom && has_amulet {
                         let roll = self.rng.random::<u32>();
                         let pushed = netrust_core::calculate_mysterious_force(self.depth, roll)
-                            .map(|p| clamp_mysterious_force(p, netrust_core::is_sanctum_accessible(self.ritual_progress)));
+                            .map(|p| {
+                                clamp_mysterious_force(
+                                    p,
+                                    netrust_core::is_sanctum_accessible(self.ritual_progress),
+                                )
+                            });
                         if let Some(pushed_depth) = pushed.filter(|&p| p != self.depth) {
                             let from_depth = self.depth;
                             self.pack_current_level();
                             self.depth = pushed_depth;
-                            let gen_events = self.unpack_or_generate_level(BranchId::Gehennom, self.depth);
+                            let gen_events =
+                                self.unpack_or_generate_level(BranchId::Gehennom, self.depth);
                             events.extend(gen_events);
 
                             let new_coord = self.level.stairs_up;
@@ -642,7 +827,10 @@ impl SimulationWorld {
                             }
                             self.place_steed_with_hero();
 
-                            events.push(GameEvent::LevelChanged { from_depth, to_depth: self.depth });
+                            events.push(GameEvent::LevelChanged {
+                                from_depth,
+                                to_depth: self.depth,
+                            });
                             events.push(GameEvent::LogMessage {
                                 text: format!("An eldritch Mysterious Force pushes you downward to level {pushed_depth}!"),
                             });
@@ -663,14 +851,26 @@ impl SimulationWorld {
                     }
                     self.place_steed_with_hero();
 
-                    events.push(GameEvent::LevelChanged { from_depth, to_depth: self.depth });
-                    events.push(GameEvent::LogMessage { text: format!("You ascend to dungeon level {}.", self.depth) });
+                    events.push(GameEvent::LevelChanged {
+                        from_depth,
+                        to_depth: self.depth,
+                    });
+                    events.push(GameEvent::LogMessage {
+                        text: format!("You ascend to dungeon level {}.", self.depth),
+                    });
                     self.scheduler.hero_act(NORMAL_SPEED);
                 } else if self.current_branch == BranchId::DungeonsOfDoom {
                     // Surface check for Victory with Amulet of Yendor
-                    let has_amulet = self.arena.items_carried_by(self.player_id).iter().any(|&iid| {
-                        self.arena.items.get(iid).is_some_and(crate::actions::items::is_real_amulet)
-                    });
+                    let has_amulet =
+                        self.arena
+                            .items_carried_by(self.player_id)
+                            .iter()
+                            .any(|&iid| {
+                                self.arena
+                                    .items
+                                    .get(iid)
+                                    .is_some_and(crate::actions::items::is_real_amulet)
+                            });
                     if has_amulet {
                         events.push(GameEvent::Victory);
                         events.push(GameEvent::LogMessage {
@@ -700,21 +900,38 @@ impl SimulationWorld {
                         }
                         self.place_steed_with_hero();
 
-                        events.push(GameEvent::LevelChanged { from_depth, to_depth: self.depth });
-                        events.push(GameEvent::LogMessage { text: format!("You return to {:?} level {}.", parent.branch, parent.depth) });
+                        events.push(GameEvent::LevelChanged {
+                            from_depth,
+                            to_depth: self.depth,
+                        });
+                        events.push(GameEvent::LogMessage {
+                            text: format!(
+                                "You return to {:?} level {}.",
+                                parent.branch, parent.depth
+                            ),
+                        });
                         self.scheduler.hero_act(NORMAL_SPEED);
                     }
                 }
             }
-            Tile::BranchStairs { branch, level, up: true } => {
+            Tile::BranchStairs {
+                branch,
+                level,
+                up: true,
+            } => {
                 if self.current_branch == BranchId::Quest && self.depth == 1 {
                     let quest_cfg = netrust_core::get_role_quest_config(&self.role_name);
                     if self.quest_state.progress == netrust_core::QuestProgress::NemesisDefeated
-                        && self.quest_state.artifact_location == netrust_core::ArtifactLocation::CarriedByHero
+                        && self.quest_state.artifact_location
+                            == netrust_core::ArtifactLocation::CarriedByHero
                     {
                         netrust_core::return_to_leader_with_artifact(&mut self.quest_state);
                         events.push(GameEvent::LogMessage {
-                            text: netrust_i18n::Messages::quest_completed(quest_cfg.leader_name, quest_cfg.artifact_name, self.locale),
+                            text: netrust_i18n::Messages::quest_completed(
+                                quest_cfg.leader_name,
+                                quest_cfg.artifact_name,
+                                self.locale,
+                            ),
                         });
                     }
                 }
@@ -732,12 +949,19 @@ impl SimulationWorld {
                 }
                 self.place_steed_with_hero();
 
-                events.push(GameEvent::LevelChanged { from_depth, to_depth: self.depth });
-                events.push(GameEvent::LogMessage { text: format!("You return to {branch:?} level {level}.") });
+                events.push(GameEvent::LevelChanged {
+                    from_depth,
+                    to_depth: self.depth,
+                });
+                events.push(GameEvent::LogMessage {
+                    text: format!("You return to {branch:?} level {level}."),
+                });
                 self.scheduler.hero_act(NORMAL_SPEED);
             }
             _ => {
-                events.push(GameEvent::LogMessage { text: netrust_i18n::Messages::no_stairs_up(self.locale).into() });
+                events.push(GameEvent::LogMessage {
+                    text: netrust_i18n::Messages::no_stairs_up(self.locale).into(),
+                });
             }
         }
 

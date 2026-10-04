@@ -1,5 +1,8 @@
 use netrust_arena::{ActorId, ItemLocation};
-use netrust_core::{energy::NORMAL_SPEED, ranged::{can_mount, resolve_projectile_impact}};
+use netrust_core::{
+    energy::NORMAL_SPEED,
+    ranged::{can_mount, resolve_projectile_impact},
+};
 use netrust_types::{Direction, MountState, SlotId};
 use rand::Rng;
 
@@ -14,9 +17,17 @@ impl SimulationWorld {
         let items = self.arena.items_carried_by(self.player_id);
         if items.contains(&idx) {
             self.hero.quivered_item = Some(idx);
-            let item_name = self.arena.items.get(idx).map(|i| i.name.as_str()).unwrap_or("item");
+            let item_name = self
+                .arena
+                .items
+                .get(idx)
+                .map(|i| i.name.as_str())
+                .unwrap_or("item");
             events.push(GameEvent::LogMessage {
-                text: netrust_i18n::Messages::quiver_success(&netrust_i18n::t_item(item_name, self.locale), self.locale),
+                text: netrust_i18n::Messages::quiver_success(
+                    &netrust_i18n::t_item(item_name, self.locale),
+                    self.locale,
+                ),
             });
         }
         events
@@ -28,7 +39,12 @@ impl SimulationWorld {
 
         let quivered_item_opt = self.hero.quivered_item;
         if let Some(item_id) = quivered_item_opt {
-            let start = self.arena.actors.get(self.player_id).map(|a| a.coord).unwrap();
+            let start = self
+                .arena
+                .actors
+                .get(self.player_id)
+                .map(|a| a.coord)
+                .unwrap();
             let mut current = start;
             let mut target_actor = None;
 
@@ -52,7 +68,7 @@ impl SimulationWorld {
                 events.push(GameEvent::LogMessage {
                     text: netrust_i18n::Messages::hit_monster(self.locale).into(),
                 });
-                
+
                 let lethal = if let Some(target) = self.arena.actors.get_mut(actor_id) {
                     target.hp = target.hp.saturating_sub(damage);
                     target.hp == 0
@@ -78,14 +94,16 @@ impl SimulationWorld {
                         text: netrust_i18n::Messages::projectile_breaks(self.locale).into(),
                     });
                     self.arena.destroy_item(item_id);
-                    if true { let player = &mut self.hero;
+                    if true {
+                        let player = &mut self.hero;
                         player.quivered_item = None;
                     }
                 } else {
                     if let Some(item) = self.arena.items.get_mut(item_id) {
                         item.location = ItemLocation::Floor(current);
                     }
-                    if true { let player = &mut self.hero;
+                    if true {
+                        let player = &mut self.hero;
                         player.quivered_item = None;
                     }
                 }
@@ -96,7 +114,8 @@ impl SimulationWorld {
                 if let Some(item) = self.arena.items.get_mut(item_id) {
                     item.location = ItemLocation::Floor(current);
                 }
-                if true { let player = &mut self.hero;
+                if true {
+                    let player = &mut self.hero;
                     player.quivered_item = None;
                 }
             }
@@ -114,8 +133,10 @@ impl SimulationWorld {
         self.scheduler.hero_act(NORMAL_SPEED);
 
         if let Some(target) = self.arena.actors.get(actor_id) {
-            if can_mount(target.is_tame, true) { // simplified saddle check
-                if true { let player = &mut self.hero;
+            if can_mount(target.is_tame, true) {
+                // simplified saddle check
+                if true {
+                    let player = &mut self.hero;
                     player.mount = Some(MountState {
                         steed_id: actor_id,
                         saddle_equipped: true,
@@ -138,7 +159,8 @@ impl SimulationWorld {
         let mut events = Vec::new();
         self.scheduler.hero_act(NORMAL_SPEED);
 
-        if true { let player = &mut self.hero;
+        if true {
+            let player = &mut self.hero;
             if player.mount.is_some() {
                 player.mount = None;
                 events.push(GameEvent::LogMessage {

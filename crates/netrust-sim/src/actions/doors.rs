@@ -15,8 +15,18 @@ impl SimulationWorld {
 
         if player.coord.is_adjacent(target_coord) {
             let tile = self.level.get_tile(target_coord).clone();
-            if let Tile::Door { state: DoorState::Closed, trapped } = tile {
-                self.level.set_tile(target_coord, Tile::Door { state: DoorState::Open, trapped });
+            if let Tile::Door {
+                state: DoorState::Closed,
+                trapped,
+            } = tile
+            {
+                self.level.set_tile(
+                    target_coord,
+                    Tile::Door {
+                        state: DoorState::Open,
+                        trapped,
+                    },
+                );
                 events.push(GameEvent::DoorToggled {
                     coord: target_coord,
                     new_state: DoorState::Open,
@@ -39,8 +49,18 @@ impl SimulationWorld {
 
         if player.coord.is_adjacent(target_coord) {
             let tile = self.level.get_tile(target_coord).clone();
-            if let Tile::Door { state: DoorState::Open, trapped } = tile {
-                self.level.set_tile(target_coord, Tile::Door { state: DoorState::Closed, trapped });
+            if let Tile::Door {
+                state: DoorState::Open,
+                trapped,
+            } = tile
+            {
+                self.level.set_tile(
+                    target_coord,
+                    Tile::Door {
+                        state: DoorState::Closed,
+                        trapped,
+                    },
+                );
                 events.push(GameEvent::DoorToggled {
                     coord: target_coord,
                     new_state: DoorState::Closed,
@@ -65,7 +85,13 @@ impl SimulationWorld {
             let tile = self.level.get_tile(target_coord).clone();
             if let Tile::Door { state, .. } = tile {
                 if state != DoorState::Broken {
-                    self.level.set_tile(target_coord, Tile::Door { state: DoorState::Broken, trapped: false });
+                    self.level.set_tile(
+                        target_coord,
+                        Tile::Door {
+                            state: DoorState::Broken,
+                            trapped: false,
+                        },
+                    );
                     events.push(GameEvent::DoorToggled {
                         coord: target_coord,
                         new_state: DoorState::Broken,

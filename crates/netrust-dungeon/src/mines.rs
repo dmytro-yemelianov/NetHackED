@@ -93,7 +93,12 @@ pub fn generate_minetown_level<R: Rng>(_rng: &mut R) -> MinetownLayout {
 
     // Altar placed inside Temple
     let altar_coord = Coord::new_unchecked(64, 7);
-    level.set_tile(altar_coord, Tile::Altar { align: Alignment::Lawful });
+    level.set_tile(
+        altar_coord,
+        Tile::Altar {
+            align: Alignment::Lawful,
+        },
+    );
 
     // Priest stands directly in front of the altar
     let priest_coord = Coord::new_unchecked(64, 8);
@@ -127,10 +132,7 @@ pub fn generate_minetown_level<R: Rng>(_rng: &mut R) -> MinetownLayout {
     level.set_tile(down_c, Tile::Stairs { up: false });
     level.stairs_down = down_c;
 
-    let shopkeeper_coords = vec![
-        Coord::new_unchecked(14, 6),
-        Coord::new_unchecked(14, 15),
-    ];
+    let shopkeeper_coords = vec![Coord::new_unchecked(14, 6), Coord::new_unchecked(14, 15)];
 
     let watchmen_coords = vec![
         Coord::new_unchecked(35, 11),
@@ -140,7 +142,12 @@ pub fn generate_minetown_level<R: Rng>(_rng: &mut R) -> MinetownLayout {
 
     level.rooms = vec![
         Room::new(plaza_rect, RoomType::Normal),
-        Room::new(temple_rect, RoomType::Temple { alignment: Alignment::Lawful }),
+        Room::new(
+            temple_rect,
+            RoomType::Temple {
+                alignment: Alignment::Lawful,
+            },
+        ),
         Room::new(shop1_rect, RoomType::Shop),
         Room::new(shop2_rect, RoomType::Shop),
     ];
@@ -202,8 +209,17 @@ mod tests {
     fn test_mines_cavern_generation() {
         let mut rng = ChaCha8Rng::seed_from_u64(42);
         let level = generate_mines_cavern_level(&mut rng, 1);
-        assert!(matches!(level.get_tile(level.stairs_up), Tile::BranchStairs { branch: BranchId::DungeonsOfDoom, .. }));
-        assert!(matches!(level.get_tile(level.stairs_down), Tile::Stairs { up: false }));
+        assert!(matches!(
+            level.get_tile(level.stairs_up),
+            Tile::BranchStairs {
+                branch: BranchId::DungeonsOfDoom,
+                ..
+            }
+        ));
+        assert!(matches!(
+            level.get_tile(level.stairs_down),
+            Tile::Stairs { up: false }
+        ));
         assert!(level.rooms.len() >= 4);
     }
 
@@ -211,7 +227,12 @@ mod tests {
     fn test_minetown_generation() {
         let mut rng = ChaCha8Rng::seed_from_u64(42);
         let layout = generate_minetown_level(&mut rng);
-        assert!(matches!(layout.level.get_tile(layout.altar_coord), Tile::Altar { align: Alignment::Lawful }));
+        assert!(matches!(
+            layout.level.get_tile(layout.altar_coord),
+            Tile::Altar {
+                align: Alignment::Lawful
+            }
+        ));
         assert_eq!(layout.watchmen_coords.len(), 3);
         assert_eq!(layout.shopkeeper_coords.len(), 2);
     }
@@ -221,7 +242,10 @@ mod tests {
         let mut rng = ChaCha8Rng::seed_from_u64(42);
         let (level, luckstone_coord) = generate_mines_end_level(&mut rng);
         assert!(level.is_passable(luckstone_coord));
-        assert!(matches!(level.get_tile(level.stairs_up), Tile::Stairs { up: true }));
+        assert!(matches!(
+            level.get_tile(level.stairs_up),
+            Tile::Stairs { up: true }
+        ));
         // No down stairs in Mines' End
         assert_eq!(level.stairs_down, Coord::new_unchecked(0, 0));
     }
