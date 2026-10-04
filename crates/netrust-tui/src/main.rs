@@ -696,7 +696,7 @@ fn show_enhance_modal(stdout: &mut Stdout, world: &mut SimulationWorld) -> io::R
     Ok(())
 }
 
-fn show_help_modal(stdout: &mut Stdout, locale: Locale) -> io::Result<()> {
+fn show_help_modal(stdout: &mut Stdout, locale: Locale, seed: u64) -> io::Result<()> {
     let (ox, oy) = screen_offsets();
     execute!(stdout, Clear(ClearType::All))?;
 
@@ -755,6 +755,23 @@ fn show_help_modal(stdout: &mut Stdout, locale: Locale) -> io::Result<()> {
         Print(footer),
         ResetColor
     )?;
+
+    queue!(
+        stdout,
+        MoveTo(ox + 4, oy + 22),
+        SetForegroundColor(Color::DarkGrey),
+        Print(format!(
+            "{}: {}",
+            if locale == Locale::Uk {
+                "Зерно"
+            } else {
+                "Seed"
+            },
+            seed
+        )),
+        ResetColor
+    )?;
+    stdout.flush()?;
 
     loop {
         if let Event::Key(key) = event::read()? {
@@ -912,7 +929,7 @@ fn main() -> io::Result<()> {
                         None
                     }
                     KeyOutcome::OpenHelp => {
-                        show_help_modal(&mut stdout, world.locale)?;
+                        show_help_modal(&mut stdout, world.locale, seed)?;
                         None
                     }
                     KeyOutcome::ToggleLanguage => {
@@ -1115,7 +1132,7 @@ fn render(
 
     let visible: HashSet<Coord> = compute_fov(&world.level, p_coord, 8);
 
-    // Line 0: message banner, with the seed right-aligned inside the 80 columns.
+    // Line 0: full-width message banner; the seed tag is added only if it fits.
     let seed_tag = format!(
         "{}:{}",
         if world.locale == Locale::Uk {
@@ -1125,13 +1142,12 @@ fn render(
         },
         seed
     );
-    let msg_width = 80usize.saturating_sub(seed_tag.chars().count() + 1);
-    let msg_trunc: String = message.chars().take(msg_width).collect();
+    let banner = banner_line(message, &seed_tag);
     queue!(
         stdout,
         MoveTo(ox, oy),
         SetForegroundColor(Color::Yellow),
-        Print(format!("{msg_trunc:<msg_width$} {seed_tag}")),
+        Print(banner),
         ResetColor
     )?;
 
@@ -1430,6 +1446,17 @@ fn render(
     stdout.flush()
 }
 
+/// Message padded to 80 columns; the right-aligned seed tag is appended only
+/// when it fits without shortening the message (char counts, not bytes).
+fn banner_line(message: &str, seed_tag: &str) -> String {
+    let (m, t) = (message.chars().count(), seed_tag.chars().count());
+    if m + t < 80 {
+        format!("{message:<w$}{seed_tag}", w = 80 - t)
+    } else {
+        format!("{message:<80}")
+    }
+}
+
 /// Parse `--seed N` from the argument list.
 fn parse_seed_args(args: &[String]) -> Result<Option<u64>, String> {
     let Some(pos) = args.iter().position(|a| a == "--seed") else {
@@ -1448,6 +1475,14 @@ mod tests {
     use super::*;
     fn s(v: &[&str]) -> Vec<String> {
         v.iter().map(|x| x.to_string()).collect()
+    }
+
+    #[test]
+    fn banner_keeps_full_message() {
+        assert_eq!(banner_line("hi", "Seed:5").chars().count(), 80);
+        assert!(banner_line("hi", "Seed:5").ends_with("Seed:5"));
+        let long = "ж".repeat(75);
+        assert_eq!(banner_line(&long, "Seed:5"), format!("{long:<80}"));
     }
 
     #[test]
