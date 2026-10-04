@@ -69,7 +69,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         runs,
     };
 
-    let report_path = "benchmark_report.json";
+    let report_path = "web/benchmark_report.json";
     let json_bytes = serde_json::to_string_pretty(&report)?;
     let mut file = File::create(report_path)?;
     file.write_all(json_bytes.as_bytes())?;
