@@ -1,6 +1,7 @@
 //! Frozen fingerprints of vanilla play. Recorded on main before the rule-pack
 //! refactor (P1); every later change must keep them identical.
 use netrust_agent::arena::run_seed_games;
+use netrust_data::monsters::BESTIARY;
 use netrust_data::roles::{get_role, Gender, RaceId, RoleId};
 use netrust_sim::{ActionAst, SimulationWorld};
 use netrust_types::{Coord, Direction};
@@ -44,15 +45,15 @@ const EXPECTED_RUNS: [u64; 4] = [
     5_992_343_144_856_610_526,
 ];
 const EXPECTED_LOGS: [u64; 9] = [
-    10_284_077_770_640_603_820,
-    1_873_923_448_637_030_106,
-    12_887_439_925_162_047_825,
-    3_639_312_384_190_478_179,
-    5_108_422_725_681_711_348,
-    12_003_228_215_816_724_814,
-    15_989_717_679_611_174_760,
-    13_193_988_166_941_799_923,
-    7_773_727_900_926_177_870,
+    6_084_688_683_205_385_671,
+    15_616_401_141_373_472_836,
+    4_899_398_478_763_589_659,
+    16_065_937_482_197_730_413,
+    2_131_477_169_023_326_163,
+    14_544_001_921_339_539_876,
+    14_894_273_454_409_416_984,
+    5_962_845_032_407_934_693,
+    9_102_617_103_894_820_477,
 ];
 
 #[test]
@@ -101,15 +102,29 @@ fn scripted_action(i: usize, player: Coord) -> ActionAst {
     }
 }
 
-fn play_role(role: RoleId) -> u64 {
-    let config = netrust_data::CharacterConfig {
+/// Hero inventory as "name:enchantment" in arena order.
+fn inventory_fingerprint(world: &SimulationWorld) -> String {
+    world
+        .arena
+        .items_carried_by(world.player_id)
+        .iter()
+        .filter_map(|id| world.arena.items.get(*id))
+        .map(|it| format!("{}:{};", it.name, it.enchantment))
+        .collect()
+}
+
+fn character(role: RoleId) -> netrust_data::CharacterConfig {
+    netrust_data::CharacterConfig {
         name: format!("{role:?}"),
         role,
         race: RaceId::Human,
         gender: Gender::Female,
         alignment: get_role(role).default_alignment,
-    };
-    let mut world = SimulationWorld::new_with_character(7, config);
+    }
+}
+
+fn play_role(role: RoleId) -> u64 {
+    let mut world = SimulationWorld::new_with_character(7, character(role));
     let mut step_events = Vec::new();
     for i in 0..300 {
         let player = world.arena.actors.get(world.player_id).map(|a| a.coord);
@@ -127,6 +142,7 @@ fn play_role(role: RoleId) -> u64 {
         p.coord,
     );
     let mut bytes = format!("{role:?}").into_bytes();
+    bytes.extend(inventory_fingerprint(&world).into_bytes());
     bytes.extend(serde_json::to_vec(&world.event_log).expect("event_log serializes"));
     bytes.extend(serde_json::to_vec(&step_events).expect("step events serialize"));
     bytes.extend(serde_json::to_vec(&summary).expect("summary serializes"));
@@ -137,4 +153,64 @@ fn play_role(role: RoleId) -> u64 {
 fn golden_vanilla_event_logs_are_unchanged() {
     let logs: Vec<u64> = ROLES.iter().map(|&r| play_role(r)).collect();
     assert_eq!(logs, EXPECTED_LOGS);
+}
+
+const COMBAT_ROLES: [RoleId; 3] = [RoleId::Valkyrie, RoleId::Wizard, RoleId::Rogue];
+const EXPECTED_COMBAT: [u64; 3] = [
+    1_387_903_097_435_528_940,
+    11_050_519_370_090_146_935,
+    7_813_387_057_544_155_063,
+];
+
+/// Every bestiary entry fights the hero for up to 20 alternating melee/wait steps.
+fn bestiary_combat(role: RoleId) -> u64 {
+    let mut all = Vec::new();
+    for arch in BESTIARY {
+        let mut world = SimulationWorld::new_with_character(11, character(role));
+        let hero = world.arena.actors.get(world.player_id).expect("hero").coord;
+        let mut bytes = format!("{:?}|{}|", arch.id, arch.name).into_bytes();
+        let Some(mid) = world.spawn_monster_near(arch.id, hero) else {
+            bytes.extend(b"nospawn");
+            all.push(fnv1a(&bytes));
+            continue;
+        };
+        let mut events = Vec::new();
+        for step in 0..20 {
+            let (Some(h), Some(m)) = (
+                world.arena.actors.get(world.player_id),
+                world.arena.actors.get(mid),
+            ) else {
+                break;
+            };
+            if h.is_dead || m.is_dead {
+                break;
+            }
+            let action = if step % 2 == 0 {
+                ActionAst::MeleeAttack(m.coord)
+            } else {
+                ActionAst::Wait
+            };
+            events.push(world.step_player_action(action));
+        }
+        let h = world
+            .arena
+            .actors
+            .get(world.player_id)
+            .map(|h| (h.hp, h.ac));
+        let m = world
+            .arena
+            .actors
+            .get(mid)
+            .map(|m| (m.hp, m.is_peaceful, m.is_dead));
+        bytes.extend(serde_json::to_vec(&(&events, &world.event_log, h, m)).expect("serialize"));
+        all.push(fnv1a(&bytes));
+    }
+    let bytes = serde_json::to_vec(&all).expect("serialize");
+    fnv1a(&bytes)
+}
+
+#[test]
+fn golden_vanilla_bestiary_combat_is_unchanged() {
+    let got: Vec<u64> = COMBAT_ROLES.iter().map(|&r| bestiary_combat(r)).collect();
+    assert_eq!(got, EXPECTED_COMBAT);
 }
