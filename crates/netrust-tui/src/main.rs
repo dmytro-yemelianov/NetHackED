@@ -440,7 +440,7 @@ fn show_conducts_modal(stdout: &mut Stdout, world: &SimulationWorld) -> io::Resu
             stdout,
             MoveTo(ox + 4, oy + 3 + (idx * 2) as u16),
             SetForegroundColor(Color::White),
-            Print(format!("{name:<48} ")),
+            Print(format!("{name:<60} ")),
             SetForegroundColor(status_color),
             Print(status_str),
             ResetColor
@@ -635,7 +635,7 @@ fn main() -> io::Result<()> {
                 locale = Locale::parse(val);
             }
         } else if arg == "--uk" {
-            locale = Locale::parse("uk");
+            locale = Locale::Uk;
         } else if arg == "--en" {
             locale = Locale::En;
         }

@@ -306,6 +306,15 @@ mod tests {
         )));
     }
     #[test]
+    fn help_keys_are_registered_i18n_keys() {
+        for (c, key) in HELP_KEYS {
+            assert!(
+                netrust_i18n::ALL_KEYS.contains(key),
+                "help key '{c}' uses unregistered i18n key {key}"
+            );
+        }
+    }
+    #[test]
     fn every_help_key_is_handled() {
         for (c, _) in HELP_KEYS {
             assert!(
