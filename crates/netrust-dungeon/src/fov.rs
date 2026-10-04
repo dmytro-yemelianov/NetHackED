@@ -7,7 +7,7 @@ use netrust_types::{Coord, COLNO, ROWNO};
 use std::collections::HashSet;
 
 /// Compute Field of View (FOV) using symmetric raycasting.
-/// Matches the reflexivity and symmetry theorems verified in `NetMechanics.FOV`.
+/// Is intended to mirror the reflexivity and symmetry theorems stated in `NetMechanics.FOV` (no proptest links them).
 pub fn compute_fov(level: &DungeonLevel, origin: Coord, max_radius: usize) -> HashSet<Coord> {
     let mut visible = HashSet::new();
     visible.insert(origin);

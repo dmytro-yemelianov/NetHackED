@@ -32,8 +32,8 @@ def isAdjacent (c1 c2 : Coord) : Bool := coordChebyshev c1 c2 == 1
   Discrete line of sight relation between two coordinates.
   This is a "connected through transparent cells" relation: a cell sees itself,
   its 8 neighbours, and anything reachable by chaining such links through
-  transparent intermediate cells. It is not NetHack's straight-line
-  `clear_path` (vision.c); it is only a sound over-approximation shape.
+  transparent intermediate cells via adjacent steps. It is not NetHack's
+  straight-line `clear_path` (vision.c).
 -/
 inductive HasLOS (isTrans : Coord → Bool) : Coord → Coord → Prop where
   | SameCell (c : Coord) : HasLOS isTrans c c

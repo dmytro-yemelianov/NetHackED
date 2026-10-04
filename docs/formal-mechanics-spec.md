@@ -12,6 +12,12 @@ The Lean models and the Rust engine are simplified abstractions of NetHack mecha
 * **Bare-handed damage**: bare-handed attacks use the weapon skill damage table (Unskilled $-2$). In C, the bare-handed/martial-arts damage bonus is $0/{+1}/{+1}/{+2}$ for Unskilled/Basic/Skilled/Expert.
 * **`abon()` omitted**: attributes are not tracked, so the to-hit `abon()` term is 0; C's $+1$ below experience level 3 and the Str/Dex to-hit bonuses are absent.
 * **Temple priest donations**: the NetRust priest additionally uncurses carried items for an offer of at least $200 \times$ level and grants divine favor $+2$ for any donation that is not refused or a cheapskate offer; neither exists in C `priest.c`. The clairvoyance band (`priest.c:671-680`) and the selfless band's alignment gain / cleansing (`priest.c:706-719`) are not applied (message only).
+* **Mysterious Force depth mapping**: C gates the force on `dunlev < dunlevs_in_dungeon - 3` of the real Gehennom (about 20+ levels); NetRust's Gehennom has 6 levels, so the force is only active at depths 1 and 2 (`do.c:1541-1573`).
+* **Mysterious Force RNG and teleport**: the sim draws four random values unconditionally on every Amulet ascent attempt in Gehennom (trigger, push, and counter draws are not consumed lazily as in C), and the same-level outcome teleports the hero to a uniformly random passable, unoccupied tile instead of C `safe_teleds` (`do.c:1555`).
+* **Bag of Holding explosion scatter**: surviving contents are dropped at the hero's square; C `scatter()` flies them outward with damage (`pickup.c:2517-2532`).
+* **Starting inventories**: NetRust role inventories differ from C `u_init.c` (e.g. the NetRust Valkyrie starts with a long sword +0, leather armor and a healing potion; C gives a +1 spear, a +0 dagger, a +3 small shield and a food ration).
+* **Attributes**: there is no Charisma, Constitution or Unchanging tracking; constants are used (`DEFAULT_PLAYER_CON` for the starvation threshold, a fixed Charisma for shop prices, Unchanging is a parameter of the core polymorph function, not a tracked hero property).
+* **Name-based item kind detection**: some sim code (e.g. weapon skill selection in `netrust-sim/src/combat.rs`) infers an item's kind from substrings of its name rather than from its object class/type.
 
 These divergences are planned to be corrected in a later fidelity pass. Until then, do not treat the formulas in this document as authoritative descriptions of NetHack C behavior.
 

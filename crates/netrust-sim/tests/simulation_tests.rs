@@ -4106,3 +4106,27 @@ fn test_fresh_valkyrie_to_hit_matches_c_basic_skill() {
         "hits {hits} vs expected ~{expect}"
     );
 }
+
+#[test]
+fn test_starvation_death_logs_cause_in_both_locales() {
+    for (locale, expected) in [
+        (netrust_types::Locale::En, "You die from starvation."),
+        (netrust_types::Locale::Uk, "Ви помираєте від голоду."),
+    ] {
+        let mut sim = SimulationWorld::new_with_seed(4243);
+        sim.locale = locale;
+        sim.player_nutrition = -1000;
+        assert_eq!(sim.hunger_state(), netrust_sim::HungerState::Starved);
+        let mut events = Vec::new();
+        for _ in 0..3 {
+            events.extend(sim.step_player_action(ActionAst::Wait));
+        }
+        assert!(sim.arena.actors.get(sim.player_id).unwrap().is_dead);
+        assert!(
+            events
+                .iter()
+                .any(|e| matches!(e, GameEvent::LogMessage { text } if text == expected)),
+            "missing starvation message {expected:?}"
+        );
+    }
+}

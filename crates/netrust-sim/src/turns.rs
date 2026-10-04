@@ -72,6 +72,9 @@ impl SimulationWorld {
                             p.hp = 0;
                             p.is_dead = true;
                         }
+                        events.push(GameEvent::LogMessage {
+                            text: netrust_i18n::t("starved", self.locale).into(),
+                        });
                     }
 
                     if self.scheduler.monster_can_act() {
