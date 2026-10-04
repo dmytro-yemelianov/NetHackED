@@ -11,15 +11,16 @@ use netrust_core::{
     enchant_weapon, enter_branch, exit_branch, feed_pet, hero_damage_after_ac, hunger_of_nutrition,
     hunger_tier, identify_fully, interact_with_occupant, is_candelabrum_ready,
     is_hero_eligible_for_quest, is_hp_critical, is_sanctum_accessible, is_valid_bones_level,
-    learn_buc, learn_type, luck_decay_period, mana_cost, mbag_explodes, melee_damage, mix_alchemy,
+    learn_buc, learn_type, luck_decay_period, mana_cost, mattacku_die, mbag_explodes, melee_damage,
+    mhitm_to_hit, mix_alchemy, monster_attack_damage, monster_attack_hits, monster_hit_damage,
     monster_to_hit_value, mysterious_force, offer_amulet_on_high_altar, pet_tile_steppable,
     pick_up_quest_artifact, priest_donation_outcome, priest_donation_quan,
     priest_suggested_donation, priest_uncurse, promote_pet, protection_purchase_count,
-    protection_purchase_step, push_boulder, quest_progress_rank, recharge_wand, reflect,
+    protection_purchase_step, push_boulder, quest_progress_rank, recharge_wand, reflect, resisted,
     resolve_breath_damage, resolve_gaze, resolve_sacrifice, return_to_leader_with_artifact,
     rub_lamp, sell_price, step_luck_decay, step_ray, step_ritual, swap_displacement,
-    tick_light_fuel, tick_prayer_timeout, to_hit_value, toggle_drawbridge, uncurse, zap_wand,
-    Alignment, ArtifactLocation, AscensionOutcome, BagCheckItem, BagCheckKind, BeamRay,
+    tick_light_fuel, tick_prayer_timeout, to_hit_value, toggle_drawbridge, uncurse, zap_hit,
+    zap_wand, Alignment, ArtifactLocation, AscensionOutcome, BagCheckItem, BagCheckKind, BeamRay,
     BranchCoord, BranchId, BreathType, Buc, CandelabrumState, Combatant, Coord, DilutionState,
     Direction, DivineState, DonationOutcome, DoorState, DrawbridgeState, DrawbridgeTransition,
     DungeonDepth, EnchantOutcome, EncumbranceTier, Engraving, EngravingMedium, FormStats,
@@ -30,6 +31,7 @@ use netrust_core::{
     SurfaceOrientation, TacticalAction, TacticalContext, Tile, Velocity, WandCharges, WaterType,
     MAX_DIVINE_PROTECTION, NORMAL_SPEED, QUEST_MIN_ALIGNMENT, QUEST_MIN_LEVEL, REQUIRED_CANDLES,
 };
+use netrust_types::{Attack, AttackType, DamageType};
 use proptest::prelude::*;
 
 prop_compose! {
@@ -371,6 +373,105 @@ proptest! {
         );
         // Hero -> monster: no AC reduction at all.
         prop_assert_eq!(calculate_damage(roll, enchant, bonus, hero_ac, None), base);
+    }
+
+    // -------------------------------------------------------------
+    // C reference: rnd.c d(n, x) = n + sum of n RND(x) draws (each 1..=x),
+    // used by hitmu (mhitu.c:1187) and mdamagem (mhitm.c:1025).
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_monster_attack_damage_matches_c_dice(
+        n in 0u8..10,
+        d in 0u8..80,
+        rolls in proptest::collection::vec(0u32..100, 0..12)
+    ) {
+        let attack = Attack { at: AttackType::Claw, ad: DamageType::Phys, n, d };
+        let expected: u32 = if d == 0 {
+            0
+        } else {
+            (0..n as usize)
+                .map(|i| rolls.get(i).copied().unwrap_or(1).clamp(1, d as u32))
+                .sum()
+        };
+        let dmg = monster_attack_damage(&attack, &rolls);
+        prop_assert_eq!(dmg, expected);
+        if d > 0 {
+            prop_assert!(dmg >= n as u32 && dmg <= n as u32 * d as u32);
+        }
+    }
+
+    // -------------------------------------------------------------
+    // C reference: mhitm.c:321 tmp = find_mac(mdef) + m_lev (no +10),
+    // mhitm.c:441 strike = tmp > rnd(20 + i); mhitu.c:794 same die.
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_mhitm_to_hit_matches_c(
+        m_lev in 0i32..50,
+        def_ac in -40i32..20,
+        i in 0u32..6,
+        roll in 0u32..40
+    ) {
+        let (tmp, die) = mhitm_to_hit(m_lev, def_ac, i);
+        prop_assert_eq!(tmp, def_ac + m_lev);
+        prop_assert_eq!(die, 20 + i);
+        prop_assert_eq!(mattacku_die(i), 20 + i);
+        let dieroll = roll.clamp(1, die) as i32;
+        prop_assert_eq!(monster_attack_hits(tmp, die, roll), tmp > dieroll);
+    }
+
+    // -------------------------------------------------------------
+    // C reference: hitmu mhitu.c:1187 dmg = d(n,d); mhitm_ad_fire/cold
+    // (uhitm.c:2521/2626) zero it under resistance; mhitu.c:1208
+    // `if (dmg && u.uac < 0) dmg -= rnd(-u.uac), min 1`.
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_monster_hit_damage_matches_c(
+        n in 1u8..8,
+        d in 1u8..12,
+        rolls in proptest::collection::vec(1u32..12, 8),
+        fire in any::<bool>(),
+        fire_res in any::<bool>(),
+        hero_ac in proptest::option::of(-20i32..11),
+        absorb in 0u32..30
+    ) {
+        let ad = if fire { DamageType::Fire } else { DamageType::Phys };
+        let attack = Attack { at: AttackType::Touch, ad, n, d };
+        let mut intr = Intrinsics::empty();
+        intr.fire_resistance = fire_res;
+        let res = resisted(ad, &intr);
+        prop_assert_eq!(res, fire && fire_res);
+        let mut dmg: u32 = (0..n as usize).map(|i| rolls[i].clamp(1, d as u32)).sum();
+        if res {
+            dmg = 0;
+        }
+        if let Some(ac) = hero_ac {
+            if dmg > 0 && ac < 0 {
+                dmg = dmg.saturating_sub(absorb.clamp(1, (-ac) as u32)).max(1);
+            }
+        }
+        let got = monster_hit_damage(&attack, &rolls, res, hero_ac.map(|ac| (ac, absorb)));
+        prop_assert_eq!(got, dmg);
+        prop_assert_eq!(got == 0, res);
+    }
+
+    // -------------------------------------------------------------
+    // C reference: zap.c:4705 zap_hit(u.uac, 0) for a breath ray at the hero.
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_zap_hit_matches_c(
+        ac in -30i32..15,
+        chance in 0u32..25,
+        rnd10 in 0u32..15,
+        ac_roll in 0u32..40
+    ) {
+        let c = chance.min(19) as i32;
+        let expected = if c == 0 {
+            (rnd10.clamp(1, 10) as i32) < ac
+        } else {
+            let acv = if ac >= 0 { ac } else { -(ac_roll.clamp(1, (-ac) as u32) as i32) };
+            3 - c < acv
+        };
+        prop_assert_eq!(zap_hit(ac, chance, rnd10, ac_roll), expected);
     }
 
     // -------------------------------------------------------------

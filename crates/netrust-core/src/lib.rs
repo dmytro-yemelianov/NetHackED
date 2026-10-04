@@ -44,8 +44,10 @@ pub use bones::{corrupt_buc_on_death, create_ghost_hp, is_valid_bones_level};
 pub use branch::{branch_entrance_depth, branch_max_depth, enter_branch, exit_branch};
 pub use buc::{dip_water, uncurse, Buc, WaterType};
 pub use combat::{
-    attack_hits, calculate_damage, hero_damage_after_ac, luck_to_hit_bonus, melee_damage,
-    monster_to_hit_value, resolve_melee_attack, to_hit_value, AttackResult, Combatant,
+    ac_value, attack_hits, calculate_damage, hero_damage_after_ac, is_melee_attack,
+    luck_to_hit_bonus, mattacku_die, melee_damage, mhitm_to_hit, monster_attack_damage,
+    monster_attack_hits, monster_hit_damage, monster_to_hit_value, resisted, resolve_melee_attack,
+    to_hit_value, zap_hit, AttackResult, Combatant,
 };
 pub use dungeon_stack::DungeonDepth;
 pub use enchantment::{

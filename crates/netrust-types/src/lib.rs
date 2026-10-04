@@ -567,18 +567,52 @@ pub enum WaterType {
     Unholy,
 }
 
-/// Damage and attack types.
+/// C attack type (`AT_*`, include/monattk.h). `Passive` is `AT_NONE`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum AttackType {
+    Claw,
+    Bite,
+    Kick,
+    Touch,
+    Breath,
+    Gaze,
+    Weapon,
+    Magic,
+    Passive,
+}
+
+/// C damage type (`AD_*`) for the subset used by the bestiary.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum DamageType {
-    Physical,
-    Magic,
+    Phys,
     Fire,
     Cold,
-    Electric,
-    Poison,
-    Acid,
-    Disintegration,
-    LevelDrain,
+    /// `AD_DRST`: poisonous (Str drain).
+    DrainStr,
+    /// `AD_STON`: stoning.
+    Stone,
+    Slow,
+    /// `AD_PLYS`: paralysis.
+    Paralyze,
+    /// `AD_DRLI`: level drain.
+    DrainLife,
+    /// `AD_SAMU`: steal quest artifact / Amulet.
+    StealAmulet,
+    /// `AD_CLRC`: clerical spell.
+    Clerical,
+    /// `AD_SPEL`: mage spell.
+    Spell,
+    /// `AD_STUN`: stuns the defender.
+    Stun,
+}
+
+/// One C `ATTK(at, ad, n, d)` entry: `n`d`d` damage dice.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct Attack {
+    pub at: AttackType,
+    pub ad: DamageType,
+    pub n: u8,
+    pub d: u8,
 }
 
 /// Intrinsic and Extrinsic flags.

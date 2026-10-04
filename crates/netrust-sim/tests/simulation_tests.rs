@@ -2163,14 +2163,29 @@ fn test_monster_dragon_breath_and_reflection() {
         dragon_coord,
     );
     let dragon_id = sim.arena.spawn_actor(dragon);
+    let dragon_hp = sim.arena.actors.get(dragon_id).unwrap().hp;
+    let hero_hp = sim.arena.actors.get(sim.player_id).unwrap().hp;
 
-    // Turn step triggers monster breath towards player
-    let events = sim.step_player_action(ActionAst::Wait);
-    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("bounces the deadly breath") || text.contains("відбиття"))));
+    // C breamm (mthrowu.c:1117) breathes on `rn2(3)` and zap_hit decides whether
+    // the ray hits: wait (keeping the dragon 3 tiles away) until it is reflected.
+    let mut reflected = false;
+    for _ in 0..30 {
+        sim.arena.actors.get_mut(dragon_id).unwrap().coord = dragon_coord;
+        let events = sim.step_player_action(ActionAst::Wait);
+        if events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("bounces the deadly breath") || text.contains("відбиття"))) {
+            reflected = true;
+            break;
+        }
+    }
+    assert!(
+        reflected,
+        "the red dragon breathed and the hero reflected it"
+    );
 
-    // Dragon was hit by its own breath
-    let dragon_after = sim.arena.actors.get(dragon_id).unwrap();
-    assert!(dragon_after.hp < 90 || dragon_after.is_dead);
+    // Reflection protects the hero; the bounced fire does not hurt the red
+    // dragon (C MR_FIRE, monsters.h red dragon), and the dragon never melees at range.
+    assert_eq!(sim.arena.actors.get(sim.player_id).unwrap().hp, hero_hp);
+    assert_eq!(sim.arena.actors.get(dragon_id).unwrap().hp, dragon_hp);
 }
 
 #[test]

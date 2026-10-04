@@ -14,7 +14,7 @@
 //! HP is rolled in C (`d(lvl,8)`) and is not compared here.
 
 use netrust_data::monsters::{get_monster_species, monster_archetype_by_name, MonsterSpeciesId};
-use netrust_data::BESTIARY;
+use netrust_data::{AttackType, BESTIARY};
 
 type Row = (
     &'static str,
@@ -1109,5 +1109,35 @@ fn names_and_modelled_intrinsics_are_pinned() {
             id == "SilverDragon",
             "{id} reflection"
         );
+    }
+}
+
+/// Sim abilities must be backed by a C attack: gaze by AT_GAZE, spells by
+/// AT_MAGC; breath comes from AT_BREA alone (no invented breath/gaze).
+#[test]
+fn abilities_are_backed_by_c_attacks() {
+    use netrust_types::MonsterAbility;
+    for m in BESTIARY {
+        let has = |at: AttackType| m.attacks.iter().any(|a| a.at == at);
+        for ab in m.abilities {
+            match ab {
+                MonsterAbility::Breath { .. } => {
+                    panic!("{}: breath comes from the AT_BREA attack", m.name)
+                }
+                MonsterAbility::Gaze { .. } => assert!(has(AttackType::Gaze), "{}", m.name),
+                MonsterAbility::Spellcaster { .. } => {
+                    assert!(has(AttackType::Magic), "{}", m.name)
+                }
+            }
+        }
+    }
+    let eye = monster_archetype_by_name("floating eye").unwrap();
+    assert!(
+        eye.abilities.is_empty(),
+        "floating eye gaze is passive in C"
+    );
+    for name in ["Lord Surtur", "Minion of Huhetotl"] {
+        let m = monster_archetype_by_name(name).unwrap();
+        assert!(!m.attacks.iter().any(|a| a.at == AttackType::Breath));
     }
 }

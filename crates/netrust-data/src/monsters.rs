@@ -1,10 +1,11 @@
 //! Declarative monster bestiary and species registry for NetRust.
 
 use netrust_arena::ActorRecord;
-use netrust_types::{
-    Alignment, BreathType, Coord, GazeType, Intrinsics, MonsterAbility, MonsterSpell,
-};
+use netrust_types::{Alignment, Coord, GazeType, Intrinsics, MonsterAbility, MonsterSpell};
 use serde::{Deserialize, Serialize};
+
+/// Re-exported from `netrust-types` so `netrust-core` combat can take an [`Attack`].
+pub use netrust_types::{Attack, AttackType, DamageType};
 
 /// Enumeration of canonical monster species.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -85,54 +86,6 @@ pub enum AiBehavior {
     CompanionPet,
 }
 
-/// C attack type (`AT_*`, include/monattk.h). `Passive` is `AT_NONE`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum AttackType {
-    Claw,
-    Bite,
-    Kick,
-    Touch,
-    Breath,
-    Gaze,
-    Weapon,
-    Magic,
-    Passive,
-}
-
-/// C damage type (`AD_*`) for the subset used by the bestiary.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum DamageType {
-    Phys,
-    Fire,
-    Cold,
-    /// `AD_DRST`: poisonous (Str drain).
-    DrainStr,
-    /// `AD_STON`: stoning.
-    Stone,
-    Slow,
-    /// `AD_PLYS`: paralysis.
-    Paralyze,
-    /// `AD_DRLI`: level drain.
-    DrainLife,
-    /// `AD_SAMU`: steal quest artifact / Amulet.
-    StealAmulet,
-    /// `AD_CLRC`: clerical spell.
-    Clerical,
-    /// `AD_SPEL`: mage spell.
-    Spell,
-    /// `AD_STUN`: stuns the defender.
-    Stun,
-}
-
-/// One C `ATTK(at, ad, n, d)` entry: `n`d`d` damage dice.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-pub struct Attack {
-    pub at: AttackType,
-    pub ad: DamageType,
-    pub n: u8,
-    pub d: u8,
-}
-
 /// C monster size (`MZ_*`, include/monflag.h:174-180).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum MonsterSize {
@@ -157,8 +110,9 @@ pub struct MonsterArchetype {
     pub speed: u32,
     pub alignment: Alignment,
     pub intrinsics: Intrinsics,
-    /// C `mattk[]` (up to 6 attacks; NO_ATTK slots are omitted). The sim does not
-    /// consume these until D2 Task 4 wires them into combat.
+    /// C `mattk[]` (up to 6 attacks; only trailing NO_ATTK slots are omitted, so
+    /// the slice index is the C slot `i` of the `rnd(20 + i)` to-hit die). The sim
+    /// resolves melee from it (`netrust-sim` combat) and breath from its AT_BREA.
     pub attacks: &'static [Attack],
     /// C `msize` (`MZ_*`; `MZ_HUMAN` is `MZ_MEDIUM`).
     pub size: MonsterSize,
@@ -171,6 +125,9 @@ pub struct MonsterArchetype {
     /// C `M1_MINDLESS`.
     pub mindless: bool,
     pub ai_behavior: AiBehavior,
+    /// Sim tactical abilities. Gaze and spellcasting only act when `attacks`
+    /// has the matching AT_GAZE / AT_MAGC entry (Medusa's gaze; lich, Dark One,
+    /// Thoth Amon and Wizard of Yendor spells). Breath is driven by AT_BREA.
     pub abilities: &'static [MonsterAbility],
 }
 
@@ -354,9 +311,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         is_unique: false,
         mindless: false,
         ai_behavior: AiBehavior::Stationary,
-        abilities: &[MonsterAbility::Gaze {
-            gaze: GazeType::Paralysis,
-        }],
+        abilities: &[],
     },
     MonsterArchetype {
         id: MonsterSpeciesId::Skeleton,
@@ -481,11 +436,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         is_unique: false,
         mindless: false,
         ai_behavior: AiBehavior::MeleeHunter,
-        abilities: &[MonsterAbility::Breath {
-            breath: BreathType::Cold,
-            range: 6,
-            damage_dice: (3, 6),
-        }],
+        abilities: &[],
     },
     MonsterArchetype {
         id: MonsterSpeciesId::RedDragon,
@@ -534,11 +485,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         is_unique: false,
         mindless: false,
         ai_behavior: AiBehavior::MeleeHunter,
-        abilities: &[MonsterAbility::Breath {
-            breath: BreathType::Fire,
-            range: 6,
-            damage_dice: (3, 6),
-        }],
+        abilities: &[],
     },
     MonsterArchetype {
         id: MonsterSpeciesId::Medusa,
@@ -1371,11 +1318,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         is_unique: true,
         mindless: false,
         ai_behavior: AiBehavior::MeleeHunter,
-        abilities: &[MonsterAbility::Breath {
-            breath: BreathType::Fire,
-            range: 6,
-            damage_dice: (4, 8),
-        }],
+        abilities: &[],
     },
     MonsterArchetype {
         id: MonsterSpeciesId::TheDarkOne,
@@ -1535,11 +1478,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         is_unique: true,
         mindless: false,
         ai_behavior: AiBehavior::MeleeHunter,
-        abilities: &[MonsterAbility::Breath {
-            breath: BreathType::Fire,
-            range: 7,
-            damage_dice: (5, 8),
-        }],
+        abilities: &[],
     },
     MonsterArchetype {
         id: MonsterSpeciesId::MasterKaen,
@@ -1716,11 +1655,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         is_unique: true,
         mindless: false,
         ai_behavior: AiBehavior::MeleeHunter,
-        abilities: &[MonsterAbility::Breath {
-            breath: BreathType::Cold,
-            range: 6,
-            damage_dice: (4, 8),
-        }],
+        abilities: &[],
     },
     // Quest Guardians (C monsters.h:3773-3914 LVL(5, 12, ac, mr, align); role.c guardnum :48-:550). HP: mean of 5d8.
     MonsterArchetype {

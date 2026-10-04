@@ -857,6 +857,14 @@ impl Messages {
         }
     }
 
+    /// C `buzz` (zap.c:4984): the breath beam missed the hero (`zap_hit` failed).
+    pub fn breath_misses(breath_name: &str, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!("The blast of {breath_name} whizzes by you!"),
+            Locale::Uk => format!("Подих ({breath_name}) пролітає повз вас!"),
+        }
+    }
+
     pub fn breath_absorbed(breath_name: &str, locale: Locale) -> String {
         match locale {
             Locale::En => format!("You are engulfed in the blast of {breath_name}, but your innate resistance absorbs it completely!"),
