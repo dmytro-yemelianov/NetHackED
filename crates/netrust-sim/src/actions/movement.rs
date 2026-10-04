@@ -3,6 +3,7 @@
 use netrust_core::energy::NORMAL_SPEED;
 use netrust_dungeon::RoomType;
 use netrust_types::{Alignment, Coord, Direction, DoorState, Tile};
+use rand::Rng;
 
 use crate::events::GameEvent;
 use crate::world::SimulationWorld;
@@ -208,10 +209,15 @@ impl SimulationWorld {
                             .get(self.player_id)
                             .map(|a| a.intrinsics.levitation)
                             .unwrap_or(false);
-                        let triggered =
-                            self.level.traps.get_mut(&target_coord).and_then(|trap| {
-                                netrust_core::traps::trigger_trap(trap, is_flying)
-                            });
+                        // C `rn2(5)` seen-trap escape draw, once per encounter (trap.c:3040).
+                        let rn2_5: u32 = if self.level.traps.contains_key(&target_coord) {
+                            self.rng.random_range(0..5)
+                        } else {
+                            1
+                        };
+                        let triggered = self.level.traps.get_mut(&target_coord).and_then(|trap| {
+                            netrust_core::traps::trigger_trap(trap, is_flying, rn2_5)
+                        });
                         if let Some(triggered_type) = triggered {
                             match triggered_type {
                                 netrust_types::TrapType::Arrow | netrust_types::TrapType::Dart => {

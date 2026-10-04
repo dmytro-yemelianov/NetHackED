@@ -1726,26 +1726,42 @@ prop_compose! {
 }
 
 proptest! {
+    // Reference written directly from NetHack 3.7 C: trap.c:1061 floor_trigger,
+    // dotrap trap.c:2996-3046 (check_in_air; already_seen && !rn2(5) escape).
     #[test]
-    fn prop_flying_bypasses_floor_traps(mut trap in arb_trap_record()) {
-        trap.state = netrust_types::TrapState::Revealed;
-        let is_floor = netrust_core::traps::is_floor_trap(trap.trap_type);
-        if is_floor {
-            prop_assert!(!netrust_core::traps::can_trigger_trap(&trap, true));
-        }
-        prop_assert!(netrust_core::traps::can_trigger_trap(&trap, false));
+    fn prop_can_trigger_trap_matches_c_reference(
+        trap in arb_trap_record(),
+        flying in proptest::bool::ANY,
+        roll in 0u32..100,
+    ) {
+        use netrust_types::{TrapState, TrapType};
+        let floor_trigger = matches!(
+            trap.trap_type,
+            TrapType::Arrow | TrapType::Dart | TrapType::RockFall | TrapType::Pit
+                | TrapType::SpikedPit | TrapType::Fire | TrapType::SleepingGas | TrapType::Rust
+        );
+        let disarmed = trap.state == TrapState::Disarmed;
+        let avoided_in_air = floor_trigger && flying;
+        let escaped_seen = trap.state == TrapState::Revealed && roll % 5 == 0;
+        let expected = !(disarmed || avoided_in_air || escaped_seen);
+        prop_assert_eq!(netrust_core::traps::is_floor_trap(trap.trap_type), floor_trigger);
+        prop_assert_eq!(netrust_core::traps::can_trigger_trap(&trap, flying, roll), expected);
     }
 
     #[test]
-    fn prop_disarmed_trap_never_triggers(mut trap in arb_trap_record(), is_flying in proptest::bool::ANY) {
+    fn prop_disarmed_trap_never_triggers(
+        mut trap in arb_trap_record(),
+        is_flying in proptest::bool::ANY,
+        roll in 0u32..100,
+    ) {
         trap.state = netrust_types::TrapState::Disarmed;
-        prop_assert!(!netrust_core::traps::can_trigger_trap(&trap, is_flying));
+        prop_assert!(!netrust_core::traps::can_trigger_trap(&trap, is_flying, roll));
     }
 
     #[test]
-    fn prop_trigger_trap_reveals_hidden(mut trap in arb_trap_record()) {
+    fn prop_trigger_trap_reveals_hidden(mut trap in arb_trap_record(), roll in 0u32..100) {
         trap.state = netrust_types::TrapState::Hidden;
-        let triggered = netrust_core::traps::trigger_trap(&mut trap, false);
+        let triggered = netrust_core::traps::trigger_trap(&mut trap, false, roll);
         prop_assert!(triggered.is_some());
         prop_assert_eq!(trap.state, netrust_types::TrapState::Revealed);
     }

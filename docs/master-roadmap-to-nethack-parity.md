@@ -116,8 +116,8 @@ To achieve **100% canonical feature parity** with NetHack (3.6 / 3.7 / 5.0 archi
   - `netrust-dungeon`: Procedural trap distribution per branch depth.
   - `netrust-sim`: Movement trigger handlers, trap discovery actions.
 - **Lean 4 Verification Target** (`NetMechanics/Traps.lean`):
-  - `theorem non_flying_triggers_floor_trap` and `triggering_reveals_hidden_trap`: Stepping on revealed or hidden trap triggers specific effect, revealing hidden traps.
-  - `theorem flying_avoids_floor_traps`: Entities with intrinsic or equipment `Flying` bypass pits, bear traps, and spiked pits.
+  - `theorem non_flying_triggers_floor_trap`, `seen_trap_escape_iff` and `triggering_reveals_hidden_trap`: Stepping on a trap triggers it (a seen trap is escaped iff `rn2(5) = 0`), revealing hidden traps.
+  - `theorem flying_avoids_floor_traps`: Entities with intrinsic or equipment `Flying` bypass C floor traps (arrow, dart, rock, pit, spiked pit, fire, sleeping gas, rust) but not webs.
 
 ### 4.2 Special Boss Branches
 - **Scope & Mechanics**:
