@@ -245,7 +245,12 @@ impl SimulationWorld {
                 polymorph: None,
                 lycanthropy: None,
                 afflictions: netrust_types::AfflictionState::default(),
-                skills: netrust_types::SkillTree::default(),
+                skills: netrust_types::SkillTree {
+                    skills: netrust_data::starting_skills(config.role)
+                        .into_iter()
+                        .collect(),
+                    ..netrust_types::SkillTree::default()
+                },
                 mount: None,
                 quivered_item: None,
             },

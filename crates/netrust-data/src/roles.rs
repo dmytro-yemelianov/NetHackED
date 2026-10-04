@@ -2,7 +2,7 @@
 
 use crate::items::{create_item_record, ItemKindId};
 use netrust_arena::{ActorId, ActorRecord, EntityArena, ItemId, ItemLocation};
-use netrust_types::{Alignment, Buc, Coord, Intrinsics};
+use netrust_types::{Alignment, Buc, Coord, Intrinsics, SkillClass, SkillLevel};
 use serde::{Deserialize, Serialize};
 
 /// Classic NetHack Player Roles.
@@ -152,6 +152,99 @@ pub static ROLES: &[RoleSpec] = &[
         ],
     },
 ];
+
+/// Weapon skill class of a weapon item kind, for the skill classes NetRust models
+/// (C `weapon_type`, `weapon.c:1514`). Weapons whose C skill has no `SkillClass`
+/// (saber, mace, quarterstaff, spear, knife, dart, whip, ...) map to `None` and are
+/// skipped.
+fn weapon_skill_class(kind: ItemKindId) -> Option<SkillClass> {
+    match kind {
+        ItemKindId::Dagger => Some(SkillClass::Dagger),
+        ItemKindId::ShortSword => Some(SkillClass::ShortSword),
+        ItemKindId::LongSword => Some(SkillClass::LongSword),
+        _ => None,
+    }
+}
+
+/// Weapon skill classes NetRust models that appear in the role's C skill table
+/// (`u_init.c:257-572`, `Skill_A` .. `Skill_W`); a class absent here is restricted
+/// for the role and never advances. The bool is whether the role's maximum
+/// bare-handed/martial-arts skill exceeds Expert (`weapon.c:1784`).
+fn role_skill_table(role: RoleId) -> (&'static [SkillClass], bool) {
+    use SkillClass::*;
+    match role {
+        // Skill_A (u_init.c:257)
+        RoleId::Archaeologist => (&[Dagger, ShortSword, Club, BareHanded], false),
+        // Skill_B (u_init.c:279); bare-handed Master
+        RoleId::Barbarian => (
+            &[Dagger, ShortSword, LongSword, Club, Bow, BareHanded],
+            true,
+        ),
+        // Skill_H (u_init.c:327)
+        RoleId::Healer => (&[Dagger, ShortSword, Club, BareHanded], false),
+        // Skill_K (u_init.c:346)
+        RoleId::Knight => (
+            &[
+                Dagger, ShortSword, LongSword, Club, Bow, Crossbow, BareHanded,
+            ],
+            false,
+        ),
+        // Skill_Mon (u_init.c:375); martial arts Grand Master
+        RoleId::Monk => (&[Crossbow, BareHanded], true),
+        // Skill_R (u_init.c:414)
+        RoleId::Rogue => (
+            &[Dagger, ShortSword, LongSword, Club, Crossbow, BareHanded],
+            false,
+        ),
+        // Skill_T (u_init.c:490)
+        RoleId::Tourist => (
+            &[Dagger, ShortSword, LongSword, Bow, Crossbow, BareHanded],
+            false,
+        ),
+        // Skill_V (u_init.c:525)
+        RoleId::Valkyrie => (&[Dagger, ShortSword, LongSword, BareHanded], false),
+        // Skill_W (u_init.c:548)
+        RoleId::Wizard => (&[Dagger, ShortSword, Club, BareHanded], false),
+    }
+}
+
+/// C-inventory weapons that NetRust's simplified `starting_items` lacks but whose
+/// skill class NetRust models (each starts Basic via `skill_init`): the Valkyrie's
+/// dagger (`u_init.c:160` `Valkyrie[]`). Other roles' extra C weapons (spear,
+/// quarterstaff, bullwhip, scalpel, darts, lance, axes) have no `SkillClass`.
+fn c_extra_weapons(role: RoleId) -> &'static [ItemKindId] {
+    match role {
+        RoleId::Valkyrie => &[ItemKindId::Dagger],
+        _ => &[],
+    }
+}
+
+/// Weapon skills a role starts with above Unskilled (everything else is Unskilled).
+///
+/// C `skill_init` (`weapon.c:1738`): every non-ammo weapon in the starting
+/// inventory sets its skill to Basic (`weapon.c:1752`), applied here to NetRust's
+/// `starting_items` plus [`c_extra_weapons`]; skills restricted by the role's table
+/// (`u_init.c:257-572`) are skipped. Roles whose maximum bare-handed/martial-arts
+/// skill exceeds Expert (Barbarian, Monk) start Basic bare-handed (`weapon.c:1784`).
+/// Wizard: C's quarterstaff has no `SkillClass`, and dagger is only
+/// Unskilled-but-allowed in `Skill_W`, so no weapon class starts Basic.
+/// Spell skills and riding are not modelled.
+pub fn starting_skills(role: RoleId) -> Vec<(SkillClass, SkillLevel)> {
+    let (allowed, bare_basic) = role_skill_table(role);
+    let mut out: Vec<(SkillClass, SkillLevel)> = Vec::new();
+    let spec = get_role(role);
+    for &kind in spec.starting_items.iter().chain(c_extra_weapons(role)) {
+        if let Some(class) = weapon_skill_class(kind) {
+            if allowed.contains(&class) && !out.iter().any(|(c, _)| *c == class) {
+                out.push((class, SkillLevel::Basic));
+            }
+        }
+    }
+    if bare_basic {
+        out.push((SkillClass::BareHanded, SkillLevel::Basic));
+    }
+    out
+}
 
 /// Specification of a race and its passive intrinsics.
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -11,7 +11,6 @@ The Lean models and the Rust engine are simplified abstractions of NetHack mecha
 * **Monster-vs-monster to-hit**: pet and other monster-vs-monster attacks use the monster-vs-hero formula (`mhitu.c`: $\text{AC\_VALUE}(\text{AC}) + 10 + m_{\text{lev}}$). C `mhitm.c` uses $\text{find\_mac}(mdef) + m_{\text{lev}}$ (no $+10$) against $\text{rnd}(20 + i)$.
 * **Bare-handed damage**: bare-handed attacks use the weapon skill damage table (Unskilled $-2$). In C, the bare-handed/martial-arts damage bonus is $0/{+1}/{+1}/{+2}$ for Unskilled/Basic/Skilled/Expert.
 * **`abon()` omitted**: attributes are not tracked, so the to-hit `abon()` term is 0; C's $+1$ below experience level 3 and the Str/Dex to-hit bonuses are absent.
-* **Starting weapon skills**: heroes start with no weapon skills (every weapon is Unskilled, $-4$ to hit); C starts each role at Basic in its starting weapons. A follow-up task will address this.
 * **Temple priest donations**: the NetRust priest additionally uncurses carried items for an offer of at least $200 \times$ level and grants divine favor $+2$ for any donation that is not refused or a cheapskate offer; neither exists in C `priest.c`. The clairvoyance band (`priest.c:671-680`) and the selfless band's alignment gain / cleansing (`priest.c:706-719`) are not applied (message only).
 
 These divergences are planned to be corrected in a later fidelity pass. Until then, do not treat the formulas in this document as authoritative descriptions of NetHack C behavior.

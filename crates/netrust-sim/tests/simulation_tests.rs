@@ -4032,3 +4032,77 @@ fn test_quest_leader_spawned_per_role_matches_config() {
         );
     }
 }
+
+/// Count hits of a fresh Valkyrie's first melee swing against a sturdy AC `ac` target
+/// over many seeds.
+fn valkyrie_first_swing_hits(ac: i32, seeds: u64) -> u64 {
+    let mut hits = 0;
+    for seed in 0..seeds {
+        let mut sim = SimulationWorld::new_with_character(
+            seed,
+            CharacterConfig {
+                role: RoleId::Valkyrie,
+                ..CharacterConfig::default()
+            },
+        );
+        let p = sim.arena.actors.get(sim.player_id).unwrap().coord;
+        let mc = Coord::new(p.x + 1, p.y).unwrap();
+        let mon = ActorRecord {
+            name: "Dummy".into(),
+            coord: mc,
+            hp: 500,
+            max_hp: 500,
+            ac,
+            level: 1,
+            speed: 0,
+            alignment: Alignment::Chaotic,
+            intrinsics: Intrinsics::default(),
+            is_player: false,
+            is_dead: false,
+            is_tame: false,
+            tameness: 0,
+            is_unique: false,
+            abilities: Vec::new(),
+        };
+        let mid = sim.arena.spawn_actor(mon);
+        let events = sim.step_player_action(ActionAst::MeleeAttack(mc));
+        if events
+            .iter()
+            .any(|e| matches!(e, GameEvent::AttackLanded { target, .. } if *target == mid))
+        {
+            hits += 1;
+        }
+    }
+    hits
+}
+
+#[test]
+fn test_fresh_valkyrie_to_hit_matches_c_basic_skill() {
+    // Fresh Valkyrie: level 1, Luck 0, abon 0, long sword (enchant from the actual
+    // record) at Basic skill (weapon.c:1752 skill_init; weapon_hit_bonus 0).
+    let sim = SimulationWorld::new_with_character(
+        1,
+        CharacterConfig {
+            role: RoleId::Valkyrie,
+            ..CharacterConfig::default()
+        },
+    );
+    let w = sim.arena.items.get(sim.wielded_item.unwrap()).unwrap();
+    let ench = w.enchantment as i32;
+    let level = sim.arena.actors.get(sim.player_id).unwrap().level as i32;
+    let lvl_skill = sim.hero.skills.skills[&netrust_types::SkillClass::LongSword];
+    assert_eq!(lvl_skill, netrust_types::SkillLevel::Basic);
+    // C uhitm.c:365: tmp = 1 + abon(0) + AC 7 + level + Luck 0 + enchant + skill 0.
+    let tmp = 1 + 7 + level + ench;
+    assert_eq!(tmp, 9 + ench);
+    // d20 < tmp: with tmp = 9 + ench the exact hit chance is (tmp - 1)/20.
+    // AC 19 => tmp = 21 + ench >= 21: every swing hits (Unskilled -4 would miss d20 >= 17).
+    assert_eq!(valkyrie_first_swing_hits(19, 200), 200);
+    // AC 7: tmp = 9 + ench; some, but not all, of the swings hit.
+    let hits = valkyrie_first_swing_hits(7, 400);
+    let expect = 400.0 * f64::from(tmp - 1) / 20.0;
+    assert!(
+        (f64::from(hits as u32) - expect).abs() < 60.0,
+        "hits {hits} vs expected ~{expect}"
+    );
+}

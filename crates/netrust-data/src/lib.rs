@@ -17,8 +17,8 @@ pub use monsters::{
 };
 pub use pantheons::{get_pantheon_for_role, get_patron_deity};
 pub use roles::{
-    get_race, get_role, spawn_player_character, spawn_starting_pet, CharacterConfig, Gender,
-    RaceId, RaceSpec, RoleId, RoleSpec, RACES, ROLES,
+    get_race, get_role, spawn_player_character, spawn_starting_pet, starting_skills,
+    CharacterConfig, Gender, RaceId, RaceSpec, RoleId, RoleSpec, RACES, ROLES,
 };
 
 #[cfg(test)]
@@ -72,5 +72,35 @@ mod tests {
             assert_eq!(actor.ac, role.ac);
             assert_eq!(items.len(), role.starting_items.len());
         }
+    }
+
+    fn level_of(role: RoleId, class: netrust_types::SkillClass) -> netrust_types::SkillLevel {
+        starting_skills(role)
+            .into_iter()
+            .find(|(c, _)| *c == class)
+            .map(|(_, l)| l)
+            .unwrap_or(netrust_types::SkillLevel::Unskilled)
+    }
+
+    #[test]
+    fn starting_skills_follow_c_skill_init() {
+        use netrust_types::{SkillClass as C, SkillLevel as L};
+        // weapon.c:1752 skill_init: every inventory weapon's skill starts Basic.
+        assert!(level_of(RoleId::Valkyrie, C::LongSword) >= L::Basic); // NetRust inventory
+        assert_eq!(level_of(RoleId::Valkyrie, C::Dagger), L::Basic); // u_init.c:160 Valkyrie[]
+        assert_eq!(level_of(RoleId::Knight, C::LongSword), L::Basic);
+        assert_eq!(level_of(RoleId::Rogue, C::Dagger), L::Basic);
+        assert_eq!(level_of(RoleId::Rogue, C::ShortSword), L::Basic);
+        assert_eq!(level_of(RoleId::Archaeologist, C::ShortSword), L::Basic);
+        // Wizard: C starts with a quarterstaff (no NetRust class); dagger is only
+        // Unskilled-but-allowed in Skill_W, so no weapon class is Basic.
+        assert_eq!(level_of(RoleId::Wizard, C::Dagger), L::Unskilled);
+        // weapon.c:1784: max skill above Expert => bare hands start Basic.
+        assert_eq!(level_of(RoleId::Monk, C::BareHanded), L::Basic); // Skill_Mon martial arts GM
+        assert_eq!(level_of(RoleId::Barbarian, C::BareHanded), L::Basic); // Skill_B Master
+        assert_eq!(level_of(RoleId::Valkyrie, C::BareHanded), L::Unskilled); // Skill_V Expert
+        assert_eq!(level_of(RoleId::Healer, C::BareHanded), L::Unskilled);
+        // A role whose table lacks the class never gets it.
+        assert_eq!(level_of(RoleId::Monk, C::LongSword), L::Unskilled);
     }
 }
