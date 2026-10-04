@@ -111,6 +111,15 @@ python3 python/train_ppo.py                   # writes web/policy_weights.json (
 scripts/check-doc-links.sh
 ```
 
+### 5. Run the CI Checks Locally
+```bash
+cargo fmt --all --check
+cargo clippy --workspace --all-targets --locked -- -D warnings
+cargo test --workspace --exclude netrust-py --locked
+cargo build -p netrust-wasm --target wasm32-unknown-unknown --locked   # needs: rustup target add wasm32-unknown-unknown
+bash scripts/check-doc-links.sh
+```
+
 ---
 
 ## Frontends & Interaction Options
