@@ -4167,6 +4167,43 @@ fn test_quest_leader_spawned_per_role_matches_config() {
     }
 }
 
+#[test]
+fn test_quest_guardians_spawned_per_role_use_c_species() {
+    for role in [
+        "Valkyrie",
+        "Wizard",
+        "Barbarian",
+        "Rogue",
+        "Knight",
+        "Monk",
+        "Healer",
+        "Tourist",
+        "Archaeologist",
+    ] {
+        let cfg = netrust_core::get_role_quest_config(role).unwrap();
+        let mut sim = SimulationWorld::new_with_seed(5);
+        sim.role_name = role.to_string();
+        sim.current_branch = netrust_types::BranchId::Quest;
+        sim.depth = 1;
+        let _ = sim.unpack_or_generate_level(netrust_types::BranchId::Quest, 1);
+        assert!(
+            sim.arena
+                .actors
+                .iter()
+                .any(|(_, a)| a.name == cfg.guardian_name),
+            "{role}: guardian {} not spawned",
+            cfg.guardian_name
+        );
+        assert!(
+            !sim.arena
+                .actors
+                .iter()
+                .any(|(_, a)| a.name == "quest guardian"),
+            "{role}: generic guardian spawned"
+        );
+    }
+}
+
 /// Count hits of a fresh Valkyrie's first melee swing against a sturdy AC `ac` target
 /// over many seeds.
 fn valkyrie_first_swing_hits(ac: i32, seeds: u64) -> u64 {

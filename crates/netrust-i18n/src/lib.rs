@@ -1365,7 +1365,15 @@ pub fn t_monster(name: &str, locale: Locale) -> String {
         "master of thieves" => "Майстер Злодіїв".into(),
         "cyclops" => "Циклоп".into(),
         "minion of huhetotl" => "Слуга Хухетотля".into(),
-        "quest guardian" => "охоронець завдання".into(),
+        "student" => "студент".into(),
+        "chieftain" => "вождь".into(),
+        "attendant" => "санітар".into(),
+        "page" => "паж".into(),
+        "abbot" => "абат".into(),
+        "thug" => "головоріз".into(),
+        "guide" => "гід".into(),
+        "warrior" => "воїн".into(),
+        "apprentice" => "учень".into(),
         _ => {
             if let Some(rest) = name.strip_prefix("ghost of ") {
                 format!("привид героя {rest}")

@@ -498,10 +498,10 @@ impl SimulationWorld {
                         }
                     }
 
+                    // C role.c `guardnum`: one guardian species per role.
+                    let guardian_species = quest_species_by_name(quest_cfg.guardian_name);
                     for gc in layout.guardian_coords {
-                        if let Some(id) =
-                            self.spawn_monster_near(MonsterSpeciesId::QuestGuardian, gc)
-                        {
+                        if let Some(id) = self.spawn_monster_near(guardian_species, gc) {
                             if let Some(a) = self.arena.actors.get_mut(id) {
                                 a.is_tame = true;
                             }
