@@ -335,7 +335,6 @@ impl SimulationWorld {
                 if prot > prev_prot {
                     let gained = prot - prev_prot;
                     self.divine_protection = prot;
-                    self.recompute_hero_ac();
                     events.push(GameEvent::LogMessage {
                         text: format!("You feel much safer! You are granted +{gained} divine AC protection (total: +{prot})."),
                     });

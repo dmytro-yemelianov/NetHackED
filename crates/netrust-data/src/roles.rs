@@ -341,12 +341,34 @@ pub fn spawn_player_character(
 
     let mut item_ids = Vec::new();
     for &kind in role.starting_items {
-        let item = create_item_record(kind, ItemLocation::CarriedBy(player_id), Buc::Uncursed);
+        let mut item = create_item_record(kind, ItemLocation::CarriedBy(player_id), Buc::Uncursed);
+        if let Some(spe) = starting_item_spe(config.role, kind) {
+            item.enchantment = spe;
+        }
         let id = arena.spawn_item(item);
         item_ids.push(id);
     }
 
     (player_id, item_ids)
+}
+
+/// C `trobj.trspe` of a role's starting weapon or armor (`u_init.c:42-176`), for
+/// the weapon/armor role/item pairs NetRust's starting inventories share with C. Returns `None`
+/// for items C does not give that role (NetRust-only substitutes keep the
+/// catalog enchantment). `ini_inv` applies `trspe` to the created object
+/// (`u_init.c:1233-1234`).
+pub fn starting_item_spe(role: RoleId, kind: ItemKindId) -> Option<i8> {
+    match (role, kind) {
+        // Knight[]: { LONG_SWORD, 1, ... } (u_init.c:91)
+        (RoleId::Knight, ItemKindId::LongSword) => Some(1),
+        // Rogue[]: SHORT_SWORD +0, DAGGER +0, LEATHER_ARMOR +1 (u_init.c:134-136)
+        (RoleId::Rogue, ItemKindId::ShortSword) => Some(0),
+        (RoleId::Rogue, ItemKindId::Dagger) => Some(0),
+        (RoleId::Rogue, ItemKindId::LeatherArmor) => Some(1),
+        // Wizard[]: { CLOAK_OF_MAGIC_RESISTANCE, 0, ... } (u_init.c:169)
+        (RoleId::Wizard, ItemKindId::CloakOfMagicResistance) => Some(0),
+        _ => None,
+    }
 }
 
 /// Spawns an initial companion pet (Little Dog or Kitten) adjacent to the hero.

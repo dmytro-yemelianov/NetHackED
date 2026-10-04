@@ -725,7 +725,6 @@ impl SimulationWorld {
                 text: "You have no such scroll or book to read.".into(),
             });
         }
-        self.recompute_hero_ac();
         events
     }
 

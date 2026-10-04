@@ -552,25 +552,25 @@ proptest! {
 
     // -------------------------------------------------------------
     // C reference: hack.h:1526-1528 (ARM_BONUS) and do_wear.c:2473-2507 (find_ac).
+    // Inputs are C-valid: a_ac in [0, 9] (objects.h armor a_ac = 10 - ac), erosion
+    // in [0, MAX_ERODE = 3] (obj.h:129).
     // -------------------------------------------------------------
     #[test]
     fn prop_find_ac_matches_c_reference(
         base_ac in -20i32..=30,
         protection in -10i32..=50,
         worn in proptest::collection::vec(
-            (0i32..=15, -10i32..=15, 0u8..=5),
+            (0i32..=9, -10i32..=15, 0u8..=3),
             0..=7,
         ),
     ) {
+        // hack.h:1526-1528, verbatim: a_ac + spe - min(greatest_erosion, a_ac)
         fn c_reference_arm_bonus(a_ac: i32, spe: i32, erosion: u8) -> i32 {
-            let ero = if a_ac > 0 {
-                (erosion as i32).min(a_ac)
-            } else {
-                0
-            };
-            a_ac + spe - ero
+            a_ac + spe - std::cmp::min(erosion as i32, a_ac)
         }
 
+        // do_wear.c:2474-2504: subtract each worn ARM_BONUS and u.ublessed, then
+        // cap |uac| at AC_MAX (you.h:472).
         fn c_reference_find_ac(
             base_ac: i32,
             worn: &[(i32, i32, u8)],

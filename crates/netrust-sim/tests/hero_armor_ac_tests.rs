@@ -9,7 +9,7 @@
 use netrust_arena::{ItemLocation, ItemRecord};
 use netrust_core::ActionAst;
 use netrust_data::{create_item_record, CharacterConfig, ItemKindId, RoleId};
-use netrust_sim::SimulationWorld;
+use netrust_sim::{Alignment, Direction, SimulationWorld, Tile};
 use netrust_types::{Buc, ItemClass};
 
 #[test]
@@ -46,9 +46,9 @@ fn test_fresh_valkyrie_starts_naked_at_ac_10() {
 }
 
 #[test]
-fn test_fresh_rogue_starts_with_leather_armor_at_ac_8() {
-    // C u_init.c:136: Rogue starts with leather armor (a_ac = 2).
-    // find_ac: 10 - 2 = 8.
+fn test_fresh_rogue_starts_with_plus_one_leather_armor_at_ac_7() {
+    // C u_init.c:136: Rogue starts with +1 leather armor (a_ac = 2, spe = 1).
+    // find_ac: 10 - (2 + 1) = 7.
     let sim = SimulationWorld::new_with_character(
         42,
         CharacterConfig {
@@ -59,9 +59,17 @@ fn test_fresh_rogue_starts_with_leather_armor_at_ac_8() {
 
     let player = sim.arena.actors.get(sim.player_id).unwrap();
     assert_eq!(
-        player.ac, 8,
-        "Fresh Rogue carrying leather armor should start at AC 8"
+        player.ac, 7,
+        "Fresh Rogue carrying +1 leather armor should start at AC 7"
     );
+    let armor = sim
+        .arena
+        .items_carried_by(sim.player_id)
+        .into_iter()
+        .filter_map(|id| sim.arena.items.get(id))
+        .find(|it| it.class == ItemClass::Armor)
+        .expect("Rogue carries leather armor");
+    assert_eq!(armor.enchantment, 1, "C u_init.c:136 spe = 1");
 }
 
 #[test]
@@ -223,21 +231,22 @@ fn test_erosion_capping_in_arm_bonus() {
         },
     );
 
-    // Leather armor with heavy erosion (erosion = 5, but a_ac = 2):
+    // Leather armor with erosion 2 (a_ac = 2):
     // min(erosion, a_ac) = 2, so ARM_BONUS = 2 + 0 - 2 = 0
     let mut armor = create_item_record(
         ItemKindId::LeatherArmor,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     );
-    armor.erosion = 5;
+    // C MAX_ERODE = 3 (include/obj.h:129); erosion 2 on a_ac 2 hits the cap.
+    armor.erosion = 2;
     sim.arena.spawn_item(armor);
     sim.recompute_hero_ac();
 
     assert_eq!(
         sim.arena.actors.get(sim.player_id).unwrap().ac,
         10,
-        "Heavy erosion on +0 leather armor reduces bonus to 0, leaving AC at 10"
+        "Erosion 2 on +0 leather armor (a_ac 2) reduces bonus to 0, leaving AC at 10"
     );
 
     // With spe +1, bonus is 2 + 1 - 2 = 1, AC becomes 9
@@ -260,15 +269,15 @@ fn test_erosion_capping_in_arm_bonus() {
         }
     }
     enchanted_eroded_armor.enchantment = 1;
-    enchanted_eroded_armor.erosion = 10; // C capped at a_ac (5)
+    enchanted_eroded_armor.erosion = 3; // C MAX_ERODE (include/obj.h:129)
     sim.arena.spawn_item(enchanted_eroded_armor);
     sim.recompute_hero_ac();
 
-    // Chain mail a_ac = 5, spe = 1, min(10, 5) = 5 -> bonus = 5 + 1 - 5 = 1 -> AC 10 - 1 = 9
+    // Chain mail a_ac = 5, spe = 1, min(3, 5) = 3 -> bonus = 5 + 1 - 3 = 3 -> AC 10 - 3 = 7
     assert_eq!(
         sim.arena.actors.get(sim.player_id).unwrap().ac,
-        9,
-        "Erosion cannot reduce bonus below enchantment spe"
+        7,
+        "Erosion 3 (MAX_ERODE) on +1 chain mail leaves bonus 3"
     );
 }
 
@@ -302,8 +311,8 @@ fn test_dropping_armor_restores_ac() {
             ..CharacterConfig::default()
         },
     );
-    // Rogue starts with leather armor carried -> AC 8
-    assert_eq!(sim.arena.actors.get(sim.player_id).unwrap().ac, 8);
+    // Rogue starts with +1 leather armor carried (C u_init.c:136) -> AC 7
+    assert_eq!(sim.arena.actors.get(sim.player_id).unwrap().ac, 7);
 
     // Find the index of the leather armor in carried inventory
     let carried = sim.arena.items_carried_by(sim.player_id);
@@ -332,8 +341,8 @@ fn test_container_transfer_updates_ac() {
             ..CharacterConfig::default()
         },
     );
-    // Rogue has sack and leather armor -> AC 8
-    assert_eq!(sim.arena.actors.get(sim.player_id).unwrap().ac, 8);
+    // Rogue has sack and +1 leather armor (C u_init.c:136) -> AC 7
+    assert_eq!(sim.arena.actors.get(sim.player_id).unwrap().ac, 7);
 
     let carried = sim.arena.items_carried_by(sim.player_id);
     let sack_idx = carried
@@ -370,10 +379,81 @@ fn test_container_transfer_updates_ac() {
         item_index: 0,
     });
 
-    // Armor is back in carried inventory -> AC 8
+    // Armor is back in carried inventory -> AC 7
     assert_eq!(
         sim.arena.actors.get(sim.player_id).unwrap().ac,
-        8,
-        "Taking armor out of container into inventory makes it worn; AC should be 8"
+        7,
+        "Taking armor out of container into inventory makes it worn; AC should be 7"
+    );
+}
+
+#[test]
+fn test_sacrificing_worn_armor_raises_ac_immediately() {
+    // Hero AC is recomputed at the end of every player action, so destroying
+    // the worn leather armor on an altar (C find_ac, do_wear.c:2473) takes effect
+    // within the same step.
+    let mut sim = SimulationWorld::new_with_character(
+        42,
+        CharacterConfig {
+            role: RoleId::Rogue,
+            ..CharacterConfig::default()
+        },
+    );
+    assert_eq!(sim.arena.actors.get(sim.player_id).unwrap().ac, 7);
+    let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+    sim.level.set_tile(
+        p_coord,
+        Tile::Altar {
+            align: Alignment::Chaotic,
+        },
+    );
+    let carried = sim.arena.items_carried_by(sim.player_id);
+    let armor_idx = carried
+        .iter()
+        .position(|&id| sim.arena.items.get(id).unwrap().class == ItemClass::Armor)
+        .unwrap();
+
+    sim.step_player_action(ActionAst::Sacrifice(armor_idx));
+
+    assert!(sim
+        .arena
+        .items_carried_by(sim.player_id)
+        .into_iter()
+        .all(|id| sim.arena.items.get(id).unwrap().class != ItemClass::Armor));
+    assert_eq!(
+        sim.arena.actors.get(sim.player_id).unwrap().ac,
+        10,
+        "Sacrificed armor no longer counts toward AC"
+    );
+}
+
+#[test]
+fn test_firing_quivered_armor_updates_ac() {
+    let mut sim = SimulationWorld::new_with_character(
+        42,
+        CharacterConfig {
+            role: RoleId::Rogue,
+            ..CharacterConfig::default()
+        },
+    );
+    assert_eq!(sim.arena.actors.get(sim.player_id).unwrap().ac, 7);
+    let armor_id = sim
+        .arena
+        .items_carried_by(sim.player_id)
+        .into_iter()
+        .find(|&id| sim.arena.items.get(id).unwrap().class == ItemClass::Armor)
+        .unwrap();
+
+    sim.step_player_action(ActionAst::Quiver(armor_id));
+    sim.step_player_action(ActionAst::Fire(Direction::East));
+
+    assert!(!sim
+        .arena
+        .items_carried_by(sim.player_id)
+        .contains(&armor_id));
+    assert_eq!(
+        sim.arena.actors.get(sim.player_id).unwrap().ac,
+        10,
+        "Fired armor leaves the inventory and stops counting toward AC"
     );
 }

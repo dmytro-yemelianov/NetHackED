@@ -518,6 +518,35 @@ theorem find_ac_monotonic_protection (baseAc : Int) (worn : List (Int × Int × 
   dsimp only []
   repeat (split <;> try omega)
 
+/-- Every worn piece with `a_ac ≥ 0` and `spe ≥ 0` contributes a non-negative total bonus. -/
+theorem armor_list_bonus_nonneg (worn : List (Int × Int × Nat))
+    (h : ∀ p ∈ worn, 0 ≤ p.1 ∧ 0 ≤ p.2.1) :
+    0 ≤ armorListBonus worn := by
+  induction worn with
+  | nil => simp [armorListBonus]
+  | cons p rest ih =>
+    have hp := h p (List.mem_cons_self ..)
+    have hrest : ∀ q ∈ rest, 0 ≤ q.1 ∧ 0 ≤ q.2.1 :=
+      fun q hq => h q (List.mem_cons_of_mem _ hq)
+    have hb := (arm_bonus_bounds p.1 p.2.1 p.2.2 hp.1).1
+    have ihr := ih hrest
+    unfold armorListBonus at ihr ⊢
+    simp only [List.map_cons, List.sum_cons]
+    omega
+
+/--
+  Human-form hero AC (`baseAc = 10`, `do_wear.c:2475`) never exceeds 10 when every worn
+  piece has `a_ac ≥ 0` and `spe ≥ 0` and divine protection is non-negative
+  (`do_wear.c:2478-2501`, `hack.h:1526-1528`).
+-/
+theorem find_ac_le_base_nonneg_armor (worn : List (Int × Int × Nat)) (protection : Int)
+    (h : ∀ p ∈ worn, 0 ≤ p.1 ∧ 0 ≤ p.2.1) (hprot : 0 ≤ protection) :
+    findAc 10 worn protection ≤ 10 := by
+  have hb := armor_list_bonus_nonneg worn h
+  unfold findAc
+  dsimp only []
+  repeat (split <;> try omega)
+
 /-- `findAc` is always clamped within `[-99, 99]` (C `AC_MAX`). -/
 theorem find_ac_bounds (baseAc : Int) (worn : List (Int × Int × Nat)) (protection : Int) :
     -99 ≤ findAc baseAc worn protection ∧ findAc baseAc worn protection ≤ 99 := by
