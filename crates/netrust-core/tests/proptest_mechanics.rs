@@ -567,7 +567,7 @@ proptest! {
             base_form: base,
             poly_form: Some(poly),
         };
-        let (after, _) = entity.apply_damage(damage);
+        let (after, _) = entity.apply_damage(damage, false);
         prop_assert_eq!(after.base_form.max_hp, base_hp);
     }
 
@@ -593,8 +593,11 @@ proptest! {
             base_form: base,
             poly_form: Some(poly),
         };
-        let (after, _) = entity.apply_damage(poly_hp + extra);
+        let (after, dead) = entity.apply_damage(poly_hp + extra, false);
         prop_assert!(!after.is_polymorphed());
+        // C rehumanize: excess discarded, base HP untouched, never fatal.
+        prop_assert_eq!(after.base_form.hp, 20);
+        prop_assert!(!dead);
     }
 
     // -------------------------------------------------------------
@@ -1680,13 +1683,16 @@ proptest! {
         }
     }
     // -------------------------------------------------------------
-    // Theorem: prop_poly_damage_absorption_and_reversion
+    // Theorem: poly_reversion_preserves_base_hp (C hack.c:4256 losehp /
+    // polyself.c:1367 rehumanize; reference written from the C rule)
     // -------------------------------------------------------------
     #[test]
-    fn prop_poly_damage_absorption_and_reversion(
-        base_hp in 10i32..100,
-        poly_hp in 10i32..100,
-        damage in 0i32..150,
+    fn prop_poly_damage_matches_c_reference(
+        base_hp in 1i32..100,
+        poly_hp in 1i32..100,
+        damage in -20i32..250,
+        polymorphed in any::<bool>(),
+        unchanging in any::<bool>(),
     ) {
         use netrust_types::{Hero, PolymorphForm};
         use netrust_core::polymorph::{apply_poly_damage, PolyDamageResult};
@@ -1694,7 +1700,7 @@ proptest! {
         let mut hero = Hero { mount: None, quivered_item: None,
             base_hp,
             base_max_hp: base_hp,
-            polymorph: Some(PolymorphForm {
+            polymorph: polymorphed.then_some(PolymorphForm {
                 monster_id: 1,
                 hp: poly_hp,
                 max_hp: poly_hp,
@@ -1703,26 +1709,31 @@ proptest! {
             lycanthropy: None, afflictions: Default::default(), skills: Default::default(),
         };
 
-        let result = apply_poly_damage(&mut hero, damage);
-        prop_assert_eq!(hero.base_max_hp, base_hp); // Invariant
-
-        if damage < poly_hp {
-            prop_assert!(matches!(result, PolyDamageResult::Absorbed));
-            prop_assert!(hero.polymorph.is_some());
-            prop_assert_eq!(hero.polymorph.as_ref().unwrap().hp, poly_hp - damage);
-            prop_assert_eq!(hero.base_hp, base_hp);
-        } else {
-            let excess = damage - poly_hp;
-            prop_assert!(hero.polymorph.is_none());
-            if excess < base_hp {
-                let matches_reverted = matches!(result, PolyDamageResult::Reverted { excess_damage } if excess_damage == excess);
-                prop_assert!(matches_reverted);
-                prop_assert_eq!(hero.base_hp, base_hp - excess);
+        // Reference: (result, base_hp after, poly hp after)
+        let n = damage.max(0);
+        let (exp, exp_base, exp_poly) = if polymorphed {
+            let mh = poly_hp - n;
+            if mh >= 1 {
+                (PolyDamageResult::Absorbed, base_hp, Some(mh))
+            } else if unchanging {
+                (PolyDamageResult::Dead, base_hp, Some(mh))
             } else {
-                prop_assert!(matches!(result, PolyDamageResult::Dead));
-                prop_assert!(hero.base_hp <= 0);
+                (PolyDamageResult::Reverted, base_hp, None)
             }
-        }
+        } else {
+            let uhp = base_hp - n;
+            if uhp < 1 {
+                (PolyDamageResult::Dead, uhp, None)
+            } else {
+                (PolyDamageResult::BaseDamaged, uhp, None)
+            }
+        };
+
+        let result = apply_poly_damage(&mut hero, damage, unchanging);
+        prop_assert_eq!(result, exp);
+        prop_assert_eq!(hero.base_hp, exp_base);
+        prop_assert_eq!(hero.base_max_hp, base_hp);
+        prop_assert_eq!(hero.polymorph.map(|p| p.hp), exp_poly);
     }
 
     // -------------------------------------------------------------

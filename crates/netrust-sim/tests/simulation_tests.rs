@@ -3057,9 +3057,10 @@ fn test_hero_polymorph_potion_and_damage_reversion() {
     );
 
     let current_base = sim.hero.base_hp;
-    assert!(
-        current_base < 100 && current_base > 0,
-        "Hero should survive with reduced base HP, got {current_base}"
+    // C rehumanize: overkill is discarded, base HP stays untouched.
+    assert_eq!(
+        current_base, 100,
+        "Reverting must not carry excess damage into base HP"
     );
 }
 

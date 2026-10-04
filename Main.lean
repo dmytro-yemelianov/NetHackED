@@ -78,7 +78,7 @@ def main : IO Unit := do
   let heroBase : FormStats := { hp := 20, maxHp := 20, name := "Hero" }
   let vampirePoly : FormStats := { hp := 15, maxHp := 15, name := "Vampire Bat" }
   let polyHero : PolyEntity := { baseForm := heroBase, polyForm := some vampirePoly }
-  let (revertedHero, isDead) := applyPolyDamage polyHero 18
+  let (revertedHero, isDead) := applyPolyDamage polyHero 18 false
   IO.println s!"[Polymorph] Bat (HP=15) took 18 damage -> Reverted to Base: {revertedHero.polyForm.isNone}, Base HP: {revertedHero.baseForm.hp}/20, Dead: {isDead}"
 
   -- 10. Dijkstra Metric Gradient Descent demonstration

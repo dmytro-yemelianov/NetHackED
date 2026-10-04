@@ -475,7 +475,7 @@ fn main() {
     let hero_max_hp = sim.arena.actors.get(sim.player_id).unwrap().max_hp;
     let base_hp_before = sim.hero.base_hp;
     println!("  Poly HP before hit: 40 | Base HP: {base_hp_before}");
-    let res_absorb = netrust_core::polymorph::apply_poly_damage(&mut sim.hero, 15);
+    let res_absorb = netrust_core::polymorph::apply_poly_damage(&mut sim.hero, 15, false);
     println!(
         "  After 15 damage: {:?} | Remaining Poly HP: {:?}",
         res_absorb,
@@ -483,14 +483,14 @@ fn main() {
     );
 
     println!("\nHero takes fatal damage (30 damage) to polymorph form:");
-    let res_lethal = netrust_core::polymorph::apply_poly_damage(&mut sim.hero, 30);
+    let res_lethal = netrust_core::polymorph::apply_poly_damage(&mut sim.hero, 30, false);
     println!("  Lethal damage result: {res_lethal:?}");
     println!(
         "  Polymorph state after reversion: {:?}",
         sim.hero.polymorph
     );
     println!(
-        "  Base HP preserved (minus excess): {}/{}",
+        "  Base HP preserved (excess discarded): {}/{}",
         sim.hero.base_hp, hero_max_hp
     );
 

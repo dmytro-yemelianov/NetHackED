@@ -288,12 +288,14 @@ $$\text{Entity} = \langle \text{Base}, \text{PolyForm}? \rangle$$
 $$D(e, \text{dmg}) = \begin{cases}
 \langle \text{Base}[\text{hp} \mapsto \text{hp} - \text{dmg}], \text{None} \rangle & \text{if } \text{PolyForm} = \text{None} \\
 \langle \text{Base}, \text{Some}(\text{Poly}[\text{hp} \mapsto \text{hp} - \text{dmg}]) \rangle & \text{if } \text{dmg} < \text{Poly.hp} \\
-\langle \text{Base}[\text{hp} \mapsto \text{hp} - (\text{dmg} - \text{Poly.hp})], \text{None} \rangle & \text{if } \text{dmg} \ge \text{Poly.hp}
+\langle \text{Base}, \text{None} \rangle & \text{if } \text{dmg} \ge \text{Poly.hp} \land \lnot\text{Unchanging}
 \end{cases}$$
 
 ### Machine-Checked Proofs in [NetMechanics/Polymorph.lean](../NetMechanics/Polymorph.lean)
 * `poly_fatal_damage_reverts`: Lethal damage to the polymorph form strictly forces form reversion to base ($\forall e, \text{dmg} \ge \text{Poly.hp},\; \text{isPolymorphed} = \text{false}$).
-* `poly_exact_depletion_preserves_base_hp`: When damage exactly matches polymorph HP, zero excess penetrates, preserving base HP completely.
+* `poly_exact_depletion_preserves_base_hp`: Reverting (damage $\ge$ Poly.hp) discards the excess: base HP is untouched (C `hack.c:4256` `losehp`, `polyself.c:1367` `rehumanize`).
+* `poly_reversion_preserves_base_hp`: Rehumanizing leaves the whole base form unchanged; death only if base HP was already 0.
+* `poly_unchanging_fatal_dies`: With Unchanging, fatal polyform damage kills instead of reverting.
 * `poly_non_fatal_damage_preserves_poly`: Non-fatal damage maintains shape-shifted state.
 * `poly_damage_preserves_base_max_hp`: Base maximum HP is invariant under polymorph damage resolution.
 

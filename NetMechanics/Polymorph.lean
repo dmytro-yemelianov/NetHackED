@@ -22,12 +22,13 @@ def isPolymorphed (e : PolyEntity) : Bool :=
   e.polyForm.isSome
 
 /--
-  Damage resolution with Polymorph HP buffer:
-  If polymorphed, damage is absorbed by the polymorph form first.
-  Lethal damage to polymorph form breaks the transformation, reverting
-  to the base form, with only excess damage penetrating to the base HP pool.
+  Damage resolution (C `hack.c:4256` `losehp`, `polyself.c:1367` `rehumanize`):
+  if polymorphed, `u.mh -= n`; when it drops below 1 the hero rehumanizes with
+  NO carry-over to `u.uhp` (excess damage is discarded), unless `Unchanging`,
+  in which case the hero dies. Not polymorphed: `u.uhp -= n`, death at < 1.
+  Returns the updated entity and whether the hero died.
 -/
-def applyPolyDamage (e : PolyEntity) (damage : Nat) : PolyEntity × Bool :=
+def applyPolyDamage (e : PolyEntity) (damage : Nat) (unchanging : Bool) : PolyEntity × Bool :=
   match e.polyForm with
   | none =>
     let newBaseHp := e.baseForm.hp - damage
@@ -38,70 +39,87 @@ def applyPolyDamage (e : PolyEntity) (damage : Nat) : PolyEntity × Bool :=
       -- Poly form absorbs all damage
       let newPoly := { poly with hp := poly.hp - damage }
       ({ e with polyForm := some newPoly }, false)
+    else if unchanging then
+      -- Unchanging: cannot rehumanize, dies in creature form
+      ({ e with polyForm := some { poly with hp := 0 } }, true)
     else
-      -- Lethal to poly form: revert to base, excess penetrates
-      let excessDamage := damage - poly.hp
-      let newBaseHp := e.baseForm.hp - excessDamage
-      let isDead := newBaseHp == 0
-      ({ e with baseForm := { e.baseForm with hp := newBaseHp }, polyForm := none }, isDead)
+      -- rehumanize: revert to base, excess discarded, base HP untouched
+      ({ e with polyForm := none }, e.baseForm.hp == 0)
 
 /--
-  Theorem: Fatal polymorph damage triggers form reversion.
-  Taking damage >= poly HP strictly breaks the polymorph form.
+  Theorem: Fatal polymorph damage triggers form reversion (absent Unchanging).
 -/
 theorem poly_fatal_damage_reverts (e : PolyEntity) (poly : FormStats)
   (he : e.polyForm = some poly) (damage : Nat) (hdam : damage ≥ poly.hp) :
-  (applyPolyDamage e damage).1.polyForm = none := by
-  simp [applyPolyDamage, he]
+  (applyPolyDamage e damage false).1.polyForm = none := by
   have hnot : ¬ (damage < poly.hp) := Nat.not_lt.mpr hdam
-  simp [hnot]
+  simp [applyPolyDamage, he, hnot]
 
 /--
-  Theorem: Exact polymorph depletion leaves base HP completely untouched.
-  If damage == poly.hp, excess damage is 0, so base HP is completely preserved.
+  Theorem: Reverting never touches base HP (any damage >= poly.hp, so overkill
+  is discarded; generalises exact depletion).
 -/
 theorem poly_exact_depletion_preserves_base_hp (e : PolyEntity) (poly : FormStats)
-  (he : e.polyForm = some poly) :
-  (applyPolyDamage e poly.hp).1.baseForm.hp = e.baseForm.hp := by
-  simp [applyPolyDamage, he]
+  (he : e.polyForm = some poly) (damage : Nat) (hdam : damage ≥ poly.hp) :
+  (applyPolyDamage e damage false).1.baseForm.hp = e.baseForm.hp := by
+  have hnot : ¬ (damage < poly.hp) := Nat.not_lt.mpr hdam
+  simp [applyPolyDamage, he, hnot]
 
 /--
   Theorem: Non-fatal polymorph damage preserves base form and stays polymorphed.
 -/
 theorem poly_non_fatal_damage_preserves_poly (e : PolyEntity) (poly : FormStats)
-  (he : e.polyForm = some poly) (damage : Nat) (hlt : damage < poly.hp) :
-  (applyPolyDamage e damage).1.polyForm.isSome = true := by
+  (he : e.polyForm = some poly) (damage : Nat) (hlt : damage < poly.hp) (u : Bool) :
+  (applyPolyDamage e damage u).1.polyForm.isSome = true := by
   simp [applyPolyDamage, he, hlt]
 
 /--
   Theorem: Base max HP is invariant under polymorph damage resolution.
 -/
-theorem poly_damage_preserves_base_max_hp (e : PolyEntity) (damage : Nat) :
-  (applyPolyDamage e damage).1.baseForm.maxHp = e.baseForm.maxHp := by
+theorem poly_damage_preserves_base_max_hp (e : PolyEntity) (damage : Nat) (u : Bool) :
+  (applyPolyDamage e damage u).1.baseForm.maxHp = e.baseForm.maxHp := by
   cases he : e.polyForm with
   | none =>
     simp [applyPolyDamage, he]
   | some poly =>
-    simp [applyPolyDamage, he]
-    split <;> rfl
+    unfold applyPolyDamage
+    rw [he]
+    dsimp only
+    split
+    · rfl
+    · split <;> rfl
 
+/--
+  Theorem: Rehumanizing (damage >= poly.hp, not Unchanging) leaves the base HP
+  untouched and kills only if base HP was already 0.
+-/
+theorem poly_reversion_preserves_base_hp (e : PolyEntity) (poly : FormStats) (damage : Nat)
+  (he : e.polyForm = some poly) (hdam : damage ≥ poly.hp) :
+  let res := applyPolyDamage e damage false
+  res.1.polyForm = none ∧ res.1.baseForm = e.baseForm ∧ res.2 = (e.baseForm.hp == 0) := by
+  have hnot : ¬ (damage < poly.hp) := Nat.not_lt.mpr hdam
+  simp [applyPolyDamage, he, hnot]
 
 theorem poly_reversion_preserves_base_stats (e : PolyEntity) (poly : FormStats) (damage : Nat)
   (he : e.polyForm = some poly)
   (hdam : damage ≥ poly.hp)
-  (hsurvives : damage - poly.hp < e.baseForm.hp) :
-  let res := applyPolyDamage e damage
+  (hbase : e.baseForm.hp ≠ 0) :
+  let res := applyPolyDamage e damage false
   res.1.polyForm = none ∧
   res.1.baseForm.maxHp = e.baseForm.maxHp ∧
   res.1.baseForm.name = e.baseForm.name ∧
   res.2 = false := by
-  dsimp [applyPolyDamage]
-  simp [he]
   have hnot : ¬ (damage < poly.hp) := Nat.not_lt.mpr hdam
-  simp [hnot]
-  have hgt : e.baseForm.hp - (damage - poly.hp) > 0 := Nat.sub_pos_of_lt hsurvives
-  have hneq : e.baseForm.hp - (damage - poly.hp) ≠ 0 := Nat.ne_of_gt hgt
-  exact hneq
+  simp [applyPolyDamage, he, hnot, hbase]
+
+/--
+  Theorem: With Unchanging, fatal polyform damage kills (C `rehumanize`).
+-/
+theorem poly_unchanging_fatal_dies (e : PolyEntity) (poly : FormStats) (damage : Nat)
+  (he : e.polyForm = some poly) (hdam : damage ≥ poly.hp) :
+  (applyPolyDamage e damage true).2 = true := by
+  have hnot : ¬ (damage < poly.hp) := Nat.not_lt.mpr hdam
+  simp [applyPolyDamage, he, hnot]
 
 -- 2. Unique Entities
 structure Monster where

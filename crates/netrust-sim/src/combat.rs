@@ -195,10 +195,15 @@ impl SimulationWorld {
                         actual_damage += 9999;
                     } // Force fatal
 
-                    let poly_res =
-                        netrust_core::polymorph::apply_poly_damage(&mut self.hero, actual_damage);
+                    // Unchanging is not tracked on Hero yet; pass false.
+                    let poly_res = netrust_core::polymorph::apply_poly_damage(
+                        &mut self.hero,
+                        actual_damage,
+                        false,
+                    );
                     match poly_res {
-                        netrust_core::polymorph::PolyDamageResult::Absorbed => {
+                        netrust_core::polymorph::PolyDamageResult::Absorbed
+                        | netrust_core::polymorph::PolyDamageResult::BaseDamaged => {
                             if let Some(poly) = &self.hero.polymorph {
                                 target.hp = poly.hp as u32;
                                 target.max_hp = poly.max_hp as u32;
@@ -208,9 +213,7 @@ impl SimulationWorld {
                             }
                             lethal = false;
                         }
-                        netrust_core::polymorph::PolyDamageResult::Reverted {
-                            excess_damage: _,
-                        } => {
+                        netrust_core::polymorph::PolyDamageResult::Reverted => {
                             target.hp = self.hero.base_hp as u32;
                             target.max_hp = self.hero.base_max_hp as u32;
                             lethal = false;

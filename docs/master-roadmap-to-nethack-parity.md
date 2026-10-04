@@ -47,7 +47,7 @@ To achieve **100% canonical feature parity** with NetHack (3.6 / 3.7 / 5.0 archi
   - `netrust-core`: Polymorph reversion logic, shape-fit equipment validation, system-shock RNG checks.
   - `netrust-sim`: Beam and trap interaction, equipment auto-unequip on shape shift, monster stat swap.
 - **Lean 4 Verification Target** (`NetMechanics/Polymorph.lean`):
-  - `theorem poly_reversion_preserves_base_stats`: Zero HP in poly form restores base hero HP without instant death unless overflow exceeds base HP.
+  - `theorem poly_reversion_preserves_base_stats`: Zero HP in poly form restores the base form with base HP untouched (overkill discarded, C `rehumanize`) unless Unchanging.
   - `theorem polypile_preserves_or_reduces_count`: Stack polypiling preserves total item count or strictly reduces it (system shock).
   - `theorem unique_entities_poly_invariant`: Uniques and artifact items are invariant under polymorph beams.
 

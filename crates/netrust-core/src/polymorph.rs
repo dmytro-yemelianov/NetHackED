@@ -34,55 +34,38 @@ impl PolyEntity {
         self.poly_form.is_some()
     }
 
-    /// Resolves damage, absorbing with poly form first and reverting to base upon fatal damage.
+    /// Resolves damage per C `hack.c:4256` `losehp` / `polyself.c:1367`
+    /// `rehumanize`: the polyform absorbs damage; when its HP would drop below
+    /// 1 the entity reverts and the excess is discarded (base HP untouched),
+    /// unless `unchanging`, in which case it dies.
     /// Returns `(updated_entity, is_dead)`.
-    pub fn apply_damage(&self, damage: u32) -> (Self, bool) {
+    pub fn apply_damage(&self, damage: u32, unchanging: bool) -> (Self, bool) {
         match &self.poly_form {
             None => {
                 let new_base_hp = self.base_form.hp.saturating_sub(damage);
-                let is_dead = new_base_hp == 0;
-                (
-                    Self {
-                        base_form: FormStats {
-                            hp: new_base_hp,
-                            max_hp: self.base_form.max_hp,
-                            name: self.base_form.name.clone(),
-                        },
-                        poly_form: None,
-                    },
-                    is_dead,
-                )
+                let mut e = self.clone();
+                e.base_form.hp = new_base_hp;
+                (e, new_base_hp == 0)
             }
-            Some(poly) => {
-                if damage < poly.hp {
-                    let new_poly = FormStats {
-                        hp: poly.hp - damage,
-                        max_hp: poly.max_hp,
-                        name: poly.name.clone(),
-                    };
-                    (
-                        Self {
-                            base_form: self.base_form.clone(),
-                            poly_form: Some(new_poly),
-                        },
-                        false,
-                    )
-                } else {
-                    let excess = damage - poly.hp;
-                    let new_base_hp = self.base_form.hp.saturating_sub(excess);
-                    let is_dead = new_base_hp == 0;
-                    (
-                        Self {
-                            base_form: FormStats {
-                                hp: new_base_hp,
-                                max_hp: self.base_form.max_hp,
-                                name: self.base_form.name.clone(),
-                            },
-                            poly_form: None,
-                        },
-                        is_dead,
-                    )
+            Some(poly) if damage < poly.hp => {
+                let mut e = self.clone();
+                if let Some(p) = &mut e.poly_form {
+                    p.hp = poly.hp - damage;
                 }
+                (e, false)
+            }
+            Some(_) if unchanging => {
+                let mut e = self.clone();
+                if let Some(p) = &mut e.poly_form {
+                    p.hp = 0;
+                }
+                (e, true)
+            }
+            Some(_) => {
+                let mut e = self.clone();
+                e.poly_form = None;
+                let dead = e.base_form.hp == 0;
+                (e, dead)
             }
         }
     }
@@ -109,10 +92,10 @@ mod tests {
             poly_form: Some(poly),
         };
 
-        // Take 15 damage: 10 absorbed by Bat, 5 penetrates to Hero
-        let (reverted, is_dead) = entity.apply_damage(15);
+        // Take 15 damage: Bat dies, the 5 excess is discarded (C rehumanize)
+        let (reverted, is_dead) = entity.apply_damage(15, false);
         assert!(!reverted.is_polymorphed());
-        assert_eq!(reverted.base_form.hp, 15);
+        assert_eq!(reverted.base_form.hp, 20);
         assert!(!is_dead);
     }
 
@@ -133,7 +116,7 @@ mod tests {
             poly_form: Some(poly),
         };
 
-        let (reverted, is_dead) = entity.apply_damage(10);
+        let (reverted, is_dead) = entity.apply_damage(10, false);
         assert!(!reverted.is_polymorphed());
         assert_eq!(reverted.base_form.hp, 20);
         assert!(!is_dead);
@@ -144,34 +127,49 @@ use netrust_types::{EquipSlot, Hero, MonsterId};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PolyDamageResult {
+    /// Polymorphed and the polyform survived (`u.mh >= 1`).
     Absorbed,
-    Reverted { excess_damage: i32 },
+    /// Not polymorphed; base HP reduced and the hero survived (`u.uhp >= 1`).
+    BaseDamaged,
+    /// Polyform HP dropped below 1: the hero rehumanized. Excess damage is
+    /// discarded and base HP is untouched.
+    Reverted,
+    /// The hero died (base HP < 1, or polyform HP < 1 while `Unchanging`).
     Dead,
 }
 
-pub fn apply_poly_damage(hero: &mut Hero, damage: i32) -> PolyDamageResult {
+/// Apply `damage` to the hero (negative damage is treated as 0).
+///
+/// C `hack.c:4256` `losehp`: when `Upolyd`, `u.mh -= n` and `u.mh < 1` calls
+/// `rehumanize()` with no carry-over to `u.uhp`; otherwise `u.uhp -= n` and
+/// `u.uhp < 1` is death. C `polyself.c:1367` `rehumanize`: with `Unchanging`
+/// the hero dies instead of reverting; else `polyman()` restores the normal
+/// form with `u.uhp` unchanged (death only if `u.uhp < 1` already).
+///
+/// `unchanging`: whether the hero has the Unchanging property. The Hero type
+/// does not track it yet, so the sim passes `false`.
+pub fn apply_poly_damage(hero: &mut Hero, damage: i32, unchanging: bool) -> PolyDamageResult {
+    let damage = damage.max(0);
     if let Some(poly) = &mut hero.polymorph {
-        if damage < poly.hp {
-            poly.hp -= damage;
-            PolyDamageResult::Absorbed
-        } else {
-            let excess = damage - poly.hp;
-            hero.polymorph = None;
-            hero.base_hp -= excess;
-            if hero.base_hp <= 0 {
-                PolyDamageResult::Dead
-            } else {
-                PolyDamageResult::Reverted {
-                    excess_damage: excess,
-                }
-            }
+        poly.hp = poly.hp.saturating_sub(damage);
+        if poly.hp >= 1 {
+            return PolyDamageResult::Absorbed;
         }
-    } else {
-        hero.base_hp -= damage;
-        if hero.base_hp <= 0 {
+        if unchanging {
+            return PolyDamageResult::Dead;
+        }
+        hero.polymorph = None;
+        if hero.base_hp < 1 {
             PolyDamageResult::Dead
         } else {
-            PolyDamageResult::Absorbed // Or maybe Reverted is not needed here, Absorbed means not dead in base form? Actually, instructions say "If polymorphed..."
+            PolyDamageResult::Reverted
+        }
+    } else {
+        hero.base_hp = hero.base_hp.saturating_sub(damage);
+        if hero.base_hp < 1 {
+            PolyDamageResult::Dead
+        } else {
+            PolyDamageResult::BaseDamaged
         }
     }
 }
@@ -202,5 +200,73 @@ pub fn cure_lycanthropy(hero: &mut Hero) -> bool {
         true
     } else {
         false
+    }
+}
+
+#[cfg(test)]
+mod hero_tests {
+    use super::*;
+    use netrust_types::PolymorphForm;
+
+    fn poly_hero(base: i32, poly: i32) -> Hero {
+        Hero {
+            base_hp: base,
+            base_max_hp: base,
+            polymorph: Some(PolymorphForm {
+                monster_id: 1,
+                hp: poly,
+                max_hp: poly,
+                duration: 100,
+            }),
+            mount: None,
+            quivered_item: None,
+            lycanthropy: None,
+            afflictions: Default::default(),
+            skills: Default::default(),
+        }
+    }
+
+    #[test]
+    fn overkill_reverts_without_touching_base_hp() {
+        let mut h = poly_hero(20, 10);
+        assert_eq!(
+            apply_poly_damage(&mut h, 15, false),
+            PolyDamageResult::Reverted
+        );
+        assert!(h.polymorph.is_none());
+        assert_eq!(h.base_hp, 20);
+    }
+
+    #[test]
+    fn huge_overkill_never_kills_without_unchanging() {
+        let mut h = poly_hero(1, 5);
+        assert_eq!(
+            apply_poly_damage(&mut h, 9999, false),
+            PolyDamageResult::Reverted
+        );
+        assert_eq!(h.base_hp, 1);
+    }
+
+    #[test]
+    fn unchanging_dies_instead_of_reverting() {
+        let mut h = poly_hero(20, 10);
+        assert_eq!(apply_poly_damage(&mut h, 10, true), PolyDamageResult::Dead);
+    }
+
+    #[test]
+    fn unpolymorphed_survival_is_base_damaged_and_negative_is_zero() {
+        let mut h = poly_hero(20, 10);
+        h.polymorph = None;
+        assert_eq!(
+            apply_poly_damage(&mut h, 5, false),
+            PolyDamageResult::BaseDamaged
+        );
+        assert_eq!(h.base_hp, 15);
+        assert_eq!(
+            apply_poly_damage(&mut h, -7, false),
+            PolyDamageResult::BaseDamaged
+        );
+        assert_eq!(h.base_hp, 15);
+        assert_eq!(apply_poly_damage(&mut h, 15, false), PolyDamageResult::Dead);
     }
 }
