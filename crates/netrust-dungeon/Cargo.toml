@@ -1,5 +1,6 @@
 [package]
 name = "netrust-dungeon"
+license = "NGPL"
 version = "0.1.0"
 edition = "2021"
 description = "Grid map representation, FOV shadowcasting, and procedural level generation for NetRust"

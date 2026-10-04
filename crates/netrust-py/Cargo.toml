@@ -1,5 +1,6 @@
 [package]
 name = "netrust-py"
+license = "NGPL"
 version = "0.1.0"
 edition = "2021"
 description = "PyO3 Python Gym / RL Environment bindings for NetRust"

@@ -539,7 +539,7 @@
     <!-- Standings Content -->
     <div id="tabStandingsContent">
       <p style="font-size:0.8rem; color:var(--text-dim); margin-bottom:0.75rem;">
-        Empirical evaluation results across randomized dungeon seeds (90+ standardized runs):
+        Empirical evaluation results across randomized dungeon seeds (see benchmark_report.json for the exact run count):
       </p>
       <table class="leaderboard-table">
         <thead>
@@ -785,13 +785,6 @@
             mean_gold: 50.0,
             win_rate_pct: 0.0
           },
-          "RL Policy (Q-Net / Gym)": {
-            mean_max_depth: 2.25,
-            mean_kills: 1.85,
-            mean_turns: 180.4,
-            mean_gold: 55.0,
-            win_rate_pct: 0.0
-          },
           "RandomBaseline": {
             mean_max_depth: 1.00,
             mean_kills: 0.00,
@@ -832,16 +825,6 @@
         const resp = await fetch('./benchmark_report.json');
         if (resp.ok) {
           const json = await resp.json();
-          // Ensure RL Policy is reflected
-          if (!json.summary.per_policy["RL Policy (Q-Net / Gym)"]) {
-            json.summary.per_policy["RL Policy (Q-Net / Gym)"] = {
-              mean_max_depth: 2.25,
-              mean_kills: 1.85,
-              mean_turns: 180.4,
-              mean_gold: 55.0,
-              win_rate_pct: 0.0
-            };
-          }
           populateLeaderboardTable(json);
           return;
         }
@@ -1967,7 +1950,7 @@
       const container = document.getElementById('tournamentResultsContainer');
       const tbody = document.getElementById('tournamentTableBody');
       container.style.display = 'block';
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#d6a3ff;">Running 100 seeds across all policies via WASM engine... Please wait...</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#d6a3ff;">Running 25 seeds x 2 roles per policy via WASM engine... Please wait...</td></tr>';
 
       setTimeout(() => {
         try {

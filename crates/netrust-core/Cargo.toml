@@ -1,5 +1,6 @@
 [package]
 name = "netrust-core"
+license = "NGPL"
 version = "0.1.0"
 edition = "2021"
 description = "Core game mechanics of NetHack formalized in Lean 4 and implemented in safe Rust"

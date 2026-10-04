@@ -251,16 +251,12 @@ def train_rl_agent(
 
     # Export weights to JSON
     weights_data = policy.export_weights()
-    weights_path = repo_root / "policy_weights.json"
     web_weights_path = repo_root / "web" / "policy_weights.json"
-
-    with open(weights_path, "w") as f:
-        json.dump(weights_data, f, indent=2)
 
     with open(web_weights_path, "w") as f:
         json.dump(weights_data, f, indent=2)
 
-    print(f"Exported policy weights to: {weights_path} & {web_weights_path}")
+    print(f"Exported policy weights to: {web_weights_path}")
     return weights_data
 
 if __name__ == "__main__":
