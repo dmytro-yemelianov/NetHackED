@@ -18,7 +18,7 @@ use crossterm::{
 use netrust_agent::commands::ZAP_ENERGY;
 use netrust_core::skills::{enhance_skill, skill_damage_bonus, skill_to_hit_bonus};
 use netrust_dungeon::compute_fov;
-use netrust_i18n::{t, t_align, t_hunger_str, t_item, Locale};
+use netrust_i18n::{t, t_align, t_hunger_str, t_item, Locale, Messages};
 use netrust_sim::{
     ActionAst, Alignment, CharacterConfig, Coord, Direction, DoorState, GameEvent, Gender,
     HungerState, RaceId, RoleId, SimulationWorld, Tile, COLNO, ROWNO,
@@ -1014,12 +1014,7 @@ fn main() -> io::Result<()> {
                                 .get(item_id)
                                 .map(|i| i.name.as_str())
                                 .unwrap_or("item");
-                            let localized_name = t_item(item_name, world.locale);
-                            message = if world.locale == Locale::Uk {
-                                format!("Ви вклали у сагайдак: {localized_name}.")
-                            } else {
-                                format!("You ready {item_name} in your quiver.")
-                            };
+                            message = Messages::quiver_success(item_name, world.locale);
                         }
                         None
                     }

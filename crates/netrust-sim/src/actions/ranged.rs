@@ -24,10 +24,7 @@ impl SimulationWorld {
                 .map(|i| i.name.as_str())
                 .unwrap_or("item");
             events.push(GameEvent::LogMessage {
-                text: netrust_i18n::Messages::quiver_success(
-                    &netrust_i18n::t_item(item_name, self.locale),
-                    self.locale,
-                ),
+                text: netrust_i18n::Messages::quiver_success(item_name, self.locale),
             });
         }
         events

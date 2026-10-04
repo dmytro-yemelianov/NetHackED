@@ -895,6 +895,7 @@ dependencies = [
 name = "netrust-i18n"
 version = "0.1.0"
 dependencies = [
+ "netrust-data",
  "netrust-types",
  "serde",
 ]
