@@ -6,6 +6,7 @@ pub mod items;
 pub mod monsters;
 pub mod pantheons;
 pub mod roles;
+pub mod ruleset;
 
 pub use items::{
     create_item_record, get_item_archetype, initial_wand_charges, item_archetype_by_name,
@@ -16,11 +17,16 @@ pub use monsters::{
     monster_class_of, AiBehavior, Attack, AttackType, DamageType, MonsterArchetype, MonsterSize,
     MonsterSound, MonsterSpeciesId, BESTIARY,
 };
+pub use netrust_types::ItemClass;
 pub use pantheons::{get_pantheon_for_role, get_patron_deity};
 pub use roles::{
     get_race, get_role, race_hatemask, race_hostile, race_lovemask, race_peaceful,
     spawn_player_character, spawn_starting_pet, starting_item_spe, starting_skills,
     CharacterConfig, Gender, RaceId, RaceSpec, RoleId, RoleSpec, RACES, ROLES,
+};
+pub use ruleset::{
+    ArmorDef, ItemDef, MechanicsSection, MonsterDef, PackManifest, QuestDef, RaceDef, RoleDef,
+    Ruleset, RulesetRef, StartingItem, ENGINE_REQUIRED_ITEMS, ENGINE_REQUIRED_MONSTERS,
 };
 
 #[cfg(test)]

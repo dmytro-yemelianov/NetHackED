@@ -11,6 +11,7 @@ pub use netrust_types::{Attack, AttackType, DamageType};
 
 /// Enumeration of canonical monster species.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum MonsterSpeciesId {
     Goblin,
     Hobgoblin,
@@ -75,6 +76,7 @@ pub enum MonsterSpeciesId {
 
 /// Behavioral archetype for autonomous monster decision making.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum AiBehavior {
     /// Actively computes Dijkstra gradient to hunt and attack player.
     MeleeHunter,
@@ -92,6 +94,7 @@ pub enum AiBehavior {
 /// (`makemon.c:2276-2279`: `MS_LEADER`, `MS_GUARDIAN`, `MS_NEMESIS`); every
 /// other `MS_*` is [`MonsterSound::Other`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum MonsterSound {
     Leader,
     Guardian,
@@ -101,6 +104,7 @@ pub enum MonsterSound {
 
 /// C monster size (`MZ_*`, include/monflag.h:174-180).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum MonsterSize {
     Tiny,
     Small,

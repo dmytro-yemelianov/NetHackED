@@ -8,6 +8,11 @@ description = "Core game mechanics of NetHack formalized in Lean 4 and implement
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 netrust-types = { path = "../netrust-types" }
+schemars = { version = "0.8", optional = true }
+
+[features]
+default = []
+schema = ["dep:schemars", "netrust-types/schema"]
 
 [dev-dependencies]
 proptest = "1.5"
