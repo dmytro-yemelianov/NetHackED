@@ -1,6 +1,6 @@
 # NetRust Architecture: How It Is Built, and How It Differs from NetHack C
 
-This article is for contributors and engineers reading the repository. It describes how the NetRust engine is put together today. It compares each part with the NetHack 5.0 C code it is modelled on, and it explains which choices make the engine fast, reliable and compatible. It also lists where NetRust falls short of NetHack and where it is known to diverge from it.
+This article is for contributors and engineers reading the repository. It describes how the NetRust engine is put together today. It compares each part with the NetHack 5.0 C code it is modelled on, and it explains which choices aim to make the engine fast, reliable, compatible and fail-proof. It also lists where NetRust falls short of NetHack and where it is known to diverge from it.
 
 All numbers were measured on a clean export of `main` (2026-10-04, Apple Silicon, Rust 1.88.0). References to NetHack C use paths inside the local `NetHack-5.0.0/` reference tree. That tree is git-ignored, so those paths are written as code, not links.
 
@@ -10,9 +10,9 @@ All numbers were measured on a clean export of `main` (2026-10-04, Apple Silicon
 
 NetRust is a Rust reimplementation of a subset of NetHack. The game runs as a deterministic, serializable simulation library. Terminal, web, Python and network frontends all drive that library through one shared command parser.
 
-The workspace has 11 crates with about 34,600 lines of Rust in 116 files. A separate Lean 4 project (`NetMechanics/`, 40 modules, 273 theorems, no `sorry`) holds simplified models of selected mechanics, and 97 Rust property tests check the engine against those models.
+The workspace has 11 crates with about 34,600 lines of Rust in 116 files. A separate Lean 4 project (`NetMechanics/`, 40 modules, 273 theorems, no `sorry`) holds simplified models of selected mechanics. 97 Rust property tests mirror those theorems and compare the engine with reference functions written from the C rules.
 
-`cargo test --workspace --exclude netrust-py --locked` runs 481 tests, all passing. In a single-threaded release build, the benchmark plays 200 full games (about 41,700 game turns) in roughly 2.6 seconds.
+`cargo test --workspace --exclude netrust-py --locked` runs 481 tests, all passing. These two counts (481 tests, 273 theorems) are as of 2026-10-04; later sections refer back to them. In a single-threaded release build, the benchmark plays 200 full games (about 41,700 game turns) in roughly 2.6 seconds.
 
 The content covers about 12-15% of NetHack: 47 monster species against 394, 66 item kinds against about 452, and 9 roles against 13. Twelve divergences from C behaviour are documented in the mechanics spec.
 
@@ -62,6 +62,7 @@ graph TD
     types --> dungeon
     arena --> data
     types --> i18n
+    data -.->|dev-dependency, tests only| i18n
     arena --> sim
     core --> sim
     dungeon --> sim
@@ -89,7 +90,8 @@ graph TD
 
 ### 3.2 Layering rules
 
-- **Dependencies point one way:** types → arena/core → dungeon/data/i18n → sim → agent → frontends. No crate depends on a crate above it.
+- **Dependencies point one way:** types → arena/core → dungeon/data → i18n → sim → agent → frontends. `netrust-i18n` uses `netrust-data` only as a dev-dependency, for its name-coverage tests. No crate depends on a crate above it.
+- The graph shows only the main edges. The frontends (`netrust-tui`, `netrust-wasm`, `netrust-py`) also depend directly on lower crates such as `netrust-sim`, `netrust-core` and `netrust-types`.
 - **`netrust-core` has no I/O and no RNG.** Its only dependencies are `netrust-types` and `serde` ([Cargo.toml](../crates/netrust-core/Cargo.toml)). Every random outcome reaches it as an explicit argument.
 - **Engine crates do no I/O.** A grep for `std::fs`, `std::io` or `File::` in the `src/` of core, sim, dungeon, data, arena and types finds nothing. Files, sockets, terminals and the browser are handled only by the frontends.
 
@@ -110,7 +112,7 @@ sequenceDiagram
     W->>W: step_player_action(action)
     W->>C: rules with explicit rolls drawn from world.rng
     C-->>W: outcome (hit/miss, damage, new state)
-    W->>S: hero_act(cost); step() until hero can act
+    W->>S: hero_act(cost), then step() until hero can act
     S-->>W: MonsterStep / TurnTick
     W->>W: step_monsters(), hunger, afflictions
     W-->>F: Vec<GameEvent>
@@ -118,6 +120,19 @@ sequenceDiagram
 ```
 
 [`SimulationWorld::step_player_action(&mut self, ActionAst) -> Vec<GameEvent>`](../crates/netrust-sim/src/actions/mod.rs) is the only entry point for gameplay. It `match`es on the action and hands off to domain handlers in [`actions/`](../crates/netrust-sim/src/actions/) (movement, doors, inventory, items, economy, engrave, ranged, religion, stairs). [`process_turn_ticks`](../crates/netrust-sim/src/turns.rs) then runs the scheduler until the hero can act again. If the player is dead or missing, the call does nothing and returns an empty event list.
+
+### 3.4 Where to start reading the code
+
+Open these files in this order:
+
+1. [netrust-core/src/ast.rs](../crates/netrust-core/src/ast.rs): the list of actions a player can take.
+2. [netrust-sim/src/world.rs](../crates/netrust-sim/src/world.rs): everything a game contains.
+3. [netrust-sim/src/actions/mod.rs](../crates/netrust-sim/src/actions/mod.rs): how one action is dispatched.
+4. [netrust-sim/src/turns.rs](../crates/netrust-sim/src/turns.rs) and [netrust-core/src/energy.rs](../crates/netrust-core/src/energy.rs): how turns and monster moves are scheduled.
+5. [netrust-arena/src/lib.rs](../crates/netrust-arena/src/lib.rs): how items and actors are stored.
+6. [netrust-agent/src/commands.rs](../crates/netrust-agent/src/commands.rs): how text and keys become actions.
+
+For a working example of the whole loop, read [simulation_tests.rs](../crates/netrust-sim/tests/simulation_tests.rs).
 
 ---
 
@@ -159,7 +174,7 @@ Each subsection follows the same pattern: what C does, what NetRust does, and wh
   - Luck is clamped to `-13..=13`.
 
   Rolls outside their range are clamped and never cause a panic. Doc comments cite the C source they follow, for example `uhitm.c:365` and `mhitu.c:709`.
-- **Why:** A pure function can be property-tested over its whole input range, checked against a Lean model, and reasoned about without any game state. The simulation decides *when* to draw a number and the core decides *what the number means*. Keeping those apart is what makes "draw only when C draws" fidelity work possible (see §7).
+- **Why:** A pure function can be property-tested over its whole input range, modelled in Lean, and reasoned about without any game state. The simulation decides *when* to draw a number and the core decides *what the number means*. Keeping those apart is what makes "draw only when C draws" fidelity work possible (see §7).
 
 ### 4.5 Deterministic RNG with saved state
 
@@ -177,7 +192,7 @@ Each subsection follows the same pattern: what C does, what NetRust does, and wh
 
 - **C:** Large macro tables: `include/monsters.h` (394 `MON(` entries), `include/objects.h`, `include/artilist.h`.
 - **Rust:** `static` slices in [netrust-data](../crates/netrust-data/src/): `BESTIARY` (47 `MonsterArchetype`s), `ITEM_CATALOG` (66 `ItemArchetype`s), `ROLES` (9), `RACES` (5) and pantheons. They are keyed by closed enums (`MonsterSpeciesId`, `ItemKindId`). Lookups use `.iter().find()` with an `expect`, and unit tests spawn every enum variant, so a missing table row fails a test rather than a game.
-- **Why:** The tables are declarative, type-checked and exhaustive. Adding content still requires recompiling (see §9). On `main`, monsters still use a single `damage_dice` pair, and some entries are invented (for example "war dog"). Fidelity pass D2 is replacing these with C attack lists.
+- **Why:** The tables are declarative, type-checked and exhaustive. Adding content still requires recompiling (see §9). On `main`, monsters still use a single `damage_dice` pair, and some entries are invented (for example "war dog"). As of 2026-10-04, fidelity pass D2 is replacing these with C attack lists.
 
 ### 4.8 Dungeon generation with reachability guarantees
 
@@ -187,14 +202,22 @@ Each subsection follows the same pattern: what C does, what NetRust does, and wh
 
 ---
 
-## 5. Fast
+## 5. Performance
 
 ### 5.1 Measurements
+
+These numbers were measured on 2026-10-04 on an Apple Silicon Mac, using a clean export of `main` and Rust 1.88.0. To reproduce the benchmark (it writes `web/benchmark_report.json` relative to the current directory):
+
+```bash
+cargo run --release -p netrust-agent --bin netrust-benchmark
+```
+
+NetRust has not been benchmarked against NetHack C.
 
 | Measurement | Result |
 |---|---|
 | `netrust-benchmark` (release, single thread): seeds 1-25 × {Valkyrie, Wizard} × 4 policies, max 1000 turns = 200 games | **2.56 s** wall (2.29 s user), ≈ 41.7k game turns, **≈ 16k turns/s** including writing a 68 KB JSON report |
-| Test suite (debug): 481 tests | 3.44 s total test execution; ≈ 41 s wall for `cargo test` including compilation with dependencies already built |
+| Full test suite (debug, §1) | 3.44 s total test execution; ≈ 41 s wall for `cargo test` including compilation with dependencies already built |
 | Slowest test groups | 200-seed reachability sweeps 1.38 s; one 7-test unit suite 1.50 s |
 | Release build of `netrust-benchmark` (dependencies already built) | 24.9 s |
 | WASM, raw `cargo build --release --target wasm32-unknown-unknown` | 1.2 MB |
@@ -202,7 +225,7 @@ Each subsection follows the same pattern: what C does, what NetRust does, and wh
 
 The benchmark's AI policies are weak: the mean depth reached is 1.0-2.8 and no policy wins. The turns-per-second figure measures the engine, not the quality of play.
 
-### 5.2 Why it is fast
+### 5.2 Design choices that help performance
 
 - **No I/O in the engine.** Stepping touches only memory. Rendering, file writes and network traffic happen outside `step_player_action`.
 - **Compact storage.** Slot maps give O(1) insert, remove and lookup in contiguous storage. Traps and engravings use sparse `HashMap<Coord, _>`. Breadth-first searches use `HashSet`s.
@@ -221,7 +244,7 @@ None of these has been a bottleneck at the current content size. They are the fi
 
 ---
 
-## 6. Reliable and fail-proof
+## 6. Reliability and failure handling
 
 ### 6.1 Language-level guarantees
 
@@ -264,10 +287,10 @@ The toolchain is pinned to Rust 1.88.0 in [rust-toolchain.toml](../rust-toolchai
 
 ### 6.4 Testing in layers
 
-1. **Unit and integration tests:** 481 in total. The largest groups are 131 sim unit tests, 101 in `simulation_tests.rs`, and 97 property tests.
+1. **Unit and integration tests:** the 481 tests from §1. The largest groups are 131 sim unit tests, 101 in `simulation_tests.rs`, and 97 property tests.
 2. **Seed sweeps:** 200 seeds per dungeon generator family (§4.8).
 3. **Property tests against reference models:** [proptest_mechanics.rs](../crates/netrust-core/tests/proptest_mechanics.rs) (2,311 lines, 97 `prop_*` tests). Each test corresponds to a theorem in `NetMechanics`. Fidelity pass D1 added a rule: these tests compare the Rust code with an *independent* reference written from the C rule, rather than with a copy of the Rust implementation.
-4. **Lean 4 models:** [NetMechanics/](../NetMechanics/) has 40 modules and 273 theorems. It contains no `sorry`, `admit` or `native_decide` and declares no axioms of its own; the policy is in [lean4-verification-guide.md](lean4-verification-guide.md).
+4. **Lean 4 models:** [NetMechanics/](../NetMechanics/) has 40 modules and the 273 theorems from §1. It contains no `sorry`, `admit` or `native_decide` and declares no axioms of its own; the policy is in [lean4-verification-guide.md](lean4-verification-guide.md).
 
 What this does and doesn't establish: the Lean models are **simplified abstractions of selected mechanics**, and their theorems are machine-checked. The Rust code is *tested* against the same properties with proptests. There is **no formal link** between the Lean models and the Rust code, so NetRust is not formally verified. The Lean guide and the mechanics spec both say the models are not a faithful transcription of NetHack 5.0.
 
@@ -281,72 +304,28 @@ What this does and doesn't establish: the Lean models are **simplified abstracti
 
 ---
 
-## 7. Compatible
+## 7. Compatibility with NetHack (fidelity)
 
 ### 7.1 Fidelity policy and the D1 pass
 
-NetRust brings its mechanics in line with NetHack 5.0 in numbered *fidelity passes*. Each changed function cites the C code it follows as `file.c:line`, and each pass updates the Lean models and proptests along with it. Pass **D1** is merged to `main` ([design](superpowers/specs/2026-10-04-fidelity-d1-design.md), [C reference](superpowers/specs/2026-10-04-fidelity-d1-c-reference.md)). It aligned these 16 areas with C:
+NetRust brings its mechanics in line with NetHack 5.0 in numbered *fidelity passes*. Each changed function cites the C code it follows as `file.c:line`, and each pass updates the Lean models and proptests along with it. Pass **D1** is merged to `main`. It aligned 16 areas with C: hero to-hit, damage and AC absorption, floor traps, luckstone timeout, hunger, encumbrance, enchantment, wand recharging, shop prices, Bag of Holding explosions, polymorph overkill, bones cursing, the Mysterious Force, priest protection, quest leaders and nemeses, and stronger Lean theorems. It also set starting weapon skills to follow `skill_init` (`weapon.c:1752`). The full table with C line references is in the [D1 design](superpowers/specs/2026-10-04-fidelity-d1-design.md) and [C reference](superpowers/specs/2026-10-04-fidelity-d1-c-reference.md).
 
-| # | Area | C anchor |
-|---|---|---|
-| 1 | Hero melee to-hit | `uhitm.c:365` |
-| 2 | Damage minimum and `rnd(-ac)` absorption (hero as defender only) | `mhitu.c`, `hack.h` |
-| 3 | Floor-trap set, flying/levitation avoidance, seen-trap escape `rn2(5)` | `trap.c` |
-| 4 | Luckstone timeout (300 / 600) | `timeout.c` |
-| 5 | Hunger thresholds incl. Starved < −(100 + 10·Con) | `eat.c` |
-| 6 | Encumbrance `weight_cap` and tier formula | `hack.c` |
-| 7 | Enchant armor / weapon evaporation | `read.c` |
-| 8 | Wand recharge explosion `n³ > rn2(343)`, dedicated `recharged` field | `read.c:729` |
-| 9 | Shop prices (CHA table, ×4/3 surcharges, sell /2 or /3) | `shk.c` |
-| 10 | Bag of Holding explosion (recursive, cancellation, bag of tricks, d(6,6)) | `pickup.c` |
-| 11 | Polymorph overkill discarded on rehumanize | `polyself.c` |
-| 12 | Bones cursing `rn2(5)` | `bones.c` |
-| 13 | Mysterious Force P = 1/(4 + mf) | `do.c:1541-1573` |
-| 14 | Priest protection purchase | `priest.c` |
-| 15 | Quest leaders and nemeses for the 9 roles | quest data |
-| 16 | Stronger Lean theorems (LOS adjacency, beam termination, pathfinding convergence) | — |
-
-D1 also set each role's starting weapon skills to follow `skill_init` (`weapon.c:1752`). The C anchors in rows 3-7 and 9-12 name the source file only; the D1 design and C-reference documents give the exact lines.
-
-**D2**, in progress on a separate branch, replaces monster and item table values with C values. That includes C attack lists with dice used by the simulation, weapon damage dice, armor AC and peaceful monsters.
+As of 2026-10-04, pass **D2** is in progress on a separate branch. It replaces monster and item table values with C values, including attack lists with dice used by the simulation, weapon damage dice, armor AC and peaceful monsters.
 
 ### 7.2 Known divergences
 
-The [formal mechanics spec](formal-mechanics-spec.md#known-divergences-from-nethack-c) lists 12 divergences that remain. In summary:
-
-- **Combat:**
-  - Monster-vs-monster to-hit uses the monster-vs-hero formula.
-  - Bare-handed and martial-arts damage differ from C.
-  - `abon()` is omitted.
-- **Economy and religion:**
-  - Priest donations have extra effects that C doesn't have.
-  - Shop prices are computed at payment time.
-  - All priests share one cheapskate counter.
-- **Gehennom:**
-  - The Mysterious Force depth mapping is adjusted for a 6-level Gehennom.
-  - Its RNG draws happen unconditionally rather than lazily, and its teleport is simplified.
-- **Items:**
-  - Bag of Holding explosion contents are not scattered.
-  - Some code identifies item kinds from substrings of their names.
-- **Character:**
-  - Starting inventories differ from `u_init.c`.
-  - Charisma, Constitution and Unchanging are not tracked.
-  - Fainting is approximated as HP drain.
-  - Luck comes only from the luckstone.
-  - A carried dunce cap counts as worn.
-
-The spec states that its formulas should not be treated as authoritative descriptions of NetHack C behaviour.
+The [formal mechanics spec](formal-mechanics-spec.md#known-divergences-from-nethack-c) lists 12 divergences that remain. They fall into five groups: combat formulas (monster-vs-monster to-hit, bare-handed damage, the missing `abon()`), economy and religion (priest donations, shop pricing, the cheapskate counter), the Mysterious Force in Gehennom, items (Bag of Holding scatter, name-based kind detection), and the character (starting inventories, untracked attributes, fainting, luck sources, dunce cap). The spec states that its formulas should not be treated as authoritative descriptions of NetHack C behaviour.
 
 ### 7.3 Structural simplifications
 
-- **Monster speed.** Every monster draws from one shared energy pool ([energy.rs](../crates/netrust-core/src/energy.rs)). There is no per-monster `mcalcmove`, so no MSLOW/MFAST and no random rounding. Per-monster speed is a D3 goal.
+- **Monster speed.** Every monster draws from one shared energy pool ([energy.rs](../crates/netrust-core/src/energy.rs)). There is no per-monster `mcalcmove`, so no MSLOW/MFAST and no random rounding. As of 2026-10-04, per-monster speed is planned for D3.
 - **RNG streams.** NetRust does not try to reproduce C's random number stream: it uses ChaCha8 where C uses ISAAC64. Fidelity is at the level of formulas and distributions, and the code aims to draw a random number only where C draws one (for example `rn2(343)` for wand recharging).
 
 ### 7.4 Determinism, replay and save compatibility
 
-- **Replay.** A recorded game consists of its seed and its `ActionAst` sequence, and replaying that sequence reproduces the same events (§4.5). C NetHack cannot do this, because it seeds from the OS, reseeds, and uses a separate display stream.
+- **Replay.** A recorded game consists of its seed and its `ActionAst` sequence, and replaying that sequence reproduces the same events (§4.5). C NetHack does not support seeded replay by design: it seeds from the OS, can reseed, and uses a separate display stream.
 - **Saves** are JSON produced by `serde_json`. `HashMap<Coord, _>` fields go through a `coord_map` adapter. The C save format is binary and depends on struct layout.
-  - **Back-compatibility:** new fields get `#[serde(default)]`. Examples on `SimulationWorld` include `priest_cheapskate`, `quest_state`, `mysterious_force_count`, `genocide_registry`, `conducts` and the RNG itself; others are `ItemRecord.recharged` and `DungeonLevel.traps` / `is_dark`. The test `mysterious_force_count_serde_default` deletes a field from saved JSON and reloads it. D2 adopts this as a rule.
+  - **Back-compatibility:** new fields get `#[serde(default)]`. Examples on `SimulationWorld` include `priest_cheapskate`, `quest_state`, `mysterious_force_count`, `genocide_registry`, `conducts` and the RNG itself; others are `ItemRecord.recharged` and `DungeonLevel.traps` / `is_dark`. The test `mysterious_force_count_serde_default` deletes a field from saved JSON and reloads it. The D2 design (as of 2026-10-04) adopts this as a rule.
   - **Limitation:** the TUI has no save or restore command. Serialization is used through tests and the API.
 
 ### 7.5 One parser for every frontend
@@ -359,16 +338,18 @@ The spec states that its formulas should not be treated as authoritative descrip
 
 | Frontend | Location | Notes |
 |---|---|---|
-| Terminal (`netrust`) | [netrust-tui](../crates/netrust-tui/src/main.rs) | crossterm; a pure key handler in [keys.rs](../crates/netrust-tui/src/keys.rs); pager; `--seed N`; panic hook restores the terminal |
-| Web | [netrust-wasm](../crates/netrust-wasm/src/lib.rs) + [web/index.html](../web/index.html) | 30 `#[wasm_bindgen]` items: `step(action, arg)`, `render_ascii`, `get_observation_json`, canvas render data, i18n, role list, a chunked `TournamentRun` and a tournament benchmark; build with `wasm-pack build crates/netrust-wasm --target web --out-dir ../../web/pkg` |
-| Python / Gymnasium | [netrust-py](../crates/netrust-py/src/lib.rs), [python/netrust_gym/env.py](../python/netrust_gym/env.py) | PyO3 environment with `get_action_mask`, `action_space_size`, `render`, and optional conduct masking; `NetRustGymEnv(gym.Env)`; masked REINFORCE example in [train_reinforce.py](../python/train_reinforce.py) |
-| MCP (stdio) | [mcp.rs](../crates/netrust-agent/src/mcp.rs) | 7 tools: `netrust_get_observation`, `netrust_step`, `netrust_inspect_tile`, `netrust_render_map`, `netrust_reset_game`, `netrust_get_roles`, `netrust_reset_with_character` |
+| Terminal (`netrust`) | [netrust-tui](../crates/netrust-tui/src/main.rs) | crossterm; pure key handler in [keys.rs](../crates/netrust-tui/src/keys.rs); `--seed N`; panic hook restores the terminal |
+| Web | [netrust-wasm](../crates/netrust-wasm/src/lib.rs) + [web/index.html](../web/index.html) | `wasm-bindgen` API for stepping, rendering and observations; built with `wasm-pack` (see the README) |
+| Python / Gymnasium | [netrust-py](../crates/netrust-py/src/lib.rs), [python/netrust_gym/env.py](../python/netrust_gym/env.py) | PyO3 environment with action masking; REINFORCE example in [train_reinforce.py](../python/train_reinforce.py) |
+| MCP (stdio) | [mcp.rs](../crates/netrust-agent/src/mcp.rs) | Tools for observing, stepping and resetting a game |
 | JSON-RPC 2.0 (stdio) | [jsonrpc.rs](../crates/netrust-agent/src/jsonrpc.rs) | Standard error codes |
-| GraphQL (HTTP) | [graphql.rs](../crates/netrust-agent/src/graphql.rs) | axum + async-graphql. Queries: `playerState`, `observationJson`, `asciiMap`, `inspectTile`, `bestiary`, `itemCatalog`, `roles`, `races`. Mutations: `stepAction`, `resetGame`, `resetWithCharacter`. Includes a GraphiQL page. |
-| Bones server | [bones/](../crates/netrust-agent/src/bones/) | Shares bones between players over HTTP (axum server plus client); size limits listed in §6.2 |
-| Benchmark / demo | [benchmark.rs](../crates/netrust-agent/src/bin/benchmark.rs), [arena.rs](../crates/netrust-agent/src/arena.rs) | Fixed tournament of 4 policies; writes `web/benchmark_report.json` relative to the current directory |
+| GraphQL (HTTP) | [graphql.rs](../crates/netrust-agent/src/graphql.rs) | axum + async-graphql; game state, data tables and step mutations |
+| Bones server | [bones/](../crates/netrust-agent/src/bones/) | Shares bones between players over HTTP; limits in §6.2 |
+| Benchmark / demo | [benchmark.rs](../crates/netrust-agent/src/bin/benchmark.rs), [arena.rs](../crates/netrust-agent/src/arena.rs) | Fixed tournament of 4 policies (§5.1) |
 
-Strings come from [netrust-i18n](../crates/netrust-i18n/src/lib.rs): 126 keys, English and Ukrainian, compiled in as `match` tables, with coverage tests. Monster and item names are translated too. More detail on the agent interfaces is in [agent-and-mcp-integration.md](agent-and-mcp-integration.md).
+The tool, query and mutation names are listed in [agent-and-mcp-integration.md](agent-and-mcp-integration.md).
+
+Strings come from [netrust-i18n](../crates/netrust-i18n/src/lib.rs): 126 keys, English and Ukrainian, compiled in as `match` tables, with coverage tests. Monster and item names are translated too.
 
 C supports display back ends through one `window_procs` vtable. NetRust has a separate crate for each frontend, all talking to the same simulation API.
 
@@ -400,7 +381,7 @@ C supports display back ends through one `window_procs` vtable. NetRust has a se
 - **Dungeon:** the Wizard's Tower, Vlad's Tower and Fort Ludios are stubs (solid stone with one staircase).
 - **Configuration and saves:** no options or config file, and no save game in the TUI.
 
-### 9.2 Next fidelity passes
+### 9.2 Next fidelity passes (as of 2026-10-04)
 
 - **D2** (in progress): C values for the monster and item tables, attack lists, weapon dice, armor AC, and peaceful monsters.
 - **D3** (planned): floating-eye paralysis, per-monster speed, XP and level-up, pets following the hero across levels, encumbrance applied to movement, and telepathy while blind.
