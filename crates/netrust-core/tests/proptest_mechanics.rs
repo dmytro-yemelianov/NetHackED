@@ -6,29 +6,29 @@ use netrust_core::{
     apply_erosion, apply_vorpal_strike, attack_hits, attack_nemesis, branch_entrance_depth,
     branch_max_depth, buy_price, calculate_damage, calculate_encumbrance,
     calculate_mysterious_force, calculate_summon_count, calculate_tournament_score,
-    can_detect_monster, can_insert_safe, can_see_tile, cast_spell, choose_pet_goal, clamp_favor,
-    consecrate_water, consult_leader, corrupt_buc_on_death, create_ghost_hp,
-    decide_tactical_action, destroy_drawbridge, dilute_potion, dip_water, enchant_armor,
-    enchant_weapon, enter_branch, exit_branch, feed_pet, hero_damage_after_ac, hunger_of_nutrition,
-    hunger_tier, identify_fully, interact_with_occupant, is_candelabrum_ready,
-    is_hero_eligible_for_quest, is_hp_critical, is_sanctum_accessible, is_valid_bones_level,
-    learn_buc, learn_type, luck_decay_period, mana_cost, melee_damage, mix_alchemy,
-    monster_to_hit_value, offer_amulet_on_high_altar, pet_tile_steppable, pick_up_quest_artifact,
+    can_detect_monster, can_see_tile, cast_spell, choose_pet_goal, clamp_favor, consecrate_water,
+    consult_leader, corrupt_buc_on_death, create_ghost_hp, decide_tactical_action,
+    destroy_drawbridge, dilute_potion, dip_water, enchant_armor, enchant_weapon, enter_branch,
+    exit_branch, feed_pet, hero_damage_after_ac, hunger_of_nutrition, hunger_tier, identify_fully,
+    interact_with_occupant, is_candelabrum_ready, is_hero_eligible_for_quest, is_hp_critical,
+    is_sanctum_accessible, is_valid_bones_level, learn_buc, learn_type, luck_decay_period,
+    mana_cost, mbag_explodes, melee_damage, mix_alchemy, monster_to_hit_value,
+    offer_amulet_on_high_altar, pet_tile_steppable, pick_up_quest_artifact,
     priest_donation_outcome, priest_donation_quan, priest_suggested_donation, priest_uncurse,
     promote_pet, protection_purchase_count, protection_purchase_step, push_boulder,
     quest_progress_rank, recharge_wand, reflect, resolve_breath_damage, resolve_gaze,
     resolve_sacrifice, return_to_leader_with_artifact, rub_lamp, sell_price, step_luck_decay,
     step_ray, step_ritual, swap_displacement, tick_light_fuel, tick_prayer_timeout, to_hit_value,
-    toggle_drawbridge, uncurse, zap_wand, Alignment, ArtifactLocation, AscensionOutcome, BeamRay,
-    BranchCoord, BranchId, BreathType, Buc, CandelabrumState, Combatant, Coord, DilutionState,
-    Direction, DivineState, DonationOutcome, DoorState, DrawbridgeState, DrawbridgeTransition,
-    DungeonDepth, EnchantOutcome, EncumbranceTier, Engraving, EngravingMedium, FormStats,
-    GazeEffect, GazeType, HeroInteraction, HeroQuestEligibility, Intrinsics, InvocationStep, Item,
-    KnowledgeLevel, LightSource, MetricState, PetFamily, PetGoal, PetSpeciesTier, PolyEntity,
-    PushOutcome, QuestProgress, QuestState, RechargeResult, RitualProgress, RubResult,
-    SchedulerState, SpellKind, StepAction, StepResult, SurfaceOrientation, TacticalAction,
-    TacticalContext, Tile, Velocity, WandCharges, WaterType, MAX_DIVINE_PROTECTION, NORMAL_SPEED,
-    QUEST_MIN_ALIGNMENT, QUEST_MIN_LEVEL, REQUIRED_CANDLES,
+    toggle_drawbridge, uncurse, zap_wand, Alignment, ArtifactLocation, AscensionOutcome,
+    BagCheckItem, BagCheckKind, BeamRay, BranchCoord, BranchId, BreathType, Buc, CandelabrumState,
+    Combatant, Coord, DilutionState, Direction, DivineState, DonationOutcome, DoorState,
+    DrawbridgeState, DrawbridgeTransition, DungeonDepth, EnchantOutcome, EncumbranceTier,
+    Engraving, EngravingMedium, FormStats, GazeEffect, GazeType, HeroInteraction,
+    HeroQuestEligibility, Intrinsics, InvocationStep, KnowledgeLevel, LightSource, MetricState,
+    PetFamily, PetGoal, PetSpeciesTier, PolyEntity, PushOutcome, QuestProgress, QuestState,
+    RechargeResult, RitualProgress, RubResult, SchedulerState, SpellKind, StepAction, StepResult,
+    SurfaceOrientation, TacticalAction, TacticalContext, Tile, Velocity, WandCharges, WaterType,
+    MAX_DIVINE_PROTECTION, NORMAL_SPEED, QUEST_MIN_ALIGNMENT, QUEST_MIN_LEVEL, REQUIRED_CANDLES,
 };
 use proptest::prelude::*;
 
@@ -135,6 +135,27 @@ fn ref_enchant_weapon(spe: i8, buc: Buc, rn2_3: u32, gain_roll: u32) -> Option<i
         return None;
     }
     Some((spe + amount).clamp(-128, 127) as i8)
+}
+
+fn arb_bag_kind() -> impl Strategy<Value = BagCheckKind> {
+    prop_oneof![
+        Just(BagCheckKind::BagOfHolding),
+        (-2i32..4).prop_map(|charges| BagCheckKind::BagOfTricks { charges }),
+        (-2i32..4).prop_map(|charges| BagCheckKind::WandOfCancellation { charges }),
+        Just(BagCheckKind::Other),
+    ]
+}
+
+fn arb_bag_tree(depth: u32) -> BoxedStrategy<BagCheckItem> {
+    let leaf = arb_bag_kind().prop_map(|kind| BagCheckItem {
+        kind,
+        children: vec![],
+    });
+    leaf.prop_recursive(depth, 12, 3, |inner| {
+        (arb_bag_kind(), proptest::collection::vec(inner, 0..3))
+            .prop_map(|(kind, children)| BagCheckItem { kind, children })
+    })
+    .boxed()
 }
 
 proptest! {
@@ -372,25 +393,57 @@ proptest! {
     }
 
     // -------------------------------------------------------------
-    // Theorem: boh_cannot_contain_boh (Bag of Holding safety)
+    // Theorem: boh_cannot_contain_boh / depth_zero_boh_explodes /
+    // cancellation_wand_explodes (pickup.c:2488 mbag_explodes)
     // -------------------------------------------------------------
     #[test]
-    fn prop_boh_cannot_contain_boh(buc1 in arb_buc(), buc2 in arb_buc()) {
-        let boh1 = Item::Box {
-            name: "bag 1".into(),
-            base_weight: 15,
-            buc: buc1,
-            is_bag_of_holding: true,
-            contents: vec![],
-        };
-        let boh2 = Item::Box {
-            name: "bag 2".into(),
-            base_weight: 15,
-            buc: buc2,
-            is_bag_of_holding: true,
-            contents: vec![],
-        };
-        prop_assert!(!can_insert_safe(&boh2, &boh1));
+    fn prop_mbag_explodes_matches_c_reference(
+        tree in arb_bag_tree(3),
+        rolls in proptest::collection::vec(any::<u32>(), 64),
+    ) {
+        // Reference written directly from pickup.c:2488-2507; `rolls` are
+        // consumed in C draw order, reduced to rn2(n) range by `% n`.
+        fn reference(o: &BagCheckItem, depth: u32, rolls: &mut impl Iterator<Item = u32>) -> bool {
+            let (otyp_cancel_or_tricks, spe, is_mbag, is_cancel) = match o.kind {
+                BagCheckKind::BagOfHolding => (false, 0, true, false),
+                BagCheckKind::BagOfTricks { charges } => (true, charges, true, false),
+                BagCheckKind::WandOfCancellation { charges } => (true, charges, false, true),
+                BagCheckKind::Other => (false, 0, false, false),
+            };
+            if otyp_cancel_or_tricks && spe <= 0 {
+                return false;
+            }
+            if (is_mbag || is_cancel) && {
+                let n = 1u32 << (if depth > 7 { 7 } else { depth });
+                rolls.next().unwrap_or(0) % n <= depth
+            } {
+                return true;
+            }
+            for c in &o.children {
+                if reference(c, depth + 1, rolls) {
+                    return true;
+                }
+            }
+            false
+        }
+        let mut it_ref = rolls.clone().into_iter();
+        let expected = reference(&tree, 0, &mut it_ref);
+        let mut it = rolls.clone().into_iter();
+        let mut bounds_ok = true;
+        let got = mbag_explodes(&tree, 0, &mut |n| {
+            bounds_ok &= n.is_power_of_two() && n <= 128;
+            it.next().unwrap_or(0) % n
+        });
+        prop_assert_eq!(got, expected);
+        prop_assert!(bounds_ok);
+        // Same number of draws as C.
+        prop_assert_eq!(it.count(), it_ref.count());
+    }
+
+    #[test]
+    fn prop_depth_zero_boh_always_explodes(roll in any::<u32>()) {
+        let boh = BagCheckItem { kind: BagCheckKind::BagOfHolding, children: vec![] };
+        prop_assert!(mbag_explodes(&boh, 0, &mut |_| roll));
     }
 
     // -------------------------------------------------------------

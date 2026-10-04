@@ -3,6 +3,7 @@
 use netrust_arena::ItemLocation;
 use netrust_core::energy::NORMAL_SPEED;
 use netrust_types::Coord;
+use rand::Rng;
 
 use crate::events::GameEvent;
 use crate::world::SimulationWorld;
@@ -130,6 +131,42 @@ impl SimulationWorld {
         events
     }
 
+    /// Builds the C `mbag_explodes` view of an arena item and its recursive
+    /// contents. Kind is detected by name; charges are `enchantment` (`obj->spe`).
+    fn bag_check_tree(&self, id: netrust_arena::ItemId) -> netrust_core::BagCheckItem {
+        use netrust_core::{BagCheckItem, BagCheckKind};
+        let rec = self.arena.items.get(id);
+        let kind = match rec {
+            Some(r) if r.is_bag_of_holding => BagCheckKind::BagOfHolding,
+            Some(r) if r.name.contains("wand of cancellation") => {
+                BagCheckKind::WandOfCancellation {
+                    charges: i32::from(r.enchantment),
+                }
+            }
+            Some(r) if r.name.contains("bag of tricks") => BagCheckKind::BagOfTricks {
+                charges: i32::from(r.enchantment),
+            },
+            _ => BagCheckKind::Other,
+        };
+        BagCheckItem {
+            kind,
+            children: self
+                .arena
+                .items_in_container(id)
+                .into_iter()
+                .map(|c| self.bag_check_tree(c))
+                .collect(),
+        }
+    }
+
+    /// Destroys an item and everything inside it.
+    fn destroy_item_tree(&mut self, id: netrust_arena::ItemId) {
+        for c in self.arena.items_in_container(id) {
+            self.destroy_item_tree(c);
+        }
+        self.arena.destroy_item(id);
+    }
+
     pub(crate) fn handle_put_in_container(
         &mut self,
         item_index: usize,
@@ -151,11 +188,14 @@ impl SimulationWorld {
                     events.push(GameEvent::LogMessage {
                         text: format!("The {} is not a container.", container.name),
                     });
-                } else if !netrust_core::inventory::can_insert_safe_flags(
-                    item.is_bag_of_holding,
-                    container.is_container,
-                    container.is_bag_of_holding,
-                ) {
+                } else if container.is_bag_of_holding && {
+                    // pickup.c:2658: only a BoH checks the inserted object.
+                    let tree = self.bag_check_tree(item_id);
+                    let rng = &mut self.rng;
+                    netrust_core::mbag_explodes(&tree, 0, &mut |bound| {
+                        rng.random_range(0..bound.max(1))
+                    })
+                } {
                     // Magical container explosion!
                     events.push(GameEvent::LogMessage {
                         text: "The magical energies rupture the fabric of space! The bag explodes with a blinding flash!".into(),
@@ -164,7 +204,23 @@ impl SimulationWorld {
                     {
                         self.wielded_item = None;
                     }
-                    self.arena.destroy_item(item_id);
+                    // do_boh_explosion (pickup.c:2517): each content item is
+                    // destroyed with probability 1/13 (is_boh_item_gone), the rest
+                    // are scattered (approximated: dropped at the hero's square).
+                    let hero_coord = self.arena.actors.get(self.player_id).map(|p| p.coord);
+                    for content in self.arena.items_in_container(container_id) {
+                        if self.rng.random_range(0..13u32) != 0 {
+                            if let (Some(c), Some(rec)) =
+                                (hero_coord, self.arena.items.get_mut(content))
+                            {
+                                rec.location = ItemLocation::Floor(c);
+                                continue;
+                            }
+                        }
+                        self.destroy_item_tree(content);
+                    }
+                    // The inserted object was never inserted: it is deleted with its contents.
+                    self.destroy_item_tree(item_id);
                     self.arena.destroy_item(container_id);
                     if let Some(p) = self.arena.actors.get_mut(self.player_id) {
                         p.hp = p.hp.saturating_sub(15);

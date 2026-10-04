@@ -73,29 +73,76 @@ theorem contents_weight_ge_tail (x : Item) (xs : List Item) :
   dsimp [contentsWeight]
   exact Nat.le_add_left (contentsWeight xs) (itemWeight x)
 
-/--
-  Check whether an item can be safely inserted into a container.
-  Matches NetHack pickup.c:2658 mbag_explodes() check:
-  Inserting a Bag of Holding into another Bag of Holding triggers an explosion.
--/
-def canInsertSafe (item : Item) (container : Item) : Bool :=
-  match container with
-  | Item.Box _ _ _ isBoH _ =>
-    if isBoH then
-      match item with
-      | Item.Box _ _ _ itemBoH _ => !itemBoH
-      | _ => true
-    else
-      true
+/-- What an object is, as far as C `mbag_explodes` cares (`obj->otyp`, `obj->spe`). -/
+inductive BagCheckKind where
+  | BagOfHolding
+  | BagOfTricks (charges : Int)
+  | WandOfCancellation (charges : Int)
+  | Other
+deriving Repr, DecidableEq
+
+/-- An object being put into a Bag of Holding with its recursive contents (`obj->cobj`). -/
+inductive BagCheckItem where
+  | mk (kind : BagCheckKind) (children : List BagCheckItem)
+deriving Repr
+
+/-- Empty wands of cancellation / bags of tricks never explode (`pickup.c:2491-2493`). -/
+def bagEmpty : BagCheckKind → Bool
+  | .BagOfTricks c => decide (c ≤ 0)
+  | .WandOfCancellation c => decide (c ≤ 0)
   | _ => false
+
+/-- `Is_mbag(obj) || otyp == WAN_CANCELLATION` (`pickup.c:2496`). -/
+def bagMagical : BagCheckKind → Bool
+  | .Other => false
+  | _ => true
+
+/--
+  The C draw `rn2(1 << min(depth, 7))` (`pickup.c:2497`), with the caller-supplied
+  oracle `roll` (given the bound) reduced into `0..bound-1`.
+-/
+def bagDraw (roll : Nat → Nat) (depth : Nat) : Nat :=
+  roll (1 <<< Nat.min depth 7) % (1 <<< Nat.min depth 7)
+
+mutual
+  /--
+    C `mbag_explodes(obj, depthin)` (`pickup.c:2488-2507`). `roll` models `rn2(bound)`.
+    (The Lean model shares one oracle across draws; Rust consumes one roll per draw.)
+  -/
+  def mbagExplodes (roll : Nat → Nat) (depth : Nat) : BagCheckItem → Bool
+    | .mk k cs =>
+      if bagEmpty k then false
+      else if bagMagical k && decide (bagDraw roll depth ≤ depth) then true
+      else anyExplodes roll (depth + 1) cs
+
+  def anyExplodes (roll : Nat → Nat) (depth : Nat) : List BagCheckItem → Bool
+    | [] => false
+    | c :: cs => mbagExplodes roll depth c || anyExplodes roll depth cs
+end
+
+/-- Safe iff `mbag_explodes(obj, 0)` is false (`pickup.c:2658`). -/
+def canInsertSafe (roll : Nat → Nat) (item : BagCheckItem) : Bool :=
+  !mbagExplodes roll 0 item
+
+/-- At depth 0 the draw is `rn2(1) = 0 <= 0`, so a BoH always explodes. -/
+theorem depth_zero_boh_explodes (roll : Nat → Nat) (cs : List BagCheckItem) :
+  mbagExplodes roll 0 (BagCheckItem.mk BagCheckKind.BagOfHolding cs) = true := by
+  simp [mbagExplodes, bagEmpty, bagMagical, bagDraw, Nat.mod_one]
+
+/-- A charged wand of cancellation explodes at depth 0 regardless of the roll. -/
+theorem cancellation_wand_explodes (roll : Nat → Nat) (c : Int) (h : 0 < c)
+    (cs : List BagCheckItem) :
+  mbagExplodes roll 0 (BagCheckItem.mk (BagCheckKind.WandOfCancellation c) cs) = true := by
+  have : ¬ c ≤ 0 := by omega
+  simp [mbagExplodes, bagEmpty, bagMagical, bagDraw, Nat.mod_one, this]
 
 /--
   Theorem: Bag of Holding Explosion Prevention.
-  A Bag of Holding cannot be safely inserted into another Bag of Holding.
+  A Bag of Holding cannot be safely inserted into a Bag of Holding (any roll).
 -/
-theorem boh_cannot_contain_boh (name1 name2 : String) (w1 w2 : Nat) (b1 b2 : BUC) (c1 c2 : List Item) :
-  canInsertSafe (Item.Box name1 w1 b1 true c1) (Item.Box name2 w2 b2 true c2) = false := by
-  rfl
+theorem boh_cannot_contain_boh (roll : Nat → Nat) (cs : List BagCheckItem) :
+  canInsertSafe roll (BagCheckItem.mk BagCheckKind.BagOfHolding cs) = false := by
+  simp [canInsertSafe, depth_zero_boh_explodes]
 
 /-- Encumbrance tiers in NetHack -/
 inductive EncumbranceTier where

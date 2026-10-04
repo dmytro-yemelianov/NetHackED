@@ -77,8 +77,7 @@ $$\Omega(\_, \text{false}, W_{\text{inner}}) = W_{\text{inner}}$$
 *Notice on Integer Rounding*: In NetHack C, `(cwt + 3) / 4` ensures that an item weighing 1 unit inside a blessed Bag of Holding still contributes at least 1 unit of effective weight ($4 / 4 = 1$), rather than truncating to 0.
 
 ### Insertion Safety & Nesting Explosions
-In NetHack (`NetHack-5.0.0/src/pickup.c`:2658 `mbag_explodes`), inserting a Bag of Holding inside another Bag of Holding triggers an immediate magical explosion:
-$$\text{canInsertSafe}(i, c) = \text{false} \quad \text{if } i.\text{isBoH} \land c.\text{isBoH}$$
+When an object $o$ is put into a Bag of Holding, C `mbag_explodes(o, d)` (`NetHack-5.0.0/src/pickup.c`:2488-2507, called with $d = 0$ at :2658) decides whether the bag explodes. Empty (spe $\le 0$) wands of cancellation and bags of tricks never explode. Otherwise a Bag of Holding, bag of tricks or wand of cancellation explodes if $\text{rn2}(2^{\min(d,7)}) \le d$ (odds $1/1, 2/2, 3/4, 4/8, \ldots$); failing that, each content item is checked recursively at depth $d+1$ and the first explosion wins. Draws happen only where C draws. Hence a BoH, charged bag of tricks or charged wand of cancellation always explodes at depth 0, and a container holding one at depth 1 always explodes.
 
 ### Carrying Capacity & Encumbrance Tiers
 Carrying capacity $C$ for a hero with (reduced) Strength $S$ and Constitution $K$ (`hack.c:4295`, `weight_cap`):

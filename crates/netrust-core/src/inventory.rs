@@ -61,37 +61,62 @@ impl Item {
     }
 }
 
-/// Check whether an item can be safely inserted into a container without explosion.
-/// In NetHack (pickup.c:2658 mbag_explodes), placing a Bag of Holding inside
-/// another Bag of Holding triggers an immediate magical explosion destroying both.
-pub fn can_insert_safe(item: &Item, container: &Item) -> bool {
-    match container {
-        Item::Box {
-            is_bag_of_holding: true,
-            ..
-        } => !matches!(
-            item,
-            Item::Box {
-                is_bag_of_holding: true,
-                ..
-            }
-        ),
-        Item::Box {
-            is_bag_of_holding: false,
-            ..
-        } => true,
-        Item::Single { .. } => false,
-    }
+/// What an object is, as far as `mbag_explodes` cares (C `obj->otyp`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BagCheckKind {
+    /// `BAG_OF_HOLDING`.
+    BagOfHolding,
+    /// `BAG_OF_TRICKS` with `obj->spe` charges.
+    BagOfTricks { charges: i32 },
+    /// `WAN_CANCELLATION` with `obj->spe` charges.
+    WandOfCancellation { charges: i32 },
+    /// Anything else (a sack, a dagger, ...).
+    Other,
 }
 
-/// Convenience check using boolean flags.
-#[inline]
-pub fn can_insert_safe_flags(
-    item_is_boh: bool,
-    container_is_container: bool,
-    container_is_boh: bool,
-) -> bool {
-    container_is_container && !(item_is_boh && container_is_boh)
+/// An object being put into a Bag of Holding, with its recursive contents
+/// (C `obj->cobj` list).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BagCheckItem {
+    pub kind: BagCheckKind,
+    pub children: Vec<BagCheckItem>,
+}
+
+/// C `mbag_explodes(obj, depthin)` (`pickup.c:2488-2507`): would putting `obj`
+/// into a Bag of Holding make it explode?
+///
+/// Called with `depth = 0` when inserting (`pickup.c:2658`; also `pickup.c:3776`).
+/// Empty (`spe <= 0`) wands of cancellation / bags of tricks never explode
+/// (`pickup.c:2491-2493`). Otherwise a BoH, bag of tricks or wand of
+/// cancellation explodes if `rn2(1 << min(depth, 7)) <= depth`
+/// (`pickup.c:2496-2497`); else the children are scanned at `depth + 1`,
+/// stopping at the first explosion.
+///
+/// `rn2` models C `rn2(n)`: it is called with the bound `n` and should return
+/// a value in `0..n` (out-of-range results are clamped to `n - 1`). It is
+/// invoked only when C draws (C short-circuits on the item-kind test and on the
+/// first exploding child), so the caller's RNG stream stays in step.
+pub fn mbag_explodes(obj: &BagCheckItem, depth: u32, rn2: &mut impl FnMut(u32) -> u32) -> bool {
+    let magical = match obj.kind {
+        BagCheckKind::WandOfCancellation { charges } | BagCheckKind::BagOfTricks { charges }
+            if charges <= 0 =>
+        {
+            return false;
+        }
+        BagCheckKind::BagOfHolding
+        | BagCheckKind::BagOfTricks { .. }
+        | BagCheckKind::WandOfCancellation { .. } => true,
+        BagCheckKind::Other => false,
+    };
+    if magical {
+        let bound = 1u32 << depth.min(7);
+        if rn2(bound).min(bound - 1) <= depth {
+            return true;
+        }
+    }
+    obj.children
+        .iter()
+        .any(|child| mbag_explodes(child, depth + 1, rn2))
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -199,23 +224,67 @@ mod tests {
         assert_eq!(boh_feather.item_weight(), 16);
     }
 
+    fn leaf(kind: BagCheckKind) -> BagCheckItem {
+        BagCheckItem {
+            kind,
+            children: vec![],
+        }
+    }
+
     #[test]
-    fn test_boh_cannot_contain_boh() {
-        let boh1 = Item::Box {
-            name: "outer bag".into(),
-            base_weight: 15,
-            buc: Buc::Blessed,
-            is_bag_of_holding: true,
-            contents: vec![],
+    fn test_boh_into_boh_always_explodes() {
+        let boh = leaf(BagCheckKind::BagOfHolding);
+        // depth 0: rn2(1) == 0 <= 0, whatever the caller returns.
+        assert!(mbag_explodes(&boh, 0, &mut |_| 999));
+    }
+
+    #[test]
+    fn test_charged_cancellation_explodes_empty_does_not() {
+        let w = |charges| leaf(BagCheckKind::WandOfCancellation { charges });
+        assert!(mbag_explodes(&w(1), 0, &mut |_| 0));
+        assert!(!mbag_explodes(&w(0), 0, &mut |_| panic!("no draw")));
+        let t = |charges| leaf(BagCheckKind::BagOfTricks { charges });
+        assert!(mbag_explodes(&t(3), 0, &mut |_| 0));
+        assert!(!mbag_explodes(&t(0), 0, &mut |_| panic!("no draw")));
+    }
+
+    #[test]
+    fn test_sack_with_boh_depth_one_always_explodes() {
+        let sack = BagCheckItem {
+            kind: BagCheckKind::Other,
+            children: vec![leaf(BagCheckKind::BagOfHolding)],
         };
-        let boh2 = Item::Box {
-            name: "inner bag".into(),
-            base_weight: 15,
-            buc: Buc::Blessed,
-            is_bag_of_holding: true,
-            contents: vec![],
+        // depth 1: rn2(2) in {0,1} <= 1 always.
+        assert!(mbag_explodes(&sack, 0, &mut |_| 1));
+    }
+
+    #[test]
+    fn test_deep_nesting_is_probabilistic_and_draws_in_c_order() {
+        let boh = leaf(BagCheckKind::BagOfHolding);
+        let sack2 = BagCheckItem {
+            kind: BagCheckKind::Other,
+            children: vec![BagCheckItem {
+                kind: BagCheckKind::Other,
+                children: vec![boh],
+            }],
         };
-        assert!(!can_insert_safe(&boh2, &boh1));
+        // BoH at depth 2: rn2(4) <= 2 explodes; 3 survives.
+        let mut bounds = vec![];
+        assert!(!mbag_explodes(&sack2, 0, &mut |b| {
+            bounds.push(b);
+            3
+        }));
+        assert_eq!(bounds, vec![4]);
+        assert!(mbag_explodes(&sack2, 0, &mut |_| 2));
+    }
+
+    #[test]
+    fn test_plain_items_never_draw() {
+        let sack = BagCheckItem {
+            kind: BagCheckKind::Other,
+            children: vec![leaf(BagCheckKind::Other)],
+        };
+        assert!(!mbag_explodes(&sack, 0, &mut |_| panic!("no draw")));
     }
 
     #[test]

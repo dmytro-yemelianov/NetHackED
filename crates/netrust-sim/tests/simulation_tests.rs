@@ -398,6 +398,100 @@ fn test_container_boh_in_boh_explosion() {
     assert!(sim.arena.actors.get(sim.player_id).unwrap().hp < initial_hp);
 }
 
+/// Puts `item` (by id) into `container` (by id) via the action handler.
+fn put_in(
+    sim: &mut SimulationWorld,
+    item: netrust_arena::ItemId,
+    container: netrust_arena::ItemId,
+) -> Vec<GameEvent> {
+    let carried = sim.arena.items_carried_by(sim.player_id);
+    let i = carried.iter().position(|&id| id == item).unwrap();
+    let c = carried.iter().position(|&id| id == container).unwrap();
+    sim.step_player_action(ActionAst::PutInContainer {
+        item_index: i,
+        container_index: c,
+    })
+}
+
+fn carried_wand(sim: &mut SimulationWorld, name: &str, charges: i8) -> netrust_arena::ItemId {
+    let mut rec = create_item_record(
+        ItemKindId::Dagger,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Uncursed,
+    );
+    rec.name = name.to_string();
+    rec.enchantment = charges;
+    sim.arena.spawn_item(rec)
+}
+
+#[test]
+fn test_boh_explodes_on_charged_cancellation_not_empty() {
+    let mut sim = SimulationWorld::new_with_seed(107);
+    let boh = sim.arena.spawn_item(create_item_record(
+        ItemKindId::BagOfHolding,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Uncursed,
+    ));
+    let empty = carried_wand(&mut sim, "wand of cancellation", 0);
+    let events = put_in(&mut sim, empty, boh);
+    assert!(events
+        .iter()
+        .any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("You put"))));
+    let charged = carried_wand(&mut sim, "wand of cancellation", 2);
+    let events = put_in(&mut sim, charged, boh);
+    assert!(events
+        .iter()
+        .any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("explodes"))));
+    assert!(sim.arena.items.get(boh).is_none());
+}
+
+#[test]
+fn test_boh_explodes_on_sack_containing_boh() {
+    let mut sim = SimulationWorld::new_with_seed(108);
+    let outer = sim.arena.spawn_item(create_item_record(
+        ItemKindId::BagOfHolding,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Uncursed,
+    ));
+    let sack = sim.arena.spawn_item(create_item_record(
+        ItemKindId::Sack,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Uncursed,
+    ));
+    let inner = sim.arena.spawn_item(create_item_record(
+        ItemKindId::BagOfHolding,
+        ItemLocation::InContainer(sack),
+        Buc::Uncursed,
+    ));
+    let _ = inner;
+    // Sack holding a BoH at depth 1: rn2(2) <= 1 always explodes.
+    let events = put_in(&mut sim, sack, outer);
+    assert!(events
+        .iter()
+        .any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("explodes"))));
+    assert!(sim.arena.items.get(outer).is_none());
+}
+
+#[test]
+fn test_boh_into_plain_sack_is_safe() {
+    let mut sim = SimulationWorld::new_with_seed(109);
+    let boh = sim.arena.spawn_item(create_item_record(
+        ItemKindId::BagOfHolding,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Uncursed,
+    ));
+    let sack = sim.arena.spawn_item(create_item_record(
+        ItemKindId::Sack,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Uncursed,
+    ));
+    let events = put_in(&mut sim, boh, sack);
+    assert!(events
+        .iter()
+        .any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("You put"))));
+    assert!(sim.arena.items.get(boh).is_some());
+}
+
 #[test]
 fn test_water_dipping() {
     use netrust_types::WaterType;

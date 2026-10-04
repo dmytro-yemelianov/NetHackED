@@ -64,8 +64,8 @@ pub use gehennom::{
 pub use grid::{Alignment, Coord, DoorState, Tile, COLNO, ROWNO};
 pub use identification::{identify_fully, learn_buc, learn_type, KnowledgeLevel};
 pub use inventory::{
-    calculate_encumbrance, can_insert_safe, encumbrance_tier, weight_cap, EncumbranceTier, Item,
-    ItemKind,
+    calculate_encumbrance, encumbrance_tier, mbag_explodes, weight_cap, BagCheckItem, BagCheckKind,
+    EncumbranceTier, Item, ItemKind,
 };
 pub use inventory_interaction::{
     buy_factor, buy_price, dilute_potion, dunce_or_tourist_surcharge, oid_price_adjustment,
