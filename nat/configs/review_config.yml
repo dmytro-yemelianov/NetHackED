@@ -16,12 +16,12 @@ llms:
     base_url: https://integrate.api.nvidia.com/v1
     api_key: ${NVIDIA_API_KEY}
     temperature: 0.05
-    max_tokens: 4096
+    max_tokens: 2048
 
 functions:
   netrust_workspace_reader:
     _type: netrust_workspace_reader
-    max_read_lines: 500
+    max_read_lines: 100
 
   netrust_cargo_runner:
     _type: netrust_cargo_runner

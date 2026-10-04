@@ -2,7 +2,7 @@
 
 use netrust_arena::{ActorId, ItemId, ItemLocation};
 use netrust_core::energy::NORMAL_SPEED;
-use netrust_data::{create_item_record, create_monster_record, ItemKindId, MonsterSpeciesId};
+use netrust_data::{ItemKindId, MonsterSpeciesId};
 use netrust_dungeon::{
     generate_dungeon_level, generate_gehennom_maze_level, generate_moloch_sanctum_level,
     generate_sokoban_level, generate_valley_of_the_dead,
@@ -25,14 +25,13 @@ pub fn clamp_mysterious_force(pushed: usize, sanctum_open: bool) -> usize {
 }
 
 /// Resolve a quest leader/nemesis display name (from `get_role_quest_config`,
-/// C `role.c` `urole[]`) to its BESTIARY species, so spawning and the
-/// nemesis-kill name check in combat can never disagree.
-pub(crate) fn quest_species_by_name(name: &str) -> MonsterSpeciesId {
-    netrust_data::BESTIARY
-        .iter()
-        .find(|m| m.name.eq_ignore_ascii_case(name))
-        .map(|m| m.id)
-        .unwrap_or_else(|| panic!("quest monster {name} missing from BESTIARY"))
+/// C `role.c` `urole[]`) to its ruleset species, so spawning and the
+/// nemesis-kill name check in combat can never disagree. Returns None if missing without panic.
+pub(crate) fn quest_species_by_name(
+    ruleset: &netrust_data::ruleset::Ruleset,
+    name: &str,
+) -> Option<MonsterSpeciesId> {
+    ruleset.monster(name).and_then(|m| m.id)
 }
 
 impl SimulationWorld {
@@ -60,16 +59,14 @@ impl SimulationWorld {
         self.place_steed_with_hero();
     }
 
-    /// Spawn a monster at or near `preferred` on a passable, unoccupied, non-stairs tile
-    /// (searching outward up to radius 3 in row-major ring order). Returns `None` if no spot.
-    ///
-    /// Like C `makemon` (`makemon.c:1299`), the new monster's peacefulness is
-    /// `peace_minded(ptr)`, drawn from the sim RNG only when C draws.
-    pub fn spawn_monster_near(
-        &mut self,
-        species: MonsterSpeciesId,
-        preferred: Coord,
-    ) -> Option<ActorId> {
+    /// Spawn a monster by name at or near `preferred` on a passable, unoccupied, non-stairs tile
+    /// (searching outward up to radius 3 in row-major ring order). Returns `None` if no spot or genocided.
+    pub fn spawn_monster_by_name(&mut self, name: &str, preferred: Coord) -> Option<ActorId> {
+        if self.actor_is_genocided(name) {
+            return None;
+        }
+        let rs = std::sync::Arc::clone(&self.ruleset);
+        let def = rs.monster(name)?;
         for radius in 0..=3isize {
             for dy in -radius..=radius {
                 for dx in -radius..=radius {
@@ -88,14 +85,33 @@ impl SimulationWorld {
                         && c != self.level.stairs_down
                         && self.actor_at(c).is_none()
                     {
-                        let mut rec = create_monster_record(species, c);
-                        rec.is_peaceful = self.roll_spawn_peaceful(species);
+                        let mut rec = rs.create_monster_record(name, c)?;
+                        if let Some(species) = def.id {
+                            rec.is_peaceful = self.roll_spawn_peaceful(species);
+                        } else {
+                            rec.is_peaceful = def.peaceful_by_default;
+                        }
                         return Some(self.arena.spawn_actor(rec));
                     }
                 }
             }
         }
         None
+    }
+
+    /// Spawn a monster at or near `preferred` on a passable, unoccupied, non-stairs tile
+    /// (searching outward up to radius 3 in row-major ring order). Returns `None` if no spot.
+    ///
+    /// Like C `makemon` (`makemon.c:1299`), the new monster's peacefulness is
+    /// `peace_minded(ptr)`, drawn from the sim RNG only when C draws.
+    pub fn spawn_monster_near(
+        &mut self,
+        species: MonsterSpeciesId,
+        preferred: Coord,
+    ) -> Option<ActorId> {
+        let rs = std::sync::Arc::clone(&self.ruleset);
+        let name = rs.monster_by_id(species).map(|m| m.name.clone())?;
+        self.spawn_monster_by_name(&name, preferred)
     }
 
     /// Pack the current floor into the StoredLevel cache: every non-player, non-steed actor,
@@ -265,12 +281,13 @@ impl SimulationWorld {
 
                     // Spawn puzzle boulders
                     for bc in boulder_coords {
-                        let boulder = create_item_record(
+                        if let Some(boulder) = self.ruleset.create_item_record_by_id(
                             ItemKindId::Boulder,
                             ItemLocation::Floor(bc),
                             Buc::Uncursed,
-                        );
-                        self.arena.spawn_item(boulder);
+                        ) {
+                            self.arena.spawn_item(boulder);
+                        }
                     }
 
                     // Spawn prize in prize chamber (at depth 1: Bag of Holding)
@@ -280,12 +297,13 @@ impl SimulationWorld {
                     } else {
                         ItemKindId::AmuletOfReflection
                     };
-                    let prize = create_item_record(
+                    if let Some(prize) = self.ruleset.create_item_record_by_id(
                         prize_kind,
                         ItemLocation::Floor(prize_coord),
                         Buc::Blessed,
-                    );
-                    self.arena.spawn_item(prize);
+                    ) {
+                        self.arena.spawn_item(prize);
+                    }
 
                     events.push(GameEvent::LogMessage {
                         text: "You step into the legendary Sokoban puzzle maze! Boulders and pits line the corridors.".into(),
@@ -316,12 +334,13 @@ impl SimulationWorld {
                         netrust_dungeon::generate_mines_end_level(&mut self.rng);
                     self.level = lvl;
 
-                    let luckstone = create_item_record(
+                    if let Some(luckstone) = self.ruleset.create_item_record_by_id(
                         ItemKindId::Luckstone,
                         ItemLocation::Floor(luckstone_coord),
                         Buc::Uncursed,
-                    );
-                    self.arena.spawn_item(luckstone);
+                    ) {
+                        self.arena.spawn_item(luckstone);
+                    }
 
                     let centers: Vec<Coord> = self.level.rooms.iter().map(|r| r.center()).collect();
                     for (i, &center) in centers.iter().enumerate() {
@@ -380,12 +399,13 @@ impl SimulationWorld {
 
                     // Spawn Bell of Opening in Valley of the Dead
                     let bell_coord = self.level.rooms[1].center();
-                    let bell = create_item_record(
+                    if let Some(bell) = self.ruleset.create_item_record_by_id(
                         ItemKindId::BellOfOpening,
                         ItemLocation::Floor(bell_coord),
                         Buc::Blessed,
-                    );
-                    self.arena.spawn_item(bell);
+                    ) {
+                        self.arena.spawn_item(bell);
+                    }
 
                     events.push(GameEvent::LogMessage {
                         text: "You cross into the gloomy, desolate Valley of the Dead...".into(),
@@ -426,25 +446,31 @@ impl SimulationWorld {
                     }
                     let mut spots = order.into_iter();
                     if let Some(c) = spots.next() {
-                        self.arena.spawn_item(create_item_record(
+                        if let Some(it) = self.ruleset.create_item_record_by_id(
                             ItemKindId::CandelabrumOfInvocation,
                             ItemLocation::Floor(c),
                             Buc::Uncursed,
-                        ));
+                        ) {
+                            self.arena.spawn_item(it);
+                        }
                     }
                     if let Some(c) = spots.next() {
-                        self.arena.spawn_item(create_item_record(
+                        if let Some(it) = self.ruleset.create_item_record_by_id(
                             ItemKindId::BookOfTheDead,
                             ItemLocation::Floor(c),
                             Buc::Blessed,
-                        ));
+                        ) {
+                            self.arena.spawn_item(it);
+                        }
                     }
                     for c in spots.take(7) {
-                        self.arena.spawn_item(create_item_record(
+                        if let Some(it) = self.ruleset.create_item_record_by_id(
                             ItemKindId::WaxCandle,
                             ItemLocation::Floor(c),
                             Buc::Uncursed,
-                        ));
+                        ) {
+                            self.arena.spawn_item(it);
+                        }
                     }
 
                     events.push(GameEvent::LogMessage {
@@ -467,12 +493,13 @@ impl SimulationWorld {
                         m.is_peaceful = false;
                     }
 
-                    let amulet = create_item_record(
+                    if let Some(amulet) = self.ruleset.create_item_record_by_id(
                         ItemKindId::AmuletOfYendor,
                         ItemLocation::Floor(self.level.stairs_down),
                         Buc::Blessed,
-                    );
-                    self.arena.spawn_item(amulet);
+                    ) {
+                        self.arena.spawn_item(amulet);
+                    }
 
                     events.push(GameEvent::LogMessage {
                         text: "You enter Moloch's Sanctum! Rivers of boiling lava surround the unholy high altar!".into(),
@@ -514,15 +541,35 @@ impl SimulationWorld {
                     self.level = layout.level;
 
                     let quest_cfg = netrust_core::get_role_quest_config_or_default(&self.role_name);
-                    let leader_species = quest_species_by_name(quest_cfg.leader_name);
-                    // Leader and guardians are M2_PEACEFUL (and MS_LEADER /
-                    // MS_GUARDIAN), so peace_minded makes them peaceful.
-                    self.spawn_monster_near(leader_species, layout.leader_coord);
+                    if let Some(leader_species) =
+                        quest_species_by_name(&self.ruleset, quest_cfg.leader_name)
+                    {
+                        // Leader and guardians are M2_PEACEFUL (and MS_LEADER /
+                        // MS_GUARDIAN), so peace_minded makes them peaceful.
+                        self.spawn_monster_near(leader_species, layout.leader_coord);
+                    } else if self
+                        .spawn_monster_by_name(quest_cfg.leader_name, layout.leader_coord)
+                        .is_none()
+                    {
+                        events.push(GameEvent::LogMessage {
+                            text: format!(
+                                "Quest leader '{}' missing from ruleset.",
+                                quest_cfg.leader_name
+                            ),
+                        });
+                    }
 
                     // C role.c `guardnum`: one guardian species per role.
-                    let guardian_species = quest_species_by_name(quest_cfg.guardian_name);
-                    for gc in layout.guardian_coords {
-                        self.spawn_monster_near(guardian_species, gc);
+                    if let Some(guardian_species) =
+                        quest_species_by_name(&self.ruleset, quest_cfg.guardian_name)
+                    {
+                        for gc in layout.guardian_coords {
+                            self.spawn_monster_near(guardian_species, gc);
+                        }
+                    } else {
+                        for gc in layout.guardian_coords {
+                            self.spawn_monster_by_name(quest_cfg.guardian_name, gc);
+                        }
                     }
 
                     events.push(GameEvent::LogMessage {
@@ -558,9 +605,14 @@ impl SimulationWorld {
                     self.level = layout.level;
 
                     let quest_cfg = netrust_core::get_role_quest_config_or_default(&self.role_name);
-                    let nemesis_species = quest_species_by_name(quest_cfg.nemesis_name);
-                    if let Some(id) = self.spawn_monster_near(nemesis_species, layout.nemesis_coord)
+                    let nemesis_id = if let Some(nemesis_species) =
+                        quest_species_by_name(&self.ruleset, quest_cfg.nemesis_name)
                     {
+                        self.spawn_monster_near(nemesis_species, layout.nemesis_coord)
+                    } else {
+                        self.spawn_monster_by_name(quest_cfg.nemesis_name, layout.nemesis_coord)
+                    };
+                    if let Some(id) = nemesis_id {
                         // The Tourist nemesis is the (M2_PEACEFUL) Master of Thieves;
                         // the quest goal level creates it with `peaceful = 0`
                         // (Tou-goal.lua:117). Every other nemesis is M2_HOSTILE.
@@ -653,13 +705,15 @@ impl SimulationWorld {
                                 4 => MonsterSpeciesId::Vampire,
                                 _ => MonsterSpeciesId::SilverDragon,
                             };
-                            let arch = netrust_data::get_monster_species(species);
-                            if !netrust_core::genocide::is_genocided(
-                                &self.genocide_registry,
-                                arch.name,
-                                arch.glyph,
-                            ) {
-                                self.spawn_monster_near(species, center);
+                            let rs = std::sync::Arc::clone(&self.ruleset);
+                            if let Some(arch) = rs.monster_by_id(species) {
+                                if !netrust_core::genocide::is_genocided(
+                                    &self.genocide_registry,
+                                    &arch.name,
+                                    arch.glyph,
+                                ) {
+                                    self.spawn_monster_near(species, center);
+                                }
                             }
                         }
                     }
@@ -667,12 +721,13 @@ impl SimulationWorld {
                     // At depth 5 in Dungeons of Doom, spawn the Amulet of Yendor
                     if branch == BranchId::DungeonsOfDoom && depth == 5 {
                         if let Some(deepest_room) = self.level.rooms.last() {
-                            let amulet = create_item_record(
+                            if let Some(amulet) = self.ruleset.create_item_record_by_id(
                                 ItemKindId::AmuletOfYendor,
                                 ItemLocation::Floor(deepest_room.center()),
                                 Buc::Blessed,
-                            );
-                            self.arena.spawn_item(amulet);
+                            ) {
+                                self.arena.spawn_item(amulet);
+                            }
                             events.push(GameEvent::LogMessage {
                                 text: "A primordial cosmic radiance emanates from the deepest chamber of this floor...".into(),
                             });

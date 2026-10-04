@@ -356,6 +356,16 @@ impl Ruleset {
         })
     }
 
+    /// Spawn an ActorRecord by its canonical species ID.
+    pub fn create_monster_record_by_id(
+        &self,
+        id: MonsterSpeciesId,
+        coord: Coord,
+    ) -> Option<ActorRecord> {
+        let def = self.monster_by_id(id)?;
+        self.create_monster_record(&def.name, coord)
+    }
+
     /// Spawn an ItemRecord from ruleset item data.
     pub fn create_item_record(
         &self,
@@ -390,6 +400,17 @@ impl Ruleset {
             rot_threshold: 50,
             recharged: 0,
         })
+    }
+
+    /// Spawn an ItemRecord by its canonical item kind ID.
+    pub fn create_item_record_by_id(
+        &self,
+        id: ItemKindId,
+        location: ItemLocation,
+        buc: Buc,
+    ) -> Option<ItemRecord> {
+        let def = self.item_by_id(id)?;
+        self.create_item_record(&def.name, location, buc)
     }
 
     /// Spawn player actor and initial inventory into the entity arena.

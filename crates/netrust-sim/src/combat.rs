@@ -9,9 +9,7 @@ use netrust_core::{
     },
     Combatant,
 };
-use netrust_data::{
-    create_item_record, item_archetype_by_name, monster_archetype_by_name, ItemKindId, MonsterSize,
-};
+use netrust_data::{ItemKindId, MonsterSize};
 use netrust_types::{Attack, AttackType, Buc, DamageType};
 use rand::{Rng, RngCore};
 
@@ -124,7 +122,7 @@ impl SimulationWorld {
 
         let weapon_dice = if let Some(wid) = self.wielded_item {
             if let Some(w) = self.arena.items.get(wid) {
-                if let Some(arch) = item_archetype_by_name(&w.name) {
+                if let Some(arch) = self.ruleset.item(&w.name) {
                     if arch.damage_small.1 > 0 || arch.damage_large.1 > 0 {
                         Some((arch.damage_small.1, arch.damage_large.1))
                     } else {
@@ -157,7 +155,9 @@ impl SimulationWorld {
             None
         };
 
-        let target_large = monster_archetype_by_name(&defender.name)
+        let target_large = self
+            .ruleset
+            .monster(&defender.name)
             .map(|m| m.size >= MonsterSize::Large)
             .unwrap_or(false);
         let martial_arts = self.role_name.eq_ignore_ascii_case("monk");
@@ -374,12 +374,13 @@ impl SimulationWorld {
                         "healer" => ItemKindId::StaffOfAesculapius,
                         _ => ItemKindId::OrbOfDetection,
                     };
-                    let art_rec = create_item_record(
+                    if let Some(art_rec) = self.ruleset.create_item_record_by_id(
                         art_id,
                         ItemLocation::Floor(defender.coord),
                         Buc::Blessed,
-                    );
-                    self.arena.spawn_item(art_rec);
+                    ) {
+                        self.arena.spawn_item(art_rec);
+                    }
                     events.push(GameEvent::LogMessage {
                         text: netrust_i18n::Messages::quest_nemesis_defeat(
                             quest_cfg.nemesis_name,
@@ -389,12 +390,13 @@ impl SimulationWorld {
                     });
                 }
 
-                let corpse = create_item_record(
+                if let Some(corpse) = self.ruleset.create_item_record_by_id(
                     ItemKindId::Corpse,
                     ItemLocation::Floor(defender.coord),
                     Buc::Uncursed,
-                );
-                self.arena.spawn_item(corpse);
+                ) {
+                    self.arena.spawn_item(corpse);
+                }
             }
         }
         lethal
@@ -453,9 +455,12 @@ impl SimulationWorld {
         let Some(defender) = self.arena.actors.get(defender_id).cloned() else {
             return events;
         };
-        let attacks: &[Attack] = monster_archetype_by_name(&attacker.name)
-            .map(|arch| arch.attacks)
-            .unwrap_or(std::slice::from_ref(&FALLBACK_ATTACK));
+        let rs = std::sync::Arc::clone(&self.ruleset);
+        let fallback_slice = [FALLBACK_ATTACK];
+        let attacks: &[Attack] = rs
+            .monster(&attacker.name)
+            .map(|arch| arch.attacks.as_slice())
+            .unwrap_or(&fallback_slice);
         let def_ac = self.defender_ac(defender_id, &defender);
         let hero_defender = defender_id == self.player_id;
         let m_lev = attacker.level as i32;

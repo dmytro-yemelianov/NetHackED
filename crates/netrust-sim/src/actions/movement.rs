@@ -68,27 +68,28 @@ impl SimulationWorld {
             events.push(GameEvent::LogMessage {
                 text: netrust_i18n::Messages::peaceful_in_the_way(
                     &target.name,
-                    crate::peace::monnam_article(&target.name),
+                    crate::peace::monnam_article(&self.ruleset, &target.name),
                     self.locale,
                 ),
             });
             return events;
         }
         let quest_cfg = netrust_core::get_role_quest_config_or_default(&self.role_name);
-        let mundisplaceable =
-            netrust_data::monster_archetype_by_name(&target.name).is_some_and(|a| {
-                matches!(
-                    a.id,
+        let mundisplaceable = self.ruleset.monster(&target.name).is_some_and(|a| {
+            matches!(
+                a.id,
+                Some(
                     netrust_data::MonsterSpeciesId::Priest
-                        | netrust_data::MonsterSpeciesId::Shopkeeper
+                        | netrust_data::MonsterSpeciesId::Shopkeeper,
                 )
-            }) || target.name.eq_ignore_ascii_case(quest_cfg.leader_name);
+            )
+        }) || target.name.eq_ignore_ascii_case(quest_cfg.leader_name);
         let trap_at_hero = self.level.traps.contains_key(&hero_from);
         if mundisplaceable || trap_at_hero || !self.level.is_passable(hero_from) {
             events.push(GameEvent::LogMessage {
                 text: netrust_i18n::Messages::peaceful_wont_swap(
                     &target.name,
-                    crate::peace::monnam_article(&target.name),
+                    crate::peace::monnam_article(&self.ruleset, &target.name),
                     self.locale,
                 ),
             });

@@ -116,7 +116,7 @@ async def workspace_reader_function(config: WorkspaceReaderConfig, builder: Buil
                 matches = stdout.decode("utf-8", errors="replace").splitlines()
                 if not matches:
                     return f"No matches found for query '{query}' in '{target or '.'}'."
-                return f"Found {len(matches)} match(es):\n" + "\n".join(matches[:150])
+                return f"Found {len(matches)} match(es):\n" + "\n".join(matches[:40])
 
             elif action_lower == "stat":
                 if not target_path.exists():
@@ -301,7 +301,8 @@ async def rulepacks_auditor_function(config: RulePacksAuditorConfig, builder: Bu
             )
             stdout, _ = await proc.communicate()
             tree = stdout.decode("utf-8", errors="replace")
-            forbidden = [pkg for pkg in ["toml", "clap", "schemars", "netrust-pack"] if pkg in tree]
+            import re
+            forbidden = [pkg for pkg in ["toml", "clap", "schemars", "netrust-pack"] if re.search(rf"\b{re.escape(pkg)} v", tree)]
             if forbidden:
                 results.append(f"--- WASM Hygiene: VIOLATION! Found forbidden dependencies: {forbidden} ---")
             else:

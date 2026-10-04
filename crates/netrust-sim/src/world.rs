@@ -1,14 +1,12 @@
-//! Core SimulationWorld state definition and character initialization.
+use std::sync::Arc;
 
 use netrust_arena::{ActorId, EntityArena, ItemId, ItemLocation};
 use netrust_core::{
     armor_base_ac, armor_slot, energy::SchedulerState, find_ac, nutrition::hunger_of_nutrition,
     HungerState, SpellKind,
 };
-use netrust_data::{
-    create_item_record, create_monster_record, spawn_player_character, CharacterConfig, ItemKindId,
-    MonsterSpeciesId, RoleId,
-};
+use netrust_data::ruleset::{Ruleset, RulesetRef};
+use netrust_data::{CharacterConfig, ItemKindId, MonsterSpeciesId, RoleId};
 use netrust_dungeon::{generate_dungeon_level, DungeonLevel, RoomType};
 use netrust_types::{Buc, Coord, ItemClass};
 /// Constitution used for starvation thresholds (`eat.c:3437`); the sim has no
@@ -30,9 +28,47 @@ pub struct StoredLevel {
     pub unpaid_items: Vec<(ItemId, u32)>,
 }
 
+fn default_ruleset() -> Arc<Ruleset> {
+    Ruleset::vanilla()
+}
+
+fn default_ruleset_ref() -> RulesetRef {
+    RulesetRef::vanilla()
+}
+
+/// Error returned when loading a simulation save fails.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum LoadError {
+    Json(String),
+    RulesetMismatch {
+        expected: Box<RulesetRef>,
+        found: Box<RulesetRef>,
+    },
+}
+
+impl std::fmt::Display for LoadError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            LoadError::Json(msg) => write!(f, "JSON load error: {msg}"),
+            LoadError::RulesetMismatch { expected, found } => {
+                write!(
+                    f,
+                    "Ruleset mismatch: expected {expected:?}, found {found:?}"
+                )
+            }
+        }
+    }
+}
+
+impl std::error::Error for LoadError {}
+
 /// The complete, deterministic game simulation world.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SimulationWorld {
+    #[serde(skip, default = "default_ruleset")]
+    pub ruleset: Arc<Ruleset>,
+    #[serde(default = "default_ruleset_ref")]
+    pub ruleset_ref: RulesetRef,
     pub level: DungeonLevel,
     pub levels: Vec<DungeonLevel>,
     pub current_branch: netrust_types::BranchId,
@@ -112,22 +148,27 @@ impl SimulationWorld {
 
     pub(crate) fn actor_is_genocided(&self, name: &str) -> bool {
         let lower = name.to_lowercase();
-        let class = netrust_data::monster_class_of(name);
+        let class = self.ruleset.monster_class_of(name);
         self.genocide_registry.genocided_species.contains(&lower)
             || class
                 .map(|c| self.genocide_registry.genocided_classes.contains(&c))
                 .unwrap_or(false)
     }
 
-    /// Initialize a new deterministic simulation world with a custom character configuration.
-    pub fn new_with_character(seed: u64, config: CharacterConfig) -> Self {
+    /// Initialize a new deterministic simulation world with a custom character configuration and ruleset.
+    pub fn new_with_character_and_ruleset(
+        seed: u64,
+        config: CharacterConfig,
+        ruleset: Arc<Ruleset>,
+        ruleset_ref: RulesetRef,
+    ) -> Self {
         let mut rng = ChaCha8Rng::seed_from_u64(seed);
         let level = generate_dungeon_level(&mut rng);
         let mut arena = EntityArena::new();
 
         // Spawn player with character configuration (role, race, starting items)
         let (player_id, starting_items) =
-            spawn_player_character(&config, level.stairs_up, &mut arena);
+            ruleset.spawn_player_character(&config, level.stairs_up, &mut arena);
 
         let mut unpaid_items = Vec::new();
         let player_gold = if config.role == RoleId::Tourist {
@@ -146,19 +187,29 @@ impl SimulationWorld {
         };
 
         // Spawn starter food in player's pack
-        arena.spawn_item(create_item_record(
+        if let Some(item_rec) = ruleset.create_item_record_by_id(
             ItemKindId::FoodRation,
             ItemLocation::CarriedBy(player_id),
             Buc::Uncursed,
-        ));
+        ) {
+            arena.spawn_item(item_rec);
+        }
+
+        let init_align = ruleset
+            .role(config.role)
+            .map(|r| r.initial_alignment_record)
+            .unwrap_or(INITIAL_ALIGNMENT_RECORD);
 
         // Process rooms: spawn Shopkeeper and merchandise in Shop, monsters in Normal rooms
         for (i, room) in level.rooms.iter().enumerate() {
             match room.room_type {
                 RoomType::Shop => {
                     // Spawn peaceful Shopkeeper
-                    let sk = create_monster_record(MonsterSpeciesId::Shopkeeper, room.center());
-                    arena.spawn_actor(sk);
+                    if let Some(sk) = ruleset
+                        .create_monster_record_by_id(MonsterSpeciesId::Shopkeeper, room.center())
+                    {
+                        arena.spawn_actor(sk);
+                    }
 
                     // Spawn shop merchandise on floor
                     let items_to_sell = [
@@ -174,32 +225,35 @@ impl SimulationWorld {
                         let iy = (room.y1 + 1).min(room.y2.saturating_sub(1));
                         let ic = Coord::new_unchecked(ix, iy);
                         if ic != room.center() {
-                            let item_rec =
-                                create_item_record(kind, ItemLocation::Floor(ic), Buc::Uncursed);
-                            let cost = netrust_data::items::ITEM_CATALOG
-                                .iter()
-                                .find(|it| it.id == kind)
-                                .map(|it| it.cost)
-                                .unwrap_or(30);
-                            let item_id = arena.spawn_item(item_rec);
-                            unpaid_items.push((item_id, cost));
+                            if let Some(item_rec) = ruleset.create_item_record_by_id(
+                                kind,
+                                ItemLocation::Floor(ic),
+                                Buc::Uncursed,
+                            ) {
+                                let cost = ruleset.item_by_id(kind).map(|it| it.cost).unwrap_or(30);
+                                let item_id = arena.spawn_item(item_rec);
+                                unpaid_items.push((item_id, cost));
+                            }
                         }
                         off += 1;
                     }
                 }
                 RoomType::Normal if i > 0 && i != level.rooms.len() - 1 => {
-                    let mut goblin = create_monster_record(MonsterSpeciesId::Goblin, room.center());
-                    // makemon.c:1299 `mpeaceful = peace_minded(ptr)`; the hero
-                    // starts with the initial record and no Amulet.
-                    let input = crate::peace::peace_input(
-                        netrust_data::get_monster_species(MonsterSpeciesId::Goblin),
-                        config.alignment,
-                        config.race,
-                        INITIAL_ALIGNMENT_RECORD,
-                        false,
-                    );
-                    goblin.is_peaceful = crate::peace::roll_peace_minded(&input, &mut rng);
-                    arena.spawn_actor(goblin);
+                    if let Some(mut goblin) =
+                        ruleset.create_monster_record_by_id(MonsterSpeciesId::Goblin, room.center())
+                    {
+                        if let Some(gob_def) = ruleset.monster_by_id(MonsterSpeciesId::Goblin) {
+                            let input = crate::peace::peace_input(
+                                gob_def,
+                                config.alignment,
+                                config.race,
+                                init_align,
+                                false,
+                            );
+                            goblin.is_peaceful = crate::peace::roll_peace_minded(&input, &mut rng);
+                        }
+                        arena.spawn_actor(goblin);
+                    }
                 }
                 _ => {}
             }
@@ -208,27 +262,33 @@ impl SimulationWorld {
         // Spawn starting floor items near stairs from declarative item catalog
         let item_coord1 =
             Coord::new(level.stairs_up.x + 1, level.stairs_up.y).unwrap_or(level.stairs_up);
-        arena.spawn_item(create_item_record(
+        if let Some(it) = ruleset.create_item_record_by_id(
             ItemKindId::SilverSaber,
             ItemLocation::Floor(item_coord1),
             Buc::Uncursed,
-        ));
+        ) {
+            arena.spawn_item(it);
+        }
 
         let item_coord2 =
             Coord::new(level.stairs_up.x, level.stairs_up.y + 1).unwrap_or(level.stairs_up);
-        arena.spawn_item(create_item_record(
+        if let Some(it) = ruleset.create_item_record_by_id(
             ItemKindId::PotionOfHealing,
             ItemLocation::Floor(item_coord2),
             Buc::Blessed,
-        ));
+        ) {
+            arena.spawn_item(it);
+        }
 
         let item_coord3 =
             Coord::new(level.stairs_up.x + 1, level.stairs_up.y + 1).unwrap_or(level.stairs_up);
-        arena.spawn_item(create_item_record(
+        if let Some(it) = ruleset.create_item_record_by_id(
             ItemKindId::BagOfHolding,
             ItemLocation::Floor(item_coord3),
             Buc::Uncursed,
-        ));
+        ) {
+            arena.spawn_item(it);
+        }
 
         // Auto-wield first starting weapon if any
         let wielded_item = starting_items.into_iter().find(|&id| {
@@ -239,7 +299,18 @@ impl SimulationWorld {
                 .unwrap_or(false)
         });
 
+        let starting_skills = ruleset
+            .role(config.role)
+            .map(|r| r.skills.iter().copied().collect())
+            .unwrap_or_else(|| {
+                netrust_data::starting_skills(config.role)
+                    .into_iter()
+                    .collect()
+            });
+
         let mut sim = Self {
+            ruleset,
+            ruleset_ref,
             levels: vec![level.clone()],
             current_branch: netrust_types::BranchId::DungeonsOfDoom,
             stored_levels: Vec::new(),
@@ -265,9 +336,7 @@ impl SimulationWorld {
                 lycanthropy: None,
                 afflictions: netrust_types::AfflictionState::default(),
                 skills: netrust_types::SkillTree {
-                    skills: netrust_data::starting_skills(config.role)
-                        .into_iter()
-                        .collect(),
+                    skills: starting_skills,
                     ..netrust_types::SkillTree::default()
                 },
                 mount: None,
@@ -280,7 +349,7 @@ impl SimulationWorld {
             ritual_progress: netrust_core::RitualProgress::Uninitiated,
             vibrating_square: None,
             quest_state: netrust_core::QuestState::default(),
-            alignment_record: INITIAL_ALIGNMENT_RECORD,
+            alignment_record: init_align,
             hero_race: config.race,
             mysterious_force_count: 0,
             role_name: format!("{:?}", config.role),
@@ -292,6 +361,48 @@ impl SimulationWorld {
         };
         sim.recompute_hero_ac();
         sim
+    }
+
+    /// Initialize a new deterministic simulation world with a custom character configuration.
+    pub fn new_with_character(seed: u64, config: CharacterConfig) -> Self {
+        Self::new_with_character_and_ruleset(
+            seed,
+            config,
+            Ruleset::vanilla(),
+            RulesetRef::vanilla(),
+        )
+    }
+
+    /// Serialize the simulation state to JSON string.
+    pub fn to_save_json(&self) -> Result<String, serde_json::Error> {
+        serde_json::to_string(self)
+    }
+
+    /// Deserialize a saved simulation world, validating ruleset reference compatibility.
+    pub fn from_save_json(
+        json: &str,
+        rs: Arc<Ruleset>,
+        rref: &RulesetRef,
+    ) -> Result<Self, LoadError> {
+        let mut world: SimulationWorld =
+            serde_json::from_str(json).map_err(|e| LoadError::Json(e.to_string()))?;
+        if &world.ruleset_ref != rref {
+            return Err(LoadError::RulesetMismatch {
+                expected: Box::new(rref.clone()),
+                found: Box::new(world.ruleset_ref),
+            });
+        }
+        world.ruleset = rs;
+        Ok(world)
+    }
+
+    /// Returns the current coordinate of the player character.
+    pub fn hero_coord(&self) -> Coord {
+        self.arena
+            .actors
+            .get(self.player_id)
+            .map(|a| a.coord)
+            .unwrap_or(Coord::new_unchecked(1, 1))
     }
 
     /// Compute hero's current AC according to NetHack 5.0 C `find_ac(void)` (`do_wear.c:2473-2507`).
@@ -308,11 +419,23 @@ impl SimulationWorld {
         for item_id in self.arena.items_carried_by(self.player_id) {
             if let Some(item) = self.arena.items.get(item_id) {
                 if item.class == ItemClass::Armor {
-                    if let Some(slot) = armor_slot(&item.name) {
+                    let (slot, a_ac) = if let Some(def) = self.ruleset.item(&item.name) {
+                        let slot = def
+                            .armor
+                            .as_ref()
+                            .map(|a| a.slot)
+                            .or_else(|| armor_slot(&item.name));
+                        let base_ac = def
+                            .armor
+                            .as_ref()
+                            .map(|a| a.base_ac)
+                            .unwrap_or(def.ac_bonus);
+                        (slot, base_ac)
+                    } else {
+                        (armor_slot(&item.name), armor_base_ac(&item.name))
+                    };
+                    if let Some(slot) = slot {
                         if worn_slots.insert(slot) {
-                            let a_ac = netrust_data::item_archetype_by_name(&item.name)
-                                .map(|arch| arch.ac_bonus)
-                                .unwrap_or_else(|| armor_base_ac(&item.name));
                             worn_armor.push((a_ac, item.enchantment as i32, item.erosion));
                         }
                     }

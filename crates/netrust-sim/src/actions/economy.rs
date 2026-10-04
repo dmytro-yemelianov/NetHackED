@@ -124,9 +124,9 @@ impl SimulationWorld {
 
         let item_id = carried[item_index];
         if let Some(item) = self.arena.items.get(item_id) {
-            let base_cost = netrust_data::items::ITEM_CATALOG
-                .iter()
-                .find(|it| it.name == item.name)
+            let base_cost = self
+                .ruleset
+                .item(&item.name)
                 .map(|it| it.cost)
                 .unwrap_or(20);
             let buy = self.shop_buy_price(base_cost);
