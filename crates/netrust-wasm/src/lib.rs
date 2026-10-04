@@ -2,11 +2,66 @@
 //!
 //! Enables zero-install in-browser NetHack gameplay and remote agent control.
 
-use netrust_agent::{render_ascii_map, AgentSession};
-use netrust_core::ActionAst;
-use netrust_data::roles::{CharacterConfig, Gender, RaceId, RoleId, RACES, ROLES};
-use netrust_types::Direction;
+use netrust_agent::{
+    parse_action, parse_character, render_ascii_map, run_seed_games, summarize, ActionArgs,
+    AgentSession, RunResult,
+};
+use netrust_data::roles::{CharacterConfig, RoleId, RACES, ROLES};
+use netrust_types::Coord;
 use wasm_bindgen::prelude::*;
+
+/// Installs the panic hook so Rust panics show up in the browser console.
+#[wasm_bindgen(start)]
+pub fn wasm_start() {
+    #[cfg(target_arch = "wasm32")]
+    console_error_panic_hook::set_once();
+}
+
+/// Actions whose argument is an inventory/spell index or amount.
+const INDEX_ACTIONS: &[&str] = &[
+    "drop",
+    "wield",
+    "eat",
+    "quaff",
+    "read",
+    "rub",
+    "price_check",
+    "appraise",
+    "apply",
+    "light",
+    "sacrifice",
+    "donate",
+];
+/// Actions whose argument is a direction.
+const DIRECTION_ACTIONS: &[&str] = &[
+    "move",
+    "cast",
+    "zap",
+    "fire",
+    "kick",
+    "open_door",
+    "close_door",
+    "untrap",
+];
+/// Actions whose argument is free text.
+const TEXT_ACTIONS: &[&str] = &["wish", "engrave", "dip"];
+
+/// Map a raw string argument onto the shared [`ActionArgs`] fields for `action`.
+fn action_args_for(action: &str, arg: Option<String>, player: Option<Coord>) -> ActionArgs {
+    let a = action.trim().to_lowercase();
+    let mut args = ActionArgs {
+        player,
+        ..ActionArgs::default()
+    };
+    if INDEX_ACTIONS.contains(&a.as_str()) {
+        args.index = arg.and_then(|s| s.trim().parse::<usize>().ok());
+    } else if DIRECTION_ACTIONS.contains(&a.as_str()) {
+        args.direction = arg;
+    } else if TEXT_ACTIONS.contains(&a.as_str()) {
+        args.text = arg;
+    }
+    args
+}
 
 #[wasm_bindgen]
 pub struct WasmGameSession {
@@ -24,43 +79,22 @@ impl WasmGameSession {
     }
 
     /// Create a new session with a custom character configuration.
+    /// Returns an error string for an unknown role or race.
     #[wasm_bindgen]
-    pub fn new_with_character(seed: u64, role: &str, race: &str, name: &str) -> Self {
-        let role_id = match role.to_lowercase().as_str() {
-            "wizard" => RoleId::Wizard,
-            "barbarian" => RoleId::Barbarian,
-            "rogue" => RoleId::Rogue,
-            "knight" => RoleId::Knight,
-            "monk" => RoleId::Monk,
-            "healer" => RoleId::Healer,
-            "tourist" => RoleId::Tourist,
-            "archaeologist" => RoleId::Archaeologist,
-            _ => RoleId::Valkyrie,
-        };
-
-        let race_id = match race.to_lowercase().as_str() {
-            "elf" => RaceId::Elf,
-            "dwarf" => RaceId::Dwarf,
-            "gnome" => RaceId::Gnome,
-            "orc" => RaceId::Orc,
-            _ => RaceId::Human,
-        };
-
-        let config = CharacterConfig {
-            name: if name.is_empty() {
-                "Hero".into()
-            } else {
-                name.to_string()
-            },
-            role: role_id,
-            race: race_id,
-            gender: Gender::Female,
-            alignment: netrust_data::roles::get_role(role_id).default_alignment,
-        };
-
-        Self {
+    pub fn new_with_character(
+        seed: u64,
+        role: &str,
+        race: &str,
+        name: &str,
+    ) -> Result<WasmGameSession, JsValue> {
+        let name = if name.is_empty() { None } else { Some(name) };
+        let mut config = parse_character(name, Some(role), Some(race), Some("female"), None)
+            .map_err(|e| JsValue::from_str(&e))?;
+        // The web UI keeps each role's natural alignment.
+        config.alignment = netrust_data::roles::get_role(config.role).default_alignment;
+        Ok(Self {
             session: AgentSession::new_with_character(seed, config),
-        }
+        })
     }
 
     /// Render 80x21 ASCII viewport with FOV shading.
@@ -79,77 +113,18 @@ impl WasmGameSession {
     /// Step the simulation with an action string (e.g. "move", "wait", "pickup", "pay", "pray", "sacrifice").
     #[wasm_bindgen]
     pub fn step(&mut self, action_str: &str, arg: Option<String>) -> String {
-        let action = match action_str.to_lowercase().as_str() {
-            "move" => {
-                let dir = match arg.as_deref().unwrap_or("none") {
-                    "north" | "k" => Direction::North,
-                    "south" | "j" => Direction::South,
-                    "east" | "l" => Direction::East,
-                    "west" | "h" => Direction::West,
-                    "northeast" | "u" => Direction::NorthEast,
-                    "northwest" | "y" => Direction::NorthWest,
-                    "southeast" | "n" => Direction::SouthEast,
-                    "southwest" | "b" => Direction::SouthWest,
-                    _ => Direction::None,
-                };
-                ActionAst::Move(dir)
-            }
-            "pickup" => ActionAst::PickUp,
-            "drop" => ActionAst::Drop(arg.and_then(|s| s.parse().ok()).unwrap_or(0)),
-            "wield" => ActionAst::Wield(arg.and_then(|s| s.parse().ok()).unwrap_or(0)),
-            "eat" => ActionAst::Eat(arg.and_then(|s| s.parse().ok()).unwrap_or(0)),
-            "quaff" => ActionAst::Quaff(arg.and_then(|s| s.parse().ok()).unwrap_or(0)),
-            "read" => ActionAst::Read(arg.and_then(|s| s.parse().ok()).unwrap_or(0)),
-            "rub" => ActionAst::Rub(arg.and_then(|s| s.parse().ok()).unwrap_or(0)),
-            "price_check" | "appraise" => {
-                ActionAst::PriceCheck(arg.and_then(|s| s.parse().ok()).unwrap_or(0))
-            }
-            "dip" => {
-                let (idx, water) = if let Some(ref s) = arg {
-                    if let Some((idx_s, w_s)) = s.split_once(':') {
-                        let i = idx_s.parse().unwrap_or(0);
-                        let w = match w_s.to_lowercase().as_str() {
-                            "unholy" | "cursed" => netrust_types::WaterType::Unholy,
-                            "plain" | "uncursed" => netrust_types::WaterType::Plain,
-                            _ => netrust_types::WaterType::Holy,
-                        };
-                        (i, w)
-                    } else {
-                        (s.parse().unwrap_or(0), netrust_types::WaterType::Holy)
-                    }
-                } else {
-                    (0, netrust_types::WaterType::Holy)
-                };
-                ActionAst::Dip {
-                    item_index: idx,
-                    into_water: water,
+        let name = action_str.trim().to_lowercase();
+        if INDEX_ACTIONS.contains(&name.as_str()) {
+            if let Some(a) = &arg {
+                if a.trim().parse::<usize>().is_err() {
+                    return serde_json::json!({"error": "index must be a number"}).to_string();
                 }
             }
-            "engrave" => {
-                let text = arg.unwrap_or_else(|| "Elbereth".to_string());
-                ActionAst::Engrave {
-                    text,
-                    medium: netrust_core::engraving::EngravingMedium::Dust(1),
-                }
-            }
-            "wish" => ActionAst::Wish(arg.unwrap_or_default()),
-            "cast" => ActionAst::Cast {
-                spell_index: arg.and_then(|s| s.parse().ok()).unwrap_or(0),
-                dir: Direction::None,
-            },
-            "zap" => ActionAst::ZapWand {
-                dir: Direction::East,
-                energy: 6,
-            },
-            "pay" => ActionAst::Pay,
-            "pray" => ActionAst::Pray,
-            "sacrifice" => ActionAst::Sacrifice(arg.and_then(|s| s.parse().ok()).unwrap_or(0)),
-            "donate" => ActionAst::Donate(arg.and_then(|s| s.parse().ok()).unwrap_or(0)),
-            "apply" | "light" => ActionAst::Apply(arg.and_then(|s| s.parse().ok()).unwrap_or(0)),
-            "descend" => ActionAst::Descend,
-            "ascend" => ActionAst::Ascend,
-            "wait" => ActionAst::Wait,
-            _ => ActionAst::Wait,
+        }
+        let args = action_args_for(&name, arg, self.session.player_coord());
+        let action = match parse_action(&name, &args) {
+            Ok(a) => a,
+            Err(e) => return serde_json::json!({"error": e}).to_string(),
         };
 
         let obs = self.session.step(action);
@@ -519,14 +494,66 @@ impl WasmGameSession {
     }
 }
 
+/// Incremental tournament runner so the UI can show progress between seeds.
+#[wasm_bindgen]
+pub struct TournamentRun {
+    seeds: Vec<u64>,
+    roles: Vec<RoleId>,
+    max_turns: u64,
+    done: usize,
+    results: Vec<RunResult>,
+}
+
+#[wasm_bindgen]
+impl TournamentRun {
+    #[wasm_bindgen(constructor)]
+    pub fn new(num_seeds: u32, max_turns: u32) -> TournamentRun {
+        TournamentRun {
+            seeds: (1..=(num_seeds as u64).max(1)).collect(),
+            roles: vec![RoleId::Valkyrie, RoleId::Wizard],
+            max_turns: (max_turns as u64).max(10),
+            done: 0,
+            results: Vec::new(),
+        }
+    }
+
+    /// Run up to `k` more seeds. Returns true once every seed has completed.
+    pub fn step(&mut self, k: u32) -> bool {
+        let end = self.seeds.len().min(self.done.saturating_add(k as usize));
+        while self.done < end {
+            let seed = self.seeds[self.done];
+            self.results
+                .extend(run_seed_games(seed, &self.roles, self.max_turns));
+            self.done += 1;
+        }
+        self.done >= self.seeds.len()
+    }
+
+    /// Seeds completed so far.
+    pub fn progress(&self) -> u32 {
+        self.done as u32
+    }
+
+    /// Total seeds to run.
+    pub fn total(&self) -> u32 {
+        self.seeds.len() as u32
+    }
+
+    /// Summary JSON over the runs completed so far (keys sorted for stable output).
+    pub fn report_json(&self) -> String {
+        let summary = summarize(&self.results);
+        serde_json::to_value(&summary)
+            .map(|v| v.to_string())
+            .unwrap_or_default()
+    }
+}
+
 /// Run tournament benchmark across seeds comparing Random, Survival, Speedrunner, and PetTesterTactical.
 #[wasm_bindgen]
 pub fn run_tournament_benchmark(num_seeds: u32, max_turns: u32) -> String {
-    let seeds: Vec<u64> = (1..=(num_seeds as u64).max(1)).collect();
-    let roles = vec![RoleId::Valkyrie, RoleId::Wizard];
-    let (_results, summary) =
-        netrust_agent::run_evaluation_suite(&seeds, &roles, (max_turns as u64).max(10));
-    serde_json::to_string(&summary).unwrap_or_default()
+    let mut t = TournamentRun::new(num_seeds, max_turns);
+    while !t.step(u32::MAX) {}
+    t.report_json()
 }
 
 /// Run a match with PetTesterTacticalPolicy and return full decision trajectory JSON for replay in Web UI.
@@ -547,6 +574,41 @@ mod tests {
     use super::*;
 
     #[test]
+    fn step_rejects_unknown_action_without_advancing() {
+        let mut s = WasmGameSession::new(7);
+        let turn = s.get_turn();
+        let out = s.step("dance", None);
+        assert!(out.contains("\"error\""));
+        assert_eq!(s.get_turn(), turn);
+    }
+
+    #[test]
+    fn cast_and_zap_take_direction() {
+        let args = action_args_for("cast", Some("west".into()), None);
+        assert_eq!(args.direction.as_deref(), Some("west"));
+        let args = action_args_for("drop", Some("2".into()), None);
+        assert_eq!(args.index, Some(2));
+    }
+
+    #[test]
+    fn non_numeric_index_is_error() {
+        let mut s = WasmGameSession::new(7);
+        assert!(s.step("drop", Some("abc".into())).contains("\"error\""));
+    }
+
+    #[test]
+    fn chunked_tournament_matches_one_shot() {
+        let one = run_tournament_benchmark(3, 30);
+        let mut t = TournamentRun::new(3, 30);
+        assert!(!t.step(0));
+        assert_eq!(t.progress(), 0);
+        while !t.step(1) {}
+        assert_eq!(t.progress(), 3);
+        assert!(t.step(1), "after completion step is a no-op returning true");
+        assert_eq!(t.report_json(), one);
+    }
+
+    #[test]
     fn test_wasm_session_init_and_step() {
         let mut wasm_sess = WasmGameSession::new(42);
         assert_eq!(wasm_sess.get_player_hp(), 18);
@@ -565,7 +627,8 @@ mod tests {
 
     #[test]
     fn test_wasm_session_character_creation() {
-        let wasm_sess = WasmGameSession::new_with_character(42, "barbarian", "orc", "Conan");
+        let wasm_sess =
+            WasmGameSession::new_with_character(42, "barbarian", "orc", "Conan").unwrap();
         assert_eq!(wasm_sess.get_player_hp(), 20);
         assert_eq!(wasm_sess.get_player_name(), "Conan");
         assert_eq!(wasm_sess.get_player_alignment(), "Chaotic");

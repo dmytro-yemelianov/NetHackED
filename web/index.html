@@ -495,7 +495,7 @@
           <button id="btnOpenInv" class="btn-gold" style="font-weight:bold;">🎒 [i] Inventory</button>
           <button data-act="eat" data-arg="0" id="btnActEat">[e] Eat</button>
           <button data-act="quaff" data-arg="0" id="btnActQuaff">[q] Quaff</button>
-          <button data-act="cast" data-arg="0" id="btnActCast">[x] Cast</button>
+          <button data-act="cast" id="btnActCast">[x] Cast</button>
           <button data-act="read" data-arg="0" id="btnActRead">[r] Read</button>
           <button data-act="pickup" id="btnActPickup">[,] PickUp</button>
           <button data-act="pay" id="btnActPay">[p] Pay</button>
@@ -741,7 +741,7 @@
   </dialog>
 
   <script type="module">
-    import init, { WasmGameSession, run_tournament_benchmark, run_tactical_trajectory } from './pkg/netrust_wasm.js';
+    import init, { WasmGameSession, TournamentRun, run_tactical_trajectory } from './pkg/netrust_wasm.js';
 
     let session = null;
     let selectedRole = 'valkyrie';
@@ -809,7 +809,7 @@
         const medal = idx === 0 ? '🥇 ' : (idx === 1 ? '🥈 ' : (idx === 2 ? '🥉 ' : ''));
         tr.innerHTML = `
           <td style="font-weight:bold; color:var(--text-yellow);">${medal}#${idx + 1}</td>
-          <td style="color:var(--text-white); font-weight:bold;">${p.name}</td>
+          <td style="color:var(--text-white); font-weight:bold;">${escapeHtml(p.name)}</td>
           <td style="color:var(--text-green);">${p.win_rate_pct.toFixed(1)}%</td>
           <td>${p.mean_max_depth.toFixed(2)}</td>
           <td>${p.mean_kills.toFixed(1)}</td>
@@ -1328,9 +1328,9 @@
         const costStr = item.unpaid_cost !== null && item.unpaid_cost !== undefined ? `${item.unpaid_cost} zm (unpaid)` : '-';
         tr.innerHTML = `
           <td>${idx}</td>
-          <td style="font-weight:bold;">${item.name}</td>
-          <td>${item.class}</td>
-          <td class="${bucClass}">${item.buc}</td>
+          <td style="font-weight:bold;">${escapeHtml(item.name)}</td>
+          <td>${escapeHtml(item.class)}</td>
+          <td class="${bucClass}">${escapeHtml(item.buc)}</td>
           <td>${item.enchantment >= 0 ? '+' : ''}${item.enchantment}</td>
           <td>${item.weight}</td>
           <td style="color:${item.unpaid_cost ? 'var(--text-yellow)' : 'var(--text-dim)'};">${costStr}</td>
@@ -1490,8 +1490,21 @@
       }
     }
 
+    function updateProgress(done, total) {
+      const tb = document.getElementById('tournamentTableBody');
+      tb.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#d6a3ff;">Running seed ${Number(done)} of ${Number(total)}...</td></tr>`;
+    }
+
+    function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    let lastDir = 'east';
+
     function doAction(action, arg) {
       if (!session) return null;
+      // Directional spells/wands use the last movement direction.
+      if ((action === 'cast' || action === 'zap') && (arg === null || arg === undefined || /^\d+$/.test(arg))) {
+        arg = lastDir;
+      }
       // Sound FX trigger
       if (action === 'move') playSfx('step');
       else if (action === 'zap') playSfx('zap');
@@ -1503,6 +1516,11 @@
       const resStr = session.step(action, arg ? arg : null);
       try {
         const res = JSON.parse(resStr);
+        if (res.error) {
+          messageBarEl.textContent = res.error;
+          return null;
+        }
+        if (action === 'move' && arg) lastDir = arg;
         if (res.last_events && res.last_events.some(e => e.AttackLanded)) {
           playSfx('hit');
         }
@@ -1798,7 +1816,7 @@
         const outCol = m.outcome === 'DIED' ? 'var(--text-red)' : 'var(--text-green)';
         tr.innerHTML = `
           <td>${m.time}</td>
-          <td style="color:var(--text-cyan); font-weight:bold;">${m.policy}</td>
+          <td style="color:var(--text-cyan); font-weight:bold;">${escapeHtml(m.policy)}</td>
           <td>${m.seed}</td>
           <td>${m.steps}</td>
           <td>${m.dlvl}</td>
@@ -1862,7 +1880,7 @@
         case 'i': openInventoryDialog(); break;
         case 'e': doAction('eat', '0'); break;
         case 'q': doAction('quaff', '0'); break;
-        case 'x': doAction('cast', '0'); break;
+        case 'x': doAction('cast', lastDir); break;
         case 'r': doAction('read', '0'); break;
         case 'E': openEngraveDialog(); break;
         case 'p': doAction('pay', null); break;
@@ -1952,10 +1970,15 @@
       container.style.display = 'block';
       tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#d6a3ff;">Running 25 seeds x 2 roles per policy via WASM engine... Please wait...</td></tr>';
 
-      setTimeout(() => {
+      await new Promise(r => setTimeout(r, 50));
+      {
         try {
-          const jsonStr = run_tournament_benchmark(25, 200); // 25 seeds * 2 roles = 50 runs per policy (200 total)
-          const summary = JSON.parse(jsonStr);
+          const run = new TournamentRun(25, 200); // 25 seeds * 2 roles = 50 runs per policy (200 total)
+          while (!run.step(1)) {
+            updateProgress(run.progress(), run.total());
+            await new Promise(r => setTimeout(r));
+          }
+          const summary = JSON.parse(run.report_json());
           tbody.innerHTML = '';
           const policies = Object.keys(summary.per_policy || {}).sort((a, b) => {
             return (summary.per_policy[b].win_rate_pct || 0) - (summary.per_policy[a].win_rate_pct || 0);
@@ -1966,7 +1989,7 @@
             const isTop = pol === 'PetTesterTactical';
             tr.style.background = isTop ? 'rgba(157, 78, 221, 0.2)' : '';
             tr.innerHTML = `
-              <td style="font-weight:bold; color:${isTop ? '#d6a3ff' : 'var(--text-white)'};">${pol} ${isTop ? '⭐' : ''}</td>
+              <td style="font-weight:bold; color:${isTop ? '#d6a3ff' : 'var(--text-white)'};">${escapeHtml(pol)} ${isTop ? '⭐' : ''}</td>
               <td>${st.runs}</td>
               <td style="color:${st.win_rate_pct > 0 ? 'var(--text-green)' : 'var(--text-dim)'}; font-weight:bold;">${st.win_rate_pct.toFixed(1)}%</td>
               <td>${st.mean_max_depth.toFixed(2)}</td>
@@ -1978,9 +2001,9 @@
           }
         } catch (e) {
           console.error(e);
-          tbody.innerHTML = `<tr><td colspan="7" style="color:var(--text-red);">Error running tournament: ${e.message}</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="7" style="color:var(--text-red);">Error running tournament: ${escapeHtml(e.message)}</td></tr>`;
         }
-      }, 50);
+      }
     });
 
     document.getElementById('btnReplayTrajectory').addEventListener('click', () => {
@@ -2032,7 +2055,12 @@
 
     document.getElementById('btnStartGame').addEventListener('click', () => {
       const name = document.getElementById('charName').value.trim() || 'Hero';
-      session = WasmGameSession.new_with_character(42n, selectedRole, selectedRace, name);
+      try {
+        session = WasmGameSession.new_with_character(42n, selectedRole, selectedRace, name);
+      } catch (err) {
+        messageBarEl.textContent = `Could not create character: ${err}`;
+        return;
+      }
       messageBarEl.textContent = `Welcome, ${name} the ${selectedRole.toUpperCase()}! Your quest begins.`;
       charDialog.close();
       updateUi(null);

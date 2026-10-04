@@ -957,6 +957,50 @@ pub fn run_game_with_trajectory<P: AgentPolicy>(
     (run_res, recording)
 }
 
+/// Runs every built-in policy for one seed across the given roles.
+pub fn run_seed_games(seed: u64, roles: &[RoleId], max_turns: u64) -> Vec<RunResult> {
+    let mut results = Vec::new();
+    for &role in roles {
+        let config = CharacterConfig {
+            name: format!("{role:?}"),
+            role,
+            race: netrust_data::roles::RaceId::Human,
+            gender: netrust_data::roles::Gender::Female,
+            alignment: netrust_data::roles::get_role(role).default_alignment,
+        };
+
+        // 1. Random policy
+        results.push(run_single_game(
+            RandomPolicy::new(seed),
+            seed,
+            config.clone(),
+            max_turns,
+        ));
+        // 2. Survival policy
+        results.push(run_single_game(
+            SurvivalPolicy::new(),
+            seed,
+            config.clone(),
+            max_turns,
+        ));
+        // 3. Speedrunner policy
+        results.push(run_single_game(
+            SpeedrunPolicy::new(),
+            seed,
+            config.clone(),
+            max_turns,
+        ));
+        // 4. PetTester Tactical policy
+        results.push(run_single_game(
+            PetTesterTacticalPolicy::new(),
+            seed,
+            config,
+            max_turns,
+        ));
+    }
+    results
+}
+
 /// Evaluates a collection of policies over multiple seeds and roles.
 pub fn run_evaluation_suite(
     seeds: &[u64],
@@ -964,40 +1008,18 @@ pub fn run_evaluation_suite(
     max_turns: u64,
 ) -> (Vec<RunResult>, ArenaSummary) {
     let mut results = Vec::new();
-
     for &seed in seeds {
-        for &role in roles {
-            let config = CharacterConfig {
-                name: format!("{role:?}"),
-                role,
-                race: netrust_data::roles::RaceId::Human,
-                gender: netrust_data::roles::Gender::Female,
-                alignment: netrust_data::roles::get_role(role).default_alignment,
-            };
-
-            // 1. Random policy
-            let res_random =
-                run_single_game(RandomPolicy::new(seed), seed, config.clone(), max_turns);
-            results.push(res_random);
-
-            // 2. Survival policy
-            let res_surv = run_single_game(SurvivalPolicy::new(), seed, config.clone(), max_turns);
-            results.push(res_surv);
-
-            // 3. Speedrunner policy
-            let res_speed = run_single_game(SpeedrunPolicy::new(), seed, config.clone(), max_turns);
-            results.push(res_speed);
-
-            // 4. PetTester Tactical policy
-            let res_tactical =
-                run_single_game(PetTesterTacticalPolicy::new(), seed, config, max_turns);
-            results.push(res_tactical);
-        }
+        results.extend(run_seed_games(seed, roles, max_turns));
     }
+    let summary = summarize(&results);
+    (results, summary)
+}
 
+/// Aggregates per-run results into summary statistics.
+pub fn summarize(results: &[RunResult]) -> ArenaSummary {
     // Aggregate summary statistics
     let mut per_policy_map: HashMap<String, Vec<&RunResult>> = HashMap::new();
-    for r in &results {
+    for r in results {
         per_policy_map
             .entry(r.policy_name.clone())
             .or_default()
@@ -1040,14 +1062,12 @@ pub fn run_evaluation_suite(
         0.0
     };
 
-    let summary = ArenaSummary {
+    ArenaSummary {
         total_runs,
         total_victories,
         overall_win_rate_pct,
         per_policy,
-    };
-
-    (results, summary)
+    }
 }
 
 #[cfg(test)]

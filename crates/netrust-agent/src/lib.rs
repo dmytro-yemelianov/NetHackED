@@ -22,9 +22,9 @@ pub mod graphql;
 pub mod netconfig;
 
 pub use arena::{
-    run_evaluation_suite, run_game_with_trajectory, run_single_game, AgentPolicy, ArenaSummary,
-    BenchmarkReport, PetTesterTacticalPolicy, PolicyStats, RandomPolicy, RunResult, SpeedrunPolicy,
-    SurvivalPolicy, TrajectoryRecording, TrajectoryStep,
+    run_evaluation_suite, run_game_with_trajectory, run_seed_games, run_single_game, summarize,
+    AgentPolicy, ArenaSummary, BenchmarkReport, PetTesterTacticalPolicy, PolicyStats, RandomPolicy,
+    RunResult, SpeedrunPolicy, SurvivalPolicy, TrajectoryRecording, TrajectoryStep,
 };
 pub use ascii::render_ascii_map;
 pub use commands::{parse_action, parse_character, ActionArgs, ZAP_ENERGY};
