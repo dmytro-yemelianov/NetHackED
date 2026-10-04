@@ -152,7 +152,7 @@ def main : IO Unit := do
   let vorpalResult := applyVorpalStrike vorpalDefender true
   let wand0 : WandCharges := { charges := 3, recharges := 0 }
   let wand1 := zapWand wand0
-  let wandRecharged := rechargeWand (wand1.getD wand0) 5
+  let wandRecharged := rechargeWand (wand1.getD wand0) false 100 5
   IO.println s!"[Artifact] Excalibur damage vs demon: {excalDmg}"
   IO.println s!"[Artifact] Vorpal Blade decapitation strike -> Defender HP: {vorpalResult.hp}, Dead: {vorpalResult.isDead}"
   -- 21. Class Quest Branch & Nemesis demonstration

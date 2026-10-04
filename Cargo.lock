@@ -857,6 +857,7 @@ dependencies = [
  "netrust-types",
  "proptest",
  "serde",
+ "serde_json",
  "slotmap",
 ]
 

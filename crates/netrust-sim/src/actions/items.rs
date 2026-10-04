@@ -477,11 +477,45 @@ impl SimulationWorld {
                                 (
                                     w.name.clone(),
                                     w.enchantment.max(0) as u32,
-                                    w.erosion as u32,
+                                    w.recharged as u32,
                                 )
                             };
+                            // read.c:737: lim = 1 wishing, 8 directional, 15 non-directional.
+                            let is_wishing = wand_name.contains("wishing");
+                            let nodir = [
+                                "light",
+                                "secret door detection",
+                                "create monster",
+                                "enlightenment",
+                            ]
+                            .iter()
+                            .any(|k| wand_name.contains(k));
+                            let lim: i32 = if is_wishing {
+                                1
+                            } else if nodir {
+                                15
+                            } else {
+                                8
+                            };
+                            // read.c:729 draws: rn2(343) for explosion, then the charge roll
+                            // (read.c:760-766): blessed rn1(5, lim-4), uncursed rnd() of it.
+                            let roll_343 = self.rng.random_range(0..343u32);
+                            let mut charge_n = if lim == 1 {
+                                1
+                            } else {
+                                self.rng.random_range(0..5i32) + lim - 4
+                            };
+                            if item.buc != Buc::Blessed {
+                                charge_n = self.rng.random_range(1..=charge_n);
+                            }
                             let wand_state = netrust_types::WandCharges { charges, recharges };
-                            match netrust_core::artifacts_wands::recharge_wand(wand_state, 5) {
+                            match netrust_core::artifacts_wands::recharge_wand(
+                                wand_state,
+                                is_wishing,
+                                item.buc == Buc::Blessed,
+                                roll_343,
+                                charge_n as u32,
+                            ) {
                                 netrust_types::RechargeResult::Exploded => {
                                     self.arena.destroy_item(wid);
                                     if let Some(p) = self.arena.actors.get_mut(self.player_id) {
@@ -499,12 +533,18 @@ impl SimulationWorld {
                                 }
                                 netrust_types::RechargeResult::Success(new_w) => {
                                     if let Some(w_mut) = self.arena.items.get_mut(wid) {
-                                        w_mut.enchantment = new_w.charges.min(i8::MAX as u32) as i8;
-                                        w_mut.erosion = new_w.recharges as u8;
+                                        // read.c:757 cursed: stripspe (spe > 0 -> 0).
+                                        let charges_now = if item.buc == Buc::Cursed {
+                                            0
+                                        } else {
+                                            new_w.charges
+                                        };
+                                        w_mut.enchantment = charges_now.min(i8::MAX as u32) as i8;
+                                        w_mut.recharged = new_w.recharges.min(u8::MAX as u32) as u8;
                                         events.push(GameEvent::LogMessage {
                                             text: netrust_i18n::Messages::wand_recharged(
                                                 &wand_name,
-                                                new_w.charges,
+                                                charges_now,
                                                 new_w.recharges,
                                                 self.locale,
                                             ),
@@ -865,7 +905,7 @@ impl SimulationWorld {
         };
         let current_charges = netrust_types::WandCharges {
             charges: wand_item.enchantment.max(0) as u32,
-            recharges: wand_item.erosion as u32,
+            recharges: wand_item.recharged as u32,
         };
         let wand_name =
             if let Some(new_charges) = netrust_core::artifacts_wands::zap_wand(current_charges) {
@@ -1050,7 +1090,7 @@ impl SimulationWorld {
                 return events;
             };
             let charges = wand_item.enchantment.max(0) as u32;
-            let recharges = wand_item.erosion as u32;
+            let recharges = wand_item.recharged as u32;
             if let Some(new_w) =
                 netrust_core::artifacts_wands::zap_wand(netrust_types::WandCharges {
                     charges,

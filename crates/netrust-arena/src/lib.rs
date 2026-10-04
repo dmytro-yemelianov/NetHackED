@@ -31,6 +31,9 @@ pub struct ItemRecord {
     pub corpse_race: Option<String>,
     pub corpse_age: u32,
     pub rot_threshold: u32,
+    /// Times recharged (C `obj->recharged`, read.c:729); distinct from `erosion`.
+    #[serde(default)]
+    pub recharged: u8,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -177,6 +180,33 @@ mod tests {
     use super::*;
 
     #[test]
+    fn item_record_without_recharged_deserializes_to_zero() {
+        let mut arena = EntityArena::new();
+        let id = arena.spawn_item(ItemRecord {
+            name: "wand of striking".into(),
+            class: ItemClass::Wand,
+            weight: 7,
+            buc: Buc::Uncursed,
+            is_container: false,
+            is_bag_of_holding: false,
+            enchantment: 4,
+            erosion: 1,
+            proofed: false,
+            location: ItemLocation::Floor(Coord::new(1, 1).unwrap()),
+            corpse_race: None,
+            corpse_age: 0,
+            rot_threshold: 50,
+            recharged: 3,
+        });
+        let mut v = serde_json::to_value(arena.items.get(id).unwrap()).unwrap();
+        assert_eq!(v["recharged"], 3);
+        v.as_object_mut().unwrap().remove("recharged");
+        let back: ItemRecord = serde_json::from_value(v).unwrap();
+        assert_eq!(back.recharged, 0);
+        assert_eq!(back.erosion, 1);
+    }
+
+    #[test]
     fn test_spawn_and_retrieve_actor() {
         let mut arena = EntityArena::new();
         let actor = ActorRecord {
@@ -220,6 +250,7 @@ mod tests {
             corpse_race: None,
             corpse_age: 0,
             rot_threshold: 50,
+            recharged: 0,
         });
 
         let boh = arena.spawn_item(ItemRecord {
@@ -236,6 +267,7 @@ mod tests {
             corpse_race: None,
             corpse_age: 0,
             rot_threshold: 50,
+            recharged: 0,
         });
 
         // Place dagger inside bag
@@ -265,6 +297,7 @@ mod tests {
             corpse_race: None,
             corpse_age: 0,
             rot_threshold: 50,
+            recharged: 0,
         });
         let box2 = arena.spawn_item(ItemRecord {
             name: "box 2".into(),
@@ -280,6 +313,7 @@ mod tests {
             corpse_race: None,
             corpse_age: 0,
             rot_threshold: 50,
+            recharged: 0,
         });
 
         assert!(arena.contains_transitive(box1, box2));

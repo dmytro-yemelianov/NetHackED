@@ -56,6 +56,7 @@ async fn test_networked_bones_flow_and_ghost_reincarnation() {
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,
+        recharged: 0,
     });
 
     // 4. Conan falls in battle to a hill orc -> sync bones to server

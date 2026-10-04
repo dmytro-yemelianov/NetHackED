@@ -63,19 +63,41 @@ pub fn zap_wand(w: WandCharges) -> Option<WandCharges> {
     }
 }
 
-/// Recharges a wand using a Scroll of Charging.
+/// Recharges a wand with a Scroll of Charging (uncursed or blessed).
 ///
-/// If recharges >= 3, the wand explodes!
-/// Matches Lean theorem `recharge_safe_below_cap` and `recharge_explodes_at_cap`.
-pub fn recharge_wand(w: WandCharges, added_charges: u32) -> RechargeResult {
-    if w.recharges >= 3 {
-        RechargeResult::Exploded
-    } else {
-        RechargeResult::Success(WandCharges {
-            charges: w.charges + added_charges,
-            recharges: w.recharges + 1,
-        })
+/// C `read.c:729` `recharge`, wands at `read.c:737-794`: with `n` prior
+/// recharges the wand explodes iff `n > 0 && (wishing || n*n*n > rn2(7*7*7))`
+/// (so the first recharge never explodes; `n >= 7` always does). Otherwise the
+/// recharge counter increments and `spe = max(spe + 1, charge_roll)`, where
+/// `charge_roll` is the caller's `n` from `read.c:760-766`: `rn1(5, lim-4)`
+/// when blessed, `rnd()` of that when uncursed (`lim` 1 wishing / 8 directional
+/// / 15 non-directional). A wand of wishing left with more than 3 charges
+/// explodes (`read.c:785`).
+///
+/// - `roll_343`: the `rn2(343)` draw, range `0..343` (clamped).
+/// - `charge_roll`: final charge count, range `1..=15` (clamped).
+/// - `blessed` is informational here: the BUC formulas are applied by the
+///   caller when drawing `charge_roll`.
+pub fn recharge_wand(
+    state: WandCharges,
+    is_wishing: bool,
+    _blessed: bool,
+    roll_343: u32,
+    charge_roll: u32,
+) -> RechargeResult {
+    let roll = roll_343.min(342);
+    let n = state.recharges.min(7);
+    if n > 0 && (is_wishing || n * n * n > roll) {
+        return RechargeResult::Exploded;
     }
+    let charges = (state.charges + 1).max(charge_roll.clamp(1, 15));
+    if is_wishing && charges > 3 {
+        return RechargeResult::Exploded;
+    }
+    RechargeResult::Success(WandCharges {
+        charges,
+        recharges: state.recharges + 1,
+    })
 }
 
 /// Parses a wishing string into (item_name, enchantment, buc).
@@ -161,20 +183,87 @@ mod tests {
     }
 
     #[test]
-    fn test_wand_recharge_and_explosion() {
-        let mut w = WandCharges::new(0);
-        for _ in 0..3 {
-            let res = recharge_wand(w, 4);
-            match res {
-                RechargeResult::Success(next) => w = next,
-                RechargeResult::Exploded => panic!("Should not explode yet"),
-            }
+    fn test_recharge_first_never_explodes() {
+        let w = WandCharges::new(0);
+        for roll in [0, 1, 342] {
+            assert!(matches!(
+                recharge_wand(w, false, true, roll, 5),
+                RechargeResult::Success(_)
+            ));
         }
-        assert_eq!(w.recharges, 3);
-        assert_eq!(w.charges, 12);
+    }
 
-        // 4th recharge exceeds limit -> explosion!
-        assert_eq!(recharge_wand(w, 4), RechargeResult::Exploded);
+    #[test]
+    fn test_recharge_n7_always_explodes() {
+        let w = WandCharges {
+            charges: 2,
+            recharges: 7,
+        };
+        for roll in [0, 100, 342, 9999] {
+            assert_eq!(
+                recharge_wand(w, false, false, roll, 5),
+                RechargeResult::Exploded
+            );
+        }
+    }
+
+    #[test]
+    fn test_recharge_n1_explodes_only_on_roll_0() {
+        let w = WandCharges {
+            charges: 2,
+            recharges: 1,
+        };
+        assert_eq!(
+            recharge_wand(w, false, true, 0, 5),
+            RechargeResult::Exploded
+        );
+        assert!(matches!(
+            recharge_wand(w, false, true, 1, 5),
+            RechargeResult::Success(_)
+        ));
+    }
+
+    #[test]
+    fn test_recharge_wishing_explodes_from_n1() {
+        let w = WandCharges {
+            charges: 0,
+            recharges: 1,
+        };
+        assert_eq!(
+            recharge_wand(w, true, true, 342, 1),
+            RechargeResult::Exploded
+        );
+        // First recharge of an empty wishing wand: spe = max(0+1, 1) = 1.
+        let ok = recharge_wand(WandCharges::new(0), true, true, 342, 1);
+        assert_eq!(
+            ok,
+            RechargeResult::Success(WandCharges {
+                charges: 1,
+                recharges: 1
+            })
+        );
+    }
+
+    #[test]
+    fn test_recharge_sets_max_of_roll_and_spe_plus_one() {
+        let w = WandCharges {
+            charges: 6,
+            recharges: 0,
+        };
+        assert_eq!(
+            recharge_wand(w, false, true, 0, 4),
+            RechargeResult::Success(WandCharges {
+                charges: 7,
+                recharges: 1
+            })
+        );
+        assert_eq!(
+            recharge_wand(w, false, true, 0, 8),
+            RechargeResult::Success(WandCharges {
+                charges: 8,
+                recharges: 1
+            })
+        );
     }
 
     #[test]

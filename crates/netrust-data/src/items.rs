@@ -950,5 +950,6 @@ pub fn create_item_record(id: ItemKindId, location: ItemLocation, buc: Buc) -> I
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,
+        recharged: 0,
     }
 }

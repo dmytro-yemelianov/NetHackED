@@ -84,28 +84,55 @@ inductive RechargeResult where
   | Exploded
 deriving Repr, DecidableEq
 
-/-- Recharging a wand: fails/explodes if over-recharged (> 3 times) -/
-def rechargeWand (w : WandCharges) (addedCharges : Nat) : RechargeResult :=
-  if w.recharges ≥ 3 then
+/-- Recharging a wand with a Scroll of Charging (read.c:737-794).
+    `roll343` is `rn2(343)`; `chargeRoll` is the caller's `n` (read.c:760-766).
+    Explodes iff `n > 0 ∧ (wishing ∨ n³ > roll343)` with `n` prior recharges
+    (capped at 7); a wishing wand left above 3 charges also explodes. -/
+def rechargeWand (w : WandCharges) (isWishing : Bool) (roll343 chargeRoll : Nat) :
+    RechargeResult :=
+  let n := min w.recharges 7
+  if n > 0 ∧ (isWishing = true ∨ n * n * n > roll343) then
+    RechargeResult.Exploded
+  else if isWishing = true ∧ max (w.charges + 1) chargeRoll > 3 then
     RechargeResult.Exploded
   else
     RechargeResult.Success {
-      charges := w.charges + addedCharges,
+      charges := max (w.charges + 1) chargeRoll,
       recharges := w.recharges + 1
     }
 
-/-- Theorem: Recharging under limit increases charges without explosion -/
-theorem recharge_safe_below_cap (w : WandCharges) (add : Nat) (h : w.recharges < 3) :
-  ∃ w', rechargeWand w add = RechargeResult.Success w' ∧ w'.charges = w.charges + add := by
-  dsimp [rechargeWand]
-  have h_not : ¬(w.recharges ≥ 3) := by omega
-  rw [if_neg h_not]
-  refine ⟨{ charges := w.charges + add, recharges := w.recharges + 1 }, ⟨rfl, rfl⟩⟩
+/-- Theorem: the first recharge of a non-wishing wand never explodes. -/
+theorem recharge_safe_first (w : WandCharges) (roll343 chargeRoll : Nat)
+    (h : w.recharges = 0) :
+    ∃ w', rechargeWand w false roll343 chargeRoll = RechargeResult.Success w'
+      ∧ w'.charges = max (w.charges + 1) chargeRoll := by
+  subst_vars
+  simp [rechargeWand, h]
 
-/-- Theorem: Over-recharging (> 3) triggers explosion -/
-theorem recharge_explodes_at_cap (w : WandCharges) (add : Nat) (h : w.recharges ≥ 3) :
-  rechargeWand w add = RechargeResult.Exploded := by
-  dsimp [rechargeWand]
-  rw [if_pos h]
+/-- Theorem: a non-wishing wand explodes iff `n > 0 ∧ n³ > roll` (n = recharges capped at 7). -/
+theorem recharge_explodes_iff (w : WandCharges) (roll343 chargeRoll : Nat) :
+    rechargeWand w false roll343 chargeRoll = RechargeResult.Exploded ↔
+      (0 < min w.recharges 7 ∧
+        min w.recharges 7 * min w.recharges 7 * min w.recharges 7 > roll343) := by
+  unfold rechargeWand
+  simp only [Bool.false_eq_true, false_or, false_and, if_false]
+  split <;> simp_all
+
+/-- Theorem: with 7 or more prior recharges the wand always explodes for every
+    `rn2(343)` outcome (n³ = 343 > roll). -/
+theorem recharge_explodes_at_cap (w : WandCharges) (chargeRoll roll343 : Nat)
+    (h : w.recharges ≥ 7) (hr : roll343 < 343) :
+    rechargeWand w false roll343 chargeRoll = RechargeResult.Exploded := by
+  rw [recharge_explodes_iff]
+  have hm : min w.recharges 7 = 7 := by omega
+  rw [hm]
+  omega
+
+/-- Theorem: a wishing wand explodes on any re-recharge. -/
+theorem recharge_wishing_explodes (w : WandCharges) (roll343 chargeRoll : Nat)
+    (h : 0 < w.recharges) :
+    rechargeWand w true roll343 chargeRoll = RechargeResult.Exploded := by
+  have hm : 0 < min w.recharges 7 := by omega
+  simp [rechargeWand, hm]
 
 end NetMechanics

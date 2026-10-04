@@ -106,6 +106,7 @@ impl SimulationWorld {
                         corpse_race: None,
                         corpse_age: 0,
                         rot_threshold: 50,
+                        recharged: 0,
                     };
                     self.arena.spawn_item(item_record);
                 }

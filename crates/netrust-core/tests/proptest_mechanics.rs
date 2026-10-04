@@ -954,23 +954,36 @@ proptest! {
     }
 
     // -------------------------------------------------------------
-    // Theorems: recharge_safe_below_cap & recharge_explodes_at_cap
+    // Theorems: recharge_safe_first, recharge_explodes_iff, recharge_explodes_at_cap
+    // Reference written from NetHack read.c:737-794.
     // -------------------------------------------------------------
     #[test]
     fn prop_recharge_theorems(
-        charges in 0u32..10,
+        charges in 0u32..20,
         recharges in 0u32..10,
-        add in 1u32..5,
+        wishing in proptest::bool::ANY,
+        blessed in proptest::bool::ANY,
+        roll_343 in 0u32..343,
+        charge_roll in 1u32..16,
     ) {
         let w = WandCharges { charges, recharges };
-        let res = recharge_wand(w, add);
-        if recharges >= 3 {
-            prop_assert_eq!(res, RechargeResult::Exploded);
+        let res = recharge_wand(w, wishing, blessed, roll_343, charge_roll);
+        // C: n > 0 && (wishing || n^3 > rn2(343))
+        let n = recharges.min(7);
+        let explode = n > 0 && (wishing || n * n * n > roll_343);
+        let new_spe = std::cmp::max(charges + 1, charge_roll);
+        let expected = if explode || (wishing && new_spe > 3) {
+            RechargeResult::Exploded
         } else {
-            prop_assert_eq!(res, RechargeResult::Success(WandCharges {
-                charges: charges + add,
-                recharges: recharges + 1,
-            }));
+            RechargeResult::Success(WandCharges { charges: new_spe, recharges: recharges + 1 })
+        };
+        prop_assert_eq!(res.clone(), expected);
+        if recharges == 0 && !wishing {
+            let is_success = matches!(res, RechargeResult::Success(_));
+            prop_assert!(is_success);
+        }
+        if recharges >= 7 {
+            prop_assert_eq!(res, RechargeResult::Exploded);
         }
     }
 

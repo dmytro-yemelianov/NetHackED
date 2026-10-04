@@ -237,6 +237,7 @@ fn test_pickup_and_drop_lifecycle() {
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,
+        recharged: 0,
     });
 
     let events_pickup = sim.step_player_action(ActionAst::PickUp);
@@ -277,6 +278,7 @@ fn test_wield_weapon() {
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,
+        recharged: 0,
     });
 
     let carried = sim.arena.items_carried_by(sim.player_id);
@@ -771,6 +773,7 @@ fn test_nutrition_decay_and_eating() {
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,
+        recharged: 0,
     });
     let carried2 = sim.arena.items_carried_by(sim.player_id);
     let corpse_idx = carried2.iter().position(|&id| id == corpse).unwrap();
@@ -1455,6 +1458,7 @@ fn test_altar_sacrifice_and_divine_crowning() {
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,
+        recharged: 0,
     });
 
     let carried = sim.arena.items_carried_by(sim.player_id);
@@ -1503,6 +1507,7 @@ fn test_altar_holy_water_consecration() {
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,
+        recharged: 0,
     });
 
     let events = sim.step_player_action(ActionAst::Pray);
@@ -1529,6 +1534,7 @@ fn test_wand_of_wishing_spawns_item() {
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,
+        recharged: 0,
     });
 
     let events = sim.step_player_action(ActionAst::Wish(
@@ -1585,6 +1591,7 @@ fn test_wand_of_striking_destroys_drawbridge() {
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,
+        recharged: 0,
     });
 
     let events = sim.step_player_action(ActionAst::ZapWand {
@@ -1625,6 +1632,7 @@ fn test_wand_of_cold_freezes_pool() {
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,
+        recharged: 0,
     });
 
     let events = sim.step_player_action(ActionAst::ZapWand {
@@ -1655,6 +1663,7 @@ fn test_scroll_of_charging_and_explosion() {
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,
+        recharged: 0,
     });
 
     let scroll = sim.arena.spawn_item(ItemRecord {
@@ -1671,22 +1680,26 @@ fn test_scroll_of_charging_and_explosion() {
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,
+        recharged: 0,
     });
 
     let carried = sim.arena.items_carried_by(sim.player_id);
     let s_idx = carried.iter().position(|&id| id == scroll).unwrap();
 
-    // Recharging safely
+    // First recharge never explodes (read.c:737). Blessed directional wand:
+    // spe = max(2 + 1, rn1(5, 4)) lies in 4..=8; the count is in `recharged`.
     let events = sim.step_player_action(ActionAst::Read(s_idx));
-    assert!(events.iter().any(
-        |e| matches!(e, GameEvent::LogMessage { text } if text.contains("Recharged to (7:1)"))
-    ));
-    assert_eq!(sim.arena.items.get(wand).unwrap().enchantment, 7);
-    assert_eq!(sim.arena.items.get(wand).unwrap().erosion, 1);
+    assert!(events
+        .iter()
+        .any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("Recharged to ("))));
+    let w_after = sim.arena.items.get(wand).unwrap();
+    assert!((4..=8).contains(&w_after.enchantment));
+    assert_eq!(w_after.recharged, 1);
+    assert_eq!(w_after.erosion, 0);
 
-    // Now test exploding at cap (recharges >= 3)
+    // A wand recharged 7 times always explodes (n^3 = 343 > any rn2(343)).
     if let Some(w) = sim.arena.items.get_mut(wand) {
-        w.erosion = 3;
+        w.recharged = 7;
     }
     let scroll2 = sim.arena.spawn_item(ItemRecord {
         name: "scroll of charging".into(),
@@ -1702,6 +1715,7 @@ fn test_scroll_of_charging_and_explosion() {
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,
+        recharged: 0,
     });
     let carried2 = sim.arena.items_carried_by(sim.player_id);
     let s2_idx = carried2.iter().position(|&id| id == scroll2).unwrap();
@@ -1754,6 +1768,7 @@ fn test_artifact_combat_bonus_and_vorpal_blade() {
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,
+        recharged: 0,
     });
     sim.wielded_item = Some(excalibur);
 
@@ -1810,6 +1825,7 @@ fn test_ukrainian_i18n_simulation_logging() {
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,
+        recharged: 0,
     });
 
     let wish_events = sim.step_player_action(ActionAst::Wish(
@@ -1903,6 +1919,7 @@ fn test_monster_lich_summon_and_curse() {
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,
+        recharged: 0,
     });
 
     let mut lich =
@@ -1950,6 +1967,7 @@ fn test_bones_file_generation_and_ghost_encounter() {
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,
+        recharged: 0,
     });
 
     // Save bones on death
@@ -2711,6 +2729,7 @@ fn test_hero_polymorph_potion_and_damage_reversion() {
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,
+        recharged: 0,
     });
     let carried = sim.arena.items_carried_by(sim.player_id);
     let idx = carried.iter().position(|&id| id == potion).unwrap();
@@ -2802,6 +2821,7 @@ fn test_wand_of_polymorph_unique_monster_invariant() {
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,
+        recharged: 0,
     });
     sim1.step_player_action(ActionAst::ZapWand {
         dir: netrust_types::Direction::East,
@@ -2852,6 +2872,7 @@ fn test_wand_of_polymorph_unique_monster_invariant() {
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,
+        recharged: 0,
     });
     sim2.step_player_action(ActionAst::ZapWand {
         dir: netrust_types::Direction::East,
@@ -2905,6 +2926,7 @@ fn test_scroll_of_genocide_conduct_and_level_wipe() {
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,
+        recharged: 0,
     });
 
     assert!(sim.conducts.genocideless);
@@ -2950,6 +2972,7 @@ fn test_cursed_scroll_of_genocide_summons() {
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,
+        recharged: 0,
     });
 
     let before_count = sim.arena.actors.len();
@@ -3015,6 +3038,7 @@ fn test_petrification_countdown_and_lizard_cure() {
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,
+        recharged: 0,
     });
 
     let carried = sim.arena.items_carried_by(sim.player_id);
@@ -3087,6 +3111,7 @@ fn test_weapon_skill_combat_bonus() {
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,
+        recharged: 0,
     });
 
     // Wield it
@@ -3175,6 +3200,7 @@ fn test_ranged_fire_arrow_hits_monster() {
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,
+        recharged: 0,
     });
 
     // Quiver the arrow
@@ -3351,6 +3377,7 @@ fn test_corpse_eating_and_conduct_invalidation() {
         corpse_race: Some("goblin".into()),
         corpse_age: 0,
         rot_threshold: 50,
+        recharged: 0,
     };
 
     let corpse_id = sim.arena.items.insert(corpse);
@@ -3393,6 +3420,7 @@ fn test_cannibalism_detection() {
         corpse_race: Some("human".into()),
         corpse_age: 0,
         rot_threshold: 50,
+        recharged: 0,
     };
 
     let corpse_id = sim.arena.items.insert(human_corpse);
