@@ -10,6 +10,24 @@ use rand::RngCore;
 use crate::events::GameEvent;
 use crate::world::SimulationWorld;
 
+/// Lowercase, trim and drop a leading article from a wish query.
+pub fn normalize_wish_name(query: &str) -> String {
+    let lower = query.trim().to_lowercase();
+    for article in ["a ", "an ", "the "] {
+        if let Some(rest) = lower.strip_prefix(article) {
+            return rest.trim().to_string();
+        }
+    }
+    lower
+}
+
+const UNWISHABLE: &[ItemKindId] = &[
+    ItemKindId::BellOfOpening, ItemKindId::CandelabrumOfInvocation, ItemKindId::BookOfTheDead,
+    ItemKindId::OrbOfFate, ItemKindId::HeartOfAhriman, ItemKindId::MagicMirrorOfMerlin,
+    ItemKindId::EyesOfTheOverworld, ItemKindId::MasterKeyOfThievery, ItemKindId::TsurugiOfMuramasa,
+    ItemKindId::PlatinumYendorianExpressCard, ItemKindId::StaffOfAesculapius, ItemKindId::OrbOfDetection,
+];
+
 impl SimulationWorld {
     pub(crate) fn handle_dip(&mut self, item_index: usize, into_water: WaterType) -> Vec<GameEvent> {
         let mut events = Vec::new();
@@ -305,7 +323,7 @@ impl SimulationWorld {
                                 }
                                 netrust_types::RechargeResult::Success(new_w) => {
                                     if let Some(w_mut) = self.arena.items.get_mut(wid) {
-                                        w_mut.enchantment = new_w.charges as i8;
+                                        w_mut.enchantment = new_w.charges.min(i8::MAX as u32) as i8;
                                         w_mut.erosion = new_w.recharges as u8;
                                         events.push(GameEvent::LogMessage {
                                             text: netrust_i18n::Messages::wand_recharged(&wand_name, new_w.charges, new_w.recharges, self.locale),
@@ -558,27 +576,26 @@ impl SimulationWorld {
             self.arena.items.get(id).map(|it| it.class == ItemClass::Wand).unwrap_or(false)
         });
 
-        let wand_name = if let Some(wid) = wand_id {
-            if let Some(wand_item) = self.arena.items.get_mut(wid) {
-                let current_charges = netrust_types::WandCharges {
-                    charges: wand_item.enchantment.max(0) as u32,
-                    recharges: wand_item.erosion as u32,
-                };
-                if let Some(new_charges) = netrust_core::artifacts_wands::zap_wand(current_charges) {
-                    wand_item.enchantment = new_charges.charges as i8;
-                    wand_item.name.clone()
-                } else {
-                    events.push(GameEvent::LogMessage {
-                        text: netrust_i18n::Messages::wand_empty(self.locale).into(),
-                    });
-                    self.scheduler.hero_act(NORMAL_SPEED);
-                    return events;
-                }
-            } else {
-                "wand of striking".to_string()
-            }
+        let Some(wid) = wand_id else {
+            events.push(GameEvent::LogMessage { text: "You have no wand to zap.".into() });
+            return events;
+        };
+        let Some(wand_item) = self.arena.items.get_mut(wid) else {
+            return events;
+        };
+        let current_charges = netrust_types::WandCharges {
+            charges: wand_item.enchantment.max(0) as u32,
+            recharges: wand_item.erosion as u32,
+        };
+        let wand_name = if let Some(new_charges) = netrust_core::artifacts_wands::zap_wand(current_charges) {
+            wand_item.enchantment = new_charges.charges.min(i8::MAX as u32) as i8;
+            wand_item.name.clone()
         } else {
-            "wand of striking".to_string()
+            events.push(GameEvent::LogMessage {
+                text: netrust_i18n::Messages::wand_empty(self.locale).into(),
+            });
+            self.scheduler.hero_act(NORMAL_SPEED);
+            return events;
         };
 
         // If Wand of Secret Door Detection: reveals secret doors in 5x5 radius
@@ -718,12 +735,18 @@ impl SimulationWorld {
             self.arena.items.get(id).map(|it| it.name.contains("wishing")).unwrap_or(false)
         });
 
-        if let Some(wid) = wow_id {
-            let wand_item = self.arena.items.get_mut(wid).unwrap();
+        let Some(wid) = wow_id else {
+            events.push(GameEvent::LogMessage { text: "You have no means of wishing.".into() });
+            return events;
+        };
+        {
+            let Some(wand_item) = self.arena.items.get_mut(wid) else {
+                return events;
+            };
             let charges = wand_item.enchantment.max(0) as u32;
             let recharges = wand_item.erosion as u32;
             if let Some(new_w) = netrust_core::artifacts_wands::zap_wand(netrust_types::WandCharges { charges, recharges }) {
-                wand_item.enchantment = new_w.charges as i8;
+                wand_item.enchantment = new_w.charges.min(i8::MAX as u32) as i8;
             } else {
                 events.push(GameEvent::LogMessage { text: netrust_i18n::Messages::wish_empty(self.locale).into() });
                 self.scheduler.hero_act(NORMAL_SPEED);
@@ -733,24 +756,37 @@ impl SimulationWorld {
         netrust_core::conducts::record_wish(&mut self.conducts);
 
         if let Some((item_query, ench, buc)) = netrust_core::artifacts_wands::parse_wish(&wish_str) {
-            let matched_arch = netrust_data::ITEM_CATALOG.iter().find(|arch| {
-                arch.name.to_lowercase() == item_query.to_lowercase()
-                    || arch.name.to_lowercase().contains(&item_query.to_lowercase())
-                    || item_query.to_lowercase().contains(arch.name.to_lowercase().as_str())
-            });
+            let wanted = normalize_wish_name(&item_query);
+            let matched_arch = netrust_data::ITEM_CATALOG.iter().find(|arch| arch.name.to_lowercase() == wanted);
 
-            if let Some(arch) = matched_arch {
-                let mut record = create_item_record(arch.id, ItemLocation::Floor(player.coord), buc);
-                record.enchantment = ench;
-                let spawned_id = self.arena.spawn_item(record);
-                let item_name = self.arena.items.get(spawned_id).unwrap().name.clone();
-                events.push(GameEvent::LogMessage {
-                    text: netrust_i18n::Messages::wish_granted(&item_name, self.locale),
-                });
-            } else {
-                events.push(GameEvent::LogMessage {
-                    text: format!("You feel a vague sense of loss. You wished for '{}', but received nothing.", wish_str),
-                });
+            match matched_arch {
+                Some(arch) if arch.id == ItemKindId::AmuletOfYendor => {
+                    let mut fake = create_item_record(arch.id, ItemLocation::Floor(player.coord), buc);
+                    fake.name = "cheap plastic imitation of the Amulet of Yendor".into();
+                    self.arena.spawn_item(fake);
+                    events.push(GameEvent::LogMessage {
+                        text: netrust_i18n::Messages::wish_granted("cheap plastic imitation of the Amulet of Yendor", self.locale),
+                    });
+                }
+                Some(arch) if UNWISHABLE.contains(&arch.id) => {
+                    events.push(GameEvent::LogMessage {
+                        text: format!("You feel a vague sense of loss. The {} cannot be wished for.", arch.name),
+                    });
+                }
+                Some(arch) => {
+                    let mut record = create_item_record(arch.id, ItemLocation::Floor(player.coord), buc);
+                    record.enchantment = ench;
+                    let spawned_id = self.arena.spawn_item(record);
+                    let item_name = self.arena.items.get(spawned_id).unwrap().name.clone();
+                    events.push(GameEvent::LogMessage {
+                        text: netrust_i18n::Messages::wish_granted(&item_name, self.locale),
+                    });
+                }
+                None => {
+                    events.push(GameEvent::LogMessage {
+                        text: format!("You feel a vague sense of loss. You wished for '{}', but received nothing.", wish_str),
+                    });
+                }
             }
         } else {
             events.push(GameEvent::LogMessage {

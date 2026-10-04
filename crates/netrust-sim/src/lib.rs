@@ -8,6 +8,7 @@ pub mod monsters;
 pub mod turns;
 pub mod world;
 
+pub use actions::items::normalize_wish_name;
 pub use events::GameEvent;
 pub use world::{default_rng, SimulationWorld, StoredLevel};
 

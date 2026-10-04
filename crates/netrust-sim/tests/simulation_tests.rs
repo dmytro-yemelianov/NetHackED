@@ -164,6 +164,12 @@ fn test_zap_wand_beam_propagation_and_damage() {
         abilities: Vec::new(),
     };
     let mon_id = sim.arena.spawn_actor(mon);
+    // Zapping now requires a carried wand.
+    sim.arena.spawn_item(create_item_record(
+        ItemKindId::WandOfStriking,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Uncursed,
+    ));
 
     let events = sim.step_player_action(ActionAst::ZapWand {
         dir: Direction::East,
