@@ -8,23 +8,25 @@ pub mod pantheons;
 pub mod roles;
 
 pub use items::{
-    create_item_record, get_item_archetype, initial_wand_charges, ItemArchetype, ItemKindId,
-    ITEM_CATALOG,
+    create_item_record, get_item_archetype, initial_wand_charges, item_archetype_by_name,
+    ItemArchetype, ItemKindId, WandDir, ITEM_CATALOG,
 };
 pub use monsters::{
-    create_ghost_record, create_monster_record, get_monster_species, monster_class_of, AiBehavior,
-    MonsterArchetype, MonsterSpeciesId, BESTIARY,
+    create_ghost_record, create_monster_record, get_monster_species, monster_archetype_by_name,
+    monster_class_of, AiBehavior, Attack, AttackType, DamageType, MonsterArchetype, MonsterSize,
+    MonsterSound, MonsterSpeciesId, BESTIARY,
 };
 pub use pantheons::{get_pantheon_for_role, get_patron_deity};
 pub use roles::{
-    get_race, get_role, spawn_player_character, spawn_starting_pet, starting_skills,
+    get_race, get_role, race_hatemask, race_hostile, race_lovemask, race_peaceful,
+    spawn_player_character, spawn_starting_pet, starting_item_spe, starting_skills,
     CharacterConfig, Gender, RaceId, RaceSpec, RoleId, RoleSpec, RACES, ROLES,
 };
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use netrust_arena::ItemLocation;
+    use netrust_arena::{EntityArena, ItemLocation};
     use netrust_types::Coord;
 
     #[test]
@@ -71,6 +73,40 @@ mod tests {
             assert_eq!(actor.hp, role.base_hp);
             assert_eq!(actor.ac, role.ac);
             assert_eq!(items.len(), role.starting_items.len());
+        }
+    }
+
+    #[test]
+    fn starting_items_carry_c_trspe() {
+        // C u_init.c:91 Knight LONG_SWORD +1; u_init.c:136 Rogue LEATHER_ARMOR +1;
+        // ini_inv applies trspe (u_init.c:1233-1234).
+        for (role, kind, spe) in [
+            (RoleId::Knight, ItemKindId::LongSword, 1),
+            (RoleId::Rogue, ItemKindId::LeatherArmor, 1),
+            (RoleId::Rogue, ItemKindId::Dagger, 0),
+            (RoleId::Rogue, ItemKindId::ShortSword, 0),
+            (RoleId::Wizard, ItemKindId::CloakOfMagicResistance, 0),
+        ] {
+            let mut arena = EntityArena::new();
+            let config = CharacterConfig {
+                role,
+                ..CharacterConfig::default()
+            };
+            let (_, items) =
+                spawn_player_character(&config, Coord::new_unchecked(5, 5), &mut arena);
+            let want = create_item_record(
+                kind,
+                ItemLocation::Floor(Coord::new_unchecked(0, 0)),
+                netrust_types::Buc::Uncursed,
+            )
+            .name;
+            let item = items
+                .iter()
+                .filter_map(|&id| arena.items.get(id))
+                .find(|it| it.name == want)
+                .unwrap_or_else(|| panic!("{role:?} carries {want}"));
+            assert_eq!(item.enchantment, spe, "{role:?} {want}");
+            assert_eq!(starting_item_spe(role, kind), Some(spe));
         }
     }
 

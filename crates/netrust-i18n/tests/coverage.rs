@@ -70,3 +70,61 @@ fn cmd_bar_fits_and_mentions_esc() {
         assert!(s.contains("Esc"), "{loc:?}: {s}");
     }
 }
+
+#[test]
+fn peace_messages_are_translated() {
+    assert_eq!(
+        Messages::gets_angry("watchman", true, Locale::En),
+        "The watchman gets angry!"
+    );
+    assert_eq!(
+        Messages::gets_angry("Medusa", false, Locale::En),
+        "Medusa gets angry!"
+    );
+    let uk = Messages::gets_angry("watchman", true, Locale::Uk);
+    assert!(!uk.contains("watchman"), "{uk}");
+    for (en, uk) in [
+        (
+            Messages::sanctum_infidel(Locale::En).to_string(),
+            Messages::sanctum_infidel(Locale::Uk).to_string(),
+        ),
+        (
+            Messages::sanctum_be_gone(Locale::En).to_string(),
+            Messages::sanctum_be_gone(Locale::Uk).to_string(),
+        ),
+        (
+            Messages::feel_hypocrite(Locale::En).to_string(),
+            Messages::feel_hypocrite(Locale::Uk).to_string(),
+        ),
+        (
+            Messages::engraving_fades(Locale::En).to_string(),
+            Messages::engraving_fades(Locale::Uk).to_string(),
+        ),
+        (
+            Messages::peaceful_in_the_way("gnome", true, Locale::En),
+            Messages::peaceful_in_the_way("gnome", true, Locale::Uk),
+        ),
+        (
+            Messages::peaceful_wont_swap("priest", true, Locale::En),
+            Messages::peaceful_wont_swap("priest", true, Locale::Uk),
+        ),
+        (
+            Messages::swap_with_peaceful("gnome", Locale::En),
+            Messages::swap_with_peaceful("gnome", Locale::Uk),
+        ),
+        (
+            Messages::guardians_angry_too("warrior", true, Locale::En),
+            Messages::guardians_angry_too("warrior", true, Locale::Uk),
+        ),
+    ] {
+        assert_ne!(en, uk);
+        assert!(
+            !uk.contains("gnome") && !uk.contains("priest") && !uk.contains("warrior"),
+            "{uk}"
+        );
+    }
+    assert_eq!(
+        Messages::guardians_angry_too("warrior", true, Locale::En),
+        "The warriors appear to be angry too..."
+    );
+}

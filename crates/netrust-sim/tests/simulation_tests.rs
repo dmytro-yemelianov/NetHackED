@@ -147,6 +147,8 @@ fn test_melee_attack_action() {
         tameness: 0,
         is_unique: false,
         abilities: Vec::new(),
+        is_peaceful: false,
+        mspec_used: 0,
     };
     let mon_id = sim.arena.spawn_actor(goblin);
 
@@ -195,6 +197,8 @@ fn test_zap_wand_beam_propagation_and_damage() {
         tameness: 0,
         is_unique: false,
         abilities: Vec::new(),
+        is_peaceful: false,
+        mspec_used: 0,
     };
     let mon_id = sim.arena.spawn_actor(mon);
     // Zapping now requires a carried wand.
@@ -217,6 +221,62 @@ fn test_zap_wand_beam_propagation_and_damage() {
     ));
     let mon_after = sim.arena.actors.get(mon_id).unwrap();
     assert!(mon_after.is_dead);
+}
+
+#[test]
+fn test_wands_of_digging_and_teleportation_do_not_damage() {
+    // C zap.c:3459 (zap_dig) never hurts monsters; teleportation relocates them.
+    for kind in [ItemKindId::WandOfDigging, ItemKindId::WandOfTeleportation] {
+        let mut sim = SimulationWorld::new_with_seed(101);
+        let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+        for dx in 1..=4 {
+            let c = Coord::new(p_coord.x + dx, p_coord.y).unwrap();
+            sim.level.set_tile(c, Tile::Room);
+        }
+
+        let target_coord = Coord::new(p_coord.x + 2, p_coord.y).unwrap();
+        let mon = ActorRecord {
+            name: "Goblin Archer".into(),
+            coord: target_coord,
+            hp: 10,
+            max_hp: 10,
+            ac: 8,
+            level: 1,
+            speed: 10,
+            alignment: Alignment::Chaotic,
+            intrinsics: Intrinsics::default(),
+            is_player: false,
+            is_dead: false,
+            is_tame: false,
+            tameness: 0,
+            is_unique: false,
+            abilities: Vec::new(),
+            is_peaceful: false,
+            mspec_used: 0,
+        };
+        let mon_id = sim.arena.spawn_actor(mon);
+        // Zapping now requires a carried wand.
+        sim.arena.spawn_item(create_item_record(
+            kind,
+            ItemLocation::CarriedBy(sim.player_id),
+            Buc::Uncursed,
+        ));
+
+        let events = sim.step_player_action(ActionAst::ZapWand {
+            dir: Direction::East,
+            energy: 5,
+        });
+
+        assert!(events
+            .iter()
+            .any(|e| matches!(e, GameEvent::BeamPropagated { .. })));
+        assert!(!events
+            .iter()
+            .any(|e| matches!(e, GameEvent::AttackLanded { .. })));
+        let mon_after = sim.arena.actors.get(mon_id).unwrap();
+        assert!(!mon_after.is_dead);
+        assert_eq!(mon_after.hp, 10);
+    }
 }
 
 #[test]
@@ -829,7 +889,8 @@ fn test_shop_and_shopkeeper_mechanics() {
             .iter()
             .any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("Stop, thief!"))));
         let sk_after = sim.arena.actors.get(sk_id).unwrap();
-        assert_eq!(sk_after.alignment, Alignment::Chaotic);
+        assert!(!sk_after.is_peaceful);
+        assert_eq!(sk_after.alignment, Alignment::Neutral);
     }
 }
 
@@ -1368,12 +1429,12 @@ fn test_companion_pet_feeding_and_growth() {
     assert_eq!(sim.arena.actors.get(pet_id).unwrap().name, "dog");
     assert_eq!(sim.arena.actors.get(pet_id).unwrap().max_hp, 24);
 
-    // Feed further nutrition to reach level 7 -> promotes to war dog
+    // Feed further nutrition to reach level 7 -> promotes to large dog
     let events2 = sim.feed_companion_pet(pet_id, 150);
     assert!(events2.iter().any(
-        |e| matches!(e, GameEvent::LogMessage { text } if text.contains("grows into a war dog"))
+        |e| matches!(e, GameEvent::LogMessage { text } if text.contains("grows into a large dog"))
     ));
-    assert_eq!(sim.arena.actors.get(pet_id).unwrap().name, "war dog");
+    assert_eq!(sim.arena.actors.get(pet_id).unwrap().name, "large dog");
     assert_eq!(sim.arena.actors.get(pet_id).unwrap().max_hp, 45);
 }
 
@@ -1410,6 +1471,11 @@ fn test_scroll_of_enchant_weapon() {
 fn test_scroll_of_enchant_armor() {
     // Uncursed +0 leather armor gains rnd(3) (read.c:1115); seed 5 draws 1.
     let mut sim = SimulationWorld::new_with_seed(5);
+    sim.arena.spawn_item(create_item_record(
+        ItemKindId::LeatherArmor,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Uncursed,
+    ));
 
     let scroll = sim.arena.spawn_item(create_item_record(
         ItemKindId::ScrollOfEnchantArmor,
@@ -1463,17 +1529,13 @@ fn enchant_at_safe_limit_never_evaporates() {
         // Cursed leather armor +3 with an uncursed scroll: s = 0 + 1 (non-magic)
         // -> rnd(1) = 1, no evaporation (read.c:1179), armor becomes uncursed.
         let mut sim = SimulationWorld::new_with_seed(seed);
-        let armor_id = sim
-            .arena
-            .items_carried_by(sim.player_id)
-            .into_iter()
-            .find(|&id| sim.arena.items.get(id).unwrap().class == ItemClass::Armor)
-            .unwrap();
-        {
-            let armor = sim.arena.items.get_mut(armor_id).unwrap();
-            armor.enchantment = 3;
-            armor.buc = Buc::Cursed;
-        }
+        let mut armor_rec = create_item_record(
+            ItemKindId::LeatherArmor,
+            ItemLocation::CarriedBy(sim.player_id),
+            Buc::Cursed,
+        );
+        armor_rec.enchantment = 3;
+        let armor_id = sim.arena.spawn_item(armor_rec);
         let scroll = sim.arena.spawn_item(create_item_record(
             ItemKindId::ScrollOfEnchantArmor,
             ItemLocation::CarriedBy(sim.player_id),
@@ -2005,6 +2067,8 @@ fn test_artifact_combat_bonus_and_vorpal_blade() {
         tameness: 0,
         is_unique: false,
         abilities: Vec::new(),
+        is_peaceful: false,
+        mspec_used: 0,
     });
 
     let excalibur = sim.arena.spawn_item(ItemRecord {
@@ -2058,6 +2122,8 @@ fn test_ukrainian_i18n_simulation_logging() {
         tameness: 0,
         is_unique: false,
         abilities: Vec::new(),
+        is_peaceful: false,
+        mspec_used: 0,
     });
 
     let combat_events = sim.step_player_action(ActionAst::MeleeAttack(mon_coord));
@@ -2109,14 +2175,29 @@ fn test_monster_dragon_breath_and_reflection() {
         dragon_coord,
     );
     let dragon_id = sim.arena.spawn_actor(dragon);
+    let dragon_hp = sim.arena.actors.get(dragon_id).unwrap().hp;
+    let hero_hp = sim.arena.actors.get(sim.player_id).unwrap().hp;
 
-    // Turn step triggers monster breath towards player
-    let events = sim.step_player_action(ActionAst::Wait);
-    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("bounces the deadly breath") || text.contains("відбиття"))));
+    // C breamm (mthrowu.c:1117) breathes on `rn2(3)` and zap_hit decides whether
+    // the ray hits: wait (keeping the dragon 3 tiles away) until it is reflected.
+    let mut reflected = false;
+    for _ in 0..30 {
+        sim.arena.actors.get_mut(dragon_id).unwrap().coord = dragon_coord;
+        let events = sim.step_player_action(ActionAst::Wait);
+        if events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("bounces the deadly breath") || text.contains("відбиття"))) {
+            reflected = true;
+            break;
+        }
+    }
+    assert!(
+        reflected,
+        "the red dragon breathed and the hero reflected it"
+    );
 
-    // Dragon was hit by its own breath
-    let dragon_after = sim.arena.actors.get(dragon_id).unwrap();
-    assert!(dragon_after.hp < 90 || dragon_after.is_dead);
+    // Reflection protects the hero; the bounced fire does not hurt the red
+    // dragon (C MR_FIRE, monsters.h red dragon), and the dragon never melees at range.
+    assert_eq!(sim.arena.actors.get(sim.player_id).unwrap().hp, hero_hp);
+    assert_eq!(sim.arena.actors.get(dragon_id).unwrap().hp, dragon_hp);
 }
 
 #[test]
@@ -3115,8 +3196,6 @@ fn test_hero_polymorph_potion_and_damage_reversion() {
         p.hp = 100;
         p.max_hp = 100;
     }
-    sim.hero.base_hp = 100;
-    sim.hero.base_max_hp = 100;
 
     let potion = sim.arena.spawn_item(ItemRecord {
         name: "potion of polymorph".into(),
@@ -3159,6 +3238,8 @@ fn test_hero_polymorph_potion_and_damage_reversion() {
         tameness: 0,
         is_unique: false,
         abilities: Vec::new(),
+        is_peaceful: false,
+        mspec_used: 0,
     };
     sim.arena.spawn_actor(mon);
 
@@ -3210,6 +3291,8 @@ fn test_wand_of_polymorph_unique_monster_invariant() {
         tameness: 0,
         is_unique: true,
         abilities: Vec::new(),
+        is_peaceful: false,
+        mspec_used: 0,
     });
     sim1.arena.spawn_item(ItemRecord {
         name: "wand of polymorph".into(),
@@ -3261,6 +3344,8 @@ fn test_wand_of_polymorph_unique_monster_invariant() {
         tameness: 0,
         is_unique: false,
         abilities: Vec::new(),
+        is_peaceful: false,
+        mspec_used: 0,
     });
     sim2.arena.spawn_item(ItemRecord {
         name: "wand of polymorph".into(),
@@ -3314,6 +3399,8 @@ fn test_scroll_of_genocide_conduct_and_level_wipe() {
         tameness: 0,
         is_unique: false,
         abilities: Vec::new(),
+        is_peaceful: false,
+        mspec_used: 0,
     });
 
     let scroll_id = sim.arena.spawn_item(ItemRecord {
@@ -3544,6 +3631,8 @@ fn test_weapon_skill_combat_bonus() {
         tameness: 0,
         is_unique: false,
         abilities: Vec::new(),
+        is_peaceful: false,
+        mspec_used: 0,
     });
 
     let hp_before = sim.arena.actors.get(mon_id).unwrap().hp;
@@ -3587,6 +3676,8 @@ fn test_ranged_fire_arrow_hits_monster() {
         tameness: 0,
         is_unique: false,
         abilities: Vec::new(),
+        is_peaceful: false,
+        mspec_used: 0,
     });
 
     // Put arrow in hero inventory
@@ -3651,6 +3742,8 @@ fn test_steed_mounting_and_effective_movement() {
         tameness: 10,
         is_unique: false,
         abilities: Vec::new(),
+        is_peaceful: false,
+        mspec_used: 0,
     });
 
     // Mount the steed
@@ -3871,6 +3964,8 @@ fn test_pacifist_conduct_violation_on_kill() {
         is_tame: false,
         tameness: 0,
         abilities: vec![],
+        is_peaceful: false,
+        mspec_used: 0,
     };
 
     sim.arena.actors.insert(monster);
@@ -4113,6 +4208,43 @@ fn test_quest_leader_spawned_per_role_matches_config() {
     }
 }
 
+#[test]
+fn test_quest_guardians_spawned_per_role_use_c_species() {
+    for role in [
+        "Valkyrie",
+        "Wizard",
+        "Barbarian",
+        "Rogue",
+        "Knight",
+        "Monk",
+        "Healer",
+        "Tourist",
+        "Archaeologist",
+    ] {
+        let cfg = netrust_core::get_role_quest_config(role).unwrap();
+        let mut sim = SimulationWorld::new_with_seed(5);
+        sim.role_name = role.to_string();
+        sim.current_branch = netrust_types::BranchId::Quest;
+        sim.depth = 1;
+        let _ = sim.unpack_or_generate_level(netrust_types::BranchId::Quest, 1);
+        assert!(
+            sim.arena
+                .actors
+                .iter()
+                .any(|(_, a)| a.name == cfg.guardian_name),
+            "{role}: guardian {} not spawned",
+            cfg.guardian_name
+        );
+        assert!(
+            !sim.arena
+                .actors
+                .iter()
+                .any(|(_, a)| a.name == "quest guardian"),
+            "{role}: generic guardian spawned"
+        );
+    }
+}
+
 /// Count hits of a fresh Valkyrie's first melee swing against a sturdy AC `ac` target
 /// over many seeds.
 fn valkyrie_first_swing_hits(ac: i32, seeds: u64) -> u64 {
@@ -4143,6 +4275,8 @@ fn valkyrie_first_swing_hits(ac: i32, seeds: u64) -> u64 {
             tameness: 0,
             is_unique: false,
             abilities: Vec::new(),
+            is_peaceful: false,
+            mspec_used: 0,
         };
         let mid = sim.arena.spawn_actor(mon);
         let events = sim.step_player_action(ActionAst::MeleeAttack(mc));

@@ -335,9 +335,6 @@ impl SimulationWorld {
                 if prot > prev_prot {
                     let gained = prot - prev_prot;
                     self.divine_protection = prot;
-                    if let Some(p) = self.arena.actors.get_mut(self.player_id) {
-                        p.ac -= gained as i32; // Lower AC is better in NetHack
-                    }
                     events.push(GameEvent::LogMessage {
                         text: format!("You feel much safer! You are granted +{gained} divine AC protection (total: +{prot})."),
                     });

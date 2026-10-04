@@ -1,16 +1,32 @@
 //! Melee combat resolution and damage application.
 
-use netrust_arena::{ActorId, ItemLocation};
+use netrust_arena::{ActorId, ActorRecord, ItemLocation};
 use netrust_core::{
-    combat::{monster_to_hit_value, resolve_melee_attack, to_hit_value},
+    combat::{
+        attack_hits, dmgval, is_melee_attack, mattacku_die, mhitm_to_hit, monster_attack_damage,
+        monster_attack_hits, monster_hit_damage, monster_to_hit_value, resisted,
+        resolve_melee_attack, to_hit_value, weapon_damage_die,
+    },
     Combatant,
 };
-use netrust_data::{create_item_record, ItemKindId};
-use netrust_types::Buc;
+use netrust_data::{
+    create_item_record, item_archetype_by_name, monster_archetype_by_name, ItemKindId, MonsterSize,
+};
+use netrust_types::{Attack, AttackType, Buc, DamageType};
 use rand::{Rng, RngCore};
 
 use crate::events::GameEvent;
 use crate::world::SimulationWorld;
+
+/// Attack used for an actor whose name resolves to no bestiary archetype
+/// (custom or renamed actors): a single `d(1, 6)` hand-to-hand hit, the
+/// pre-D2 sim's one-d6 monster attack. Not a C rule; documented divergence.
+pub(crate) const FALLBACK_ATTACK: Attack = Attack {
+    at: AttackType::Claw,
+    ad: DamageType::Phys,
+    n: 1,
+    d: 6,
+};
 
 impl SimulationWorld {
     pub(crate) fn resolve_combat(
@@ -18,6 +34,9 @@ impl SimulationWorld {
         attacker_id: ActorId,
         defender_id: ActorId,
     ) -> Vec<GameEvent> {
+        if attacker_id != self.player_id {
+            return self.resolve_monster_attacks(attacker_id, defender_id);
+        }
         let mut events = Vec::new();
         let Some(attacker) = self.arena.actors.get(attacker_id).cloned() else {
             return events;
@@ -26,20 +45,10 @@ impl SimulationWorld {
             return events;
         };
 
-        // Check defender armor enchantment
-        let armor_ench: i32 = self
-            .arena
-            .items_carried_by(defender_id)
-            .into_iter()
-            .filter_map(|id| self.arena.items.get(id))
-            .filter(|it| it.class == netrust_types::ItemClass::Armor)
-            .map(|a| a.enchantment as i32)
-            .sum();
-
         let def_combat = Combatant {
             hp: defender.hp,
             max_hp: defender.max_hp,
-            ac: defender.ac - armor_ench,
+            ac: self.defender_ac(defender_id, &defender),
             level: defender.level,
             to_hit_bonus: 0,
             damage_bonus: 0,
@@ -113,37 +122,69 @@ impl SimulationWorld {
             }
         }
 
-        let target_ac = def_combat.ac;
-        let hero_defender = defender_id == self.player_id;
-        // Hero attacker: C find_roll_to_hit (uhitm.c:365). Monster attacker:
-        // C mattacku (mhitu.c:709), AC_VALUE draws rnd(-ac) when ac < 0.
-        let to_hit = if attacker_id == self.player_id {
-            to_hit_value(
-                attacker.level as i32,
-                self.player_luck,
-                weapon_ench,
-                skill_hit_bonus,
-                target_ac,
-            )
-        } else {
-            let ac_roll = if target_ac < 0 {
-                self.rng.random_range(1..=target_ac.unsigned_abs())
+        let weapon_dice = if let Some(wid) = self.wielded_item {
+            if let Some(w) = self.arena.items.get(wid) {
+                if let Some(arch) = item_archetype_by_name(&w.name) {
+                    if arch.damage_small.1 > 0 || arch.damage_large.1 > 0 {
+                        Some((arch.damage_small.1, arch.damage_large.1))
+                    } else {
+                        // C uhitm.c:895: non-weapon object wielded as weapon deals rnd(2)
+                        Some((2, 2))
+                    }
+                } else {
+                    let lower = w.name.to_lowercase();
+                    if lower.contains("dagger") {
+                        Some((4, 3))
+                    } else if lower.contains("short sword") {
+                        Some((6, 8))
+                    } else if lower.contains("long sword")
+                        || lower.contains("excalibur")
+                        || lower.contains("vorpal blade")
+                    {
+                        Some((8, 12))
+                    } else if lower.contains("silver saber") {
+                        Some((8, 8))
+                    } else if lower.contains("mace") {
+                        Some((6, 6))
+                    } else {
+                        Some((2, 2))
+                    }
+                }
             } else {
-                1
-            };
-            monster_to_hit_value(attacker.level as i32, target_ac, ac_roll)
-        };
-        let d20 = self.rng.random_range(1..=20u32);
-        let base_roll = self.rng.random_range(1..=6u32);
-        // C mhitu.c:1208: rnd(-u.uac) damage reduction only when the hero is hit.
-        let hero_absorb_roll = if hero_defender {
-            Some(if target_ac < 0 {
-                self.rng.random_range(1..=target_ac.unsigned_abs())
-            } else {
-                1
-            })
+                None
+            }
         } else {
             None
+        };
+
+        let target_large = monster_archetype_by_name(&defender.name)
+            .map(|m| m.size >= MonsterSize::Large)
+            .unwrap_or(false);
+        let martial_arts = self.role_name.eq_ignore_ascii_case("monk");
+
+        let target_ac = def_combat.ac;
+        // Hero attacker: C find_roll_to_hit (uhitm.c:365) vs rnd(20) (uhitm.c:780).
+        let to_hit = to_hit_value(
+            attacker.level as i32,
+            self.player_luck,
+            weapon_ench,
+            skill_hit_bonus,
+            target_ac,
+        );
+        let d20 = self.rng.random_range(1..=20u32);
+        // C hmon_hitmon (uhitm.c:944 `dmgval`, uhitm.c:847 bare hands) runs
+        // only after `tmp > dieroll` (uhitm.c:782): the damage die is drawn
+        // only on a hit, so a miss consumes just the rnd(20).
+        let base_roll = if attack_hits(d20, to_hit) {
+            let die = weapon_damage_die(weapon_dice, target_large, martial_arts);
+            let roll = if die == 0 {
+                0
+            } else {
+                self.rng.random_range(1..=die)
+            };
+            dmgval(weapon_dice, target_large, martial_arts, roll)
+        } else {
+            0
         };
 
         let result = resolve_melee_attack(
@@ -153,7 +194,7 @@ impl SimulationWorld {
             base_roll,
             weapon_ench,
             skill_dmg_bonus,
-            hero_absorb_roll,
+            None,
         );
 
         if result.hit {
@@ -172,148 +213,393 @@ impl SimulationWorld {
                 );
             }
 
-            let mut lethal = false;
-            if let Some(target) = self.arena.actors.get_mut(defender_id) {
-                let decap = if artifact == Some(netrust_types::ArtifactKind::VorpalBlade) {
-                    (self.rng.next_u32() % 20) == 0
-                } else {
-                    false
-                };
+            let decap = if artifact == Some(netrust_types::ArtifactKind::VorpalBlade) {
+                (self.rng.next_u32() % 20) == 0
+            } else {
+                false
+            };
+            if decap {
+                events.push(GameEvent::LogMessage {
+                    text: netrust_i18n::Messages::vorpal_decapitate(&defender.name, self.locale),
+                });
+            }
+            let lethal = self.land_hit(
+                attacker_id,
+                &attacker,
+                defender_id,
+                &defender,
+                final_damage,
+                decap,
+                &mut events,
+            );
+            // C hmon_hitmon (uhitm.c:1923-1926): a surviving target is woken
+            // with `wakeup(mon, TRUE)` -> setmangry.
+            if !lethal {
+                self.setmangry(defender_id, &mut events);
+            }
+        } else {
+            self.push_miss(attacker_id, &attacker, defender_id, &defender, &mut events);
+            // C missum (uhitm.c:5212-5213): `wakeup(mdef, TRUE)` -> setmangry.
+            self.setmangry(defender_id, &mut events);
+        }
 
-                if decap {
+        events
+    }
+
+    /// Copy the player actor's `hp`/`max_hp` (the single source of truth for
+    /// hero HP) into the hero's current form before damage resolution: the
+    /// polyform (`u.mh`/`u.mhmax`) when polymorphed, else the base form
+    /// (`u.uhp`/`u.uhpmax`). C keeps one pair per form (`hack.c:4256` losehp).
+    pub(crate) fn sync_hero_form_from_actor(hero: &mut netrust_types::Hero, actor: &ActorRecord) {
+        let hp = i32::try_from(actor.hp).unwrap_or(i32::MAX);
+        let max_hp = i32::try_from(actor.max_hp).unwrap_or(i32::MAX);
+        if let Some(poly) = &mut hero.polymorph {
+            poly.hp = hp;
+            poly.max_hp = max_hp;
+        } else {
+            hero.base_hp = hp;
+            hero.base_max_hp = max_hp;
+        }
+    }
+
+    /// Apply `damage` to the hero through C `losehp` (`hack.c:4256`): the
+    /// player actor's hp/max_hp are authoritative (healing, breath, traps,
+    /// prayer and regeneration change only them), so they are copied into the
+    /// current form first, then [`netrust_core::polymorph::apply_poly_damage`]
+    /// runs (`u.mh < 1` -> `rehumanize`, else `u.uhp < 1` -> death) and the
+    /// result is written back. Pushes "You revert to your normal form!" on
+    /// rehumanize. Returns `true` when the hero died. Shared by melee
+    /// (`land_hit`), breath and gaze damage.
+    pub(crate) fn damage_hero(&mut self, damage: i32, events: &mut Vec<GameEvent>) -> bool {
+        let Some(target) = self.arena.actors.get_mut(self.player_id) else {
+            return false;
+        };
+        Self::sync_hero_form_from_actor(&mut self.hero, target);
+        // Unchanging is not tracked on Hero yet; pass false.
+        let poly_res = netrust_core::polymorph::apply_poly_damage(&mut self.hero, damage, false);
+        match poly_res {
+            netrust_core::polymorph::PolyDamageResult::Absorbed
+            | netrust_core::polymorph::PolyDamageResult::BaseDamaged => {
+                if let Some(poly) = &self.hero.polymorph {
+                    target.hp = poly.hp.max(0) as u32;
+                    target.max_hp = poly.max_hp.max(0) as u32;
+                } else {
+                    target.hp = self.hero.base_hp.max(0) as u32;
+                    target.max_hp = self.hero.base_max_hp.max(0) as u32;
+                }
+                false
+            }
+            netrust_core::polymorph::PolyDamageResult::Reverted => {
+                target.hp = self.hero.base_hp.max(0) as u32;
+                target.max_hp = self.hero.base_max_hp.max(0) as u32;
+                events.push(GameEvent::LogMessage {
+                    text: netrust_i18n::Messages::revert_form(self.locale).to_string(),
+                });
+                false
+            }
+            netrust_core::polymorph::PolyDamageResult::Dead => {
+                target.hp = 0;
+                target.is_dead = true;
+                true
+            }
+        }
+    }
+
+    /// Apply a landed hit's damage to the defender and emit the hit/kill events
+    /// (shared by hero, monster and pet attacks). Returns `true` when lethal.
+    #[allow(clippy::too_many_arguments)]
+    fn land_hit(
+        &mut self,
+        attacker_id: ActorId,
+        attacker: &ActorRecord,
+        defender_id: ActorId,
+        defender: &ActorRecord,
+        final_damage: u32,
+        decap: bool,
+        events: &mut Vec<GameEvent>,
+    ) -> bool {
+        let mut lethal = false;
+        if defender_id == self.player_id {
+            let mut actual_damage = i32::try_from(final_damage).unwrap_or(i32::MAX);
+            if decap {
+                actual_damage = actual_damage.saturating_add(9999); // Force fatal
+            }
+            lethal = self.damage_hero(actual_damage, events);
+        } else if let Some(target) = self.arena.actors.get_mut(defender_id) {
+            let (new_hp, dead) = if decap {
+                netrust_core::artifacts_wands::apply_vorpal_strike(target.hp, decap)
+            } else {
+                (
+                    target.hp.saturating_sub(final_damage),
+                    target.hp <= final_damage,
+                )
+            };
+            target.hp = new_hp;
+            target.is_dead = dead || target.hp == 0;
+            lethal = target.is_dead;
+        }
+        events.push(GameEvent::AttackLanded {
+            attacker: attacker_id,
+            target: defender_id,
+            damage: final_damage,
+            lethal,
+        });
+        let attack_msg = netrust_i18n::Messages::attack_hit(
+            &attacker.name,
+            &defender.name,
+            final_damage,
+            self.locale,
+        );
+        events.push(GameEvent::LogMessage { text: attack_msg });
+        if lethal {
+            if attacker_id == self.player_id {
+                netrust_core::conducts::record_kill(&mut self.conducts);
+            }
+            events.push(GameEvent::LogMessage {
+                text: netrust_i18n::Messages::killed(&defender.name, self.locale),
+            });
+            if defender_id != self.player_id {
+                // Check if the defeated enemy is the unique Class Nemesis
+                let quest_cfg = netrust_core::get_role_quest_config_or_default(&self.role_name);
+                if defender.name.eq_ignore_ascii_case(quest_cfg.nemesis_name) {
+                    netrust_core::attack_nemesis(&mut self.quest_state, 9999);
+                    let art_id = match quest_cfg.role_name.to_lowercase().as_str() {
+                        "valkyrie" => ItemKindId::OrbOfFate,
+                        "wizard" => ItemKindId::EyeOfTheAethiopica,
+                        "barbarian" => ItemKindId::HeartOfAhriman,
+                        "knight" => ItemKindId::MagicMirrorOfMerlin,
+                        "monk" => ItemKindId::EyesOfTheOverworld,
+                        "rogue" => ItemKindId::MasterKeyOfThievery,
+                        "tourist" => ItemKindId::PlatinumYendorianExpressCard,
+                        "healer" => ItemKindId::StaffOfAesculapius,
+                        _ => ItemKindId::OrbOfDetection,
+                    };
+                    let art_rec = create_item_record(
+                        art_id,
+                        ItemLocation::Floor(defender.coord),
+                        Buc::Blessed,
+                    );
+                    self.arena.spawn_item(art_rec);
                     events.push(GameEvent::LogMessage {
-                        text: netrust_i18n::Messages::vorpal_decapitate(
-                            &defender.name,
+                        text: netrust_i18n::Messages::quest_nemesis_defeat(
+                            quest_cfg.nemesis_name,
+                            quest_cfg.artifact_name,
                             self.locale,
                         ),
                     });
                 }
 
-                if defender_id == self.player_id {
-                    let mut actual_damage = final_damage as i32;
-                    if decap {
-                        actual_damage += 9999;
-                    } // Force fatal
-
-                    // Unchanging is not tracked on Hero yet; pass false.
-                    let poly_res = netrust_core::polymorph::apply_poly_damage(
-                        &mut self.hero,
-                        actual_damage,
-                        false,
-                    );
-                    match poly_res {
-                        netrust_core::polymorph::PolyDamageResult::Absorbed
-                        | netrust_core::polymorph::PolyDamageResult::BaseDamaged => {
-                            if let Some(poly) = &self.hero.polymorph {
-                                target.hp = poly.hp as u32;
-                                target.max_hp = poly.max_hp as u32;
-                            } else {
-                                target.hp = self.hero.base_hp as u32;
-                                target.max_hp = self.hero.base_max_hp as u32;
-                            }
-                            lethal = false;
-                        }
-                        netrust_core::polymorph::PolyDamageResult::Reverted => {
-                            target.hp = self.hero.base_hp as u32;
-                            target.max_hp = self.hero.base_max_hp as u32;
-                            lethal = false;
-                            events.push(GameEvent::LogMessage {
-                                text: netrust_i18n::Messages::revert_form(self.locale).to_string(),
-                            });
-                        }
-                        netrust_core::polymorph::PolyDamageResult::Dead => {
-                            target.hp = 0;
-                            target.is_dead = true;
-                            lethal = true;
-                        }
-                    }
-                } else {
-                    let (new_hp, dead) = if decap {
-                        netrust_core::artifacts_wands::apply_vorpal_strike(target.hp, decap)
-                    } else {
-                        (
-                            target.hp.saturating_sub(final_damage),
-                            target.hp <= final_damage,
-                        )
-                    };
-                    target.hp = new_hp;
-                    target.is_dead = dead || target.hp == 0;
-                    lethal = target.is_dead;
-                }
+                let corpse = create_item_record(
+                    ItemKindId::Corpse,
+                    ItemLocation::Floor(defender.coord),
+                    Buc::Uncursed,
+                );
+                self.arena.spawn_item(corpse);
             }
-            events.push(GameEvent::AttackLanded {
-                attacker: attacker_id,
-                target: defender_id,
-                damage: final_damage,
-                lethal,
-            });
-            let attack_msg = netrust_i18n::Messages::attack_hit(
-                &attacker.name,
-                &defender.name,
-                final_damage,
-                self.locale,
-            );
-            events.push(GameEvent::LogMessage { text: attack_msg });
-            if lethal {
-                if attacker_id == self.player_id {
-                    netrust_core::conducts::record_kill(&mut self.conducts);
-                }
-                events.push(GameEvent::LogMessage {
-                    text: netrust_i18n::Messages::killed(&defender.name, self.locale),
-                });
-                if defender_id != self.player_id {
-                    // Check if the defeated enemy is the unique Class Nemesis
-                    let quest_cfg = netrust_core::get_role_quest_config_or_default(&self.role_name);
-                    if defender.name.eq_ignore_ascii_case(quest_cfg.nemesis_name) {
-                        netrust_core::attack_nemesis(&mut self.quest_state, 9999);
-                        let art_id = match quest_cfg.role_name.to_lowercase().as_str() {
-                            "valkyrie" => ItemKindId::OrbOfFate,
-                            "wizard" => ItemKindId::EyeOfTheAethiopica,
-                            "barbarian" => ItemKindId::HeartOfAhriman,
-                            "knight" => ItemKindId::MagicMirrorOfMerlin,
-                            "monk" => ItemKindId::EyesOfTheOverworld,
-                            "rogue" => ItemKindId::MasterKeyOfThievery,
-                            "tourist" => ItemKindId::PlatinumYendorianExpressCard,
-                            "healer" => ItemKindId::StaffOfAesculapius,
-                            _ => ItemKindId::OrbOfDetection,
-                        };
-                        let art_rec = create_item_record(
-                            art_id,
-                            ItemLocation::Floor(defender.coord),
-                            Buc::Blessed,
-                        );
-                        self.arena.spawn_item(art_rec);
-                        events.push(GameEvent::LogMessage {
-                            text: netrust_i18n::Messages::quest_nemesis_defeat(
-                                quest_cfg.nemesis_name,
-                                quest_cfg.artifact_name,
-                                self.locale,
-                            ),
-                        });
-                    }
-
-                    let corpse = create_item_record(
-                        ItemKindId::Corpse,
-                        ItemLocation::Floor(defender.coord),
-                        Buc::Uncursed,
-                    );
-                    self.arena.spawn_item(corpse);
-                }
-            }
-        } else {
-            events.push(GameEvent::AttackMissed {
-                attacker: attacker_id,
-                target: defender_id,
-            });
-            events.push(GameEvent::LogMessage {
-                text: netrust_i18n::Messages::attack_miss(
-                    &attacker.name,
-                    &defender.name,
-                    self.locale,
-                ),
-            });
         }
+        lethal
+    }
 
+    /// Defender AC as the sim models `find_mac`/`u.uac`.
+    ///
+    /// For the hero (`self.player_id`), `defender.ac` is maintained by
+    /// [`SimulationWorld::recompute_hero_ac`]. For monsters, returns base AC minus
+    /// the enchantment of carried armor (C `find_mac`, `worn.c:717`).
+    pub(crate) fn defender_ac(&self, defender_id: ActorId, defender: &ActorRecord) -> i32 {
+        if defender_id == self.player_id {
+            defender.ac
+        } else {
+            let armor_ench: i32 = self
+                .arena
+                .items_carried_by(defender_id)
+                .into_iter()
+                .filter_map(|id| self.arena.items.get(id))
+                .filter(|it| it.class == netrust_types::ItemClass::Armor)
+                .map(|a| a.enchantment as i32)
+                .sum();
+            defender.ac - armor_ench
+        }
+    }
+
+    /// A monster's full melee attack round against the hero (C `mattacku`,
+    /// `mhitu.c:491`) or another monster (C `mattackm`, `mhitm.c:293`).
+    ///
+    /// Loops the archetype's `mattk[]` in slot order (`mhitu.c:768`,
+    /// `mhitm.c:375`); only the adjacent hand-to-hand types
+    /// ([`is_melee_attack`]) act here. Breath and gaze are handled as ranged
+    /// abilities in `monsters.rs`; AT_MAGC spells by the spellcaster abilities;
+    /// AT_NONE is passive. An actor whose name has no archetype falls back to
+    /// [`FALLBACK_ATTACK`].
+    ///
+    /// RNG draws, in C order:
+    /// 1. Hero defender only, once per round: `rnd(-u.uac)` for `AC_VALUE` when
+    ///    `u.uac < 0` (`mhitu.c:709`).
+    /// 2. Per melee slot `i`: `rnd(20 + i)` (`mhitu.c:806` / `mhitm.c:441`).
+    /// 3. On a hit: `n` draws `rnd(d)` for `d(n, d)` (`mhitu.c:1187` /
+    ///    `mhitm.c:1025`); none when `n == 0` or `d == 0`.
+    /// 4. Hero defender, damage > 0 and `u.uac < 0`: `rnd(-u.uac)` absorption
+    ///    (`mhitu.c:1208`).
+    ///
+    /// The round stops when the defender dies (C: hero death ends the game; `mhitm.c:380` skips attacks once `DEADMONSTER(mdef)`).
+    fn resolve_monster_attacks(
+        &mut self,
+        attacker_id: ActorId,
+        defender_id: ActorId,
+    ) -> Vec<GameEvent> {
+        let mut events = Vec::new();
+        let Some(attacker) = self.arena.actors.get(attacker_id).cloned() else {
+            return events;
+        };
+        let Some(defender) = self.arena.actors.get(defender_id).cloned() else {
+            return events;
+        };
+        let attacks: &[Attack] = monster_archetype_by_name(&attacker.name)
+            .map(|arch| arch.attacks)
+            .unwrap_or(std::slice::from_ref(&FALLBACK_ATTACK));
+        let def_ac = self.defender_ac(defender_id, &defender);
+        let hero_defender = defender_id == self.player_id;
+        let m_lev = attacker.level as i32;
+        // C mhitu.c:709: tmp = AC_VALUE(u.uac) + 10 + m_lev, computed once.
+        let hero_tmp = if hero_defender {
+            let ac_roll = if def_ac < 0 {
+                self.rng.random_range(1..=def_ac.unsigned_abs())
+            } else {
+                1
+            };
+            Some(monster_to_hit_value(m_lev, def_ac, ac_roll))
+        } else {
+            None
+        };
+
+        for (i, attack) in attacks.iter().enumerate() {
+            if !is_melee_attack(attack.at) {
+                continue;
+            }
+            let alive = self
+                .arena
+                .actors
+                .get(defender_id)
+                .is_some_and(|d| !d.is_dead);
+            if !alive {
+                break;
+            }
+            let i = i as u32;
+            let (tmp, die) = match hero_tmp {
+                Some(tmp) => (tmp, mattacku_die(i)),
+                None => mhitm_to_hit(m_lev, def_ac, i),
+            };
+            let roll = self.rng.random_range(1..=die);
+            if !monster_attack_hits(tmp, die, roll) {
+                self.push_miss(attacker_id, &attacker, defender_id, &defender, &mut events);
+                continue;
+            }
+            let rolls: Vec<u32> = if attack.d == 0 {
+                Vec::new()
+            } else {
+                (0..attack.n)
+                    .map(|_| self.rng.random_range(1..=u32::from(attack.d)))
+                    .collect()
+            };
+            let def_intrinsics = self
+                .arena
+                .actors
+                .get(defender_id)
+                .map(|d| d.intrinsics)
+                .unwrap_or(defender.intrinsics);
+            let is_resisted = resisted(attack.ad, &def_intrinsics);
+            let hero = if hero_defender {
+                let raw = if is_resisted {
+                    0
+                } else {
+                    monster_attack_damage(attack, &rolls)
+                };
+                let absorb = if raw > 0 && def_ac < 0 {
+                    self.rng.random_range(1..=def_ac.unsigned_abs())
+                } else {
+                    1
+                };
+                Some((def_ac, absorb))
+            } else {
+                None
+            };
+            let dmg = monster_hit_damage(attack, &rolls, is_resisted, hero);
+            if self.land_hit(
+                attacker_id,
+                &attacker,
+                defender_id,
+                &defender,
+                dmg,
+                false,
+                &mut events,
+            ) {
+                break;
+            }
+        }
         events
+    }
+
+    fn push_miss(
+        &self,
+        attacker_id: ActorId,
+        attacker: &ActorRecord,
+        defender_id: ActorId,
+        defender: &ActorRecord,
+        events: &mut Vec<GameEvent>,
+    ) {
+        events.push(GameEvent::AttackMissed {
+            attacker: attacker_id,
+            target: defender_id,
+        });
+        events.push(GameEvent::LogMessage {
+            text: netrust_i18n::Messages::attack_miss(&attacker.name, &defender.name, self.locale),
+        });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use netrust_types::{Alignment, Coord, Intrinsics};
+
+    /// A hero melee miss draws only the to-hit `rnd(20)` (uhitm.c:780); the
+    /// weapon damage roll (`dmgval`, uhitm.c:944) is drawn only on a hit.
+    #[test]
+    fn hero_miss_does_not_draw_the_damage_roll() {
+        let mut sim = SimulationWorld::new_with_seed(77);
+        let pid = sim.player_id;
+        sim.arena.actors.retain(|id, _| id == pid);
+        let at = {
+            let p = &sim.arena.actors[pid];
+            Coord::new_unchecked(p.coord.x + 1, p.coord.y)
+        };
+        // AC -60: find_roll_to_hit `tmp` is far below 1, so every rnd(20) misses.
+        let dummy = sim.arena.spawn_actor(ActorRecord {
+            name: "training dummy".into(),
+            coord: at,
+            hp: 50,
+            max_hp: 50,
+            ac: -60,
+            level: 0,
+            speed: 12,
+            alignment: Alignment::Neutral,
+            intrinsics: Intrinsics::default(),
+            is_player: false,
+            is_unique: false,
+            is_dead: false,
+            is_tame: false,
+            tameness: 0,
+            abilities: Vec::new(),
+            is_peaceful: false,
+            mspec_used: 0,
+        });
+        for _ in 0..20 {
+            let mut expected = sim.rng.clone();
+            let _d20: u32 = expected.random_range(1..=20u32);
+            let events = sim.resolve_combat(pid, dummy);
+            assert!(events
+                .iter()
+                .any(|e| matches!(e, GameEvent::AttackMissed { .. })));
+            assert_eq!(sim.rng, expected, "a miss draws only the rnd(20)");
+        }
     }
 }

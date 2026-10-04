@@ -21,6 +21,14 @@ impl SimulationWorld {
                         turn: self.scheduler.turn,
                     });
 
+                    // C mcalcdistress -> m_calcdistress -> mon_regen (mon.c:1193,
+                    // monmove.c:311): once per turn, `if (mspec_used) mspec_used--`.
+                    for (_, m) in self.arena.actors.iter_mut() {
+                        if !m.is_player && !m.is_dead {
+                            m.mspec_used = m.mspec_used.saturating_sub(1);
+                        }
+                    }
+
                     match netrust_core::afflictions::tick_afflictions(&mut self.hero) {
                         netrust_core::afflictions::AfflictionTickResult::StoneDeath => {
                             if let Some(p) = self.arena.actors.get_mut(self.player_id) {

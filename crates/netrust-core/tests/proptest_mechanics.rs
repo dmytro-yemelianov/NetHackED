@@ -3,33 +3,37 @@
 //! Every property test here corresponds to a machine-checked theorem in `NetMechanics`.
 
 use netrust_core::{
-    apply_erosion, apply_vorpal_strike, attack_hits, attack_nemesis, branch_entrance_depth,
-    branch_max_depth, buy_price, calculate_damage, calculate_encumbrance, calculate_summon_count,
-    calculate_tournament_score, can_detect_monster, can_see_tile, cast_spell, choose_pet_goal,
-    clamp_favor, consecrate_water, consult_leader, corrupt_buc_on_death, create_ghost_hp,
-    decide_tactical_action, destroy_drawbridge, dilute_potion, dip_water, enchant_armor,
-    enchant_weapon, enter_branch, exit_branch, feed_pet, hero_damage_after_ac, hunger_of_nutrition,
-    hunger_tier, identify_fully, interact_with_occupant, is_candelabrum_ready,
+    apply_erosion, apply_vorpal_strike, arm_bonus, attack_hits, attack_nemesis,
+    branch_entrance_depth, branch_max_depth, buy_price, calculate_damage, calculate_encumbrance,
+    calculate_summon_count, calculate_tournament_score, can_detect_monster, can_see_tile,
+    cast_spell, choose_pet_goal, clamp_favor, consecrate_water, consult_leader,
+    corrupt_buc_on_death, create_ghost_hp, decide_tactical_action, destroy_drawbridge,
+    dilute_potion, dip_water, dmgval, enchant_armor, enchant_weapon, enter_branch, exit_branch,
+    feed_pet, find_ac, hero_damage_after_ac, hunger_of_nutrition, hunger_tier, identify_fully,
+    interact_with_occupant, is_candelabrum_ready, is_elbereth_ward_active,
     is_hero_eligible_for_quest, is_hp_critical, is_sanctum_accessible, is_valid_bones_level,
-    learn_buc, learn_type, luck_decay_period, mana_cost, mbag_explodes, melee_damage, mix_alchemy,
-    monster_to_hit_value, mysterious_force, offer_amulet_on_high_altar, pet_tile_steppable,
-    pick_up_quest_artifact, priest_donation_outcome, priest_donation_quan,
-    priest_suggested_donation, priest_uncurse, promote_pet, protection_purchase_count,
-    protection_purchase_step, push_boulder, quest_progress_rank, recharge_wand, reflect,
-    resolve_breath_damage, resolve_gaze, resolve_sacrifice, return_to_leader_with_artifact,
-    rub_lamp, sell_price, step_luck_decay, step_ray, step_ritual, swap_displacement,
-    tick_light_fuel, tick_prayer_timeout, to_hit_value, toggle_drawbridge, uncurse, zap_wand,
-    Alignment, ArtifactLocation, AscensionOutcome, BagCheckItem, BagCheckKind, BeamRay,
-    BranchCoord, BranchId, BreathType, Buc, CandelabrumState, Combatant, Coord, DilutionState,
-    Direction, DivineState, DonationOutcome, DoorState, DrawbridgeState, DrawbridgeTransition,
-    DungeonDepth, EnchantOutcome, EncumbranceTier, Engraving, EngravingMedium, FormStats,
-    GazeEffect, GazeType, HeroInteraction, HeroQuestEligibility, Intrinsics, InvocationStep,
-    KnowledgeLevel, LightSource, MetricState, MysteriousForceOutcome, PetFamily, PetGoal,
-    PetSpeciesTier, PolyEntity, PushOutcome, QuestProgress, QuestState, RechargeResult,
-    RitualProgress, RubResult, SchedulerState, SpellKind, StepAction, StepResult,
-    SurfaceOrientation, TacticalAction, TacticalContext, Tile, Velocity, WandCharges, WaterType,
-    MAX_DIVINE_PROTECTION, NORMAL_SPEED, QUEST_MIN_ALIGNMENT, QUEST_MIN_LEVEL, REQUIRED_CANDLES,
+    learn_buc, learn_type, luck_decay_period, mana_cost, mattacku_die, mbag_explodes, melee_damage,
+    mhitm_to_hit, mix_alchemy, monster_attack_damage, monster_attack_hits, monster_hit_damage,
+    monster_to_hit_value, mysterious_force, offer_amulet_on_high_altar, onscary_exempt,
+    peace_minded, pet_tile_steppable, pick_up_quest_artifact, priest_donation_outcome,
+    priest_donation_quan, priest_suggested_donation, priest_uncurse, promote_pet,
+    protection_purchase_count, protection_purchase_step, push_boulder, quest_progress_rank,
+    recharge_wand, reflect, resisted, resolve_breath_damage, resolve_gaze, resolve_sacrifice,
+    return_to_leader_with_artifact, rub_lamp, sell_price, step_luck_decay, step_ray, step_ritual,
+    swap_displacement, tick_light_fuel, tick_prayer_timeout, to_hit_value, toggle_drawbridge,
+    uncurse, weapon_damage_die, zap_hit, zap_wand, Alignment, ArtifactLocation, AscensionOutcome,
+    BagCheckItem, BagCheckKind, BeamRay, BranchCoord, BranchId, BreathType, Buc, CandelabrumState,
+    Combatant, Coord, DilutionState, Direction, DivineState, DonationOutcome, DoorState,
+    DrawbridgeState, DrawbridgeTransition, DungeonDepth, EnchantOutcome, EncumbranceTier,
+    Engraving, EngravingMedium, FormStats, GazeEffect, GazeType, HeroInteraction,
+    HeroQuestEligibility, Intrinsics, InvocationStep, KnowledgeLevel, LightSource, MetricState,
+    MysteriousForceOutcome, PeaceMindedInput, PetFamily, PetGoal, PetSpeciesTier, PolyEntity,
+    PushOutcome, QuestProgress, QuestState, RechargeResult, RitualProgress, RubResult,
+    SchedulerState, SpellKind, StepAction, StepResult, SurfaceOrientation, TacticalAction,
+    TacticalContext, Tile, Velocity, WandCharges, WaterType, MAX_DIVINE_PROTECTION, NORMAL_SPEED,
+    QUEST_MIN_ALIGNMENT, QUEST_MIN_LEVEL, REQUIRED_CANDLES,
 };
+use netrust_types::{Attack, AttackType, DamageType};
 use proptest::prelude::*;
 
 prop_compose! {
@@ -371,6 +375,320 @@ proptest! {
         );
         // Hero -> monster: no AC reduction at all.
         prop_assert_eq!(calculate_damage(roll, enchant, bonus, hero_ac, None), base);
+    }
+
+    // -------------------------------------------------------------
+    // C reference: rnd.c d(n, x) = n + sum of n RND(x) draws (each 1..=x),
+    // used by hitmu (mhitu.c:1187) and mdamagem (mhitm.c:1025).
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_monster_attack_damage_matches_c_dice(
+        n in 0u8..10,
+        d in 0u8..80,
+        rolls in proptest::collection::vec(0u32..100, 0..12),
+        ad_idx in 0usize..3
+    ) {
+        // The dice do not depend on the damage type (Phys, Fire and Cold alike).
+        let ad = [DamageType::Phys, DamageType::Fire, DamageType::Cold][ad_idx];
+        let attack = Attack { at: AttackType::Claw, ad, n, d };
+        let expected: u32 = if d == 0 {
+            0
+        } else {
+            (0..n as usize)
+                .map(|i| rolls.get(i).copied().unwrap_or(1).clamp(1, d as u32))
+                .sum()
+        };
+        let dmg = monster_attack_damage(&attack, &rolls);
+        prop_assert_eq!(dmg, expected);
+        if d > 0 {
+            prop_assert!(dmg >= n as u32 && dmg <= n as u32 * d as u32);
+        }
+    }
+
+    // -------------------------------------------------------------
+    // C reference: mhitm.c:321 tmp = find_mac(mdef) + m_lev (no +10),
+    // mhitm.c:441 strike = tmp > rnd(20 + i); mhitu.c:794 same die.
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_mhitm_to_hit_matches_c(
+        m_lev in 0i32..50,
+        def_ac in -40i32..20,
+        i in 0u32..6,
+        roll in 0u32..40
+    ) {
+        let (tmp, die) = mhitm_to_hit(m_lev, def_ac, i);
+        prop_assert_eq!(tmp, def_ac + m_lev);
+        prop_assert_eq!(die, 20 + i);
+        prop_assert_eq!(mattacku_die(i), 20 + i);
+        let dieroll = roll.clamp(1, die) as i32;
+        prop_assert_eq!(monster_attack_hits(tmp, die, roll), tmp > dieroll);
+    }
+
+    // -------------------------------------------------------------
+    // C reference: hitmu mhitu.c:1187 dmg = d(n,d); mhitm_ad_fire/cold
+    // (uhitm.c:2521/2626) zero it under resistance; mhitu.c:1208
+    // `if (dmg && u.uac < 0) dmg -= rnd(-u.uac), min 1`.
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_monster_hit_damage_matches_c(
+        n in 1u8..8,
+        d in 1u8..12,
+        rolls in proptest::collection::vec(1u32..12, 8),
+        ad_idx in 0usize..3,
+        fire_res in any::<bool>(),
+        cold_res in any::<bool>(),
+        hero_ac in proptest::option::of(-20i32..11),
+        absorb in 0u32..30
+    ) {
+        let ad = [DamageType::Phys, DamageType::Fire, DamageType::Cold][ad_idx];
+        let attack = Attack { at: AttackType::Touch, ad, n, d };
+        let mut intr = Intrinsics::empty();
+        intr.fire_resistance = fire_res;
+        intr.cold_resistance = cold_res;
+        let res = resisted(ad, &intr);
+        // mhitm_ad_fire (uhitm.c:2521) / mhitm_ad_cold (uhitm.c:2626).
+        let c_res = match ad {
+            DamageType::Fire => fire_res,
+            DamageType::Cold => cold_res,
+            _ => false,
+        };
+        prop_assert_eq!(res, c_res);
+        let mut dmg: u32 = (0..n as usize).map(|i| rolls[i].clamp(1, d as u32)).sum();
+        if res {
+            dmg = 0;
+        }
+        if let Some(ac) = hero_ac {
+            if dmg > 0 && ac < 0 {
+                dmg = dmg.saturating_sub(absorb.clamp(1, (-ac) as u32)).max(1);
+            }
+        }
+        let got = monster_hit_damage(&attack, &rolls, res, hero_ac.map(|ac| (ac, absorb)));
+        prop_assert_eq!(got, dmg);
+        prop_assert_eq!(got == 0, res);
+    }
+
+    // -------------------------------------------------------------
+    // C reference: zap.c:4705 zap_hit(u.uac, 0) for a breath ray at the hero.
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_zap_hit_matches_c(
+        ac in -30i32..15,
+        chance in 0u32..25,
+        rnd10 in 0u32..15,
+        ac_roll in 0u32..40
+    ) {
+        let c = chance.min(19) as i32;
+        let expected = if c == 0 {
+            (rnd10.clamp(1, 10) as i32) < ac
+        } else {
+            let acv = if ac >= 0 { ac } else { -(ac_roll.clamp(1, (-ac) as u32) as i32) };
+            3 - c < acv
+        };
+        prop_assert_eq!(zap_hit(ac, chance, rnd10, ac_roll), expected);
+    }
+
+    // -------------------------------------------------------------
+    // C reference: weapon.c:225-227 / :264-265 (dmgval base draw):
+    //   if (bigmonst(ptr)) { if (oc_wldam) tmp = rnd(oc_wldam); }
+    //   else               { if (oc_wsdam) tmp = rnd(oc_wsdam); }
+    // and uhitm.c:847 (bare hands): tmp = rnd(!martial_bonus() ? 2 : 4).
+    // The reference draws `rnd(x) = 1 + raw % x` (rnd.c RND, range 1..=x)
+    // itself and feeds that in-range draw to `dmgval`.
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_dmgval_matches_c_rule(
+        weapon in proptest::option::of((0u32..50, 0u32..50)),
+        target_large in any::<bool>(),
+        martial_arts in any::<bool>(),
+        raw in any::<u32>(),
+        out_of_range in 0u32..200,
+    ) {
+        let rnd = |x: u32| 1 + raw % x;
+        // (die, draw) the way C reaches them; die 0 = "no draw, tmp stays 0".
+        let (c_die, c_tmp) = if let Some((oc_wsdam, oc_wldam)) = weapon {
+            if target_large {
+                if oc_wldam != 0 { (oc_wldam, rnd(oc_wldam)) } else { (0, 0) }
+            } else if oc_wsdam != 0 {
+                (oc_wsdam, rnd(oc_wsdam))
+            } else {
+                (0, 0)
+            }
+        } else if !martial_arts {
+            (2, rnd(2))
+        } else {
+            (4, rnd(4))
+        };
+        prop_assert_eq!(weapon_damage_die(weapon, target_large, martial_arts), c_die);
+        prop_assert_eq!(dmgval(weapon, target_large, martial_arts, c_tmp), c_tmp);
+        // An out-of-range draw is clamped into rnd's 1..=die range (0 when no die).
+        let clamped = dmgval(weapon, target_large, martial_arts, out_of_range);
+        if c_die == 0 {
+            prop_assert_eq!(clamped, 0);
+        } else {
+            prop_assert!((1..=c_die).contains(&clamped));
+        }
+    }
+
+    // C weapon.c objects[] table rows (oc_wsdam, oc_wldam) and uhitm.c:847.
+    #[test]
+    fn prop_dmgval_c_die_table(raw in any::<u32>()) {
+        // (weapon (oc_wsdam, oc_wldam), target large, martial arts, die)
+        let cases = [
+            (Some((4, 3)), false, false, 4),   // dagger vs small: d4
+            (Some((4, 3)), true, false, 3),    // dagger vs large: d3
+            (Some((8, 12)), false, false, 8),  // long sword vs small: d8
+            (Some((8, 12)), true, false, 12),  // long sword vs large: d12
+            (Some((6, 8)), true, true, 8),     // short sword vs large (Monk irrelevant)
+            (Some((0, 0)), false, false, 0),   // oc_wsdam 0: no draw
+            (None, false, false, 2),           // bare hands: rnd(2)
+            (None, true, true, 4),             // martial arts: rnd(4)
+        ];
+        for (weapon, large, martial, die) in cases {
+            prop_assert_eq!(weapon_damage_die(weapon, large, martial), die);
+            let draw = if die == 0 { 0 } else { 1 + raw % die };
+            prop_assert_eq!(dmgval(weapon, large, martial, draw), draw);
+        }
+    }
+
+    // -------------------------------------------------------------
+    // C reference: hack.h:1526-1528 (ARM_BONUS) and do_wear.c:2473-2507 (find_ac).
+    // Inputs are C-valid: a_ac in [0, 9] (objects.h armor a_ac = 10 - ac), erosion
+    // in [0, MAX_ERODE = 3] (obj.h:129).
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_find_ac_matches_c_reference(
+        base_ac in -20i32..=30,
+        protection in -10i32..=50,
+        worn in proptest::collection::vec(
+            (0i32..=9, -10i32..=15, 0u8..=3),
+            0..=7,
+        ),
+    ) {
+        // hack.h:1526-1528, verbatim: a_ac + spe - min(greatest_erosion, a_ac)
+        fn c_reference_arm_bonus(a_ac: i32, spe: i32, erosion: u8) -> i32 {
+            a_ac + spe - std::cmp::min(erosion as i32, a_ac)
+        }
+
+        // do_wear.c:2474-2504: subtract each worn ARM_BONUS and u.ublessed, then
+        // cap |uac| at AC_MAX (you.h:472).
+        fn c_reference_find_ac(
+            base_ac: i32,
+            worn: &[(i32, i32, u8)],
+            protection: i32,
+        ) -> i32 {
+            let mut uac = base_ac;
+            for &(a_ac, spe, erosion) in worn {
+                uac -= c_reference_arm_bonus(a_ac, spe, erosion);
+            }
+            uac -= protection;
+            if uac.abs() > 99 {
+                uac.signum() * 99
+            } else {
+                uac
+            }
+        }
+
+        for &(a, s, e) in &worn {
+            prop_assert_eq!(arm_bonus(a, s, e), c_reference_arm_bonus(a, s, e));
+        }
+
+        let got = find_ac(base_ac, &worn, protection);
+        let expected = c_reference_find_ac(base_ac, &worn, protection);
+        prop_assert_eq!(got, expected);
+        prop_assert!((-99..=99).contains(&got));
+    }
+
+    // -------------------------------------------------------------
+    // Theorem: peace_minded_matches_c_reference
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_peace_minded_matches_c_reference(
+        flags in proptest::collection::vec(any::<bool>(), 9),
+        mal in prop_oneof![-20..=20i32, Just(-128i32)],
+        ual in -1..=1i32,
+        rec in prop_oneof![-40..=40i32, any::<i32>()],
+        script in proptest::collection::vec(any::<u32>(), 2),
+    ) {
+        // C makemon.c:2268-2308, transcribed statement by statement; `rn2`
+        // draws from a scripted sequence (each value reduced into 0..n).
+        #[allow(clippy::too_many_arguments)]
+        fn c_peace_minded(
+            always_peaceful: bool, always_hostile: bool, ms_leader_or_guardian: bool,
+            ms_nemesis: bool, race_peaceful: bool, race_hostile: bool, mal: i32, ual: i32,
+            record: i64, has_amulet: bool, is_minion: bool, rn2: &mut dyn FnMut(u32) -> u32,
+        ) -> bool {
+            if always_peaceful { return true; }
+            if always_hostile { return false; }
+            if ms_leader_or_guardian { return true; }
+            if ms_nemesis { return false; }
+            if race_peaceful { return true; }
+            if race_hostile { return false; }
+            if mal.signum() != ual.signum() { return false; }
+            if mal < 0 && has_amulet { return false; }
+            if is_minion { return record >= 0; }
+            let first = rn2((16 + if record < -15 { -15 } else { record }) as u32) != 0;
+            first && rn2((2 + i64::from(mal).abs()) as u32) != 0
+        }
+        let mut c_calls = Vec::new();
+        let mut it = script.clone().into_iter();
+        let expected = c_peace_minded(
+            flags[0], flags[1], flags[2], flags[3], flags[4], flags[5], mal, ual,
+            i64::from(rec), flags[6], flags[7],
+            &mut |n| { c_calls.push(n); it.next().unwrap() % n },
+        );
+        let input = PeaceMindedInput {
+            always_peaceful: flags[0],
+            always_hostile: flags[1],
+            leader_or_guardian: flags[2],
+            nemesis: flags[3],
+            race_peaceful: flags[4],
+            race_hostile: flags[5],
+            monster_alignment: mal,
+            hero_alignment: ual,
+            hero_align_record: rec,
+            hero_has_amulet: flags[6],
+            is_minion: flags[7],
+        };
+        let mut calls = Vec::new();
+        let mut it = script.into_iter();
+        let got = peace_minded(&input, |n| { calls.push(n); it.next().unwrap() % n });
+        prop_assert_eq!(got, expected);
+        // Same draws, same arguments, same count (the second only after a non-zero first).
+        prop_assert_eq!(calls, c_calls);
+    }
+
+    // -------------------------------------------------------------
+    // Theorem: onscary_exempt_and_elbereth
+    // -------------------------------------------------------------
+    #[test]
+    fn prop_onscary_exempt_and_elbereth(
+        is_rider in any::<bool>(),
+        s_human in any::<bool>(),
+        is_unique in any::<bool>(),
+        is_shk in any::<bool>(),
+        is_guard in any::<bool>(),
+        mcansee in any::<bool>(),
+        is_peaceful in any::<bool>(),
+        is_minotaur in any::<bool>(),
+        text_elbereth in any::<bool>(),
+    ) {
+        // C monmove.c:240-302 for a written engraving under the hero
+        // (magical scare, no scare-monster scroll, outside Gehennom/endgame).
+        let c_onscary = || -> bool {
+            if is_rider { return false; }
+            if s_human || is_unique { return false; }
+            text_elbereth
+                && !(is_shk || is_guard || !mcansee || is_peaceful || is_minotaur)
+        };
+        let engraving = Engraving::new(
+            if text_elbereth { "Elbereth" } else { "Elbereth?" },
+            EngravingMedium::Burned,
+        );
+        let exempt = onscary_exempt(s_human, is_minotaur, is_shk || is_guard, is_rider);
+        let active =
+            is_elbereth_ward_active(Some(&engraving), !mcansee, is_unique, is_peaceful, exempt);
+        prop_assert_eq!(active, c_onscary());
+        prop_assert!(!is_elbereth_ward_active(None, !mcansee, is_unique, is_peaceful, exempt));
     }
 
     // -------------------------------------------------------------
@@ -1269,7 +1587,7 @@ proptest! {
         let species = match species_idx {
             0 => PetSpeciesTier::LittleDog,
             1 => PetSpeciesTier::Dog,
-            2 => PetSpeciesTier::WarDog,
+            2 => PetSpeciesTier::LargeDog,
             3 => PetSpeciesTier::Kitten,
             4 => PetSpeciesTier::Housecat,
             _ => PetSpeciesTier::LargeCat,
@@ -1287,7 +1605,7 @@ proptest! {
         }
 
         // Fixed points at apex tier
-        prop_assert_eq!(promote_pet(PetSpeciesTier::WarDog, l1), PetSpeciesTier::WarDog);
+        prop_assert_eq!(promote_pet(PetSpeciesTier::LargeDog, l1), PetSpeciesTier::LargeDog);
         prop_assert_eq!(promote_pet(PetSpeciesTier::LargeCat, l1), PetSpeciesTier::LargeCat);
     }
 

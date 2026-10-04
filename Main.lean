@@ -63,7 +63,7 @@ def main : IO Unit := do
 
   -- 7. Engraving & Elbereth Ward demonstration
   let elbereth : Engraving := { text := "Elbereth", medium := EngravingMedium.Burned }
-  let wardActive := isElberethWardActive (some elbereth) false false
+  let wardActive := isElberethWardActive (some elbereth) false false false false
   let smudged := smudge elbereth
   IO.println s!"[Engraving] Burned 'Elbereth' ward active vs visible monster: {wardActive}, smudge invariant: {repr smudged}"
 

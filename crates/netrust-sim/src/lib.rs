@@ -5,6 +5,7 @@ pub mod bones;
 pub mod combat;
 pub mod events;
 pub mod monsters;
+pub mod peace;
 pub mod turns;
 pub mod world;
 
