@@ -4,6 +4,13 @@
 //! size, attacks (AT, AD, n, d), resistance/see-invis intrinsics,
 //! peaceful_by_default, is_human, is_unique, mindless).
 //! Excluded: QuestGuardian (not a C monster; per-role species come later).
+//!
+//! NOTE: the expected table was generated from `NetHack-5.0.0/include/monsters.h`
+//! by the same script that generated the data (not an independent check).
+//! `monsters.h` is git-ignored, so CI cannot parse it; this test pins the
+//! generated values against accidental edits. `magic_resistance`, `reflection`
+//! and the names are pinned in the small tables below (they are NetRust
+//! modelling choices, not columns of the C-derived table).
 //! HP is rolled in C (`d(lvl,8)`) and is not compared here.
 
 use netrust_data::monsters::{get_monster_species, monster_archetype_by_name, MonsterSpeciesId};
@@ -834,10 +841,7 @@ fn bestiary_matches_c_table() {
         let (id, glyph, lvl, spd, ac, aln, size, atks, res, peaceful, human, uniq, mindless) = *row;
         let arch = BESTIARY
             .iter()
-            .find(|a| {
-                format!("{:?}", a.id) == id
-                    || (id == "LargeDog" && format!("{:?}", a.id) == "LargeDog")
-            })
+            .find(|a| format!("{:?}", a.id) == id)
             .unwrap_or_else(|| panic!("missing species {id}"));
         seen += 1;
         assert_eq!(arch.glyph, glyph, "{id} glyph");
@@ -883,4 +887,80 @@ fn lookup_by_name_strips_prefixes_and_ignores_case() {
     assert!(monster_archetype_by_name("no such thing").is_none());
     assert_eq!(get_monster_species(MonsterSpeciesId::Medusa).name, "medusa");
     assert!(get_monster_species(MonsterSpeciesId::Medusa).is_unique);
+}
+
+const NAMES: &[(&str, &str)] = &[
+    ("Goblin", "goblin"),
+    ("Hobgoblin", "hobgoblin"),
+    ("Orc", "hill orc"),
+    ("Kobold", "kobold"),
+    ("Jackal", "jackal"),
+    ("GiantAnt", "giant ant"),
+    ("FloatingEye", "floating eye"),
+    ("Skeleton", "skeleton"),
+    ("Vampire", "vampire"),
+    ("SilverDragon", "silver dragon"),
+    ("RedDragon", "red dragon"),
+    ("Medusa", "medusa"),
+    ("Lich", "master lich"),
+    ("Shopkeeper", "shopkeeper"),
+    ("LittleDog", "little dog"),
+    ("Dog", "dog"),
+    ("LargeDog", "large dog"),
+    ("Kitten", "kitten"),
+    ("Housecat", "housecat"),
+    ("LargeCat", "large cat"),
+    ("Ghost", "ghost"),
+    ("Djinni", "djinni"),
+    ("Gnome", "gnome"),
+    ("Dwarf", "dwarf"),
+    ("Priest", "priest"),
+    ("Watchman", "watchman"),
+    ("TheNorn", "The Norn"),
+    ("NeferetTheGreen", "Neferet the Green"),
+    ("Pelias", "Pelias"),
+    ("KingArthur", "King Arthur"),
+    ("GrandMaster", "Grand Master"),
+    ("MasterAssassin", "Master Assassin"),
+    ("Hippocrates", "Hippocrates"),
+    ("Twoflower", "Twoflower"),
+    ("LordCarnarvon", "Lord Carnarvon"),
+    ("LordSurtur", "Lord Surtur"),
+    ("TheDarkOne", "The Dark One"),
+    ("ThothAmon", "Thoth Amon"),
+    ("Ixoth", "Ixoth"),
+    ("MasterKaen", "Master Kaen"),
+    ("MasterOfThieves", "Master of Thieves"),
+    ("Cyclops", "Cyclops"),
+    ("MinionOfHuhetotl", "Minion of Huhetotl"),
+    ("QuestGuardian", "quest guardian"),
+    ("WizardOfYendor", "Wizard of Yendor"),
+    ("VladTheImpaler", "Vlad the Impaler"),
+    ("Croesus", "Croesus"),
+];
+
+#[test]
+fn names_and_modelled_intrinsics_are_pinned() {
+    assert_eq!(NAMES.len(), BESTIARY.len());
+    for (id, name) in NAMES {
+        let a = BESTIARY
+            .iter()
+            .find(|a| format!("{:?}", a.id) == *id)
+            .unwrap_or_else(|| panic!("missing {id}"));
+        assert_eq!(a.name, *name, "{id} name");
+    }
+    // magic_resistance / reflection are modelling choices: only these two entries set them.
+    for a in BESTIARY {
+        let id = format!("{:?}", a.id);
+        assert_eq!(
+            a.intrinsics.magic_resistance,
+            id == "Shopkeeper",
+            "{id} magic_resistance"
+        );
+        assert_eq!(
+            a.intrinsics.reflection,
+            id == "SilverDragon",
+            "{id} reflection"
+        );
+    }
 }
