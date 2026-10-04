@@ -6,7 +6,7 @@ use netrust_agent::{
     parse_action, parse_character, render_ascii_map, run_seed_games, summarize, ActionArgs,
     AgentSession, RunResult,
 };
-use netrust_data::roles::{CharacterConfig, RoleId, RACES, ROLES};
+use netrust_data::roles::{CharacterConfig, RoleId};
 use netrust_types::Coord;
 use wasm_bindgen::prelude::*;
 
@@ -331,8 +331,9 @@ impl WasmGameSession {
     /// Return catalog of available roles and races in JSON format.
     #[wasm_bindgen]
     pub fn get_roles_json() -> String {
+        let rs = netrust_data::ruleset::Ruleset::vanilla();
         let data = serde_json::json!({
-            "roles": ROLES.iter().map(|r| serde_json::json!({
+            "roles": rs.roles.iter().map(|r| serde_json::json!({
                 "id": format!("{:?}", r.id),
                 "name": r.name,
                 "base_hp": r.base_hp,
@@ -340,7 +341,7 @@ impl WasmGameSession {
                 "speed": r.speed,
                 "default_alignment": format!("{:?}", r.default_alignment),
             })).collect::<Vec<_>>(),
-            "races": RACES.iter().map(|r| serde_json::json!({
+            "races": rs.races.iter().map(|r| serde_json::json!({
                 "id": format!("{:?}", r.id),
                 "name": r.name,
             })).collect::<Vec<_>>()
@@ -658,5 +659,15 @@ mod tests {
 
         let res_price = wasm_sess.step("price_check", Some("0".into()));
         assert!(res_price.contains("turn"));
+    }
+
+    #[test]
+    fn test_wasm_get_roles_json_parity() {
+        let json = WasmGameSession::get_roles_json();
+        let val: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert_eq!(val["roles"].as_array().unwrap().len(), 9);
+        assert_eq!(val["races"].as_array().unwrap().len(), 5);
+        assert_eq!(val["roles"][0]["name"], "Valkyrie");
+        assert_eq!(val["races"][0]["name"], "Human");
     }
 }

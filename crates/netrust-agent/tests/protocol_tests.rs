@@ -269,3 +269,18 @@ fn jsonrpc_accepts_move_prefixed_names() {
     .unwrap();
     assert!(r.get("result").is_some());
 }
+
+#[test]
+fn mcp_get_roles_returns_nine_roles_and_five_races() {
+    let mut s = AgentSession::new(42);
+    let r = mcp(
+        &mut s,
+        json!({"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"netrust_get_roles","arguments":{}}}),
+    )
+    .unwrap();
+    assert!(r.get("result").is_some());
+    let text = r["result"]["content"][0]["text"].as_str().unwrap();
+    let val: serde_json::Value = serde_json::from_str(text).unwrap();
+    assert_eq!(val["roles"].as_array().unwrap().len(), 9);
+    assert_eq!(val["races"].as_array().unwrap().len(), 5);
+}

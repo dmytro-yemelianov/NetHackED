@@ -34,38 +34,39 @@ use pager::Pager;
 use std::collections::HashSet;
 use std::io::{self, stdout, Stdout, Write};
 
-/// Character-select rows: (role key, race key, description key, hotkey).
-const ROLE_ROWS: &[(&str, &str, &str, char)] = &[
-    (
-        "role.valkyrie",
-        "role.valkyrie.race",
-        "role.valkyrie.desc",
-        'v',
-    ),
-    ("role.wizard", "role.wizard.race", "role.wizard.desc", 'w'),
-    (
-        "role.barbarian",
-        "role.barbarian.race",
-        "role.barbarian.desc",
-        'b',
-    ),
-    ("role.rogue", "role.rogue.race", "role.rogue.desc", 'r'),
-    ("role.knight", "role.knight.race", "role.knight.desc", 'k'),
-    ("role.monk", "role.monk.race", "role.monk.desc", 'm'),
-    ("role.healer", "role.healer.race", "role.healer.desc", 'h'),
-    (
-        "role.tourist",
-        "role.tourist.race",
-        "role.tourist.desc",
-        't',
-    ),
-    (
-        "role.archaeologist",
-        "role.archaeologist.race",
-        "role.archaeologist.desc",
-        'a',
-    ),
-];
+fn role_ui_keys(role_id: RoleId) -> (char, &'static str, &'static str, &'static str) {
+    match role_id {
+        RoleId::Valkyrie => (
+            'v',
+            "role.valkyrie",
+            "role.valkyrie.race",
+            "role.valkyrie.desc",
+        ),
+        RoleId::Wizard => ('w', "role.wizard", "role.wizard.race", "role.wizard.desc"),
+        RoleId::Barbarian => (
+            'b',
+            "role.barbarian",
+            "role.barbarian.race",
+            "role.barbarian.desc",
+        ),
+        RoleId::Rogue => ('r', "role.rogue", "role.rogue.race", "role.rogue.desc"),
+        RoleId::Knight => ('k', "role.knight", "role.knight.race", "role.knight.desc"),
+        RoleId::Monk => ('m', "role.monk", "role.monk.race", "role.monk.desc"),
+        RoleId::Healer => ('h', "role.healer", "role.healer.race", "role.healer.desc"),
+        RoleId::Tourist => (
+            't',
+            "role.tourist",
+            "role.tourist.race",
+            "role.tourist.desc",
+        ),
+        RoleId::Archaeologist => (
+            'a',
+            "role.archaeologist",
+            "role.archaeologist.race",
+            "role.archaeologist.desc",
+        ),
+    }
+}
 
 struct TerminalGuard;
 
@@ -133,9 +134,12 @@ fn select_character(stdout: &mut Stdout, locale: Locale) -> io::Result<Option<Ch
         ResetColor
     )?;
 
-    let roles: Vec<(String, &str, &str)> = ROLE_ROWS
+    let rs = netrust_data::ruleset::Ruleset::vanilla();
+    let roles: Vec<(String, &str, &str)> = rs
+        .roles
         .iter()
-        .map(|(key, race_key, desc_key, hotkey)| {
+        .map(|r| {
+            let (hotkey, key, race_key, desc_key) = role_ui_keys(r.id);
             (
                 format!("[{hotkey}] {}", t(key, locale)),
                 t(race_key, locale),
