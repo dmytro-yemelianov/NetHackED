@@ -1,0 +1,5 @@
+[toolchain]
+# Pinned so local and CI clippy/rustfmt results match; bump deliberately.
+channel = "1.88.0"
+components = ["rustfmt", "clippy"]
+targets = ["wasm32-unknown-unknown"]
