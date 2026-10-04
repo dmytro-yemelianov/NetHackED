@@ -38,6 +38,9 @@ The repository includes a comprehensive, formal architectural reference suite in
    * **AI Agent & LLM Guide**: Connecting autonomous agents and subagents via the Model Context Protocol (MCP), JSON line streaming, and GraphQL.
    * **Tool Catalog**: `netrust_get_observation`, `netrust_step`, `netrust_inspect_tile`, `netrust_render_map`, `netrust_reset_game`, `netrust_get_roles`, `netrust_reset_with_character`.
 
+6. **[docs/rule-packs.md](docs/rule-packs.md)**:
+   * **Rule Pack Author Guide**: Declarative monster, item, and role modding, format specification, validation rules, CLI tool, and replay-deterministic execution.
+
 ---
 
 ## Repository Structure
@@ -142,6 +145,8 @@ Then visit **`http://localhost:8080`** in your browser:
 ### 2. Play in Terminal (Human Interactive TUI)
 ```bash
 cargo run --bin netrust
+# Or load a custom rule pack (.nrpack or directory)
+cargo run --bin netrust -- --pack packs/examples/hard-mode
 ```
 * Character selection prompt upon boot.
 * Standard NetHack keyboard controls: Vi-keys, arrows, `o` (open), `c` (close), `K` (kick), `z` (zap wand), `,` (pick up), `p` (pay shopkeeper), `P` (pray at altar), `S` (sacrifice item), `d` (drop), `w` (wield), `<` (ascend), `>` (descend), `.` (wait), `Esc` (quit), `q` (quaff).

@@ -14,6 +14,7 @@ netrust-sim = { path = "../netrust-sim" }
 netrust-data = { path = "../netrust-data" }
 netrust-agent = { path = "../netrust-agent" }
 netrust-i18n = { path = "../netrust-i18n" }
+netrust-pack = { path = "../netrust-pack" }
 crossterm = "0.28"
 
 [[bin]]

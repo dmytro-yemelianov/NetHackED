@@ -1,0 +1,26 @@
+[[monster]]
+name = "jackal"
+attacks = [{ at = "Bite", ad = "Phys", n = 1, d = 4 }]
+
+[[monster]]
+name = "dire jackal"
+new = true
+glyph = "d"
+base_hp = 12
+max_hp = 12
+ac = 6
+level = 2
+speed = 14
+alignment = "Neutral"
+intrinsics = {}
+attacks = [{ at = "Bite", ad = "Phys", n = 2, d = 4 }]
+size = "Medium"
+peaceful_by_default = false
+always_hostile = true
+maligntyp = 0
+msound = "Other"
+is_human = false
+is_unique = false
+mindless = false
+ai_behavior = "MeleeHunter"
+abilities = []

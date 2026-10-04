@@ -1,0 +1,5 @@
+id = "hard-mode"
+name = "Hard Mode"
+version = "0.1.0"
+base = "vanilla"
+description = "A harder NetRust challenge pack with buffed jackals and a new dire jackal"

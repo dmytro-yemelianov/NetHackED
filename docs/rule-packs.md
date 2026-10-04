@@ -1,0 +1,238 @@
+# NetRust Rule Packs Guide
+
+Rule packs allow modders, tournament organizers, and researchers to modify game data—such as monster stats and attacks, item attributes and costs, and role starting inventories—without recompiling the engine or breaking replay determinism.
+
+---
+
+## Overview
+
+A **Rule Pack** is a self-contained bundle that describes modifications relative to the canonical **vanilla ruleset**.
+Packs can:
+- **Patch** existing entities (e.g. increase monster HP, change item cost or damage dice).
+- **Add** new monsters or items (with unique names and valid attributes).
+- **Remove** non-engine-required entities from generation and catalogs.
+- **Provide localized names** for new entities in supported languages (English and Ukrainian).
+
+Packs **cannot**:
+- Introduce arbitrary code execution. NetRust rule packs are pure data (declarative TOML or JSON).
+- Break replay determinism. Given the same ruleset and seed, simulation execution is 100% reproducible bit-for-bit across platforms.
+- Add new roles or attack types in P1 (roles may only be patched; new roles and mechanics knobs arrive in P2).
+
+---
+
+## Directory Layout
+
+A rule pack source directory has the following structure:
+
+```
+my-pack/
+├── pack.toml          # Required: pack metadata (id, name, version, base = "vanilla", description)
+├── monsters.toml      # Optional: monster patches, new monsters, monster removals
+├── items.toml         # Optional: item patches, new items, item removals
+├── roles.toml         # Optional: role starting inventory patches
+├── mechanics.toml     # Optional: reserved for P2 mechanics knobs (must be empty or omitted in P1)
+└── i18n/              # Optional: localized entity name translations
+    └── uk.toml        # Key-value mappings: "english name" = "українська назва"
+```
+
+### 1. `pack.toml`
+Defines the pack identifier, human-readable name, semantic version, and base:
+```toml
+id = "hard-mode"
+name = "Hard Mode"
+version = "0.1.0"
+base = "vanilla"
+description = "A harder NetRust challenge pack with buffed jackals and a new dire jackal"
+```
+> [!NOTE]
+> In Phase 1, `base` must be `"vanilla"`. Deriving from other packs is reserved for future extensions.
+
+### 2. `monsters.toml`
+Contains a list of `[[monster]]` tables.
+
+#### Patching an existing monster:
+Specify the target monster's `name` and only the fields you wish to override. Unspecified fields retain their vanilla values.
+```toml
+[[monster]]
+name = "jackal"
+attacks = [{ at = "Bite", ad = "Phys", n = 1, d = 4 }]
+```
+
+#### Adding a new monster:
+Set `new = true` and provide all required monster fields:
+```toml
+[[monster]]
+name = "dire jackal"
+new = true
+glyph = "d"
+base_hp = 12
+max_hp = 12
+ac = 6
+level = 2
+speed = 14
+alignment = "Neutral"
+intrinsics = {}
+attacks = [{ at = "Bite", ad = "Phys", n = 2, d = 4 }]
+size = "Medium"
+peaceful_by_default = false
+always_hostile = true
+maligntyp = 0
+msound = "Other"
+is_human = false
+is_unique = false
+mindless = false
+ai_behavior = "MeleeHunter"
+abilities = []
+```
+
+#### Removing a monster:
+Set `remove = true`:
+```toml
+[[monster]]
+name = "newt"
+remove = true
+```
+> [!WARNING]
+> Engine-required monsters (such as quest leaders, quest guardians, quest nemeses, and `shopkeeper`) cannot be removed. Attempting to remove an engine-required monster fails validation.
+
+### 3. `items.toml`
+Contains a list of `[[item]]` tables for patching, adding (`new = true`), or removing (`remove = true`) items.
+```toml
+[[item]]
+name = "leather armor"
+cost = 2
+```
+
+### 4. `roles.toml`
+Contains a list of `[[role]]` tables. Roles cannot be added or removed in P1, only patched:
+```toml
+[[role]]
+name = "Valkyrie"
+starting_items = [
+    { item = "long sword", spe = 1 },
+    { item = "potion of healing" },
+    { item = "food ration" },
+]
+```
+
+### 5. `i18n/<lang>.toml`
+Flat key-value mappings of English names to translations:
+```toml
+"dire jackal" = "лютий шакал"
+```
+
+---
+
+## Validation Rules
+
+When a pack is validated (`netrust-pack validate`) or built (`netrust-pack build`), the engine verifies:
+1. **Unique Names**: Monster and item names must be unique within their catalogs.
+2. **Target Existence**: Patches and removals must reference existing entities.
+3. **Engine-Required Invariants**: Engine-required monsters (`shopkeeper`, `priest`, quest leaders/guardians/nemeses) and engine-required items (`amulet of yendor`, quest artifacts) cannot be removed.
+4. **Valid References**: Starting items in `roles.toml` and quest monsters must exist in the resolved ruleset.
+5. **Numerical Ranges**:
+   - `level`: 0 to 49
+   - `speed`: 0 to 60
+   - `ac`: -20 to 20
+   - `base_hp` / `max_hp`: 1 to 10,000 (with `base_hp <= max_hp`)
+   - `attacks`: `n` and `d` in 1..=255 (special passive/gaze/magic attacks may be 0d0)
+   - `weight`: 0 to 10,000
+   - `cost`: 0 to 1,000,000
+   - `glyph`: single printable ASCII character
+6. **Unknown Fields**: Unknown fields in TOML files are rejected immediately with file and field diagnostics.
+7. **i18n Coverage**: Added entities without corresponding translations in present i18n files trigger warnings.
+
+---
+
+## Pack Distribution: `.nrpack` Files
+
+While pack authors edit human-readable TOML directories, packs can be compiled into `.nrpack` files:
+```bash
+cargo run -p netrust-pack -- build packs/examples/hard-mode -o hard-mode.nrpack
+```
+
+An `.nrpack` file is a deterministic, canonical JSON file containing:
+- `format`: Pack format version (`1`).
+- `manifest`: Pack metadata (`id`, `name`, `version`, `base`, `description`).
+- `ruleset`: Complete resolved ruleset data.
+- `hash`: Cryptographic SHA-256 digest (`sha256:<hex>`) of the canonical ruleset JSON.
+
+If an `.nrpack` file is tampered with or corrupted, `load_nrpack` detects the hash mismatch and refuses to load it.
+
+---
+
+## `netrust-pack` CLI Reference
+
+The workspace includes a command-line tool `netrust-pack`:
+
+### `new`
+Scaffold a new rule pack directory with commented template files:
+```bash
+cargo run -p netrust-pack -- new packs/my-pack --id my-pack --name "My Pack"
+```
+
+### `validate`
+Check a pack directory or `.nrpack` file for syntax errors, missing fields, range violations, or broken references:
+```bash
+cargo run -p netrust-pack -- validate packs/examples/hard-mode
+```
+
+### `build`
+Compile and validate a pack directory into a distribution `.nrpack` file and print its SHA-256 hash:
+```bash
+cargo run -p netrust-pack -- build packs/examples/hard-mode -o hard-mode.nrpack
+```
+
+### `diff`
+Display deterministic, field-by-field differences between two rulesets (supports `vanilla`, directory, or `.nrpack`):
+```bash
+cargo run -p netrust-pack -- diff vanilla hard-mode.nrpack
+```
+
+### `export-vanilla`
+Export the built-in vanilla ruleset as a clean directory of TOML files:
+```bash
+cargo run -p netrust-pack -- export-vanilla packs/vanilla-exported
+```
+
+### `schema`
+Generate JSON Schema files (`pack.schema.json`, `monsters.schema.json`, `items.schema.json`, `roles.schema.json`) for IDE auto-completion and linting:
+```bash
+cargo run -p netrust-pack -- schema -o schemas/
+```
+
+### `simulate`
+Run autonomous agent simulations across roles and seeds to stress-test game balance and check for panics or crashes:
+```bash
+cargo run -p netrust-pack -- simulate hard-mode.nrpack --seeds 5 --turns 500
+```
+
+---
+
+## Using Rule Packs in the TUI
+
+To launch the NetRust Terminal User Interface with a rule pack:
+
+```bash
+# Using a compiled .nrpack file
+cargo run --bin netrust -- --pack hard-mode.nrpack
+
+# Using a pack directory directly
+cargo run --bin netrust -- --pack packs/examples/hard-mode
+```
+
+When a custom pack is active, its name is displayed in the bottom status line:
+```
+Hero:Neu Dlvl:1  $:0  HP:12(12) Pw:1(1) AC:10  T:1    Wield:none [Hard Mode]
+```
+
+---
+
+## Save File Compatibility & Determinism
+
+Every NetRust save file records a `ruleset_ref` containing:
+- `id`: The pack identifier.
+- `version`: The pack version string.
+- `hash`: The cryptographic SHA-256 ruleset hash (or `"vanilla"` for vanilla).
+
+When restoring a saved game, the engine checks that the active ruleset matches the save file's `ruleset_ref`. If there is a mismatch, the engine refuses to load the save with a `RulesetMismatch` error, preventing corrupted game state or replay divergence.

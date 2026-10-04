@@ -1,0 +1,7 @@
+[[role]]
+name = "Valkyrie"
+starting_items = [
+    { item = "long sword", spe = 1 },
+    { item = "potion of healing" },
+    { item = "food ration" },
+]
