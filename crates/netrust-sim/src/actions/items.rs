@@ -331,17 +331,17 @@ impl SimulationWorld {
                                 events.push(GameEvent::LogMessage { text: "You read the cursed scroll of genocide. Monsters appear!".into() });
                             }
                             Buc::Uncursed => {
-                                let target = netrust_types::GenocideTarget::Species("Goblin".to_string());
+                                let target = netrust_types::GenocideTarget::Species("goblin".to_string());
                                 netrust_core::genocide::apply_genocide(&mut self.genocide_registry, target.clone());
                                 // Wipe from current floor
                                 let mut to_remove = Vec::new();
                                 for (aid, actor) in self.arena.actors.iter() {
-                                    if !actor.is_player && netrust_core::genocide::is_genocided(&self.genocide_registry, &actor.name, 'g') {
+                                    if !actor.is_player && self.actor_is_genocided(&actor.name) {
                                         to_remove.push(aid);
                                     }
                                 }
                                 for aid in to_remove {
-                                    self.arena.actors.remove(aid);
+                                    self.remove_actor_dropping_items(aid);
                                 }
                                 events.push(GameEvent::LogMessage { text: "You read the scroll of genocide. A species is wiped out!".into() });
                             }
@@ -351,12 +351,12 @@ impl SimulationWorld {
                                 // Wipe from current floor
                                 let mut to_remove = Vec::new();
                                 for (aid, actor) in self.arena.actors.iter() {
-                                    if !actor.is_player && netrust_core::genocide::is_genocided(&self.genocide_registry, &actor.name, 'L') {
+                                    if !actor.is_player && self.actor_is_genocided(&actor.name) {
                                         to_remove.push(aid);
                                     }
                                 }
                                 for aid in to_remove {
-                                    self.arena.actors.remove(aid);
+                                    self.remove_actor_dropping_items(aid);
                                 }
                                 events.push(GameEvent::LogMessage { text: "You read the blessed scroll of genocide. A whole class of monsters is wiped out!".into() });
                             }

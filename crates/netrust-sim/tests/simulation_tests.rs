@@ -2207,7 +2207,7 @@ fn test_scroll_of_genocide_conduct_and_level_wipe() {
     let mon_c = netrust_types::Coord::new_unchecked(player_c.x + 1, player_c.y);
     sim.level.set_tile(mon_c, netrust_types::Tile::Room);
     let goblin_id = sim.arena.spawn_actor(ActorRecord {
-        name: "Goblin".into(),
+        name: "goblin".into(),
         coord: mon_c,
         hp: 10, max_hp: 10, ac: 10, level: 1, speed: 10,
         alignment: netrust_types::Alignment::Chaotic,
@@ -2236,7 +2236,7 @@ fn test_scroll_of_genocide_conduct_and_level_wipe() {
 
     assert!(!sim.conducts.genocideless);
     assert!(!sim.arena.actors.contains_key(goblin_id));
-    assert!(is_genocided(&sim.genocide_registry, "Goblin", 'g'));
+    assert!(is_genocided(&sim.genocide_registry, "goblin", 'o'));
 }
 
 #[test]

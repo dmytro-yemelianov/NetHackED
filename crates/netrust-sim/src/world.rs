@@ -74,6 +74,24 @@ pub fn default_rng() -> ChaCha8Rng {
 }
 
 impl SimulationWorld {
+    /// Remove an actor, leaving anything it carried on the floor where it stood.
+    pub(crate) fn remove_actor_dropping_items(&mut self, id: ActorId) {
+        let Some(coord) = self.arena.actors.get(id).map(|a| a.coord) else { return };
+        for item_id in self.arena.items_carried_by(id) {
+            if let Some(item) = self.arena.items.get_mut(item_id) {
+                item.location = ItemLocation::Floor(coord);
+            }
+        }
+        self.arena.actors.remove(id);
+    }
+
+    pub(crate) fn actor_is_genocided(&self, name: &str) -> bool {
+        let lower = name.to_lowercase();
+        let class = netrust_data::monster_class_of(name);
+        self.genocide_registry.genocided_species.contains(&lower)
+            || class.map(|c| self.genocide_registry.genocided_classes.contains(&c)).unwrap_or(false)
+    }
+
     /// Initialize a new deterministic simulation world with a custom character configuration.
     pub fn new_with_character(seed: u64, config: CharacterConfig) -> Self {
         let mut rng = ChaCha8Rng::seed_from_u64(seed);

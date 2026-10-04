@@ -9,7 +9,7 @@ pub mod pantheons;
 
 pub use items::{create_item_record, get_item_archetype, ItemArchetype, ItemKindId, ITEM_CATALOG};
 pub use monsters::{
-    create_ghost_record, create_monster_record, get_monster_species, AiBehavior, MonsterArchetype,
+    create_ghost_record, create_monster_record, get_monster_species, monster_class_of, AiBehavior, MonsterArchetype,
     MonsterSpeciesId, BESTIARY,
 };
 pub use roles::{
