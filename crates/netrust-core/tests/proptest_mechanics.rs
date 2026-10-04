@@ -3,31 +3,32 @@
 //! Every property test here corresponds to a machine-checked theorem in `NetMechanics`.
 
 use netrust_core::{
-    apply_erosion, apply_priest_donation, apply_vorpal_strike, attack_hits, attack_nemesis,
-    branch_entrance_depth, branch_max_depth, buy_factor, calculate_buy_price, calculate_damage,
-    calculate_encumbrance, calculate_mysterious_force, calculate_sell_price,
-    calculate_summon_count, calculate_tournament_score, can_detect_monster, can_insert_safe,
-    can_see_tile, cast_spell, choose_pet_goal, clamp_favor, consecrate_water, consult_leader,
-    corrupt_buc_on_death, create_ghost_hp, decide_tactical_action, destroy_drawbridge,
-    dilute_potion, dip_water, enchant_armor, enchant_weapon, enter_branch, exit_branch, feed_pet,
-    hero_damage_after_ac, hunger_of_nutrition, hunger_tier, identify_fully, interact_with_occupant,
-    is_candelabrum_ready, is_hero_eligible_for_quest, is_hp_critical, is_sanctum_accessible,
-    is_valid_bones_level, learn_buc, learn_type, luck_decay_period, mana_cost, melee_damage,
-    mix_alchemy, monster_to_hit_value, offer_amulet_on_high_altar, pet_tile_steppable,
-    pick_up_quest_artifact, priest_uncurse, promote_pet, protection_donation_cost, push_boulder,
+    apply_erosion, apply_vorpal_strike, attack_hits, attack_nemesis, branch_entrance_depth,
+    branch_max_depth, buy_price, calculate_damage, calculate_encumbrance,
+    calculate_mysterious_force, calculate_summon_count, calculate_tournament_score,
+    can_detect_monster, can_insert_safe, can_see_tile, cast_spell, choose_pet_goal, clamp_favor,
+    consecrate_water, consult_leader, corrupt_buc_on_death, create_ghost_hp,
+    decide_tactical_action, destroy_drawbridge, dilute_potion, dip_water, enchant_armor,
+    enchant_weapon, enter_branch, exit_branch, feed_pet, hero_damage_after_ac, hunger_of_nutrition,
+    hunger_tier, identify_fully, interact_with_occupant, is_candelabrum_ready,
+    is_hero_eligible_for_quest, is_hp_critical, is_sanctum_accessible, is_valid_bones_level,
+    learn_buc, learn_type, luck_decay_period, mana_cost, melee_damage, mix_alchemy,
+    monster_to_hit_value, offer_amulet_on_high_altar, pet_tile_steppable, pick_up_quest_artifact,
+    priest_donation_outcome, priest_donation_quan, priest_suggested_donation, priest_uncurse,
+    promote_pet, protection_purchase_count, protection_purchase_step, push_boulder,
     quest_progress_rank, recharge_wand, reflect, resolve_breath_damage, resolve_gaze,
-    resolve_sacrifice, return_to_leader_with_artifact, rub_lamp, sell_factor, step_luck_decay,
+    resolve_sacrifice, return_to_leader_with_artifact, rub_lamp, sell_price, step_luck_decay,
     step_ray, step_ritual, swap_displacement, tick_light_fuel, tick_prayer_timeout, to_hit_value,
     toggle_drawbridge, uncurse, zap_wand, Alignment, ArtifactLocation, AscensionOutcome, BeamRay,
     BranchCoord, BranchId, BreathType, Buc, CandelabrumState, Combatant, Coord, DilutionState,
-    Direction, DivineState, DoorState, DrawbridgeState, DrawbridgeTransition, DungeonDepth,
-    EnchantOutcome, EncumbranceTier, Engraving, EngravingMedium, FormStats, GazeEffect, GazeType,
-    HeroInteraction, HeroQuestEligibility, Intrinsics, InvocationStep, Item, KnowledgeLevel,
-    LightSource, MetricState, PetFamily, PetGoal, PetSpeciesTier, PolyEntity, PushOutcome,
-    QuestProgress, QuestState, RechargeResult, RitualProgress, RubResult, SchedulerState,
-    SpellKind, StepAction, StepResult, SurfaceOrientation, TacticalAction, TacticalContext, Tile,
-    Velocity, WandCharges, WaterType, MAX_DIVINE_PROTECTION, NORMAL_SPEED, QUEST_MIN_ALIGNMENT,
-    QUEST_MIN_LEVEL, REQUIRED_CANDLES,
+    Direction, DivineState, DonationOutcome, DoorState, DrawbridgeState, DrawbridgeTransition,
+    DungeonDepth, EnchantOutcome, EncumbranceTier, Engraving, EngravingMedium, FormStats,
+    GazeEffect, GazeType, HeroInteraction, HeroQuestEligibility, Intrinsics, InvocationStep, Item,
+    KnowledgeLevel, LightSource, MetricState, PetFamily, PetGoal, PetSpeciesTier, PolyEntity,
+    PushOutcome, QuestProgress, QuestState, RechargeResult, RitualProgress, RubResult,
+    SchedulerState, SpellKind, StepAction, StepResult, SurfaceOrientation, TacticalAction,
+    TacticalContext, Tile, Velocity, WandCharges, WaterType, MAX_DIVINE_PROTECTION, NORMAL_SPEED,
+    QUEST_MIN_ALIGNMENT, QUEST_MIN_LEVEL, REQUIRED_CANDLES,
 };
 use proptest::prelude::*;
 
@@ -1142,25 +1143,47 @@ proptest! {
     }
 
     // -------------------------------------------------------------
-    // Theorems: sell_le_buy_price & charisma factor monotonicity
+    // Theorems: sell_le_buy_price, buy_price_antitone_cha (shk.c get_cost / set_cost)
     // -------------------------------------------------------------
     #[test]
-    fn prop_price_identification_theorems(base in 1u32..2000, cha in 1u32..25, buc in arb_buc()) {
-        let buy = calculate_buy_price(base, cha, buc);
-        let sell = calculate_sell_price(base, cha, buc);
-        // Arbitrage prevention: sell price <= buy price
-        prop_assert!(sell <= buy);
+    fn prop_buy_price_matches_c_reference(
+        base in 0u32..5000,
+        cha in -3i32..30,
+        dunce in any::<bool>(),
+        unid in any::<bool>(),
+        artifact in any::<bool>(),
+        angry in any::<bool>(),
+    ) {
+        prop_assert_eq!(
+            buy_price(base, cha, dunce, unid, artifact, angry),
+            c_get_cost(base, cha, dunce, unid, artifact, angry)
+        );
+    }
 
-        // Charisma monotonicity: higher charisma -> buy factor does not increase, sell factor does not decrease
-        if cha < 25 {
-            let next_buy_fac = buy_factor(cha + 1);
-            let cur_buy_fac = buy_factor(cha);
-            prop_assert!(next_buy_fac <= cur_buy_fac);
+    #[test]
+    fn prop_sell_price_matches_c_reference(
+        base in 0u32..5000,
+        dunce in any::<bool>(),
+        lowball in any::<bool>(),
+    ) {
+        prop_assert_eq!(sell_price(base, dunce, lowball), c_set_cost(base, dunce, lowball));
+    }
 
-            let next_sell_fac = sell_factor(cha + 1);
-            let cur_sell_fac = sell_factor(cha);
-            prop_assert!(next_sell_fac >= cur_sell_fac);
-        }
+    #[test]
+    fn prop_price_identification_theorems(
+        base in 0u32..5000,
+        cha in -3i32..30,
+        dunce in any::<bool>(),
+        unid in any::<bool>(),
+        artifact in any::<bool>(),
+        angry in any::<bool>(),
+        lowball in any::<bool>(),
+    ) {
+        // sell_le_buy_price: no arbitrage for any CHA / surcharge combination.
+        let buy = buy_price(base, cha, dunce, unid, artifact, angry);
+        prop_assert!(sell_price(base, dunce, lowball) <= buy);
+        // buy_price_antitone_cha: higher CHA never raises the buy price.
+        prop_assert!(buy_price(base, cha + 1, dunce, unid, artifact, angry) <= buy);
     }
 
     // -------------------------------------------------------------
@@ -1218,23 +1241,41 @@ proptest! {
     }
 
     // -------------------------------------------------------------
-    // Theorem: priest_protection_bounded & priest_protection_monotonic
+    // Theorems: priest_protection_bounded, priest_protection_monotonic,
+    // priest_protection_insufficient (priest.c:637-699)
     // -------------------------------------------------------------
     #[test]
     fn prop_priest_protection_theorems(
-        cur in 0u32..=9,
-        donation in 0u32..=10000,
-        level in 1u32..=30,
+        cur in 0u32..=20,
+        level_peak in 0u32..=30,
+        cheapskate in 0u32..=5,
+        rn2_101 in 0u32..101,
+        gold in 0u32..=200_000,
+        offer in 0u32..=200_000,
+        rolls in proptest::collection::vec(0u32..40, 0..64),
     ) {
-        let res = apply_priest_donation(cur, donation, level);
-        // Bounded by MAX_DIVINE_PROTECTION (9)
-        prop_assert!(res <= MAX_DIVINE_PROTECTION);
-        // Monotonic
-        prop_assert!(cur <= res);
+        let suggested = priest_suggested_donation(level_peak, cheapskate, rn2_101);
+        prop_assert_eq!(suggested, level_peak.max(1) * (rn2_101 + 150 + cheapskate * 40));
+        let quan = priest_donation_quan(gold, suggested);
+        prop_assert_eq!(quan, (gold / (suggested * 3)).max(1));
 
-        // Insufficient donation leaves protection unchanged
-        if donation < protection_donation_cost(level) && cur < MAX_DIVINE_PROTECTION {
-            prop_assert_eq!(res, cur);
+        let outcome = priest_donation_outcome(offer, suggested, quan, gold.saturating_sub(offer));
+        let mut prot = cur;
+        if outcome == DonationOutcome::Protection {
+            let n = protection_purchase_count(offer, suggested);
+            prop_assert_eq!(n, offer / (2 * suggested));
+            for i in 0..n as usize {
+                let r = rolls.get(i).copied().unwrap_or(0);
+                prop_assert_eq!(protection_purchase_step(prot, r), c_ublessed_step(prot, r));
+                prot = protection_purchase_step(prot, r);
+            }
+        }
+        // Bounded by the hard cap 20, monotonic.
+        prop_assert!(prot <= MAX_DIVINE_PROTECTION);
+        prop_assert!(cur <= prot);
+        // Below the protection band nothing changes.
+        if offer < 2 * suggested * quan {
+            prop_assert!(outcome != DonationOutcome::Protection);
         }
     }
 
@@ -2044,5 +2085,89 @@ proptest! {
         let mut t6 = tracker_base.clone();
         netrust_core::conducts::record_polypile(&mut t6);
         if !tracker_base.polypileless { prop_assert_eq!(t6.polypileless, false); }
+    }
+}
+
+/// C shk.c:2899-3009 `get_cost` (reference transcription for the proptest).
+fn c_get_cost(base: u32, cha: i32, dunce: bool, unid: bool, artifact: bool, angry: bool) -> u32 {
+    let mut tmp: i64 = if base == 0 { 5 } else { base as i64 };
+    let (mut multiplier, mut divisor) = (1i64, 1i64);
+    if unid {
+        multiplier *= 4;
+        divisor *= 3;
+    }
+    if dunce {
+        multiplier *= 4;
+        divisor *= 3;
+    }
+    if cha > 18 {
+        divisor *= 2;
+    } else if cha == 18 {
+        multiplier *= 2;
+        divisor *= 3;
+    } else if cha >= 16 {
+        multiplier *= 3;
+        divisor *= 4;
+    } else if cha <= 5 {
+        multiplier *= 2;
+    } else if cha <= 7 {
+        multiplier *= 3;
+        divisor *= 2;
+    } else if cha <= 10 {
+        multiplier *= 4;
+        divisor *= 3;
+    }
+    tmp *= multiplier;
+    if divisor > 1 {
+        tmp *= 10;
+        tmp /= divisor;
+        tmp += 5;
+        tmp /= 10;
+    }
+    if tmp <= 0 {
+        tmp = 1;
+    }
+    if artifact {
+        tmp *= 4;
+    }
+    if angry {
+        tmp += (tmp + 2) / 3;
+    }
+    tmp as u32
+}
+
+/// C shk.c:3170-3212 `set_cost` for a non-gem stack (reference transcription).
+fn c_set_cost(base: u32, dunce: bool, lowball: bool) -> u32 {
+    let mut tmp = base as i64;
+    let mut multiplier = 1i64;
+    let mut divisor = if dunce { 3i64 } else { 2 };
+    if lowball && tmp > 1 {
+        multiplier *= 3;
+        divisor *= 4;
+    }
+    if tmp >= 1 {
+        tmp *= multiplier;
+        if divisor > 1 {
+            tmp *= 10;
+            tmp /= divisor;
+            tmp += 5;
+            tmp /= 10;
+        }
+        if tmp < 1 {
+            tmp = 1;
+        }
+    }
+    tmp as u32
+}
+
+/// C priest.c:694-698: one iteration of the protection loop. `roll` is rn2(3)
+/// when `ublessed == 0`, else rn2(ublessed).
+fn c_ublessed_step(ublessed: u32, roll: u32) -> u32 {
+    if ublessed == 0 {
+        roll.min(2) + 2
+    } else if ublessed < 20 && (ublessed < 9 || roll.min(ublessed - 1) == 0) {
+        ublessed + 1
+    } else {
+        ublessed
     }
 }

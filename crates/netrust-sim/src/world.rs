@@ -41,6 +41,7 @@ pub struct SimulationWorld {
     pub player_id: ActorId,
     pub wielded_item: Option<ItemId>,
     pub scheduler: SchedulerState,
+    /// Unpaid shop merchandise as `(item, base cost)`; see [`Self::get_unpaid_cost`].
     pub unpaid_items: Vec<(ItemId, u32)>,
     pub player_gold: u32,
     pub player_nutrition: i32,
@@ -49,6 +50,9 @@ pub struct SimulationWorld {
     pub known_spells: Vec<(SpellKind, u32)>,
     pub divine_state: netrust_types::DivineState,
     pub divine_protection: u32,
+    /// Temple priest `cheapskate_count` (C `priest.c:562`); one counter for all priests.
+    #[serde(default)]
+    pub priest_cheapskate: u32,
     pub player_luck: i32,
     pub hero: netrust_types::Hero,
     pub locale: netrust_types::Locale,
@@ -229,6 +233,7 @@ impl SimulationWorld {
             known_spells,
             divine_state: netrust_types::DivineState::default(),
             divine_protection: 0,
+            priest_cheapskate: 0,
             player_luck: 0,
             hero: netrust_types::Hero {
                 base_hp: arena.actors[player_id].hp as i32,
@@ -272,12 +277,13 @@ impl SimulationWorld {
         Self::new_with_character(seed, CharacterConfig::default())
     }
 
-    /// Retrieve the unpaid debt cost for a shop item, if any.
+    /// Retrieve the price owed for an unpaid shop item, if any: the ledger holds the base
+    /// cost (`oc_cost`), priced through C `get_cost` (`shk.c:2899`) for the current hero.
     pub fn get_unpaid_cost(&self, id: ItemId) -> Option<u32> {
         self.unpaid_items
             .iter()
             .find(|(i, _)| *i == id)
-            .map(|(_, c)| *c)
+            .map(|(_, base)| self.shop_buy_price(*base))
     }
 
     /// Check if an item is unpaid store merchandise.

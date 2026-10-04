@@ -548,14 +548,16 @@ impl AgentPolicy for PetTesterTacticalPolicy {
         }
 
         // 5. Minetown Temple Donation: if near priest and have 400+ gold and protection < 9
-        if world.player_gold >= 400 && world.divine_protection < 9 {
+        // Beyond the soft cap each purchase only succeeds with chance 1/protection.
+        if world.player_gold >= 400 && world.divine_protection < netrust_core::PROTECTION_SOFT_CAP {
             let priest_near = world.arena.actors.values().any(|a| {
                 !a.is_dead
                     && a.name.to_lowercase().contains("priest")
                     && a.coord.chebyshev_distance(player.coord) <= 6
             });
             if priest_near {
-                return ActionAst::Donate(400);
+                // 0 = the priest's suggested protection amount (priest.c:645).
+                return ActionAst::Donate(0);
             }
         }
 

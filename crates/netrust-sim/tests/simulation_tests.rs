@@ -12,6 +12,7 @@ use netrust_sim::{
     ActionAst, Alignment, Buc, Coord, Direction, DoorState, GameEvent, Intrinsics, ItemClass,
     SimulationWorld, SpellKind, Tile,
 };
+use rand::Rng;
 
 #[test]
 fn test_simulation_world_init() {
@@ -570,7 +571,7 @@ fn test_shop_and_shopkeeper_mechanics() {
     let (sk_id, sk) = sk_opt.unwrap();
     assert_eq!(sk.alignment, Alignment::Neutral);
 
-    let (unpaid_id, cost) = sim.unpaid_items[0];
+    let (unpaid_id, _base) = sim.unpaid_items[0];
     let item_coord = match sim.arena.items.get(unpaid_id).unwrap().location {
         ItemLocation::Floor(c) => c,
         _ => panic!("Item should be on floor"),
@@ -587,6 +588,7 @@ fn test_shop_and_shopkeeper_mechanics() {
 
     sim.player_gold = 500;
     let initial_gold = sim.player_gold;
+    let cost = sim.get_unpaid_cost(unpaid_id).unwrap();
     let pay_events = sim.step_player_action(ActionAst::Pay);
     assert!(pay_events.iter().any(
         |e| matches!(e, GameEvent::LogMessage { text } if text.contains("You pay the shopkeeper"))
@@ -2157,6 +2159,42 @@ fn test_shopkeeper_price_identification() {
 }
 
 #[test]
+fn test_shop_buy_price_c_get_cost() {
+    // Default CHA 10 (x4/3, shk.c:2981); a level-1 Tourist adds the x4/3 tourist surcharge
+    // (shk.c:2966); a carried dunce cap stands in for a worn one (shk.c:2964).
+    let mut sim = SimulationWorld::new_with_seed(42);
+    let item = sim.arena.spawn_item(create_item_record(
+        ItemKindId::LongSword,
+        ItemLocation::CarriedBy(sim.player_id),
+        Buc::Cursed,
+    ));
+    sim.unpaid_items.push((item, 300));
+    assert_eq!(sim.get_unpaid_cost(item), Some(400)); // BUC does not matter
+    sim.arena.items.get_mut(item).unwrap().name = "dunce cap".into();
+    assert_eq!(sim.get_unpaid_cost(item), Some(533)); // 300*16/9 = 533.3
+
+    let config = CharacterConfig {
+        role: RoleId::Tourist,
+        ..CharacterConfig::default()
+    };
+    let mut tourist = SimulationWorld::new_with_character(42, config);
+    let item = tourist.arena.spawn_item(create_item_record(
+        ItemKindId::LongSword,
+        ItemLocation::CarriedBy(tourist.player_id),
+        Buc::Uncursed,
+    ));
+    tourist.unpaid_items.push((item, 300));
+    assert_eq!(tourist.get_unpaid_cost(item), Some(533));
+    tourist
+        .arena
+        .actors
+        .get_mut(tourist.player_id)
+        .unwrap()
+        .level = 15;
+    assert_eq!(tourist.get_unpaid_cost(item), Some(400));
+}
+
+#[test]
 fn test_gnomish_mines_branch_transition() {
     use netrust_types::BranchId;
     let mut sim = SimulationWorld::new_with_seed(101);
@@ -2238,8 +2276,25 @@ fn test_minetown_temple_priest_donation_and_uncursing() {
     let initial_ac = sim.arena.actors.get(sim.player_id).unwrap().ac;
     assert_eq!(sim.divine_protection, 0);
 
-    // Donate 400 zm -> should grant protection and uncurse items
-    let donate_events = sim.step_player_action(ActionAst::Donate(400));
+    // Replay C priest.c:637-698 on a clone of the world RNG to know the exact outcome.
+    let mut rng = sim.rng.clone();
+    let level = sim.arena.actors.get(sim.player_id).unwrap().level;
+    let suggested = level.max(1) * (150 + rng.random_range(0..101u32));
+    let quan = (2000 / (suggested * 3)).max(1);
+    let offer = suggested * quan * 2;
+    let mut expected_prot = 0u32;
+    for _ in 0..offer / (2 * suggested) {
+        expected_prot = if expected_prot == 0 {
+            2 + rng.random_range(0..3u32)
+        } else if expected_prot < 9 {
+            expected_prot + 1
+        } else {
+            unreachable!("at most 4 purchases from 0")
+        };
+    }
+
+    // Donate the suggested protection amount -> protection and uncursing
+    let donate_events = sim.step_player_action(ActionAst::Donate(0));
     assert!(donate_events.iter().any(
         |e| matches!(e, GameEvent::LogMessage { text } if text.contains("divine AC protection"))
     ));
@@ -2247,13 +2302,36 @@ fn test_minetown_temple_priest_donation_and_uncursing() {
         .iter()
         .any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("uncursed"))));
 
-    assert!(sim.divine_protection > 0);
-    assert!(sim.arena.actors.get(sim.player_id).unwrap().ac < initial_ac);
+    assert_eq!(sim.divine_protection, expected_prot);
+    assert!((2..=7).contains(&expected_prot));
+    assert_eq!(
+        sim.arena.actors.get(sim.player_id).unwrap().ac,
+        initial_ac - expected_prot as i32
+    );
     assert_eq!(
         sim.arena.items.get(cursed_sword).unwrap().buc,
         Buc::Uncursed
     );
-    assert_eq!(sim.player_gold, 1600);
+    assert_eq!(sim.player_gold, 2000 - offer);
+}
+
+#[test]
+fn test_priest_donation_below_protection_band() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+    let priest_coord = Coord::new_unchecked(p_coord.x + 1, p_coord.y);
+    let priest = netrust_data::create_monster_record(MonsterSpeciesId::Priest, priest_coord);
+    sim.arena.spawn_actor(priest);
+
+    // 100 zm is below every suggested amount (>= 150): cheapskate, no protection.
+    sim.player_gold = 2000;
+    let events = sim.step_player_action(ActionAst::Donate(100));
+    assert!(events
+        .iter()
+        .any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("Cheapskate"))));
+    assert_eq!(sim.divine_protection, 0);
+    assert_eq!(sim.priest_cheapskate, 1);
+    assert_eq!(sim.player_gold, 1900);
 }
 
 #[test]

@@ -3,6 +3,7 @@ use netrust_core::energy::NORMAL_SPEED;
 use netrust_core::religion::{clamp_favor, consecrate_water, resolve_sacrifice};
 use netrust_i18n::Messages;
 use netrust_types::{Alignment, Buc, ItemClass, SacrificeResult, Tile};
+use rand::Rng;
 
 use crate::events::GameEvent;
 use crate::world::SimulationWorld;
@@ -272,43 +273,87 @@ impl SimulationWorld {
             return events;
         };
 
-        let donation = if amount == 0 {
-            // Default donation: 400 * level
-            netrust_core::mines::protection_donation_cost(player.level)
-        } else {
-            amount
-        };
-
-        if self.player_gold < donation {
+        // C priest.c:612: a hero without gold cannot make an offer.
+        if self.player_gold == 0 {
             events.push(GameEvent::LogMessage {
-                text: format!("You do not have enough gold to donate {donation} zm."),
+                text: format!("You do not have enough gold to donate {amount} zm."),
             });
             return events;
         }
 
+        // C priest.c:637-643. No `u.ulevelpeak` is tracked; the current level stands in.
+        let gold_before = self.player_gold;
+        let rn2_101 = self.rng.random_range(0..101u32);
+        let suggested =
+            netrust_core::priest_suggested_donation(player.level, self.priest_cheapskate, rn2_101);
+        let quan = netrust_core::priest_donation_quan(gold_before, suggested);
+        // `amount == 0` offers the priest's suggested protection amount (`suggested*quan*2`);
+        // C `bribe` (minion.c:378-381) caps an offer at the hero's gold.
+        let requested = if amount == 0 {
+            suggested.saturating_mul(quan).saturating_mul(2)
+        } else {
+            amount
+        };
+        let donation = requested.min(gold_before);
         self.player_gold -= donation;
 
-        // Apply divine protection
-        let prev_prot = self.divine_protection;
-        let new_prot =
-            netrust_core::mines::apply_priest_donation(prev_prot, donation, player.level);
-        if new_prot > prev_prot {
-            let gained = new_prot - prev_prot;
-            self.divine_protection = new_prot;
-            if let Some(p) = self.arena.actors.get_mut(self.player_id) {
-                p.ac -= gained as i32; // Lower AC is better in NetHack
+        let outcome =
+            netrust_core::priest_donation_outcome(donation, suggested, quan, self.player_gold);
+        match outcome {
+            netrust_core::DonationOutcome::Refused => {
+                self.priest_cheapskate += 1;
+                events.push(GameEvent::LogMessage {
+                    text: "The priest says: 'Thou shalt regret thine action!'".into(),
+                });
             }
-            events.push(GameEvent::LogMessage {
-                text: format!("You feel much safer! You are granted +{gained} divine AC protection (total: +{new_prot})."),
-            });
-        } else if prev_prot >= netrust_core::mines::MAX_DIVINE_PROTECTION {
-            events.push(GameEvent::LogMessage {
-                text: "The priest smiles benevolently: 'You already possess the maximum divine protection.'".into(),
-            });
-        } else {
-            events.push(GameEvent::LogMessage {
-                text: "The priest thanks you for your contribution to the temple.".into(),
-            });
+            netrust_core::DonationOutcome::Cheapskate => {
+                self.priest_cheapskate += 1;
+                events.push(GameEvent::LogMessage {
+                    text: "The priest says: 'Cheapskate.'".into(),
+                });
+            }
+            netrust_core::DonationOutcome::Thanks => {
+                events.push(GameEvent::LogMessage {
+                    text: "The priest thanks you for your contribution to the temple.".into(),
+                });
+            }
+            netrust_core::DonationOutcome::Clairvoyance => {
+                // Clairvoyance is not modelled.
+                events.push(GameEvent::LogMessage {
+                    text: "The priest says: 'Thou art indeed a pious individual. I bestow upon thee a blessing.'".into(),
+                });
+            }
+            netrust_core::DonationOutcome::Protection => {
+                let prev_prot = self.divine_protection;
+                let mut prot = prev_prot;
+                for _ in 0..netrust_core::protection_purchase_count(donation, suggested) {
+                    let roll = netrust_core::protection_step_roll_bound(prot)
+                        .map(|bound| self.rng.random_range(0..bound))
+                        .unwrap_or(0);
+                    prot = netrust_core::protection_purchase_step(prot, roll);
+                }
+                if prot > prev_prot {
+                    let gained = prot - prev_prot;
+                    self.divine_protection = prot;
+                    if let Some(p) = self.arena.actors.get_mut(self.player_id) {
+                        p.ac -= gained as i32; // Lower AC is better in NetHack
+                    }
+                    events.push(GameEvent::LogMessage {
+                        text: format!("You feel much safer! You are granted +{gained} divine AC protection (total: +{prot})."),
+                    });
+                } else {
+                    events.push(GameEvent::LogMessage {
+                        text: "The priest says: 'Thy selfless generosity is deeply appreciated.'"
+                            .into(),
+                    });
+                }
+            }
+            netrust_core::DonationOutcome::Selfless => {
+                events.push(GameEvent::LogMessage {
+                    text: "The priest says: 'Thy selfless generosity is deeply appreciated.'"
+                        .into(),
+                });
+            }
         }
 
         // Uncursing service: if donation >= 200 * level, uncurse cursed items

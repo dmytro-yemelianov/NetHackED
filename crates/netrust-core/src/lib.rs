@@ -68,8 +68,9 @@ pub use inventory::{
     ItemKind,
 };
 pub use inventory_interaction::{
-    buy_factor, calculate_buy_price, calculate_sell_price, dilute_potion, reverse_price_id,
-    rub_lamp, sell_factor, DilutionState, RubResult,
+    buy_factor, buy_price, dilute_potion, dunce_or_tourist_surcharge, oid_price_adjustment,
+    reverse_price_id, rub_lamp, sell_factor, sell_price, shk_sell_lowball, DilutionState,
+    RubResult,
 };
 pub use lighting::{
     can_detect_monster, can_see_tile, monster_has_mind, tick_light_fuel, LightSource,
@@ -77,8 +78,10 @@ pub use lighting::{
 };
 pub use magic::{can_cast, cast_spell, decay_retention, mana_cost, SpellKind};
 pub use mines::{
-    apply_priest_donation, clamp_luck, luck_decay_period, priest_uncurse, protection_donation_cost,
-    step_luck_decay, MAX_DIVINE_PROTECTION,
+    clamp_luck, luck_decay_period, priest_donation_outcome, priest_donation_quan,
+    priest_suggested_donation, priest_uncurse, protection_purchase_count, protection_purchase_step,
+    protection_step_roll_bound, step_luck_decay, DonationOutcome, MAX_DIVINE_PROTECTION,
+    PROTECTION_SOFT_CAP,
 };
 pub use monster_abilities::{calculate_summon_count, resolve_breath_damage, resolve_gaze};
 pub use netrust_types::{
