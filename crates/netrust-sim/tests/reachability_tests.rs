@@ -33,7 +33,7 @@ fn invocation_items_reachable_on_every_seed() {
 
 #[test]
 fn spawned_monsters_never_on_stairs_or_stacked() {
-    let cases = [(BranchId::GnomishMines, 1usize), (BranchId::GnomishMines, 5), (BranchId::Gehennom, 1), (BranchId::Gehennom, 3), (BranchId::Gehennom, 5), (BranchId::Quest, 2)];
+    let cases = [(BranchId::GnomishMines, 1usize), (BranchId::GnomishMines, 5), (BranchId::Gehennom, 1), (BranchId::Gehennom, 3), (BranchId::Gehennom, 5), (BranchId::Quest, 2), (BranchId::Gehennom, 6), (BranchId::GnomishMines, 3), (BranchId::Quest, 1), (BranchId::Quest, 3), (BranchId::DungeonsOfDoom, 2)];
     for seed in 0..50u64 {
         for (branch, depth) in cases {
             let mut sim = SimulationWorld::new_with_seed(seed);

@@ -316,8 +316,7 @@ impl SimulationWorld {
                     let (lvl, _spawn) = generate_moloch_sanctum_level(&mut self.rng);
                     self.level = lvl;
 
-                    let priest = create_monster_record(MonsterSpeciesId::Priest, self.level.stairs_down);
-                    self.arena.spawn_actor(priest);
+                    self.spawn_monster_near(MonsterSpeciesId::Priest, self.level.stairs_down);
 
                     let amulet = create_item_record(ItemKindId::AmuletOfYendor, ItemLocation::Floor(self.level.stairs_down), Buc::Blessed);
                     self.arena.spawn_item(amulet);
