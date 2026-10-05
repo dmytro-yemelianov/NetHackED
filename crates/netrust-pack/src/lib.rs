@@ -2,6 +2,7 @@
 
 pub mod files;
 pub mod format;
+pub mod install;
 pub mod merge;
 pub mod nrpack;
 pub mod simulate;
@@ -11,6 +12,10 @@ pub use files::{parse_pack_files, read_pack_files_from_dir, vanilla_pack_files, 
 pub use format::{
     read_pack_dir, ItemPatch, ItemsToml, MonsterPatch, MonstersToml, PackDir, PackToml, RolePatch,
     RolesToml,
+};
+pub use install::{
+    default_packs_dir, install_pack, list_installed, pack_info, resolve_installed, InstalledPack,
+    PackInfo,
 };
 pub use merge::resolve;
 pub use nrpack::{
@@ -29,6 +34,7 @@ pub enum PackError {
     Invalid(Report),
     Hash { expected: String, found: String },
     Format(u32),
+    Conflict(String),
 }
 
 impl std::fmt::Display for PackError {
@@ -56,6 +62,7 @@ impl std::fmt::Display for PackError {
                 )
             }
             Self::Format(v) => write!(f, "Unsupported rule pack format version: {v}"),
+            Self::Conflict(msg) => write!(f, "{msg}"),
         }
     }
 }

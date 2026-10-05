@@ -46,6 +46,21 @@ enum Commands {
         #[arg(short, long)]
         out: PathBuf,
     },
+    /// List rule packs installed in the local packs directory
+    List {
+        #[arg(long)]
+        dir: Option<PathBuf>,
+    },
+    /// Show manifest, hash, counts and vanilla diff size of a pack (path or installed id)
+    Info { pack: String },
+    /// Validate/build a pack and copy it into the local packs directory
+    Install {
+        path: PathBuf,
+        #[arg(long)]
+        dir: Option<PathBuf>,
+        #[arg(long)]
+        force: bool,
+    },
     /// Simulate gameplay comparing a rule pack against vanilla
     Simulate {
         pack: String,
@@ -78,6 +93,13 @@ fn load_source(source: &str) -> Result<(Arc<Ruleset>, RulesetRef), String> {
             "source '{source}' does not exist as file or directory"
         ))
     }
+}
+
+fn packs_dir_or_exit(dir: Option<PathBuf>) -> Result<PathBuf, ExitCode> {
+    dir.or_else(netrust_pack::default_packs_dir).ok_or_else(|| {
+        eprintln!("error: no packs directory (set NETRUST_PACKS_DIR or HOME, or pass --dir)");
+        ExitCode::FAILURE
+    })
 }
 
 fn main() -> ExitCode {
@@ -405,6 +427,88 @@ description = "A custom NetRust rule pack"
 
             println!("Exported vanilla ruleset to '{}'", dir.display());
             ExitCode::SUCCESS
+        }
+
+        Commands::List { dir } => {
+            let dir = match packs_dir_or_exit(dir) {
+                Ok(d) => d,
+                Err(c) => return c,
+            };
+            match netrust_pack::list_installed(&dir) {
+                Ok(list) if list.is_empty() => {
+                    println!("No packs installed in '{}'", dir.display());
+                    ExitCode::SUCCESS
+                }
+                Ok(list) => {
+                    for p in list {
+                        println!("{}\t{}\t{}\t{}", p.id, p.version, p.hash, p.path.display());
+                    }
+                    ExitCode::SUCCESS
+                }
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    ExitCode::FAILURE
+                }
+            }
+        }
+
+        Commands::Info { pack } => {
+            let p = Path::new(&pack);
+            let src = if p.exists() {
+                p.to_path_buf()
+            } else {
+                match netrust_pack::default_packs_dir()
+                    .and_then(|d| netrust_pack::resolve_installed(&d, &pack))
+                {
+                    Some(i) => i.path,
+                    None => {
+                        eprintln!("error: pack '{pack}' not found");
+                        return ExitCode::FAILURE;
+                    }
+                }
+            };
+            match netrust_pack::pack_info(&src) {
+                Ok(i) => {
+                    println!("id:       {}", i.manifest.id);
+                    println!("name:     {}", i.manifest.name);
+                    println!("version:  {}", i.manifest.version);
+                    println!("hash:     {}", i.hash);
+                    println!(
+                        "monsters: {}  items: {}  roles: {}",
+                        i.monsters, i.items, i.roles
+                    );
+                    println!("warnings: {}", i.warnings);
+                    println!("diffs vs vanilla: {}", i.diffs_vs_vanilla);
+                    ExitCode::SUCCESS
+                }
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    ExitCode::FAILURE
+                }
+            }
+        }
+
+        Commands::Install { path, dir, force } => {
+            let dir = match packs_dir_or_exit(dir) {
+                Ok(d) => d,
+                Err(c) => return c,
+            };
+            match netrust_pack::install_pack(&path, &dir, force) {
+                Ok(i) => {
+                    println!(
+                        "Installed {} {} ({}) -> {}",
+                        i.id,
+                        i.version,
+                        i.hash,
+                        i.path.display()
+                    );
+                    ExitCode::SUCCESS
+                }
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    ExitCode::FAILURE
+                }
+            }
         }
 
         Commands::Schema { out } => {

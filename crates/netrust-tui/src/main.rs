@@ -1308,13 +1308,22 @@ pub fn parse_args(args: &[String]) -> Result<TuiArgs, String> {
             "--pack" => {
                 if let Some(val) = args.get(i + 1) {
                     let pb = std::path::PathBuf::from(val);
-                    if !pb.exists() {
-                        return Err(format!("Rule pack not found: {val}"));
-                    }
-                    pack_path = Some(pb);
+                    let resolved = if pb.exists() {
+                        pb
+                    } else {
+                        netrust_pack::default_packs_dir()
+                            .and_then(|d| netrust_pack::resolve_installed(&d, val))
+                            .map(|p| p.path)
+                            .ok_or_else(|| {
+                                format!(
+                                    "Rule pack not found: {val} (not a path or installed pack id)"
+                                )
+                            })?
+                    };
+                    pack_path = Some(resolved);
                     i += 1;
                 } else {
-                    return Err("--pack requires a file path".into());
+                    return Err("--pack requires a file path or installed pack id".into());
                 }
             }
             other => {
@@ -1384,5 +1393,20 @@ mod tests {
         assert!(res.is_err());
         let err = res.unwrap_err();
         assert!(err.contains("missing.nrpack"));
+    }
+
+    #[test]
+    fn parse_args_resolves_installed_pack_by_id() {
+        let dir = std::env::temp_dir().join("netrust-tui-packs");
+        let _ = std::fs::remove_dir_all(&dir);
+        let hard =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packs/examples/hard-mode");
+        let inst = netrust_pack::install_pack(&hard, &dir, false).unwrap();
+        // Only this test sets NETRUST_PACKS_DIR.
+        std::env::set_var("NETRUST_PACKS_DIR", &dir);
+        let res = parse_args(&s(&["netrust", "--pack", &inst.id]));
+        std::env::remove_var("NETRUST_PACKS_DIR");
+        let parsed = res.expect("installed id resolves");
+        assert_eq!(parsed.pack_path.as_deref(), Some(inst.path.as_path()));
     }
 }
