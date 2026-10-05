@@ -19,7 +19,12 @@ web/index.html developer client + web/packs.html pack manager (GitHub Pages)
   - `WasmGameSession` wraps the engine's `AgentSession`. It uses the same command parser as the MCP, JSON-RPC and GraphQL frontends.
   - `WasmPack` wraps a resolved rule pack.
   - `WasmGameSession.newWithPack(seed, role, race, name, pack)` starts a game on a pack.
-- **`web/play/`** is the clean game: one `<pre>` element with an 80×24 grid. Keyboard prompts imitate NetHack's (`What do you want to eat? [a-c or ?*]`). The map comes straight from the engine's `render_ascii()`, and the page only colours glyphs by class.
+- **`web/play/`** is the clean game.
+  - It draws the 80×24 grid through `PixelScreen` (`crates/nethacked-wasm/src/pixel.rs`), built on [pixel-ssh](https://github.com/dmytro-yemelianov/pixel-ssh), the engine behind yemelianov.dev: an indexed framebuffer, CP437 and Cyrillic bitmap fonts, palettes, and a WebGL2 CRT shader.
+  - The page's JavaScript still produces the 24 text lines and gives each cell a color role.
+  - `PixelGrid` maps the roles to the first 16 palette entries, which pixel-ssh arranges by UI role in every theme, so any palette stays consistent.
+  - pixel-ssh is a git dependency pinned to one revision.
+  - Without WebGL2 the page renders the same lines as a `<pre>` element with an 80×24 grid. Keyboard prompts imitate NetHack's (`What do you want to eat? [a-c or ?*]`). The map comes straight from the engine's `render_ascii()`, and the page only colours glyphs by class.
 - **`web/index.html` and `web/packs.html`** form the developer client: canvas tiles, AI arena, benchmarks, and the pack manager and editor. They are plain ES modules with no bundler and no npm dependencies.
 
 ---

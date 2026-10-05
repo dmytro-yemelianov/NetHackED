@@ -15,7 +15,27 @@ NetHackED can be played in four places. All of them run the same deterministic e
 
 ![Role selection on the clean terminal](images/play-pick.png)
 
-The page at **nethacked.yemelianov.dev** is only a terminal. It has no buttons and no panels. It looks like a NetHack screen:
+The page at **nethacked.yemelianov.dev** is only a terminal. It draws with [pixel-ssh](https://github.com/dmytro-yemelianov/pixel-ssh), the engine behind [yemelianov.dev](https://yemelianov.dev/), so the look is the same:
+- an 8-bit indexed framebuffer;
+- IBM VGA, EGA and BIOS bitmap fonts, including Cyrillic;
+- retro palettes;
+- WebGL2 CRT effects.
+
+Without WebGL2 the page falls back to a plain text terminal.
+
+![The game on the pixel renderer](images/play-pixel.png)
+
+| Key | Display |
+|---|---|
+| `F2` | Display system: VGA 640×400, EGA 640×350, SGA 640×480 or SVGA 800×600 (the systems with at least 80 columns) |
+| `F3` | Palette |
+| `F4` | Visual effects: Default, Clean, CRT, Arcade, Bloom, Glitch |
+
+The choice is remembered in the browser.
+
+![CRT 'Arcade' effects](images/play-pixel-crt.png)
+
+The rest of this page: It has no buttons and no panels. It looks like a NetHack screen:
 - line 0 is the message line;
 - lines 1–21 are the map;
 - lines 22–23 are the two status lines.
@@ -55,7 +75,7 @@ When several messages arrive in one turn, they are shown one line at a time with
 
 Options can be combined, for example `https://nethacked.yemelianov.dev/?pack=hard-mode&seed=7`.
 
-![Ukrainian, on the Hard Mode pack](images/play-uk.png)
+![Ukrainian, on the Hard Mode pack](images/play-pixel-uk.png)
 
 ---
 

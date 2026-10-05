@@ -1105,9 +1105,13 @@ dependencies = [
  "nethacked-pack",
  "nethacked-sim",
  "nethacked-types",
+ "pixel-ssh-framebuffer",
+ "pixel-ssh-render-web",
+ "pixel-ssh-view",
  "serde",
  "serde_json",
  "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]
@@ -1207,6 +1211,31 @@ name = "pin-project-lite"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd"
+
+[[package]]
+name = "pixel-ssh-framebuffer"
+version = "0.1.0"
+source = "git+https://github.com/dmytro-yemelianov/pixel-ssh?rev=3a5287887adbe6b925520eab139cbee6b5ab1c49#3a5287887adbe6b925520eab139cbee6b5ab1c49"
+dependencies = [
+ "pixel-ssh-view",
+]
+
+[[package]]
+name = "pixel-ssh-render-web"
+version = "0.1.0"
+source = "git+https://github.com/dmytro-yemelianov/pixel-ssh?rev=3a5287887adbe6b925520eab139cbee6b5ab1c49#3a5287887adbe6b925520eab139cbee6b5ab1c49"
+dependencies = [
+ "js-sys",
+ "pixel-ssh-framebuffer",
+ "pixel-ssh-view",
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
+name = "pixel-ssh-view"
+version = "0.1.0"
+source = "git+https://github.com/dmytro-yemelianov/pixel-ssh?rev=3a5287887adbe6b925520eab139cbee6b5ab1c49#3a5287887adbe6b925520eab139cbee6b5ab1c49"
 
 [[package]]
 name = "portable-atomic"
@@ -2118,6 +2147,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "23f0c9c52aa7cd7d77769a4cfe2a9adb1b331f489a41d912ce14513d5ab995c6"
 dependencies = [
  "unicode-ident",
+]
+
+[[package]]
+name = "web-sys"
+version = "0.3.106"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "88261b9deccee56594c11a3460c462c41f58d148598fe70ad77070126a68aba4"
+dependencies = [
+ "js-sys",
+ "wasm-bindgen",
 ]
 
 [[package]]
