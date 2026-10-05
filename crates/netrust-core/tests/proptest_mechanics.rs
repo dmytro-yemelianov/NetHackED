@@ -2007,6 +2007,7 @@ proptest! {
             progress: QuestProgress::Assigned,
             artifact_location: ArtifactLocation::HeldByNemesis,
             nemesis_hp,
+            killed_leader: false,
         };
 
         let rank_before = quest_progress_rank(state.progress);

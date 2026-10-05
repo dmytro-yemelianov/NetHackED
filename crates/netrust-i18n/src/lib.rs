@@ -680,6 +680,24 @@ impl Messages {
         }
     }
 
+    /// C `mon.c:3681,3692`: killing quest leader or guardian.
+    pub fn bad_idea(probably: bool, locale: Locale) -> &'static str {
+        match (probably, locale) {
+            (true, Locale::En) => "That was probably a bad idea...",
+            (true, Locale::Uk) => "Це, напевно, була погана ідея...",
+            (false, Locale::En) => "That was a bad idea...",
+            (false, Locale::Uk) => "Це була погана ідея...",
+        }
+    }
+
+    /// C `mon.c:3710`: killing a tame pet.
+    pub fn distant_thunder(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You hear the rumble of distant thunder...",
+            Locale::Uk => "Ви чуєте гуркіт далекого грому...",
+        }
+    }
+
     /// C `domove_swap_with_pet` (hack.c:2160): "You stop.  %s doesn't want to swap places."
     pub fn peaceful_wont_swap(target: &str, article: bool, locale: Locale) -> String {
         let target = monnam(target, article, locale);
@@ -1852,6 +1870,18 @@ mod tests {
         assert_eq!(
             Messages::revert_form(Locale::Uk),
             "Ви повертаєтесь до свого звичайного вигляду!"
+        );
+        assert_eq!(
+            Messages::bad_idea(true, Locale::Uk),
+            "Це, напевно, була погана ідея..."
+        );
+        assert_eq!(
+            Messages::bad_idea(false, Locale::Uk),
+            "Це була погана ідея..."
+        );
+        assert_eq!(
+            Messages::distant_thunder(Locale::Uk),
+            "Ви чуєте гуркіт далекого грому..."
         );
     }
 

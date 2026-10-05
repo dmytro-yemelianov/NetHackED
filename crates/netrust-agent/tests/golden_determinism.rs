@@ -157,9 +157,9 @@ fn golden_vanilla_event_logs_are_unchanged() {
 
 const COMBAT_ROLES: [RoleId; 3] = [RoleId::Valkyrie, RoleId::Wizard, RoleId::Rogue];
 const EXPECTED_COMBAT: [u64; 3] = [
-    1_387_903_097_435_528_940,
+    16_953_266_006_928_294_484,
     11_050_519_370_090_146_935,
-    7_813_387_057_544_155_063,
+    10_816_216_705_399_070_657,
 ];
 
 /// Every bestiary entry fights the hero for up to 20 alternating melee/wait steps.

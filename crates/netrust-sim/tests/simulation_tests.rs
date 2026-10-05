@@ -4514,3 +4514,293 @@ fn test_spawned_monsters_malign_matches_c_set_malign() {
         "coaligned always_hostile kobold malign should be 0"
     );
 }
+
+fn make_test_actor(
+    name: &str,
+    coord: Coord,
+    alignment: Alignment,
+    malign: i32,
+    is_peaceful: bool,
+    is_tame: bool,
+) -> ActorRecord {
+    ActorRecord {
+        name: name.into(),
+        coord,
+        hp: 50,
+        max_hp: 50,
+        ac: 0,
+        level: 1,
+        speed: 12,
+        alignment,
+        intrinsics: Intrinsics::default(),
+        is_player: false,
+        is_unique: false,
+        is_dead: false,
+        is_tame,
+        tameness: if is_tame { 10 } else { 0 },
+        abilities: Vec::new(),
+        is_peaceful,
+        mspec_used: 0,
+        malign,
+    }
+}
+
+#[test]
+fn test_kill_quest_leader_penalties_and_guardian_anger() {
+    let mut sim = SimulationWorld::new_with_character(
+        42,
+        CharacterConfig {
+            role: RoleId::Archaeologist,
+            race: RaceId::Human,
+            name: "Indiana".to_string(),
+            gender: Gender::Male,
+            alignment: Alignment::Neutral,
+        },
+    );
+    // Archaeologist starts with alignment record 10, favor 5, luck 0
+    assert_eq!(sim.alignment_record, 10);
+    assert_eq!(sim.divine_state.favor, 5);
+    assert_eq!(sim.player_luck, 0);
+
+    let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+    let leader_c = p_coord.step(Direction::East).unwrap();
+    let guardian_c = p_coord.step(Direction::West).unwrap();
+
+    let leader_rec = make_test_actor(
+        "Lord Carnarvon",
+        leader_c,
+        Alignment::Neutral,
+        -20,
+        true,
+        false,
+    );
+    let leader_id = sim.arena.spawn_actor(leader_rec);
+
+    let guardian_rec = make_test_actor("student", guardian_c, Alignment::Neutral, -9, true, false);
+    let guardian_id = sim.arena.spawn_actor(guardian_rec);
+
+    let mut events = Vec::new();
+    sim.on_actor_killed(sim.player_id, leader_id, &mut events);
+
+    // mon.c:3678:
+    // lim = 10 + 0 / 200 = 10.
+    // penalty = -(10 + 10 / 2) = -15.
+    // adjalign(10, -15, 10) = -5.
+    // leader.malign = -20: adjalign(-5, -20, 10) = -25.
+    assert_eq!(sim.alignment_record, -25);
+    assert_eq!(sim.divine_state.favor, -2); // 5 - 7 = -2
+    assert_eq!(sim.player_luck, -10); // 0 - 20 clamped to -10
+    assert!(sim.quest_state.killed_leader);
+
+    // Guardian should be angered and non-tame
+    let guardian = sim.arena.actors.get(guardian_id).unwrap();
+    assert!(!guardian.is_peaceful);
+    assert!(!guardian.is_tame);
+
+    // Check log message
+    assert!(events.iter().any(
+        |e| matches!(e, GameEvent::LogMessage { text } if text.contains("That was a bad idea..."))
+    ));
+}
+
+#[test]
+fn test_kill_quest_nemesis_bonus_conditioned_on_leader() {
+    // Case 1: Leader NOT killed
+    let mut sim1 = SimulationWorld::new_with_character(
+        43,
+        CharacterConfig {
+            role: RoleId::Archaeologist,
+            race: RaceId::Human,
+            name: "Indy".to_string(),
+            gender: Gender::Male,
+            alignment: Alignment::Neutral,
+        },
+    );
+    sim1.alignment_record = 5;
+    sim1.quest_state.progress = netrust_core::QuestProgress::Assigned;
+    let p_coord = sim1.arena.actors.get(sim1.player_id).unwrap().coord;
+    let nem_c = p_coord.step(Direction::East).unwrap();
+    let nem_rec = make_test_actor(
+        "Minion of Huhetotl",
+        nem_c,
+        Alignment::Chaotic,
+        5,
+        false,
+        false,
+    );
+    let nem_id = sim1.arena.spawn_actor(nem_rec);
+    let mut events1 = Vec::new();
+    sim1.on_actor_killed(sim1.player_id, nem_id, &mut events1);
+    // lim = 10. nem bonus = lim / 4 = 2.
+    // adjalign(5, 2, 10) = 7.
+    // adjalign(7, malign=5, 10) capped at lim=10 => 10.
+    assert_eq!(sim1.alignment_record, 10);
+    assert_eq!(
+        sim1.quest_state.progress,
+        netrust_core::QuestProgress::NemesisDefeated
+    );
+    assert_eq!(
+        sim1.quest_state.artifact_location,
+        netrust_core::ArtifactLocation::DroppedOnFloor
+    );
+
+    // Case 2: Leader WAS killed -> no nemesis alignment bonus
+    let mut sim2 = SimulationWorld::new_with_character(
+        44,
+        CharacterConfig {
+            role: RoleId::Archaeologist,
+            race: RaceId::Human,
+            name: "Indy2".to_string(),
+            gender: Gender::Male,
+            alignment: Alignment::Neutral,
+        },
+    );
+    sim2.alignment_record = 0;
+    sim2.quest_state.progress = netrust_core::QuestProgress::Assigned;
+    sim2.quest_state.killed_leader = true;
+    let p_coord2 = sim2.arena.actors.get(sim2.player_id).unwrap().coord;
+    let nem_c2 = p_coord2.step(Direction::East).unwrap();
+    let nem_rec2 = make_test_actor(
+        "Minion of Huhetotl",
+        nem_c2,
+        Alignment::Chaotic,
+        5,
+        false,
+        false,
+    );
+    let nem_id2 = sim2.arena.spawn_actor(nem_rec2);
+    let mut events2 = Vec::new();
+    sim2.on_actor_killed(sim2.player_id, nem_id2, &mut events2);
+    // No nemesis bonus! Only malign 5: adjalign(0, 5, 10) = 5.
+    assert_eq!(sim2.alignment_record, 5);
+}
+
+#[test]
+fn test_kill_quest_guardian_penalties() {
+    let mut sim = SimulationWorld::new_with_character(
+        47,
+        CharacterConfig {
+            role: RoleId::Archaeologist,
+            race: RaceId::Human,
+            name: "Indy3".to_string(),
+            gender: Gender::Male,
+            alignment: Alignment::Neutral,
+        },
+    );
+    sim.alignment_record = 10;
+    let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+    let guardian_c = p_coord.step(Direction::East).unwrap();
+    let guardian_rec = make_test_actor("student", guardian_c, Alignment::Neutral, -9, true, false);
+    let guardian_id = sim.arena.spawn_actor(guardian_rec);
+
+    let mut events = Vec::new();
+    sim.on_actor_killed(sim.player_id, guardian_id, &mut events);
+
+    // lim = 10. penalty = -(10 / 8) = -1.
+    // adjalign(10, -1, 10) = 9.
+    // malign -9: adjalign(9, -9, 10) = 0.
+    assert_eq!(sim.alignment_record, 0);
+    assert_eq!(sim.player_luck, -4);
+    assert_eq!(sim.divine_state.favor, 4); // 5 - 1 = 4
+    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("That was probably a bad idea..."))));
+}
+
+#[test]
+fn test_kill_temple_priest_divine_protection_and_moloch_bonus() {
+    let mut sim = SimulationWorld::new_with_character(
+        45,
+        CharacterConfig {
+            role: RoleId::Knight,
+            race: RaceId::Human,
+            name: "Arthur".to_string(),
+            gender: Gender::Male,
+            alignment: Alignment::Lawful,
+        },
+    );
+    sim.alignment_record = 5;
+    sim.divine_protection = 7;
+
+    // Coaligned temple priest
+    let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+    let priest_rec = make_test_actor(
+        "priest",
+        p_coord.step(Direction::East).unwrap(),
+        Alignment::Lawful,
+        -9,
+        true,
+        false,
+    );
+    let priest_id = sim.arena.spawn_actor(priest_rec);
+    let mut events = Vec::new();
+    sim.on_actor_killed(sim.player_id, priest_id, &mut events);
+    // Coaligned priest: adjalign(-2), divine protection wiped to 0
+    // 5 - 2 = 3. malign -9 => 3 - 9 = -6.
+    assert_eq!(sim.alignment_record, -6);
+    assert_eq!(sim.divine_protection, 0);
+
+    // Crossaligned High Priest of Moloch
+    let priest_moloch = make_test_actor(
+        "High Priest of Moloch",
+        p_coord.step(Direction::West).unwrap(),
+        Alignment::Chaotic,
+        20,
+        false,
+        false,
+    );
+    let moloch_id = sim.arena.spawn_actor(priest_moloch);
+    let mut events2 = Vec::new();
+    sim.on_actor_killed(sim.player_id, moloch_id, &mut events2);
+    // Crossaligned priest: +2. Moloch high priest: +lim/4 (+2).
+    // record before was -6. -6 + 2 + 2 = -2.
+    // Then malign (+20): -2 + 20 capped at lim=10 => 10.
+    assert_eq!(sim.alignment_record, 10);
+}
+
+#[test]
+fn test_kill_tame_pet_and_peaceful_monster() {
+    let mut sim = SimulationWorld::new_with_character(
+        46,
+        CharacterConfig {
+            role: RoleId::Rogue,
+            race: RaceId::Human,
+            name: "Sneak".to_string(),
+            gender: Gender::Male,
+            alignment: Alignment::Chaotic,
+        },
+    );
+    sim.alignment_record = 10;
+    let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+
+    // Tame pet
+    let pet_rec = make_test_actor(
+        "little dog",
+        p_coord.step(Direction::East).unwrap(),
+        Alignment::Chaotic,
+        -3,
+        true,
+        true,
+    );
+    let pet_id = sim.arena.spawn_actor(pet_rec);
+
+    let mut events = Vec::new();
+    sim.on_actor_killed(sim.player_id, pet_id, &mut events);
+    // Tame pet: adjalign(-15), malign -3 => 10 - 15 - 3 = -8.
+    assert_eq!(sim.alignment_record, -8);
+    assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("rumble of distant thunder"))));
+
+    // Peaceful monster
+    let peace_rec = make_test_actor(
+        "watchman",
+        p_coord.step(Direction::West).unwrap(),
+        Alignment::Neutral,
+        -5,
+        true,
+        false,
+    );
+    let peace_id = sim.arena.spawn_actor(peace_rec);
+
+    let mut events2 = Vec::new();
+    sim.on_actor_killed(sim.player_id, peace_id, &mut events2);
+    // Peaceful monster: adjalign(-5), malign -5 => -8 - 5 - 5 = -18.
+    assert_eq!(sim.alignment_record, -18);
+}

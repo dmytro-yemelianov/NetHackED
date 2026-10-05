@@ -139,6 +139,9 @@ pub fn alignlim(moves: u64) -> i32 {
     i32::try_from(10 + moves / 200).unwrap_or(i32::MAX)
 }
 
+/// C `A_NONE` (`align.h:19`): unaligned / no alignment (-128).
+pub const A_NONE: i8 = -128;
+
 /// C `set_malign` (`makemon.c:2320-2366`).
 ///
 /// Precalculated alignment adjustment upon monster death. Negative values mean
