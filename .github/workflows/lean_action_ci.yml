@@ -69,3 +69,10 @@ jobs:
       - run: bash scripts/check-doc-links.sh
       - run: bash scripts/check-no-static-tables.sh
       - run: python3 scripts/parity-summary.py --check
+      - uses: actions/checkout@v4
+        with:
+          repository: NetHack/NetHack
+          ref: NetHack-5.0.0_Released
+          path: NetHack-5.0.0
+          sparse-checkout: include
+      - run: python3 scripts/extract/c_tables.py --check
