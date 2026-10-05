@@ -2,6 +2,11 @@
 
 NetRust is a Rust reimplementation of selected **NetHack** mechanics (derived from the NetHack 5.0.0 source), accompanied by **Lean 4** models of those mechanics in `NetMechanics/`.
 
+**Play now:** [netrust.yemelianov.dev](https://netrust.yemelianov.dev/) (clean keyboard terminal) · [developer web client](https://dmytro-yemelianov.github.io/NetRust/) · [pack manager](https://dmytro-yemelianov.github.io/NetRust/packs.html) · terminal and SSH: see [Playing NetRust](docs/playing-netrust.md)
+
+![NetRust in the browser](docs/images/play-dungeon.png)
+
+
 What is and is not claimed:
 
 * The Lean 4 models of selected mechanics are machine-checked (`lake build`). They are simplified abstractions, not a transcription of NetHack 5.0.
@@ -43,6 +48,12 @@ The repository includes a comprehensive, formal architectural reference suite in
 
 7. **[docs/rule-packs.md](docs/rule-packs.md)**:
    * **Rule Pack Author Guide**: Declarative monster, item, and role modding, format specification, validation rules, CLI tool, and replay-deterministic execution.
+
+8. **[docs/playing-netrust.md](docs/playing-netrust.md)**:
+   * **Player Guide**: Playing in the browser (clean terminal and developer client), in a terminal, and over SSH, with keys, URL options, and a hardened `ssh play@host` setup.
+
+9. **[docs/web-and-wasm.md](docs/web-and-wasm.md)**:
+   * **Web & WebAssembly Article**: How the browser builds work, the shared CLI/browser rule pack pipeline (byte-identical builds), the pack editor's lossless TOML handling, GitHub Pages and Cloudflare deploys, and wasm size.
 
 ---
 

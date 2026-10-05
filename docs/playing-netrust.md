@@ -1,0 +1,146 @@
+# Playing NetRust: Browser, Terminal and SSH
+
+NetRust can be played in four places. All of them run the same deterministic engine, so a given seed, ruleset and sequence of keys produces the same game everywhere.
+
+| Where | What you get | How |
+|---|---|---|
+| [netrust.yemelianov.dev](https://netrust.yemelianov.dev/) | A clean 80×24 keyboard-only terminal in the browser | Open the link |
+| [GitHub Pages](https://dmytro-yemelianov.github.io/NetRust/) | The developer web client: tile canvas, AI arena, benchmark tables, rule pack manager | Open the link |
+| Your terminal | The native TUI (`netrust`) | `cargo install --path crates/netrust-tui --locked` |
+| Over SSH | The native TUI on a server | `ssh -t host netrust`, or a dedicated `play` account |
+
+---
+
+## 1. In the browser: the clean terminal
+
+![Role selection on the clean terminal](images/play-pick.png)
+
+The page at **netrust.yemelianov.dev** is only a terminal. It has no buttons and no panels. It looks like a NetHack screen:
+- line 0 is the message line;
+- lines 1–21 are the map;
+- lines 22–23 are the two status lines.
+
+The game itself is the Rust engine compiled to WebAssembly, so nothing runs on a server. Each browser tab is its own game.
+
+![A Valkyrie on dungeon level 1](images/play-dungeon.png)
+
+### Keys
+
+| Keys | Action |
+|---|---|
+| `h j k l y u b n`, arrow keys | Move (the diagonal letters are `y u b n`) |
+| `.` | Wait a turn |
+| `s` | Search |
+| `,` | Pick up |
+| `<` `>` | Go up or down stairs |
+| `i` | Inventory |
+| `e` `q` `r` `w` `d` `a` `R` `S` | Eat, quaff, read, wield, drop, apply, rub, sacrifice. You are prompted for an item letter: `What do you want to eat? [a-c or ?*]` |
+| `x` `z` `f` `F` | Cast, zap, fire, kick. You are prompted for a direction |
+| `E` | Engrave. Type the text and press Enter |
+| `p` `P` | Pay, pray |
+| `?` | Help |
+| `Esc` | Cancel a prompt |
+
+When several messages arrive in one turn, they are shown one line at a time with `--More--`. Press any key to see the next one.
+
+![The help overlay](images/play-help.png)
+
+### URL options
+
+| Option | Effect |
+|---|---|
+| `?pack=hard-mode` | Play on a bundled rule pack. Its id is shown in the status line |
+| `?lang=uk` | Ukrainian messages and status words |
+| `?seed=42` | A fixed seed, so the same keys replay the same game |
+
+Options can be combined, for example `https://netrust.yemelianov.dev/?pack=hard-mode&seed=7`.
+
+---
+
+## 2. In the browser: the developer client
+
+The GitHub Pages site is the full web client. It adds:
+- a tile canvas renderer;
+- an AI arena that runs scripted and neural policies;
+- tournament benchmark tables;
+- the **rule pack manager** (`packs.html`).
+
+The pack manager lists vanilla, the bundled packs and packs you upload. For each pack it shows:
+- monsters, items and roles;
+- validation diagnostics;
+- a field-by-field diff against vanilla.
+
+It also edits pack patches, either in a form or as raw TOML, and downloads the built `.nrpack`. See [Rule Packs](rule-packs.md) for the format.
+
+![The pack manager showing Hard Mode's diff against vanilla](images/pack-manager-diff.png)
+
+Packs you upload stay in your browser, in IndexedDB. They are never sent anywhere.
+
+---
+
+## 3. In a terminal
+
+![The native terminal UI](images/tui.png)
+
+```bash
+cargo install --path crates/netrust-tui --locked   # installs `netrust` into ~/.cargo/bin
+netrust                      # pick a role, then play
+netrust --seed 7             # fixed seed
+netrust --pack hard-mode     # an installed rule pack (see `netrust-pack install`)
+netrust --pack path/to/pack  # or a pack directory / .nrpack file
+netrust --uk                 # Ukrainian
+```
+
+The TUI needs a terminal of at least 80×24, and it redraws when the terminal is resized. The bottom line lists the main keys. `?` shows the rest, and `Esc` asks before quitting.
+
+---
+
+## 4. Over SSH
+
+The TUI is an ordinary terminal program, so it works over SSH as long as SSH allocates a terminal.
+
+### Your own server
+
+```bash
+ssh -t you@host netrust
+```
+
+`-t` is required. Without it there is no pseudo-terminal, so raw mode fails and nothing is drawn.
+
+### A public `ssh play@host` account
+
+This setup works like nethack.alt.org. Create a dedicated account whose only command is the game:
+
+```bash
+sudo useradd -m -s /bin/sh play
+sudo passwd -d play                      # passwordless; or set a published password
+sudo install -m755 ~/.cargo/bin/netrust /usr/local/bin/netrust
+```
+
+Then add this to `/etc/ssh/sshd_config` and reload sshd (`sudo systemctl reload sshd`):
+
+```
+Match User play
+    ForceCommand /usr/local/bin/netrust
+    PermitEmptyPasswords yes      # only if you chose passwordless play
+    PermitTTY yes
+    AllowTcpForwarding no
+    AllowAgentForwarding no
+    X11Forwarding no
+    PermitTunnel no
+```
+
+Anyone can now play with `ssh play@host`. Each connection is a separate process with its own game.
+
+Things to know:
+- **There are no save files.** A dropped connection ends the game. If you want players to be able to reattach, start the game inside `tmux`: `ForceCommand tmux new -A -s game /usr/local/bin/netrust`.
+- **Rate-limit public access.** Use `MaxStartups` and `MaxSessions` in `sshd_config`, plus a tool such as `fail2ban`. Keep the `play` account free of a real shell and of anything secret.
+- **Cloudflare cannot carry this SSH traffic by itself.** Workers and Containers accept only HTTP and WebSocket. Plain SSH through Cloudflare needs Spectrum, or Cloudflare Tunnel in front of a machine you run. That is why the Cloudflare site is the WebAssembly terminal described above.
+
+---
+
+## See also
+
+- [Web and WebAssembly](web-and-wasm.md): how the browser builds work and how they are deployed.
+- [Rule Packs](rule-packs.md): the pack format and the `netrust-pack` CLI.
+- [Architecture](architecture.md): how the engine is put together.

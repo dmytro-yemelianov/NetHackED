@@ -207,6 +207,28 @@ Run autonomous agent simulations across roles and seeds to stress-test game bala
 cargo run -p netrust-pack -- simulate hard-mode.nrpack --seeds 5 --turns 500
 ```
 
+### `install`, `list`, `info`
+Install packs into a local packs directory (`$NETRUST_PACKS_DIR`, else `~/.netrust/packs`) so tools can refer to them by id:
+```bash
+cargo run -p netrust-pack -- install packs/examples/hard-mode   # validates, builds, copies <id>-<version>.nrpack
+cargo run -p netrust-pack -- list                               # id, version, hash, path
+cargo run -p netrust-pack -- info hard-mode                     # manifest, hash, counts, diff size vs vanilla
+```
+`install` refuses to overwrite an installed pack that has the same id and version but a different hash, unless you pass `--force`. Pack `id` and `version` must be safe slugs (`[A-Za-z0-9][A-Za-z0-9._-]*` and `[A-Za-z0-9][A-Za-z0-9.+-]*`), because they become file names.
+
+---
+
+## Rule Packs in the Browser
+
+The developer web client includes a pack manager at [`packs.html`](https://dmytro-yemelianov.github.io/NetRust/packs.html). It runs the same Rust pack library compiled to WebAssembly, so a pack it builds is byte-identical to the CLI's. It can:
+- load vanilla, the bundled example packs, or your own uploads (`.nrpack`, pack `.toml` files, or a pack folder);
+- show monsters, items and roles, validation diagnostics, and a field-level diff against vanilla;
+- edit patches in a form (typed from the pack JSON schemas) or as raw TOML, rebuilding live, then save the pack or download the `.nrpack`.
+
+![Pack manager: Hard Mode vs vanilla](images/pack-manager-diff.png)
+
+To play on a pack in the browser, use **Play with this pack** in the manager, or the clean terminal's URL option: `https://netrust.yemelianov.dev/?pack=hard-mode`.
+
 ---
 
 ## Using Rule Packs in the TUI
@@ -219,6 +241,9 @@ cargo run --bin netrust -- --pack hard-mode.nrpack
 
 # Using a pack directory directly
 cargo run --bin netrust -- --pack packs/examples/hard-mode
+
+# Using an installed pack by id (highest installed version wins)
+cargo run --bin netrust -- --pack hard-mode
 ```
 
 When a custom pack is active, its name is displayed in the bottom status line:
