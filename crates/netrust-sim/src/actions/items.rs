@@ -756,7 +756,12 @@ impl SimulationWorld {
                     };
                     self.player_nutrition = (self.player_nutrition + nut_gain).min(2000);
 
-                    if item.name.contains("corpse") {
+                    let is_meat = self
+                        .ruleset
+                        .item(&item.name)
+                        .map(|i| i.is_meat())
+                        .unwrap_or_else(|| item.name.contains("corpse"));
+                    if is_meat {
                         netrust_core::conducts::record_eat_meat(&mut self.conducts);
                         let corpse_race = item.corpse_race.as_deref().unwrap_or("unknown");
                         if netrust_core::nutrition::is_cannibalism(corpse_race, "human") {

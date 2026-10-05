@@ -48,6 +48,45 @@ pub struct MonsterDef {
     pub abilities: Vec<MonsterAbility>,
 }
 
+impl MonsterDef {
+    /// Returns whether this monster is an undead species (skeleton, vampire, lich, master lich, ghost, zombie).
+    pub fn is_undead(&self) -> bool {
+        matches!(
+            self.name.to_lowercase().as_str(),
+            "skeleton" | "vampire" | "lich" | "master lich" | "ghost" | "zombie"
+        )
+    }
+
+    /// Returns whether this monster is a demon species.
+    pub fn is_demon(&self) -> bool {
+        self.name.to_lowercase().contains("demon")
+    }
+
+    /// Returns whether this monster is considered demon or undead (e.g. for holy damage bonuses).
+    pub fn is_demon_or_undead(&self) -> bool {
+        self.is_demon() || self.is_undead()
+    }
+
+    /// Returns whether this monster is a temple priest or priest archetype.
+    pub fn is_priest(&self) -> bool {
+        self.name.to_lowercase().contains("priest")
+    }
+
+    /// Pet promotion tier for canine and feline pets (1 = little dog / kitten, 2 = dog / housecat, 3 = large dog / large cat).
+    pub fn pet_tier(&self) -> Option<u32> {
+        let n = self.name.to_lowercase();
+        if n.contains("little dog") || n.contains("kitten") {
+            Some(1)
+        } else if n.contains("large dog") || n.contains("large cat") {
+            Some(3)
+        } else if n.contains("dog") || n.contains("housecat") {
+            Some(2)
+        } else {
+            None
+        }
+    }
+}
+
 /// Owned definition of armor slot and base AC.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
@@ -78,6 +117,64 @@ pub struct ItemDef {
     pub nutrition: u32,
     /// Armor slot and C base AC (from `netrust_core::ac` table); `None` for non-armor.
     pub armor: Option<ArmorDef>,
+}
+
+impl ItemDef {
+    /// Canonical weapon skill associated with this item archetype.
+    pub fn weapon_skill(&self) -> Option<SkillClass> {
+        let n = self.name.to_lowercase();
+        if n.contains("dagger") {
+            Some(SkillClass::Dagger)
+        } else if n.contains("short sword") {
+            Some(SkillClass::ShortSword)
+        } else if n.contains("long sword") || n.contains("excalibur") || n.contains("vorpal blade")
+        {
+            Some(SkillClass::LongSword)
+        } else if n.contains("crossbow") {
+            Some(SkillClass::Crossbow)
+        } else if n.contains("bow") {
+            Some(SkillClass::Bow)
+        } else if n.contains("club") {
+            Some(SkillClass::Club)
+        } else {
+            None
+        }
+    }
+
+    /// Returns the weapon base dice (small, large) for melee combat.
+    pub fn weapon_damage_dice(&self) -> Option<(u32, u32)> {
+        if self.damage_small.1 > 0 || self.damage_large.1 > 0 {
+            Some((self.damage_small.1, self.damage_large.1))
+        } else {
+            None
+        }
+    }
+
+    /// Returns whether consuming this item breaks vegetarian conduct (meat, corpse, tripe, etc.).
+    pub fn is_meat(&self) -> bool {
+        let n = self.name.to_lowercase();
+        n.contains("corpse") || n.contains("tripe") || n.contains("meat")
+    }
+
+    /// Returns whether this item is a light source (lamp, lantern, candle).
+    pub fn is_light_source(&self) -> bool {
+        let n = self.name.to_lowercase();
+        n.contains("lamp") || n.contains("lantern") || n.contains("candle")
+    }
+
+    /// Returns the light emission radius of this light source.
+    pub fn light_radius(&self) -> u32 {
+        let n = self.name.to_lowercase();
+        if n.contains("lantern") {
+            3
+        } else if n.contains("candle") {
+            1
+        } else if n.contains("lamp") {
+            2
+        } else {
+            0
+        }
+    }
 }
 
 /// Starting item grant for a player role.

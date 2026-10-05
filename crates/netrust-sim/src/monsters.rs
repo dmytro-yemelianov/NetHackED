@@ -668,20 +668,14 @@ impl SimulationWorld {
         let new_level = pet.level + exp_gain;
         pet.level = new_level;
 
-        let cur_tier = if pet.name.contains("little dog") {
-            Some(netrust_core::PetSpeciesTier::LittleDog)
-        } else if pet.name.contains("large dog") {
-            Some(netrust_core::PetSpeciesTier::LargeDog)
-        } else if pet.name.contains("dog") {
-            Some(netrust_core::PetSpeciesTier::Dog)
-        } else if pet.name.contains("kitten") {
-            Some(netrust_core::PetSpeciesTier::Kitten)
-        } else if pet.name.contains("large cat") {
-            Some(netrust_core::PetSpeciesTier::LargeCat)
-        } else if pet.name.contains("housecat") {
-            Some(netrust_core::PetSpeciesTier::Housecat)
-        } else {
-            None
+        let cur_tier = match pet.name.to_lowercase().as_str() {
+            "little dog" => Some(netrust_core::PetSpeciesTier::LittleDog),
+            "dog" => Some(netrust_core::PetSpeciesTier::Dog),
+            "large dog" => Some(netrust_core::PetSpeciesTier::LargeDog),
+            "kitten" => Some(netrust_core::PetSpeciesTier::Kitten),
+            "housecat" => Some(netrust_core::PetSpeciesTier::Housecat),
+            "large cat" => Some(netrust_core::PetSpeciesTier::LargeCat),
+            _ => None,
         };
 
         if let Some(tier) = cur_tier {

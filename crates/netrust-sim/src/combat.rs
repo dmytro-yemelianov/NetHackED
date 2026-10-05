@@ -83,17 +83,10 @@ impl SimulationWorld {
         if attacker_id == self.player_id {
             if let Some(wid) = self.wielded_item {
                 if let Some(w) = self.arena.items.get(wid) {
-                    let sk = match w.name.to_lowercase().as_str() {
-                        n if n.contains("dagger") => Some(netrust_types::SkillClass::Dagger),
-                        n if n.contains("long sword") => Some(netrust_types::SkillClass::LongSword),
-                        n if n.contains("short sword") => {
-                            Some(netrust_types::SkillClass::ShortSword)
-                        }
-                        n if n.contains("bow") => Some(netrust_types::SkillClass::Bow),
-                        n if n.contains("crossbow") => Some(netrust_types::SkillClass::Crossbow),
-                        n if n.contains("club") => Some(netrust_types::SkillClass::Club),
-                        _ => None,
-                    };
+                    let sk = self
+                        .ruleset
+                        .item(&w.name)
+                        .and_then(|item_def| item_def.weapon_skill());
                     if let Some(skill_class) = sk {
                         let level = self
                             .hero
@@ -122,32 +115,12 @@ impl SimulationWorld {
 
         let weapon_dice = if let Some(wid) = self.wielded_item {
             if let Some(w) = self.arena.items.get(wid) {
-                if let Some(arch) = self.ruleset.item(&w.name) {
-                    if arch.damage_small.1 > 0 || arch.damage_large.1 > 0 {
-                        Some((arch.damage_small.1, arch.damage_large.1))
-                    } else {
-                        // C uhitm.c:895: non-weapon object wielded as weapon deals rnd(2)
-                        Some((2, 2))
-                    }
-                } else {
-                    let lower = w.name.to_lowercase();
-                    if lower.contains("dagger") {
-                        Some((4, 3))
-                    } else if lower.contains("short sword") {
-                        Some((6, 8))
-                    } else if lower.contains("long sword")
-                        || lower.contains("excalibur")
-                        || lower.contains("vorpal blade")
-                    {
-                        Some((8, 12))
-                    } else if lower.contains("silver saber") {
-                        Some((8, 8))
-                    } else if lower.contains("mace") {
-                        Some((6, 6))
-                    } else {
-                        Some((2, 2))
-                    }
-                }
+                let dice = self
+                    .ruleset
+                    .item(&w.name)
+                    .and_then(|i| i.weapon_damage_dice())
+                    .unwrap_or((2, 2));
+                Some(dice)
             } else {
                 None
             }
@@ -198,11 +171,18 @@ impl SimulationWorld {
         );
 
         if result.hit {
-            let is_demon_or_undead = defender.name.to_lowercase().contains("demon")
-                || defender.name.to_lowercase().contains("lich")
-                || defender.name.to_lowercase().contains("vampire")
-                || defender.name.to_lowercase().contains("zombie")
-                || defender.name.to_lowercase().contains("skeleton");
+            let is_demon_or_undead = self
+                .ruleset
+                .monster(&defender.name)
+                .map(|m| m.is_demon_or_undead())
+                .unwrap_or_else(|| {
+                    let lower = defender.name.to_lowercase();
+                    lower.contains("demon")
+                        || lower.contains("lich")
+                        || lower.contains("vampire")
+                        || lower.contains("zombie")
+                        || lower.contains("skeleton")
+                });
 
             let mut final_damage = result.damage_dealt;
             if let Some(art) = artifact {

@@ -558,19 +558,13 @@ impl SimulationWorld {
         let carried = self.arena.items_carried_by(self.player_id);
         for iid in carried {
             if let Some(it) = self.arena.items.get(iid) {
-                if (it.name.contains("lamp")
-                    || it.name.contains("lantern")
-                    || it.name.contains("candle"))
-                    && it.enchantment > 0
-                {
-                    let radius = if it.name.contains("lantern") {
-                        netrust_core::lighting::LANTERN_RADIUS
-                    } else if it.name.contains("candle") {
-                        netrust_core::lighting::CANDLE_RADIUS
-                    } else {
-                        netrust_core::lighting::OIL_LAMP_RADIUS
-                    };
-                    light_sources.push((p_coord, radius));
+                if let Some(arch) = self.ruleset.item(&it.name) {
+                    if arch.is_light_source() && it.enchantment > 0 {
+                        let radius = arch.light_radius();
+                        if radius > 0 {
+                            light_sources.push((p_coord, radius));
+                        }
+                    }
                 }
             }
         }

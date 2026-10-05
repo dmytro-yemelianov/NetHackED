@@ -119,7 +119,7 @@ impl SimulationWorld {
     /// so those exemptions are always false here (the core predicate keeps them).
     pub(crate) fn elbereth_scares(&self, mon: &ActorRecord, engraving: Option<&Engraving>) -> bool {
         let arch = self.ruleset.monster(&mon.name);
-        let is_s_human = arch.is_some_and(|a| a.glyph == '@');
+        let is_s_human = arch.is_some_and(|a| a.is_human);
         let exempt = netrust_core::engraving::onscary_exempt(
             is_s_human,
             false,
