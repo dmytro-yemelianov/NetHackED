@@ -404,10 +404,15 @@ impl SimulationWorld {
         if defender_id != self.player_id {
             let quest_cfg = netrust_core::get_role_quest_config_or_default(&self.role_name);
             let mdef = self.ruleset.monster(&defender.name);
-            let is_leader = defender.name.eq_ignore_ascii_case(quest_cfg.leader_name)
-                || mdef.is_some_and(|m| m.msound == MonsterSound::Leader);
+            // C mon.c:3684 tests `m_id == quest_status.leader_m_id`: only the
+            // hero's own quest leader, not any MS_LEADER monster (the Tourist
+            // nemesis, Master of Thieves, is MS_LEADER).
+            let is_leader = defender.name.eq_ignore_ascii_case(quest_cfg.leader_name);
             let is_nemesis = defender.name.eq_ignore_ascii_case(quest_cfg.nemesis_name)
                 || mdef.is_some_and(|m| m.msound == MonsterSound::Nemesis);
+            // C mon.c:3691/3694 classify the alignment adjustment by `msound`
+            // alone, so the MS_LEADER Tourist nemesis gets no "Real good!" bonus.
+            let align_nemesis = mdef.is_some_and(|m| m.msound == MonsterSound::Nemesis);
             let is_guardian = defender.name.eq_ignore_ascii_case(quest_cfg.guardian_name)
                 || mdef.is_some_and(|m| m.msound == MonsterSound::Guardian);
             let is_priest = mdef.is_some_and(|m| m.is_priest())
@@ -429,8 +434,8 @@ impl SimulationWorld {
                         text: netrust_i18n::Messages::bad_idea(probably, self.locale).into(),
                     });
                     self.anger_quest_guardians();
-                } else if is_nemesis {
-                    // Real good! mon.c:3685
+                } else if align_nemesis {
+                    // Real good! mon.c:3691
                     if !self.quest_state.killed_leader {
                         self.alignment_record = adjalign(self.alignment_record, lim / 4, lim);
                     }

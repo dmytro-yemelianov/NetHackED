@@ -4545,6 +4545,35 @@ fn make_test_actor(
     }
 }
 
+/// C mon.c:3684-3694: the Tourist nemesis (Master of Thieves) is MS_LEADER but
+/// not the hero's quest leader (`leader_m_id`) nor MS_NEMESIS, so killing it
+/// applies neither the leader penalty nor the nemesis bonus, only `malign`.
+#[test]
+fn test_tourist_killing_master_of_thieves_only_applies_malign() {
+    let mut sim = SimulationWorld::new_with_seed(42);
+    sim.role_name = "Tourist".to_string();
+    sim.alignment_record = 5;
+    let favor = sim.divine_state.favor;
+    let luck = sim.player_luck;
+    let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
+    let rec = make_test_actor(
+        "Master of Thieves",
+        p_coord.step(Direction::East).unwrap(),
+        Alignment::Chaotic,
+        -20,
+        false,
+        false,
+    );
+    let id = sim.arena.spawn_actor(rec);
+    let mut events = Vec::new();
+    sim.on_actor_killed(sim.player_id, id, &mut events);
+    // 5 + malign(-20) = -15; no leader or nemesis adjustment.
+    assert_eq!(sim.alignment_record, -15);
+    assert!(!sim.quest_state.killed_leader);
+    assert_eq!(sim.divine_state.favor, favor);
+    assert_eq!(sim.player_luck, luck);
+}
+
 #[test]
 fn test_kill_quest_leader_penalties_and_guardian_anger() {
     let mut sim = SimulationWorld::new_with_character(
