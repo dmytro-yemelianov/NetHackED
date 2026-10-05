@@ -437,6 +437,9 @@ fn test_tourist_nemesis_master_of_thieves_is_hostile() {
         .find(|a| a.name == "Master of Thieves")
         .expect("nemesis");
     assert!(!nemesis.is_peaceful);
+    // sp_lev.c:2130 re-runs set_malign, but the Master of Thieves is MS_LEADER
+    // (the Rogue quest leader), so makemon.c:2338 gives -20 either way.
+    assert_eq!(nemesis.malign, -20);
 }
 
 fn place_east(sim: &mut SimulationWorld, mut rec: ActorRecord) -> netrust_arena::ActorId {
@@ -747,6 +750,8 @@ fn test_sanctum_priest_is_hostile_and_attacks() {
         .map(|(id, a)| (id, a.coord))
         .expect("Sanctum priest spawned");
     assert!(!sim.arena.actors.get(priest).unwrap().is_peaceful);
+    // priest.c:456 set_malign with shralign == A_NONE, hostile: +20.
+    assert_eq!(sim.arena.actors.get(priest).unwrap().malign, 20);
 
     // Put the hero next to the priest with a huge HP pool.
     let spot = pcoord

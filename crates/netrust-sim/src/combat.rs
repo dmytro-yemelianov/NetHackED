@@ -340,55 +340,40 @@ impl SimulationWorld {
         lethal
     }
 
-    /// Turn all alive quest guardians on the level hostile and non-tame (C `mon.c:3733-3739` `anger_quest_guardians`).
+    /// C `iter_mons(anger_quest_guardians)` (`mon.c:3733-3739`): each quest
+    /// guardian gets `setmangry(mtmp, TRUE)` (`mon.c:4265-4318`). Only a
+    /// peaceful, non-tame guardian turns hostile, costing `adjalign(-1)`.
+    /// `setmangry` never calls `set_malign`, so the guardian keeps its peaceful
+    /// `malign`. Not modelled: the per-guardian Elbereth hypocrisy check and the
+    /// "gets angry!" messages.
     pub fn anger_quest_guardians(&mut self) {
         let quest_cfg = netrust_core::get_role_quest_config_or_default(&self.role_name);
         let guardian_ids: Vec<ActorId> = self
             .arena
             .actors
             .iter()
-            .filter_map(|(id, actor)| {
-                if id != self.player_id && !actor.is_dead {
-                    let mdef = self.ruleset.monster(&actor.name);
-                    let is_guardian = actor.name.eq_ignore_ascii_case(quest_cfg.guardian_name)
-                        || mdef.is_some_and(|m| m.msound == MonsterSound::Guardian);
-                    if is_guardian {
-                        Some(id)
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                }
+            .filter(|(id, actor)| {
+                *id != self.player_id
+                    && !actor.is_dead
+                    && (actor.name.eq_ignore_ascii_case(quest_cfg.guardian_name)
+                        || self
+                            .ruleset
+                            .monster(&actor.name)
+                            .is_some_and(|m| m.msound == MonsterSound::Guardian))
             })
+            .map(|(id, _)| id)
             .collect();
 
-        let hero_align = self.hero_alignment();
-        let role_name = self.role_name.clone();
+        let lim = alignlim(self.scheduler.turn);
         for id in guardian_ids {
-            let def_opt = self
-                .arena
-                .actors
-                .get(id)
-                .and_then(|a| self.ruleset.monster(&a.name))
-                .cloned();
-            if let Some(mon) = self.arena.actors.get_mut(id) {
-                mon.is_peaceful = false;
-                mon.is_tame = false;
-                if let Some(def) = &def_opt {
-                    let quest_cfg = netrust_core::get_role_quest_config_or_default(&role_name);
-                    let is_leader = matches!(def.msound, MonsterSound::Leader)
-                        || mon.name.eq_ignore_ascii_case(quest_cfg.leader_name);
-                    mon.malign = netrust_core::calculate_malign(
-                        def.maligntyp,
-                        hero_align,
-                        mon.is_peaceful,
-                        is_leader,
-                        def.peaceful_by_default,
-                        def.always_hostile,
-                    );
-                }
+            let Some(mon) = self.arena.actors.get_mut(id) else {
+                continue;
+            };
+            if !mon.is_peaceful || mon.is_tame {
+                continue;
             }
+            mon.is_peaceful = false;
+            self.alignment_record = adjalign(self.alignment_record, -1, lim);
         }
     }
 

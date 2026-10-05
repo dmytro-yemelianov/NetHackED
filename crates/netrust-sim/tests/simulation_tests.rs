@@ -4586,16 +4586,19 @@ fn test_kill_quest_leader_penalties_and_guardian_anger() {
     // lim = 10 + 0 / 200 = 10.
     // penalty = -(10 + 10 / 2) = -15.
     // adjalign(10, -15, 10) = -5.
-    // leader.malign = -20: adjalign(-5, -20, 10) = -25.
-    assert_eq!(sim.alignment_record, -25);
+    // anger_quest_guardians -> setmangry on the peaceful guardian: adjalign(-1) = -6.
+    // leader.malign = -20: adjalign(-6, -20, 10) = -26.
+    assert_eq!(sim.alignment_record, -26);
     assert_eq!(sim.divine_state.favor, -2); // 5 - 7 = -2
     assert_eq!(sim.player_luck, -10); // 0 - 20 clamped to -10
     assert!(sim.quest_state.killed_leader);
 
-    // Guardian should be angered and non-tame
+    // Guardian is angered; setmangry does not re-run set_malign, so it keeps
+    // its peaceful malign (killing it later is still a penalty).
     let guardian = sim.arena.actors.get(guardian_id).unwrap();
     assert!(!guardian.is_peaceful);
     assert!(!guardian.is_tame);
+    assert_eq!(guardian.malign, -9);
 
     // Check log message
     assert!(events.iter().any(
