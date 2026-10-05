@@ -1258,14 +1258,16 @@ fn render(
     stdout.flush()
 }
 
-/// Message padded to 80 columns; the right-aligned seed tag is appended only
-/// when it fits without shortening the message (char counts, not bytes).
+/// Message padded (or cut) to exactly 80 columns; the right-aligned seed tag
+/// is appended only when it fits without shortening the message (char counts,
+/// not bytes). Never wider than 80, so no text is left past the banner.
 fn banner_line(message: &str, seed_tag: &str) -> String {
     let (m, t) = (message.chars().count(), seed_tag.chars().count());
     if m + t < 80 {
         format!("{message:<w$}{seed_tag}", w = 80 - t)
     } else {
-        format!("{message:<80}")
+        let cut: String = message.chars().take(80).collect();
+        format!("{cut:<80}")
     }
 }
 
@@ -1374,6 +1376,16 @@ mod tests {
         assert!(banner_line("hi", "Seed:5").ends_with("Seed:5"));
         let long = "ж".repeat(75);
         assert_eq!(banner_line(&long, "Seed:5"), format!("{long:<80}"));
+    }
+
+    #[test]
+    fn banner_never_exceeds_80_columns() {
+        // A longer message (e.g. the welcome text) must not spill past column
+        // 80, or later 80-column banners leave its tail on screen.
+        let long = "x".repeat(120);
+        assert_eq!(banner_line(&long, "Seed:5").chars().count(), 80);
+        let uk = "ж".repeat(95);
+        assert_eq!(banner_line(&uk, "Seed:5").chars().count(), 80);
     }
 
     #[test]
