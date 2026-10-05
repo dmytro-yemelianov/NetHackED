@@ -131,13 +131,13 @@ Context: the player-facing action set is the `ActionAst` enum (core/ast.rs). It 
 | Dismount and landing spot | steed.c:dismount_steed (576), landing_spot (460) | 🟡 PARTIAL | sim/actions/ranged.rs:159-178 | No forced dismount or damage |
 | **Movement (hack.c)** | | | | |
 | Basic movement and walls | hack.c:domove_core (2712), test_move (991) | ✅ PRESENT | sim/actions/movement.rs:134ff | Works |
-| Diagonal movement through doorways forbidden | hack.c:test_move (doorway diagonal) | ❌ MISSING | grep `diagonal` in movement.rs: no match | Hero can move diagonally into or out of doors |
+| Diagonal movement through doorways forbidden | hack.c:test_move (1141, 1209), doorless_door (4063) | ✅ PRESENT | core/grid.rs:26 `diagonal_door_block`; sim/actions/movement.rs:20, :351 (hero arm), :222 (pet swap), :130 (peaceful swap); sim/monsters.rs:57 (`can_step` in every field and descent); tests sim/tests/door_diagonal_tests.rs | Open, closed and locked doors refuse diagonal steps in and out (no time); a closed door bumped diagonally still auto-opens; attacks across a doorway work; Broken and the new `NoDoor` allow diagonals; monsters follow mfndpos (mon.c:2250-2257). Message always shown (C only with `mention_walls`); see KD |
 | Boulder pushing | hack.c:moverock (336) | ✅ PRESENT | movement.rs:195-246 + core/sokoban.rs | Push, pit fill and block work; no squeeze-past or force-fight-the-boulder |
 | Travel command `_` | hack.c:findtravelpath (1266) | ❌ MISSING | no Travel action; core/pathfinding.rs is only for monsters | No travel |
 | Running (G/shift-move) and lookaround | hack.c:lookaround (3898) | ❌ MISSING | no match | Tedious one-step movement |
 | Swimming/drowning, water/lava entry | hack.c:pooleffects (3233), swim_move_danger (1885); trap.c drown | ❌ MISSING | Pool/Moat are impassable unless frozen (types 417) | Water is just a wall; no drowning danger |
 | Encumbrance effects (speed, can't climb stairs, overexertion) | hack.c:calc_capacity (4372), near_capacity (4385), overexertion (3051) | ❌ MISSING | `encumbrance_tier` unused in sim | Weight is irrelevant |
-| Peaceful swap / displacing pets | hack.c:domove_swap_with_pet (2141-2176) | ✅ PRESENT | movement.rs:46-121 (KD "Peaceful swap") | Close to C |
+| Peaceful swap / displacing pets | hack.c:domove_swap_with_pet (2141-2176) | ✅ PRESENT | movement.rs:46-121 (KD "Peaceful swap"); diagonal refusal movement.rs:130, :222 + door_diagonal_tests.rs | Close to C; swap refused diagonally through an intact doorway (test_move) |
 | Traps on entry | hack.c:spoteffects (3312) | ✅ PRESENT | movement.rs:322ff | See the traps audit |
 | Engraving wipe on movement | hack.c:u_wipe_engr / engrave.c:wipe_engr_at (272) | 🟡 PARTIAL | movement.rs:288-310 smudges a dust engraving on step-off | C wipes on fighting, not on walking; these differ |
 | **Engraving and Elbereth (engrave.c)** | | | | |

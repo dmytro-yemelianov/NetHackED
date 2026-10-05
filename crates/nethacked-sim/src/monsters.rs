@@ -46,6 +46,14 @@ impl SimulationWorld {
         true
     }
 
+    /// One monster action phase: pets, peacefuls and hostiles move by
+    /// descending (or, when fleeing, ascending) a distance field to the hero.
+    ///
+    /// Movement follows C `mfndpos` (mon.c:2250-2257): no diagonal step into
+    /// or out of a door that is not broken or empty (doorway), via
+    /// [`SimulationWorld::can_step`] as the edge predicate of every field,
+    /// descent and ascent, and as a filter on peaceful random steps. Melee is
+    /// not restricted: an adjacent monster attacks diagonally across a doorway.
     pub(crate) fn step_monsters(&mut self) -> Vec<GameEvent> {
         let mut events = Vec::new();
         let player_coord = self
@@ -55,7 +63,11 @@ impl SimulationWorld {
             .filter(|p| !p.is_dead)
             .map(|p| p.coord);
         if let Some(pc) = player_coord {
-            let dijkstra = DijkstraField::compute(pc, |c| self.level.is_passable(c));
+            let dijkstra = DijkstraField::compute_with_edges(
+                pc,
+                |c| self.level.is_passable(c),
+                |a, b| self.can_step(a, b),
+            );
             let player_engraving = self.level.get_engraving(pc).cloned();
 
             let mon_ids: Vec<ActorId> = self
@@ -147,10 +159,14 @@ impl SimulationWorld {
                                 let combat_events = self.resolve_combat(mon_id, target_enemy);
                                 events.extend(combat_events);
                             } else {
-                                let threat_dijkstra = DijkstraField::compute(enemy_coord, |c| {
-                                    self.level.is_passable(c)
-                                });
-                                if let Some(step_c) = threat_dijkstra.steepest_descent(mon.coord) {
+                                let threat_dijkstra = DijkstraField::compute_with_edges(
+                                    enemy_coord,
+                                    |c| self.level.is_passable(c),
+                                    |a, b| self.can_step(a, b),
+                                );
+                                if let Some(step_c) = threat_dijkstra
+                                    .steepest_descent_by(mon.coord, |a, b| self.can_step(a, b))
+                                {
                                     let floor_items = self.arena.items_at_floor(step_c);
                                     let bucs: Vec<Buc> = floor_items
                                         .iter()
@@ -181,7 +197,9 @@ impl SimulationWorld {
                         }
                         _ => {
                             if mon.coord.chebyshev_distance(pc) > 2 {
-                                if let Some(next_c) = dijkstra.steepest_descent(mon.coord) {
+                                if let Some(next_c) = dijkstra
+                                    .steepest_descent_by(mon.coord, |a, b| self.can_step(a, b))
+                                {
                                     let floor_items = self.arena.items_at_floor(next_c);
                                     let bucs: Vec<Buc> = floor_items
                                         .iter()
@@ -230,7 +248,10 @@ impl SimulationWorld {
                         let passable_neighbors: Vec<Coord> = neighbors
                             .into_iter()
                             .filter(|&c| {
-                                c != pc && self.level.is_passable(c) && self.actor_at(c).is_none()
+                                c != pc
+                                    && self.level.is_passable(c)
+                                    && self.actor_at(c).is_none()
+                                    && self.can_step(mon.coord, c)
                             })
                             .collect();
                         if !passable_neighbors.is_empty() {
@@ -331,7 +352,9 @@ impl SimulationWorld {
                                 mon.name
                             ),
                         });
-                        if let Some(flee_c) = dijkstra.steepest_ascent(mon.coord) {
+                        if let Some(flee_c) =
+                            dijkstra.steepest_ascent_by(mon.coord, |a, b| self.can_step(a, b))
+                        {
                             if self.level.is_passable(flee_c) && self.actor_at(flee_c).is_none() {
                                 let from = mon.coord;
                                 if let Some(m) = self.arena.actors.get_mut(mon_id) {
@@ -366,9 +389,9 @@ impl SimulationWorld {
                     // Dijkstra metric gradient step: flee if low on HP
                     let should_flee = mon.hp <= (mon.max_hp / 3).max(1);
                     let target_opt = if should_flee {
-                        dijkstra.steepest_ascent(mon.coord)
+                        dijkstra.steepest_ascent_by(mon.coord, |a, b| self.can_step(a, b))
                     } else {
-                        dijkstra.steepest_descent(mon.coord)
+                        dijkstra.steepest_descent_by(mon.coord, |a, b| self.can_step(a, b))
                     };
 
                     if let Some(nc) = target_opt {

@@ -428,7 +428,9 @@ impl WasmGameSession {
                     nethacked_types::Tile::Corr => "corr",
                     nethacked_types::Tile::Door { state, .. } => match state {
                         nethacked_types::DoorState::Open => "door_open",
-                        nethacked_types::DoorState::Broken => "door_broken",
+                        nethacked_types::DoorState::Broken | nethacked_types::DoorState::NoDoor => {
+                            "door_broken"
+                        }
                         _ => "door_closed",
                     },
                     nethacked_types::Tile::SecretDoor { .. } => "stone",

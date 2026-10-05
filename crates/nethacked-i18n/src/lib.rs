@@ -1644,6 +1644,24 @@ impl Messages {
             Locale::Uk => format!("Ви повертаєтеся до {branch} на рівень {level}."),
         }
     }
+
+    /// C `test_move` (hack.c:1147): "You can't move diagonally into an intact
+    /// doorway." Shown always (C needs `mention_walls`).
+    pub fn no_diagonal_into_doorway(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You can't move diagonally into an intact doorway.",
+            Locale::Uk => "Ви не можете рухатися по діагоналі в непошкоджений дверний проріз.",
+        }
+    }
+
+    /// C `test_move` (hack.c:1212): "You can't move diagonally out of an intact
+    /// doorway." Shown always (C needs `mention_walls`).
+    pub fn no_diagonal_out_of_doorway(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You can't move diagonally out of an intact doorway.",
+            Locale::Uk => "Ви не можете рухатися по діагоналі з непошкодженого дверного прорізу.",
+        }
+    }
 }
 
 /// Translates item names to the specified locale.
