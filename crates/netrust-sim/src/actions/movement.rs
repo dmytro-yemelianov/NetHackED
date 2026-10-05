@@ -180,7 +180,7 @@ impl SimulationWorld {
                         to: from,
                     });
                     events.push(GameEvent::LogMessage {
-                        text: format!("You displace {pet_name}."),
+                        text: netrust_i18n::Messages::displace_pet(&pet_name, self.locale),
                     });
                     self.scheduler.hero_act(move_cost);
                 } else if self.is_safemon(target_id) {
@@ -220,7 +220,7 @@ impl SimulationWorld {
                                 it.location = netrust_arena::ItemLocation::Floor(new_pos);
                             }
                             events.push(GameEvent::LogMessage {
-                                text: "You push the boulder.".into(),
+                                text: netrust_i18n::Messages::push_boulder(self.locale).into(),
                             });
                             self.scheduler.hero_act(move_cost);
                         }
@@ -228,19 +228,21 @@ impl SimulationWorld {
                             self.arena.destroy_item(boulder_id);
                             self.level.set_tile(pit_pos, Tile::Pit { filled: true });
                             events.push(GameEvent::LogMessage {
-                                text: "The boulder falls into the pit and fills it!".into(),
+                                text: netrust_i18n::Messages::boulder_falls_into_pit(self.locale)
+                                    .into(),
                             });
                             self.scheduler.hero_act(move_cost);
                         }
                         netrust_core::sokoban::PushOutcome::Blocked => {
                             events.push(GameEvent::LogMessage {
-                                text: "You try to move the boulder, but it won't budge.".into(),
+                                text: netrust_i18n::Messages::boulder_wont_budge(self.locale)
+                                    .into(),
                             });
                         }
                     }
                 } else {
                     events.push(GameEvent::LogMessage {
-                        text: "You try to move the boulder, but it won't budge.".into(),
+                        text: netrust_i18n::Messages::boulder_wont_budge(self.locale).into(),
                     });
                 }
             } else {
@@ -268,7 +270,7 @@ impl SimulationWorld {
                         self.level
                             .set_tile(target_coord, Tile::Drawbridge { open: true });
                         events.push(GameEvent::LogMessage {
-                            text: "You lower the drawbridge over the moat. The portcullis creaks open.".into(),
+                            text: netrust_i18n::Messages::drawbridge_lower(self.locale).into(),
                         });
                         self.scheduler.hero_act(move_cost);
                     }
@@ -298,7 +300,10 @@ impl SimulationWorld {
                                         remaining: None,
                                     });
                                     events.push(GameEvent::LogMessage {
-                                        text: "The engraving in the dust has been completely wiped away by your footsteps.".into(),
+                                        text: netrust_i18n::Messages::engraving_wiped_by_footsteps(
+                                            self.locale,
+                                        )
+                                        .into(),
                                     });
                                 }
                             }
@@ -307,9 +312,9 @@ impl SimulationWorld {
                         // If stepping onto a tile with an engraving, notify player!
                         if let Some(e) = self.level.get_engraving(target_coord) {
                             events.push(GameEvent::LogMessage {
-                                text: format!(
-                                    "There is something written on the floor here: \"{}\".",
-                                    e.text
+                                text: netrust_i18n::Messages::floor_engraving_text(
+                                    &e.text,
+                                    self.locale,
                                 ),
                             });
                         }
@@ -334,7 +339,10 @@ impl SimulationWorld {
                             match triggered_type {
                                 netrust_types::TrapType::Arrow | netrust_types::TrapType::Dart => {
                                     events.push(GameEvent::LogMessage {
-                                        text: format!("A {triggered_type:?} trap shoots you!"),
+                                        text: netrust_i18n::Messages::trap_shoots(
+                                            &format!("{triggered_type:?}"),
+                                            self.locale,
+                                        ),
                                     });
                                     events.extend(self.damage_player(
                                         2,
@@ -343,24 +351,34 @@ impl SimulationWorld {
                                 }
                                 netrust_types::TrapType::Teleport => {
                                     events.push(GameEvent::LogMessage {
-                                        text: "You trigger a teleport trap!".into(),
+                                        text: netrust_i18n::Messages::trap_teleport(self.locale)
+                                            .into(),
                                     });
                                     // Teleport logic omitted for brevity, just send event
                                 }
                                 netrust_types::TrapType::LevelTeleport => {
                                     events.push(GameEvent::LogMessage {
-                                        text: "You trigger a level teleport trap!".into(),
+                                        text: netrust_i18n::Messages::trap_level_teleport(
+                                            self.locale,
+                                        )
+                                        .into(),
                                     });
                                 }
                                 netrust_types::TrapType::Pit
                                 | netrust_types::TrapType::SpikedPit => {
                                     events.push(GameEvent::LogMessage {
-                                        text: "You fall into a pit!".into(),
+                                        text: netrust_i18n::Messages::trap_fall_into_pit(
+                                            self.locale,
+                                        )
+                                        .into(),
                                     });
                                 }
                                 _ => {
                                     events.push(GameEvent::LogMessage {
-                                        text: format!("You trigger a {triggered_type:?} trap!"),
+                                        text: netrust_i18n::Messages::trap_trigger_generic(
+                                            &format!("{triggered_type:?}"),
+                                            self.locale,
+                                        ),
                                     });
                                 }
                             }

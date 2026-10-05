@@ -306,7 +306,7 @@ impl SimulationWorld {
                     }
 
                     events.push(GameEvent::LogMessage {
-                        text: "You step into the legendary Sokoban puzzle maze! Boulders and pits line the corridors.".into(),
+                        text: netrust_i18n::Messages::enter_sokoban(self.locale).into(),
                     });
                 }
                 (BranchId::GnomishMines, 3) => {
@@ -325,7 +325,7 @@ impl SimulationWorld {
                     }
 
                     events.push(GameEvent::LogMessage {
-                        text: "Welcome to Minetown! Bustling shops and an ancient sanctuary stand before you.".into(),
+                        text: netrust_i18n::Messages::enter_minetown(self.locale).into(),
                     });
                 }
                 (BranchId::GnomishMines, 5) => {
@@ -355,7 +355,7 @@ impl SimulationWorld {
                     }
 
                     events.push(GameEvent::LogMessage {
-                        text: "You reach Mines' End! A legendary luckstone rests in the deepest shrine.".into(),
+                        text: netrust_i18n::Messages::reach_mines_end(self.locale).into(),
                     });
                 }
                 (BranchId::GnomishMines, d) => {
@@ -376,8 +376,7 @@ impl SimulationWorld {
                     }
 
                     events.push(GameEvent::LogMessage {
-                        text: "You descend into the rugged, dark caverns of the Gnomish Mines."
-                            .into(),
+                        text: netrust_i18n::Messages::descend_gnomish_mines(self.locale).into(),
                     });
                 }
                 (BranchId::Gehennom, 1) => {
@@ -408,7 +407,7 @@ impl SimulationWorld {
                     }
 
                     events.push(GameEvent::LogMessage {
-                        text: "You cross into the gloomy, desolate Valley of the Dead...".into(),
+                        text: netrust_i18n::Messages::cross_valley_of_dead(self.locale).into(),
                     });
                 }
                 (BranchId::Gehennom, 5) => {
@@ -474,7 +473,7 @@ impl SimulationWorld {
                     }
 
                     events.push(GameEvent::LogMessage {
-                        text: "You reach the infernal bottom of Gehennom. A cryptic vibration resonates beneath the stone.".into(),
+                        text: netrust_i18n::Messages::reach_bottom_gehennom(self.locale).into(),
                     });
                 }
                 (BranchId::Gehennom, SANCTUM_DEPTH) => {
@@ -502,7 +501,7 @@ impl SimulationWorld {
                     }
 
                     events.push(GameEvent::LogMessage {
-                        text: "You enter Moloch's Sanctum! Rivers of boiling lava surround the unholy high altar!".into(),
+                        text: netrust_i18n::Messages::enter_moloch_sanctum(self.locale).into(),
                     });
                     if priest.is_some() {
                         // priest.c:451-452, spoken with `verbalize1`.
@@ -532,7 +531,7 @@ impl SimulationWorld {
                     }
 
                     events.push(GameEvent::LogMessage {
-                        text: format!("You delve through the fiery, twisting corridors of Gehennom (level {d})."),
+                        text: netrust_i18n::Messages::delve_gehennom(d, self.locale),
                     });
                 }
                 (BranchId::Quest, 1) => {
@@ -573,9 +572,10 @@ impl SimulationWorld {
                     }
 
                     events.push(GameEvent::LogMessage {
-                        text: format!(
-                            "You enter the Sanctuary of {}: '{}'.",
-                            quest_cfg.leader_name, quest_cfg.home_desc
+                        text: netrust_i18n::Messages::enter_quest_sanctuary(
+                            quest_cfg.leader_name,
+                            quest_cfg.home_desc,
+                            self.locale,
                         ),
                     });
                 }
@@ -596,7 +596,7 @@ impl SimulationWorld {
                     }
 
                     events.push(GameEvent::LogMessage {
-                        text: "You navigate the treacherous labyrinth of the Quest trial.".into(),
+                        text: netrust_i18n::Messages::labyrinth_quest_trial(self.locale).into(),
                     });
                 }
                 (BranchId::Quest, 3) => {
@@ -622,7 +622,11 @@ impl SimulationWorld {
                     }
 
                     events.push(GameEvent::LogMessage {
-                        text: format!("You arrive at the inner sanctum: {}! {} glares at you with burning hatred!", quest_cfg.goal_desc, quest_cfg.nemesis_name),
+                        text: netrust_i18n::Messages::arrive_quest_nemesis(
+                            quest_cfg.goal_desc,
+                            quest_cfg.nemesis_name,
+                            self.locale,
+                        ),
                     });
                 }
                 _ => {
@@ -729,7 +733,8 @@ impl SimulationWorld {
                                 self.arena.spawn_item(amulet);
                             }
                             events.push(GameEvent::LogMessage {
-                                text: "A primordial cosmic radiance emanates from the deepest chamber of this floor...".into(),
+                                text: netrust_i18n::Messages::amulet_cosmic_radiance(self.locale)
+                                    .into(),
                             });
                         }
                     }
@@ -769,13 +774,13 @@ impl SimulationWorld {
                     to_depth: self.depth,
                 });
                 events.push(GameEvent::LogMessage {
-                    text: "You step through the subterranean portal into Moloch's Sanctum!".into(),
+                    text: netrust_i18n::Messages::portal_moloch_sanctum(self.locale).into(),
                 });
                 self.scheduler.hero_act(NORMAL_SPEED);
                 return events;
             } else {
                 events.push(GameEvent::LogMessage {
-                    text: "You feel a strange vibration beneath your feet, but the subterranean way remains sealed. Perform the Invocation Ritual!".into(),
+                    text: netrust_i18n::Messages::portal_sealed_need_ritual(self.locale).into(),
                 });
                 return events;
             }
@@ -838,7 +843,7 @@ impl SimulationWorld {
                     to_depth: self.depth,
                 });
                 events.push(GameEvent::LogMessage {
-                    text: format!("You descend deeper into dungeon level {}.", self.depth),
+                    text: netrust_i18n::Messages::descend_deeper(self.depth, self.locale),
                 });
                 self.scheduler.hero_act(NORMAL_SPEED);
             }
@@ -865,7 +870,11 @@ impl SimulationWorld {
                     to_depth: self.depth,
                 });
                 events.push(GameEvent::LogMessage {
-                    text: format!("You enter the {branch:?} branch (level {level})."),
+                    text: netrust_i18n::Messages::enter_branch(
+                        &format!("{branch:?}"),
+                        level,
+                        self.locale,
+                    ),
                 });
                 self.scheduler.hero_act(NORMAL_SPEED);
             }
@@ -926,7 +935,10 @@ impl SimulationWorld {
                                     self.depth, outcome, c,
                                 ));
                             events.push(GameEvent::LogMessage {
-                                text: "A mysterious force momentarily surrounds you...".into(),
+                                text: netrust_i18n::Messages::mysterious_force_surrounds(
+                                    self.locale,
+                                )
+                                .into(),
                             });
                         }
                         if outcome == netrust_core::MysteriousForceOutcome::SameLevelTeleport {
@@ -962,7 +974,10 @@ impl SimulationWorld {
                                 to_depth: self.depth,
                             });
                             events.push(GameEvent::LogMessage {
-                                text: format!("An eldritch Mysterious Force pushes you downward to level {pushed_depth}!"),
+                                text: netrust_i18n::Messages::mysterious_force_pushes(
+                                    pushed_depth,
+                                    self.locale,
+                                ),
                             });
                             self.scheduler.hero_act(NORMAL_SPEED);
                             return events;
@@ -986,7 +1001,7 @@ impl SimulationWorld {
                         to_depth: self.depth,
                     });
                     events.push(GameEvent::LogMessage {
-                        text: format!("You ascend to dungeon level {}.", self.depth),
+                        text: netrust_i18n::Messages::ascend_to_level(self.depth, self.locale),
                     });
                     self.scheduler.hero_act(NORMAL_SPEED);
                 } else if self.current_branch == BranchId::DungeonsOfDoom {
@@ -1004,11 +1019,12 @@ impl SimulationWorld {
                     if has_amulet {
                         events.push(GameEvent::Victory);
                         events.push(GameEvent::LogMessage {
-                            text: "You ascend from the dungeon carrying the Amulet of Yendor! An astral chorus welcomes you into immortality! You have won NetRust!".into(),
+                            text: netrust_i18n::Messages::victory_ascend_amulet(self.locale).into(),
                         });
                     } else {
                         events.push(GameEvent::LogMessage {
-                            text: "An unseen celestial force bars your escape from the dungeon without the Amulet of Yendor!".into(),
+                            text: netrust_i18n::Messages::celestial_force_bars_escape(self.locale)
+                                .into(),
                         });
                     }
                 } else {
@@ -1035,9 +1051,10 @@ impl SimulationWorld {
                             to_depth: self.depth,
                         });
                         events.push(GameEvent::LogMessage {
-                            text: format!(
-                                "You return to {:?} level {}.",
-                                parent.branch, parent.depth
+                            text: netrust_i18n::Messages::return_to_branch_level(
+                                &format!("{:?}", parent.branch),
+                                parent.depth,
+                                self.locale,
                             ),
                         });
                         self.scheduler.hero_act(NORMAL_SPEED);
@@ -1084,7 +1101,11 @@ impl SimulationWorld {
                     to_depth: self.depth,
                 });
                 events.push(GameEvent::LogMessage {
-                    text: format!("You return to {branch:?} level {level}."),
+                    text: netrust_i18n::Messages::return_to_branch_level(
+                        &format!("{branch:?}"),
+                        level,
+                        self.locale,
+                    ),
                 });
                 self.scheduler.hero_act(NORMAL_SPEED);
             }
