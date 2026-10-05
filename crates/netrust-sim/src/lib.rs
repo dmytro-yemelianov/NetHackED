@@ -9,6 +9,7 @@ pub mod peace;
 pub mod turns;
 pub mod world;
 
+pub use actions::economy::EconomyLedger;
 pub use actions::items::{is_real_amulet, normalize_wish_name};
 pub use actions::stairs::{clamp_mysterious_force, SANCTUM_DEPTH};
 pub use events::GameEvent;

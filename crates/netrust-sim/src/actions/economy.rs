@@ -1,6 +1,8 @@
 //! Shop economy and store payment handling.
 
+use netrust_arena::ItemId;
 use netrust_core::energy::NORMAL_SPEED;
+use serde::{Deserialize, Serialize};
 
 use crate::events::GameEvent;
 use crate::world::SimulationWorld;
@@ -9,6 +11,54 @@ use crate::world::SimulationWorld;
 /// documented default stands in for `ACURR(A_CHA)` (C starting CHA is role-dependent and
 /// rolled; 10 is a typical value and falls in the `8-10` band, buy x4/3, `shk.c:2963`).
 pub const DEFAULT_CHARISMA: i32 = 10;
+
+/// Modular economy ledger tracking unpaid shop merchandise and valuation.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EconomyLedger {
+    pub unpaid_items: Vec<(ItemId, u32)>,
+}
+
+impl EconomyLedger {
+    /// Create a new, empty unpaid items ledger.
+    pub fn new() -> Self {
+        Self {
+            unpaid_items: Vec::new(),
+        }
+    }
+
+    /// Create a ledger wrapping existing items.
+    pub fn with_items(unpaid_items: Vec<(ItemId, u32)>) -> Self {
+        Self { unpaid_items }
+    }
+
+    /// Check if an item is unpaid store merchandise.
+    pub fn is_unpaid(&self, id: ItemId) -> bool {
+        self.unpaid_items.iter().any(|(i, _)| *i == id)
+    }
+
+    /// Get the unpaid base cost recorded for an item.
+    pub fn get_unpaid_base_cost(&self, id: ItemId) -> Option<u32> {
+        self.unpaid_items
+            .iter()
+            .find(|(i, _)| *i == id)
+            .map(|(_, cost)| *cost)
+    }
+
+    /// Remove an item from the unpaid ledger.
+    pub fn remove_unpaid(&mut self, id: ItemId) {
+        self.unpaid_items.retain(|(i, _)| *i != id);
+    }
+
+    /// Record a new unpaid item and its base cost.
+    pub fn record_unpaid(&mut self, id: ItemId, base_cost: u32) {
+        self.unpaid_items.push((id, base_cost));
+    }
+
+    /// Clear all entries from the ledger.
+    pub fn clear(&mut self) {
+        self.unpaid_items.clear();
+    }
+}
 
 impl SimulationWorld {
     /// C `shk.c:2947-2951` dunce/tourist surcharge for the hero. Worn slots are not
@@ -75,13 +125,14 @@ impl SimulationWorld {
 
         if to_pay.is_empty() {
             events.push(GameEvent::LogMessage {
-                text: "You have no unpaid items to pay for.".into(),
+                text: netrust_i18n::Messages::no_unpaid_items(self.locale).into(),
             });
         } else if self.player_gold < total_due {
             events.push(GameEvent::LogMessage {
-                text: format!(
-                    "You don't have enough gold! You owe {} zorkmids but only have {}.",
-                    total_due, self.player_gold
+                text: netrust_i18n::Messages::not_enough_gold(
+                    total_due,
+                    self.player_gold,
+                    self.locale,
                 ),
             });
         } else {
@@ -90,9 +141,7 @@ impl SimulationWorld {
                 self.remove_unpaid(id);
             }
             events.push(GameEvent::LogMessage {
-                text: format!(
-                    "You pay the shopkeeper {total_due} zorkmids. 'Thank you for your business!'"
-                ),
+                text: netrust_i18n::Messages::pay_shopkeeper(total_due, self.locale),
             });
             self.scheduler.hero_act(NORMAL_SPEED);
         }
@@ -105,7 +154,7 @@ impl SimulationWorld {
         let carried = self.arena.items_carried_by(self.player_id);
         if item_index >= carried.len() {
             events.push(GameEvent::LogMessage {
-                text: "You don't have that item to appraise.".into(),
+                text: netrust_i18n::Messages::no_item_to_appraise(self.locale).into(),
             });
             return events;
         }
@@ -117,7 +166,7 @@ impl SimulationWorld {
             .any(|a| a.name == "shopkeeper" && !a.is_dead);
         if !has_shopkeeper {
             events.push(GameEvent::LogMessage {
-                text: "There is no shopkeeper here to appraise your goods.".into(),
+                text: netrust_i18n::Messages::no_shopkeeper_to_appraise(self.locale).into(),
             });
             return events;
         }

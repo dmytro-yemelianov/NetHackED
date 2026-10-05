@@ -154,7 +154,7 @@ impl SimulationWorld {
         // so `ActorRecord::ac` is never stale between steps.
         self.recompute_hero_ac();
 
-        self.event_log.extend(events.clone());
+        self.record_events(&events);
         events
     }
 }

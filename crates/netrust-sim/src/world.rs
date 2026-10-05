@@ -119,6 +119,8 @@ pub struct SimulationWorld {
     pub seed: u64,
     pub event_log: Vec<GameEvent>,
     #[serde(default)]
+    pub max_event_log_len: Option<usize>,
+    #[serde(default)]
     pub genocide_registry: netrust_types::GenocideRegistry,
     #[serde(default)]
     pub conducts: netrust_types::ConductTracker,
@@ -128,11 +130,17 @@ pub struct SimulationWorld {
 /// attrib.c:1094; documented divergence).
 pub const INITIAL_ALIGNMENT_RECORD: i32 = 25;
 
+/// Default maximum length of the sliding window for `event_log` (prevents unbounded memory growth).
+pub const DEFAULT_MAX_EVENT_LOG_LEN: usize = 10_000;
+
 pub fn default_rng() -> ChaCha8Rng {
     ChaCha8Rng::seed_from_u64(0)
 }
 
 impl SimulationWorld {
+    /// Default maximum length of the sliding window for `event_log` (prevents unbounded memory growth).
+    pub const DEFAULT_MAX_EVENT_LOG_LEN: usize = DEFAULT_MAX_EVENT_LOG_LEN;
+
     /// Remove an actor, leaving anything it carried on the floor where it stood.
     pub(crate) fn remove_actor_dropping_items(&mut self, id: ActorId) {
         let Some(coord) = self.arena.actors.get(id).map(|a| a.coord) else {
@@ -356,6 +364,7 @@ impl SimulationWorld {
             rng,
             seed,
             event_log: Vec::new(),
+            max_event_log_len: Some(DEFAULT_MAX_EVENT_LOG_LEN),
             genocide_registry: netrust_types::GenocideRegistry::default(),
             conducts: netrust_types::ConductTracker::default(),
         };
@@ -486,6 +495,34 @@ impl SimulationWorld {
     /// Clear unpaid status after purchase.
     pub fn remove_unpaid(&mut self, id: ItemId) {
         self.unpaid_items.retain(|(i, _)| *i != id);
+    }
+
+    /// Retrieve an EconomyLedger snapshot of current unpaid store items.
+    pub fn economy_ledger(&self) -> crate::actions::economy::EconomyLedger {
+        crate::actions::economy::EconomyLedger::with_items(self.unpaid_items.clone())
+    }
+
+    /// Append game events to the event log, maintaining a sliding window limit if configured.
+    pub fn record_events(&mut self, events: &[GameEvent]) {
+        self.event_log.extend(events.iter().cloned());
+        let cap = self
+            .max_event_log_len
+            .unwrap_or(Self::DEFAULT_MAX_EVENT_LOG_LEN);
+        if self.event_log.len() > cap {
+            let excess = self.event_log.len() - cap;
+            self.event_log.drain(0..excess);
+        }
+    }
+
+    /// Set or clear the maximum capacity of the event log circular buffer.
+    pub fn set_max_event_log_len(&mut self, cap: Option<usize>) {
+        self.max_event_log_len = cap;
+        if let Some(cap) = cap {
+            if self.event_log.len() > cap {
+                let excess = self.event_log.len() - cap;
+                self.event_log.drain(0..excess);
+            }
+        }
     }
 
     /// Find actor occupying a specific coordinate.

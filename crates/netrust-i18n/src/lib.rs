@@ -1205,6 +1205,47 @@ impl Messages {
         }
     }
 
+    pub fn no_unpaid_items(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You have no unpaid items to pay for.",
+            Locale::Uk => "У вас немає неоплачених речей для розрахунку.",
+        }
+    }
+
+    pub fn not_enough_gold(due: u32, gold: u32, locale: Locale) -> String {
+        match locale {
+            Locale::En => {
+                format!("You don't have enough gold! You owe {due} zorkmids but only have {gold}.")
+            }
+            Locale::Uk => {
+                format!("У вас недостатньо золота! Ви винні {due} зоркмідів, а маєте лише {gold}.")
+            }
+        }
+    }
+
+    pub fn pay_shopkeeper(paid: u32, locale: Locale) -> String {
+        match locale {
+            Locale::En => {
+                format!("You pay the shopkeeper {paid} zorkmids. 'Thank you for your business!'")
+            }
+            Locale::Uk => format!("Ви платите крамарю {paid} зоркмідів. 'Дякую за покупку!'"),
+        }
+    }
+
+    pub fn no_item_to_appraise(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You don't have that item to appraise.",
+            Locale::Uk => "У вас немає цього предмета для оцінки.",
+        }
+    }
+
+    pub fn no_shopkeeper_to_appraise(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "There is no shopkeeper here to appraise your goods.",
+            Locale::Uk => "Тут немає крамаря, щоб оцінити ваші товари.",
+        }
+    }
+
     pub fn quiver_success(item_name: &str, locale: Locale) -> String {
         let item_name = tn(item_name, locale);
         match locale {
