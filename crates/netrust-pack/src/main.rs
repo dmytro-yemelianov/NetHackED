@@ -9,7 +9,7 @@ use clap::{Parser, Subcommand};
 use netrust_data::ruleset::{Ruleset, RulesetRef};
 use netrust_pack::{
     build, diff, load_nrpack, read_pack_dir, resolve, run_simulation, validate, write_nrpack,
-    ItemPatch, ItemsToml, MonsterPatch, MonstersToml, PackError, PackToml, RolePatch, RolesToml,
+    ItemsToml, MonstersToml, PackError, PackToml, RolesToml,
 };
 
 #[derive(Parser)]
@@ -396,120 +396,11 @@ description = "A custom NetRust rule pack"
                 return ExitCode::FAILURE;
             }
 
-            let vanilla = Ruleset::vanilla();
-
-            let manifest = PackToml {
-                id: "vanilla-export".into(),
-                name: "Vanilla Export".into(),
-                version: "0.1.0".into(),
-                base: "vanilla".into(),
-                description: Some("Exported vanilla NetRust data".into()),
-            };
-
-            let monsters = MonstersToml {
-                monster: vanilla
-                    .monsters
-                    .iter()
-                    .map(|m| MonsterPatch {
-                        name: m.name.clone(),
-                        new: false,
-                        remove: false,
-                        glyph: Some(m.glyph),
-                        base_hp: Some(m.base_hp),
-                        max_hp: Some(m.max_hp),
-                        ac: Some(m.ac),
-                        level: Some(m.level),
-                        speed: Some(m.speed),
-                        alignment: Some(m.alignment),
-                        intrinsics: Some(m.intrinsics),
-                        attacks: Some(m.attacks.clone()),
-                        size: Some(m.size),
-                        peaceful_by_default: Some(m.peaceful_by_default),
-                        always_hostile: Some(m.always_hostile),
-                        maligntyp: Some(m.maligntyp),
-                        msound: Some(m.msound),
-                        m2_race: m.m2_race.map(Some),
-                        is_human: Some(m.is_human),
-                        is_unique: Some(m.is_unique),
-                        mindless: Some(m.mindless),
-                        ai_behavior: Some(m.ai_behavior),
-                        abilities: Some(m.abilities.clone()),
-                    })
-                    .collect(),
-            };
-
-            let items = ItemsToml {
-                item: vanilla
-                    .items
-                    .iter()
-                    .map(|i| ItemPatch {
-                        name: i.name.clone(),
-                        new: false,
-                        remove: false,
-                        class: Some(i.class),
-                        weight: Some(i.weight),
-                        cost: Some(i.cost),
-                        damage_small: Some(i.damage_small),
-                        damage_large: Some(i.damage_large),
-                        ac_bonus: Some(i.ac_bonus),
-                        is_container: Some(i.is_container),
-                        is_bag_of_holding: Some(i.is_bag_of_holding),
-                        oc_magic: Some(i.oc_magic),
-                        wand_dir: i.wand_dir.map(Some),
-                        nutrition: Some(i.nutrition),
-                        armor: i.armor.clone().map(Some),
-                    })
-                    .collect(),
-            };
-
-            let roles = RolesToml {
-                role: vanilla
-                    .roles
-                    .iter()
-                    .map(|r| RolePatch {
-                        name: r.name.clone(),
-                        new: None,
-                        remove: None,
-                        base_hp: Some(r.base_hp),
-                        ac: Some(r.ac),
-                        speed: Some(r.speed),
-                        default_alignment: Some(r.default_alignment),
-                        starting_items: Some(r.starting_items.clone()),
-                        skills: Some(r.skills.clone()),
-                        pantheon: Some(r.pantheon.clone()),
-                        quest: r.quest.clone().map(Some),
-                        initial_alignment_record: Some(r.initial_alignment_record),
-                    })
-                    .collect(),
-            };
-
-            if let Err(e) = fs::write(
-                dir.join("pack.toml"),
-                toml::to_string_pretty(&manifest).unwrap(),
-            ) {
-                eprintln!("error writing pack.toml: {e}");
-                return ExitCode::FAILURE;
-            }
-            if let Err(e) = fs::write(
-                dir.join("monsters.toml"),
-                toml::to_string_pretty(&monsters).unwrap(),
-            ) {
-                eprintln!("error writing monsters.toml: {e}");
-                return ExitCode::FAILURE;
-            }
-            if let Err(e) = fs::write(
-                dir.join("items.toml"),
-                toml::to_string_pretty(&items).unwrap(),
-            ) {
-                eprintln!("error writing items.toml: {e}");
-                return ExitCode::FAILURE;
-            }
-            if let Err(e) = fs::write(
-                dir.join("roles.toml"),
-                toml::to_string_pretty(&roles).unwrap(),
-            ) {
-                eprintln!("error writing roles.toml: {e}");
-                return ExitCode::FAILURE;
+            for (name, text) in netrust_pack::vanilla_pack_files().0 {
+                if let Err(e) = fs::write(dir.join(&name), text) {
+                    eprintln!("error writing {name}: {e}");
+                    return ExitCode::FAILURE;
+                }
             }
 
             println!("Exported vanilla ruleset to '{}'", dir.display());
