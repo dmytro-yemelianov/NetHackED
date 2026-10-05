@@ -9,7 +9,7 @@ NetHackED is a Rust reimplementation of selected **NetHack** mechanics (derived 
 ![NetHackED in the browser](docs/images/play-pixel.png)
 
 
-**Status: work in progress.** Of 542 player-visible NetHack 5.0 features audited against the C source, 58 work as in C, 175 are partial and 306 are missing. It has 55 of 394 monster species and 51 of 439 object types. See the [parity tables](docs/parity/README.md) and the [roadmap](docs/roadmap.md).
+**Status: work in progress.** Of 542 player-visible NetHack 5.0 features audited against the C source, 58 work as in C, 175 are partial and 306 are missing. It has all 383 NetHack monster species as data (generated from the C source) and 51 of 439 object types. See the [parity tables](docs/parity/README.md) and the [roadmap](docs/roadmap.md).
 
 What is and is not claimed:
 

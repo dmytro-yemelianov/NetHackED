@@ -14,7 +14,7 @@
 //! HP is rolled in C (`d(lvl,8)`) and is not compared here.
 
 use nethacked_data::monsters::{get_monster_species, monster_archetype_by_name, MonsterSpeciesId};
-use nethacked_data::{AttackType, BESTIARY};
+use nethacked_data::{AttackType, BESTIARY, LEGACY_SPECIES};
 
 type Row = (
     &'static str,
@@ -1008,8 +1008,9 @@ fn bestiary_matches_c_table() {
         assert_eq!(arch.is_unique, uniq, "{id} unique");
         assert_eq!(arch.mindless, mindless, "{id} mindless");
     }
-    // Every entry is covered.
-    assert_eq!(seen, BESTIARY.len());
+    // Every hand-modelled entry is covered; the generated ones are checked by
+    // scripts/gen-bestiary.py --check against monsters.h directly.
+    assert_eq!(seen, LEGACY_SPECIES);
 }
 
 /// `peace_minded` inputs from `monsters.h` (makemon.c:2268-2308): `M2_HOSTILE`,
@@ -1076,7 +1077,7 @@ const PEACE_TABLE: &[(&str, bool, i8, &str, &str)] = &[
 
 #[test]
 fn bestiary_peace_fields_match_c_table() {
-    assert_eq!(PEACE_TABLE.len(), BESTIARY.len());
+    assert_eq!(PEACE_TABLE.len(), LEGACY_SPECIES);
     for (id, hostile, mal, msound, race) in PEACE_TABLE {
         let arch = BESTIARY
             .iter()
@@ -1188,7 +1189,7 @@ const NAMES: &[(&str, &str)] = &[
 
 #[test]
 fn names_and_modelled_intrinsics_are_pinned() {
-    assert_eq!(NAMES.len(), BESTIARY.len());
+    assert_eq!(NAMES.len(), LEGACY_SPECIES);
     for (id, name) in NAMES {
         let a = BESTIARY
             .iter()

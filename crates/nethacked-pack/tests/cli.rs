@@ -111,7 +111,7 @@ fn test_cli_validate_broken_pack() {
 
     // Inject out-of-range level
     let mut monsters = fs::read_to_string(pack_dir.join("monsters.toml")).unwrap();
-    monsters.push_str("\n[[monster]]\nname = \"jackal\"\nlevel = 99\n");
+    monsters.push_str("\n[[monster]]\nname = \"jackal\"\nlevel = 200\n");
     fs::write(pack_dir.join("monsters.toml"), monsters).unwrap();
 
     let val_out = Command::new(bin_path())

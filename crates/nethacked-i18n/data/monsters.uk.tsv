@@ -1,0 +1,332 @@
+# Ukrainian names for the monster species imported from NetHack 5.0 C
+# (scripts/gen-bestiary.py). Format: english<TAB>ukrainian. Hand-modelled
+# species keep their translations in t_monster's match; this file is the
+# fallback for every other species.
+killer bee	бджола-вбивця
+soldier ant	мураха-солдат
+fire ant	вогняна мураха
+giant beetle	велетенський жук
+queen bee	бджолина матка
+acid blob	кислотна грудка
+quivering blob	тремтяча грудка
+gelatinous cube	драглистий куб
+chickatrice	курчатриса
+cockatrice	кокатрикс
+pyrolisk	піроліск
+fox	лисиця
+coyote	койот
+werejackal	перевертень-шакал
+dingo	дінго
+wolf	вовк
+werewolf	перевертень-вовк
+winter wolf cub	вовченя зимового вовка
+warg	варг
+winter wolf	зимовий вовк
+hell hound pup	цуценя пекельного пса
+hell hound	пекельний пес
+gas spore	газова спора
+freezing sphere	крижана сфера
+flaming sphere	полум'яна сфера
+shocking sphere	електрична сфера
+jaguar	ягуар
+lynx	рись
+panther	пантера
+tiger	тигр
+displacer beast	звір-зміщувач
+gremlin	гремлін
+gargoyle	гаргуля
+winged gargoyle	крилата гаргуля
+hobbit	гобіт
+bugbear	багбір
+dwarf lord	дворф-володар
+dwarf king	дворфський король
+mind flayer	пожирач розуму
+master mind flayer	верховний пожирач розуму
+manes	мани
+homunculus	гомункул
+imp	біс
+lemure	лемур
+quasit	квазит
+tengu	тенгу
+blue jelly	синій драгель
+spotted jelly	плямистий драгель
+ochre jelly	охровий драгель
+large kobold	великий кобольд
+kobold lord	кобольд-володар
+kobold shaman	кобольд-шаман
+leprechaun	лепрекон
+small mimic	малий мімік
+large mimic	великий мімік
+giant mimic	велетенський мімік
+wood nymph	лісова німфа
+water nymph	водяна німфа
+mountain nymph	гірська німфа
+orc	орк
+Mordor orc	мордорський орк
+Uruk-hai	урук-хай
+orc shaman	орк-шаман
+orc-captain	орк-капітан
+rock piercer	кам'яний пробивач
+iron piercer	залізний пробивач
+glass piercer	скляний пробивач
+rothe	рот
+mumak	мумак
+leocrotta	левкрота
+wumpus	вампус
+titanothere	титанотерій
+baluchitherium	белуджитерій
+mastodon	мастодонт
+sewer rat	каналізаційний пацюк
+giant rat	велетенський пацюк
+rabid rat	скажений пацюк
+wererat	перевертень-пацюк
+rock mole	кам'яний кріт
+woodchuck	бабак
+cave spider	печерний павук
+centipede	стонога
+giant spider	велетенський павук
+scorpion	скорпіон
+lurker above	верхній чатувальник
+trapper	ловець
+pony	поні
+white unicorn	білий єдиноріг
+gray unicorn	сірий єдиноріг
+black unicorn	чорний єдиноріг
+horse	кінь
+warhorse	бойовий кінь
+fog cloud	хмара туману
+dust vortex	пиловий вихор
+ice vortex	крижаний вихор
+energy vortex	енергетичний вихор
+steam vortex	паровий вихор
+fire vortex	вогняний вихор
+baby long worm	маля довгого черв'яка
+baby purple worm	маля пурпурового черв'яка
+long worm	довгий черв'як
+purple worm	пурпуровий черв'як
+grid bug	сітковий жук
+xan	ксан
+yellow light	жовте світло
+black light	чорне світло
+zruty	зруті
+couatl	коатль
+Aleax	алеакс
+Angel	ангел
+ki-rin	кі-рін
+Archon	архонт
+bat	кажан
+giant bat	велетенський кажан
+raven	ворон
+vampire bat	кажан-вампір
+plains centaur	степовий кентавр
+forest centaur	лісовий кентавр
+mountain centaur	гірський кентавр
+baby gray dragon	сіре драконеня
+baby gold dragon	золоте драконеня
+baby silver dragon	срібне драконеня
+baby red dragon	червоне драконеня
+baby white dragon	біле драконеня
+baby orange dragon	помаранчеве драконеня
+baby black dragon	чорне драконеня
+baby blue dragon	синє драконеня
+baby green dragon	зелене драконеня
+baby yellow dragon	жовте драконеня
+gray dragon	сірий дракон
+gold dragon	золотий дракон
+white dragon	білий дракон
+orange dragon	помаранчевий дракон
+black dragon	чорний дракон
+blue dragon	синій дракон
+green dragon	зелений дракон
+yellow dragon	жовтий дракон
+stalker	переслідувач
+air elemental	елементаль повітря
+fire elemental	елементаль вогню
+earth elemental	елементаль землі
+water elemental	елементаль води
+lichen	лишайник
+brown mold	бура пліснява
+yellow mold	жовта пліснява
+green mold	зелена пліснява
+red mold	червона пліснява
+shrieker	верескун
+violet fungus	фіолетовий гриб
+gnome lord	гном-лорд
+gnomish wizard	гномський чарівник
+gnome king	гномський король
+giant	велетень
+stone giant	кам'яний велетень
+hill giant	пагорбовий велетень
+fire giant	вогняний велетень
+frost giant	морозний велетень
+ettin	еттін
+storm giant	штормовий велетень
+titan	титан
+minotaur	мінотавр
+jabberwock	бармаглот
+Keystone Kop	кістоунський коп
+Kop Sergeant	коп-сержант
+Kop Lieutenant	коп-лейтенант
+Kop Kaptain	коп-капітан
+lich	ліч
+demilich	деміліч
+arch-lich	архіліч
+kobold mummy	мумія кобольда
+gnome mummy	мумія гнома
+orc mummy	мумія орка
+dwarf mummy	мумія дворфа
+elf mummy	мумія ельфа
+human mummy	мумія людини
+ettin mummy	мумія еттіна
+giant mummy	мумія велетня
+red naga hatchling	червоне нагеня
+black naga hatchling	чорне нагеня
+golden naga hatchling	золоте нагеня
+guardian naga hatchling	нагеня-вартовий
+red naga	червона нага
+black naga	чорна нага
+golden naga	золота нага
+guardian naga	нага-вартова
+ogre	огр
+ogre lord	огр-володар
+ogre king	король огрів
+gray ooze	сірий слиз
+brown pudding	бурий пудинг
+green slime	зелений слиз
+black pudding	чорний пудинг
+quantum mechanic	квантовий механік
+genetic engineer	генний інженер
+rust monster	іржавий монстр
+disenchanter	розчаровувач
+garter snake	вужик
+snake	змія
+water moccasin	водяний щитомордник
+python	пітон
+pit viper	гримуча змія
+cobra	кобра
+troll	троль
+ice troll	крижаний троль
+rock troll	скельний троль
+water troll	водяний троль
+Olog-hai	олог-хай
+umber hulk	умбровий громило
+vampire lord	володар вампірів
+barrow wight	курганний упир
+wraith	примара
+Nazgul	назгул
+xorn	ксорн
+monkey	мавпа
+ape	людиноподібна мавпа
+owlbear	сововедмідь
+yeti	єті
+carnivorous ape	хижа мавпа
+sasquatch	сасквоч
+kobold zombie	зомбі-кобольд
+gnome zombie	зомбі-гном
+orc zombie	зомбі-орк
+dwarf zombie	зомбі-дворф
+elf zombie	зомбі-ельф
+human zombie	зомбі-людина
+ettin zombie	зомбі-еттін
+ghoul	гуль
+giant zombie	зомбі-велетень
+straw golem	солом'яний голем
+paper golem	паперовий голем
+rope golem	мотузяний голем
+gold golem	золотий голем
+leather golem	шкіряний голем
+wood golem	дерев'яний голем
+flesh golem	м'ясний голем
+clay golem	глиняний голем
+stone golem	кам'яний голем
+glass golem	скляний голем
+iron golem	залізний голем
+human	людина
+human wererat	перевертень-пацюк (людина)
+human werejackal	перевертень-шакал (людина)
+human werewolf	перевертень-вовк (людина)
+elf	ельф
+Woodland-elf	лісовий ельф
+Green-elf	зелений ельф
+Grey-elf	сірий ельф
+elf-lord	ельф-володар
+Elvenking	ельфійський король
+doppelganger	доппельгангер
+guard	вартовий
+prisoner	в'язень
+Oracle	Оракул
+high priest	верховний жрець
+soldier	солдат
+sergeant	сержант
+nurse	медсестра
+lieutenant	лейтенант
+captain	капітан
+watch captain	капітан варти
+shade	тінь
+water demon	водяний демон
+incubus	інкуб
+horned devil	рогатий диявол
+erinys	ерінія
+barbed devil	колючий диявол
+marilith	маріліт
+vrock	врок
+hezrou	хезру
+bone devil	кістяний диявол
+ice devil	крижаний диявол
+nalfeshnee	нальфешні
+pit fiend	диявол безодні
+sandestin	сандестин
+balrog	балрог
+Juiblex	Джуйблекс
+Yeenoghu	Йіноґу
+Orcus	Оркус
+Geryon	Геріон
+Dispater	Діспатер
+Baalzebub	Баал-Зебуб
+Asmodeus	Асмодей
+Demogorgon	Демогоргон
+Death	Смерть
+Pestilence	Чума
+Famine	Голод
+mail daemon	поштовий демон
+jellyfish	медуза
+piranha	піранья
+shark	акула
+giant eel	велетенський вугор
+electric eel	електричний вугор
+kraken	кракен
+newt	тритон
+gecko	гекон
+iguana	ігуана
+baby crocodile	крокодильчик
+lizard	ящірка
+chameleon	хамелеон
+crocodile	крокодил
+salamander	саламандра
+long worm tail	хвіст довгого черв'яка
+archeologist	археолог
+barbarian	варвар
+caveman	печерна людина
+healer	цілитель
+knight	лицар
+monk	чернець
+cleric	клірик
+ranger	рейнджер
+rogue	розбійник
+samurai	самурай
+tourist	турист
+valkyrie	валькірія
+wizard	чарівник
+Shaman Karnov	шаман Карнов
+Arch Priest	архіжрець
+Orion	Оріон
+Lord Sato	лорд Сато
+Chromatic Dragon	Хроматичний Дракон
+Nalzok	Нальзок
+Scorpius	Скорпіус
+Ashikaga Takauji	Асікаґа Такаудзі
+neanderthal	неандерталець
+acolyte	послушник
+hunter	мисливець
+ninja	ніндзя
+roshi	роші
