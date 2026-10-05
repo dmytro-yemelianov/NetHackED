@@ -74,12 +74,15 @@ impl SimulationWorld {
 
             // 1. Spawn the vengeful ghost at the death site
             let ghost_hp = netrust_core::create_ghost_hp(bones.max_hp);
-            let ghost = create_ghost_record(
+            let mut ghost = create_ghost_record(
                 &bones.hero_name,
                 bones.hero_level,
                 ghost_hp,
                 bones.death_coord,
             );
+            if let Some(def) = self.ruleset.monster("ghost") {
+                self.set_monster_malign(&mut ghost, def);
+            }
             self.arena.spawn_actor(ghost);
 
             // 2. Scatter corrupted (cursed) equipment across neighboring floor tiles

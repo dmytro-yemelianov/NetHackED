@@ -61,6 +61,9 @@ pub struct ActorRecord {
     /// turn by `mon_regen` (`monmove.c:311`).
     #[serde(default)]
     pub mspec_used: u8,
+    /// C `malign` (`makemon.c:2320-2366`). Precalculated alignment adjustment upon death.
+    #[serde(default)]
+    pub malign: i32,
 }
 
 /// The centralized entity arena replacing all ambient pointers.
@@ -235,6 +238,7 @@ mod tests {
             abilities: Vec::new(),
             is_peaceful: false,
             mspec_used: 0,
+            malign: 0,
         };
         let id = arena.spawn_actor(actor);
         assert_eq!(arena.actors.get(id).unwrap().hp, 20);
@@ -264,6 +268,7 @@ mod tests {
             abilities: Vec::new(),
             is_peaceful: true,
             mspec_used: 0,
+            malign: 0,
         };
         let id = arena.spawn_actor(actor);
         let mut v = serde_json::to_value(arena.actors.get(id).unwrap()).unwrap();
@@ -295,6 +300,7 @@ mod tests {
             abilities: Vec::new(),
             is_peaceful: false,
             mspec_used: 12,
+            malign: 5,
         });
         let mut v = serde_json::to_value(arena.actors.get(id).unwrap()).unwrap();
         assert_eq!(v["mspec_used"], 12);
@@ -303,6 +309,38 @@ mod tests {
         let back: ActorRecord = serde_json::from_value(v).unwrap();
         assert_eq!(back.mspec_used, 0);
         assert_eq!(back.name, "red dragon");
+    }
+
+    #[test]
+    fn test_actor_record_serde_default_malign() {
+        let mut arena = EntityArena::new();
+        let id = arena.spawn_actor(ActorRecord {
+            name: "goblin".into(),
+            coord: Coord::new(5, 5).unwrap(),
+            hp: 8,
+            max_hp: 8,
+            ac: 10,
+            level: 0,
+            speed: 6,
+            alignment: Alignment::Chaotic,
+            intrinsics: Intrinsics::default(),
+            is_player: false,
+            is_dead: false,
+            is_tame: false,
+            tameness: 0,
+            is_unique: false,
+            abilities: Vec::new(),
+            is_peaceful: false,
+            mspec_used: 0,
+            malign: 3,
+        });
+        let mut v = serde_json::to_value(arena.actors.get(id).unwrap()).unwrap();
+        assert_eq!(v["malign"], 3);
+        // A save written before malign existed loads with default 0.
+        v.as_object_mut().unwrap().remove("malign");
+        let back: ActorRecord = serde_json::from_value(v).unwrap();
+        assert_eq!(back.malign, 0);
+        assert_eq!(back.name, "goblin");
     }
 
     #[test]

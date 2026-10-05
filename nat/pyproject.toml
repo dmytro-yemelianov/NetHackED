@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "netrust-nat"
-version = "0.1.0"
+version = "0.2.0"
 description = "NVIDIA NeMo Agent Toolkit (NAT) configuration and tools for NetRust review and development"
 readme = "README.md"
 requires-python = ">=3.11"

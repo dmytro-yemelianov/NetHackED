@@ -48,6 +48,8 @@ pub struct RoleSpec {
     pub speed: u32,
     pub default_alignment: Alignment,
     pub starting_items: &'static [ItemKindId],
+    /// NetHack 5.0 C `urole.initrecord` (`role.c`, `attrib.c:1094`).
+    pub initial_alignment_record: i32,
 }
 
 pub static ROLES: &[RoleSpec] = &[
@@ -59,6 +61,7 @@ pub static ROLES: &[RoleSpec] = &[
         speed: 12,
         default_alignment: Alignment::Neutral,
         starting_items: &[ItemKindId::LongSword, ItemKindId::PotionOfHealing],
+        initial_alignment_record: 0,
     },
     RoleSpec {
         id: RoleId::Wizard,
@@ -72,6 +75,7 @@ pub static ROLES: &[RoleSpec] = &[
             ItemKindId::ScrollOfIdentify,
             ItemKindId::CloakOfMagicResistance,
         ],
+        initial_alignment_record: 0,
     },
     RoleSpec {
         id: RoleId::Barbarian,
@@ -81,6 +85,7 @@ pub static ROLES: &[RoleSpec] = &[
         speed: 12,
         default_alignment: Alignment::Chaotic,
         starting_items: &[ItemKindId::LongSword],
+        initial_alignment_record: 10,
     },
     RoleSpec {
         id: RoleId::Rogue,
@@ -95,6 +100,7 @@ pub static ROLES: &[RoleSpec] = &[
             ItemKindId::LeatherArmor,
             ItemKindId::Sack,
         ],
+        initial_alignment_record: 10,
     },
     RoleSpec {
         id: RoleId::Knight,
@@ -104,6 +110,7 @@ pub static ROLES: &[RoleSpec] = &[
         speed: 12,
         default_alignment: Alignment::Lawful,
         starting_items: &[ItemKindId::LongSword],
+        initial_alignment_record: 10,
     },
     RoleSpec {
         id: RoleId::Monk,
@@ -116,6 +123,7 @@ pub static ROLES: &[RoleSpec] = &[
             ItemKindId::PotionOfHealing,
             ItemKindId::ScrollOfTeleportation,
         ],
+        initial_alignment_record: 10,
     },
     RoleSpec {
         id: RoleId::Healer,
@@ -128,6 +136,7 @@ pub static ROLES: &[RoleSpec] = &[
             ItemKindId::PotionOfHealing,
             ItemKindId::PotionOfExtraHealing,
         ],
+        initial_alignment_record: 10,
     },
     RoleSpec {
         id: RoleId::Tourist,
@@ -141,6 +150,7 @@ pub static ROLES: &[RoleSpec] = &[
             ItemKindId::PotionOfExtraHealing,
             ItemKindId::BagOfHolding,
         ],
+        initial_alignment_record: 0,
     },
     RoleSpec {
         id: RoleId::Archaeologist,
@@ -150,6 +160,7 @@ pub static ROLES: &[RoleSpec] = &[
         speed: 12,
         default_alignment: Alignment::Lawful,
         starting_items: &[ItemKindId::ShortSword, ItemKindId::Sack],
+        initial_alignment_record: 10,
     },
 ];
 
@@ -371,6 +382,7 @@ pub fn spawn_player_character(
         abilities: Vec::new(),
         is_peaceful: false,
         mspec_used: 0,
+        malign: 0,
     };
     let player_id = arena.spawn_actor(actor);
 

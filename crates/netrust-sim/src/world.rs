@@ -126,9 +126,9 @@ pub struct SimulationWorld {
     pub conducts: netrust_types::ConductTracker,
 }
 
-/// The sim's starting alignment record (C starts at `urole.initrecord`,
-/// attrib.c:1094; documented divergence).
-pub const INITIAL_ALIGNMENT_RECORD: i32 = 25;
+/// The sim's fallback starting alignment record when a role definition is missing
+/// (C starts at `urole.initrecord`, attrib.c:1094; roles default to 10).
+pub const INITIAL_ALIGNMENT_RECORD: i32 = 10;
 
 /// Default maximum length of the sliding window for `event_log` (prevents unbounded memory growth).
 pub const DEFAULT_MAX_EVENT_LOG_LEN: usize = 10_000;
@@ -213,9 +213,19 @@ impl SimulationWorld {
             match room.room_type {
                 RoomType::Shop => {
                     // Spawn peaceful Shopkeeper
-                    if let Some(sk) = ruleset
+                    if let Some(mut sk) = ruleset
                         .create_monster_record_by_id(MonsterSpeciesId::Shopkeeper, room.center())
                     {
+                        if let Some(sk_def) = ruleset.monster_by_id(MonsterSpeciesId::Shopkeeper) {
+                            sk.malign = netrust_core::calculate_malign(
+                                sk_def.maligntyp,
+                                config.alignment,
+                                sk.is_peaceful,
+                                false,
+                                sk_def.peaceful_by_default,
+                                sk_def.always_hostile,
+                            );
+                        }
                         arena.spawn_actor(sk);
                     }
 
@@ -259,6 +269,14 @@ impl SimulationWorld {
                                 false,
                             );
                             goblin.is_peaceful = crate::peace::roll_peace_minded(&input, &mut rng);
+                            goblin.malign = netrust_core::calculate_malign(
+                                gob_def.maligntyp,
+                                config.alignment,
+                                goblin.is_peaceful,
+                                false,
+                                gob_def.peaceful_by_default,
+                                gob_def.always_hostile,
+                            );
                         }
                         arena.spawn_actor(goblin);
                     }

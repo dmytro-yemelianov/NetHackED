@@ -225,6 +225,13 @@ impl SimulationWorld {
                             spawn_c,
                         ) {
                             mon.name = "hostile djinni".into();
+                            mon.is_peaceful = false;
+                            if let Some(def) = self
+                                .ruleset
+                                .monster_by_id(netrust_data::MonsterSpeciesId::Djinni)
+                            {
+                                self.set_monster_malign(&mut mon, def);
+                            }
                             self.arena.spawn_actor(mon);
                         }
                     }
@@ -617,6 +624,13 @@ impl SimulationWorld {
                                         spawn_c,
                                     ) {
                                         mon.name = "hostile goblin".into();
+                                        mon.is_peaceful = false;
+                                        if let Some(def) = self
+                                            .ruleset
+                                            .monster_by_id(netrust_data::MonsterSpeciesId::Goblin)
+                                        {
+                                            self.set_monster_malign(&mut mon, def);
+                                        }
                                         self.arena.spawn_actor(mon);
                                     }
                                 }
@@ -875,20 +889,22 @@ impl SimulationWorld {
                                             damage: spell_damage,
                                             lethal: target.is_dead,
                                         });
-                                        if target.is_dead {
-                                            events.push(GameEvent::LogMessage {
-                                                text: format!("{} is slain by magic!", target.name),
-                                            });
-                                            if let Some(corpse) =
-                                                self.ruleset.create_item_record_by_id(
-                                                    ItemKindId::Corpse,
-                                                    ItemLocation::Floor(target.coord),
-                                                    Buc::Uncursed,
-                                                )
-                                            {
-                                                self.arena.spawn_item(corpse);
-                                            }
-                                        }
+                                    }
+                                    if self.arena.actors.get(target_id).is_some_and(|t| t.is_dead) {
+                                        let name = self
+                                            .arena
+                                            .actors
+                                            .get(target_id)
+                                            .map(|a| a.name.as_str())
+                                            .unwrap_or("The monster");
+                                        events.push(GameEvent::LogMessage {
+                                            text: format!("{name} is slain by magic!"),
+                                        });
+                                        self.on_actor_killed(
+                                            self.player_id,
+                                            target_id,
+                                            &mut events,
+                                        );
                                     }
                                     // C bhitm (zap.c:552-554, force bolt) and buzz
                                     // (zap.c:4948, magic missile): a surviving
@@ -1109,18 +1125,18 @@ impl SimulationWorld {
                                 lethal: target.is_dead,
                             });
                         }
-                        if target.is_dead {
-                            events.push(GameEvent::LogMessage {
-                                text: format!("{} is destroyed by the wand beam!", target.name),
-                            });
-                            if let Some(corpse) = self.ruleset.create_item_record_by_id(
-                                ItemKindId::Corpse,
-                                ItemLocation::Floor(target.coord),
-                                Buc::Uncursed,
-                            ) {
-                                self.arena.spawn_item(corpse);
-                            }
-                        }
+                    }
+                    if self.arena.actors.get(target_id).is_some_and(|t| t.is_dead) {
+                        let name = self
+                            .arena
+                            .actors
+                            .get(target_id)
+                            .map(|a| a.name.as_str())
+                            .unwrap_or("The monster");
+                        events.push(GameEvent::LogMessage {
+                            text: format!("{name} is destroyed by the wand beam!"),
+                        });
+                        self.on_actor_killed(self.player_id, target_id, &mut events);
                     }
                     // C bhitm (zap.c:552-554) / buzz (zap.c:4948): a surviving
                     // target is woken with `wakeup(mon, TRUE)`; digging is

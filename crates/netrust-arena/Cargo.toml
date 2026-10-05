@@ -1,7 +1,7 @@
 [package]
 name = "netrust-arena"
 license = "NGPL"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "Generational arena entity storage replacing intrusive pointers for NetRust"
 

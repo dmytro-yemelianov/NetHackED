@@ -60,6 +60,9 @@ pub struct QuestState {
     pub progress: QuestProgress,
     pub artifact_location: ArtifactLocation,
     pub nemesis_hp: u32,
+    /// C `svq.quest_status.killed_leader` (`mon.c:3679`). Tracks if the player murdered the Quest Leader.
+    #[serde(default)]
+    pub killed_leader: bool,
 }
 
 impl Default for QuestState {
@@ -68,6 +71,7 @@ impl Default for QuestState {
             progress: QuestProgress::Unassigned,
             artifact_location: ArtifactLocation::HeldByNemesis,
             nemesis_hp: 120,
+            killed_leader: false,
         }
     }
 }
@@ -381,5 +385,17 @@ mod tests {
             let is_role = C_TABLE.iter().any(|r| r.0.eq_ignore_ascii_case(&junk));
             prop_assert_eq!(get_role_quest_config(&junk).is_some(), is_role);
         }
+    }
+
+    #[test]
+    fn test_quest_state_serde_default_killed_leader() {
+        let legacy_json =
+            r#"{"progress":"Assigned","artifact_location":"HeldByNemesis","nemesis_hp":120}"#;
+        let state: QuestState =
+            serde_json::from_str(legacy_json).expect("legacy QuestState should deserialize");
+        assert_eq!(state.progress, QuestProgress::Assigned);
+        assert_eq!(state.artifact_location, ArtifactLocation::HeldByNemesis);
+        assert_eq!(state.nemesis_hp, 120);
+        assert!(!state.killed_leader);
     }
 }

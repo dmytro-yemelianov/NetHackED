@@ -132,9 +132,80 @@ pub fn adjalign(record: i32, n: i32, alignlim: i32) -> i32 {
     }
 }
 
+use netrust_types::Alignment;
+
 /// C `ALIGNLIM` (`align.h:17`): `10 + moves / 200`.
 pub fn alignlim(moves: u64) -> i32 {
     i32::try_from(10 + moves / 200).unwrap_or(i32::MAX)
+}
+
+/// C `A_NONE` (`align.h:19`): unaligned / no alignment (-128).
+pub const A_NONE: i8 = -128;
+
+/// C `set_malign` (`makemon.c:2320-2366`).
+///
+/// Precalculated alignment adjustment upon monster death. Negative values mean
+/// it is bad to kill this monster; positive values mean it is good.
+pub fn calculate_malign(
+    maligntyp: i8,
+    hero_alignment: Alignment,
+    is_peaceful: bool,
+    is_leader: bool,
+    always_peaceful: bool,
+    always_hostile: bool,
+) -> i32 {
+    let mal = maligntyp as i32;
+    let hero_sgn = match hero_alignment {
+        Alignment::Chaotic => -1,
+        Alignment::Neutral | Alignment::Unaligned => 0,
+        Alignment::Lawful => 1,
+    };
+    let mal_sgn = if mal < 0 {
+        -1
+    } else if mal > 0 {
+        1
+    } else {
+        0
+    };
+    let coaligned = mal_sgn == hero_sgn;
+
+    if is_leader {
+        -20
+    } else if maligntyp == -128 {
+        // A_NONE (align.h:19, makemon.c:2341-2345)
+        if is_peaceful {
+            0
+        } else {
+            20
+        }
+    } else if always_peaceful {
+        // makemon.c:2346-2351
+        let absmal = mal.abs();
+        if is_peaceful {
+            -3 * 5.max(absmal)
+        } else {
+            3 * 5.max(absmal)
+        }
+    } else if always_hostile {
+        // makemon.c:2352-2357
+        let absmal = mal.abs();
+        if coaligned {
+            0
+        } else {
+            5.max(absmal)
+        }
+    } else if coaligned {
+        // makemon.c:2358-2363
+        let absmal = mal.abs();
+        if is_peaceful {
+            -3 * 3.max(absmal)
+        } else {
+            3.max(absmal)
+        }
+    } else {
+        // makemon.c:2364-2365: not coaligned and therefore hostile
+        mal.abs()
+    }
 }
 
 #[cfg(test)]
@@ -275,5 +346,88 @@ mod tests {
         assert_eq!(adjalign(i32::MAX, 5, i32::MAX), i32::MAX);
         assert_eq!(alignlim(0), 10);
         assert_eq!(alignlim(450), 12);
+    }
+
+    #[test]
+    fn test_calculate_malign_canonical_cases() {
+        // Leader is always -20
+        assert_eq!(
+            calculate_malign(0, Alignment::Lawful, true, true, false, false),
+            -20
+        );
+        assert_eq!(
+            calculate_malign(-3, Alignment::Chaotic, false, true, false, true),
+            -20
+        );
+
+        // A_NONE (-128)
+        assert_eq!(
+            calculate_malign(-128, Alignment::Lawful, true, false, false, false),
+            0
+        );
+        assert_eq!(
+            calculate_malign(-128, Alignment::Lawful, false, false, false, false),
+            20
+        );
+
+        // Always peaceful (e.g. shopkeeper mal=0)
+        assert_eq!(
+            calculate_malign(0, Alignment::Neutral, true, false, true, false),
+            -15 // -3 * max(5, 0)
+        );
+        assert_eq!(
+            calculate_malign(0, Alignment::Neutral, false, false, true, false),
+            15 // 3 * max(5, 0)
+        );
+        assert_eq!(
+            calculate_malign(7, Alignment::Lawful, true, false, true, false),
+            -21 // -3 * max(5, 7)
+        );
+
+        // Always hostile (e.g. orc mal=-3, demon mal=-15)
+        // Coaligned always hostile: 0
+        assert_eq!(
+            calculate_malign(-3, Alignment::Chaotic, false, false, false, true),
+            0
+        );
+        // Crossaligned always hostile: max(5, absmal)
+        assert_eq!(
+            calculate_malign(-3, Alignment::Lawful, false, false, false, true),
+            5 // max(5, 3)
+        );
+        assert_eq!(
+            calculate_malign(-15, Alignment::Lawful, false, false, false, true),
+            15 // max(5, 15)
+        );
+
+        // Coaligned standard monster
+        // Peaceful: -3 * max(3, absmal)
+        assert_eq!(
+            calculate_malign(0, Alignment::Neutral, true, false, false, false),
+            -9 // -3 * max(3, 0)
+        );
+        assert_eq!(
+            calculate_malign(-4, Alignment::Chaotic, true, false, false, false),
+            -12 // -3 * max(3, 4)
+        );
+        // Hostile (renegade): max(3, absmal)
+        assert_eq!(
+            calculate_malign(0, Alignment::Neutral, false, false, false, false),
+            3 // max(3, 0)
+        );
+        assert_eq!(
+            calculate_malign(4, Alignment::Lawful, false, false, false, false),
+            4 // max(3, 4)
+        );
+
+        // Crossaligned hostile standard monster: abs(mal)
+        assert_eq!(
+            calculate_malign(-3, Alignment::Lawful, false, false, false, false),
+            3
+        );
+        assert_eq!(
+            calculate_malign(4, Alignment::Chaotic, false, false, false, false),
+            4
+        );
     }
 }

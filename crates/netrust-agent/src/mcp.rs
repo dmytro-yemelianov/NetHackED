@@ -62,7 +62,7 @@ fn dispatch(
         "initialize" => Ok(json!({
             "protocolVersion": "2024-11-05",
             "capabilities": { "tools": {} },
-            "serverInfo": { "name": "netrust-mcp", "version": "0.1.0" }
+            "serverInfo": { "name": "netrust-mcp", "version": env!("CARGO_PKG_VERSION") }
         })),
         "notifications/initialized" => Ok(Value::Null),
         "ping" => Ok(json!({})),

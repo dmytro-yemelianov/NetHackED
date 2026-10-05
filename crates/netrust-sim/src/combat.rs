@@ -7,9 +7,12 @@ use netrust_core::{
         monster_attack_hits, monster_hit_damage, monster_to_hit_value, resisted,
         resolve_melee_attack, to_hit_value, weapon_damage_die,
     },
-    Combatant,
+    mines::clamp_luck,
+    peace::{adjalign, alignlim, A_NONE},
+    religion::clamp_favor,
+    Combatant, QuestProgress,
 };
-use netrust_data::{ItemKindId, MonsterSize};
+use netrust_data::{monsters::MonsterSound, ItemKindId, MonsterSize};
 use netrust_types::{Attack, AttackType, Buc, DamageType};
 use rand::{Rng, RngCore};
 
@@ -332,54 +335,183 @@ impl SimulationWorld {
         );
         events.push(GameEvent::LogMessage { text: attack_msg });
         if lethal {
-            if attacker_id == self.player_id {
-                netrust_core::conducts::record_kill(&mut self.conducts);
-            }
-            events.push(GameEvent::LogMessage {
-                text: netrust_i18n::Messages::killed(&defender.name, self.locale),
-            });
-            if defender_id != self.player_id {
-                // Check if the defeated enemy is the unique Class Nemesis
-                let quest_cfg = netrust_core::get_role_quest_config_or_default(&self.role_name);
-                if defender.name.eq_ignore_ascii_case(quest_cfg.nemesis_name) {
-                    netrust_core::attack_nemesis(&mut self.quest_state, 9999);
-                    let art_id = match quest_cfg.role_name.to_lowercase().as_str() {
-                        "valkyrie" => ItemKindId::OrbOfFate,
-                        "wizard" => ItemKindId::EyeOfTheAethiopica,
-                        "barbarian" => ItemKindId::HeartOfAhriman,
-                        "knight" => ItemKindId::MagicMirrorOfMerlin,
-                        "monk" => ItemKindId::EyesOfTheOverworld,
-                        "rogue" => ItemKindId::MasterKeyOfThievery,
-                        "tourist" => ItemKindId::PlatinumYendorianExpressCard,
-                        "healer" => ItemKindId::StaffOfAesculapius,
-                        _ => ItemKindId::OrbOfDetection,
-                    };
-                    if let Some(art_rec) = self.ruleset.create_item_record_by_id(
-                        art_id,
-                        ItemLocation::Floor(defender.coord),
-                        Buc::Blessed,
-                    ) {
-                        self.arena.spawn_item(art_rec);
-                    }
-                    events.push(GameEvent::LogMessage {
-                        text: netrust_i18n::Messages::quest_nemesis_defeat(
-                            quest_cfg.nemesis_name,
-                            quest_cfg.artifact_name,
-                            self.locale,
-                        ),
-                    });
-                }
-
-                if let Some(corpse) = self.ruleset.create_item_record_by_id(
-                    ItemKindId::Corpse,
-                    ItemLocation::Floor(defender.coord),
-                    Buc::Uncursed,
-                ) {
-                    self.arena.spawn_item(corpse);
-                }
-            }
+            self.on_actor_killed(attacker_id, defender_id, events);
         }
         lethal
+    }
+
+    /// C `iter_mons(anger_quest_guardians)` (`mon.c:3733-3739`): each quest
+    /// guardian gets `setmangry(mtmp, TRUE)` (`mon.c:4265-4318`). Only a
+    /// peaceful, non-tame guardian turns hostile, costing `adjalign(-1)`.
+    /// `setmangry` never calls `set_malign`, so the guardian keeps its peaceful
+    /// `malign`. Not modelled: the per-guardian Elbereth hypocrisy check and the
+    /// "gets angry!" messages.
+    pub fn anger_quest_guardians(&mut self) {
+        let quest_cfg = netrust_core::get_role_quest_config_or_default(&self.role_name);
+        let guardian_ids: Vec<ActorId> = self
+            .arena
+            .actors
+            .iter()
+            .filter(|(id, actor)| {
+                *id != self.player_id
+                    && !actor.is_dead
+                    && (actor.name.eq_ignore_ascii_case(quest_cfg.guardian_name)
+                        || self
+                            .ruleset
+                            .monster(&actor.name)
+                            .is_some_and(|m| m.msound == MonsterSound::Guardian))
+            })
+            .map(|(id, _)| id)
+            .collect();
+
+        let lim = alignlim(self.scheduler.turn);
+        for id in guardian_ids {
+            let Some(mon) = self.arena.actors.get_mut(id) else {
+                continue;
+            };
+            if !mon.is_peaceful || mon.is_tame {
+                continue;
+            }
+            mon.is_peaceful = false;
+            self.alignment_record = adjalign(self.alignment_record, -1, lim);
+        }
+    }
+
+    /// Centralized actor death resolution (C `mon.c:3676-3726`).
+    ///
+    /// Handles conduct kill tracking, quest leader / nemesis / guardian kill
+    /// penalties and rewards, temple priest divine protection cancellation,
+    /// tame / peaceful / hostile alignment adjustments via C `adjalign`,
+    /// quest artifact generation, and corpse spawning.
+    pub fn on_actor_killed(
+        &mut self,
+        attacker_id: ActorId,
+        defender_id: ActorId,
+        events: &mut Vec<GameEvent>,
+    ) {
+        let Some(defender) = self.arena.actors.get(defender_id).cloned() else {
+            return;
+        };
+
+        if attacker_id == self.player_id {
+            netrust_core::conducts::record_kill(&mut self.conducts);
+        }
+
+        events.push(GameEvent::LogMessage {
+            text: netrust_i18n::Messages::killed(&defender.name, self.locale),
+        });
+
+        if defender_id != self.player_id {
+            let quest_cfg = netrust_core::get_role_quest_config_or_default(&self.role_name);
+            let mdef = self.ruleset.monster(&defender.name);
+            // C mon.c:3684 tests `m_id == quest_status.leader_m_id`: only the
+            // hero's own quest leader, not any MS_LEADER monster (the Tourist
+            // nemesis, Master of Thieves, is MS_LEADER).
+            let is_leader = defender.name.eq_ignore_ascii_case(quest_cfg.leader_name);
+            let is_nemesis = defender.name.eq_ignore_ascii_case(quest_cfg.nemesis_name)
+                || mdef.is_some_and(|m| m.msound == MonsterSound::Nemesis);
+            // C mon.c:3691/3694 classify the alignment adjustment by `msound`
+            // alone, so the MS_LEADER Tourist nemesis gets no "Real good!" bonus.
+            let align_nemesis = mdef.is_some_and(|m| m.msound == MonsterSound::Nemesis);
+            let is_guardian = defender.name.eq_ignore_ascii_case(quest_cfg.guardian_name)
+                || mdef.is_some_and(|m| m.msound == MonsterSound::Guardian);
+            let is_priest = mdef.is_some_and(|m| m.is_priest())
+                || defender.name.to_ascii_lowercase().contains("priest");
+
+            if attacker_id == self.player_id {
+                let lim = alignlim(self.scheduler.turn);
+                let hero_align = self.hero_alignment();
+
+                if is_leader {
+                    // REAL BAD! mon.c:3678
+                    let penalty = -(self.alignment_record + lim / 2);
+                    self.alignment_record = adjalign(self.alignment_record, penalty, lim);
+                    self.divine_state.favor = clamp_favor(self.divine_state.favor - 7);
+                    self.player_luck = clamp_luck(self.player_luck - 20);
+                    self.quest_state.killed_leader = true;
+                    let probably = self.quest_state.progress == QuestProgress::Completed;
+                    events.push(GameEvent::LogMessage {
+                        text: netrust_i18n::Messages::bad_idea(probably, self.locale).into(),
+                    });
+                    self.anger_quest_guardians();
+                } else if align_nemesis {
+                    // Real good! mon.c:3691
+                    if !self.quest_state.killed_leader {
+                        self.alignment_record = adjalign(self.alignment_record, lim / 4, lim);
+                    }
+                } else if is_guardian {
+                    // Bad mon.c:3689
+                    self.alignment_record = adjalign(self.alignment_record, -(lim / 8), lim);
+                    self.divine_state.favor = clamp_favor(self.divine_state.favor - 1);
+                    self.player_luck = clamp_luck(self.player_luck - 4);
+                    events.push(GameEvent::LogMessage {
+                        text: netrust_i18n::Messages::bad_idea(true, self.locale).into(),
+                    });
+                } else if is_priest {
+                    // C mon.c:3697-3705
+                    let coaligned = defender.alignment == hero_align;
+                    let adj = if coaligned { -2 } else { 2 };
+                    self.alignment_record = adjalign(self.alignment_record, adj, lim);
+                    if coaligned {
+                        self.divine_protection = 0;
+                    }
+                    let maligntyp = mdef.map(|m| m.maligntyp).unwrap_or(0);
+                    if maligntyp == A_NONE || defender.name.to_ascii_lowercase().contains("moloch")
+                    {
+                        self.alignment_record = adjalign(self.alignment_record, lim / 4, lim);
+                    }
+                } else if defender.is_tame {
+                    // C mon.c:3706
+                    self.alignment_record = adjalign(self.alignment_record, -15, lim);
+                    events.push(GameEvent::LogMessage {
+                        text: netrust_i18n::Messages::distant_thunder(self.locale).into(),
+                    });
+                } else if defender.is_peaceful {
+                    // C mon.c:3722
+                    self.alignment_record = adjalign(self.alignment_record, -5, lim);
+                }
+
+                // C mon.c:3725: malign was already adjusted for u.ualign.type and randomization
+                self.alignment_record = adjalign(self.alignment_record, defender.malign, lim);
+            }
+
+            if is_nemesis {
+                netrust_core::attack_nemesis(&mut self.quest_state, 9999);
+                let art_id = match quest_cfg.role_name.to_lowercase().as_str() {
+                    "valkyrie" => ItemKindId::OrbOfFate,
+                    "wizard" => ItemKindId::EyeOfTheAethiopica,
+                    "barbarian" => ItemKindId::HeartOfAhriman,
+                    "knight" => ItemKindId::MagicMirrorOfMerlin,
+                    "monk" => ItemKindId::EyesOfTheOverworld,
+                    "rogue" => ItemKindId::MasterKeyOfThievery,
+                    "tourist" => ItemKindId::PlatinumYendorianExpressCard,
+                    "healer" => ItemKindId::StaffOfAesculapius,
+                    _ => ItemKindId::OrbOfDetection,
+                };
+                if let Some(art_rec) = self.ruleset.create_item_record_by_id(
+                    art_id,
+                    ItemLocation::Floor(defender.coord),
+                    Buc::Blessed,
+                ) {
+                    self.arena.spawn_item(art_rec);
+                }
+                events.push(GameEvent::LogMessage {
+                    text: netrust_i18n::Messages::quest_nemesis_defeat(
+                        quest_cfg.nemesis_name,
+                        quest_cfg.artifact_name,
+                        self.locale,
+                    ),
+                });
+            }
+
+            if let Some(corpse) = self.ruleset.create_item_record_by_id(
+                ItemKindId::Corpse,
+                ItemLocation::Floor(defender.coord),
+                Buc::Uncursed,
+            ) {
+                self.arena.spawn_item(corpse);
+            }
+        }
     }
 
     /// Defender AC as the sim models `find_mac`/`u.uac`.
@@ -576,6 +708,7 @@ mod tests {
             abilities: Vec::new(),
             is_peaceful: false,
             mspec_used: 0,
+            malign: 0,
         });
         for _ in 0..20 {
             let mut expected = sim.rng.clone();

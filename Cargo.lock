@@ -937,7 +937,7 @@ checksum = "743fb55ba31b18fb1ecef6bdc9aa2743314978ac084044301a7eee33fb99a20d"
 
 [[package]]
 name = "netrust-agent"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "async-graphql",
  "async-graphql-axum",
@@ -960,7 +960,7 @@ dependencies = [
 
 [[package]]
 name = "netrust-arena"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "netrust-types",
  "proptest",
@@ -971,17 +971,18 @@ dependencies = [
 
 [[package]]
 name = "netrust-core"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "netrust-types",
  "proptest",
  "schemars",
  "serde",
+ "serde_json",
 ]
 
 [[package]]
 name = "netrust-data"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "netrust-arena",
  "netrust-core",
@@ -993,7 +994,7 @@ dependencies = [
 
 [[package]]
 name = "netrust-dungeon"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "netrust-core",
  "netrust-types",
@@ -1005,7 +1006,7 @@ dependencies = [
 
 [[package]]
 name = "netrust-i18n"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "netrust-data",
  "netrust-types",
@@ -1014,7 +1015,7 @@ dependencies = [
 
 [[package]]
 name = "netrust-pack"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "clap",
  "netrust-agent",
@@ -1032,7 +1033,7 @@ dependencies = [
 
 [[package]]
 name = "netrust-py"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "netrust-agent",
  "netrust-arena",
@@ -1046,7 +1047,7 @@ dependencies = [
 
 [[package]]
 name = "netrust-sim"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "netrust-arena",
  "netrust-core",
@@ -1063,7 +1064,7 @@ dependencies = [
 
 [[package]]
 name = "netrust-tui"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "crossterm",
  "netrust-agent",
@@ -1079,7 +1080,7 @@ dependencies = [
 
 [[package]]
 name = "netrust-types"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "proptest",
  "schemars",
@@ -1090,7 +1091,7 @@ dependencies = [
 
 [[package]]
 name = "netrust-wasm"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "console_error_panic_hook",
  "getrandom 0.2.17",

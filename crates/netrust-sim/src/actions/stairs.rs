@@ -91,6 +91,7 @@ impl SimulationWorld {
                         } else {
                             rec.is_peaceful = def.peaceful_by_default;
                         }
+                        self.set_monster_malign(&mut rec, def);
                         return Some(self.arena.spawn_actor(rec));
                     }
                 }
@@ -488,8 +489,19 @@ impl SimulationWorld {
                     // applies this on arrival (documented divergence).
                     let priest =
                         self.spawn_monster_near(MonsterSpeciesId::Priest, self.level.stairs_down);
+                    // `set_malign` (priest.c:456) reads the shrine alignment
+                    // `EPRI->shralign`, which is A_NONE here, not the species'.
+                    let hero_align = self.hero_alignment();
                     if let Some(m) = priest.and_then(|id| self.arena.actors.get_mut(id)) {
                         m.is_peaceful = false;
+                        m.malign = netrust_core::calculate_malign(
+                            netrust_core::peace::A_NONE,
+                            hero_align,
+                            false,
+                            false,
+                            false,
+                            false,
+                        );
                     }
 
                     if let Some(amulet) = self.ruleset.create_item_record_by_id(
@@ -616,8 +628,16 @@ impl SimulationWorld {
                         // The Tourist nemesis is the (M2_PEACEFUL) Master of Thieves;
                         // the quest goal level creates it with `peaceful = 0`
                         // (Tou-goal.lua:117). Every other nemesis is M2_HOSTILE.
-                        if let Some(a) = self.arena.actors.get_mut(id) {
+                        // sp_lev.c:2127-2130: changing `mpeaceful` re-runs `set_malign`.
+                        let rs = std::sync::Arc::clone(&self.ruleset);
+                        if let Some(mut a) = self.arena.actors.get(id).cloned() {
                             a.is_peaceful = false;
+                            if let Some(def) = rs.monster(&a.name) {
+                                self.set_monster_malign(&mut a, def);
+                            }
+                            if let Some(slot) = self.arena.actors.get_mut(id) {
+                                *slot = a;
+                            }
                         }
                     }
 
