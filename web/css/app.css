@@ -460,3 +460,14 @@ body.crt-mode .viewport::after {
 .filter { margin-bottom: .5rem; width: min(320px, 100%); }
 .packs-page a, #lnkManagePacks { color: var(--text-cyan); }
 .packs-page .pack-error { color: var(--text-red); }
+
+/* ---- Pack editor ---- */
+.editor-bar { display: flex; gap: .5rem; align-items: center; margin-bottom: .5rem; }
+.editor-bar .spacer { flex: 1; }
+.editor-bar button.active { font-weight: 700; text-decoration: underline; }
+#raw-text { width: 100%; font-family: ui-monospace, Menlo, monospace; font-size: .85rem; }
+.entries fieldset { margin: 0 0 .5rem; }
+.entries label { display: inline-flex; gap: .35rem; align-items: center; margin: .2rem .75rem .2rem 0; }
+.entries input[type=number] { width: 6rem; }
+.add-entry { display: flex; gap: .5rem; margin-top: .5rem; }
+.notice { color: var(--text-yellow); }

@@ -75,11 +75,11 @@ export function render() {
       <dt>validation</dt><dd>${report.errors.length} error(s), ${report.warnings.length} warning(s)</dd>
     </dl>
     <div class="actions">
-      <button id="act-play">Play with this pack</button>
+      ${state.key === 'new' ? '<em>Unsaved: use Edit → Save to store it, then play.</em>' : '<button id="act-play">Play with this pack</button>'}
       <button id="act-download">Download .nrpack</button>
       ${entry?.origin === 'stored' ? '<button id="act-delete" class="danger">Delete</button>' : ''}
     </div>`;
-  $('act-play').onclick = () => { localStorage.setItem(ACTIVE_KEY, state.key); location.href = 'index.html'; };
+  if ($('act-play')) $('act-play').onclick = () => { localStorage.setItem(ACTIVE_KEY, state.key); location.href = 'index.html'; };
   $('act-download').onclick = () => downloadBytes(`${m.id}-${m.version}.nrpack`, p.nrpackBytes());
   const del = $('act-delete');
   if (del) del.onclick = async () => { await deletePack(state.key); await refreshList('vanilla'); };
@@ -169,6 +169,20 @@ async function main() {
     const nr = list.find((f) => f.name.endsWith('.nrpack'));
     if (nr) return importNrpack(nr);
     importFiles(await filesFromInput(list));
+  };
+
+  $('new-from-vanilla').onclick = async () => {
+    const files = JSON.parse(state.wasm.vanillaPackFilesJson());
+    // Start from an empty patch set on top of vanilla, not a full dump.
+    files['pack.toml'] = 'id = "my-pack"\nname = "My Pack"\nversion = "0.1.0"\nbase = "vanilla"\ndescription = "Created in the NetRust web pack editor"\n';
+    files['monsters.toml'] = '# [[monster]]\n# name = "jackal"\n# level = 3\n';
+    files['items.toml'] = '# [[item]]\n# name = "leather armor"\n# cost = 10\n';
+    files['roles.toml'] = '# [[role]]\n# name = "Valkyrie"\n# base_hp = 20\n';
+    state.key = 'new';
+    state.sources = files;
+    state.pack = state.wasm.WasmPack.fromFiles(JSON.stringify(files));
+    render();
+    document.querySelector('.tabs button[data-tab="edit"]').click();
   };
 
   const params = new URLSearchParams(location.search);
