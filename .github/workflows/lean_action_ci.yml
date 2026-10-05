@@ -70,6 +70,7 @@ jobs:
       - run: bash scripts/check-no-static-tables.sh
       - run: python3 scripts/parity-summary.py --check
       - run: python3 scripts/extract/gen_rust.py --check
+      - run: python3 scripts/behaviour-coverage.py --check
       - uses: actions/checkout@v4
         with:
           repository: NetHack/NetHack

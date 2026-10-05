@@ -69,3 +69,19 @@ No legacy preservation: hand-written catalogs are deleted, goldens re-baselined 
   committed TOML means builds never need it.
 - Old saves/packs break — accepted (no backward compatibility).
 - Behaviour gaps become visible (items exist that do little) — tracked, not hidden.
+
+## Status (2026-10-06)
+
+- Steps 1–3 done (PRs #15, #16): objects, monsters, artifacts and the `mkobj.c`
+  class tables are extracted; the engine tables are generated; monsters and
+  objects are generated from the C weights.
+- Ids ended up as table-index newtypes named exactly as the C enums
+  (`MonsterSpeciesId::ALIGNED_CLERIC`), not CamelCase enums: open for packs, grep-able
+  against C. They serialize as the C name.
+- Ukrainian names stay keyed by English name: those names are now generated
+  from C, and the i18n coverage tests fail on any untranslated one.
+- Behaviour coverage is generated: `scripts/behaviour-coverage.py` →
+  [behaviour-coverage.md](../parity/behaviour-coverage.md), checked in CI.
+
+Next: behaviour handlers by tag (AD_* effects, then wand/potion/scroll effects),
+picked from the ❌ rows of the coverage report; `mksobj` init; `dat/*.lua` levels.
