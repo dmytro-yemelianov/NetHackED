@@ -1,18 +1,26 @@
 //! Rule pack library, parser, patch merger, validator, and pack format for NetRust.
 
+pub mod files;
 pub mod format;
+pub mod install;
 pub mod merge;
 pub mod nrpack;
 pub mod simulate;
 pub mod validate;
 
+pub use files::{parse_pack_files, read_pack_files_from_dir, vanilla_pack_files, PackFiles};
 pub use format::{
     read_pack_dir, ItemPatch, ItemsToml, MonsterPatch, MonstersToml, PackDir, PackToml, RolePatch,
     RolesToml,
 };
+pub use install::{
+    default_packs_dir, install_pack, list_installed, pack_info, resolve_installed, InstalledPack,
+    PackInfo,
+};
 pub use merge::resolve;
 pub use nrpack::{
-    build, diff, load_nrpack, ruleset_hash, write_nrpack, DiffEntry, NrPack, PACK_FORMAT_VERSION,
+    build, build_from_files, diff, load_nrpack, load_nrpack_bytes, nrpack_to_bytes, ruleset_hash,
+    write_nrpack, DiffEntry, NrPack, PACK_FORMAT_VERSION,
 };
 pub use simulate::{run_simulation, RoleStats, SimulationReport};
 pub use validate::{validate, Diagnostic, Report};
@@ -26,6 +34,7 @@ pub enum PackError {
     Invalid(Report),
     Hash { expected: String, found: String },
     Format(u32),
+    Conflict(String),
 }
 
 impl std::fmt::Display for PackError {
@@ -53,6 +62,7 @@ impl std::fmt::Display for PackError {
                 )
             }
             Self::Format(v) => write!(f, "Unsupported rule pack format version: {v}"),
+            Self::Conflict(msg) => write!(f, "{msg}"),
         }
     }
 }

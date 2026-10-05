@@ -281,3 +281,34 @@ fn test_cli_schema() {
             serde_json::from_str(&content).expect("schema file must be valid json");
     }
 }
+
+#[test]
+fn cli_install_list_info_roundtrip() {
+    let dir = temp_cli_dir("install-roundtrip");
+    let hard = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../packs/examples/hard-mode"
+    );
+    let out = Command::new(bin_path())
+        .args(["install", hard, "--dir"])
+        .arg(&dir)
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let out = Command::new(bin_path())
+        .args(["list", "--dir"])
+        .arg(&dir)
+        .output()
+        .unwrap();
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("sha256:"), "{stdout}");
+    let out = Command::new(bin_path())
+        .args(["info", hard])
+        .output()
+        .unwrap();
+    assert!(String::from_utf8_lossy(&out.stdout).contains("diffs vs vanilla:"));
+}

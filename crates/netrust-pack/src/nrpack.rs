@@ -10,7 +10,7 @@ use netrust_data::ruleset::{PackManifest, Ruleset, RulesetRef};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-use crate::format::read_pack_dir;
+use crate::files::PackFiles;
 use crate::merge::resolve;
 use crate::validate::{validate, Diagnostic, Report};
 use crate::PackError;
@@ -38,9 +38,14 @@ pub fn ruleset_hash(rs: &Ruleset) -> String {
     format!("sha256:{:x}", hasher.finalize())
 }
 
-/// Builds an NrPack from a pack directory: reads, resolves against vanilla, validates, and warns on missing i18n.
+/// Builds an NrPack from a pack directory (reads it, then [`build_from_files`]).
 pub fn build(dir: &Path) -> Result<(NrPack, Report), PackError> {
-    let pack = read_pack_dir(dir)?;
+    build_from_files(&crate::files::read_pack_files_from_dir(dir)?)
+}
+
+/// Builds an NrPack from in-memory sources: resolves against vanilla, validates, and warns on missing i18n.
+pub fn build_from_files(files: &PackFiles) -> Result<(NrPack, Report), PackError> {
+    let pack = crate::files::parse_pack_files(files)?;
     let base = Ruleset::vanilla();
     let ruleset = resolve(&pack, &base)?;
     let mut report = validate(&ruleset);
@@ -100,25 +105,26 @@ pub fn build(dir: &Path) -> Result<(NrPack, Report), PackError> {
     Ok((nrpack, report))
 }
 
-/// Serializes and writes an NrPack as canonical formatted JSON to the target output file.
-pub fn write_nrpack(p: &NrPack, out: &Path) -> io::Result<()> {
-    let val = serde_json::to_value(p).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
-    let json_bytes = serde_json::to_vec_pretty(&val)
-        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
-    fs::write(out, json_bytes)
+/// Canonical pretty JSON bytes of an NrPack, exactly what `write_nrpack` writes.
+pub fn nrpack_to_bytes(p: &NrPack) -> Vec<u8> {
+    let val = serde_json::to_value(p).expect("NrPack must serialize to serde_json::Value");
+    serde_json::to_vec_pretty(&val).expect("serde_json::Value must serialize to vec")
 }
 
-/// Loads an NrPack from disk, verifies format and cryptographic hash integrity, and re-indexes the ruleset.
-pub fn load_nrpack(path: &Path) -> Result<(Arc<Ruleset>, RulesetRef), PackError> {
-    let content =
-        fs::read_to_string(path).map_err(|e| PackError::Io(format!("{}: {e}", path.display())))?;
-    let nrpack: NrPack = serde_json::from_str(&content)
-        .map_err(|e| PackError::Io(format!("Failed to parse {}: {e}", path.display())))?;
+/// Serializes and writes an NrPack as canonical formatted JSON to the target output file.
+pub fn write_nrpack(p: &NrPack, out: &Path) -> io::Result<()> {
+    fs::write(out, nrpack_to_bytes(p))
+}
 
+/// Parse `.nrpack` bytes, verify format and hash, and reindex the ruleset.
+pub fn load_nrpack_bytes(bytes: &[u8]) -> Result<(Arc<Ruleset>, RulesetRef, NrPack), PackError> {
+    let text = std::str::from_utf8(bytes)
+        .map_err(|e| PackError::Io(format!("pack is not UTF-8 JSON: {e}")))?;
+    let mut nrpack: NrPack = serde_json::from_str(text)
+        .map_err(|e| PackError::Io(format!("Failed to parse .nrpack: {e}")))?;
     if nrpack.format != PACK_FORMAT_VERSION {
         return Err(PackError::Format(nrpack.format));
     }
-
     let computed = ruleset_hash(&nrpack.ruleset);
     if computed != nrpack.hash {
         return Err(PackError::Hash {
@@ -126,17 +132,36 @@ pub fn load_nrpack(path: &Path) -> Result<(Arc<Ruleset>, RulesetRef), PackError>
             found: computed,
         });
     }
-
-    let mut ruleset = nrpack.ruleset;
-    ruleset.reindex();
-
+    // The hash covers only `ruleset`; the outer manifest must agree with it.
+    if nrpack.manifest != nrpack.ruleset.manifest {
+        return Err(PackError::Io(
+            "pack manifest does not match the hashed ruleset manifest".into(),
+        ));
+    }
+    crate::files::check_manifest_ident(&nrpack.manifest.id, &nrpack.manifest.version)?;
+    nrpack.ruleset.reindex();
+    // Anyone can recompute the hash, so a loaded pack must still validate
+    // (after reindex: validation looks entries up by name).
+    let report = validate(&nrpack.ruleset);
+    if report.has_errors() {
+        return Err(PackError::Invalid(report));
+    }
     let ruleset_ref = RulesetRef {
-        id: nrpack.manifest.id,
-        version: nrpack.manifest.version,
-        hash: nrpack.hash,
+        id: nrpack.manifest.id.clone(),
+        version: nrpack.manifest.version.clone(),
+        hash: nrpack.hash.clone(),
     };
+    Ok((Arc::new(nrpack.ruleset.clone()), ruleset_ref, nrpack))
+}
 
-    Ok((Arc::new(ruleset), ruleset_ref))
+/// Loads an NrPack from disk, verifies format and cryptographic hash integrity, and re-indexes the ruleset.
+pub fn load_nrpack(path: &Path) -> Result<(Arc<Ruleset>, RulesetRef), PackError> {
+    let bytes = fs::read(path).map_err(|e| PackError::Io(format!("{}: {e}", path.display())))?;
+    let (rs, rref, _) = load_nrpack_bytes(&bytes).map_err(|e| match e {
+        PackError::Io(m) => PackError::Io(format!("{}: {m}", path.display())),
+        other => other,
+    })?;
+    Ok((rs, rref))
 }
 
 /// A single field difference between two Rulesets.

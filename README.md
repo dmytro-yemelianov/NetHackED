@@ -131,10 +131,12 @@ bash scripts/check-doc-links.sh
 ## Frontends & Interaction Options
 
 ### 1. Play in Web Browser (WebAssembly Terminal)
+**Play online:** https://dmytro-yemelianov.github.io/NetRust/ — rule pack manager: https://dmytro-yemelianov.github.io/NetRust/packs.html
+
 No backend server required. NetRust compiles to a WebAssembly module that the page loads from `web/pkg/`. Build it first (requires [`wasm-pack`](https://rustwasm.github.io/wasm-pack/)):
 ```bash
-# Build the web client
-wasm-pack build crates/netrust-wasm --target web --out-dir ../../web/pkg
+# Build the web client: wasm package, bundled rule packs and pack schemas
+scripts/build-web.sh            # add --release for an optimized build
 
 # Serve the web/ directory locally
 python3 -m http.server 8080 --directory web
@@ -144,6 +146,16 @@ Then visit **`http://localhost:8080`** in your browser:
 * Interactive Character Creator modal (`Valkyrie`, `Wizard`, `Barbarian`, `Rogue`, `Knight`, `Monk`, `Healer`, `Tourist`, `Archaeologist`).
 * Keyboard controls (Vi-keys `h/j/k/l/y/u/b/n`, arrows, `.`, `,`, `p` to pay, `P` to pray, `S` to sacrifice).
 * Live JSON Telemetry pane for autonomous agent inspection.
+
+**Rule packs in the browser.** Pick a ruleset (vanilla, a bundled example pack, or one you uploaded) in the character dialog. The pack manager (`packs.html`) lists packs; shows monsters, items and roles, validation diagnostics and a diff against vanilla; accepts `.nrpack` files, pack `.toml` files or a pack folder; and edits patches in a form or as raw TOML, then downloads the built `.nrpack`. Uploaded packs stay in your browser (IndexedDB).
+
+**Rule packs on the command line.**
+```bash
+netrust-pack install packs/examples/hard-mode   # build + copy into ~/.netrust/packs (or $NETRUST_PACKS_DIR)
+netrust-pack list                               # id, version, hash, path of installed packs
+netrust-pack info hard-mode                     # manifest, hash, counts, diff size vs vanilla
+netrust-tui --pack hard-mode                    # play an installed pack by id (or pass a path)
+```
 
 ### 2. Play in Terminal (Human Interactive TUI)
 ```bash
