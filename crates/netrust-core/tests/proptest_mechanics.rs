@@ -5,8 +5,8 @@
 use netrust_core::{
     apply_erosion, apply_vorpal_strike, arm_bonus, attack_hits, attack_nemesis,
     branch_entrance_depth, branch_max_depth, buy_price, calculate_damage, calculate_encumbrance,
-    calculate_summon_count, calculate_tournament_score, can_detect_monster, can_see_tile,
-    cast_spell, choose_pet_goal, clamp_favor, consecrate_water, consult_leader,
+    calculate_malign, calculate_summon_count, calculate_tournament_score, can_detect_monster,
+    can_see_tile, cast_spell, choose_pet_goal, clamp_favor, consecrate_water, consult_leader,
     corrupt_buc_on_death, create_ghost_hp, decide_tactical_action, destroy_drawbridge,
     dilute_potion, dip_water, dmgval, enchant_armor, enchant_weapon, enter_branch, exit_branch,
     feed_pet, find_ac, hero_damage_after_ac, hunger_of_nutrition, hunger_tier, identify_fully,
@@ -2625,5 +2625,99 @@ fn c_priest_band(offer: u32, suggested: u32, quan: u32, gold_after: u32) -> Dona
         DonationOutcome::Protection
     } else {
         DonationOutcome::Selfless
+    }
+}
+
+/// C makemon.c:2320-2366 set_malign reference implementation.
+fn c_set_malign_reference(
+    maligntyp: i8,
+    hero_alignment: Alignment,
+    is_peaceful: bool,
+    is_leader: bool,
+    always_peaceful: bool,
+    always_hostile: bool,
+) -> i32 {
+    let mal = maligntyp as i32;
+    let sgn_mal = if mal < 0 {
+        -1
+    } else if mal > 0 {
+        1
+    } else {
+        0
+    };
+    let sgn_u = match hero_alignment {
+        Alignment::Chaotic => -1,
+        Alignment::Neutral | Alignment::Unaligned => 0,
+        Alignment::Lawful => 1,
+    };
+    let coaligned = sgn_mal == sgn_u;
+
+    if is_leader {
+        -20
+    } else if mal == -128 {
+        // A_NONE
+        if is_peaceful {
+            0
+        } else {
+            20
+        }
+    } else if always_peaceful {
+        let absmal = mal.abs();
+        if is_peaceful {
+            -3 * 5.max(absmal)
+        } else {
+            3 * 5.max(absmal)
+        }
+    } else if always_hostile {
+        let absmal = mal.abs();
+        if coaligned {
+            0
+        } else {
+            5.max(absmal)
+        }
+    } else if coaligned {
+        let absmal = mal.abs();
+        if is_peaceful {
+            -3 * 3.max(absmal)
+        } else {
+            3.max(absmal)
+        }
+    } else {
+        mal.abs()
+    }
+}
+
+proptest! {
+    #[test]
+    fn prop_calculate_malign_matches_c_reference(
+        maligntyp in -128i8..=127i8,
+        hero_align_idx in 0..3u8,
+        is_peaceful in proptest::bool::ANY,
+        is_leader in proptest::bool::ANY,
+        always_peaceful in proptest::bool::ANY,
+        always_hostile in proptest::bool::ANY,
+    ) {
+        let hero_alignment = match hero_align_idx {
+            0 => Alignment::Lawful,
+            1 => Alignment::Neutral,
+            _ => Alignment::Chaotic,
+        };
+        let actual = calculate_malign(
+            maligntyp,
+            hero_alignment,
+            is_peaceful,
+            is_leader,
+            always_peaceful,
+            always_hostile,
+        );
+        let expected = c_set_malign_reference(
+            maligntyp,
+            hero_alignment,
+            is_peaceful,
+            is_leader,
+            always_peaceful,
+            always_hostile,
+        );
+        prop_assert_eq!(actual, expected);
     }
 }

@@ -456,6 +456,7 @@ impl Ruleset {
             abilities: def.abilities.clone(),
             is_peaceful: def.peaceful_by_default,
             mspec_used: 0,
+            malign: 0,
         })
     }
 
@@ -544,6 +545,7 @@ impl Ruleset {
             abilities: Vec::new(),
             is_peaceful: false,
             mspec_used: 0,
+            malign: 0,
         };
         let player_id = arena.spawn_actor(actor);
 

@@ -213,9 +213,19 @@ impl SimulationWorld {
             match room.room_type {
                 RoomType::Shop => {
                     // Spawn peaceful Shopkeeper
-                    if let Some(sk) = ruleset
+                    if let Some(mut sk) = ruleset
                         .create_monster_record_by_id(MonsterSpeciesId::Shopkeeper, room.center())
                     {
+                        if let Some(sk_def) = ruleset.monster_by_id(MonsterSpeciesId::Shopkeeper) {
+                            sk.malign = netrust_core::calculate_malign(
+                                sk_def.maligntyp,
+                                config.alignment,
+                                sk.is_peaceful,
+                                false,
+                                sk_def.peaceful_by_default,
+                                sk_def.always_hostile,
+                            );
+                        }
                         arena.spawn_actor(sk);
                     }
 
@@ -259,6 +269,14 @@ impl SimulationWorld {
                                 false,
                             );
                             goblin.is_peaceful = crate::peace::roll_peace_minded(&input, &mut rng);
+                            goblin.malign = netrust_core::calculate_malign(
+                                gob_def.maligntyp,
+                                config.alignment,
+                                goblin.is_peaceful,
+                                false,
+                                gob_def.peaceful_by_default,
+                                gob_def.always_hostile,
+                            );
                         }
                         arena.spawn_actor(goblin);
                     }

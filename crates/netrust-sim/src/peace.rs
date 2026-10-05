@@ -4,7 +4,7 @@
 
 use netrust_arena::{ActorId, ActorRecord};
 use netrust_core::engraving::Engraving;
-use netrust_core::{adjalign, alignlim, peace_minded, PeaceMindedInput};
+use netrust_core::{adjalign, alignlim, calculate_malign, peace_minded, PeaceMindedInput};
 use netrust_data::ruleset::{MonsterDef, Ruleset};
 use netrust_data::{race_hostile, race_peaceful, MonsterSound, MonsterSpeciesId, RaceId};
 use netrust_types::{Alignment, Coord};
@@ -86,7 +86,7 @@ impl SimulationWorld {
             })
     }
 
-    fn hero_alignment(&self) -> Alignment {
+    pub(crate) fn hero_alignment(&self) -> Alignment {
         self.arena
             .actors
             .get(self.player_id)
@@ -109,6 +109,21 @@ impl SimulationWorld {
             self.hero_has_amulet(),
         );
         roll_peace_minded(&input, &mut self.rng)
+    }
+
+    /// C `set_malign(mtmp)` (`makemon.c:2320-2366`): precalculate alignment adjustment upon monster death.
+    pub(crate) fn set_monster_malign(&self, rec: &mut ActorRecord, def: &MonsterDef) {
+        let quest_cfg = netrust_core::get_role_quest_config_or_default(&self.role_name);
+        let is_leader = matches!(def.msound, MonsterSound::Leader)
+            || rec.name.eq_ignore_ascii_case(quest_cfg.leader_name);
+        rec.malign = calculate_malign(
+            def.maligntyp,
+            self.hero_alignment(),
+            rec.is_peaceful,
+            is_leader,
+            def.peaceful_by_default,
+            def.always_hostile,
+        );
     }
 
     /// C `onscary(x, y, mtmp)` (`monmove.c:240-302`) for the engraving under the

@@ -522,9 +522,10 @@ impl SimulationWorld {
                                 &arch.name,
                                 arch.glyph,
                             ) {
-                                if let Some(skeleton) =
+                                if let Some(mut skeleton) =
                                     rs.create_monster_record(&arch.name, neighbor)
                                 {
+                                    self.set_monster_malign(&mut skeleton, arch);
                                     self.arena.spawn_actor(skeleton);
                                     spawned += 1;
                                 }

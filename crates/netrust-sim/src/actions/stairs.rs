@@ -91,6 +91,7 @@ impl SimulationWorld {
                         } else {
                             rec.is_peaceful = def.peaceful_by_default;
                         }
+                        self.set_monster_malign(&mut rec, def);
                         return Some(self.arena.spawn_actor(rec));
                     }
                 }

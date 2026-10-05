@@ -576,6 +576,7 @@ mod tests {
             abilities: Vec::new(),
             is_peaceful: false,
             mspec_used: 0,
+            malign: 0,
         });
         for _ in 0..20 {
             let mut expected = sim.rng.clone();

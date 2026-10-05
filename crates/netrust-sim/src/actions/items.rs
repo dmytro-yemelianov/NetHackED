@@ -225,6 +225,13 @@ impl SimulationWorld {
                             spawn_c,
                         ) {
                             mon.name = "hostile djinni".into();
+                            mon.is_peaceful = false;
+                            if let Some(def) = self
+                                .ruleset
+                                .monster_by_id(netrust_data::MonsterSpeciesId::Djinni)
+                            {
+                                self.set_monster_malign(&mut mon, def);
+                            }
                             self.arena.spawn_actor(mon);
                         }
                     }
@@ -617,6 +624,13 @@ impl SimulationWorld {
                                         spawn_c,
                                     ) {
                                         mon.name = "hostile goblin".into();
+                                        mon.is_peaceful = false;
+                                        if let Some(def) = self
+                                            .ruleset
+                                            .monster_by_id(netrust_data::MonsterSpeciesId::Goblin)
+                                        {
+                                            self.set_monster_malign(&mut mon, def);
+                                        }
                                         self.arena.spawn_actor(mon);
                                     }
                                 }

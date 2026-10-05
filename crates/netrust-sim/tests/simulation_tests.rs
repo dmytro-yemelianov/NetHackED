@@ -149,6 +149,7 @@ fn test_melee_attack_action() {
         abilities: Vec::new(),
         is_peaceful: false,
         mspec_used: 0,
+        malign: 0,
     };
     let mon_id = sim.arena.spawn_actor(goblin);
 
@@ -199,6 +200,7 @@ fn test_zap_wand_beam_propagation_and_damage() {
         abilities: Vec::new(),
         is_peaceful: false,
         mspec_used: 0,
+        malign: 0,
     };
     let mon_id = sim.arena.spawn_actor(mon);
     // Zapping now requires a carried wand.
@@ -253,6 +255,7 @@ fn test_wands_of_digging_and_teleportation_do_not_damage() {
             abilities: Vec::new(),
             is_peaceful: false,
             mspec_used: 0,
+            malign: 0,
         };
         let mon_id = sim.arena.spawn_actor(mon);
         // Zapping now requires a carried wand.
@@ -2069,6 +2072,7 @@ fn test_artifact_combat_bonus_and_vorpal_blade() {
         abilities: Vec::new(),
         is_peaceful: false,
         mspec_used: 0,
+        malign: 0,
     });
 
     let excalibur = sim.arena.spawn_item(ItemRecord {
@@ -2124,6 +2128,7 @@ fn test_ukrainian_i18n_simulation_logging() {
         abilities: Vec::new(),
         is_peaceful: false,
         mspec_used: 0,
+        malign: 0,
     });
 
     let combat_events = sim.step_player_action(ActionAst::MeleeAttack(mon_coord));
@@ -3240,6 +3245,7 @@ fn test_hero_polymorph_potion_and_damage_reversion() {
         abilities: Vec::new(),
         is_peaceful: false,
         mspec_used: 0,
+        malign: 0,
     };
     sim.arena.spawn_actor(mon);
 
@@ -3293,6 +3299,7 @@ fn test_wand_of_polymorph_unique_monster_invariant() {
         abilities: Vec::new(),
         is_peaceful: false,
         mspec_used: 0,
+        malign: 0,
     });
     sim1.arena.spawn_item(ItemRecord {
         name: "wand of polymorph".into(),
@@ -3346,6 +3353,7 @@ fn test_wand_of_polymorph_unique_monster_invariant() {
         abilities: Vec::new(),
         is_peaceful: false,
         mspec_used: 0,
+        malign: 0,
     });
     sim2.arena.spawn_item(ItemRecord {
         name: "wand of polymorph".into(),
@@ -3401,6 +3409,7 @@ fn test_scroll_of_genocide_conduct_and_level_wipe() {
         abilities: Vec::new(),
         is_peaceful: false,
         mspec_used: 0,
+        malign: 0,
     });
 
     let scroll_id = sim.arena.spawn_item(ItemRecord {
@@ -3633,6 +3642,7 @@ fn test_weapon_skill_combat_bonus() {
         abilities: Vec::new(),
         is_peaceful: false,
         mspec_used: 0,
+        malign: 0,
     });
 
     let hp_before = sim.arena.actors.get(mon_id).unwrap().hp;
@@ -3678,6 +3688,7 @@ fn test_ranged_fire_arrow_hits_monster() {
         abilities: Vec::new(),
         is_peaceful: false,
         mspec_used: 0,
+        malign: 0,
     });
 
     // Put arrow in hero inventory
@@ -3744,6 +3755,7 @@ fn test_steed_mounting_and_effective_movement() {
         abilities: Vec::new(),
         is_peaceful: false,
         mspec_used: 0,
+        malign: 0,
     });
 
     // Mount the steed
@@ -3966,6 +3978,7 @@ fn test_pacifist_conduct_violation_on_kill() {
         abilities: vec![],
         is_peaceful: false,
         mspec_used: 0,
+        malign: 0,
     };
 
     sim.arena.actors.insert(monster);
@@ -4277,6 +4290,7 @@ fn valkyrie_first_swing_hits(ac: i32, seeds: u64) -> u64 {
             abilities: Vec::new(),
             is_peaceful: false,
             mspec_used: 0,
+            malign: 0,
         };
         let mid = sim.arena.spawn_actor(mon);
         let events = sim.step_player_action(ActionAst::MeleeAttack(mc));
@@ -4426,4 +4440,77 @@ fn test_initial_alignment_record_per_role_matches_c() {
             "Role {role:?} should have initial alignment record {expected_record} matching NetHack C urole.initrecord"
         );
     }
+}
+
+#[test]
+fn test_spawned_monsters_malign_matches_c_set_malign() {
+    use netrust_data::MonsterSpeciesId;
+
+    // Lawful Knight hero
+    let mut sim = SimulationWorld::new_with_character(
+        101,
+        CharacterConfig {
+            role: RoleId::Knight,
+            race: RaceId::Human,
+            name: "Lancelot".to_string(),
+            gender: Gender::Male,
+            alignment: Alignment::Lawful,
+        },
+    );
+
+    // Kobold: maligntyp = -2, always_hostile = true.
+    // Crossaligned always_hostile (Lawful vs Chaotic): max(5, 2) = 5
+    let kob_id = sim
+        .spawn_monster_near(MonsterSpeciesId::Kobold, sim.level.stairs_up)
+        .expect("spawn kobold");
+    let kob = sim.arena.actors.get(kob_id).unwrap();
+    assert_eq!(
+        kob.malign, 5,
+        "crossaligned always_hostile kobold malign should be 5"
+    );
+
+    // Goblin: maligntyp = -3, always_hostile = false.
+    // Crossaligned (Lawful vs Chaotic): abs(mal) = 3
+    let gob_id = sim
+        .spawn_monster_near(MonsterSpeciesId::Goblin, sim.level.stairs_up)
+        .expect("spawn goblin");
+    let gob = sim.arena.actors.get(gob_id).unwrap();
+    assert_eq!(
+        gob.malign, 3,
+        "crossaligned standard goblin malign should be 3"
+    );
+
+    // Shopkeeper: always_peaceful = true, maligntyp = 0.
+    // Peaceful: -3 * max(5, 0) = -15
+    let shk_id = sim
+        .spawn_monster_near(MonsterSpeciesId::Shopkeeper, sim.level.stairs_up)
+        .expect("spawn shopkeeper");
+    let shk = sim.arena.actors.get(shk_id).unwrap();
+    assert_eq!(
+        shk.malign, -15,
+        "always_peaceful shopkeeper malign should be -15"
+    );
+
+    // Chaotic Barbarian hero
+    let mut sim_chaotic = SimulationWorld::new_with_character(
+        102,
+        CharacterConfig {
+            role: RoleId::Barbarian,
+            race: RaceId::Human,
+            name: "Conan".to_string(),
+            gender: Gender::Male,
+            alignment: Alignment::Chaotic,
+        },
+    );
+
+    // Kobold: maligntyp = -2, always_hostile = true.
+    // Coaligned always_hostile (Chaotic vs Chaotic): 0
+    let kob_chaotic_id = sim_chaotic
+        .spawn_monster_near(MonsterSpeciesId::Kobold, sim_chaotic.level.stairs_up)
+        .expect("spawn kobold for chaotic hero");
+    let kob_chaotic = sim_chaotic.arena.actors.get(kob_chaotic_id).unwrap();
+    assert_eq!(
+        kob_chaotic.malign, 0,
+        "coaligned always_hostile kobold malign should be 0"
+    );
 }
