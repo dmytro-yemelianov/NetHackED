@@ -9,9 +9,26 @@
   <meta name="description" content="NetHackED: classic NetHack reimplemented in Rust, running as WebAssembly in your browser.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='14' font-family='monospace' fill='%23fff'>@</text></svg>">
   <style>
-    :root { color-scheme: dark; --bg: #000; --fg: #c0c0c0; }
-    html, body { margin: 0; height: 100%; background: var(--bg); }
-    body { display: grid; place-items: center; }
+    :root { color-scheme: dark; --bg: #05070a; --fg: #c0c0c0; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: var(--bg); }
+    body { display: grid; place-items: center; background: radial-gradient(circle at center, #0f141c 0%, #05070a 100%); }
+    /* Pixel renderer (same look as yemelianov.dev): a 4:3 canvas, crisp pixels. */
+    canvas#screen {
+      display: none;
+      width: min(100vw, calc(100dvh * 4 / 3));
+      height: min(100dvh, calc(100vw * 3 / 4));
+      aspect-ratio: 4 / 3;
+      border-radius: 4px;
+      box-shadow: 0 0 16px rgba(0, 0, 0, 0.9);
+      image-rendering: pixelated;
+    }
+    body.pixel canvas#screen { display: block; }
+    /* With the canvas active the text terminal stays in the DOM for screen readers. */
+    body.pixel #term {
+      position: absolute; width: 1px; height: 1px; overflow: hidden;
+      clip: rect(0 0 0 0); clip-path: inset(50%); white-space: pre;
+    }
     #term {
       margin: 0;
       font: 16px/1.15 ui-monospace, "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
@@ -35,6 +52,7 @@
   </style>
 </head>
 <body>
+  <canvas id="screen" width="1280" height="800" aria-hidden="true"></canvas>
   <pre id="term" tabindex="0" aria-label="NetHackED terminal">Loading NetHackED…</pre>
   <script type="module" src="play.js"></script>
 </body>

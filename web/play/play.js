@@ -13,6 +13,23 @@ const { WasmGameSession, WasmPack } = wasm;
 const COLS = 80;
 const ROWS = 24;
 const term = document.getElementById('term');
+const canvas = document.getElementById('screen');
+
+// Pixel renderer (pixel-ssh: bitmap fonts, palettes, CRT effects over WebGL2).
+// Without WebGL2 the page keeps the plain text terminal.
+let pixel = null;
+try {
+  pixel = new wasm.PixelScreen(canvas);
+  const saved = JSON.parse(localStorage.getItem('nethacked.pixel') || 'null');
+  if (Array.isArray(saved) && saved.length === 3) pixel.restore(...saved);
+  document.body.classList.add('pixel');
+} catch (e) {
+  console.warn('Pixel renderer unavailable, using text terminal:', e?.message || e);
+  pixel = null;
+}
+const ROLE = { text: 0, hero: 1, monster: 2, gold: 3, item: 4, stairs: 5, door: 6, wall: 7, water: 8, message: 9, accent: 10 };
+const CLASS_ROLE = { 'c-hero': ROLE.hero, 'c-mon': ROLE.monster, 'c-gold': ROLE.gold, 'c-item': ROLE.item,
+  'c-stair': ROLE.stairs, 'c-door': ROLE.door, 'c-wall': ROLE.wall, 'c-water': ROLE.water };
 const params = new URLSearchParams(location.search);
 const LANG = params.get('lang') === 'uk' ? 'uk' : 'en';
 document.documentElement.lang = LANG;
@@ -26,6 +43,7 @@ const STR = {
     pick: "Shall I pick a character's role for you?",
     random: 'Random',
     pickHint: '(end with a letter; ? for help after the game starts)',
+    displayKeys: 'F2 system  F3 palette  F4 effects',
     pack: 'Rule pack',
     hero: 'Hero',
     welcome: (name, align, role) => `Hello ${name}, welcome to NetHackED!  You are a ${align.toLowerCase()} ${role.toLowerCase()}.  (? for help)`,
@@ -53,6 +71,7 @@ const STR = {
     pick: 'Обрати роль персонажа замість вас?',
     random: 'Випадково',
     pickHint: '(натисніть літеру; ? — довідка після початку гри)',
+    displayKeys: 'F2 система  F3 палітра  F4 ефекти',
     pack: 'Набір правил',
     hero: 'Герой',
     welcome: (name, align, role) => `Вітаємо, ${name}, у NetHackED!  Ви — ${role}, шлях: ${align.toLowerCase()}.  (? — довідка)`,
@@ -111,6 +130,7 @@ const HELP_UK = [
   '          f  стріляти      F  копнути       E  написати',
   '          p  платити       P  молитися      S  жертва',
   '          ?  довідка       Esc скасовує запит',
+  '          F2 система       F3 палітра       F4 ефекти',
   '',
   'Параметри URL: ?pack=hard-mode  ?lang=uk  ?seed=42',
   '',
@@ -129,6 +149,7 @@ const HELP_EN = [
   '          f  fire          F  kick          E  engrave',
   '          p  pay           P  pray          S  sacrifice',
   '          ?  this help     Esc cancels a prompt',
+  '          F2 system        F3 palette       F4 effects',
   '',
   'URL options: ?pack=hard-mode  ?lang=uk  ?seed=42',
   '',
@@ -218,6 +239,7 @@ function draw() {
     }
   }
   while (lines.length < ROWS) lines.push(pad(''));
+  if (pixel) drawPixel(lines.slice(0, ROWS));
   term.innerHTML = lines
     .slice(0, ROWS)
     .map((l, i) => (mode !== 'pick' && i >= 1 && i <= 21 && !overlay ? colorLine(l) : esc(l)))
@@ -236,11 +258,34 @@ function pickScreen() {
   ];
   ROLES.forEach(([, , label, raceLabel], i) => out.push(`    ${String.fromCharCode(97 + i)} - ${label} (${raceLabel})`));
   out.push('', `    * - ${STR.random}`, '', `  ${STR.pickHint}`);
+  if (pixel) out.push(`  ${STR.displayKeys}`);
   if (packLabel) out.push('', `  ${STR.pack}: ${packLabel}`);
   return out.map(pad);
 }
 
+// Color role per cell for the pixel renderer.
+function drawPixel(lines) {
+  const roles = new Uint8Array(COLS * ROWS);
+  lines.forEach((line, row) => {
+    for (let col = 0; col < Math.min(COLS, line.length); col++) {
+      let r = ROLE.text;
+      if (mode === 'pick') {
+        r = row === 1 ? ROLE.message : row === 2 ? ROLE.accent : ROLE.text;
+      } else if (row === 0) {
+        r = ROLE.message;
+      } else if (row <= 21 && !overlay) {
+        r = CLASS_ROLE[glyphClass(line[col])] ?? ROLE.text;
+      } else if (row === 22 && packLabel && line.indexOf(`[${packLabel}]`) >= 0 && col >= line.indexOf(`[${packLabel}]`)) {
+        r = ROLE.accent;
+      }
+      roles[row * COLS + col] = r;
+    }
+  });
+  pixel.draw(lines.join('\n'), roles);
+}
+
 function fit() {
+  if (pixel) return; // the canvas is sized by CSS
   // Scale the 80x24 grid to the window while keeping crisp monospace text.
   term.style.transform = 'none';
   const r = term.getBoundingClientRect();
@@ -350,8 +395,23 @@ async function newGame(roleIdx) {
   mode = 'play';
 }
 
+// F2 / F3 / F4: display system, palette, visual effects (pixel renderer only).
+function onDisplayKey(key) {
+  if (!pixel) return false;
+  const label = key === 'F2' ? pixel.cycleSystem() : key === 'F3' ? pixel.cyclePalette() : key === 'F4' ? pixel.cycleEffects() : null;
+  if (label === null) return false;
+  try { localStorage.setItem('nethacked.pixel', JSON.stringify(Array.from(pixel.state()))); } catch { /* storage unavailable */ }
+  if (mode !== 'pick') message = label;
+  draw();
+  return true;
+}
+
 function onKey(e) {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (onDisplayKey(e.key)) {
+    e.preventDefault();
+    return;
+  }
   const key = ARROWS[e.key] || e.key;
   if (key.length > 1 && key !== 'Escape' && key !== 'Enter') return;
   e.preventDefault();
@@ -464,6 +524,15 @@ function onKey(e) {
 }
 
 window.addEventListener('keydown', onKey);
+
+if (pixel) {
+  const t0 = performance.now();
+  const loop = (now) => {
+    pixel.frame((now - t0) / 1000);
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+}
 
 const packParam = params.get('pack');
 if (packParam) packLabel = packParam;

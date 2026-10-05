@@ -6,7 +6,7 @@ NetHackED is a Rust reimplementation of selected **NetHack** mechanics (derived 
 
 **Play now:** [nethacked.yemelianov.dev](https://nethacked.yemelianov.dev/) (clean keyboard terminal) · [developer web client](https://dmytro-yemelianov.github.io/NetHackED/) · [pack manager](https://dmytro-yemelianov.github.io/NetHackED/packs.html) · terminal and SSH: see [Playing NetHackED](docs/playing-nethacked.md)
 
-![NetHackED in the browser](docs/images/play-dungeon.png)
+![NetHackED in the browser](docs/images/play-pixel.png)
 
 
 What is and is not claimed:
@@ -223,4 +223,4 @@ Stores and serves bones files and gravestone records over HTTP; see [docs/agent-
 
 ## License & Credits
 
-NetHackED is distributed under the **NetHack General Public License (NGPL)**; see [LICENSE](LICENSE). It is derived from **NetHack** by the NetHack DevTeam, and NetHackED is not affiliated with or endorsed by the NetHack DevTeam.
+NetHackED is distributed under the **NetHack General Public License (NGPL)**; see [LICENSE](LICENSE). Third-party components (the pixel-ssh renderer, MIT, and its CC BY-SA 4.0 bitmap fonts) are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). It is derived from **NetHack** by the NetHack DevTeam, and NetHackED is not affiliated with or endorsed by the NetHack DevTeam.

@@ -11,7 +11,10 @@ use nethacked_types::Coord;
 use wasm_bindgen::prelude::*;
 
 mod packs;
+pub mod pixel;
 pub use packs::*;
+#[cfg(target_arch = "wasm32")]
+pub use pixel::PixelScreen;
 
 /// Installs the panic hook so Rust panics show up in the browser console.
 #[wasm_bindgen(start)]

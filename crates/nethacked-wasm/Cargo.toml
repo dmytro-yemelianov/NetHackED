@@ -25,4 +25,10 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 getrandom = { version = "0.2", features = ["js"] }
 getrandom_03 = { package = "getrandom", version = "0.3", features = ["wasm_js"] }
+# Pixel renderer from pixel-ssh (the engine behind yemelianov.dev): indexed
+# framebuffer, CP437 + Cyrillic bitmap fonts, palettes, WebGL2 CRT effects.
+pixel-ssh-framebuffer = { git = "https://github.com/dmytro-yemelianov/pixel-ssh", rev = "3a5287887adbe6b925520eab139cbee6b5ab1c49" }
+pixel-ssh-view = { git = "https://github.com/dmytro-yemelianov/pixel-ssh", rev = "3a5287887adbe6b925520eab139cbee6b5ab1c49" }
+pixel-ssh-render-web = { git = "https://github.com/dmytro-yemelianov/pixel-ssh", rev = "3a5287887adbe6b925520eab139cbee6b5ab1c49" }
+web-sys = { version = "0.3", features = ["HtmlCanvasElement"] }
 
