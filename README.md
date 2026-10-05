@@ -133,8 +133,8 @@ bash scripts/check-doc-links.sh
 ### 1. Play in Web Browser (WebAssembly Terminal)
 No backend server required. NetRust compiles to a WebAssembly module that the page loads from `web/pkg/`. Build it first (requires [`wasm-pack`](https://rustwasm.github.io/wasm-pack/)):
 ```bash
-# Build the web client
-wasm-pack build crates/netrust-wasm --target web --out-dir ../../web/pkg
+# Build the web client: wasm package, bundled rule packs and pack schemas
+scripts/build-web.sh            # add --release for an optimized build
 
 # Serve the web/ directory locally
 python3 -m http.server 8080 --directory web
