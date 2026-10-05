@@ -38,7 +38,10 @@ The repository includes a comprehensive, formal architectural reference suite in
    * **AI Agent & LLM Guide**: Connecting autonomous agents and subagents via the Model Context Protocol (MCP), JSON line streaming, and GraphQL.
    * **Tool Catalog**: `netrust_get_observation`, `netrust_step`, `netrust_inspect_tile`, `netrust_render_map`, `netrust_reset_game`, `netrust_get_roles`, `netrust_reset_with_character`.
 
-6. **[docs/rule-packs.md](docs/rule-packs.md)**:
+6. **[docs/architecture.md](docs/architecture.md)**:
+   * **Architecture Article**: How NetRust is built today compared with the original NetHack 5.0 C architecture: crate layering, entity arenas, action/event model, deterministic RNG, level persistence, measured performance, reliability measures, NetHack fidelity status, and known limitations.
+
+7. **[docs/rule-packs.md](docs/rule-packs.md)**:
    * **Rule Pack Author Guide**: Declarative monster, item, and role modding, format specification, validation rules, CLI tool, and replay-deterministic execution.
 
 ---
