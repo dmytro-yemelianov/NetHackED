@@ -1,19 +1,19 @@
-# NVIDIA NeMo Agent Toolkit (NAT) Configuration for NetRust
+# NVIDIA NeMo Agent Toolkit (NAT) Configuration for NetHackED
 
-Production-grade agent orchestration setup using [NVIDIA NeMo Agent Toolkit](https://github.com/NVIDIA/NeMo-Agent-Toolkit) (`nvidia-nat`) to automate verification, architectural reviews, golden determinism auditing, and rule packs implementation across the **NetRust** repository.
+Production-grade agent orchestration setup using [NVIDIA NeMo Agent Toolkit](https://github.com/NVIDIA/NeMo-Agent-Toolkit) (`nvidia-nat`) to automate verification, architectural reviews, golden determinism auditing, and rule packs implementation across the **NetHackED** repository.
 
 ---
 
 ## Registered Custom Tools
 
-The `netrust-nat` package registers 4 domain-specific tools into NAT's component registry:
+The `nethacked-nat` package registers 4 domain-specific tools into NAT's component registry:
 
 | Tool Name | Type | Purpose |
 |-----------|------|---------|
-| `netrust_workspace_reader` | Function / LangChain Tool | Safely lists, reads, stats, and greps files within the repository with line numbers. |
-| `netrust_cargo_runner` | Function / LangChain Tool | Executes `cargo fmt`, `cargo clippy`, `cargo test`, `cargo build -p netrust-wasm`, `lake build`, or `all_gates`. |
-| `netrust_golden_verifier` | Function / LangChain Tool | Runs `cargo test -p netrust-agent --test golden_determinism` to verify vanilla gameplay invariants. |
-| `netrust_rulepacks_auditor` | Function / LangChain Tool | Audits rule packs constraints, wasm dependency hygiene, and SDD progress log. |
+| `nethacked_workspace_reader` | Function / LangChain Tool | Safely lists, reads, stats, and greps files within the repository with line numbers. |
+| `nethacked_cargo_runner` | Function / LangChain Tool | Executes `cargo fmt`, `cargo clippy`, `cargo test`, `cargo build -p nethacked-wasm`, `lake build`, or `all_gates`. |
+| `nethacked_golden_verifier` | Function / LangChain Tool | Runs `cargo test -p nethacked-agent --test golden_determinism` to verify vanilla gameplay invariants. |
+| `nethacked_rulepacks_auditor` | Function / LangChain Tool | Audits rule packs constraints, wasm dependency hygiene, and SDD progress log. |
 
 ---
 

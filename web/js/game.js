@@ -715,9 +715,9 @@ function applyLocalization(locale) {
   if (lblEngraveHelp) lblEngraveHelp.innerHTML = isUk ? 'Напис <strong style="color:var(--text-yellow);">Elbereth</strong> захищає клітинку та відлякує не-гуманоїдних монстрів!' : 'Writing <strong style="color:var(--text-yellow);">Elbereth</strong> wards the tile and prevents non-humanoid monsters from attacking!';
 
   if (isUk) {
-    messageBarEl.textContent = 'Ласкаво просимо до NetRust! Формалізовано та математично доведено в Lean 4.';
+    messageBarEl.textContent = 'Ласкаво просимо до NetHackED! Формалізовано та математично доведено в Lean 4.';
   } else {
-    messageBarEl.textContent = 'Welcome to NetRust! Core mechanics modeled in Lean 4.';
+    messageBarEl.textContent = 'Welcome to NetHackED! Core mechanics modeled in Lean 4.';
   }
 }
 

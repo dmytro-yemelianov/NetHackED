@@ -77,7 +77,7 @@ async function drawEditor() {
       <button data-mode="raw" class="${mode === 'raw' ? 'active' : ''}">Raw TOML</button>
       <span class="spacer"></span>
       <button id="ed-save">Save</button>
-      <button id="ed-dl-pack">Download .nrpack</button>
+      <button id="ed-dl-pack">Download .nhpack</button>
       <button id="ed-dl-src">Download sources</button>
     </div>
     <ul id="editor-errors" class="pack-error"></ul>
@@ -85,12 +85,12 @@ async function drawEditor() {
   panel.querySelectorAll('[data-mode]').forEach((b) => (b.onclick = () => { mode = b.dataset.mode; drawEditor(); }));
   panel.querySelector('#ed-save').onclick = async () => {
     if (!state.pack) return;
-    const entry = await savePack(state.wasm, { bytes: state.pack.nrpackBytes(), sources: state.sources });
+    const entry = await savePack(state.wasm, { bytes: state.pack.nhpackBytes(), sources: state.sources });
     location.search = `?pack=${encodeURIComponent(entry.key)}`;
   };
   panel.querySelector('#ed-dl-pack').onclick = () => {
     const m = JSON.parse(state.pack.manifestJson());
-    downloadBytes(`${m.id}-${m.version}.nrpack`, state.pack.nrpackBytes());
+    downloadBytes(`${m.id}-${m.version}.nhpack`, state.pack.nhpackBytes());
   };
   panel.querySelector('#ed-dl-src').onclick = () => {
     for (const [name, text] of Object.entries(state.sources)) downloadBytes(name.replaceAll('/', '_'), text, 'text/plain');

@@ -1,10 +1,12 @@
-# NetRust: NetHack Mechanics in Rust, with Lean 4 Models
+# NetHackED: NetHack Mechanics in Rust, with Lean 4 Models
 
-NetRust is a Rust reimplementation of selected **NetHack** mechanics (derived from the NetHack 5.0.0 source), accompanied by **Lean 4** models of those mechanics in `NetMechanics/`.
+*NetHackED — from Yemelianov (Emelyanov Dmytro)*
 
-**Play now:** [netrust.yemelianov.dev](https://netrust.yemelianov.dev/) (clean keyboard terminal) · [developer web client](https://dmytro-yemelianov.github.io/NetRust/) · [pack manager](https://dmytro-yemelianov.github.io/NetRust/packs.html) · terminal and SSH: see [Playing NetRust](docs/playing-netrust.md)
+NetHackED is a Rust reimplementation of selected **NetHack** mechanics (derived from the NetHack 5.0.0 source), accompanied by **Lean 4** models of those mechanics in `NetMechanics/`.
 
-![NetRust in the browser](docs/images/play-dungeon.png)
+**Play now:** [nethacked.yemelianov.dev](https://nethacked.yemelianov.dev/) (clean keyboard terminal) · [developer web client](https://dmytro-yemelianov.github.io/NetHackED/) · [pack manager](https://dmytro-yemelianov.github.io/NetHackED/packs.html) · terminal and SSH: see [Playing NetHackED](docs/playing-nethacked.md)
+
+![NetHackED in the browser](docs/images/play-dungeon.png)
 
 
 What is and is not claimed:
@@ -33,7 +35,7 @@ The repository includes a comprehensive, formal architectural reference suite in
 
 3. **[docs/c-to-rust-migration-architecture.md](docs/c-to-rust-migration-architecture.md)**:
    * **Architectural Blueprint**: Eliminating global ambient state (`ga`..`gz`, `sv*`, `u`), transitioning from intrusive pointers (`union vptrs`) to generational handle arenas (`slotmap`), event-driven presentation decoupling, and a single seeded ChaCha8 RNG (cross-platform replay not yet tested).
-   * **Crate Graph**: Multi-crate workspace organization (`netrust-types`, `netrust-core`, `netrust-arena`, `netrust-data`, `netrust-dungeon`, `netrust-sim`, `netrust-agent`, `netrust-tui`, `netrust-wasm`, plus `netrust-py` and `netrust-i18n`).
+   * **Crate Graph**: Multi-crate workspace organization (`nethacked-types`, `nethacked-core`, `nethacked-arena`, `nethacked-data`, `nethacked-dungeon`, `nethacked-sim`, `nethacked-agent`, `nethacked-tui`, `nethacked-wasm`, plus `nethacked-py` and `nethacked-i18n`).
 
 4. **[docs/lean4-verification-guide.md](docs/lean4-verification-guide.md)**:
    * **Verification Reference**: Formal catalog of machine-checked theorems in Lean 4.
@@ -41,15 +43,15 @@ The repository includes a comprehensive, formal architectural reference suite in
 
 5. **[docs/agent-and-mcp-integration.md](docs/agent-and-mcp-integration.md)**:
    * **AI Agent & LLM Guide**: Connecting autonomous agents and subagents via the Model Context Protocol (MCP), JSON line streaming, and GraphQL.
-   * **Tool Catalog**: `netrust_get_observation`, `netrust_step`, `netrust_inspect_tile`, `netrust_render_map`, `netrust_reset_game`, `netrust_get_roles`, `netrust_reset_with_character`.
+   * **Tool Catalog**: `nethacked_get_observation`, `nethacked_step`, `nethacked_inspect_tile`, `nethacked_render_map`, `nethacked_reset_game`, `nethacked_get_roles`, `nethacked_reset_with_character`.
 
 6. **[docs/architecture.md](docs/architecture.md)**:
-   * **Architecture Article**: How NetRust is built today compared with the original NetHack 5.0 C architecture: crate layering, entity arenas, action/event model, deterministic RNG, level persistence, measured performance, reliability measures, NetHack fidelity status, and known limitations.
+   * **Architecture Article**: How NetHackED is built today compared with the original NetHack 5.0 C architecture: crate layering, entity arenas, action/event model, deterministic RNG, level persistence, measured performance, reliability measures, NetHack fidelity status, and known limitations.
 
 7. **[docs/rule-packs.md](docs/rule-packs.md)**:
    * **Rule Pack Author Guide**: Declarative monster, item, and role modding, format specification, validation rules, CLI tool, and replay-deterministic execution.
 
-8. **[docs/playing-netrust.md](docs/playing-netrust.md)**:
+8. **[docs/playing-nethacked.md](docs/playing-nethacked.md)**:
    * **Player Guide**: Playing in the browser (clean terminal and developer client), in a terminal, and over SSH, with keys, URL options, and a hardened `ssh play@host` setup.
 
 9. **[docs/web-and-wasm.md](docs/web-and-wasm.md)**:
@@ -60,7 +62,7 @@ The repository includes a comprehensive, formal architectural reference suite in
 ## Repository Structure
 
 ```
-NetRust/
+NetHackED/
 ├── LICENSE                                # NetHack General Public License (NGPL)
 ├── docs/                                  # Specifications, ontologies, guides
 │   ├── ontology-and-taxonomy.md
@@ -75,23 +77,23 @@ NetRust/
 ├── Main.lean                              # Demo executable (prints example evaluations; not a verification harness)
 ├── lakefile.toml                          # Lake build definition
 ├── crates/
-│   ├── netrust-types/                     # Coordinates, tiles, ontology enums
-│   ├── netrust-arena/                     # Generational handles (SlotMap) for actors/items
-│   ├── netrust-dungeon/                   # Grid level, FOV, procedural + special level generators
-│   ├── netrust-data/                      # Bestiary, item catalog, roles & races
-│   ├── netrust-sim/                       # Seeded simulation world, AI, containers, altars
-│   ├── netrust-core/                      # Rust mirror of modeled mechanics + proptests
-│   ├── netrust-agent/                     # Agent session, MCP / JSON / GraphQL servers, bones server
-│   │   └── src/bin/                       # netrust-mcp, netrust-jsonrpc, netrust-graphql,
-│   │                                      # netrust-benchmark, netrust-demo, netrust-bones-server
-│   ├── netrust-tui/                       # Terminal UI (binary: netrust)
-│   ├── netrust-wasm/                      # WebAssembly bindings and browser simulation runner
-│   ├── netrust-py/                        # PyO3 bindings used by the Gym environment
-│   └── netrust-i18n/                      # Localized strings (English, Ukrainian)
-├── python/                                # Gymnasium environment (netrust_gym), train_reinforce.py, demo_rl.py
+│   ├── nethacked-types/                     # Coordinates, tiles, ontology enums
+│   ├── nethacked-arena/                     # Generational handles (SlotMap) for actors/items
+│   ├── nethacked-dungeon/                   # Grid level, FOV, procedural + special level generators
+│   ├── nethacked-data/                      # Bestiary, item catalog, roles & races
+│   ├── nethacked-sim/                       # Seeded simulation world, AI, containers, altars
+│   ├── nethacked-core/                      # Rust mirror of modeled mechanics + proptests
+│   ├── nethacked-agent/                     # Agent session, MCP / JSON / GraphQL servers, bones server
+│   │   └── src/bin/                       # nethacked-mcp, nethacked-jsonrpc, nethacked-graphql,
+│   │                                      # nethacked-benchmark, nethacked-demo, nethacked-bones-server
+│   ├── nethacked-tui/                       # Terminal UI (binary: nethacked)
+│   ├── nethacked-wasm/                      # WebAssembly bindings and browser simulation runner
+│   ├── nethacked-py/                        # PyO3 bindings used by the Gym environment
+│   └── nethacked-i18n/                      # Localized strings (English, Ukrainian)
+├── python/                                # Gymnasium environment (nethacked_gym), train_reinforce.py, demo_rl.py
 ├── web/                                   # Browser client
 │   ├── index.html                         # Playable client + agent telemetry inspector
-│   ├── benchmark_report.json              # Generated by netrust-benchmark
+│   ├── benchmark_report.json              # Generated by nethacked-benchmark
 │   ├── policy_weights.json                # Generated by python/train_reinforce.py
 │   └── pkg/                               # wasm-pack output (generated; see below)
 ├── examples/                              # Agent integration examples (mcp_agent_client.py)
@@ -113,13 +115,13 @@ lake build
 
 ### 2. Run Rust Unit & Property-Based Tests
 ```bash
-cargo test --workspace --exclude netrust-py
+cargo test --workspace --exclude nethacked-py
 ```
-The `proptest` suite in `crates/netrust-core/tests/proptest_mechanics.rs` checks the Rust code against properties mirrored by hand from selected Lean theorems.
+The `proptest` suite in `crates/nethacked-core/tests/proptest_mechanics.rs` checks the Rust code against properties mirrored by hand from selected Lean theorems.
 
 ### 3. Regenerate Generated Data
 ```bash
-cargo run --release --bin netrust-benchmark   # writes web/benchmark_report.json (run from the repo root)
+cargo run --release --bin nethacked-benchmark   # writes web/benchmark_report.json (run from the repo root)
 python3 python/train_reinforce.py                   # writes web/policy_weights.json (needs the python/ extras)
 ```
 
@@ -132,8 +134,8 @@ scripts/check-doc-links.sh
 ```bash
 cargo fmt --all --check
 cargo clippy --workspace --all-targets --locked -- -D warnings
-cargo test --workspace --exclude netrust-py --locked
-cargo build -p netrust-wasm --target wasm32-unknown-unknown --locked   # needs: rustup target add wasm32-unknown-unknown
+cargo test --workspace --exclude nethacked-py --locked
+cargo build -p nethacked-wasm --target wasm32-unknown-unknown --locked   # needs: rustup target add wasm32-unknown-unknown
 bash scripts/check-doc-links.sh
 ```
 
@@ -142,9 +144,9 @@ bash scripts/check-doc-links.sh
 ## Frontends & Interaction Options
 
 ### 1. Play in Web Browser (WebAssembly Terminal)
-**Play online:** https://dmytro-yemelianov.github.io/NetRust/ — rule pack manager: https://dmytro-yemelianov.github.io/NetRust/packs.html
+**Play online:** https://dmytro-yemelianov.github.io/NetHackED/ — rule pack manager: https://dmytro-yemelianov.github.io/NetHackED/packs.html
 
-No backend server required. NetRust compiles to a WebAssembly module that the page loads from `web/pkg/`. Build it first (requires [`wasm-pack`](https://rustwasm.github.io/wasm-pack/)):
+No backend server required. NetHackED compiles to a WebAssembly module that the page loads from `web/pkg/`. Build it first (requires [`wasm-pack`](https://rustwasm.github.io/wasm-pack/)):
 ```bash
 # Build the web client: wasm package, bundled rule packs and pack schemas
 scripts/build-web.sh            # add --release for an optimized build
@@ -158,21 +160,21 @@ Then visit **`http://localhost:8080`** in your browser:
 * Keyboard controls (Vi-keys `h/j/k/l/y/u/b/n`, arrows, `.`, `,`, `p` to pay, `P` to pray, `S` to sacrifice).
 * Live JSON Telemetry pane for autonomous agent inspection.
 
-**Rule packs in the browser.** Pick a ruleset (vanilla, a bundled example pack, or one you uploaded) in the character dialog. The pack manager (`packs.html`) lists packs; shows monsters, items and roles, validation diagnostics and a diff against vanilla; accepts `.nrpack` files, pack `.toml` files or a pack folder; and edits patches in a form or as raw TOML, then downloads the built `.nrpack`. Uploaded packs stay in your browser (IndexedDB).
+**Rule packs in the browser.** Pick a ruleset (vanilla, a bundled example pack, or one you uploaded) in the character dialog. The pack manager (`packs.html`) lists packs; shows monsters, items and roles, validation diagnostics and a diff against vanilla; accepts `.nhpack` files, pack `.toml` files or a pack folder; and edits patches in a form or as raw TOML, then downloads the built `.nhpack`. Uploaded packs stay in your browser (IndexedDB).
 
 **Rule packs on the command line.**
 ```bash
-netrust-pack install packs/examples/hard-mode   # build + copy into ~/.netrust/packs (or $NETRUST_PACKS_DIR)
-netrust-pack list                               # id, version, hash, path of installed packs
-netrust-pack info hard-mode                     # manifest, hash, counts, diff size vs vanilla
-netrust-tui --pack hard-mode                    # play an installed pack by id (or pass a path)
+nethacked-pack install packs/examples/hard-mode   # build + copy into ~/.nethacked/packs (or $NETHACKED_PACKS_DIR)
+nethacked-pack list                               # id, version, hash, path of installed packs
+nethacked-pack info hard-mode                     # manifest, hash, counts, diff size vs vanilla
+nethacked-tui --pack hard-mode                    # play an installed pack by id (or pass a path)
 ```
 
 ### 2. Play in Terminal (Human Interactive TUI)
 ```bash
-cargo run --bin netrust
-# Or load a custom rule pack (.nrpack or directory)
-cargo run --bin netrust -- --pack packs/examples/hard-mode
+cargo run --bin nethacked
+# Or load a custom rule pack (.nhpack or directory)
+cargo run --bin nethacked -- --pack packs/examples/hard-mode
 ```
 * Character selection prompt upon boot.
 * Standard NetHack keyboard controls: Vi-keys, arrows, `o` (open), `c` (close), `K` (kick), `z` (zap wand), `,` (pick up), `p` (pay shopkeeper), `P` (pray at altar), `S` (sacrifice item), `d` (drop), `w` (wield), `<` (ascend), `>` (descend), `.` (wait), `Esc` (quit), `q` (quaff).
@@ -180,9 +182,9 @@ cargo run --bin netrust -- --pack packs/examples/hard-mode
 ### 3. Model Context Protocol (MCP) Server for LLMs
 For LLM pair programming and autonomous game agents (compatible with Claude Desktop, Cursor, and Antigravity):
 ```bash
-cargo run --bin netrust-mcp
+cargo run --bin nethacked-mcp
 ```
-* Discover and call tools: `netrust_get_observation`, `netrust_step`, `netrust_inspect_tile`, `netrust_render_map`, `netrust_reset_game`, `netrust_get_roles`, `netrust_reset_with_character`.
+* Discover and call tools: `nethacked_get_observation`, `nethacked_step`, `nethacked_inspect_tile`, `nethacked_render_map`, `nethacked_reset_game`, `nethacked_get_roles`, `nethacked_reset_with_character`.
 * JSON-RPC 2.0 compliant: standard error codes, no reply to notifications, `ping` supported.
 
 Run the bundled Python MCP client example:
@@ -193,27 +195,27 @@ python3 examples/mcp_agent_client.py
 ### 4. Autonomous Agent Loop Example (Rust)
 Demonstrates an agent perceiving structured FOV state and navigating the generated dungeon:
 ```bash
-cargo run --example autonomous_bot -p netrust-agent
+cargo run --example autonomous_bot -p nethacked-agent
 ```
 
 ### 5. Streaming JSON Line-Protocol for RL Agents
 ```bash
-cargo run --bin netrust-jsonrpc
+cargo run --bin nethacked-jsonrpc
 ```
 Feeds line-delimited JSON state snapshots and consumes JSON action commands via stdio.
 
 ### 6. Networked GraphQL Server & GraphiQL Explorer
 ```bash
-cargo run --bin netrust-graphql
+cargo run --bin nethacked-graphql
 ```
 * **Endpoint**: `http://127.0.0.1:4000/graphql` (binds to loopback by default; `PORT` changes the port)
 * **Interactive GraphiQL Explorer**: Open `http://localhost:4000/graphql` to execute GraphQL queries (`playerState`, `observationJson`, `asciiMap`, `inspectTile`, `bestiary`, `itemCatalog`, `roles`, `races`) and mutations (`stepAction`, `resetGame`, `resetWithCharacter`).
 
-**Binding and authentication (GraphQL and bones servers).** Both servers bind to `127.0.0.1` by default. Override the address with `--bind <addr>` or the `NETRUST_BIND` environment variable (the flag wins), e.g. `cargo run --bin netrust-graphql -- --bind 0.0.0.0:4000`. If `NETRUST_TOKEN` is set, all GraphQL mutations and the bones server's `POST /api/v1/bones` and `POST /api/v1/reset` require the header `Authorization: Bearer <token>`. Set a token before exposing either server beyond localhost.
+**Binding and authentication (GraphQL and bones servers).** Both servers bind to `127.0.0.1` by default. Override the address with `--bind <addr>` or the `NETHACKED_BIND` environment variable (the flag wins), e.g. `cargo run --bin nethacked-graphql -- --bind 0.0.0.0:4000`. If `NETHACKED_TOKEN` is set, all GraphQL mutations and the bones server's `POST /api/v1/bones` and `POST /api/v1/reset` require the header `Authorization: Bearer <token>`. Set a token before exposing either server beyond localhost.
 
 ### 7. Networked Bones Server
 ```bash
-cargo run --bin netrust-bones-server   # default 127.0.0.1:7777
+cargo run --bin nethacked-bones-server   # default 127.0.0.1:7777
 ```
 Stores and serves bones files and gravestone records over HTTP; see [docs/agent-and-mcp-integration.md](docs/agent-and-mcp-integration.md).
 
@@ -221,4 +223,4 @@ Stores and serves bones files and gravestone records over HTTP; see [docs/agent-
 
 ## License & Credits
 
-NetRust is distributed under the **NetHack General Public License (NGPL)**; see [LICENSE](LICENSE). It is derived from **NetHack** by the NetHack DevTeam, and NetRust is not affiliated with or endorsed by the NetHack DevTeam.
+NetHackED is distributed under the **NetHack General Public License (NGPL)**; see [LICENSE](LICENSE). It is derived from **NetHack** by the NetHack DevTeam, and NetHackED is not affiliated with or endorsed by the NetHack DevTeam.

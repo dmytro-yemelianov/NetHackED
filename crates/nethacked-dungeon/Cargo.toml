@@ -1,0 +1,17 @@
+[package]
+name = "nethacked-dungeon"
+license = "NGPL"
+version = "0.3.0"
+authors = ["Dmytro Yemelianov (Emelyanov)"]
+edition = "2021"
+description = "Grid map representation, FOV shadowcasting, and procedural level generation for NetHackED"
+
+[dependencies]
+nethacked-types = { path = "../nethacked-types" }
+nethacked-core = { path = "../nethacked-core" }
+serde = { version = "1.0", features = ["derive"] }
+rand = "0.9"
+
+[dev-dependencies]
+proptest = "1.5"
+rand_chacha = "0.9"

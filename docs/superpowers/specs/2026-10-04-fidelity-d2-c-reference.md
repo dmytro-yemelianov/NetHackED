@@ -1,6 +1,6 @@
-# D2 research: monster and item data fidelity (C reference vs NetRust)
+# D2 research: monster and item data fidelity (C reference vs NetHackED)
 
-Notation: C = `NetHack-5.0.0/` (paths `include/…`, `src/…`). Data = `crates/netrust-data/src`. Sim = `crates/netrust-sim/src`. Core = `crates/netrust-core/src`.
+Notation: C = `NetHack-5.0.0/` (paths `include/…`, `src/…`). Data = `crates/nethacked-data/src`. Sim = `crates/nethacked-sim/src`. Core = `crates/nethacked-core/src`.
 `d(n,m)` = n dice of m sides; `rnd(n)` = 1..n; `rn2(n)` = 0..n-1; `rn1(x,y)` = y..y+x-1.
 C `LVL(lvl, mov, ac, mr, aln)` (src/monst.c:34). `mr` is the monster's magic-resistance percentage, not an intrinsic. Alignment is a signed number (<0 chaotic, 0 neutral, >0 lawful, A_NONE = unaligned).
 Mismatch markers: **X** = value differs, **!** = invented or not in NetHack, ok = matches.
@@ -8,13 +8,13 @@ Mismatch markers: **X** = value differs, **!** = invented or not in NetHack, ok 
 ---------------------------------------------------------------------
 ## 1. Bestiary (`Data/monsters.rs:98` BESTIARY, 47 entries)
 
-NetRust fields: `glyph, base_hp=max_hp, ac, level, speed, alignment, intrinsics, damage_dice (single), ai_behavior, abilities`. C monster HP is rolled, not fixed: `d(m_lev, 8)`, or `rnd(4)` at level 0 (makemon.c:1012-1043 `newmonhp`). `m_lev` is depth-adjusted by `adj_lev`. NetRust uses a fixed `base_hp`.
+NetHackED fields: `glyph, base_hp=max_hp, ac, level, speed, alignment, intrinsics, damage_dice (single), ai_behavior, abilities`. C monster HP is rolled, not fixed: `d(m_lev, 8)`, or `rnd(4)` at level 0 (makemon.c:1012-1043 `newmonhp`). `m_lev` is depth-adjusted by `adj_lev`. NetHackED uses a fixed `base_hp`.
 
 Attack notation: `W`=AT_WEAP, `C`=AT_CLAW, `B`=AT_BITE, `T`=AT_TUCH, `K`=AT_KICK, `Br`=AT_BREA, `G`=AT_GAZE, `M`=AT_MAGC, `N`=AT_NONE (passive). The damage type is AD_PHYS unless one is given.
 
 ### 1a. Ordinary monsters
 
-| NetRust entry | C (monsters.h line) | sym C/NR | Lvl C/NR | Spd C/NR | AC C/NR | MR | Aln C/NR | C attacks | NR dice | Wt/Nut, size | Relevant C flags | Mismatches |
+| NetHackED entry | C (monsters.h line) | sym C/NR | Lvl C/NR | Spd C/NR | AC C/NR | MR | Aln C/NR | C attacks | NR dice | Wt/Nut, size | Relevant C flags | Mismatches |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | Goblin | goblin :727 | o/o | 0/1 | 6/9 | 10/6 | 0 | -3/C | W1d4 | 1d6 | 400/100 SMALL | M2_ORC, G_GENO | **X** lvl, spd, AC, dice |
 | Hobgoblin | hobgoblin :734 | o/o | 1/2 | 9/9 | 10/5 | 0 | -4/C | W1d6 | 1d8 | 1000/200 HUMAN | M2_ORC STRONG | **X** lvl, AC, dice |
@@ -47,7 +47,7 @@ Attack notation: `W`=AT_WEAP, `C`=AT_CLAW, `B`=AT_BITE, `T`=AT_TUCH, `K`=AT_KICK
 
 All C entries below are `G_NOGEN | G_UNIQ`. Leaders: `MS_LEADER`, `M2_PEACEFUL`, `M3_CLOSE`. Nemeses: `MS_NEMESIS`, `M2_HOSTILE`, `M3_WANTSARTI | M3_WAITFORU`. `AD_SAMU` = steal quest artifact or Amulet.
 
-| NetRust entry | C (line) | Lvl C/NR | Spd C/NR | AC C/NR | MR | Aln C/NR | C attacks | NR dice / abilities | Mismatches |
+| NetHackED entry | C (line) | Lvl C/NR | Spd C/NR | AC C/NR | MR | Aln C/NR | C attacks | NR dice / abilities | Mismatches |
 |---|---|---|---|---|---|---|---|---|---|
 | TheNorn "The Norn" | **Norn** :3595 (HUGE, MR_COLD) | 20/20 | 15/14 | 0/-5 | 90 | 0/N | W4d10 ×2 | 3d8 | **X** name ("Norn"; C prints "the Norn"), spd, AC, dice |
 | NeferetTheGreen | Neferet the Green :3604 | 20/22 | 15/15 | 0/-6 | 90 | 0/N | W4d10, M AD_SPEL 2d8 ×2 | 3d10 | **X** lvl, AC, attacks |
@@ -82,7 +82,7 @@ Name and identity issues:
 ---------------------------------------------------------------------
 ## 2. Item catalog (`Data/items.rs`, 66 ItemKindIds)
 
-NetRust `ItemArchetype` has `class, weight, cost, damage_small, damage_large, ac_bonus, is_container, is_bag_of_holding`. It has **no** fields for oc_magic, wand direction, nutrition, material, MC (`a_can`) or the two-hander flag. C damage values are dice sides: `rnd(oc_wsdam)` / `rnd(oc_wldam)`. C armor `a_ac = 10 - ac_param` (objects.h:427). Wand weight 7 and nutrition 30 come from objects.h:1448. Scrolls weigh 5 (:1185), potions 20 (:1124), spellbooks 50 with cost = level×100 (:1280).
+NetHackED `ItemArchetype` has `class, weight, cost, damage_small, damage_large, ac_bonus, is_container, is_bag_of_holding`. It has **no** fields for oc_magic, wand direction, nutrition, material, MC (`a_can`) or the two-hander flag. C damage values are dice sides: `rnd(oc_wsdam)` / `rnd(oc_wldam)`. C armor `a_ac = 10 - ac_param` (objects.h:427). Wand weight 7 and nutrition 30 come from objects.h:1448. Scrolls weigh 5 (:1185), potions 20 (:1124), spellbooks 50 with cost = level×100 (:1280).
 
 | ItemKindId | C object (objects.h line) | Class C/NR | Cost C/NR | Wt C/NR | Dmg sm/lg C (NR) | a_ac C/NR | mgc | Dir / nutrition | Notes |
 |---|---|---|---|---|---|---|---|---|---|
@@ -163,7 +163,7 @@ Item takeaways:
 
 C lists the gods lawful/neutral/chaotic. A leading `_` marks a goddess.
 
-| Role | C (role.c line) | NetRust | Status |
+| Role | C (role.c line) | NetHackED | Status |
 |---|---|---|---|
 | Archeologist | Quetzalcoatl / Camaxtli / Huhetotl :41 | same | ok |
 | Barbarian | Mitra / Crom / Set :82 | same | ok |
@@ -227,7 +227,7 @@ C lists the gods lawful/neutral/chaotic. A leading `_` marks a goddess.
   - Reflection blocks it. Free action reduces it to "momentarily stiffen".
   - Otherwise `nomul(-tmp)`, or -127 if Wis ≤ 12 and `!rn2(4)` (:6042).
   - Pets avoid floating eyes 9 times in 10 (dogmove.c:1130).
-- AD types NetRust can support now, with the existing Intrinsics fields (types lib.rs:586):
+- AD types NetHackED can support now, with the existing Intrinsics fields (types lib.rs:586):
 
 | AD | C handler (uhitm.c) | Hero-side effect (summary) | NR support |
 |---|---|---|---|
@@ -268,7 +268,7 @@ Other C behaviour:
   - its passive damage could kill the pet;
   - it is peaceful and the pet is below 25% HP, or it is peaceful and a leader or guardian (dogmove.c:1119-1128).
 
-NetRust today:
+NetHackED today:
 - There is **no peaceful flag**. Everything non-tame is hostile.
 - The only exception is the shopkeeper, skipped by name when its alignment is Neutral (sim/monsters.rs:213-216). Shoplifting "angers" it by setting `alignment = Chaotic` (sim/actions/movement.rs:280-283).
 - Priests and watchmen (stairs.rs:294-301) walk up to the hero and attack.
@@ -291,7 +291,7 @@ Minimal faithful model:
 ---------------------------------------------------------------------
 ## 6. Stationary monsters and AI
 
-| C mechanism | Source | Who | NetRust |
+| C mechanism | Source | Who | NetHackED |
 |---|---|---|---|
 | `M3_WAITFORU` → `STRAT_WAITFORU`: doesn't act until it sees you or is hurt | makemon.c:1461; monmove.c:710-724 | Medusa, all nemeses, Wizard, Vlad | not modelled (nemeses hunt from spawn) |
 | `M3_CLOSE` → `STRAT_CLOSE`: waits and lets you approach; quest_talk | makemon.c:1463; monmove.c:720 | quest leaders | leaders are tame followers (**X**) |
@@ -318,7 +318,7 @@ C:
   - clamp to ±99.
 - Monster AC `find_mac` (worn.c:717) is the base AC minus its worn armor's ARM_BONUS.
 
-NetRust:
+NetHackED:
 - `defender.ac - Σ enchantment of all carried Armor-class items` (sim/combat.rs:30-42). `a_ac` (`ac_bonus`) is ignored, erosion is ignored, carried and worn are not distinguished, and the sum is recomputed per attack rather than stored.
 - The hero's `ac` comes from a hardcoded per-role value (data/roles.rs:44, e.g. Valkyrie 7, Barbarian 6, Knight 5), which partly builds in the starting armor. If D2 starts adding `a_ac`, starting armor gets counted twice.
 - Divine protection lowers `p.ac` directly (sim/actions/religion.rs:339), which is correct in spirit (`u.ublessed`).
@@ -343,7 +343,7 @@ C `dmgval` (weapon.c:216-293):
 - `hmon` then adds `dbon()` (Str) and `weapon_dam_bonus` (skill, already in D1), with a final minimum of 1 (uhitm.c:1505).
 - Bare hands: `rnd(2)`, or `rnd(4)` with martial arts (uhitm.c:847). Non-weapon objects (tools such as the Orb or credit card): `rnd(2)` (uhitm.c:895).
 
-NetRust: `rnd(6) + spe + skill` for every weapon and for bare hands (combat.rs:137). **X**: a dagger should be 1..4 and a long sword 1..8 or 1..12 against large targets. Bare hands should be 1..2, not 1..6. Erosion is ignored.
+NetHackED: `rnd(6) + spe + skill` for every weapon and for bare hands (combat.rs:137). **X**: a dagger should be 1..4 and a long sword 1..8 or 1..12 against large targets. Bare hands should be 1..2, not 1..6. Erosion is ignored.
 
 Wiring:
 - combat.rs:49-72 already finds the wielded item. Look up its catalog dice (needs a kind id, §2), choose small or large from defender size (needs a `size` field), then roll.

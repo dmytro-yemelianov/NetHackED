@@ -1,9 +1,9 @@
-// NetRust clean terminal: an 80x24 NetHack-style screen driven only by the
+// NetHackED clean terminal: an 80x24 NetHack-style screen driven only by the
 // keyboard. Line 0 is the message line, lines 1-21 the map, 22-23 status.
 // URL options: ?pack=<bundled pack id>  ?lang=uk  ?seed=<n>
 
-const BASE = document.querySelector('meta[name="netrust-base"]')?.content ?? '../';
-const wasm = await import(`${BASE}pkg/netrust_wasm.js`);
+const BASE = document.querySelector('meta[name="nethacked-base"]')?.content ?? '../';
+const wasm = await import(`${BASE}pkg/nethacked_wasm.js`);
 await wasm.default();
 const { WasmGameSession, WasmPack } = wasm;
 
@@ -41,7 +41,7 @@ const ITEM_CMDS = {
 const DIR_CMDS = { x: ['cast', 'cast'], z: ['zap', 'zap'], f: ['fire', 'fire'], F: ['kick', 'kick'] };
 
 const HELP = [
-  'NetRust keys',
+  'NetHackED keys',
   '',
   ' y k u    move: h j k l y u b n (or arrow keys)',
   '  \\|/     .  wait          s  search        ,  pick up',
@@ -143,7 +143,8 @@ function draw() {
 function pickScreen() {
   const out = [
     '',
-    '  NetRust — classic NetHack in Rust and WebAssembly',
+    '  NetHackED — classic NetHack in Rust and WebAssembly',
+    '  from Yemelianov (Emelyanov Dmytro)',
     '',
     '  Shall I pick a character\'s role for you?',
     '',
@@ -246,7 +247,7 @@ async function newGame(roleIdx) {
       const entry = index.find((p) => p.id === packId);
       if (!entry) throw new Error(`unknown pack "${packId}"`);
       const bytes = new Uint8Array(await (await fetch(`${BASE}packs/${entry.file}`)).arrayBuffer());
-      session = WasmGameSession.newWithPack(seed, role, race, 'Hero', WasmPack.fromNrpack(bytes));
+      session = WasmGameSession.newWithPack(seed, role, race, 'Hero', WasmPack.fromNhpack(bytes));
     } else {
       session = WasmGameSession.new_with_character(seed, role, race, 'Hero');
     }
@@ -259,7 +260,7 @@ async function newGame(roleIdx) {
   messages = [];
   if (!message) {
     const align = session.get_player_alignment().toLowerCase();
-    message = `Hello Hero, welcome to NetRust!  You are a ${align} ${ROLES[roleIdx][2].toLowerCase()}.  (? for help)`;
+    message = `Hello Hero, welcome to NetHackED!  You are a ${align} ${ROLES[roleIdx][2].toLowerCase()}.  (? for help)`;
   }
   mode = 'play';
 }

@@ -1,16 +1,16 @@
 [workspace]
 members = [
-    "crates/netrust-types",
-    "crates/netrust-arena",
-    "crates/netrust-dungeon",
-    "crates/netrust-data",
-    "crates/netrust-sim",
-    "crates/netrust-core",
-    "crates/netrust-agent",
-    "crates/netrust-tui",
-    "crates/netrust-wasm",
-    "crates/netrust-py",
-    "crates/netrust-i18n",
-    "crates/netrust-pack",
+    "crates/nethacked-types",
+    "crates/nethacked-arena",
+    "crates/nethacked-dungeon",
+    "crates/nethacked-data",
+    "crates/nethacked-sim",
+    "crates/nethacked-core",
+    "crates/nethacked-agent",
+    "crates/nethacked-tui",
+    "crates/nethacked-wasm",
+    "crates/nethacked-py",
+    "crates/nethacked-i18n",
+    "crates/nethacked-pack",
 ]
 resolver = "2"

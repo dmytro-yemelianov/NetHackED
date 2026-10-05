@@ -1,0 +1,20 @@
+[package]
+name = "nethacked-types"
+license = "NGPL"
+version = "0.3.0"
+authors = ["Dmytro Yemelianov (Emelyanov)"]
+edition = "2021"
+description = "Fundamental domain types, coordinates, and enums for NetHackED"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+slotmap = { version = "1.1.1", features = ["serde"] }
+schemars = { version = "0.8", optional = true }
+
+[features]
+default = []
+schema = ["dep:schemars"]
+
+[dev-dependencies]
+proptest = "1.5"
+serde_json = "1.0"

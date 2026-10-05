@@ -22,14 +22,14 @@ parsing that has drifted between frontends.
 - TDD: each fix lands with a test that fails before the fix (UI-only rendering changes are
   verified by a pure-function test where possible, otherwise by a documented manual check).
 - CI stays green: `cargo fmt --all --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`,
-  `cargo test --workspace --exclude netrust-py --locked`, wasm32 build, doc-link check. Toolchain pinned 1.88.0.
+  `cargo test --workspace --exclude nethacked-py --locked`, wasm32 build, doc-link check. Toolchain pinned 1.88.0.
 - Public action names accepted today by MCP (`STEP_ACTIONS`), JSON-RPC, GraphQL and WASM keep working.
-- New dependencies allowed: `console_error_panic_hook` (netrust-wasm only); `netrust-data` as a
-  dev-dependency of `netrust-i18n`. Nothing else.
+- New dependencies allowed: `console_error_panic_hook` (nethacked-wasm only); `nethacked-data` as a
+  dev-dependency of `nethacked-i18n`. Nothing else.
 
 ---
 
-## 1. Shared command module — `crates/netrust-agent/src/commands.rs`
+## 1. Shared command module — `crates/nethacked-agent/src/commands.rs`
 
 ### API
 
@@ -79,12 +79,12 @@ that need a compass direction. Any unknown name, bad direction, missing required
 non-integer index or off-map coordinate → `Err(message)`.
 
 The exact set must be a superset of every name accepted today by MCP `STEP_ACTIONS`,
-JSON-RPC `netrust.step`, `bin/jsonrpc.rs`, GraphQL `stepAction`, and WASM `step`
+JSON-RPC `nethacked.step`, `bin/jsonrpc.rs`, GraphQL `stepAction`, and WASM `step`
 (audit each before deleting its parser; any name not in the table above is added).
 
 ### Character parsing
 
-Uses `netrust_data::roles::{ROLES, RACES}` names (case-insensitive). `None` → current
+Uses `nethacked_data::roles::{ROLES, RACES}` names (case-insensitive). `None` → current
 defaults (name "Hero", Valkyrie, Human, Female, role's default alignment if the existing
 code uses it, else Neutral). Unknown value → `Err("unknown role 'x'; expected one of …")`.
 
@@ -92,18 +92,18 @@ code uses it, else Neutral). Unknown value → `Err("unknown role 'x'; expected 
 
 - `mcp.rs`: `parse_step_action` → `commands::parse_action`; `STEP_ACTIONS` stays as the
   advertised schema enum and must be a subset of what `parse_action` accepts (test).
-  `netrust_reset_with_character` → `parse_character` (Err → `-32602`).
-- `jsonrpc.rs` (`netrust.step`) and `bin/jsonrpc.rs`: use `parse_action`; errors as today's shapes.
+  `nethacked_reset_with_character` → `parse_character` (Err → `-32602`).
+- `jsonrpc.rs` (`nethacked.step`) and `bin/jsonrpc.rs`: use `parse_action`; errors as today's shapes.
 - `graphql.rs`: `stepAction` and `resetWithCharacter` use the shared parsers; errors become
   GraphQL errors (resolver returns `Err`), no silent `Wait`.
-- `netrust-wasm` `step(action, arg)`: maps `arg` into `ActionArgs` (index or direction or text
+- `nethacked-wasm` `step(action, arg)`: maps `arg` into `ActionArgs` (index or direction or text
   by action kind) and calls `parse_action`; returns `Result<String, JsValue>`-style error string
   to JS. Character creation uses `parse_character`.
-- `netrust-py`: `ZAP_WAND` uses `ZAP_ENERGY`.
+- `nethacked-py`: `ZAP_WAND` uses `ZAP_ENERGY`.
 
 ---
 
-## 2. TUI — `crates/netrust-tui`
+## 2. TUI — `crates/nethacked-tui`
 
 - Key handling is extracted into a pure function, e.g.
   `fn handle_key(mode: &mut UiMode, key: KeyEvent, ctx: &KeyContext) -> KeyOutcome`
@@ -123,7 +123,7 @@ code uses it, else Neutral). Unknown value → `Err("unknown role 'x'; expected 
 - Inventory modal pages 20 items at a time (`>`/`<` change page); letters a–t select only
   visible items on the current page.
 - `map_ukrainian_key` adds `ґ`/`Ґ` → `\`/`|` (the key position of `\` on the UA layout).
-- Inline `if locale == Locale::Uk { … } else { … }` strings move into `netrust_i18n::Messages`
+- Inline `if locale == Locale::Uk { … } else { … }` strings move into `nethacked_i18n::Messages`
   / `t()` keys (role names, modal titles, help text, death text, language toggle, event text).
 
 ## 3. WASM / web
@@ -143,7 +143,7 @@ code uses it, else Neutral). Unknown value → `Err("unknown role 'x'; expected 
 
 ## 4. Python RL
 
-- `NetRustGymEnv(gymnasium.Env)`: `metadata`, `action_space = Discrete(26)`, an
+- `NetHackEDGymEnv(gymnasium.Env)`: `metadata`, `action_space = Discrete(26)`, an
   `observation_space` that `gymnasium.utils.env_checker.check_env` accepts (numeric `Box`es
   in a `Dict`; non-numeric fields move to `info`). `reset(seed=None, options=None)` calls
   `super().reset(seed=seed)` and, when `seed` is None, draws the engine seed from
@@ -151,7 +151,7 @@ code uses it, else Neutral). Unknown value → `Err("unknown role 'x'; expected 
 - `train_ppo.py` → `train_reinforce.py` (README/docs references updated); docstring says
   REINFORCE; prayer shaping uses `ACTION_NAMES.index("PRAY")`; constant gold bonus removed;
   actions sampled only among `action_masks()`-allowed indices.
-- `netrust-py`: `explored_tiles` cleared when depth changes; `ZAP_WAND` uses `ZAP_ENERGY`;
+- `nethacked-py`: `explored_tiles` cleared when depth changes; `ZAP_WAND` uses `ZAP_ENERGY`;
   unused `rand` dependency removed.
 - Tests (`python/tests/`): `check_env` passes; two `reset()` calls without seed give
   different initial observations with high probability (compare seeds via `info`); a
@@ -166,7 +166,7 @@ code uses it, else Neutral). Unknown value → `Err("unknown role 'x'; expected 
 - Messages that embed a monster/item name translate it internally: callers pass raw English
   names; functions call `t_monster`/`t_item` for `Locale::Uk`. Applies to every
   `Messages::*` function taking a monster or item name.
-- Tests (in `netrust-i18n`, with `netrust-data` as dev-dependency): every bestiary/catalog
+- Tests (in `nethacked-i18n`, with `nethacked-data` as dev-dependency): every bestiary/catalog
   name has a Ukrainian translation different from the English (allow-list for proper nouns
   that stay identical, e.g. "Excalibur", "Mjollnir", "Medusa"); every `t()` key returns
   different EN/UK text except an explicit allow-list (e.g. "Elbereth"); a sample of

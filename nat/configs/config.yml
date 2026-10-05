@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# NeMo Agent Toolkit (NAT) Configuration for NetRust Review & Development
+# NeMo Agent Toolkit (NAT) Configuration for NetHackED Review & Development
 
 general:
   telemetry:
@@ -7,7 +7,7 @@ general:
       file_trace:
         _type: file
         output_path: .nat/traces/
-        project: netrust-rule-packs
+        project: nethacked-rule-packs
 
 llms:
   nim_llm:
@@ -19,42 +19,42 @@ llms:
     max_tokens: 4096
 
 functions:
-  netrust_workspace_reader:
-    _type: netrust_workspace_reader
+  nethacked_workspace_reader:
+    _type: nethacked_workspace_reader
     max_read_lines: 500
 
-  netrust_cargo_runner:
-    _type: netrust_cargo_runner
+  nethacked_cargo_runner:
+    _type: nethacked_cargo_runner
     timeout_seconds: 300
 
-  netrust_golden_verifier:
-    _type: netrust_golden_verifier
+  nethacked_golden_verifier:
+    _type: nethacked_golden_verifier
     timeout_seconds: 180
 
-  netrust_rulepacks_auditor:
-    _type: netrust_rulepacks_auditor
+  nethacked_rulepacks_auditor:
+    _type: nethacked_rulepacks_auditor
 
 workflow:
   _type: react_agent
   llm_name: nim_llm
   tool_names:
-    - netrust_workspace_reader
-    - netrust_cargo_runner
-    - netrust_golden_verifier
-    - netrust_rulepacks_auditor
+    - nethacked_workspace_reader
+    - nethacked_cargo_runner
+    - nethacked_golden_verifier
+    - nethacked_rulepacks_auditor
   max_tool_calls: 10
   retry_agent_response_parsing_errors: true
   use_native_tool_calling: true
   additional_instructions: |
-    You are an expert NetRust Systems Architect and Game Engine Specialist assisting with the NetRust codebase and the Rule Packs P1 implementation.
+    You are an expert NetHackED Systems Architect and Game Engine Specialist assisting with the NetHackED codebase and the Rule Packs P1 implementation.
 
     The repository consists of:
-    1. NetRust Engine crates: netrust-core, netrust-types, netrust-data, netrust-sim, netrust-agent, netrust-dungeon, netrust-tui, netrust-wasm, netrust-py.
+    1. NetHackED Engine crates: nethacked-core, nethacked-types, nethacked-data, nethacked-sim, nethacked-agent, nethacked-dungeon, nethacked-tui, nethacked-wasm, nethacked-py.
     2. Formal Verification: Lean 4 proofs (lake build).
     3. Rule Packs P1: Architectural overhaul moving game data to Arc<Ruleset> while ensuring bit-for-bit vanilla determinism preservation (Task 1 golden determinism tests).
 
     Your role is to:
     - Review and audit code changes against global constraints and the plan in docs/superpowers/plans/2026-10-04-rule-packs-p1.md.
-    - Run toolchain gates (cargo fmt, cargo clippy, cargo test, cargo build -p netrust-wasm, lake build) using netrust_cargo_runner.
-    - Always verify golden determinism using netrust_golden_verifier.
-    - Verify WASM hygiene and absence of forbidden dependencies using netrust_rulepacks_auditor.
+    - Run toolchain gates (cargo fmt, cargo clippy, cargo test, cargo build -p nethacked-wasm, lake build) using nethacked_cargo_runner.
+    - Always verify golden determinism using nethacked_golden_verifier.
+    - Verify WASM hygiene and absence of forbidden dependencies using nethacked_rulepacks_auditor.

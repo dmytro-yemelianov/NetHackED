@@ -1,0 +1,33 @@
+[package]
+name = "nethacked-pack"
+license = "NGPL"
+version = "0.3.0"
+authors = ["Dmytro Yemelianov (Emelyanov)"]
+edition = "2021"
+description = "Rule pack library, parser, patch merger, validator, and pack format for NetHackED"
+
+[dependencies]
+nethacked-types = { path = "../nethacked-types" }
+nethacked-core = { path = "../nethacked-core" }
+nethacked-data = { path = "../nethacked-data" }
+nethacked-sim = { path = "../nethacked-sim" }
+nethacked-agent = { path = "../nethacked-agent" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.8"
+sha2 = "0.10"
+clap = { version = "4", features = ["derive"], optional = true }
+schemars = { version = "0.8", optional = true }
+
+[dev-dependencies]
+proptest = "1.5"
+
+[features]
+default = ["schema", "cli"]
+schema = ["dep:schemars", "nethacked-data/schema", "nethacked-types/schema"]
+cli = ["dep:clap"]
+
+[[bin]]
+name = "nethacked-pack"
+path = "src/main.rs"
+required-features = ["cli"]

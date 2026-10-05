@@ -8,7 +8,7 @@ C reference (formulas with `NetHack-5.0.0/` file:line citations, current Rust/Le
 
 ## Goal
 
-Make the core mechanics in `netrust-core` (and their callers in `netrust-sim`) follow NetHack 5.0 C
+Make the core mechanics in `nethacked-core` (and their callers in `nethacked-sim`) follow NetHack 5.0 C
 for the 16 items below, and update the Lean 4 models, theorems and proptests so they describe the
 corrected behaviour. Fix the vacuous/weak Lean theorems found in the review.
 
@@ -23,7 +23,7 @@ telepathy-only-while-blind, abon()/attribute system (abon treated as 0).
 1. **Explicit rolls.** Core functions stay pure; every random draw is a parameter named after its
    C distribution (`d20: u32` = rnd(20) ∈ 1..=20, `roll_343: u32` = rn2(343) ∈ 0..=342, `rn2_5`,
    …). Functions document the valid range and treat out-of-range rolls by clamping (never panic).
-   `netrust-sim` draws rolls from `SimulationWorld.rng`.
+   `nethacked-sim` draws rolls from `SimulationWorld.rng`.
 2. **Lean mirrors Rust.** Each Lean model takes the same roll arguments; theorems are universally
    quantified over rolls in range. Theorems that become false are restated (not deleted silently);
    the Lean guide's theorem table is updated accordingly.
@@ -59,7 +59,7 @@ telepathy-only-while-blind, abon()/attribute system (abon treated as 0).
 ## Data-model changes
 
 - Wand recharge count: a dedicated field (e.g. `ItemRecord.recharged: u8`, `#[serde(default)]`)
-  replaces the `erosion` overload in `netrust-sim`; all readers/writers updated.
+  replaces the `erosion` overload in `nethacked-sim`; all readers/writers updated.
 - `SimulationWorld`: `mysterious_force_count: u32` (`#[serde(default)]`).
 - Nutrition type becomes `i32` where it flows through core hunger APIs (sim field adapted).
 

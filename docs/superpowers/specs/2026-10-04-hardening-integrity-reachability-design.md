@@ -25,14 +25,14 @@ and (C) special levels whose required locations are unreachable in real play.
 
 - Work on branch `fix/review-hardening-integrity`, never `main`.
 - TDD: every fix lands with a test that fails before the fix.
-- `cargo test --workspace --exclude netrust-py` stays green; `cargo build --workspace --all-targets` builds.
+- `cargo test --workspace --exclude nethacked-py` stays green; `cargo build --workspace --all-targets` builds.
 - Match surrounding code style; no new crates except where stated.
 
 ---
 
 ## A. Hardening
 
-### A1. Validated `Coord` deserialization (`netrust-types`)
+### A1. Validated `Coord` deserialization (`nethacked-types`)
 
 `Coord` gains `#[serde(try_from = "RawCoord")]` where `RawCoord { x: usize, y: usize }`
 and `TryFrom` delegates to `Coord::new` (which bounds-checks against `COLNO`/`ROWNO`).
@@ -45,7 +45,7 @@ can no longer produce an out-of-range `Coord`.
 `Result<TileInspection, String>`; callers in MCP, JSON-RPC and GraphQL map the error to their
 protocol error. No caller uses `Coord::new_unchecked` on external input.
 
-### A3. Bones server (`netrust-agent/src/bones/`)
+### A3. Bones server (`nethacked-agent/src/bones/`)
 
 - `render_headstone` truncates and centers by `chars()` count, never byte slicing.
 - Handlers compute everything that can fail (validation, headstone rendering) **before** taking
@@ -56,12 +56,12 @@ protocol error. No caller uses `Coord::new_unchecked` on external input.
   (`death_coord` is covered by A1 — malformed coords fail JSON extraction.)
 - Caps: at most 16 bones per depth (new submissions beyond that are rejected with 409);
   at most 1000 graves (oldest evicted).
-- Bind: default `127.0.0.1:<port>`; overridden by `--bind <addr>` or `NETRUST_BIND`.
-- Auth: if env `NETRUST_TOKEN` is set and non-empty, `POST /api/v1/bones` and
+- Bind: default `127.0.0.1:<port>`; overridden by `--bind <addr>` or `NETHACKED_BIND`.
+- Auth: if env `NETHACKED_TOKEN` is set and non-empty, `POST /api/v1/bones` and
   `POST /api/v1/reset` require `Authorization: Bearer <token>`, else `401`.
   Read-only routes stay open.
 
-### A4. Bones client (`netrust-agent/src/bones/client.rs`)
+### A4. Bones client (`nethacked-agent/src/bones/client.rs`)
 
 - Path segments (e.g. hero name) are percent-encoded (RFC 3986 unreserved set kept).
 - A base URL with `https://` returns `Err("https not supported")` instead of silently using
@@ -69,7 +69,7 @@ protocol error. No caller uses `Coord::new_unchecked` on external input.
 - Response `Content-Length` capped at 4 MiB; status/header lines capped at 8 KiB; exceeding
   either returns `Err`.
 
-### A5. MCP server (`netrust-agent/src/mcp.rs`, `bin/mcp.rs`)
+### A5. MCP server (`nethacked-agent/src/mcp.rs`, `bin/mcp.rs`)
 
 - Request handling returns a proper JSON-RPC 2.0 response for every request that has an `id`:
   - unparseable JSON → `-32700` with `id: null`
@@ -78,24 +78,24 @@ protocol error. No caller uses `Coord::new_unchecked` on external input.
   - missing/invalid params, unknown tool, unknown action, out-of-range coords → `-32602`
 - Messages without `id` (notifications) never get a response.
 - `ping` returns `{}`.
-- `netrust_step` schema enum lists exactly the actions the handler accepts (including
+- `nethacked_step` schema enum lists exactly the actions the handler accepts (including
   `descend`, `ascend`, `eat`, `cast`); description no longer mentions nonexistent actions.
   Unknown actions are `-32602`, never silently `Wait`.
 - Kick targets use checked stepping (`Coord::step`-style, returning `None` off-map → `-32602`).
 - The stdin loop reads raw bytes per line; invalid UTF-8 yields `-32700` and the loop continues.
 - `bin/mcp.rs` calls the library's `run_mcp_server` instead of duplicating it.
 
-### A6. JSON-RPC server (`netrust-agent/src/jsonrpc.rs`, `bin/jsonrpc.rs`)
+### A6. JSON-RPC server (`nethacked-agent/src/jsonrpc.rs`, `bin/jsonrpc.rs`)
 
 Same robustness rules as A5 (error codes, notifications, invalid UTF-8, bounds-checked
 `inspect_tile`). Protocol surface otherwise unchanged.
 
-### A7. GraphQL server (`netrust-agent/src/graphql.rs`, `bin/graphql.rs`)
+### A7. GraphQL server (`nethacked-agent/src/graphql.rs`, `bin/graphql.rs`)
 
-- Default bind `127.0.0.1`, same `--bind`/`NETRUST_BIND` override as A3.
+- Default bind `127.0.0.1`, same `--bind`/`NETHACKED_BIND` override as A3.
 - Schema built with `limit_depth(16)` and `limit_complexity(2000)`.
 - POST handler reads the body via `axum::body::to_bytes(body, 64 * 1024)`; oversize → 413.
-- If `NETRUST_TOKEN` is set, a request whose operation is a mutation and lacks the bearer token
+- If `NETHACKED_TOKEN` is set, a request whose operation is a mutation and lacks the bearer token
   is rejected (resolver-level guard reading an `Authorized(bool)` value inserted into request
   data).
 
@@ -103,7 +103,7 @@ Same robustness rules as A5 (error codes, notifications, invalid UTF-8, bounds-c
 
 ## B. Simulation integrity
 
-### B1. Level persistence with ID remapping (`netrust-sim/src/actions/stairs.rs`, `world.rs`)
+### B1. Level persistence with ID remapping (`nethacked-sim/src/actions/stairs.rs`, `world.rs`)
 
 `StoredLevel` becomes:
 
@@ -133,22 +133,22 @@ Unpack (restoring):
    level's `stairs_up` (defensive; should not happen).
 4. Remap restored ledger entries through `item_map` and append to `world.unpaid_items`.
 
-### B2. Player damage helper (`netrust-sim`)
+### B2. Player damage helper (`nethacked-sim`)
 
 `SimulationWorld::damage_player(amount: u32, cause: &str) -> Vec<GameEvent>` does
 `hp = hp.saturating_sub(amount)` and sets `is_dead` when `hp == 0`, emitting a `GameEvent::LogMessage` naming
 the cause (deaths elsewhere are reported the same way; there is no dedicated death event). Arrow/Dart traps use it.
 
-### B3. Genocide (`netrust-sim/src/actions/items.rs`, `netrust-data`)
+### B3. Genocide (`nethacked-sim/src/actions/items.rs`, `nethacked-data`)
 
-- `netrust_data::monster_class_of(name: &str) -> Option<char>` maps bestiary species names
+- `nethacked_data::monster_class_of(name: &str) -> Option<char>` maps bestiary species names
   (case-insensitive) to their NetHack class letter.
 - `is_genocided` comparisons are case-insensitive on species name; class checks use
   `monster_class_of(actor.name)`.
 - Blessed (class `'L'`) and uncursed (species `"goblin"`) remove only matching actors.
 - Removal goes through a helper that drops the actor's carried items to the floor at its coord.
 
-### B4. Wands & wishes (`netrust-sim/src/actions/items.rs`, `netrust-data/src/items.rs`)
+### B4. Wands & wishes (`nethacked-sim/src/actions/items.rs`, `nethacked-data/src/items.rs`)
 
 - `ZapWand` with no wand in the pack: message "You have no wand to zap.", no time spent,
   no effect.
@@ -163,13 +163,13 @@ the cause (deaths elsewhere are reported the same way; there is no dedicated dea
 
 ### B5. Save/load fidelity
 
-- Enable `rand_chacha` `serde` feature in `netrust-sim`; drop `#[serde(skip)]` on `rng`.
+- Enable `rand_chacha` `serde` feature in `nethacked-sim`; drop `#[serde(skip)]` on `rng`.
 - `DungeonLevel.engravings` / `traps` serialize as a sorted `Vec<(Coord, V)>` via a small
   `coord_map` serde module (deterministic order, valid JSON). In-memory type stays `HashMap`.
 - Round-trip test: world with traps and engravings → JSON → world; JSON of both equal and
   the next RNG draw is identical.
 
-### B6. Melee randomness (`netrust-sim/src/combat.rs`)
+### B6. Melee randomness (`nethacked-sim/src/combat.rs`)
 
 Hero melee rolls `d20 = rng.random_range(1..=20)` and `dmg = rng.random_range(1..=6) + skill_dmg_bonus`
 (min 1) from `world.rng`. Damage bonus argument is the skill damage bonus, not the to-hit bonus.
@@ -185,7 +185,7 @@ Prayer timeout tick and luck decay in `actions/mod.rs` run only when the action 
 
 ## C. Level reachability
 
-### C1. Shared helpers (`netrust-dungeon`)
+### C1. Shared helpers (`nethacked-dungeon`)
 
 - `pub fn reachable_from(level: &DungeonLevel, start: Coord) -> HashSet<Coord>` — 8-connected
   BFS over `is_passable` tiles (same movement model as `validate_stair_connectivity`, which is
@@ -201,8 +201,8 @@ Moloch's Sanctum. Assert `stairs_down` (where present) and all required coordina
 (key items, shopkeepers, priest, vibrating square, sanctum up-stairs) ∈
 `reachable_from(stairs_up)`.
 
-Required-coordinate assertions for item/monster placement live in `netrust-sim` tests (they
-depend on spawn code); pure layout assertions live in `netrust-dungeon` tests.
+Required-coordinate assertions for item/monster placement live in `nethacked-sim` tests (they
+depend on spawn code); pure layout assertions live in `nethacked-dungeon` tests.
 
 ### C3. Fixes
 
@@ -223,10 +223,10 @@ depend on spawn code); pure layout assertions live in `netrust-dungeon` tests.
 
 - Unit tests next to the code for pure functions (headstone, coord serde, percent-encoding,
   reachability helpers, wish normalization).
-- `netrust-agent` tests drive `handle_mcp_request` / JSON-RPC handler with malformed input
+- `nethacked-agent` tests drive `handle_mcp_request` / JSON-RPC handler with malformed input
   and assert response codes; bones server tested via its router (`tower::ServiceExt::oneshot`
   if available, else the existing in-process server test pattern).
-- `netrust-sim/tests/` integration tests for level round-trips (container contents, unpaid
+- `nethacked-sim/tests/` integration tests for level round-trips (container contents, unpaid
   ledger, steed), genocide, wands/wishes, save/load, melee variance, free-action timers,
   reachability of spawned key items.
 

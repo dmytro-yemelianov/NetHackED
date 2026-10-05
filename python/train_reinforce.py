@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""NetRust REINFORCE (vanilla policy gradient) training script.
+"""NetHackED REINFORCE (vanilla policy gradient) training script.
 
-Trains a compact 2-layer neural policy on NetRustGymEnv with the REINFORCE
+Trains a compact 2-layer neural policy on NetHackEDGymEnv with the REINFORCE
 algorithm (Monte-Carlo returns, normalized advantages, no baseline network, no
 clipping -- this is not PPO). The policy math is pure Python; only the
 environment needs gymnasium + numpy. Actions are sampled from the policy
@@ -23,25 +23,25 @@ from typing import List, Tuple, Dict, Any, Optional
 
 import numpy as np
 
-# Ensure python directory and netrust_py library are loaded
+# Ensure python directory and nethacked_py library are loaded
 script_dir = Path(__file__).resolve().parent
 repo_root = script_dir.parent
 sys.path.insert(0, str(script_dir))
 
 try:
-    import netrust_py  # noqa: F401  (installed via `maturin develop`)
+    import nethacked_py  # noqa: F401  (installed via `maturin develop`)
 except ImportError:
     target_debug = repo_root / "target" / "debug"
     target_release = repo_root / "target" / "release"
     for target_dir in (target_release, target_debug):
-        dylib = target_dir / "libnetrust_py.dylib"
-        so = target_dir / "netrust_py.so"
+        dylib = target_dir / "libnethacked_py.dylib"
+        so = target_dir / "nethacked_py.so"
         if dylib.exists() and not so.exists():
             shutil.copy(dylib, so)
         if so.exists() and str(target_dir) not in sys.path:
             sys.path.insert(0, str(target_dir))
 
-from netrust_gym import NetRustGymEnv, ACTION_NAMES, sample_masked_action
+from nethacked_gym import NetHackEDGymEnv, ACTION_NAMES, sample_masked_action
 
 PRAY = ACTION_NAMES.index("PRAY")
 
@@ -58,7 +58,7 @@ def _val(obs: Dict[str, Any], key: str, default: float) -> float:
 
 
 def extract_features(obs: Dict[str, Any]) -> List[float]:
-    """Convert NetRust gym observation dict into normalized feature vector."""
+    """Convert NetHackED gym observation dict into normalized feature vector."""
     hp = _val(obs, "player_hp", 18)
     hp_norm = hp / max(1.0, _val(obs, "player_max_hp", 1))
     hp_danger = 1.0 if hp <= 6 else 0.0
@@ -158,14 +158,14 @@ def train_rl_agent(
     out_path: Optional[Path] = None,
 ) -> Dict[str, Any]:
     print(f"============================================================")
-    print(f" NetRust REINFORCE Training Engine")
+    print(f" NetHackED REINFORCE Training Engine")
     print(f" Features: {NUM_FEATURES} | Hidden: {NUM_HIDDEN} | Actions: {NUM_ACTIONS} | Episodes: {episodes}")
     print(f"============================================================")
 
     policy = NeuralPolicy(NUM_FEATURES, NUM_HIDDEN, NUM_ACTIONS, seed=seed)
     rng = random.Random(seed)
     np_rng = np.random.default_rng(seed)
-    env = NetRustGymEnv(seed=seed, max_steps=max_steps_per_episode)
+    env = NetHackEDGymEnv(seed=seed, max_steps=max_steps_per_episode)
     episode_history = []
     start_time = time.time()
 

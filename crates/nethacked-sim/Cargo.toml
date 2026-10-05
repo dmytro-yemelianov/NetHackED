@@ -1,0 +1,24 @@
+[package]
+name = "nethacked-sim"
+license = "NGPL"
+version = "0.3.0"
+authors = ["Dmytro Yemelianov (Emelyanov)"]
+edition = "2021"
+description = "Deterministic simulation engine, replay logger, and event processor for NetHackED"
+
+[dependencies]
+nethacked-types = { path = "../nethacked-types" }
+nethacked-arena = { path = "../nethacked-arena" }
+nethacked-dungeon = { path = "../nethacked-dungeon" }
+nethacked-core = { path = "../nethacked-core" }
+nethacked-data = { path = "../nethacked-data" }
+nethacked-i18n = { path = "../nethacked-i18n" }
+rand = "0.9"
+rand_chacha = { version = "0.9", features = ["serde"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[dev-dependencies]
+proptest = "1.5"
+
+

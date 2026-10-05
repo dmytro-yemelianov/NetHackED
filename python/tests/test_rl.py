@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Unit tests for NetRust Gymnasium Environment and PyO3 bindings."""
+"""Unit tests for NetHackED Gymnasium Environment and PyO3 bindings."""
 
 import unittest
 import sys
@@ -12,18 +12,18 @@ target_debug = repo_root / "target" / "debug"
 
 sys.path.insert(0, str(python_dir))
 try:
-    import netrust_py  # noqa: F401  (installed, e.g. via `maturin develop`)
+    import nethacked_py  # noqa: F401  (installed, e.g. via `maturin develop`)
 except ImportError:
-    if (target_debug / "libnetrust_py.dylib").exists() and not (target_debug / "netrust_py.so").exists():
+    if (target_debug / "libnethacked_py.dylib").exists() and not (target_debug / "nethacked_py.so").exists():
         import shutil
-        shutil.copy(target_debug / "libnetrust_py.dylib", target_debug / "netrust_py.so")
+        shutil.copy(target_debug / "libnethacked_py.dylib", target_debug / "nethacked_py.so")
     sys.path.insert(0, str(target_debug))
 
-from netrust_gym import NetRustGymEnv, ACTION_NAMES
+from nethacked_gym import NetHackEDGymEnv, ACTION_NAMES
 
-class TestNetRustGymEnv(unittest.TestCase):
+class TestNetHackEDGymEnv(unittest.TestCase):
     def setUp(self):
-        self.env = NetRustGymEnv(seed=42, max_steps=50, conduct_masking=True)
+        self.env = NetHackEDGymEnv(seed=42, max_steps=50, conduct_masking=True)
 
     def test_reset_shape_and_keys(self):
         obs, info = self.env.reset()
@@ -66,26 +66,26 @@ class TestNetRustGymEnv(unittest.TestCase):
 
     def test_env_checker_passes(self):
         from gymnasium.utils.env_checker import check_env
-        check_env(NetRustGymEnv(max_steps=20), skip_render_check=True)
+        check_env(NetHackEDGymEnv(max_steps=20), skip_render_check=True)
 
     def test_is_real_gymnasium_env(self):
         import gymnasium
         self.assertIsInstance(self.env, gymnasium.Env)
 
     def test_reset_without_seed_varies(self):
-        env = NetRustGymEnv(max_steps=5)
+        env = NetHackEDGymEnv(max_steps=5)
         seeds = {env.reset()[1]["seed"] for _ in range(5)}
         self.assertGreater(len(seeds), 1)
 
     def test_reset_with_seed_is_deterministic(self):
-        env = NetRustGymEnv(max_steps=5)
+        env = NetHackEDGymEnv(max_steps=5)
         a, _ = env.reset(seed=123)
         b, _ = env.reset(seed=123)
         self.assertTrue((a["map_glyphs"] == b["map_glyphs"]).all())
 
     def test_masked_sampling_respects_mask(self):
         import numpy as np
-        from netrust_gym.env import sample_masked_action
+        from nethacked_gym.env import sample_masked_action
         rng = np.random.default_rng(0)
         mask = [False] * 26
         mask[3] = mask[23] = True
@@ -94,24 +94,24 @@ class TestNetRustGymEnv(unittest.TestCase):
 
     def test_masked_sampling_all_false_falls_back_to_wait(self):
         import numpy as np
-        from netrust_gym.env import sample_masked_action
+        from nethacked_gym.env import sample_masked_action
         self.assertEqual(sample_masked_action([False] * 26, np.random.default_rng(0)), 8)
 
     def test_explored_count_positive_and_resets(self):
-        import netrust_py
-        raw = netrust_py.NetRustEnv(seed=7, max_steps=10)
+        import nethacked_py
+        raw = nethacked_py.NetHackEDEnv(seed=7, max_steps=10)
         self.assertGreater(raw.explored_count, 0)
         raw.reset(seed=7)
         n = raw.explored_count
         self.assertGreater(n, 0)
         # Per-level reset on depth change is covered by the Rust unit test
-        # `exploration_is_keyed_by_depth_and_never_farmed` in crates/netrust-py/src/lib.rs.
+        # `exploration_is_keyed_by_depth_and_never_farmed` in crates/nethacked-py/src/lib.rs.
 
     def test_invalid_render_mode_rejected(self):
         with self.assertRaises(ValueError):
-            NetRustGymEnv(seed=1, render_mode="human")
-        NetRustGymEnv(seed=1, render_mode=None)
-        NetRustGymEnv(seed=1, render_mode="ansi")
+            NetHackEDGymEnv(seed=1, render_mode="human")
+        NetHackEDGymEnv(seed=1, render_mode=None)
+        NetHackEDGymEnv(seed=1, render_mode="ansi")
 
     def test_sample_action_never_returns_masked(self):
         import random

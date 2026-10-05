@@ -1,0 +1,20 @@
+[package]
+name = "nethacked-core"
+license = "NGPL"
+version = "0.3.0"
+authors = ["Dmytro Yemelianov (Emelyanov)"]
+edition = "2021"
+description = "Core game mechanics of NetHack formalized in Lean 4 and implemented in safe Rust"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+nethacked-types = { path = "../nethacked-types" }
+schemars = { version = "0.8", optional = true }
+
+[features]
+default = []
+schema = ["dep:schemars", "nethacked-types/schema"]
+
+[dev-dependencies]
+proptest = "1.5"
+serde_json = "1"

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-NetRust MCP Agent Client Example.
+NetHackED MCP Agent Client Example.
 
-Demonstrates connecting an LLM agent / script to NetRust via Model Context Protocol (MCP)
+Demonstrates connecting an LLM agent / script to NetHackED via Model Context Protocol (MCP)
 over stdio JSON-RPC 2.0.
 """
 
@@ -29,8 +29,8 @@ def send_rpc(proc, msg_id, method, params=None):
     return json.loads(resp_line)
 
 def main():
-    print("🚀 Launching NetRust MCP Server (netrust-mcp)...")
-    cmd = ["cargo", "run", "-q", "-p", "netrust-agent", "--bin", "netrust-mcp"]
+    print("🚀 Launching NetHackED MCP Server (nethacked-mcp)...")
+    cmd = ["cargo", "run", "-q", "-p", "nethacked-agent", "--bin", "nethacked-mcp"]
     proc = subprocess.Popen(
         cmd,
         stdin=subprocess.PIPE,
@@ -54,9 +54,9 @@ def main():
             print(f"    🛠️  Tool: {t['name']} — {t['description']}")
 
         # 3. Create a Wizard character
-        print("\n[3] Creating Character via MCP tool 'netrust_reset_with_character'...")
+        print("\n[3] Creating Character via MCP tool 'nethacked_reset_with_character'...")
         create_resp = send_rpc(proc, 3, "tools/call", {
-            "name": "netrust_reset_with_character",
+            "name": "nethacked_reset_with_character",
             "arguments": {
                 "seed": 9999,
                 "name": "Gandalf",
@@ -79,7 +79,7 @@ def main():
         for idx, act in enumerate(actions, start=4):
             print(f"\n[{idx}] Agent stepping: {act}...")
             step_resp = send_rpc(proc, idx, "tools/call", {
-                "name": "netrust_step",
+                "name": "nethacked_step",
                 "arguments": { "action": act }
             })
             step_obs = json.loads(step_resp["result"]["content"][0]["text"])

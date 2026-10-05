@@ -9,7 +9,7 @@ dist=deploy/cloudflare/dist
 rm -rf "$dist"
 mkdir -p "$dist"
 # The page lives at the site root on Cloudflare, so pkg/ and packs/ are siblings.
-sed 's|<meta name="netrust-base" content="../">|<meta name="netrust-base" content="./">|' web/play/index.html > "$dist/index.html"
+sed 's|<meta name="nethacked-base" content="../">|<meta name="nethacked-base" content="./">|' web/play/index.html > "$dist/index.html"
 grep -q 'content="./"' "$dist/index.html"
 cp web/play/play.js "$dist/"
 cp -R web/pkg "$dist/pkg"

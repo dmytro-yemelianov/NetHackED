@@ -1,5 +1,5 @@
-// One-time initialization of the NetRust wasm module, shared by all pages.
-import init, * as wasm from '../pkg/netrust_wasm.js';
+// One-time initialization of the NetHackED wasm module, shared by all pages.
+import init, * as wasm from '../pkg/nethacked_wasm.js';
 
 let ready = null;
 

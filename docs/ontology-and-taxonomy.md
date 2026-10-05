@@ -1,6 +1,6 @@
-# NetHack & NetRust Domain Ontology and Taxonomy
+# NetHack & NetHackED Domain Ontology and Taxonomy
 
-This document establishes the authoritative formal ontology, taxonomic classifications, and semantic relationships for the NetHack domain and its verified Rust rewrite (**NetRust**).
+This document establishes the authoritative formal ontology, taxonomic classifications, and semantic relationships for the NetHack domain and its verified Rust rewrite (**NetHackED**).
 
 ---
 

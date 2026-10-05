@@ -4,7 +4,7 @@
 
 **Goal:** Remove remotely triggerable crashes and server exposure, fix simulation-state corruption bugs, and make every special level's required locations reachable.
 
-**Architecture:** Validation moves to the edges (validated `Coord` deserialization, bounds-checked session API, shared JSON-RPC/stdio helpers in `netrust-agent`). Level persistence keeps entity IDs consistent by storing `(old_id, record)` pairs and remapping on restore. Dungeon generators gain a shared BFS reachability helper used both for check-and-revert hazard placement and for seed-sweep tests.
+**Architecture:** Validation moves to the edges (validated `Coord` deserialization, bounds-checked session API, shared JSON-RPC/stdio helpers in `nethacked-agent`). Level persistence keeps entity IDs consistent by storing `(old_id, record)` pairs and remapping on restore. Dungeon generators gain a shared BFS reachability helper used both for check-and-revert hazard placement and for seed-sweep tests.
 
 **Tech Stack:** Rust 2021 workspace; serde/serde_json; slotmap; rand 0.9 + rand_chacha 0.9 (`serde` feature); axum 0.7 + tokio; async-graphql 7.0.2.
 
@@ -14,8 +14,8 @@
 
 - Branch: `fix/review-hardening-integrity` (never commit to `main`).
 - TDD: every fix lands with a test that fails before the fix.
-- Must pass: `cargo build --workspace --all-targets` and `cargo test --workspace --exclude netrust-py`.
-- No new crate dependencies except: `rand_chacha` feature `serde` (netrust-sim), `serde_json` dev-dependency (netrust-types).
+- Must pass: `cargo build --workspace --all-targets` and `cargo test --workspace --exclude nethacked-py`.
+- No new crate dependencies except: `rand_chacha` feature `serde` (nethacked-sim), `serde_json` dev-dependency (nethacked-types).
 - Match surrounding code style (no `cargo fmt` sweep — that is a later cycle).
 - Commit messages end with:
   ```
@@ -25,7 +25,7 @@
 - Bones validation limits: `hero_name` 1..=32 chars, `killer` ≤ 64 chars, `items.len()` ≤ 64, `depth` 1..=60; ≤ 16 bones per depth (409 beyond); ≤ 1000 graves (oldest evicted).
 - Bones client limits: response body ≤ 4 MiB, status/header line ≤ 8 KiB.
 - GraphQL: `limit_depth(16)`, `limit_complexity(2000)`, body ≤ 64 KiB (413).
-- Default bind `127.0.0.1`; override `--bind <addr>` then `NETRUST_BIND`; token env `NETRUST_TOKEN`.
+- Default bind `127.0.0.1`; override `--bind <addr>` then `NETHACKED_BIND`; token env `NETHACKED_TOKEN`.
 - Initial wand charges: wishing 1; non-directional (secret door detection) 13; other wands 6.
 
 ## Review Focus
@@ -42,38 +42,38 @@
 
 | File | Responsibility |
 |---|---|
-| `crates/netrust-types/src/lib.rs` | `Coord` validated deserialization |
-| `crates/netrust-dungeon/src/level.rs` | `coord_map` serde module for `HashMap<Coord, V>` fields |
-| `crates/netrust-dungeon/src/reach.rs` (new) | `reachable_from`, `reachable_from_with`, `find_free_floor` |
-| `crates/netrust-dungeon/src/{sokoban,mines,quest,gehennom,generator}.rs` | layout fixes |
-| `crates/netrust-dungeon/tests/reachability.rs` (new) | 200-seed layout sweeps |
-| `crates/netrust-agent/src/rpc.rs` (new) | JSON-RPC 2.0 request parsing/response builders, direction parsing |
-| `crates/netrust-agent/src/stdio.rs` (new) | UTF-8-tolerant line server loop |
-| `crates/netrust-agent/src/netconfig.rs` (new, non-wasm) | bind address / token / bearer check |
-| `crates/netrust-agent/src/{mcp,jsonrpc,session,graphql}.rs` | protocol hardening |
-| `crates/netrust-agent/src/bones/{server,client,headstone}.rs` | bones hardening |
-| `crates/netrust-agent/tests/{protocol_tests,bones_hardening_test,graphql_http_test}.rs` (new) | agent tests |
-| `crates/netrust-sim/src/world.rs` | rng serde, `damage_player`, `StoredLevel` shape |
-| `crates/netrust-sim/src/actions/stairs.rs` | pack/unpack remap, spawn placement, mysterious-force clamp |
-| `crates/netrust-sim/src/actions/{items,movement,mod}.rs`, `combat.rs` | genocide, wands/wishes, traps, melee, timers |
-| `crates/netrust-data/src/{items,monsters}.rs` | wand charges, `monster_class_of` |
-| `crates/netrust-sim/tests/{save_load_tests,integrity_tests,level_persistence_tests,reachability_tests}.rs` (new) | sim tests |
+| `crates/nethacked-types/src/lib.rs` | `Coord` validated deserialization |
+| `crates/nethacked-dungeon/src/level.rs` | `coord_map` serde module for `HashMap<Coord, V>` fields |
+| `crates/nethacked-dungeon/src/reach.rs` (new) | `reachable_from`, `reachable_from_with`, `find_free_floor` |
+| `crates/nethacked-dungeon/src/{sokoban,mines,quest,gehennom,generator}.rs` | layout fixes |
+| `crates/nethacked-dungeon/tests/reachability.rs` (new) | 200-seed layout sweeps |
+| `crates/nethacked-agent/src/rpc.rs` (new) | JSON-RPC 2.0 request parsing/response builders, direction parsing |
+| `crates/nethacked-agent/src/stdio.rs` (new) | UTF-8-tolerant line server loop |
+| `crates/nethacked-agent/src/netconfig.rs` (new, non-wasm) | bind address / token / bearer check |
+| `crates/nethacked-agent/src/{mcp,jsonrpc,session,graphql}.rs` | protocol hardening |
+| `crates/nethacked-agent/src/bones/{server,client,headstone}.rs` | bones hardening |
+| `crates/nethacked-agent/tests/{protocol_tests,bones_hardening_test,graphql_http_test}.rs` (new) | agent tests |
+| `crates/nethacked-sim/src/world.rs` | rng serde, `damage_player`, `StoredLevel` shape |
+| `crates/nethacked-sim/src/actions/stairs.rs` | pack/unpack remap, spawn placement, mysterious-force clamp |
+| `crates/nethacked-sim/src/actions/{items,movement,mod}.rs`, `combat.rs` | genocide, wands/wishes, traps, melee, timers |
+| `crates/nethacked-data/src/{items,monsters}.rs` | wand charges, `monster_class_of` |
+| `crates/nethacked-sim/tests/{save_load_tests,integrity_tests,level_persistence_tests,reachability_tests}.rs` (new) | sim tests |
 
 ---
 
 ### Task 1: Validated `Coord` deserialization
 
 **Files:**
-- Modify: `crates/netrust-types/src/lib.rs:46-51` (Coord struct)
-- Modify: `crates/netrust-types/Cargo.toml` (dev-dep `serde_json = "1.0"`)
-- Test: `crates/netrust-types/src/lib.rs` (`mod tests` at ~line 715)
+- Modify: `crates/nethacked-types/src/lib.rs:46-51` (Coord struct)
+- Modify: `crates/nethacked-types/Cargo.toml` (dev-dep `serde_json = "1.0"`)
+- Test: `crates/nethacked-types/src/lib.rs` (`mod tests` at ~line 715)
 
 **Interfaces:**
 - Produces: `Coord` deserialization fails for `x >= COLNO || y >= ROWNO`; serialized shape unchanged `{"x":..,"y":..}`.
 
 - [ ] **Step 1: Add dev-dependency**
 
-In `crates/netrust-types/Cargo.toml` under `[dev-dependencies]` add:
+In `crates/nethacked-types/Cargo.toml` under `[dev-dependencies]` add:
 ```toml
 serde_json = "1.0"
 ```
@@ -95,7 +95,7 @@ serde_json = "1.0"
 
 - [ ] **Step 3: Run to verify it fails**
 
-Run: `cargo test -p netrust-types coord_deserialize_rejects_out_of_bounds`
+Run: `cargo test -p nethacked-types coord_deserialize_rejects_out_of_bounds`
 Expected: FAIL (out-of-bounds JSON deserializes successfully).
 
 - [ ] **Step 4: Implement**
@@ -130,13 +130,13 @@ impl TryFrom<RawCoord> for Coord {
 
 - [ ] **Step 5: Run tests**
 
-Run: `cargo test -p netrust-types && cargo test --workspace --exclude netrust-py 2>&1 | grep -E "test result|FAILED|panicked"`
+Run: `cargo test -p nethacked-types && cargo test --workspace --exclude nethacked-py 2>&1 | grep -E "test result|FAILED|panicked"`
 Expected: all PASS.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add crates/netrust-types
+git add crates/nethacked-types
 git commit -m "fix(types): reject out-of-bounds Coord on deserialization"
 ```
 
@@ -145,23 +145,23 @@ git commit -m "fix(types): reject out-of-bounds Coord on deserialization"
 ### Task 2: Save/load fidelity (RNG state + coord-keyed maps)
 
 **Files:**
-- Modify: `crates/netrust-dungeon/src/level.rs:11-22`
-- Modify: `crates/netrust-sim/Cargo.toml` (`rand_chacha = { version = "0.9", features = ["serde"] }`)
-- Modify: `crates/netrust-sim/src/world.rs:62-63`
-- Test: `crates/netrust-sim/tests/save_load_tests.rs` (new)
+- Modify: `crates/nethacked-dungeon/src/level.rs:11-22`
+- Modify: `crates/nethacked-sim/Cargo.toml` (`rand_chacha = { version = "0.9", features = ["serde"] }`)
+- Modify: `crates/nethacked-sim/src/world.rs:62-63`
+- Test: `crates/nethacked-sim/tests/save_load_tests.rs` (new)
 
 **Interfaces:**
 - Produces: `SimulationWorld` JSON round-trip preserves RNG stream, traps, engravings. `DungeonLevel.engravings`/`traps` stay `HashMap<Coord, _>` in memory; on the wire they are sorted arrays of `[coord, value]`.
 
 - [ ] **Step 1: Write the failing test**
 
-Create `crates/netrust-sim/tests/save_load_tests.rs`:
+Create `crates/nethacked-sim/tests/save_load_tests.rs`:
 ```rust
 //! Save/load fidelity: full world JSON round-trip including RNG stream and coord-keyed maps.
 
-use netrust_core::engraving::{Engraving, EngravingMedium};
-use netrust_sim::{Coord, SimulationWorld};
-use netrust_types::{TrapRecord, TrapState, TrapType};
+use nethacked_core::engraving::{Engraving, EngravingMedium};
+use nethacked_sim::{Coord, SimulationWorld};
+use nethacked_types::{TrapRecord, TrapState, TrapType};
 use rand::RngCore;
 
 #[test]
@@ -192,17 +192,17 @@ fn world_roundtrip_preserves_rng_traps_and_engravings() {
 
 - [ ] **Step 2: Run to verify it fails**
 
-Run: `cargo test -p netrust-sim --test save_load_tests`
+Run: `cargo test -p nethacked-sim --test save_load_tests`
 Expected: FAIL — serialization error "key must be a string" (or RNG mismatch).
 
 - [ ] **Step 3: Implement coord_map**
 
-In `crates/netrust-dungeon/src/level.rs`, change the two fields to:
+In `crates/nethacked-dungeon/src/level.rs`, change the two fields to:
 ```rust
     #[serde(with = "coord_map")]
     pub engravings: HashMap<Coord, Engraving>,
     #[serde(default, with = "coord_map")]
-    pub traps: HashMap<Coord, netrust_types::TrapRecord>,
+    pub traps: HashMap<Coord, nethacked_types::TrapRecord>,
 ```
 and append to the file:
 ```rust
@@ -210,7 +210,7 @@ and append to the file:
 /// valid JSON (no struct keys) and deterministic ordering.
 mod coord_map {
     use std::collections::HashMap;
-    use netrust_types::Coord;
+    use nethacked_types::Coord;
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
     pub fn serialize<S, V>(map: &HashMap<Coord, V>, s: S) -> Result<S::Ok, S::Error>
@@ -236,18 +236,18 @@ mod coord_map {
 
 - [ ] **Step 4: Implement RNG serde**
 
-`crates/netrust-sim/Cargo.toml`: `rand_chacha = { version = "0.9", features = ["serde"] }`.
-`crates/netrust-sim/src/world.rs`: replace `#[serde(skip, default = "default_rng")]` with `#[serde(default = "default_rng")]`.
+`crates/nethacked-sim/Cargo.toml`: `rand_chacha = { version = "0.9", features = ["serde"] }`.
+`crates/nethacked-sim/src/world.rs`: replace `#[serde(skip, default = "default_rng")]` with `#[serde(default = "default_rng")]`.
 
 - [ ] **Step 5: Run tests**
 
-Run: `cargo test -p netrust-sim --test save_load_tests && cargo test --workspace --exclude netrust-py 2>&1 | grep -E "test result|FAILED|panicked"`
+Run: `cargo test -p nethacked-sim --test save_load_tests && cargo test --workspace --exclude nethacked-py 2>&1 | grep -E "test result|FAILED|panicked"`
 Expected: PASS. If `rand_core` serde feature is needed for the build, enable it the same way and note it.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add crates/netrust-dungeon/src/level.rs crates/netrust-sim/Cargo.toml crates/netrust-sim/src/world.rs crates/netrust-sim/tests/save_load_tests.rs Cargo.lock
+git add crates/nethacked-dungeon/src/level.rs crates/nethacked-sim/Cargo.toml crates/nethacked-sim/src/world.rs crates/nethacked-sim/tests/save_load_tests.rs Cargo.lock
 git commit -m "fix(sim): make world save/load round-trip RNG state, traps and engravings"
 ```
 
@@ -256,11 +256,11 @@ git commit -m "fix(sim): make world save/load round-trip RNG state, traps and en
 ### Task 3: Agent protocol foundations (rpc helpers, stdio loop, bounds-checked inspect_tile)
 
 **Files:**
-- Create: `crates/netrust-agent/src/rpc.rs`, `crates/netrust-agent/src/stdio.rs`
-- Modify: `crates/netrust-agent/src/lib.rs` (add `pub mod rpc; pub mod stdio;`)
-- Modify: `crates/netrust-agent/src/session.rs:76-94` (`inspect_tile`)
-- Modify callers: `crates/netrust-agent/src/graphql.rs:121-131`, `crates/netrust-agent/examples/autonomous_bot.rs:68-72` (mcp/jsonrpc callers are rewritten in Tasks 4–5; in this task change them to `session.inspect_tile(x, y)` and serialize `Ok`/`Err` text so the crate compiles)
-- Test: unit tests inside `rpc.rs`, `stdio.rs`; `crates/netrust-agent/tests/protocol_tests.rs` (new)
+- Create: `crates/nethacked-agent/src/rpc.rs`, `crates/nethacked-agent/src/stdio.rs`
+- Modify: `crates/nethacked-agent/src/lib.rs` (add `pub mod rpc; pub mod stdio;`)
+- Modify: `crates/nethacked-agent/src/session.rs:76-94` (`inspect_tile`)
+- Modify callers: `crates/nethacked-agent/src/graphql.rs:121-131`, `crates/nethacked-agent/examples/autonomous_bot.rs:68-72` (mcp/jsonrpc callers are rewritten in Tasks 4–5; in this task change them to `session.inspect_tile(x, y)` and serialize `Ok`/`Err` text so the crate compiles)
+- Test: unit tests inside `rpc.rs`, `stdio.rs`; `crates/nethacked-agent/tests/protocol_tests.rs` (new)
 
 **Interfaces:**
 - Produces:
@@ -275,14 +275,14 @@ git commit -m "fix(sim): make world save/load round-trip RNG state, traps and en
 
 - [ ] **Step 1: Write failing tests**
 
-Create `crates/netrust-agent/tests/protocol_tests.rs` (all new helpers are tested through the public API here):
+Create `crates/nethacked-agent/tests/protocol_tests.rs` (all new helpers are tested through the public API here):
 ```rust
 //! Protocol-level hardening tests for session, rpc helpers and stdio loop.
 
-use netrust_agent::rpc::{parse_direction, parse_request, INVALID_REQUEST, PARSE_ERROR};
-use netrust_agent::stdio::serve_lines;
-use netrust_agent::AgentSession;
-use netrust_sim::Direction;
+use nethacked_agent::rpc::{parse_direction, parse_request, INVALID_REQUEST, PARSE_ERROR};
+use nethacked_agent::stdio::serve_lines;
+use nethacked_agent::AgentSession;
+use nethacked_sim::Direction;
 use std::io::Cursor;
 
 #[test]
@@ -340,7 +340,7 @@ fn serve_lines_survives_invalid_utf8() {
 
 - [ ] **Step 2: Run to verify it fails**
 
-Run: `cargo test -p netrust-agent --test protocol_tests`
+Run: `cargo test -p nethacked-agent --test protocol_tests`
 Expected: FAIL to compile (modules/functions missing).
 
 - [ ] **Step 3: Implement `rpc.rs`**
@@ -348,7 +348,7 @@ Expected: FAIL to compile (modules/functions missing).
 ```rust
 //! Shared JSON-RPC 2.0 request parsing and response builders for stdio servers.
 
-use netrust_sim::Direction;
+use nethacked_sim::Direction;
 use serde_json::{json, Value};
 
 pub const PARSE_ERROR: i64 = -32700;
@@ -481,13 +481,13 @@ Update callers:
 
 - [ ] **Step 6: Run tests**
 
-Run: `cargo test -p netrust-agent && cargo build --workspace --all-targets`
+Run: `cargo test -p nethacked-agent && cargo build --workspace --all-targets`
 Expected: PASS.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add crates/netrust-agent
+git add crates/nethacked-agent
 git commit -m "feat(agent): shared JSON-RPC helpers, UTF-8 tolerant stdio loop, bounds-checked inspect_tile"
 ```
 
@@ -496,9 +496,9 @@ git commit -m "feat(agent): shared JSON-RPC helpers, UTF-8 tolerant stdio loop, 
 ### Task 4: MCP server compliance and robustness
 
 **Files:**
-- Modify: `crates/netrust-agent/src/mcp.rs` (whole file restructure)
-- Modify: `crates/netrust-agent/src/bin/mcp.rs`
-- Test: `crates/netrust-agent/tests/protocol_tests.rs` (append)
+- Modify: `crates/nethacked-agent/src/mcp.rs` (whole file restructure)
+- Modify: `crates/nethacked-agent/src/bin/mcp.rs`
+- Test: `crates/nethacked-agent/tests/protocol_tests.rs` (append)
 
 **Interfaces:**
 - Consumes: `rpc::*`, `stdio::serve_lines`, `AgentSession::inspect_tile(x, y)` from Task 3.
@@ -515,15 +515,15 @@ Behavior table (all responses include `"jsonrpc":"2.0"`):
 | unknown method | `-32601` |
 | `tools/call` without `params.name` string | `-32602` |
 | unknown tool | `-32602` |
-| `netrust_step` missing/unknown `action` | `-32602` |
-| `netrust_step` kick off-map | `-32602` |
-| `netrust_inspect_tile` missing x/y or out of bounds | `-32602` |
+| `nethacked_step` missing/unknown `action` | `-32602` |
+| `nethacked_step` kick off-map | `-32602` |
+| `nethacked_inspect_tile` missing x/y or out of bounds | `-32602` |
 
 - [ ] **Step 1: Write failing tests** (append to `tests/protocol_tests.rs`)
 
 ```rust
-use netrust_agent::mcp::{handle_mcp_line, handle_mcp_request};
-use netrust_agent::rpc::{INVALID_PARAMS, METHOD_NOT_FOUND};
+use nethacked_agent::mcp::{handle_mcp_line, handle_mcp_request};
+use nethacked_agent::rpc::{INVALID_PARAMS, METHOD_NOT_FOUND};
 use serde_json::json;
 
 fn mcp(session: &mut AgentSession, v: serde_json::Value) -> Option<serde_json::Value> {
@@ -567,13 +567,13 @@ fn mcp_invalid_params_paths() {
     assert_eq!(r["error"]["code"], INVALID_PARAMS);
     let r = mcp(&mut s, call("nope", json!({}))).unwrap();
     assert_eq!(r["error"]["code"], INVALID_PARAMS);
-    let r = mcp(&mut s, call("netrust_step", json!({"action":"dance"}))).unwrap();
+    let r = mcp(&mut s, call("nethacked_step", json!({"action":"dance"}))).unwrap();
     assert_eq!(r["error"]["code"], INVALID_PARAMS);
-    let r = mcp(&mut s, call("netrust_step", json!({}))).unwrap();
+    let r = mcp(&mut s, call("nethacked_step", json!({}))).unwrap();
     assert_eq!(r["error"]["code"], INVALID_PARAMS);
-    let r = mcp(&mut s, call("netrust_inspect_tile", json!({"x":1000,"y":0}))).unwrap();
+    let r = mcp(&mut s, call("nethacked_inspect_tile", json!({"x":1000,"y":0}))).unwrap();
     assert_eq!(r["error"]["code"], INVALID_PARAMS);
-    let r = mcp(&mut s, call("netrust_inspect_tile", json!({"x":5}))).unwrap();
+    let r = mcp(&mut s, call("nethacked_inspect_tile", json!({"x":5}))).unwrap();
     assert_eq!(r["error"]["code"], INVALID_PARAMS);
 }
 
@@ -581,8 +581,8 @@ fn mcp_invalid_params_paths() {
 fn mcp_kick_off_map_is_invalid_params() {
     let mut s = AgentSession::new(42);
     let pid = s.world.player_id;
-    s.world.arena.actors.get_mut(pid).unwrap().coord = netrust_sim::Coord::new(79, 20).unwrap();
-    let r = mcp(&mut s, json!({"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"netrust_step","arguments":{"action":"kick_east"}}})).unwrap();
+    s.world.arena.actors.get_mut(pid).unwrap().coord = nethacked_sim::Coord::new(79, 20).unwrap();
+    let r = mcp(&mut s, json!({"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"nethacked_step","arguments":{"action":"kick_east"}}})).unwrap();
     assert_eq!(r["error"]["code"], INVALID_PARAMS);
 }
 
@@ -591,7 +591,7 @@ fn mcp_step_enum_matches_accepted_actions() {
     let mut s = AgentSession::new(42);
     let r = mcp(&mut s, json!({"jsonrpc":"2.0","id":2,"method":"tools/list"})).unwrap();
     let tools = r["result"]["tools"].as_array().unwrap();
-    let step = tools.iter().find(|t| t["name"] == "netrust_step").unwrap();
+    let step = tools.iter().find(|t| t["name"] == "nethacked_step").unwrap();
     let actions: Vec<String> = step["inputSchema"]["properties"]["action"]["enum"]
         .as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_string()).collect();
     for a in ["descend", "ascend", "eat", "cast", "kick_east"] {
@@ -599,7 +599,7 @@ fn mcp_step_enum_matches_accepted_actions() {
     }
     for a in &actions {
         let mut fresh = AgentSession::new(42);
-        let r = mcp(&mut fresh, json!({"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"netrust_step","arguments":{"action":a}}})).unwrap();
+        let r = mcp(&mut fresh, json!({"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"nethacked_step","arguments":{"action":a}}})).unwrap();
         assert!(r.get("result").is_some(), "enum action {} rejected: {}", a, r);
     }
 }
@@ -607,7 +607,7 @@ fn mcp_step_enum_matches_accepted_actions() {
 
 - [ ] **Step 2: Run to verify it fails**
 
-Run: `cargo test -p netrust-agent --test protocol_tests mcp_`
+Run: `cargo test -p nethacked-agent --test protocol_tests mcp_`
 Expected: FAIL (compile error for `handle_mcp_line`, then assertion failures).
 
 - [ ] **Step 3: Implement**
@@ -616,7 +616,7 @@ Restructure `mcp.rs`:
 ```rust
 use crate::rpc::{self, error_response, parse_direction, result_response, RpcRequest, INVALID_PARAMS, METHOD_NOT_FOUND};
 
-/// Every action string `netrust_step` accepts; also used as the schema enum.
+/// Every action string `nethacked_step` accepts; also used as the schema enum.
 pub const STEP_ACTIONS: &[&str] = &[
     "move_north", "move_east", "move_south", "move_west",
     "move_northeast", "move_northwest", "move_southeast", "move_southwest",
@@ -648,7 +648,7 @@ fn dispatch(session: &mut AgentSession, method: &str, params: &Value) -> Result<
         "initialize" => Ok(json!({
             "protocolVersion": "2024-11-05",
             "capabilities": { "tools": {} },
-            "serverInfo": { "name": "netrust-mcp", "version": "0.1.0" }
+            "serverInfo": { "name": "nethacked-mcp", "version": "0.1.0" }
         })),
         "notifications/initialized" => Ok(Value::Null),
         "ping" => Ok(json!({})),
@@ -664,11 +664,11 @@ fn dispatch(session: &mut AgentSession, method: &str, params: &Value) -> Result<
     }
 }
 ```
-- `tools_list()` returns the existing `{"tools":[...]}` value, with the `netrust_step` description changed to `"Execute a game action and return the next observation. 'sacrifice'/'eat'/'cast' take an optional 'index'; 'cast' takes an optional 'direction' (8 compass names)."`, its `action` enum built from `STEP_ACTIONS` (`json!(STEP_ACTIONS)`), plus `"index": {"type":"integer"}` and `"direction": {"type":"string"}` properties.
+- `tools_list()` returns the existing `{"tools":[...]}` value, with the `nethacked_step` description changed to `"Execute a game action and return the next observation. 'sacrifice'/'eat'/'cast' take an optional 'index'; 'cast' takes an optional 'direction' (8 compass names)."`, its `action` enum built from `STEP_ACTIONS` (`json!(STEP_ACTIONS)`), plus `"index": {"type":"integer"}` and `"direction": {"type":"string"}` properties.
 - `call_tool(session, name, args) -> Result<String, String>` holds the existing per-tool bodies with these changes:
   - unknown tool → `Err(format!("Tool '{}' not found", name))`
-  - `netrust_step`: `let act_str = args.get("action").and_then(|a| a.as_str()).ok_or("missing 'action'")?;` then `let action = parse_step_action(act_str, args, p_coord)?;`
-  - `netrust_inspect_tile`: `let x = args.get("x").and_then(|v| v.as_u64()).ok_or("missing integer 'x'")? as usize;` (same for y) then `let insp = session.inspect_tile(x, y)?;`
+  - `nethacked_step`: `let act_str = args.get("action").and_then(|a| a.as_str()).ok_or("missing 'action'")?;` then `let action = parse_step_action(act_str, args, p_coord)?;`
+  - `nethacked_inspect_tile`: `let x = args.get("x").and_then(|v| v.as_u64()).ok_or("missing integer 'x'")? as usize;` (same for y) then `let insp = session.inspect_tile(x, y)?;`
 - `fn parse_step_action(act: &str, args: &Value, p: Coord) -> Result<ActionAst, String>`:
   - `move_<dir>` → `parse_direction(dir)` → `ActionAst::Move`
   - `cast`: direction via `args["direction"]` with `parse_direction`, default `Direction::East` when absent; an unparseable present direction → `Err`
@@ -687,20 +687,20 @@ fn dispatch(session: &mut AgentSession, method: &str, params: &Value) -> Result<
 - `bin/mcp.rs` body becomes:
   ```rust
   fn main() -> std::io::Result<()> {
-      netrust_agent::run_mcp_server(42)
+      nethacked_agent::run_mcp_server(42)
   }
   ```
   (keep the module doc comment; drop now-unused imports).
 
 - [ ] **Step 4: Run tests**
 
-Run: `cargo test -p netrust-agent`
+Run: `cargo test -p nethacked-agent`
 Expected: PASS, including existing `test_mcp_initialize_and_tools_list` and `test_mcp_tool_call_observation`.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add crates/netrust-agent
+git add crates/nethacked-agent
 git commit -m "fix(agent): JSON-RPC 2.0/MCP compliant error handling, ping, notifications and action enum"
 ```
 
@@ -709,9 +709,9 @@ git commit -m "fix(agent): JSON-RPC 2.0/MCP compliant error handling, ping, noti
 ### Task 5: JSON-RPC server robustness
 
 **Files:**
-- Modify: `crates/netrust-agent/src/jsonrpc.rs`
-- Modify: `crates/netrust-agent/src/bin/jsonrpc.rs` (use `serve_lines`; protocol unchanged)
-- Test: `crates/netrust-agent/tests/protocol_tests.rs` (append)
+- Modify: `crates/nethacked-agent/src/jsonrpc.rs`
+- Modify: `crates/nethacked-agent/src/bin/jsonrpc.rs` (use `serve_lines`; protocol unchanged)
+- Test: `crates/nethacked-agent/tests/protocol_tests.rs` (append)
 
 **Interfaces:**
 - Consumes: `rpc::*`, `stdio::serve_lines`.
@@ -720,7 +720,7 @@ git commit -m "fix(agent): JSON-RPC 2.0/MCP compliant error handling, ping, noti
 - [ ] **Step 1: Write failing tests**
 
 ```rust
-use netrust_agent::jsonrpc::{handle_jsonrpc_line, handle_jsonrpc_request};
+use nethacked_agent::jsonrpc::{handle_jsonrpc_line, handle_jsonrpc_request};
 
 #[test]
 fn jsonrpc_robustness() {
@@ -729,28 +729,28 @@ fn jsonrpc_robustness() {
     assert_eq!(r["error"]["code"], PARSE_ERROR);
     let r = handle_jsonrpc_line(&mut s, Err(())).unwrap();
     assert_eq!(r["error"]["code"], PARSE_ERROR);
-    assert!(handle_jsonrpc_request(&mut s, r#"{"jsonrpc":"2.0","method":"netrust.step","params":{"action":"wait"}}"#).is_none());
-    let r = handle_jsonrpc_request(&mut s, r#"{"jsonrpc":"2.0","id":1,"method":"netrust.inspectTile","params":{"x":1000,"y":0}}"#).unwrap();
+    assert!(handle_jsonrpc_request(&mut s, r#"{"jsonrpc":"2.0","method":"nethacked.step","params":{"action":"wait"}}"#).is_none());
+    let r = handle_jsonrpc_request(&mut s, r#"{"jsonrpc":"2.0","id":1,"method":"nethacked.inspectTile","params":{"x":1000,"y":0}}"#).unwrap();
     assert_eq!(r["error"]["code"], INVALID_PARAMS);
-    let r = handle_jsonrpc_request(&mut s, r#"{"jsonrpc":"2.0","id":2,"method":"netrust.step","params":{"action":"dance"}}"#).unwrap();
+    let r = handle_jsonrpc_request(&mut s, r#"{"jsonrpc":"2.0","id":2,"method":"nethacked.step","params":{"action":"dance"}}"#).unwrap();
     assert_eq!(r["error"]["code"], INVALID_PARAMS);
-    let r = handle_jsonrpc_request(&mut s, r#"{"jsonrpc":"2.0","id":3,"method":"netrust.step","params":{"action":"northeast"}}"#).unwrap();
+    let r = handle_jsonrpc_request(&mut s, r#"{"jsonrpc":"2.0","id":3,"method":"nethacked.step","params":{"action":"northeast"}}"#).unwrap();
     assert!(r.get("result").is_some());
 }
 ```
 
 - [ ] **Step 2: Run to verify it fails**
 
-Run: `cargo test -p netrust-agent --test protocol_tests jsonrpc_robustness`
+Run: `cargo test -p nethacked-agent --test protocol_tests jsonrpc_robustness`
 Expected: FAIL.
 
 - [ ] **Step 3: Implement**
 
 Rewrite `jsonrpc.rs` following the Task 4 shape: `handle_jsonrpc_request` → `handle_jsonrpc_line(session, Ok(line))`; `handle_jsonrpc_line` parses via `rpc::parse_request`, calls `fn dispatch(session, method, params) -> Result<Value, (i64, String)>`, returns `None` when `id` is absent. Dispatch:
-- `netrust.getObservation` → `json!(session.get_observation())`
-- `netrust.renderAscii` → `json!({ "ascii": render_ascii_map(&session.world) })`
-- `netrust.step` → action = `params.action` (default `"wait"` when absent, as before); `"pickup"|"pay"|"pray"|"descend"|"ascend"|"wait"` map as before; otherwise `parse_direction(action)` → `Move`; else `Err((INVALID_PARAMS, "Unknown action ..."))`
-- `netrust.inspectTile` → require integer x,y (`INVALID_PARAMS` if missing), `session.inspect_tile(x, y).map(|i| json!(i)).map_err(|e| (INVALID_PARAMS, e))`
+- `nethacked.getObservation` → `json!(session.get_observation())`
+- `nethacked.renderAscii` → `json!({ "ascii": render_ascii_map(&session.world) })`
+- `nethacked.step` → action = `params.action` (default `"wait"` when absent, as before); `"pickup"|"pay"|"pray"|"descend"|"ascend"|"wait"` map as before; otherwise `parse_direction(action)` → `Move`; else `Err((INVALID_PARAMS, "Unknown action ..."))`
+- `nethacked.inspectTile` → require integer x,y (`INVALID_PARAMS` if missing), `session.inspect_tile(x, y).map(|i| json!(i)).map_err(|e| (INVALID_PARAMS, e))`
 - else `METHOD_NOT_FOUND`.
 
 `run_jsonrpc_server` uses `serve_lines` exactly like `run_mcp_server`.
@@ -759,13 +759,13 @@ Rewrite `jsonrpc.rs` following the Task 4 shape: `handle_jsonrpc_request` → `h
 
 - [ ] **Step 4: Run tests**
 
-Run: `cargo test -p netrust-agent && cargo build -p netrust-agent --bins`
+Run: `cargo test -p nethacked-agent && cargo build -p nethacked-agent --bins`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add crates/netrust-agent
+git add crates/nethacked-agent
 git commit -m "fix(agent): JSON-RPC server error codes, notifications, UTF-8 tolerance and bounds checks"
 ```
 
@@ -774,18 +774,18 @@ git commit -m "fix(agent): JSON-RPC server error codes, notifications, UTF-8 tol
 ### Task 6: Bones server hardening + shared netconfig
 
 **Files:**
-- Create: `crates/netrust-agent/src/netconfig.rs` (non-wasm)
-- Modify: `crates/netrust-agent/src/lib.rs` (`#[cfg(not(target_arch = "wasm32"))] pub mod netconfig;`)
-- Modify: `crates/netrust-agent/src/bones/headstone.rs:12-23`
-- Modify: `crates/netrust-agent/src/bones/server.rs`
-- Modify: `crates/netrust-agent/src/bones/mod.rs` (export `create_bones_router_with_token`)
-- Modify: `crates/netrust-agent/src/bin/bones_server.rs`
-- Test: `crates/netrust-agent/tests/bones_hardening_test.rs` (new), headstone unit test
+- Create: `crates/nethacked-agent/src/netconfig.rs` (non-wasm)
+- Modify: `crates/nethacked-agent/src/lib.rs` (`#[cfg(not(target_arch = "wasm32"))] pub mod netconfig;`)
+- Modify: `crates/nethacked-agent/src/bones/headstone.rs:12-23`
+- Modify: `crates/nethacked-agent/src/bones/server.rs`
+- Modify: `crates/nethacked-agent/src/bones/mod.rs` (export `create_bones_router_with_token`)
+- Modify: `crates/nethacked-agent/src/bin/bones_server.rs`
+- Test: `crates/nethacked-agent/tests/bones_hardening_test.rs` (new), headstone unit test
 
 **Interfaces:**
 - Produces:
   - `netconfig::resolve_bind_addr(cli_args: &[String], env_bind: Option<String>, default_addr: &str) -> String` — `--bind <addr>` wins, then `env_bind` (non-empty), else `default_addr`
-  - `netconfig::token_from_env() -> Option<String>` — `NETRUST_TOKEN` if non-empty
+  - `netconfig::token_from_env() -> Option<String>` — `NETHACKED_TOKEN` if non-empty
   - `netconfig::bearer_ok(headers: &axum::http::HeaderMap, token: Option<&str>) -> bool` — `true` when `token` is `None`
   - `bones::create_bones_router_with_token(state: SharedGraveyard, token: Option<String>) -> Router`; `create_bones_router(state)` = `create_bones_router_with_token(state, netconfig::token_from_env())`
   - constants in `server.rs`: `MAX_NAME_CHARS=32, MAX_KILLER_CHARS=64, MAX_ITEMS=64, MAX_DEPTH=60, MAX_BONES_PER_DEPTH=16, MAX_GRAVES=1000`
@@ -803,15 +803,15 @@ Headstone unit test (append to `headstone.rs` tests):
     }
 ```
 
-Create `crates/netrust-agent/tests/bones_hardening_test.rs`:
+Create `crates/nethacked-agent/tests/bones_hardening_test.rs`:
 ```rust
 //! Hardening tests for the bones HTTP server: validation, poisoning resistance, caps, auth.
 
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
-use netrust_agent::bones::{create_bones_router_with_token, GraveyardState};
-use netrust_agent::netconfig::resolve_bind_addr;
+use nethacked_agent::bones::{create_bones_router_with_token, GraveyardState};
+use nethacked_agent::netconfig::resolve_bind_addr;
 use serde_json::json;
 
 async fn spawn(token: Option<&str>) -> (String, Arc<Mutex<GraveyardState>>) {
@@ -927,7 +927,7 @@ fn bind_addr_resolution() {
 
 - [ ] **Step 2: Run to verify it fails**
 
-Run: `cargo test -p netrust-agent --test bones_hardening_test; cargo test -p netrust-agent headstone`
+Run: `cargo test -p nethacked-agent --test bones_hardening_test; cargo test -p nethacked-agent headstone`
 Expected: FAIL (missing items; headstone panics on byte slicing).
 
 - [ ] **Step 3: Implement headstone fix**
@@ -965,9 +965,9 @@ pub fn resolve_bind_addr(cli_args: &[String], env_bind: Option<String>, default_
     }
 }
 
-/// The shared secret from `NETRUST_TOKEN`, if set and non-empty.
+/// The shared secret from `NETHACKED_TOKEN`, if set and non-empty.
 pub fn token_from_env() -> Option<String> {
-    std::env::var("NETRUST_TOKEN").ok().filter(|t| !t.is_empty())
+    std::env::var("NETHACKED_TOKEN").ok().filter(|t| !t.is_empty())
 }
 
 /// True when no token is configured, or the request carries `Authorization: Bearer <token>`.
@@ -1011,23 +1011,23 @@ In `server.rs`:
 
 `bin/bones_server.rs`:
 ```rust
-    let host = env::var("NETRUST_BONES_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
-    let port = env::var("NETRUST_BONES_PORT").unwrap_or_else(|_| "7777".to_string());
+    let host = env::var("NETHACKED_BONES_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
+    let port = env::var("NETHACKED_BONES_PORT").unwrap_or_else(|_| "7777".to_string());
     let args: Vec<String> = env::args().collect();
-    let addr = netrust_agent::netconfig::resolve_bind_addr(&args, env::var("NETRUST_BIND").ok(), &format!("{}:{}", host, port));
+    let addr = nethacked_agent::netconfig::resolve_bind_addr(&args, env::var("NETHACKED_BIND").ok(), &format!("{}:{}", host, port));
 ```
 
 Export from `bones/mod.rs`: `pub use server::{create_bones_router, create_bones_router_with_token, run_bones_server, GraveyardState, SharedGraveyard};`
 
 - [ ] **Step 6: Run tests**
 
-Run: `cargo test -p netrust-agent`
+Run: `cargo test -p nethacked-agent`
 Expected: PASS including the existing `bones_server_test.rs` (no token set in env).
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add crates/netrust-agent
+git add crates/nethacked-agent
 git commit -m "fix(bones): char-safe headstones, validation, caps, poison-tolerant locking, localhost bind and token auth"
 ```
 
@@ -1036,7 +1036,7 @@ git commit -m "fix(bones): char-safe headstones, validation, caps, poison-tolera
 ### Task 7: Bones client hardening
 
 **Files:**
-- Modify: `crates/netrust-agent/src/bones/client.rs`
+- Modify: `crates/nethacked-agent/src/bones/client.rs`
 - Test: unit tests in `client.rs`
 
 **Interfaces:**
@@ -1085,7 +1085,7 @@ mod tests {
 
 - [ ] **Step 2: Run to verify it fails**
 
-Run: `cargo test -p netrust-agent --lib bones::client`
+Run: `cargo test -p nethacked-agent --lib bones::client`
 Expected: FAIL to compile.
 
 - [ ] **Step 3: Implement**
@@ -1153,13 +1153,13 @@ Expected: FAIL to compile.
 
 - [ ] **Step 4: Run tests**
 
-Run: `cargo test -p netrust-agent`
+Run: `cargo test -p nethacked-agent`
 Expected: PASS (including `bones_server_test.rs` network flow).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add crates/netrust-agent/src/bones/client.rs
+git add crates/nethacked-agent/src/bones/client.rs
 git commit -m "fix(bones): client percent-encodes paths, refuses https downgrade, caps response size"
 ```
 
@@ -1168,9 +1168,9 @@ git commit -m "fix(bones): client percent-encodes paths, refuses https downgrade
 ### Task 8: GraphQL limits, body cap, localhost bind, mutation auth
 
 **Files:**
-- Modify: `crates/netrust-agent/src/graphql.rs`
-- Modify: `crates/netrust-agent/src/bin/graphql.rs`
-- Test: `crates/netrust-agent/tests/graphql_http_test.rs` (new)
+- Modify: `crates/nethacked-agent/src/graphql.rs`
+- Modify: `crates/nethacked-agent/src/bin/graphql.rs`
+- Test: `crates/nethacked-agent/tests/graphql_http_test.rs` (new)
 
 **Interfaces:**
 - Consumes: `netconfig::{bearer_ok, resolve_bind_addr, token_from_env}`.
@@ -1178,19 +1178,19 @@ git commit -m "fix(bones): client percent-encodes paths, refuses https downgrade
   - `pub struct Authorized(pub bool);` (request data)
   - mutations return `async_graphql::Result<_>` and call `require_mutation_auth(ctx)?` first; `ctx.data_opt::<Authorized>()` absent ⇒ allowed (in-process `schema.execute`)
   - `pub const MAX_BODY_BYTES: usize = 64 * 1024;`
-  - `pub fn create_router(schema: NetRustSchema, token: Option<String>) -> axum::Router` serving `GET /graphql` (GraphiQL) and `POST /graphql`
+  - `pub fn create_router(schema: NetHackEDSchema, token: Option<String>) -> axum::Router` serving `GET /graphql` (GraphiQL) and `POST /graphql`
 
 - [ ] **Step 1: Write failing tests**
 
-Create `crates/netrust-agent/tests/graphql_http_test.rs`:
+Create `crates/nethacked-agent/tests/graphql_http_test.rs`:
 ```rust
 //! HTTP-level tests for the GraphQL server: body cap, depth/complexity limits, mutation auth.
 
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
-use netrust_agent::graphql::{create_router, create_schema, AppState};
-use netrust_agent::AgentSession;
+use nethacked_agent::graphql::{create_router, create_schema, AppState};
+use nethacked_agent::AgentSession;
 use serde_json::json;
 
 async fn spawn(token: Option<&str>) -> String {
@@ -1258,7 +1258,7 @@ async fn mutations_require_token_when_configured() {
 
 - [ ] **Step 2: Run to verify it fails**
 
-Run: `cargo test -p netrust-agent --test graphql_http_test`
+Run: `cargo test -p nethacked-agent --test graphql_http_test`
 Expected: FAIL to compile (`create_router` missing).
 
 - [ ] **Step 3: Implement schema changes**
@@ -1292,11 +1292,11 @@ fn require_mutation_auth(ctx: &Context<'_>) -> async_graphql::Result<()> {
 
   #[derive(Clone)]
   struct GqlApp {
-      schema: NetRustSchema,
+      schema: NetHackEDSchema,
       token: Option<Arc<str>>,
   }
 
-  pub fn create_router(schema: NetRustSchema, token: Option<String>) -> Router {
+  pub fn create_router(schema: NetHackEDSchema, token: Option<String>) -> Router {
       Router::new()
           .route("/graphql", get(graphiql).post(graphql_post))
           .with_state(GqlApp { schema, token: token.map(Arc::from) })
@@ -1326,21 +1326,21 @@ fn require_mutation_auth(ctx: &Context<'_>) -> async_graphql::Result<()> {
 
 `bin/graphql.rs`:
 ```rust
-use netrust_agent::graphql::{create_router, create_schema, AppState};
-use netrust_agent::netconfig::{resolve_bind_addr, token_from_env};
-use netrust_agent::AgentSession;
+use nethacked_agent::graphql::{create_router, create_schema, AppState};
+use nethacked_agent::netconfig::{resolve_bind_addr, token_from_env};
+use nethacked_agent::AgentSession;
 use std::sync::{Arc, Mutex};
 
 #[tokio::main]
 async fn main() {
     let port = std::env::var("PORT").unwrap_or_else(|_| "4000".to_string());
     let args: Vec<String> = std::env::args().collect();
-    let addr = resolve_bind_addr(&args, std::env::var("NETRUST_BIND").ok(), &format!("127.0.0.1:{}", port));
+    let addr = resolve_bind_addr(&args, std::env::var("NETHACKED_BIND").ok(), &format!("127.0.0.1:{}", port));
 
     let state = AppState { session: Arc::new(Mutex::new(AgentSession::new(42))) };
     let app = create_router(create_schema(state), token_from_env());
 
-    println!("🗡️ NetRust GraphQL Server listening on http://{}", addr);
+    println!("🗡️ NetHackED GraphQL Server listening on http://{}", addr);
     println!("📊 GraphiQL Interactive Explorer: http://{}/graphql", addr);
 
     let listener = tokio::net::TcpListener::bind(&addr).await.expect("bind GraphQL address");
@@ -1350,13 +1350,13 @@ async fn main() {
 
 - [ ] **Step 5: Run tests**
 
-Run: `cargo test -p netrust-agent && cargo build -p netrust-agent --bins`
+Run: `cargo test -p nethacked-agent && cargo build -p nethacked-agent --bins`
 Expected: PASS.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add crates/netrust-agent
+git add crates/nethacked-agent
 git commit -m "fix(graphql): depth/complexity limits, 64KiB body cap, localhost bind and token-guarded mutations"
 ```
 
@@ -1365,23 +1365,23 @@ git commit -m "fix(graphql): depth/complexity limits, 64KiB body cap, localhost 
 ### Task 9: Player damage helper; trap damage cannot wrap
 
 **Files:**
-- Modify: `crates/netrust-sim/src/world.rs` (add method in `impl SimulationWorld`)
-- Modify: `crates/netrust-sim/src/actions/movement.rs:163-167`
-- Test: `crates/netrust-sim/tests/integrity_tests.rs` (new)
+- Modify: `crates/nethacked-sim/src/world.rs` (add method in `impl SimulationWorld`)
+- Modify: `crates/nethacked-sim/src/actions/movement.rs:163-167`
+- Test: `crates/nethacked-sim/tests/integrity_tests.rs` (new)
 
 **Interfaces:**
 - Produces: `pub fn damage_player(&mut self, amount: u32, cause: &str) -> Vec<GameEvent>` on `SimulationWorld`.
 
 - [ ] **Step 1: Write failing test**
 
-Create `crates/netrust-sim/tests/integrity_tests.rs`:
+Create `crates/nethacked-sim/tests/integrity_tests.rs`:
 ```rust
 //! Simulation integrity regressions: damage, genocide, wands/wishes, melee variance, timers.
 
-use netrust_arena::ItemLocation;
-use netrust_data::{create_item_record, create_monster_record, ItemKindId, MonsterSpeciesId};
-use netrust_sim::{ActionAst, Buc, Coord, Direction, SimulationWorld, Tile};
-use netrust_types::{TrapRecord, TrapState, TrapType};
+use nethacked_arena::ItemLocation;
+use nethacked_data::{create_item_record, create_monster_record, ItemKindId, MonsterSpeciesId};
+use nethacked_sim::{ActionAst, Buc, Coord, Direction, SimulationWorld, Tile};
+use nethacked_types::{TrapRecord, TrapState, TrapType};
 
 fn open_east(sim: &mut SimulationWorld) -> Coord {
     let p = sim.arena.actors.get(sim.player_id).unwrap().coord;
@@ -1423,7 +1423,7 @@ fn damage_player_saturates_and_marks_death() {
 
 - [ ] **Step 2: Run to verify it fails**
 
-Run: `cargo test -p netrust-sim --test integrity_tests`
+Run: `cargo test -p nethacked-sim --test integrity_tests`
 Expected: FAIL (compile error `damage_player`; trap test panics with "attempt to subtract with overflow").
 
 - [ ] **Step 3: Implement**
@@ -1449,17 +1449,17 @@ In `movement.rs` replace the Arrow/Dart arm body's damage block with:
 ```rust
                                         events.extend(self.damage_player(2, &format!("{:?} trap", triggered_type).to_lowercase()));
 ```
-If the borrow checker rejects this because `trap` (a `get_mut` borrow of `self.level.traps`) is still live, first copy `triggered_type` out and end the `if let Some(trap)` borrow before matching (restructure: `let triggered = self.level.traps.get_mut(&target_coord).and_then(|trap| netrust_core::traps::trigger_trap(trap, is_flying));` then `if let Some(triggered_type) = triggered { match ... }`), computing `is_flying` before.
+If the borrow checker rejects this because `trap` (a `get_mut` borrow of `self.level.traps`) is still live, first copy `triggered_type` out and end the `if let Some(trap)` borrow before matching (restructure: `let triggered = self.level.traps.get_mut(&target_coord).and_then(|trap| nethacked_core::traps::trigger_trap(trap, is_flying));` then `if let Some(triggered_type) = triggered { match ... }`), computing `is_flying` before.
 
 - [ ] **Step 4: Run tests**
 
-Run: `cargo test -p netrust-sim`
+Run: `cargo test -p nethacked-sim`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add crates/netrust-sim
+git add crates/nethacked-sim
 git commit -m "fix(sim): saturating player damage helper; traps can no longer wrap HP"
 ```
 
@@ -1468,14 +1468,14 @@ git commit -m "fix(sim): saturating player damage helper; traps can no longer wr
 ### Task 10: Genocide targets only matching monsters
 
 **Files:**
-- Modify: `crates/netrust-data/src/monsters.rs` (add `monster_class_of`), `crates/netrust-data/src/lib.rs` (export)
-- Modify: `crates/netrust-sim/src/actions/items.rs:331-362`
-- Modify: `crates/netrust-sim/tests/simulation_tests.rs:2209-2239` (test used the wrong species name)
-- Test: `crates/netrust-sim/tests/integrity_tests.rs` (append)
+- Modify: `crates/nethacked-data/src/monsters.rs` (add `monster_class_of`), `crates/nethacked-data/src/lib.rs` (export)
+- Modify: `crates/nethacked-sim/src/actions/items.rs:331-362`
+- Modify: `crates/nethacked-sim/tests/simulation_tests.rs:2209-2239` (test used the wrong species name)
+- Test: `crates/nethacked-sim/tests/integrity_tests.rs` (append)
 
 **Interfaces:**
 - Produces:
-  - `netrust_data::monster_class_of(name: &str) -> Option<char>` — bestiary glyph by case-insensitive name
+  - `nethacked_data::monster_class_of(name: &str) -> Option<char>` — bestiary glyph by case-insensitive name
   - `SimulationWorld::remove_actor_dropping_items(&mut self, id: ActorId)` (pub(crate)) — carried items move to `Floor(actor.coord)`, then actor removed
   - species genocide is stored lowercase in `genocide_registry.genocided_species`
 
@@ -1518,25 +1518,25 @@ fn uncursed_genocide_hits_bestiary_goblins() {
     let idx = genocide_scroll(&mut sim, Buc::Uncursed);
     sim.step_player_action(ActionAst::Read(idx));
     assert!(!sim.arena.actors.contains_key(gob));
-    assert!(netrust_core::genocide::is_genocided(&sim.genocide_registry, "goblin", 'o'));
+    assert!(nethacked_core::genocide::is_genocided(&sim.genocide_registry, "goblin", 'o'));
 }
 
 #[test]
 fn monster_class_lookup() {
-    assert_eq!(netrust_data::monster_class_of("master lich"), Some('L'));
-    assert_eq!(netrust_data::monster_class_of("GOBLIN"), Some('o'));
-    assert_eq!(netrust_data::monster_class_of("no such thing"), None);
+    assert_eq!(nethacked_data::monster_class_of("master lich"), Some('L'));
+    assert_eq!(nethacked_data::monster_class_of("GOBLIN"), Some('o'));
+    assert_eq!(nethacked_data::monster_class_of("no such thing"), None);
 }
 ```
 
 - [ ] **Step 2: Run to verify it fails**
 
-Run: `cargo test -p netrust-sim --test integrity_tests genocide`
+Run: `cargo test -p nethacked-sim --test integrity_tests genocide`
 Expected: FAIL.
 
 - [ ] **Step 3: Implement**
 
-`netrust-data/src/monsters.rs`:
+`nethacked-data/src/monsters.rs`:
 ```rust
 /// NetHack monster class letter (bestiary glyph) for a species name, case-insensitive.
 pub fn monster_class_of(name: &str) -> Option<char> {
@@ -1545,7 +1545,7 @@ pub fn monster_class_of(name: &str) -> Option<char> {
 ```
 Export in `lib.rs` alongside the other `monsters::` re-exports.
 
-`netrust-sim` (in `items.rs` or `world.rs`):
+`nethacked-sim` (in `items.rs` or `world.rs`):
 ```rust
     /// Remove an actor, leaving anything it carried on the floor where it stood.
     pub(crate) fn remove_actor_dropping_items(&mut self, id: ActorId) {
@@ -1560,7 +1560,7 @@ Export in `lib.rs` alongside the other `monsters::` re-exports.
 
     fn actor_is_genocided(&self, name: &str) -> bool {
         let lower = name.to_lowercase();
-        let class = netrust_data::monster_class_of(name);
+        let class = nethacked_data::monster_class_of(name);
         self.genocide_registry.genocided_species.contains(&lower)
             || class.map(|c| self.genocide_registry.genocided_classes.contains(&c)).unwrap_or(false)
     }
@@ -1571,13 +1571,13 @@ Update the old test at `simulation_tests.rs:2210`: actor name `"goblin"`; final 
 
 - [ ] **Step 4: Run tests**
 
-Run: `cargo test -p netrust-sim && cargo test -p netrust-data && cargo test -p netrust-core`
+Run: `cargo test -p nethacked-sim && cargo test -p nethacked-data && cargo test -p nethacked-core`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add crates/netrust-data crates/netrust-sim
+git add crates/nethacked-data crates/nethacked-sim
 git commit -m "fix(sim): genocide removes only matching species/class and drops their inventory"
 ```
 
@@ -1586,14 +1586,14 @@ git commit -m "fix(sim): genocide removes only matching species/class and drops 
 ### Task 11: Wands require a wand, wishes require charges, exact wish matching, initial charges
 
 **Files:**
-- Modify: `crates/netrust-data/src/items.rs:925-944` (`create_item_record`)
-- Modify: `crates/netrust-sim/src/actions/items.rs` (`handle_zap_wand` start, `handle_wish`, recharge `as i8`)
-- Test: `crates/netrust-sim/tests/integrity_tests.rs` (append); data unit test
+- Modify: `crates/nethacked-data/src/items.rs:925-944` (`create_item_record`)
+- Modify: `crates/nethacked-sim/src/actions/items.rs` (`handle_zap_wand` start, `handle_wish`, recharge `as i8`)
+- Test: `crates/nethacked-sim/tests/integrity_tests.rs` (append); data unit test
 
 **Interfaces:**
 - Produces:
-  - `netrust_data::initial_wand_charges(id: ItemKindId) -> i8` (pub): `WandOfWishing => 1`, `WandOfSecretDoorDetection => 13`, other `Wand`-class kinds `=> 6`, non-wands `=> 0`; used by `create_item_record` for `enchantment`
-  - `pub fn normalize_wish_name(query: &str) -> String` in `netrust-sim/src/actions/items.rs` (re-exported as `netrust_sim::normalize_wish_name`): lowercase, trims, drops leading `a`/`an`/`the`
+  - `nethacked_data::initial_wand_charges(id: ItemKindId) -> i8` (pub): `WandOfWishing => 1`, `WandOfSecretDoorDetection => 13`, other `Wand`-class kinds `=> 6`, non-wands `=> 0`; used by `create_item_record` for `enchantment`
+  - `pub fn normalize_wish_name(query: &str) -> String` in `nethacked-sim/src/actions/items.rs` (re-exported as `nethacked_sim::normalize_wish_name`): lowercase, trims, drops leading `a`/`an`/`the`
   - unwishable kinds: `AmuletOfYendor` (→ imitation), `BellOfOpening`, `CandelabrumOfInvocation`, `BookOfTheDead`, `OrbOfFate`, `HeartOfAhriman`, `MagicMirrorOfMerlin`, `EyesOfTheOverworld`, `MasterKeyOfThievery`, `TsurugiOfMuramasa`, `PlatinumYendorianExpressCard`, `StaffOfAesculapius`, `OrbOfDetection` (→ nothing)
 
 - [ ] **Step 1: Write failing tests**
@@ -1608,14 +1608,14 @@ fn has_item(sim: &SimulationWorld, name: &str) -> bool {
 fn zap_without_wand_is_free_noop() {
     let mut sim = SimulationWorld::new_with_seed(90);
     for id in sim.arena.items_carried_by(sim.player_id) {
-        if sim.arena.items.get(id).unwrap().class == netrust_types::ItemClass::Wand {
+        if sim.arena.items.get(id).unwrap().class == nethacked_types::ItemClass::Wand {
             sim.arena.items.remove(id);
         }
     }
     let energy = sim.scheduler.hero_energy;
     let ev = sim.step_player_action(ActionAst::ZapWand { dir: Direction::East, energy: 6 });
     assert!(ev.iter().any(|e| format!("{:?}", e).contains("no wand")));
-    assert!(!ev.iter().any(|e| matches!(e, netrust_sim::GameEvent::BeamPropagated { .. })));
+    assert!(!ev.iter().any(|e| matches!(e, nethacked_sim::GameEvent::BeamPropagated { .. })));
     assert_eq!(sim.scheduler.hero_energy, energy);
 }
 
@@ -1666,15 +1666,15 @@ fn catalog_wands_start_charged() {
 
 #[test]
 fn normalize_wish_strips_articles() {
-    assert_eq!(netrust_sim::normalize_wish_name("  The Amulet of Yendor "), "amulet of yendor");
-    assert_eq!(netrust_sim::normalize_wish_name("an elven mithril-coat"), "elven mithril-coat");
+    assert_eq!(nethacked_sim::normalize_wish_name("  The Amulet of Yendor "), "amulet of yendor");
+    assert_eq!(nethacked_sim::normalize_wish_name("an elven mithril-coat"), "elven mithril-coat");
 }
 ```
 Note: `parse_wish` (core) already strips BUC and `+N`; the sim normalizes the remaining name.
 
 - [ ] **Step 2: Run to verify it fails**
 
-Run: `cargo test -p netrust-sim --test integrity_tests -- wish zap catalog normalize`
+Run: `cargo test -p nethacked-sim --test integrity_tests -- wish zap catalog normalize`
 Expected: FAIL.
 
 - [ ] **Step 3: Implement data side**
@@ -1683,7 +1683,7 @@ Expected: FAIL.
 /// Initial charges for a freshly generated wand (stored in `enchantment`).
 pub fn initial_wand_charges(id: ItemKindId) -> i8 {
     let arch = get_item_archetype(id);
-    if arch.class != netrust_types::ItemClass::Wand {
+    if arch.class != nethacked_types::ItemClass::Wand {
         return 0;
     }
     match id {
@@ -1738,13 +1738,13 @@ const UNWISHABLE: &[ItemKindId] = &[
 In `handle_wish` after `parse_wish`:
 ```rust
             let wanted = normalize_wish_name(&item_query);
-            let matched_arch = netrust_data::ITEM_CATALOG.iter().find(|arch| arch.name.to_lowercase() == wanted);
+            let matched_arch = nethacked_data::ITEM_CATALOG.iter().find(|arch| arch.name.to_lowercase() == wanted);
             match matched_arch {
                 Some(arch) if arch.id == ItemKindId::AmuletOfYendor => {
                     let mut fake = create_item_record(arch.id, ItemLocation::Floor(player.coord), buc);
                     fake.name = "cheap plastic imitation of the Amulet of Yendor".into();
                     self.arena.spawn_item(fake);
-                    events.push(GameEvent::LogMessage { text: netrust_i18n::Messages::wish_granted("cheap plastic imitation of the Amulet of Yendor", self.locale) });
+                    events.push(GameEvent::LogMessage { text: nethacked_i18n::Messages::wish_granted("cheap plastic imitation of the Amulet of Yendor", self.locale) });
                 }
                 Some(arch) if UNWISHABLE.contains(&arch.id) => {
                     events.push(GameEvent::LogMessage { text: format!("You feel a vague sense of loss. The {} cannot be wished for.", arch.name) });
@@ -1753,17 +1753,17 @@ In `handle_wish` after `parse_wish`:
                 None => { /* existing "received nothing" message */ }
             }
 ```
-Re-export `normalize_wish_name` from `netrust-sim/src/lib.rs` (`pub use actions::items::normalize_wish_name;` — make `items` module `pub` access path valid; it is `pub mod items` already).
+Re-export `normalize_wish_name` from `nethacked-sim/src/lib.rs` (`pub use actions::items::normalize_wish_name;` — make `items` module `pub` access path valid; it is `pub mod items` already).
 
 - [ ] **Step 5: Run full sim and workspace tests**
 
-Run: `cargo test --workspace --exclude netrust-py 2>&1 | grep -E "test result|FAILED|panicked"`
+Run: `cargo test --workspace --exclude nethacked-py 2>&1 | grep -E "test result|FAILED|panicked"`
 Expected: PASS. Existing tests that zapped without a wand or wished without a wand must be fixed by giving the hero the wand in setup (not by weakening assertions). Record each such adjustment in the commit message body.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add crates/netrust-data crates/netrust-sim
+git add crates/nethacked-data crates/nethacked-sim
 git commit -m "fix(sim): zapping and wishing require the item, exact wish matching, wands spawn charged"
 ```
 
@@ -1772,8 +1772,8 @@ git commit -m "fix(sim): zapping and wishing require the item, exact wish matchi
 ### Task 12: Melee uses the world RNG; damage-bonus argument fixed
 
 **Files:**
-- Modify: `crates/netrust-sim/src/combat.rs:86-90`
-- Test: `crates/netrust-sim/tests/integrity_tests.rs` (append)
+- Modify: `crates/nethacked-sim/src/combat.rs:86-90`
+- Test: `crates/nethacked-sim/tests/integrity_tests.rs` (append)
 
 **Interfaces:**
 - Consumes: `SimulationWorld.rng` (`ChaCha8Rng`), `rand::Rng::random_range`.
@@ -1803,7 +1803,7 @@ fn melee_outcomes_vary_with_seed() {
 
 - [ ] **Step 2: Run to verify it fails**
 
-Run: `cargo test -p netrust-sim --test integrity_tests melee_outcomes_vary_with_seed`
+Run: `cargo test -p nethacked-sim --test integrity_tests melee_outcomes_vary_with_seed`
 Expected: FAIL (single outcome; monster counter-attacks do not change the goblin's HP).
 
 - [ ] **Step 3: Implement**
@@ -1823,13 +1823,13 @@ Note: `skill_dmg_bonus` is now both added into `dmg_roll` and passed as the dama
 
 - [ ] **Step 4: Run all tests; fix fallout via setup**
 
-Run: `cargo test --workspace --exclude netrust-py 2>&1 | grep -E "test result|FAILED|panicked"`
+Run: `cargo test --workspace --exclude nethacked-py 2>&1 | grep -E "test result|FAILED|panicked"`
 Expected: new test PASS. For each pre-existing test that now fails because it relied on a guaranteed hit or exact damage: make the outcome deterministic through setup (e.g. set defender `ac` to 20 so `10 + 20 + bonus >= 20` guarantees a hit; set defender `hp` to 1 for guaranteed kills; or loop the attack until the defender dies with a bound like 50 iterations). Do not delete or loosen the behavior being asserted. List adjusted tests in the commit body.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add crates/netrust-sim
+git add crates/nethacked-sim
 git commit -m "fix(sim): melee to-hit and damage rolls come from the world RNG"
 ```
 
@@ -1838,8 +1838,8 @@ git commit -m "fix(sim): melee to-hit and damage rolls come from the world RNG"
 ### Task 13: Prayer timeout and luck decay only advance with game time
 
 **Files:**
-- Modify: `crates/netrust-sim/src/actions/mod.rs:20-130`
-- Test: `crates/netrust-sim/tests/integrity_tests.rs` (append)
+- Modify: `crates/nethacked-sim/src/actions/mod.rs:20-130`
+- Test: `crates/nethacked-sim/tests/integrity_tests.rs` (append)
 
 - [ ] **Step 1: Write failing test**
 
@@ -1863,7 +1863,7 @@ fn bumping_a_wall_does_not_tick_prayer_timeout() {
 
 - [ ] **Step 2: Run to verify it fails**
 
-Run: `cargo test -p netrust-sim --test integrity_tests bumping_a_wall`
+Run: `cargo test -p nethacked-sim --test integrity_tests bumping_a_wall`
 Expected: FAIL (timeout decremented to 90).
 
 - [ ] **Step 3: Implement**
@@ -1882,7 +1882,7 @@ Replace the tail with:
         events.extend(sim_events);
 
         if spent_time {
-            self.divine_state.prayer_timeout = netrust_core::religion::tick_prayer_timeout(self.divine_state.prayer_timeout);
+            self.divine_state.prayer_timeout = nethacked_core::religion::tick_prayer_timeout(self.divine_state.prayer_timeout);
         }
 
         if self.scheduler.turn != turn_before && self.scheduler.turn > 0 && self.scheduler.turn % 600 == 0 {
@@ -1892,13 +1892,13 @@ Replace the tail with:
 
 - [ ] **Step 4: Run tests**
 
-Run: `cargo test --workspace --exclude netrust-py 2>&1 | grep -E "test result|FAILED|panicked"`
+Run: `cargo test --workspace --exclude nethacked-py 2>&1 | grep -E "test result|FAILED|panicked"`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add crates/netrust-sim
+git add crates/nethacked-sim
 git commit -m "fix(sim): prayer timeout and luck decay tick only when time passes"
 ```
 
@@ -1907,10 +1907,10 @@ git commit -m "fix(sim): prayer timeout and luck decay tick only when time passe
 ### Task 14: Level persistence with ID remapping (containers, monster inventories, unpaid ledger, steed, quiver)
 
 **Files:**
-- Modify: `crates/netrust-sim/src/world.rs:19-24` (`StoredLevel`)
-- Modify: `crates/netrust-sim/src/actions/stairs.rs:16-73` (`pack_current_level`, restore branch of `unpack_or_generate_level`)
+- Modify: `crates/nethacked-sim/src/world.rs:19-24` (`StoredLevel`)
+- Modify: `crates/nethacked-sim/src/actions/stairs.rs:16-73` (`pack_current_level`, restore branch of `unpack_or_generate_level`)
 - Modify: arrival code in `stairs.rs` where the hero's coord is set after a level change (descend, ascend, branch transitions, mysterious force) — move the steed with the hero
-- Test: `crates/netrust-sim/tests/level_persistence_tests.rs` (new)
+- Test: `crates/nethacked-sim/tests/level_persistence_tests.rs` (new)
 
 **Interfaces:**
 - Produces:
@@ -1926,14 +1926,14 @@ git commit -m "fix(sim): prayer timeout and luck decay tick only when time passe
 
 - [ ] **Step 1: Write failing tests**
 
-Create `crates/netrust-sim/tests/level_persistence_tests.rs`:
+Create `crates/nethacked-sim/tests/level_persistence_tests.rs`:
 ```rust
 //! Level pack/unpack keeps every cross-entity reference valid.
 
-use netrust_arena::ItemLocation;
-use netrust_data::{create_item_record, create_monster_record, ItemKindId, MonsterSpeciesId};
-use netrust_sim::{ActionAst, Buc, SimulationWorld};
-use netrust_types::MountState;
+use nethacked_arena::ItemLocation;
+use nethacked_data::{create_item_record, create_monster_record, ItemKindId, MonsterSpeciesId};
+use nethacked_sim::{ActionAst, Buc, SimulationWorld};
+use nethacked_types::MountState;
 
 fn go_down_and_up(sim: &mut SimulationWorld) {
     let down = sim.level.stairs_down;
@@ -1957,7 +1957,7 @@ fn assert_no_dangling_refs(sim: &SimulationWorld) {
     }
 }
 
-fn find_named(sim: &SimulationWorld, name: &str) -> Vec<netrust_arena::ItemId> {
+fn find_named(sim: &SimulationWorld, name: &str) -> Vec<nethacked_arena::ItemId> {
     sim.arena.items.iter().filter(|(_, it)| it.name == name).map(|(id, _)| id).collect()
 }
 
@@ -2086,7 +2086,7 @@ fn quiver_cleared_when_item_left_behind() {
 
 - [ ] **Step 2: Run to verify it fails**
 
-Run: `cargo test -p netrust-sim --test level_persistence_tests`
+Run: `cargo test -p nethacked-sim --test level_persistence_tests`
 Expected: assertion FAILs in the nested-container, monster-inventory, unpaid-ledger, steed and quiver tests (the tests do not touch `StoredLevel` directly, so they compile).
 
 - [ ] **Step 3: Implement pack**
@@ -2215,13 +2215,13 @@ Call `self.place_steed_with_hero();` immediately after every place in `stairs.rs
 
 - [ ] **Step 6: Run tests**
 
-Run: `cargo test --workspace --exclude netrust-py 2>&1 | grep -E "test result|FAILED|panicked"`
+Run: `cargo test --workspace --exclude nethacked-py 2>&1 | grep -E "test result|FAILED|panicked"`
 Expected: PASS, including existing `test_multi_floor_persistence_with_items_and_amulet`.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add crates/netrust-sim
+git add crates/nethacked-sim
 git commit -m "fix(sim): keep container, inventory, ledger, steed and quiver references valid across level changes"
 ```
 
@@ -2230,14 +2230,14 @@ git commit -m "fix(sim): keep container, inventory, ledger, steed and quiver ref
 ### Task 15: Dungeon reachability helpers, layout fixes and seed sweeps
 
 **Files:**
-- Create: `crates/netrust-dungeon/src/reach.rs`
-- Modify: `crates/netrust-dungeon/src/lib.rs` (`pub mod reach; pub use reach::{find_free_floor, reachable_from, reachable_from_with};`)
-- Modify: `crates/netrust-dungeon/src/generator.rs:125-149` (`validate_stair_connectivity` on top of `reachable_from`)
-- Modify: `crates/netrust-dungeon/src/sokoban.rs:37-40`
-- Modify: `crates/netrust-dungeon/src/mines.rs` (Minetown doors/corridors; watchman coord)
-- Modify: `crates/netrust-dungeon/src/quest.rs:143-150`
-- Modify: `crates/netrust-dungeon/src/gehennom.rs` (lava check-and-revert; sanctum up stairs)
-- Test: `crates/netrust-dungeon/tests/reachability.rs` (new)
+- Create: `crates/nethacked-dungeon/src/reach.rs`
+- Modify: `crates/nethacked-dungeon/src/lib.rs` (`pub mod reach; pub use reach::{find_free_floor, reachable_from, reachable_from_with};`)
+- Modify: `crates/nethacked-dungeon/src/generator.rs:125-149` (`validate_stair_connectivity` on top of `reachable_from`)
+- Modify: `crates/nethacked-dungeon/src/sokoban.rs:37-40`
+- Modify: `crates/nethacked-dungeon/src/mines.rs` (Minetown doors/corridors; watchman coord)
+- Modify: `crates/nethacked-dungeon/src/quest.rs:143-150`
+- Modify: `crates/nethacked-dungeon/src/gehennom.rs` (lava check-and-revert; sanctum up stairs)
+- Test: `crates/nethacked-dungeon/tests/reachability.rs` (new)
 
 **Interfaces:**
 - Produces:
@@ -2247,12 +2247,12 @@ git commit -m "fix(sim): keep container, inventory, ledger, steed and quiver ref
 
 - [ ] **Step 1: Write failing tests**
 
-Create `crates/netrust-dungeon/tests/reachability.rs`:
+Create `crates/nethacked-dungeon/tests/reachability.rs`:
 ```rust
 //! Seed sweeps: every generated level's required locations are reachable from the arrival point.
 
-use netrust_dungeon::*;
-use netrust_types::{Coord, Tile};
+use nethacked_dungeon::*;
+use nethacked_types::{Coord, Tile};
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 
@@ -2359,11 +2359,11 @@ fn find_free_floor_skips_stairs_and_avoid() {
     }
 }
 ```
-(`rand_chacha = "0.9"` is already a dev-dependency of netrust-dungeon.)
+(`rand_chacha = "0.9"` is already a dev-dependency of nethacked-dungeon.)
 
 - [ ] **Step 2: Run to verify it fails**
 
-Run: `cargo test -p netrust-dungeon --test reachability`
+Run: `cargo test -p nethacked-dungeon --test reachability`
 Expected: compile failure (helpers missing), then failures for sokoban, minetown, quest locate (some seeds), gehennom (lava on corridor, some seeds), sanctum.
 
 - [ ] **Step 3: Implement `reach.rs`**
@@ -2372,7 +2372,7 @@ Expected: compile failure (helpers missing), then failures for sokoban, minetown
 //! Reachability analysis and free-floor placement helpers shared by generators and the sim.
 
 use std::collections::{HashSet, VecDeque};
-use netrust_types::{Coord, Tile};
+use nethacked_types::{Coord, Tile};
 
 use crate::level::DungeonLevel;
 use crate::room::Rect;
@@ -2470,13 +2470,13 @@ If any sweep still fails for some seed after these fixes, diagnose that seed (pr
 
 - [ ] **Step 5: Run tests**
 
-Run: `cargo test -p netrust-dungeon && cargo test --workspace --exclude netrust-py 2>&1 | grep -E "test result|FAILED|panicked"`
+Run: `cargo test -p nethacked-dungeon && cargo test --workspace --exclude nethacked-py 2>&1 | grep -E "test result|FAILED|panicked"`
 Expected: PASS (existing `test_gehennom_maze_with_vibrating_square` still asserts the VS tile is `Room`).
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add crates/netrust-dungeon
+git add crates/nethacked-dungeon
 git commit -m "fix(dungeon): reachability helpers; Sokoban, Minetown, Quest, Gehennom and Sanctum layouts connected"
 ```
 
@@ -2485,28 +2485,28 @@ git commit -m "fix(dungeon): reachability helpers; Sokoban, Minetown, Quest, Geh
 ### Task 16: Sim placement — monsters avoid stairs/occupied tiles, invocation items on free floor, Mysterious Force clamp
 
 **Files:**
-- Modify: `crates/netrust-sim/src/actions/stairs.rs` (spawn loops in `unpack_or_generate_level`, Gehennom depth-5 item placement, mysterious force)
-- Test: `crates/netrust-sim/tests/reachability_tests.rs` (new)
+- Modify: `crates/nethacked-sim/src/actions/stairs.rs` (spawn loops in `unpack_or_generate_level`, Gehennom depth-5 item placement, mysterious force)
+- Test: `crates/nethacked-sim/tests/reachability_tests.rs` (new)
 
 **Interfaces:**
-- Consumes: `netrust_dungeon::{find_free_floor, reachable_from}` (Task 15).
+- Consumes: `nethacked_dungeon::{find_free_floor, reachable_from}` (Task 15).
 - Produces:
   - `pub(crate) fn spawn_monster_near(&mut self, species: MonsterSpeciesId, preferred: Coord) -> Option<ActorId>`
   - `pub const SANCTUM_DEPTH: usize = 6;` in `stairs.rs` (re-export not required)
-  - `pub fn clamp_mysterious_force(pushed: usize, sanctum_open: bool) -> usize` (pub, in `stairs.rs`, re-exported from `netrust_sim` for tests): returns `pushed` if `sanctum_open`, else `pushed.min(SANCTUM_DEPTH - 1)`
+  - `pub fn clamp_mysterious_force(pushed: usize, sanctum_open: bool) -> usize` (pub, in `stairs.rs`, re-exported from `nethacked_sim` for tests): returns `pushed` if `sanctum_open`, else `pushed.min(SANCTUM_DEPTH - 1)`
 
 - [ ] **Step 1: Write failing tests**
 
-Create `crates/netrust-sim/tests/reachability_tests.rs`:
+Create `crates/nethacked-sim/tests/reachability_tests.rs`:
 ```rust
 //! Spawned key items and monsters on generated levels are reachable and never block stairs.
 
-use netrust_arena::ItemLocation;
-use netrust_dungeon::reachable_from;
-use netrust_sim::{clamp_mysterious_force, SimulationWorld};
-use netrust_types::BranchId;
+use nethacked_arena::ItemLocation;
+use nethacked_dungeon::reachable_from;
+use nethacked_sim::{clamp_mysterious_force, SimulationWorld};
+use nethacked_types::BranchId;
 
-fn floor_coords_named(sim: &SimulationWorld, name: &str) -> Vec<netrust_sim::Coord> {
+fn floor_coords_named(sim: &SimulationWorld, name: &str) -> Vec<nethacked_sim::Coord> {
     sim.arena.items.values().filter(|it| it.name == name).filter_map(|it| match it.location {
         ItemLocation::Floor(c) => Some(c),
         _ => None,
@@ -2558,7 +2558,7 @@ fn spawned_monsters_never_on_stairs_or_stacked() {
 fn mysterious_force_never_reaches_sanctum_without_invocation() {
     for depth in 1..=5usize {
         for roll in 0..300u32 {
-            if let Some(pushed) = netrust_core::calculate_mysterious_force(depth, roll) {
+            if let Some(pushed) = nethacked_core::calculate_mysterious_force(depth, roll) {
                 assert!(clamp_mysterious_force(pushed, false) <= 5);
                 assert_eq!(clamp_mysterious_force(pushed, true), pushed);
             }
@@ -2569,7 +2569,7 @@ fn mysterious_force_never_reaches_sanctum_without_invocation() {
 
 - [ ] **Step 2: Run to verify it fails**
 
-Run: `cargo test -p netrust-sim --test reachability_tests`
+Run: `cargo test -p nethacked-sim --test reachability_tests`
 Expected: compile failure (`clamp_mysterious_force`), then candle/book reachability and stairs-occupancy failures.
 
 - [ ] **Step 3: Implement `spawn_monster_near`**
@@ -2614,13 +2614,13 @@ inside `unpack_or_generate_level` with `self.spawn_monster_near(species, center)
 Replace the Gehennom depth-5 Candelabrum/Book/candle placement with: free floor of `rooms[1]` first, then free floor of every other room in index order (skipping duplicates), never on the vibrating square:
 ```rust
                     let vs_avoid: Vec<Coord> = self.vibrating_square.into_iter().collect();
-                    let rects: Vec<netrust_dungeon::Rect> = self.level.rooms.iter().map(|r| r.rect).collect();
-                    let mut order: Vec<Coord> = netrust_dungeon::find_free_floor(&self.level, &rects[1], &vs_avoid);
+                    let rects: Vec<nethacked_dungeon::Rect> = self.level.rooms.iter().map(|r| r.rect).collect();
+                    let mut order: Vec<Coord> = nethacked_dungeon::find_free_floor(&self.level, &rects[1], &vs_avoid);
                     for (i, rect) in rects.iter().enumerate() {
                         if i == 1 {
                             continue;
                         }
-                        for c in netrust_dungeon::find_free_floor(&self.level, rect, &vs_avoid) {
+                        for c in nethacked_dungeon::find_free_floor(&self.level, rect, &vs_avoid) {
                             if !order.contains(&c) {
                                 order.push(c);
                             }
@@ -2650,24 +2650,24 @@ pub fn clamp_mysterious_force(pushed: usize, sanctum_open: bool) -> usize {
 ```
 In the ascend handler:
 ```rust
-                        if let Some(pushed_depth) = netrust_core::calculate_mysterious_force(self.depth, roll) {
-                            let pushed_depth = clamp_mysterious_force(pushed_depth, netrust_core::is_sanctum_accessible(self.ritual_progress));
+                        if let Some(pushed_depth) = nethacked_core::calculate_mysterious_force(self.depth, roll) {
+                            let pushed_depth = clamp_mysterious_force(pushed_depth, nethacked_core::is_sanctum_accessible(self.ritual_progress));
                             if pushed_depth != self.depth {
                                 /* existing push body */
                             }
                         }
 ```
-(If clamped to the current depth, fall through to the normal ascend.) Use `SANCTUM_DEPTH` in the `(BranchId::Gehennom, 6)` match arm (`(BranchId::Gehennom, SANCTUM_DEPTH)`). Re-export `clamp_mysterious_force` from `netrust-sim/src/lib.rs` (`pub use actions::stairs::{clamp_mysterious_force, SANCTUM_DEPTH};`).
+(If clamped to the current depth, fall through to the normal ascend.) Use `SANCTUM_DEPTH` in the `(BranchId::Gehennom, 6)` match arm (`(BranchId::Gehennom, SANCTUM_DEPTH)`). Re-export `clamp_mysterious_force` from `nethacked-sim/src/lib.rs` (`pub use actions::stairs::{clamp_mysterious_force, SANCTUM_DEPTH};`).
 
 - [ ] **Step 6: Run tests**
 
-Run: `cargo test --workspace --exclude netrust-py 2>&1 | grep -E "test result|FAILED|panicked"`
+Run: `cargo test --workspace --exclude nethacked-py 2>&1 | grep -E "test result|FAILED|panicked"`
 Expected: PASS.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add crates/netrust-sim
+git add crates/nethacked-sim
 git commit -m "fix(sim): safe monster placement, reachable invocation items, Mysterious Force cannot skip the invocation"
 ```
 
@@ -2680,7 +2680,7 @@ git commit -m "fix(sim): safe monster placement, reachable invocation items, Mys
 Run:
 ```bash
 cargo build --workspace --all-targets 2>&1 | tail -3
-cargo test --workspace --exclude netrust-py 2>&1 | grep -E "test result|FAILED|panicked"
+cargo test --workspace --exclude nethacked-py 2>&1 | grep -E "test result|FAILED|panicked"
 ```
 Expected: build OK; every `test result: ok`; zero `FAILED`.
 
@@ -2692,7 +2692,7 @@ Run: `cargo clippy --workspace --all-targets 2>&1 | grep -c "^warning"` and comp
 
 Run:
 ```bash
-printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"ping"}' '{bad' '{"jsonrpc":"2.0","method":"notifications/initialized"}' | cargo run -q -p netrust-agent --bin netrust-mcp
+printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"ping"}' '{bad' '{"jsonrpc":"2.0","method":"notifications/initialized"}' | cargo run -q -p nethacked-agent --bin nethacked-mcp
 ```
 Expected: two lines — `{"id":1,"jsonrpc":"2.0","result":{}}` (key order may vary) and a `-32700` error.
 
