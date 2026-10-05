@@ -21,12 +21,14 @@ pub const HISTORY_LIMIT: usize = 20;
 /// Texts shown for the events of one step, in order.
 ///
 /// `LogMessage` is shown as is. `AttackLanded` / `AttackMissed` are skipped
-/// when the next event is a `LogMessage` (combat.rs emits the pair), otherwise
-/// they fall back to the generic hit / miss text. `DoorToggled` prints
-/// "The door opens." / "The door closes." (lock.c:906 `pline_The("door
-/// opens.")`, lock.c:1040 `pline_The("door closes.")`); a broken door prints
-/// nothing here (the kick pairs its own text) and a toggle directly followed
-/// by a `LogMessage` prints nothing, so the line is not said twice. Level
+/// only when the next event is the `LogMessage` that combat.rs pairs with them
+/// (`land_hit` / `push_miss`: [`Messages::attack_hit`] with the same damage, or
+/// [`Messages::attack_miss`]); any other following line (a ranged "projectile
+/// breaks", a spell kill line) is unrelated, so they fall back to the generic
+/// hit / miss text. `DoorToggled` Open / Closed always prints "The door opens."
+/// / "The door closes." (lock.c:906 `pline_The("door opens.")`, lock.c:1040
+/// `pline_The("door closes.")`): no sim code pairs a log line with them. A
+/// broken door prints nothing here (the kick pairs its own text). Level
 /// changes and every other event print nothing.
 ///
 /// The world is a parameter although only its locale is read today: later
@@ -35,14 +37,27 @@ pub fn turn_messages(world: &SimulationWorld, events: &[GameEvent]) -> Vec<Strin
     let loc = world.locale;
     let mut out = Vec::new();
     for (i, ev) in events.iter().enumerate() {
-        let paired = matches!(events.get(i + 1), Some(GameEvent::LogMessage { .. }));
+        let next = match events.get(i + 1) {
+            Some(GameEvent::LogMessage { text }) => Some(text.as_str()),
+            _ => None,
+        };
         match ev {
             GameEvent::LogMessage { text } => out.push(text.clone()),
-            GameEvent::AttackLanded { damage, lethal, .. } if !paired => {
+            GameEvent::AttackLanded { damage, lethal, .. }
+                if !next.is_some_and(|n| {
+                    matches_template(n, &Messages::attack_hit(SENT_A, SENT_B, *damage, loc))
+                }) =>
+            {
                 out.push(Messages::tui_hit(*damage, *lethal, loc))
             }
-            GameEvent::AttackMissed { .. } if !paired => out.push(t("tui.miss", loc).to_string()),
-            GameEvent::DoorToggled { new_state, .. } if !paired => match new_state {
+            GameEvent::AttackMissed { .. }
+                if !next.is_some_and(|n| {
+                    matches_template(n, &Messages::attack_miss(SENT_A, SENT_B, loc))
+                }) =>
+            {
+                out.push(t("tui.miss", loc).to_string())
+            }
+            GameEvent::DoorToggled { new_state, .. } => match new_state {
                 nethacked_types::DoorState::Open => out.push(Messages::door_opens(loc).to_string()),
                 nethacked_types::DoorState::Closed => {
                     out.push(Messages::door_closes(loc).to_string())
@@ -53,6 +68,30 @@ pub fn turn_messages(world: &SimulationWorld, events: &[GameEvent]) -> Vec<Strin
         }
     }
     out
+}
+
+/// Placeholders for the attacker and target names when a combat line is built
+/// as a template (control characters never occur in a name, and the i18n name
+/// lookup returns an unknown name unchanged).
+const SENT_A: &str = "\u{1}";
+const SENT_B: &str = "\u{2}";
+
+/// True when `text` is `template` with the two name placeholders filled in:
+/// the fixed parts around and between the names all match, in order.
+fn matches_template(text: &str, template: &str) -> bool {
+    let Some((head, rest)) = template.split_once(SENT_A) else {
+        return text == template;
+    };
+    let Some((mid, tail)) = rest.split_once(SENT_B) else {
+        return false;
+    };
+    let Some(after_head) = text.strip_prefix(head) else {
+        return false;
+    };
+    let Some(after_tail) = after_head.strip_suffix(tail) else {
+        return false;
+    };
+    after_tail.contains(mid)
 }
 
 /// Split `text` into pages of at most [`PACK_LIMIT`] characters at spaces.

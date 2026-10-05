@@ -392,7 +392,9 @@ function onDisplayKey(key) {
   const label = key === 'F2' ? pixel.cycleSystem() : key === 'F3' ? pixel.cyclePalette() : key === 'F4' ? pixel.cycleEffects() : null;
   if (label === null) return false;
   try { localStorage.setItem('nethacked.pixel', JSON.stringify(Array.from(pixel.state()))); } catch { /* storage unavailable */ }
-  if (session && mode !== 'pick') prompt(label);
+  // prompt() is msgShow, which drops the pages waiting behind --More-- (and the
+  // game-over line), so the label is shown only when nothing is pending.
+  if (session && mode !== 'pick' && mode !== 'over' && !session.msgMore()) prompt(label);
   draw();
   return true;
 }

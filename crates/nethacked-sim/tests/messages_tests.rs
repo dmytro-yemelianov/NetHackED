@@ -128,12 +128,14 @@ fn turn_messages_falls_back_for_unpaired_attack_events() {
         turn_messages(&w, &[hit.clone(), GameEvent::TurnAdvanced { turn: 2 }]),
         vec![Messages::tui_hit(7, false, Locale::En)]
     );
-    // Followed by a LogMessage: paired, so only the log line.
-    assert_eq!(turn_messages(&w, &[hit, log("It dies.")]), vec!["It dies."]);
+    // Followed by combat.rs's own pair line: paired, so only the log line.
+    let hit_line = Messages::attack_hit("jackal", "hero", 7, Locale::En);
     assert_eq!(
-        turn_messages(&w, &[miss, log("You miss.")]),
-        vec!["You miss."]
+        turn_messages(&w, &[hit, log(&hit_line)]),
+        vec![hit_line.clone()]
     );
+    let miss_line = Messages::attack_miss("jackal", "hero", Locale::En);
+    assert_eq!(turn_messages(&w, &[miss, log(&miss_line)]), vec![miss_line]);
 }
 
 #[test]
@@ -153,10 +155,11 @@ fn turn_messages_door_open_close_and_broken() {
         vec!["The door closes."]
     );
     assert!(turn_messages(&w, &[toggled(DoorState::Broken)]).is_empty());
-    // Immediately followed by a LogMessage: no duplicate.
+    // Nothing in the sim pairs a log line with Open/Closed, so an unrelated
+    // line after the toggle never hides it (lock.c:906, :1040 always print).
     assert_eq!(
-        turn_messages(&w, &[toggled(DoorState::Open), log("The door is stuck.")]),
-        vec!["The door is stuck."]
+        turn_messages(&w, &[toggled(DoorState::Open), log("It is stuck.")]),
+        vec!["The door opens.", "It is stuck."]
     );
     assert_eq!(
         turn_messages(&w, &[toggled(DoorState::Broken), log("It shatters.")]),
@@ -259,4 +262,117 @@ fn turn_messages_is_deterministic_for_same_seed() {
         out
     };
     assert_eq!(run(21), run(21));
+}
+
+/// Regression: a log line from the monster phase right after the toggle must
+/// not swallow "The door opens." / "The door closes." (lock.c:906, :1040).
+#[test]
+fn turn_messages_door_toggle_survives_unrelated_log_line() {
+    let w = arena(21);
+    let toggled = |s| GameEvent::DoorToggled {
+        coord: c(41, 10),
+        new_state: s,
+    };
+    assert_eq!(
+        turn_messages(
+            &w,
+            &[
+                toggled(DoorState::Open),
+                log("The floating eye's gaze paralyzes you!")
+            ]
+        ),
+        vec!["The door opens.", "The floating eye's gaze paralyzes you!"]
+    );
+    assert_eq!(
+        turn_messages(
+            &w,
+            &[toggled(DoorState::Closed), log("The kitten whimpers.")]
+        ),
+        vec!["The door closes.", "The kitten whimpers."]
+    );
+}
+
+/// Real step: opening a door while an Elbereth-scared goblin is adjacent;
+/// `step_monsters` adds its own line after the toggle (a `TurnAdvanced` may sit
+/// between them, so this pins the end-to-end text, not the adjacency).
+#[test]
+fn real_step_door_open_then_monster_line_shows_both() {
+    use nethacked_core::EngravingMedium;
+    let d = c(41, 10);
+    let mut w = arena(22);
+    w.step_player_action(ActionAst::Engrave {
+        text: "Elbereth".into(),
+        medium: EngravingMedium::Burned,
+    });
+    w.level.set_tile(
+        d,
+        Tile::Door {
+            state: DoorState::Closed,
+            trapped: false,
+        },
+    );
+    w.arena
+        .spawn_actor(create_monster_record(MonsterSpeciesId::Goblin, c(39, 10)));
+    let ev = w.step_player_action(ActionAst::OpenDoor(d));
+    assert!(
+        ev.iter()
+            .any(|e| matches!(e, GameEvent::DoorToggled { .. })),
+        "door toggled: {ev:?}"
+    );
+    let out = turn_messages(&w, &ev);
+    assert_eq!(out[0], "The door opens.", "{out:?}");
+    assert!(out.iter().any(|m| m.contains("Elbereth")), "{out:?}");
+}
+
+/// Regression: an `AttackLanded` followed by an unrelated line (the ranged
+/// "projectile breaks" text, a spell kill line) keeps its generic hit text;
+/// only the combat.rs pair (`Messages::attack_hit` / `attack_miss`) is paired.
+#[test]
+fn turn_messages_attack_pairs_only_with_its_own_exchange_line() {
+    let w = arena(23);
+    let p = w.player_id;
+    let hit = GameEvent::AttackLanded {
+        attacker: p,
+        target: p,
+        damage: 2,
+        lethal: false,
+    };
+    let miss = GameEvent::AttackMissed {
+        attacker: p,
+        target: p,
+    };
+    let breaks = Messages::projectile_breaks(Locale::En);
+    assert_eq!(
+        turn_messages(&w, &[hit.clone(), log(breaks)]),
+        vec![Messages::tui_hit(2, false, Locale::En), breaks.to_string()]
+    );
+    assert_eq!(
+        turn_messages(&w, &[miss.clone(), log("The goblin yelps.")]),
+        vec![
+            t("tui.miss", Locale::En).to_string(),
+            "The goblin yelps.".to_string()
+        ]
+    );
+    // The real pair text (any names) still suppresses the generic text.
+    let pair = Messages::attack_hit("jackal", "hero", 2, Locale::En);
+    assert_eq!(turn_messages(&w, &[hit.clone(), log(&pair)]), vec![pair]);
+    let pair = Messages::attack_miss("jackal", "hero", Locale::En);
+    assert_eq!(turn_messages(&w, &[miss.clone(), log(&pair)]), vec![pair]);
+    // Same verb, other damage: not this exchange.
+    let other = Messages::attack_hit("jackal", "hero", 9, Locale::En);
+    assert_eq!(
+        turn_messages(&w, &[hit, log(&other)]),
+        vec![Messages::tui_hit(2, false, Locale::En), other]
+    );
+    // Ukrainian pair text.
+    let mut wu = arena(24);
+    wu.set_locale(Locale::Uk);
+    let hit = GameEvent::AttackLanded {
+        attacker: p,
+        target: p,
+        damage: 4,
+        lethal: false,
+    };
+    let pair = Messages::attack_hit("jackal", "hero", 4, Locale::Uk);
+    assert_eq!(turn_messages(&wu, &[hit, log(&pair)]), vec![pair]);
 }
