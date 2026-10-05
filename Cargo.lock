@@ -1102,6 +1102,7 @@ dependencies = [
  "netrust-data",
  "netrust-dungeon",
  "netrust-i18n",
+ "netrust-pack",
  "netrust-sim",
  "netrust-types",
  "serde",

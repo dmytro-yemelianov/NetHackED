@@ -10,6 +10,9 @@ use netrust_data::roles::{CharacterConfig, RoleId};
 use netrust_types::Coord;
 use wasm_bindgen::prelude::*;
 
+mod packs;
+pub use packs::*;
+
 /// Installs the panic hook so Rust panics show up in the browser console.
 #[wasm_bindgen(start)]
 pub fn wasm_start() {
@@ -95,6 +98,45 @@ impl WasmGameSession {
         Ok(Self {
             session: AgentSession::new_with_character(seed, config),
         })
+    }
+
+    /// Like `new_with_character` but plays on the given rule pack's ruleset.
+    #[wasm_bindgen(js_name = newWithPack)]
+    pub fn new_with_pack(
+        seed: u64,
+        role: &str,
+        race: &str,
+        name: &str,
+        pack: &WasmPack,
+    ) -> Result<WasmGameSession, JsValue> {
+        let name = if name.is_empty() { None } else { Some(name) };
+        let mut config = parse_character(name, Some(role), Some(race), Some("female"), None)
+            .map_err(|e| JsValue::from_str(&e))?;
+        config.alignment = pack
+            .ruleset
+            .role(config.role)
+            .map(|r| r.default_alignment)
+            .unwrap_or_else(|| netrust_data::roles::get_role(config.role).default_alignment);
+        Ok(Self {
+            session: AgentSession::new_with_ruleset(
+                seed,
+                config,
+                std::sync::Arc::clone(&pack.ruleset),
+                pack.rref.clone(),
+            ),
+        })
+    }
+
+    /// Id of the ruleset this session plays on (`vanilla` or a pack id).
+    #[wasm_bindgen(js_name = rulesetId)]
+    pub fn ruleset_id(&self) -> String {
+        self.session.world.ruleset_ref.id.clone()
+    }
+
+    /// Hash of the ruleset this session plays on.
+    #[wasm_bindgen(js_name = rulesetHash)]
+    pub fn ruleset_hash(&self) -> String {
+        self.session.world.ruleset_ref.hash.clone()
     }
 
     /// Render 80x21 ASCII viewport with FOV shading.
