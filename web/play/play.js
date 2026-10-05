@@ -3,8 +3,11 @@
 // URL options: ?pack=<bundled pack id>  ?lang=uk  ?seed=<n>
 
 const BASE = document.querySelector('meta[name="nethacked-base"]')?.content ?? '../';
-const wasm = await import(`${BASE}pkg/nethacked_wasm.js`);
-await wasm.default();
+// Build id from the deploy: versioned URLs so a browser never pairs a cached
+// old wasm module with new page code.
+const BUILD = document.querySelector('meta[name="nethacked-build"]')?.content ?? 'dev';
+const wasm = await import(`${BASE}pkg/nethacked_wasm.js?v=${BUILD}`);
+await wasm.default({ module_or_path: `${BASE}pkg/nethacked_wasm_bg.wasm?v=${BUILD}` });
 const { WasmGameSession, WasmPack } = wasm;
 
 const COLS = 80;

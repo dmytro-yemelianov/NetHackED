@@ -11,6 +11,9 @@ mkdir -p "$dist"
 # The page lives at the site root on Cloudflare, so pkg/ and packs/ are siblings.
 sed 's|<meta name="nethacked-base" content="../">|<meta name="nethacked-base" content="./">|' web/play/index.html > "$dist/index.html"
 grep -q 'content="./"' "$dist/index.html"
+build_id="$(git rev-parse --short HEAD)-$(date -u +%Y%m%d%H%M%S)"
+sed -i.bak "s|<meta name=\"nethacked-build\" content=\"dev\">|<meta name=\"nethacked-build\" content=\"$build_id\">|" "$dist/index.html" && rm "$dist/index.html.bak"
+grep -q "content=\"$build_id\"" "$dist/index.html"
 cp web/play/play.js "$dist/"
 cp -R web/pkg "$dist/pkg"
 rm -f "$dist/pkg/.gitignore" "$dist/pkg/package.json" "$dist/pkg/"*.d.ts
@@ -21,6 +24,10 @@ cat > "$dist/_headers" <<'HDR'
   Referrer-Policy: strict-origin-when-cross-origin
   Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'
 /pkg/*
-  Cache-Control: public, max-age=3600
+  Cache-Control: no-cache
+/play.js
+  Cache-Control: no-cache
+/packs/*
+  Cache-Control: no-cache
 HDR
 echo "dist: $(du -sh "$dist" | cut -f1) in $dist"
