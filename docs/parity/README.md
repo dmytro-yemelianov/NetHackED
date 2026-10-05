@@ -34,22 +34,24 @@ Paths in the evidence are shortened: `sim/` = `crates/nethacked-sim/src/`, `core
 |---|---:|---:|---:|---|
 | Monster species | 383 | 383 | 100% (data) | `include/monsters.h` → `data/nethack-5.0/monsters.toml` (`scripts/extract/`) |
 | Object types (excluding artifacts) | 440 | 440 | 100% (data) | [objects-dungeon.md](objects-dungeon.md#object-counts) |
-| · weapons | 71 | 5 | 7% | |
-| · armor | 84 | 5 | 6% | |
-| · rings | 28 | 0 | 0% | |
-| · amulets | 13 | 2 | 15% | |
-| · tools | 50 | 9 | 18% | |
-| · food | 33 | 4 | 12% | |
-| · potions | 26 | 5 | 19% | |
-| · scrolls | 22 | 7 | 32% | |
-| · spellbooks | 44 | 3 | 7% | |
-| · wands | 25 | 8 | 32% | |
-| · gems and stones | 36 | 1 | 3% | |
-| Artifacts | 34 | 14 | 41% | quest artifacts plus Excalibur, Vorpal Blade, Mjollnir, Magicbane |
+| · weapons | 71 | 71 | 100% (data) | |
+| · armor | 84 | 84 | 100% (data) | |
+| · rings | 28 | 28 | 100% (data) | |
+| · amulets | 13 | 13 | 100% (data) | |
+| · tools | 50 | 50 | 100% (data) | |
+| · food | 33 | 33 | 100% (data) | |
+| · potions | 26 | 26 | 100% (data) | |
+| · scrolls | 23 | 23 | 100% (data) | |
+| · spellbooks | 44 | 44 | 100% (data) | |
+| · wands | 25 | 25 | 100% (data) | |
+| · gems and stones | 36 | 36 | 100% (data) | |
+| Artifacts | 33 | 33 | 100% (data) | `include/artilist.h` → `data/nethack-5.0/artifacts.toml`; most special powers are not implemented |
 | Roles | 13 | 9 | 69% | no Caveman, Priest, Ranger or Samurai |
 | Races | 5 | 5 (fixed per role) | 5 / 5 | race, gender and alignment cannot be chosen |
 | Commands (`cmd.c` table) | 85 | 7 ✅ · 25 🟡 · 53 ❌ | 8% | [flow-ui.md § A](flow-ui.md#a-command-table-cmdc-extcmdlist-cmdc1673) |
 | Level definitions (`dat/*.lua`, excluding 7 shared library and fill files) | 124 | about 12 stand-ins | — | no Oracle, Big Room, Medusa, Ludios, towers or Planes; Sokoban is one synthetic level; one quest map shared by all roles |
+
+Data coverage says what exists; [behaviour-coverage.md](behaviour-coverage.md) (generated) says which attack types, damage types and object kinds the engine actually acts on.
 
 ## Feature status by area
 
