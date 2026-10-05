@@ -34,7 +34,7 @@ def header_defs():
     """All identifiers the relevant headers define, with integer values where known."""
     names, values = set(), {}
     for h in ["objclass.h", "skills.h", "prop.h", "color.h", "monattk.h",
-              "monflag.h", "weight.h", "align.h", "defsym.h", "sym.h"]:
+              "monflag.h", "weight.h", "align.h", "artifact.h", "defsym.h", "sym.h"]:
         text = (INC / h).read_text(errors="replace")
         for m in re.finditer(r"^\s*#\s*define\s+([A-Z_][A-Z0-9_]*)\s+(\S+)", text, re.M):
             names.add(m[1])
@@ -47,6 +47,11 @@ def header_defs():
             names.add(m[1])
             if m[2] is not None:
                 values[m[1]] = int(m[2])
+        for body in re.findall(r"\benum\b[^{;]*\{(.*?)\}", re.sub(r"/\*.*?\*/", "", text, flags=re.S), re.S):
+            for item in body.split(","):
+                m = re.fullmatch(r"\s*([A-Z_][A-Z0-9_]*)\s*(?:=.*)?", item, re.S)
+                if m:
+                    names.add(m[1])
     for m in re.finditer(r"OBJCLASS2?\(\s*(\d+),\s*'(.)',\s*(\w+)", (INC / "defsym.h").read_text()):
         names.add(m[3] + "_CLASS")
         values[m[3] + "_CLASS"] = int(m[1])
@@ -350,6 +355,67 @@ def monsters():
     return out
 
 
+# ---------------------------------------------------------------- artifacts
+
+ART_MACRO = """
+#define A(nam, typ, s1, s2, mt, atk, dfn, cry, inv, al, cl, rac, gs, gv, cost, clr, bn) \\
+    @@ ART { nam, typ, s1, s2, mt, atk, dfn, cry, inv, al, cl, rac, gs, gv, cost, clr, bn }
+"""
+
+
+def artifacts(objs, mons):
+    path = INC / "artilist.h"
+    text = path.read_text()
+    start = text.index("#if defined(MAKEDEFS_C)")
+    end = text.index("\n", text.index("#endif /* MAKEDEFS_C"))
+    helpers = text[text.index("/* clang-format off */"):text.index("/* clang-format on */")]
+    NAMES.update(o["id"] for o in objs)
+    NAMES.update("PM_" + m["id"] for m in mons)
+    NAMES.add("NON_PM")
+    lines = source_lines(path)
+    out = []
+    for r in parse_records(cpp(ART_MACRO + helpers + text[:start] + text[end:]), "ART"):
+        nam, typ, s1, s2, mt, atk, dfn, cry, inv, al, cl, rac, gs, gv, cost, clr, bn = r
+        bn = bn[0]
+        if bn in ("NONARTIFACT", "TERMINATOR"):
+            continue
+        w = f"artilist.h:{lines.get(bn, '?')} {bn}"
+
+        def attack(a):
+            _, ad, n, d = (scalar(x, w) for x in a)
+            if num(ad, w) == 0 and num(n, w) == 0 and num(d, w) == 0 and ad in (None, [(1, 0)]):
+                return None
+            return {"ad": sym(ad, w, "AD_") or "phys", "n": num(n, w), "d": num(d, w)}
+
+        def pm(v):
+            s = sym(v, w)
+            return None if s in (None, "non_pm") else s.upper()[3:]
+
+        rec = {
+            "id": bn,
+            "name": scalar(nam, w),
+            "base": sym(scalar(typ, w), w).upper(),
+            "spfx": flags(scalar(s1, w), w, "SPFX_")[0],
+            "cspfx": flags(scalar(s2, w), w, "SPFX_")[0],
+            # meaning depends on spfx: DCLAS -> S_ class, DMONS -> PM_, DFLAG2 -> M2_ flags
+            "targets": [t for _, t in scalar(mt, w) or [] if isinstance(t, str)],
+            "attack": attack(atk),
+            "defense": attack(dfn),
+            "carried": attack(cry),
+            "invoke": sym(scalar(inv, w), w),
+            "alignment": num(scalar(al, w), w),
+            "role": pm(scalar(cl, w)),
+            "race": pm(scalar(rac, w)),
+            "gen_spe": num(scalar(gs, w), w),
+            "gift_value": num(scalar(gv, w), w),
+            "cost": num(scalar(cost, w), w),
+            "color": color(scalar(clr, w), w),
+            "src": f"include/artilist.h:{lines.get(bn, 0)}",
+        }
+        out.append(rec)
+    return out
+
+
 # --------------------------------------------------------------------- TOML
 
 def toml_val(v):
@@ -359,6 +425,8 @@ def toml_val(v):
         return str(v)
     if isinstance(v, str):
         return '"' + v.replace("\\", "\\\\").replace('"', '\\"') + '"'
+    if isinstance(v, dict):
+        return "{ " + ", ".join(f"{k} = {toml_val(x)}" for k, x in v.items()) + " }"
     if isinstance(v, list):
         if v and isinstance(v[0], dict):
             return "[\n" + "".join("  { " + ", ".join(f"{k} = {toml_val(x)}" for k, x in d.items()) + " },\n" for d in v) + "]"
@@ -389,6 +457,12 @@ def check_unique(records, what):
 
 def main():
     objs, mons = objects(), monsters()
+    arts = artifacts(objs, mons)
+    check_unique(arts, "artifact")
+    oid, mid = {o["id"] for o in objs}, {m["id"] for m in mons}
+    for a in arts:
+        if a["base"] not in oid or any(a[k] and a[k] not in mid for k in ("role", "race")):
+            die(f"artifact {a['id']} references an unknown object or monster")
     check_unique(objs, "object")
     check_unique(mons, "monster")
     if len(objs) != EXPECT_OBJECTS:
@@ -404,6 +478,7 @@ def main():
             order.append(o["class"])
     files = {
         "objects.toml": to_toml("object", objs, f"{len(objs)} object types from include/objects.h"),
+        "artifacts.toml": to_toml("artifact", arts, f"{len(arts)} artifacts from include/artilist.h"),
         "monsters.toml": to_toml("monster", mons, f"{len(mons)} monster species from include/monsters.h"),
     }
     check = "--check" in sys.argv
@@ -416,7 +491,7 @@ def main():
         else:
             OUT.mkdir(parents=True, exist_ok=True)
             p.write_text(text)
-    print(f"objects: {len(objs)}  monsters: {len(mons)}")
+    print(f"objects: {len(objs)}  monsters: {len(mons)}  artifacts: {len(arts)}")
     if stale:
         die("stale: " + ", ".join(stale) + " (run scripts/extract/c_tables.py)")
 
