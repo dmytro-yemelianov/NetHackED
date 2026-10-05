@@ -1,7 +1,9 @@
 //! Declarative monster bestiary and species registry for NetHackED.
 
 use nethacked_arena::ActorRecord;
-use nethacked_types::{Alignment, Coord, GazeType, Intrinsics, MonsterAbility, MonsterSpell};
+use nethacked_types::{
+    Alignment, BreathType, Coord, GazeType, Intrinsics, MonsterAbility, MonsterSpell,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::roles::RaceId;
@@ -92,9 +94,15 @@ pub struct MonsterArchetype {
     /// has the matching AT_GAZE / AT_MAGC entry (Medusa's gaze; lich, Dark One,
     /// Thoth Amon and Wizard of Yendor spells). Breath is driven by AT_BREA.
     pub abilities: &'static [MonsterAbility],
+    /// C `difficulty` (monsters.h), used by monster generation.
+    pub difficulty: u32,
+    /// C `G_FREQ` generation frequency (0 = never randomly generated).
+    pub frequency: u32,
+    /// C `G_*` generation flags, lowercase without prefix (`nogen`, `uniq`, `hell`, ...).
+    pub gen_flags: &'static [&'static str],
 }
 
-include!("bestiary_generated.rs");
+include!("generated/monsters.rs");
 
 /// NetHack monster class letter (bestiary glyph) for a species name, case-insensitive.
 pub fn monster_class_of(name: &str) -> Option<char> {
@@ -121,10 +129,7 @@ pub fn monster_archetype_by_name(name: &str) -> Option<&'static MonsterArchetype
 
 /// Look up a monster archetype from the bestiary table.
 pub fn get_monster_species(id: MonsterSpeciesId) -> &'static MonsterArchetype {
-    BESTIARY
-        .iter()
-        .find(|m| m.id == id)
-        .expect("All MonsterSpeciesId variants must have a bestiary entry")
+    &BESTIARY[id.index()]
 }
 
 /// Factory function to spawn an ActorRecord from declarative archetype data.
@@ -158,7 +163,7 @@ pub fn create_monster_record(id: MonsterSpeciesId, coord: Coord) -> ActorRecord 
 
 /// Spawns a hostile ghost representing a deceased adventurer from a graveyard bones file.
 pub fn create_ghost_record(name: &str, level: u32, hp: u32, coord: Coord) -> ActorRecord {
-    let mut rec = create_monster_record(MonsterSpeciesId::Ghost, coord);
+    let mut rec = create_monster_record(MonsterSpeciesId::GHOST, coord);
     rec.name = format!("ghost of {name}");
     rec.level = level;
     rec.max_hp = hp;

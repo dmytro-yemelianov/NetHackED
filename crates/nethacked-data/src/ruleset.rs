@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, OnceLock};
 
 use nethacked_arena::{ActorId, ActorRecord, EntityArena, ItemId, ItemLocation, ItemRecord};
-use nethacked_core::ac::{armor_base_ac, armor_slot, ArmorSlot};
+use nethacked_core::ac::ArmorSlot;
 use nethacked_core::quest::get_role_quest_config;
 use nethacked_types::{
     Alignment, Attack, Buc, Coord, Intrinsics, ItemClass, MonsterAbility, SkillClass, SkillLevel,
@@ -480,7 +480,7 @@ impl Ruleset {
         let def = self.item(name)?;
         let charges = if def.class != ItemClass::Wand {
             0
-        } else if def.id == Some(ItemKindId::WandOfWishing) {
+        } else if def.id == Some(ItemKindId::WAN_WISHING) {
             1
         } else {
             match def.wand_dir {
@@ -608,13 +608,10 @@ fn build_vanilla_ruleset() -> Ruleset {
     let items: Vec<ItemDef> = ITEM_CATALOG
         .iter()
         .map(|arch| {
-            let armor = if arch.class == ItemClass::Armor {
-                let slot = armor_slot(arch.name).expect("armor slot for catalog armor");
-                let base_ac = armor_base_ac(arch.name);
-                Some(ArmorDef { slot, base_ac })
-            } else {
-                None
-            };
+            let armor = arch.armor_slot.map(|slot| ArmorDef {
+                slot,
+                base_ac: arch.ac_bonus,
+            });
             ItemDef {
                 id: Some(arch.id),
                 name: arch.name.to_string(),
@@ -705,7 +702,7 @@ pub const ENGINE_REQUIRED_MONSTERS: &[&str] = &[
     "djinni",
     "little dog",
     "kitten",
-    "The Norn",
+    "Norn",
     "Neferet the Green",
     "Pelias",
     "King Arthur",
@@ -715,7 +712,7 @@ pub const ENGINE_REQUIRED_MONSTERS: &[&str] = &[
     "Twoflower",
     "Lord Carnarvon",
     "Lord Surtur",
-    "The Dark One",
+    "Dark One",
     "Thoth Amon",
     "Ixoth",
     "Master Kaen",
@@ -745,7 +742,7 @@ pub const ENGINE_REQUIRED_ITEMS: &[&str] = &[
     "Candelabrum of Invocation",
     "Book of the Dead",
     "boulder",
-    "gold pieces",
+    "gold piece",
     "luckstone",
     "The Orb of Fate",
     "The Eye of the Aethiopica",

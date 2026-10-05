@@ -52,7 +52,7 @@ fn damage_player_saturates_and_marks_death() {
 
 fn genocide_scroll(sim: &mut SimulationWorld, buc: Buc) -> usize {
     let mut scroll = create_item_record(
-        ItemKindId::ScrollOfIdentify,
+        ItemKindId::SCR_IDENTIFY,
         ItemLocation::CarriedBy(sim.player_id),
         buc,
     );
@@ -73,12 +73,12 @@ fn blessed_genocide_spares_non_lich_actors_and_drops_items() {
     let c2 = Coord::new(p.x + 3, p.y).unwrap();
     let lich = sim
         .arena
-        .spawn_actor(create_monster_record(MonsterSpeciesId::Lich, c1));
+        .spawn_actor(create_monster_record(MonsterSpeciesId::MASTER_LICH, c1));
     let dog = sim
         .arena
-        .spawn_actor(create_monster_record(MonsterSpeciesId::LittleDog, c2));
+        .spawn_actor(create_monster_record(MonsterSpeciesId::LITTLE_DOG, c2));
     let loot = sim.arena.spawn_item(create_item_record(
-        ItemKindId::LongSword,
+        ItemKindId::LONG_SWORD,
         ItemLocation::CarriedBy(lich),
         Buc::Uncursed,
     ));
@@ -101,7 +101,7 @@ fn uncursed_genocide_hits_bestiary_goblins() {
     let mut sim = SimulationWorld::new_with_seed(78);
     let p = sim.arena.actors.get(sim.player_id).unwrap().coord;
     let gob = sim.arena.spawn_actor(create_monster_record(
-        MonsterSpeciesId::Goblin,
+        MonsterSpeciesId::GOBLIN,
         Coord::new(p.x + 2, p.y).unwrap(),
     ));
     let idx = genocide_scroll(&mut sim, Buc::Uncursed);
@@ -170,7 +170,7 @@ fn wish_requires_charged_wand_of_wishing() {
     );
 
     sim.arena.spawn_item(create_item_record(
-        ItemKindId::WandOfWishing,
+        ItemKindId::WAN_WISHING,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
@@ -215,7 +215,7 @@ fn wish_requires_charged_wand_of_wishing() {
 fn wishing_for_the_amulet_gives_imitation() {
     let mut sim = SimulationWorld::new_with_seed(92);
     sim.arena.spawn_item(create_item_record(
-        ItemKindId::WandOfWishing,
+        ItemKindId::WAN_WISHING,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
@@ -231,7 +231,7 @@ fn wishing_for_the_amulet_gives_imitation() {
 fn wish_substring_does_not_match() {
     let mut sim = SimulationWorld::new_with_seed(93);
     sim.arena.spawn_item(create_item_record(
-        ItemKindId::WandOfWishing,
+        ItemKindId::WAN_WISHING,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
@@ -242,19 +242,11 @@ fn wish_substring_does_not_match() {
 
 #[test]
 fn catalog_wands_start_charged() {
-    let w = create_item_record(
-        ItemKindId::WandOfStriking,
-        ItemLocation::Limbo,
-        Buc::Uncursed,
-    );
+    let w = create_item_record(ItemKindId::WAN_STRIKING, ItemLocation::Limbo, Buc::Uncursed);
     assert_eq!(w.enchantment, 6);
-    let w = create_item_record(
-        ItemKindId::WandOfWishing,
-        ItemLocation::Limbo,
-        Buc::Uncursed,
-    );
+    let w = create_item_record(ItemKindId::WAN_WISHING, ItemLocation::Limbo, Buc::Uncursed);
     assert_eq!(w.enchantment, 1);
-    let s = create_item_record(ItemKindId::LongSword, ItemLocation::Limbo, Buc::Uncursed);
+    let s = create_item_record(ItemKindId::LONG_SWORD, ItemLocation::Limbo, Buc::Uncursed);
     assert_eq!(s.enchantment, 0);
 }
 
@@ -277,7 +269,7 @@ fn melee_outcomes_vary_with_seed() {
     for seed in 0..40u64 {
         let mut sim = SimulationWorld::new_with_seed(seed);
         let east = open_east(&mut sim);
-        let mut mon = create_monster_record(MonsterSpeciesId::Goblin, east);
+        let mut mon = create_monster_record(MonsterSpeciesId::GOBLIN, east);
         mon.hp = 1000;
         mon.max_hp = 1000;
         // C to-hit: tmp = 1 + AC 13 + lvl 1 + long sword unskilled -4 = 11, so a
@@ -311,7 +303,7 @@ fn bumping_a_wall_does_not_tick_prayer_timeout() {
 fn fake_amulet_does_not_win_the_game() {
     let mut sim = SimulationWorld::new_with_seed(94);
     sim.arena.spawn_item(create_item_record(
-        ItemKindId::WandOfWishing,
+        ItemKindId::WAN_WISHING,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
@@ -338,7 +330,7 @@ fn wished_wands_keep_initial_charges() {
     let mut sim = SimulationWorld::new_with_seed(95);
     for q in ["wand of striking", "+100 wand of death"] {
         let mut w = create_item_record(
-            ItemKindId::WandOfWishing,
+            ItemKindId::WAN_WISHING,
             ItemLocation::CarriedBy(sim.player_id),
             Buc::Uncursed,
         );

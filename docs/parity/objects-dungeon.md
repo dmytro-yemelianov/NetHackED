@@ -5,27 +5,28 @@ Paths below are relative to the NetRust repo unless they start with `C:`.
 
 ## Object counts
 
-C counts come from preprocessing `include/objects.h` (481 OBJECT entries). Generic class placeholders, the 20 unnamed extra scroll labels, the 3 unnamed extra wand slots and the "strange object" are left out, which gives **439 real object types**.
-NetHackED counts come from `crates/nethacked-data/src/items.rs` (66 `ItemKindId` archetypes). 14 of those are artifacts, which C models as objects plus an artifact overlay rather than as separate object types (Excalibur, Vorpal Blade, Mjollnir, Magicbane, Eye of the Aethiopica, Orb of Fate, Heart of Ahriman, Magic Mirror of Merlin, Eyes of the Overworld, Master Key of Thievery, Tsurugi of Muramasa, PYEC, Staff of Aesculapius, Orb of Detection). Holy water is a BUC variant of water. That leaves **51 C-equivalent base types (11.6%)**.
+C counts come from `include/objects.h` expanded by the C preprocessor (`scripts/extract/c_tables.py` → `data/nethack-5.0/objects.toml`, 463 entries after the strange object and the generic class placeholders). The 23 unnamed entries (20 extra scroll labels, 3 extra wand appearances) are appearances, not object kinds, which gives **440 object types**. Artifacts come from `include/artilist.h` (33, `artifacts.toml`).
+NetHackED generates its catalog from that data (`crates/nethacked-data/src/generated/items.rs`): every object type and every artifact exists as data. Behaviour is a separate question: most kinds have no use/zap/quaff/read effect yet (see the feature rows below).
 
-| Class | C types | NetHackED base types | NetHackED items |
-|---|---|---|---|
-| Weapon | 71 | 5 | dagger, short sword, long sword, silver saber, mace |
-| Armor | 84 | 5 | leather armor, chain mail, plate mail, SDSM, cloak of MR (no helms, boots, gloves or shields) |
-| Ring | 28 | 0 | none |
-| Amulet | 13 | 2 | Amulet of Yendor, amulet of reflection (the plastic imitation exists only as a renamed AoY record) |
-| Tool | 50 | 9 | sack, bag of holding, chest, magic lamp, oil lamp, wax candle, magic marker, Bell of Opening, Candelabrum |
-| Food | 33 | 4 | food ration, apple, corpse, sprig of wolfsbane |
-| Potion | 26 | 5 | healing, extra healing, speed, water, polymorph (+ holy water variant) |
-| Scroll | 22 | 7 | identify, teleportation, remove curse, enchant weapon, enchant armor, charging, genocide |
-| Spellbook | 44 | 3 | force bolt, healing, Book of the Dead |
-| Wand | 25 | 8 | striking, digging, teleportation, death, wishing, cold, secret door detection, polymorph |
-| Coin | 1 | 1 | gold piece |
-| Gem/stone | 36 | 1 | luckstone |
-| Rock (boulder/statue) | 2 | 1 | boulder |
-| Ball/Chain | 2 | 0 | none |
-| Venom | 2 | 0 | none |
-| **Total** | **439** | **51** | plus 14 artifact pseudo-types |
+| Class | C types | NetHackED (data) |
+|---|---|---|
+| Weapon | 71 | 71 |
+| Armor | 84 | 84 |
+| Ring | 28 | 28 |
+| Amulet | 13 | 13 |
+| Tool | 50 | 50 |
+| Food | 33 | 33 |
+| Potion | 26 | 26 |
+| Scroll | 23 | 23 |
+| Spellbook | 44 | 44 |
+| Wand | 25 | 25 |
+| Coin | 1 | 1 |
+| Gem/stone | 36 | 36 |
+| Rock (boulder/statue) | 2 | 2 |
+| Ball | 1 | 1 |
+| Chain | 1 | 1 |
+| Venom | 2 | 2 |
+| **Total** | **440** | **440** + 33 artifacts |
 
 ## Feature table
 
@@ -33,8 +34,8 @@ Status totals: 119 rows: MISSING 59, PARTIAL 50, PRESENT 10 (2 rows also carry a
 
 | Feature | C reference | NetHackED status | Evidence | Player impact |
 |---|---|---|---|---|
-| Object type catalog | objects.h / objects.c | 🟡 PARTIAL | items.rs:10-80 has 51 of 439 base types (see counts above) | Most of the items a player knows from NetHack do not exist. |
-| Rings (whole class) | objects.h RING() | ❌ MISSING | no `ItemKindId::Ring*`; `grep -i "ring of" crates` only hits ac.rs:141 | No rings: no free action, conflict, regeneration, levitation and so on. |
+| Object type catalog | objects.h / objects.c | ✅ PRESENT | data/nethack-5.0/objects.toml → generated/items.rs (440 types + 33 artifacts) | Every item exists as data; effects are tracked per class below. |
+| Rings (whole class) | objects.h RING() | ❌ MISSING | the 28 rings exist as data (generated/items.rs) but nothing puts them on or applies their effects | No rings: no free action, conflict, regeneration, levitation and so on. |
 | Helms, boots, gloves, shields, other cloaks, dragon mail | objects.h HELM/BOOTS/GLOVES/SHIELD | ❌ MISSING | items.rs:16-21 has 5 armor kinds | AC builds and slot strategy are not possible. |
 | Launchers and ammo (bows, arrows, crossbow, sling) | objects.h BOW/PROJECTILE | ❌ MISSING | no bow/arrow ItemKindId | Ranged weapon play does not exist. |
 | Gems and gray stones (except luckstone) | objects.h GEM/ROCK | ❌ MISSING | items.rs:79-80 | No gem identification, unicorn gifts, loadstone or touchstone. |

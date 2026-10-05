@@ -166,7 +166,7 @@ pub fn get_role_quest_config(role_name: &str) -> Option<RoleQuestConfig> {
         match role_name.to_lowercase().as_str() {
             "valkyrie" => (
                 "Valkyrie",
-                "The Norn",
+                "Norn",
                 "Lord Surtur",
                 "The Orb of Fate",
                 "the Shrine of Destiny",
@@ -176,7 +176,7 @@ pub fn get_role_quest_config(role_name: &str) -> Option<RoleQuestConfig> {
             "wizard" => (
                 "Wizard",
                 "Neferet the Green",
-                "The Dark One",
+                "Dark One",
                 "The Eye of the Aethiopica",
                 "the Lonely Tower",
                 "the Tower of Darkness",
@@ -310,11 +310,11 @@ mod tests {
             "Master of Thieves",
             "The Platinum Yendorian Express Card",
         ),
-        ("Valkyrie", "The Norn", "Lord Surtur", "The Orb of Fate"),
+        ("Valkyrie", "Norn", "Lord Surtur", "The Orb of Fate"),
         (
             "Wizard",
             "Neferet the Green",
-            "The Dark One",
+            "Dark One",
             "The Eye of the Aethiopica",
         ),
     ];

@@ -79,8 +79,8 @@ impl SimulationWorld {
             matches!(
                 a.id,
                 Some(
-                    nethacked_data::MonsterSpeciesId::Priest
-                        | nethacked_data::MonsterSpeciesId::Shopkeeper,
+                    nethacked_data::MonsterSpeciesId::ALIGNED_CLERIC
+                        | nethacked_data::MonsterSpeciesId::SHOPKEEPER,
                 )
             )
         }) || target.name.eq_ignore_ascii_case(quest_cfg.leader_name);

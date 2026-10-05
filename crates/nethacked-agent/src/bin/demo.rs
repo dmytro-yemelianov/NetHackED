@@ -99,7 +99,7 @@ fn main() {
     println!("\nTaking actions: Picking up floor items and exploring...");
     let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
     let saber = sim.arena.spawn_item(create_item_record(
-        ItemKindId::SilverSaber,
+        ItemKindId::SILVER_SABER,
         ItemLocation::Floor(p_coord),
         Buc::Uncursed,
     ));
@@ -121,7 +121,7 @@ fn main() {
     let layout = nethacked_dungeon::generate_minetown_level(&mut sim.rng);
     sim.level = layout.level;
     let priest_coord = layout.priest_coord;
-    let mut priest_rec = create_monster_record(MonsterSpeciesId::Priest, priest_coord);
+    let mut priest_rec = create_monster_record(MonsterSpeciesId::ALIGNED_CLERIC, priest_coord);
     priest_rec.is_tame = true;
     sim.arena.spawn_actor(priest_rec);
     if let Some(p) = sim.arena.actors.get_mut(sim.player_id) {
@@ -145,7 +145,7 @@ fn main() {
 
     println!("\nPriest performing uncursing ritual on a cursed potion:");
     let cursed_pot = sim.arena.spawn_item(create_item_record(
-        ItemKindId::PotionOfExtraHealing,
+        ItemKindId::POT_EXTRA_HEALING,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Cursed,
     ));
@@ -172,7 +172,7 @@ fn main() {
 
     println!("Hero in dark cavern. Lighting oil lamp:");
     let lamp = sim.arena.spawn_item(create_item_record(
-        ItemKindId::OilLamp,
+        ItemKindId::OIL_LAMP,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
@@ -193,9 +193,9 @@ fn main() {
     let p_pos = sim.arena.actors.get(sim.player_id).unwrap().coord;
     let gnome_c = Coord::new_unchecked(p_pos.x + 3, p_pos.y);
     let skel_c = Coord::new_unchecked(p_pos.x - 3, p_pos.y);
-    let mut gnome_rec = create_monster_record(MonsterSpeciesId::Gnome, gnome_c);
+    let mut gnome_rec = create_monster_record(MonsterSpeciesId::GNOME, gnome_c);
     gnome_rec.is_tame = true;
-    let mut skel_rec = create_monster_record(MonsterSpeciesId::Skeleton, skel_c);
+    let mut skel_rec = create_monster_record(MonsterSpeciesId::SKELETON, skel_c);
     skel_rec.is_tame = true;
     sim.arena.spawn_actor(gnome_rec);
     sim.arena.spawn_actor(skel_rec);
@@ -216,7 +216,7 @@ fn main() {
     // PHASE 4: The Class Quest Branch, Leader Qualification & Nemesis Defeat
     // =========================================================================
     print_separator("PHASE 4: The Class Quest Branch, Leader Qualification & Nemesis Defeat");
-    println!("Transitioning into Quest branch (Quest Home - Sanctuary of The Norn)...");
+    println!("Transitioning into Quest branch (Quest Home - Sanctuary of Norn)...");
     sim.role_name = "Valkyrie".to_string();
     sim.current_branch = nethacked_types::BranchId::Quest;
     sim.depth = 1;
@@ -263,7 +263,7 @@ fn main() {
 
     println!("Attacking Lord Surtur with +5 Vorpal Blade:");
     let mut vorpal_rec = create_item_record(
-        ItemKindId::VorpalBlade,
+        ItemKindId::ART_VORPAL_BLADE,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Blessed,
     );
@@ -286,7 +286,7 @@ fn main() {
     print_events(&ev_pickup);
     println!("  Artifact State: {:?}", sim.quest_state.artifact_location);
 
-    println!("\nAscending back to Quest Home and receiving The Norn's blessing:");
+    println!("\nAscending back to Quest Home and receiving Norn's blessing:");
     sim.depth = 1;
     let _ = sim.unpack_or_generate_level(nethacked_types::BranchId::Quest, 1);
     let up_c = sim.level.stairs_up;
@@ -329,24 +329,24 @@ fn main() {
 
     println!("\nAcquiring the Three Canonical Invocation Relics:");
     let bell = sim.arena.spawn_item(create_item_record(
-        ItemKindId::BellOfOpening,
+        ItemKindId::BELL_OF_OPENING,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Blessed,
     ));
     let cand = sim.arena.spawn_item(create_item_record(
-        ItemKindId::CandelabrumOfInvocation,
+        ItemKindId::CANDELABRUM_OF_INVOCATION,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Blessed,
     ));
     for _ in 0..7 {
         sim.arena.spawn_item(create_item_record(
-            ItemKindId::WaxCandle,
+            ItemKindId::WAX_CANDLE,
             ItemLocation::CarriedBy(sim.player_id),
             Buc::Uncursed,
         ));
     }
     let book = sim.arena.spawn_item(create_item_record(
-        ItemKindId::BookOfTheDead,
+        ItemKindId::SPE_BOOK_OF_THE_DEAD,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Blessed,
     ));
@@ -415,7 +415,7 @@ fn main() {
 
     println!("Entering Moloch's Sanctum. Reaching High Altar and claiming the Amulet of Yendor!");
     let amulet = sim.arena.spawn_item(create_item_record(
-        ItemKindId::AmuletOfYendor,
+        ItemKindId::AMULET_OF_YENDOR,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Blessed,
     ));
@@ -463,7 +463,7 @@ fn main() {
     print_separator("PHASE 7: Polymorph Buffer Pools & Reversion on Zero HP");
     println!("Hero drinks a Potion of Polymorph:");
     let poly_pot = sim.arena.spawn_item(create_item_record(
-        ItemKindId::PotionOfPolymorph,
+        ItemKindId::POT_POLYMORPH,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
@@ -501,7 +501,7 @@ fn main() {
     // =========================================================================
     print_separator("PHASE 8: Scroll of Genocide & Non-Spawn Invariant");
     let orc = sim.arena.spawn_actor(create_monster_record(
-        MonsterSpeciesId::Orc,
+        MonsterSpeciesId::HILL_ORC,
         Coord::new_unchecked(15, 10),
     ));
     println!("Prior to genocide:");
@@ -509,7 +509,7 @@ fn main() {
     println!("  Conduct genocideless: {}", sim.conducts.genocideless);
 
     let geno_scroll = sim.arena.spawn_item(create_item_record(
-        ItemKindId::ScrollOfGenocide,
+        ItemKindId::SCR_GENOCIDE,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Blessed,
     ));
@@ -577,7 +577,7 @@ fn main() {
     print_separator("PHASE 10: Metabolism, Intrinsic Absorption & Conduct Audit");
     println!("Consuming fresh dragon meat for intrinsic acquisition:");
     let dragon_corpse = sim.arena.spawn_item(create_item_record(
-        ItemKindId::Corpse,
+        ItemKindId::CORPSE,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));

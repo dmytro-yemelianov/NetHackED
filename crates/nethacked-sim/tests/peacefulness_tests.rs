@@ -35,14 +35,15 @@ fn test_peaceful_monsters_spawn_peaceful_and_never_attack_over_50_turns() {
     let c_shopkeeper = p_coord.step(Direction::North).unwrap();
 
     let watchman_id = sim.arena.spawn_actor(create_monster_record(
-        MonsterSpeciesId::Watchman,
+        MonsterSpeciesId::WATCHMAN,
         c_watchman,
     ));
-    let priest_id = sim
-        .arena
-        .spawn_actor(create_monster_record(MonsterSpeciesId::Priest, c_priest));
+    let priest_id = sim.arena.spawn_actor(create_monster_record(
+        MonsterSpeciesId::ALIGNED_CLERIC,
+        c_priest,
+    ));
     let shopkeeper_id = sim.arena.spawn_actor(create_monster_record(
-        MonsterSpeciesId::Shopkeeper,
+        MonsterSpeciesId::SHOPKEEPER,
         c_shopkeeper,
     ));
 
@@ -76,9 +77,10 @@ fn test_hero_attack_makes_peaceful_monster_hostile_permanently() {
     let c_priest = p_coord.step(Direction::East).unwrap();
     sim.level.set_tile(c_priest, Tile::Room);
 
-    let priest_id = sim
-        .arena
-        .spawn_actor(create_monster_record(MonsterSpeciesId::Priest, c_priest));
+    let priest_id = sim.arena.spawn_actor(create_monster_record(
+        MonsterSpeciesId::ALIGNED_CLERIC,
+        c_priest,
+    ));
     assert!(sim.arena.actors.get(priest_id).unwrap().is_peaceful);
 
     // Boost hero HP so hero survives the high-damage priest attack
@@ -181,7 +183,7 @@ fn test_elbereth_exemptions_and_repulsion() {
     // 1. Goblin (not exempt, hostile) is repelled by Elbereth
     let goblin_id = sim
         .arena
-        .spawn_actor(create_monster_record(MonsterSpeciesId::Goblin, c_east));
+        .spawn_actor(create_monster_record(MonsterSpeciesId::GOBLIN, c_east));
     let events = sim.step_player_action(ActionAst::Wait);
     assert!(
         events.iter().any(|e| matches!(
@@ -195,7 +197,7 @@ fn test_elbereth_exemptions_and_repulsion() {
     // 2. Human / Shopkeeper (exempt) is NOT repelled even when hostile
     let c_north = p_coord.step(Direction::North).unwrap();
     sim.level.set_tile(c_north, Tile::Room);
-    let mut shk_rec = create_monster_record(MonsterSpeciesId::Shopkeeper, c_north);
+    let mut shk_rec = create_monster_record(MonsterSpeciesId::SHOPKEEPER, c_north);
     shk_rec.is_peaceful = false; // Make hostile
     let shk_id = sim.arena.spawn_actor(shk_rec);
 
@@ -225,7 +227,7 @@ fn test_companion_pet_does_not_attack_peaceful_monsters() {
     // Pet adjacent to hero
     let pet_coord = p_coord.step(Direction::East).unwrap();
     sim.level.set_tile(pet_coord, Tile::Room);
-    let mut pet_rec = create_monster_record(MonsterSpeciesId::LittleDog, pet_coord);
+    let mut pet_rec = create_monster_record(MonsterSpeciesId::LITTLE_DOG, pet_coord);
     pet_rec.is_tame = true;
     let pet_id = sim.arena.spawn_actor(pet_rec);
 
@@ -233,7 +235,7 @@ fn test_companion_pet_does_not_attack_peaceful_monsters() {
     let watchman_coord = pet_coord.step(Direction::East).unwrap();
     sim.level.set_tile(watchman_coord, Tile::Room);
     let watchman_id = sim.arena.spawn_actor(create_monster_record(
-        MonsterSpeciesId::Watchman,
+        MonsterSpeciesId::WATCHMAN,
         watchman_coord,
     ));
     assert!(sim.arena.actors.get(watchman_id).unwrap().is_peaceful);
@@ -264,7 +266,8 @@ fn test_companion_pet_does_not_attack_peaceful_monsters() {
 
 #[test]
 fn test_serde_default_actor_record_is_peaceful() {
-    let mut actor = create_monster_record(MonsterSpeciesId::Priest, Coord::new(1, 1).unwrap());
+    let mut actor =
+        create_monster_record(MonsterSpeciesId::ALIGNED_CLERIC, Coord::new(1, 1).unwrap());
     actor.is_peaceful = true;
     let mut v = serde_json::to_value(&actor).expect("Serialization must succeed");
     v.as_object_mut().unwrap().remove("is_peaceful");
@@ -337,7 +340,7 @@ fn test_coaligned_spawn_peaceful_rate_matches_c() {
     let n = 4000;
     let mut peaceful = 0;
     for _ in 0..n {
-        let id = spawn_east(&mut sim, MonsterSpeciesId::Goblin);
+        let id = spawn_east(&mut sim, MonsterSpeciesId::GOBLIN);
         if sim.arena.actors.get(id).unwrap().is_peaceful {
             peaceful += 1;
         }
@@ -358,7 +361,7 @@ fn test_coaligned_spawn_with_record_minus_15_is_hostile_after_one_draw() {
     for _ in 0..50 {
         let mut expected_rng = sim.rng.clone();
         let _ = expected_rng.random_range(0..1u32);
-        let id = spawn_east(&mut sim, MonsterSpeciesId::Goblin);
+        let id = spawn_east(&mut sim, MonsterSpeciesId::GOBLIN);
         assert!(!sim.arena.actors.get(id).unwrap().is_peaceful);
         assert_eq!(sim.rng, expected_rng, "exactly one rn2(1) draw");
         sim.arena.destroy_actor(id);
@@ -373,14 +376,14 @@ fn test_spawn_decisions_without_a_draw() {
     // watchman M2_PEACEFUL, Master Assassin MS_NEMESIS/M2_HOSTILE.
     let mut sim = sim_with(RaceId::Human, Alignment::Neutral, RoleId::Valkyrie, 9);
     for (species, want) in [
-        (MonsterSpeciesId::Kobold, false),
-        (MonsterSpeciesId::Goblin, false),
-        (MonsterSpeciesId::Gnome, false),
-        (MonsterSpeciesId::Dwarf, false),
-        (MonsterSpeciesId::Shopkeeper, true),
-        (MonsterSpeciesId::Watchman, true),
-        (MonsterSpeciesId::MasterAssassin, false),
-        (MonsterSpeciesId::Warrior, true),
+        (MonsterSpeciesId::KOBOLD, false),
+        (MonsterSpeciesId::GOBLIN, false),
+        (MonsterSpeciesId::GNOME, false),
+        (MonsterSpeciesId::DWARF, false),
+        (MonsterSpeciesId::SHOPKEEPER, true),
+        (MonsterSpeciesId::WATCHMAN, true),
+        (MonsterSpeciesId::MASTER_ASSASSIN, false),
+        (MonsterSpeciesId::WARRIOR, true),
     ] {
         let before = sim.rng.clone();
         let id = spawn_east(&mut sim, species);
@@ -394,7 +397,7 @@ fn test_spawn_decisions_without_a_draw() {
     }
     // Dwarvish hero: dwarves and gnomes are race_peaceful (role.c:634).
     let mut sim = sim_with(RaceId::Dwarf, Alignment::Lawful, RoleId::Valkyrie, 10);
-    for species in [MonsterSpeciesId::Dwarf, MonsterSpeciesId::Gnome] {
+    for species in [MonsterSpeciesId::DWARF, MonsterSpeciesId::GNOME] {
         let before = sim.rng.clone();
         let id = spawn_east(&mut sim, species);
         assert!(sim.arena.actors.get(id).unwrap().is_peaceful, "{species:?}");
@@ -409,13 +412,13 @@ fn test_amulet_makes_chaotic_spawns_hostile() {
     let mut sim = sim_with(RaceId::Orc, Alignment::Chaotic, RoleId::Barbarian, 11);
     sim.alignment_record = 10;
     sim.arena.spawn_item(nethacked_data::create_item_record(
-        nethacked_data::ItemKindId::AmuletOfYendor,
+        nethacked_data::ItemKindId::AMULET_OF_YENDOR,
         nethacked_arena::ItemLocation::CarriedBy(sim.player_id),
         nethacked_types::Buc::Blessed,
     ));
     for _ in 0..20 {
         let before = sim.rng.clone();
-        let id = spawn_east(&mut sim, MonsterSpeciesId::Goblin);
+        let id = spawn_east(&mut sim, MonsterSpeciesId::GOBLIN);
         assert!(!sim.arena.actors.get(id).unwrap().is_peaceful);
         assert_eq!(sim.rng, before);
         sim.arena.destroy_actor(id);
@@ -464,7 +467,7 @@ fn test_attacking_peaceful_costs_one_alignment() {
     let c = hero_coord(&sim).step(Direction::East).unwrap();
     let id = place_east(
         &mut sim,
-        create_monster_record(MonsterSpeciesId::Watchman, c),
+        create_monster_record(MonsterSpeciesId::WATCHMAN, c),
     );
     let ev = sim.step_player_action(ActionAst::MeleeAttack(c));
     assert!(!sim.arena.actors.get(id).unwrap().is_peaceful);
@@ -478,13 +481,16 @@ fn test_attacking_priest_alignment_effects() {
     let mut sim = sim_with(RaceId::Human, Alignment::Neutral, RoleId::Valkyrie, 13);
     sim.alignment_record = 8;
     let c = hero_coord(&sim).step(Direction::East).unwrap();
-    place_east(&mut sim, create_monster_record(MonsterSpeciesId::Priest, c));
+    place_east(
+        &mut sim,
+        create_monster_record(MonsterSpeciesId::ALIGNED_CLERIC, c),
+    );
     sim.step_player_action(ActionAst::MeleeAttack(c));
     assert_eq!(sim.alignment_record, 3, "co-aligned priest: adjalign(-5)");
 
     let mut sim = sim_with(RaceId::Human, Alignment::Neutral, RoleId::Valkyrie, 14);
     sim.alignment_record = 3;
-    let mut priest = create_monster_record(MonsterSpeciesId::Priest, c);
+    let mut priest = create_monster_record(MonsterSpeciesId::ALIGNED_CLERIC, c);
     priest.alignment = Alignment::Lawful;
     let c = hero_coord(&sim).step(Direction::East).unwrap();
     priest.coord = c;
@@ -507,7 +513,7 @@ fn test_attacking_from_elbereth_is_hypocritical() {
     sim.level
         .set_engraving(pc, Engraving::new("Elbereth", EngravingMedium::Burned));
     let c = pc.step(Direction::East).unwrap();
-    let mut gob = create_monster_record(MonsterSpeciesId::Goblin, c);
+    let mut gob = create_monster_record(MonsterSpeciesId::GOBLIN, c);
     gob.is_peaceful = false;
     place_east(&mut sim, gob);
     let ev = sim.step_player_action(ActionAst::MeleeAttack(c));
@@ -525,7 +531,7 @@ fn test_attacking_from_elbereth_is_hypocritical() {
     let c = pc.step(Direction::East).unwrap();
     place_east(
         &mut sim,
-        create_monster_record(MonsterSpeciesId::Watchman, c),
+        create_monster_record(MonsterSpeciesId::WATCHMAN, c),
     );
     sim.step_player_action(ActionAst::MeleeAttack(c));
     assert_eq!(sim.alignment_record, 3);
@@ -537,7 +543,7 @@ fn test_attacking_from_elbereth_is_hypocritical() {
     sim.level
         .set_engraving(pc, Engraving::new("Elbereth", EngravingMedium::Burned));
     let c = pc.step(Direction::East).unwrap();
-    let mut gob = create_monster_record(MonsterSpeciesId::Goblin, c);
+    let mut gob = create_monster_record(MonsterSpeciesId::GOBLIN, c);
     gob.is_peaceful = false;
     place_east(&mut sim, gob);
     sim.step_player_action(ActionAst::MeleeAttack(c));
@@ -553,7 +559,7 @@ fn test_attacking_unscared_hostile_from_elbereth_is_not_hypocritical() {
     sim.level
         .set_engraving(pc, Engraving::new("Elbereth", EngravingMedium::Burned));
     let c = pc.step(Direction::East).unwrap();
-    let mut wm = create_monster_record(MonsterSpeciesId::Watchman, c);
+    let mut wm = create_monster_record(MonsterSpeciesId::WATCHMAN, c);
     wm.is_peaceful = false;
     place_east(&mut sim, wm);
     let ev = sim.step_player_action(ActionAst::MeleeAttack(c));
@@ -666,7 +672,7 @@ fn test_moving_into_peaceful_gnome_swaps_or_stops() {
             100 + seed,
         );
         let pc = hero_coord(&sim);
-        let id = spawn_east(&mut sim, MonsterSpeciesId::Gnome);
+        let id = spawn_east(&mut sim, MonsterSpeciesId::GNOME);
         let gc = sim.arena.actors.get(id).unwrap().coord;
         assert_eq!(gc, pc.step(Direction::East).unwrap());
         assert!(sim.arena.actors.get(id).unwrap().is_peaceful);
@@ -698,7 +704,7 @@ fn test_explicit_attack_on_peaceful_still_attacks() {
     let c = hero_coord(&sim).step(Direction::East).unwrap();
     let id = place_east(
         &mut sim,
-        create_monster_record(MonsterSpeciesId::Watchman, c),
+        create_monster_record(MonsterSpeciesId::WATCHMAN, c),
     );
     let ev = sim.step_player_action(ActionAst::MeleeAttack(c));
     assert!(ev.iter().any(|e| matches!(

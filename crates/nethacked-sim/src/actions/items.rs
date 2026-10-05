@@ -22,18 +22,18 @@ pub fn normalize_wish_name(query: &str) -> String {
 }
 
 const UNWISHABLE: &[ItemKindId] = &[
-    ItemKindId::BellOfOpening,
-    ItemKindId::CandelabrumOfInvocation,
-    ItemKindId::BookOfTheDead,
-    ItemKindId::OrbOfFate,
-    ItemKindId::HeartOfAhriman,
-    ItemKindId::MagicMirrorOfMerlin,
-    ItemKindId::EyesOfTheOverworld,
-    ItemKindId::MasterKeyOfThievery,
-    ItemKindId::TsurugiOfMuramasa,
-    ItemKindId::PlatinumYendorianExpressCard,
-    ItemKindId::StaffOfAesculapius,
-    ItemKindId::OrbOfDetection,
+    ItemKindId::BELL_OF_OPENING,
+    ItemKindId::CANDELABRUM_OF_INVOCATION,
+    ItemKindId::SPE_BOOK_OF_THE_DEAD,
+    ItemKindId::ART_ORB_OF_FATE,
+    ItemKindId::ART_HEART_OF_AHRIMAN,
+    ItemKindId::ART_MAGIC_MIRROR_OF_MERLIN,
+    ItemKindId::ART_EYES_OF_THE_OVERWORLD,
+    ItemKindId::ART_MASTER_KEY_OF_THIEVERY,
+    ItemKindId::ART_TSURUGI_OF_MURAMASA,
+    ItemKindId::ART_YENDORIAN_EXPRESS_CARD,
+    ItemKindId::ART_STAFF_OF_AESCULAPIUS,
+    ItemKindId::ART_ORB_OF_DETECTION,
 ];
 
 impl SimulationWorld {
@@ -193,7 +193,7 @@ impl SimulationWorld {
                             .map(|p| p.coord)
                             .unwrap_or(Coord::new_unchecked(1, 1));
                         if let Some(gift) = self.ruleset.create_item_record_by_id(
-                            ItemKindId::ScrollOfIdentify,
+                            ItemKindId::SCR_IDENTIFY,
                             ItemLocation::Floor(player_c),
                             Buc::Blessed,
                         ) {
@@ -221,14 +221,14 @@ impl SimulationWorld {
                             .find(|&c| self.level.is_passable(c) && self.actor_at(c).is_none())
                             .unwrap_or(player_c);
                         if let Some(mut mon) = self.ruleset.create_monster_record_by_id(
-                            nethacked_data::MonsterSpeciesId::Djinni,
+                            nethacked_data::MonsterSpeciesId::DJINNI,
                             spawn_c,
                         ) {
                             mon.name = "hostile djinni".into();
                             mon.is_peaceful = false;
                             if let Some(def) = self
                                 .ruleset
-                                .monster_by_id(nethacked_data::MonsterSpeciesId::Djinni)
+                                .monster_by_id(nethacked_data::MonsterSpeciesId::DJINNI)
                             {
                                 self.set_monster_malign(&mut mon, def);
                             }
@@ -622,14 +622,14 @@ impl SimulationWorld {
                                         })
                                         .unwrap_or(player_c);
                                     if let Some(mut mon) = self.ruleset.create_monster_record_by_id(
-                                        nethacked_data::MonsterSpeciesId::Goblin,
+                                        nethacked_data::MonsterSpeciesId::GOBLIN,
                                         spawn_c,
                                     ) {
                                         mon.name = "hostile goblin".into();
                                         mon.is_peaceful = false;
                                         if let Some(def) = self
                                             .ruleset
-                                            .monster_by_id(nethacked_data::MonsterSpeciesId::Goblin)
+                                            .monster_by_id(nethacked_data::MonsterSpeciesId::GOBLIN)
                                         {
                                             self.set_monster_malign(&mut mon, def);
                                         }
@@ -1098,7 +1098,7 @@ impl SimulationWorld {
                         } else if wand_name.contains("polymorph") {
                             if !target.is_unique && !target.is_player {
                                 // transform monster
-                                let new_species = nethacked_data::MonsterSpeciesId::Goblin; // simplified
+                                let new_species = nethacked_data::MonsterSpeciesId::GOBLIN; // simplified
                                 if let Some(new_arch) = self.ruleset.monster_by_id(new_species) {
                                     target.name = new_arch.name.to_string();
                                     target.hp = new_arch.base_hp;
@@ -1211,7 +1211,7 @@ impl SimulationWorld {
             let matched_arch = self.ruleset.item(&wanted).cloned();
 
             match matched_arch {
-                Some(arch) if arch.id == Some(ItemKindId::AmuletOfYendor) => {
+                Some(arch) if arch.id == Some(ItemKindId::AMULET_OF_YENDOR) => {
                     if let Some(mut fake) = self.ruleset.create_item_record(
                         &arch.name,
                         ItemLocation::Floor(player.coord),

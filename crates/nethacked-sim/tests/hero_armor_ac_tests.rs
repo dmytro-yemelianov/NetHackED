@@ -104,7 +104,7 @@ fn test_leather_armor_plus_zero_reduces_ac_to_8() {
 
     // Spawn leather armor in hero's inventory
     let _armor_id = sim.arena.spawn_item(create_item_record(
-        ItemKindId::LeatherArmor,
+        ItemKindId::LEATHER_ARMOR,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
@@ -129,7 +129,7 @@ fn test_small_shield_plus_two_with_leather_armor() {
 
     // Leather armor (+0, a_ac = 2): ARM_BONUS = 2
     let _armor_id = sim.arena.spawn_item(create_item_record(
-        ItemKindId::LeatherArmor,
+        ItemKindId::LEATHER_ARMOR,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
@@ -234,7 +234,7 @@ fn test_erosion_capping_in_arm_bonus() {
     // Leather armor with erosion 2 (a_ac = 2):
     // min(erosion, a_ac) = 2, so ARM_BONUS = 2 + 0 - 2 = 0
     let mut armor = create_item_record(
-        ItemKindId::LeatherArmor,
+        ItemKindId::LEATHER_ARMOR,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     );
@@ -251,7 +251,7 @@ fn test_erosion_capping_in_arm_bonus() {
 
     // With spe +1, bonus is 2 + 1 - 2 = 1, AC becomes 9
     let mut enchanted_eroded_armor = create_item_record(
-        ItemKindId::ChainMail,
+        ItemKindId::CHAIN_MAIL,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     );

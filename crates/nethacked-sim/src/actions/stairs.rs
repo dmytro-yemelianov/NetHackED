@@ -283,7 +283,7 @@ impl SimulationWorld {
                     // Spawn puzzle boulders
                     for bc in boulder_coords {
                         if let Some(boulder) = self.ruleset.create_item_record_by_id(
-                            ItemKindId::Boulder,
+                            ItemKindId::BOULDER,
                             ItemLocation::Floor(bc),
                             Buc::Uncursed,
                         ) {
@@ -294,9 +294,9 @@ impl SimulationWorld {
                     // Spawn prize in prize chamber (at depth 1: Bag of Holding)
                     let prize_coord = Coord::new_unchecked(64, 10);
                     let prize_kind = if depth == 1 {
-                        ItemKindId::BagOfHolding
+                        ItemKindId::BAG_OF_HOLDING
                     } else {
-                        ItemKindId::AmuletOfReflection
+                        ItemKindId::AMULET_OF_REFLECTION
                     };
                     if let Some(prize) = self.ruleset.create_item_record_by_id(
                         prize_kind,
@@ -315,14 +315,14 @@ impl SimulationWorld {
                     let layout = nethacked_dungeon::generate_minetown_level(&mut self.rng);
                     self.level = layout.level;
 
-                    self.spawn_monster_near(MonsterSpeciesId::Priest, layout.priest_coord);
+                    self.spawn_monster_near(MonsterSpeciesId::ALIGNED_CLERIC, layout.priest_coord);
 
                     for wc in layout.watchmen_coords {
-                        self.spawn_monster_near(MonsterSpeciesId::Watchman, wc);
+                        self.spawn_monster_near(MonsterSpeciesId::WATCHMAN, wc);
                     }
 
                     for sc in layout.shopkeeper_coords {
-                        self.spawn_monster_near(MonsterSpeciesId::Shopkeeper, sc);
+                        self.spawn_monster_near(MonsterSpeciesId::SHOPKEEPER, sc);
                     }
 
                     events.push(GameEvent::LogMessage {
@@ -336,7 +336,7 @@ impl SimulationWorld {
                     self.level = lvl;
 
                     if let Some(luckstone) = self.ruleset.create_item_record_by_id(
-                        ItemKindId::Luckstone,
+                        ItemKindId::LUCKSTONE,
                         ItemLocation::Floor(luckstone_coord),
                         Buc::Uncursed,
                     ) {
@@ -347,9 +347,9 @@ impl SimulationWorld {
                     for (i, &center) in centers.iter().enumerate() {
                         if i > 0 {
                             let species = if i % 2 == 0 {
-                                MonsterSpeciesId::SilverDragon
+                                MonsterSpeciesId::SILVER_DRAGON
                             } else {
-                                MonsterSpeciesId::Vampire
+                                MonsterSpeciesId::VAMPIRE
                             };
                             self.spawn_monster_near(species, center);
                         }
@@ -368,9 +368,9 @@ impl SimulationWorld {
                     for (i, &center) in centers.iter().enumerate() {
                         if i > 0 {
                             let species = if i % 2 == 0 {
-                                MonsterSpeciesId::Gnome
+                                MonsterSpeciesId::GNOME
                             } else {
-                                MonsterSpeciesId::Dwarf
+                                MonsterSpeciesId::DWARF
                             };
                             self.spawn_monster_near(species, center);
                         }
@@ -389,9 +389,9 @@ impl SimulationWorld {
                     for (i, &center) in centers.iter().enumerate() {
                         if i > 0 {
                             let species = if i % 2 == 0 {
-                                MonsterSpeciesId::Skeleton
+                                MonsterSpeciesId::SKELETON
                             } else {
-                                MonsterSpeciesId::Vampire
+                                MonsterSpeciesId::VAMPIRE
                             };
                             self.spawn_monster_near(species, center);
                         }
@@ -400,7 +400,7 @@ impl SimulationWorld {
                     // Spawn Bell of Opening in Valley of the Dead
                     let bell_coord = self.level.rooms[1].center();
                     if let Some(bell) = self.ruleset.create_item_record_by_id(
-                        ItemKindId::BellOfOpening,
+                        ItemKindId::BELL_OF_OPENING,
                         ItemLocation::Floor(bell_coord),
                         Buc::Blessed,
                     ) {
@@ -420,7 +420,7 @@ impl SimulationWorld {
                     let centers: Vec<Coord> = self.level.rooms.iter().map(|r| r.center()).collect();
                     for (i, &center) in centers.iter().enumerate() {
                         if i > 0 {
-                            self.spawn_monster_near(MonsterSpeciesId::SilverDragon, center);
+                            self.spawn_monster_near(MonsterSpeciesId::SILVER_DRAGON, center);
                         }
                     }
 
@@ -448,7 +448,7 @@ impl SimulationWorld {
                     let mut spots = order.into_iter();
                     if let Some(c) = spots.next() {
                         if let Some(it) = self.ruleset.create_item_record_by_id(
-                            ItemKindId::CandelabrumOfInvocation,
+                            ItemKindId::CANDELABRUM_OF_INVOCATION,
                             ItemLocation::Floor(c),
                             Buc::Uncursed,
                         ) {
@@ -457,7 +457,7 @@ impl SimulationWorld {
                     }
                     if let Some(c) = spots.next() {
                         if let Some(it) = self.ruleset.create_item_record_by_id(
-                            ItemKindId::BookOfTheDead,
+                            ItemKindId::SPE_BOOK_OF_THE_DEAD,
                             ItemLocation::Floor(c),
                             Buc::Blessed,
                         ) {
@@ -466,7 +466,7 @@ impl SimulationWorld {
                     }
                     for c in spots.take(7) {
                         if let Some(it) = self.ruleset.create_item_record_by_id(
-                            ItemKindId::WaxCandle,
+                            ItemKindId::WAX_CANDLE,
                             ItemLocation::Floor(c),
                             Buc::Uncursed,
                         ) {
@@ -488,8 +488,10 @@ impl SimulationWorld {
                     // hero enters the temple, with no alignment penalty
                     // (`set_malign`). The sim has no temple-entry hook, so it
                     // applies this on arrival (documented divergence).
-                    let priest =
-                        self.spawn_monster_near(MonsterSpeciesId::Priest, self.level.stairs_down);
+                    let priest = self.spawn_monster_near(
+                        MonsterSpeciesId::ALIGNED_CLERIC,
+                        self.level.stairs_down,
+                    );
                     // `set_malign` (priest.c:456) reads the shrine alignment
                     // `EPRI->shralign`, which is A_NONE here, not the species'.
                     let hero_align = self.hero_alignment();
@@ -506,7 +508,7 @@ impl SimulationWorld {
                     }
 
                     if let Some(amulet) = self.ruleset.create_item_record_by_id(
-                        ItemKindId::AmuletOfYendor,
+                        ItemKindId::AMULET_OF_YENDOR,
                         ItemLocation::Floor(self.level.stairs_down),
                         Buc::Blessed,
                     ) {
@@ -535,9 +537,9 @@ impl SimulationWorld {
                     for (i, &center) in centers.iter().enumerate() {
                         if i > 0 {
                             let species = if i % 2 == 0 {
-                                MonsterSpeciesId::SilverDragon
+                                MonsterSpeciesId::SILVER_DRAGON
                             } else {
-                                MonsterSpeciesId::Vampire
+                                MonsterSpeciesId::VAMPIRE
                             };
                             self.spawn_monster_near(species, center);
                         }
@@ -603,9 +605,9 @@ impl SimulationWorld {
                     for (i, &center) in centers.iter().enumerate() {
                         if i > 0 {
                             let species = if i % 2 == 0 {
-                                MonsterSpeciesId::GiantAnt
+                                MonsterSpeciesId::GIANT_ANT
                             } else {
-                                MonsterSpeciesId::Skeleton
+                                MonsterSpeciesId::SKELETON
                             };
                             self.spawn_monster_near(species, center);
                         }
@@ -718,23 +720,23 @@ impl SimulationWorld {
                     for (i, &center) in centers.iter().enumerate() {
                         if i > 0 && i != centers.len() - 1 {
                             let species = match depth {
-                                1 => MonsterSpeciesId::Goblin,
+                                1 => MonsterSpeciesId::GOBLIN,
                                 2 => {
                                     if i % 2 == 0 {
-                                        MonsterSpeciesId::Hobgoblin
+                                        MonsterSpeciesId::HOBGOBLIN
                                     } else {
-                                        MonsterSpeciesId::Orc
+                                        MonsterSpeciesId::HILL_ORC
                                     }
                                 }
                                 3 => {
                                     if i % 2 == 0 {
-                                        MonsterSpeciesId::GiantAnt
+                                        MonsterSpeciesId::GIANT_ANT
                                     } else {
-                                        MonsterSpeciesId::Skeleton
+                                        MonsterSpeciesId::SKELETON
                                     }
                                 }
-                                4 => MonsterSpeciesId::Vampire,
-                                _ => MonsterSpeciesId::SilverDragon,
+                                4 => MonsterSpeciesId::VAMPIRE,
+                                _ => MonsterSpeciesId::SILVER_DRAGON,
                             };
                             let rs = std::sync::Arc::clone(&self.ruleset);
                             if let Some(arch) = rs.monster_by_id(species) {
@@ -753,7 +755,7 @@ impl SimulationWorld {
                     if branch == BranchId::DungeonsOfDoom && depth == 5 {
                         if let Some(deepest_room) = self.level.rooms.last() {
                             if let Some(amulet) = self.ruleset.create_item_record_by_id(
-                                ItemKindId::AmuletOfYendor,
+                                ItemKindId::AMULET_OF_YENDOR,
                                 ItemLocation::Floor(deepest_room.center()),
                                 Buc::Blessed,
                             ) {

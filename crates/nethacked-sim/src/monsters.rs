@@ -516,7 +516,7 @@ impl SimulationWorld {
                     }
                     if self.level.is_passable(neighbor) && self.actor_at(neighbor).is_none() {
                         let rs = std::sync::Arc::clone(&self.ruleset);
-                        if let Some(arch) = rs.monster_by_id(MonsterSpeciesId::Skeleton) {
+                        if let Some(arch) = rs.monster_by_id(MonsterSpeciesId::SKELETON) {
                             if !nethacked_core::genocide::is_genocided(
                                 &self.genocide_registry,
                                 &arch.name,
@@ -727,7 +727,7 @@ mod tests {
         sim.arena.actors.get_mut(pid).unwrap().coord = hero;
         let mut rec = sim
             .ruleset
-            .create_monster_record_by_id(MonsterSpeciesId::RedDragon, Coord::new_unchecked(13, 10))
+            .create_monster_record_by_id(MonsterSpeciesId::RED_DRAGON, Coord::new_unchecked(13, 10))
             .unwrap();
         rec.mspec_used = 5;
         let id = sim.arena.spawn_actor(rec);
