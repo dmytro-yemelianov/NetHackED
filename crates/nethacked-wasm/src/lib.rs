@@ -190,6 +190,7 @@ impl WasmGameSession {
                     serde_json::json!({
                         "index": idx,
                         "name": it.name,
+                        "display_name": nethacked_i18n::t_item(&it.name, self.session.world.locale),
                         "class": format!("{:?}", it.class),
                         "weight": it.weight,
                         "buc": format!("{:?}", it.buc),
@@ -612,9 +613,75 @@ pub fn run_tactical_trajectory(seed: u64, max_turns: u32) -> String {
     serde_json::to_string(&traj).unwrap_or_default()
 }
 
+/// Localized labels the clean terminal page draws itself: role and race
+/// names and the status-line labels, for `locale` (`"en"` / `"uk"`).
+#[wasm_bindgen(js_name = uiStringsJson)]
+pub fn ui_strings_json(locale: &str) -> String {
+    use nethacked_i18n::t;
+    let loc = nethacked_types::Locale::parse(locale);
+    let uk = loc == nethacked_types::Locale::Uk;
+    let roles = serde_json::json!({
+        "valkyrie": t("role.valkyrie", loc),
+        "wizard": t("role.wizard", loc),
+        "barbarian": t("role.barbarian", loc),
+        "rogue": t("role.rogue", loc),
+        "knight": t("role.knight", loc),
+        "monk": t("role.monk", loc),
+        "healer": t("role.healer", loc),
+        "tourist": t("role.tourist", loc),
+        "archaeologist": t("role.archaeologist", loc),
+    });
+    let race = |en: &'static str, ua: &'static str| if uk { ua } else { en };
+    let races = serde_json::json!({
+        "human": race("human", "людина"),
+        "elf": race("elf", "ельф"),
+        "dwarf": race("dwarf", "дворф"),
+        "gnome": race("gnome", "гном"),
+        "orc": race("orc", "орк"),
+    });
+    let status = serde_json::json!({
+        "dlvl": t("dlvl", loc),
+        "gold": t("gold", loc),
+        "hp": t("hp", loc),
+        "pw": t("pw", loc),
+        "ac": t("ac", loc),
+        "turn": t("turn", loc),
+    });
+    serde_json::json!({ "role": roles, "race": races, "status": status }).to_string()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn inventory_has_localized_display_name() {
+        let mut s = WasmGameSession::new_with_character(7, "valkyrie", "human", "T").unwrap();
+        let en: serde_json::Value = serde_json::from_str(&s.get_inventory_json()).unwrap();
+        assert_eq!(en[0]["display_name"], en[0]["name"]);
+        s.set_locale("uk");
+        let uk: serde_json::Value = serde_json::from_str(&s.get_inventory_json()).unwrap();
+        assert_eq!(uk[0]["name"], "long sword");
+        assert_eq!(uk[0]["display_name"], "довгий меч");
+    }
+
+    #[test]
+    fn ui_strings_cover_roles_races_and_status_labels() {
+        let uk: serde_json::Value = serde_json::from_str(&ui_strings_json("uk")).unwrap();
+        assert_eq!(uk["role"]["valkyrie"], "Валькірія");
+        assert_eq!(
+            uk["role"]["archaeologist"].as_str().map(|s| s.is_empty()),
+            Some(false)
+        );
+        assert_eq!(
+            uk["race"]["human"].as_str().map(|s| s.is_empty()),
+            Some(false)
+        );
+        assert_eq!(uk["status"]["turn"], "Хід");
+        let en: serde_json::Value = serde_json::from_str(&ui_strings_json("en")).unwrap();
+        assert_eq!(en["role"]["valkyrie"], "Valkyrie");
+        assert_eq!(en["status"]["turn"], "Turn");
+    }
 
     #[test]
     fn step_rejects_unknown_action_without_advancing() {

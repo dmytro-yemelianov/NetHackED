@@ -3,44 +3,121 @@
 // URL options: ?pack=<bundled pack id>  ?lang=uk  ?seed=<n>
 
 const BASE = document.querySelector('meta[name="nethacked-base"]')?.content ?? '../';
-const wasm = await import(`${BASE}pkg/nethacked_wasm.js`);
-await wasm.default();
+// Build id from the deploy: versioned URLs so a browser never pairs a cached
+// old wasm module with new page code.
+const BUILD = document.querySelector('meta[name="nethacked-build"]')?.content ?? 'dev';
+const wasm = await import(`${BASE}pkg/nethacked_wasm.js?v=${BUILD}`);
+await wasm.default({ module_or_path: `${BASE}pkg/nethacked_wasm_bg.wasm?v=${BUILD}` });
 const { WasmGameSession, WasmPack } = wasm;
 
 const COLS = 80;
 const ROWS = 24;
 const term = document.getElementById('term');
 const params = new URLSearchParams(location.search);
+const LANG = params.get('lang') === 'uk' ? 'uk' : 'en';
+document.documentElement.lang = LANG;
+// Role, race and status-label names come from the engine's i18n tables.
+const UI = JSON.parse(wasm.uiStringsJson(LANG));
+
+// Text the page draws itself (engine messages are localized by the engine).
+const STR = {
+  en: {
+    tagline: 'NetHackED — classic NetHack in Rust and WebAssembly',
+    pick: "Shall I pick a character's role for you?",
+    random: 'Random',
+    pickHint: '(end with a letter; ? for help after the game starts)',
+    pack: 'Rule pack',
+    hero: 'Hero',
+    welcome: (name, align, role) => `Hello ${name}, welcome to NetHackED!  You are a ${align.toLowerCase()} ${role.toLowerCase()}.  (? for help)`,
+    title: (name, role) => `${name} the ${role}`,
+    more: '--More--',
+    die: 'You die...  (press any key to start a new game)',
+    inventory: 'Inventory',
+    empty: 'Not carrying anything.',
+    anyKey: '(press any key)',
+    unpaid: (n) => ` (unpaid, ${n} zorkmids)`,
+    buc: { Blessed: 'blessed ', Cursed: 'cursed ' },
+    nothingTo: (verb) => `You don't have anything to ${verb}.`,
+    whatTo: (verb, last) => `What do you want to ${verb}? [a-${last} or ?*]`,
+    noObject: "You don't have that object.",
+    never: 'Never mind.',
+    direction: 'In what direction?',
+    strangeDir: 'What a strange direction!',
+    engrave: 'What do you want to write in the dust here? ',
+    unknown: (k) => `Unknown command '${k}'.  (? for help)`,
+    packFail: (e) => `Could not load pack: ${e}`,
+    verbs: { eat: 'eat', quaff: 'drink', read: 'read', wield: 'wield', drop: 'drop', apply: 'use or apply', rub: 'rub', sacrifice: 'sacrifice' },
+  },
+  uk: {
+    tagline: 'NetHackED — класичний NetHack на Rust і WebAssembly',
+    pick: 'Обрати роль персонажа замість вас?',
+    random: 'Випадково',
+    pickHint: '(натисніть літеру; ? — довідка після початку гри)',
+    pack: 'Набір правил',
+    hero: 'Герой',
+    welcome: (name, align, role) => `Вітаємо, ${name}, у NetHackED!  Ви — ${role}, шлях: ${align.toLowerCase()}.  (? — довідка)`,
+    title: (name, role) => `${name} — ${role}`,
+    more: '--Далі--',
+    die: 'Ви загинули...  (натисніть будь-яку клавішу, щоб почати нову гру)',
+    inventory: 'Інвентар',
+    empty: 'У вас нічого немає.',
+    anyKey: '(натисніть будь-яку клавішу)',
+    unpaid: (n) => ` (не оплачено, ${n} золотих)`,
+    buc: { Blessed: 'благословенний ', Cursed: 'проклятий ' },
+    nothingTo: (verb) => `У вас немає нічого, що можна ${verb}.`,
+    whatTo: (verb, last) => `Що ви хочете ${verb}? [a-${last} або ?*]`,
+    noObject: 'У вас немає такого предмета.',
+    never: 'Гаразд, не треба.',
+    direction: 'У якому напрямку?',
+    strangeDir: 'Дивний напрямок!',
+    engrave: 'Що ви хочете написати в пилу тут? ',
+    unknown: (k) => `Невідома команда '${k}'.  (? — довідка)`,
+    packFail: (e) => `Не вдалося завантажити набір правил: ${e}`,
+    verbs: { eat: "з'їсти", quaff: 'випити', read: 'прочитати', wield: 'взяти в руки', drop: 'викинути', apply: 'застосувати', rub: 'потерти', sacrifice: 'принести в жертву' },
+  },
+}[LANG];
 
 const ROLES = [
-  ['valkyrie', 'human', 'Valkyrie'],
-  ['wizard', 'human', 'Wizard'],
-  ['barbarian', 'orc', 'Barbarian'],
-  ['rogue', 'human', 'Rogue'],
-  ['knight', 'dwarf', 'Knight'],
-  ['monk', 'human', 'Monk'],
-  ['healer', 'gnome', 'Healer'],
-  ['tourist', 'human', 'Tourist'],
-  ['archaeologist', 'human', 'Archaeologist'],
-];
+  ['valkyrie', 'human'],
+  ['wizard', 'human'],
+  ['barbarian', 'orc'],
+  ['rogue', 'human'],
+  ['knight', 'dwarf'],
+  ['monk', 'human'],
+  ['healer', 'gnome'],
+  ['tourist', 'human'],
+  ['archaeologist', 'human'],
+].map(([role, race]) => [role, race, UI.role[role] || role, UI.race[race] || race]);
 
 const DIRS = { h: 'west', j: 'south', k: 'north', l: 'east', y: 'northwest', u: 'northeast', b: 'southwest', n: 'southeast' };
 const ARROWS = { ArrowLeft: 'h', ArrowDown: 'j', ArrowUp: 'k', ArrowRight: 'l' };
 
 // Item commands: key -> [action, verb for the prompt].
-const ITEM_CMDS = {
-  e: ['eat', 'eat'],
-  q: ['quaff', 'drink'],
-  r: ['read', 'read'],
-  w: ['wield', 'wield'],
-  d: ['drop', 'drop'],
-  a: ['apply', 'use or apply'],
-  R: ['rub', 'rub'],
-  S: ['sacrifice', 'sacrifice'],
-};
+const ITEM_CMDS = Object.fromEntries(
+  Object.entries({ e: 'eat', q: 'quaff', r: 'read', w: 'wield', d: 'drop', a: 'apply', R: 'rub', S: 'sacrifice' })
+    .map(([k, action]) => [k, [action, STR.verbs[action]]]),
+);
 const DIR_CMDS = { x: ['cast', 'cast'], z: ['zap', 'zap'], f: ['fire', 'fire'], F: ['kick', 'kick'] };
 
-const HELP = [
+const HELP_UK = [
+  'Клавіші NetHackED',
+  '',
+  ' y k u    рух: h j k l y u b n (або стрілки)',
+  '  \\|/     .  чекати        s  шукати        ,  підняти',
+  ' h-.-l    <  вгору         >  вниз          i  інвентар',
+  '  /|\\     e  їсти          q  пити          r  читати',
+  ' b j n    w  зброя         d  викинути      a  застосувати',
+  '          R  потерти       x  закляття      z  жезл',
+  '          f  стріляти      F  копнути       E  написати',
+  '          p  платити       P  молитися      S  жертва',
+  '          ?  довідка       Esc скасовує запит',
+  '',
+  'Параметри URL: ?pack=hard-mode  ?lang=uk  ?seed=42',
+  '',
+  '(натисніть будь-яку клавішу)',
+];
+
+const HELP_EN = [
   'NetHackED keys',
   '',
   ' y k u    move: h j k l y u b n (or arrow keys)',
@@ -57,6 +134,7 @@ const HELP = [
   '',
   '(press any key)',
 ];
+const HELP = LANG === 'uk' ? HELP_UK : HELP_EN;
 
 let session = null;
 let mode = 'pick'; // pick | play | item | dir | text | overlay | over
@@ -105,10 +183,17 @@ function colorLine(line) {
 
 function statusLines() {
   const name = session.get_player_name();
-  const align = params.get('lang') === 'uk' ? session.get_localized_alignment() : session.get_player_alignment();
-  const hunger = params.get('lang') === 'uk' ? session.get_localized_hunger_state() : session.get_hunger_state();
-  const l1 = `${name} the ${roleLabel}  ${align}${packLabel ? `  [${packLabel}]` : ''}`;
-  const l2 = `Dlvl:${session.get_depth()} $:${session.get_player_gold()} HP:${session.get_player_hp()}(${session.get_player_max_hp()}) Pw:${session.get_player_pw()}(${session.get_player_max_pw()}) AC:${session.get_player_ac()} T:${session.get_turn()}${hunger && hunger !== 'Normal' && hunger !== 'Не голодний' ? ' ' + hunger : ''}`;
+  const align = LANG === 'uk' ? session.get_localized_alignment() : session.get_player_alignment();
+  // Show hunger only when it is not the normal state (canonical English name).
+  const hungerState = session.get_hunger_state();
+  const hunger = hungerState === 'Normal' ? '' : ' ' + (LANG === 'uk' ? session.get_localized_hunger_state() : hungerState);
+  const l1 = `${STR.title(name, roleLabel)}  ${align}${packLabel ? `  [${packLabel}]` : ''}`;
+  const hp = `${session.get_player_hp()}(${session.get_player_max_hp()})`;
+  const pw = `${session.get_player_pw()}(${session.get_player_max_pw()})`;
+  const l2 =
+    LANG === 'uk'
+      ? `${UI.status.dlvl}:${session.get_depth()} ${UI.status.gold}:${session.get_player_gold()} ${UI.status.hp}:${hp} ${UI.status.pw}:${pw} ${UI.status.ac}:${session.get_player_ac()} ${UI.status.turn}:${session.get_turn()}${hunger}`
+      : `Dlvl:${session.get_depth()} $:${session.get_player_gold()} HP:${hp} Pw:${pw} AC:${session.get_player_ac()} T:${session.get_turn()}${hunger}`;
   return [l1, l2];
 }
 
@@ -117,7 +202,7 @@ function draw() {
   if (mode === 'pick') {
     lines.push(...pickScreen());
   } else {
-    const msg = messages.length ? `${messages[0]}${messages.length > 1 ? '--More--' : ''}` : message;
+    const msg = messages.length ? `${messages[0]}${messages.length > 1 ? STR.more : ''}` : message;
     lines.push(pad(msg));
     const map = session.render_ascii().split('\n');
     for (let y = 0; y < 21; y++) lines.push(pad(map[y] ?? ''));
@@ -143,15 +228,15 @@ function draw() {
 function pickScreen() {
   const out = [
     '',
-    '  NetHackED — classic NetHack in Rust and WebAssembly',
+    `  ${STR.tagline}`,
     '  from Yemelianov (Emelyanov Dmytro)',
     '',
-    '  Shall I pick a character\'s role for you?',
+    `  ${STR.pick}`,
     '',
   ];
-  ROLES.forEach(([, race, label], i) => out.push(`    ${String.fromCharCode(97 + i)} - ${label} (${race})`));
-  out.push('', '    * - Random', '', '  (end with a letter; ? for help after the game starts)');
-  if (packLabel) out.push('', `  Rule pack: ${packLabel}`);
+  ROLES.forEach(([, , label, raceLabel], i) => out.push(`    ${String.fromCharCode(97 + i)} - ${label} (${raceLabel})`));
+  out.push('', `    * - ${STR.random}`, '', `  ${STR.pickHint}`);
+  if (packLabel) out.push('', `  ${STR.pack}: ${packLabel}`);
   return out.map(pad);
 }
 
@@ -172,14 +257,14 @@ function pushEvents(res) {
   let line = '';
   for (const t of texts) {
     if (!line) line = t;
-    else if ((line + '  ' + t).length <= COLS - 8) line += '  ' + t;
+    else if ((line + '  ' + t).length <= COLS - STR.more.length) line += '  ' + t;
     else { messages.push(line); line = t; }
   }
   if (line) messages.push(line);
   message = messages.length === 1 ? messages.shift() : '';
   if (res.is_game_over) {
     mode = 'over';
-    messages.push('You die...  (press any key to start a new game)');
+    messages.push(STR.die);
   }
 }
 
@@ -202,36 +287,36 @@ function inventory() {
 
 function invLines(title) {
   const items = inventory();
-  if (!items.length) return [title, '', 'Not carrying anything.', '', '(press any key)'];
+  if (!items.length) return [title, '', STR.empty, '', STR.anyKey];
   return [
     title,
     '',
     ...items.map((it) => {
       const letter = String.fromCharCode(97 + it.index);
-      const buc = it.buc && it.buc !== 'Uncursed' ? `${it.buc.toLowerCase()} ` : '';
+      const buc = STR.buc[it.buc] || '';
       const ench = it.enchantment ? `${it.enchantment > 0 ? '+' : ''}${it.enchantment} ` : '';
-      const cost = it.unpaid_cost ? ` (unpaid, ${it.unpaid_cost} zorkmids)` : '';
-      return `${letter} - ${buc}${ench}${it.name}${cost}`;
+      const cost = it.unpaid_cost ? STR.unpaid(it.unpaid_cost) : '';
+      return `${letter} - ${buc}${ench}${it.display_name || it.name}${cost}`;
     }),
     '',
-    '(press any key)',
+    STR.anyKey,
   ];
 }
 
 function itemPrompt(action, verb) {
   const items = inventory();
   if (!items.length) {
-    message = "You don't have anything to " + verb + '.';
+    message = STR.nothingTo(verb);
     return;
   }
   const last = String.fromCharCode(96 + items.length);
-  message = `What do you want to ${verb}? [a-${last} or ?*]`;
+  message = STR.whatTo(verb, last);
   mode = 'item';
   pending = { action, verb, count: items.length };
 }
 
 function dirPrompt(action) {
-  message = 'In what direction?';
+  message = STR.direction;
   mode = 'dir';
   pending = { action };
 }
@@ -247,20 +332,20 @@ async function newGame(roleIdx) {
       const entry = index.find((p) => p.id === packId);
       if (!entry) throw new Error(`unknown pack "${packId}"`);
       const bytes = new Uint8Array(await (await fetch(`${BASE}packs/${entry.file}`)).arrayBuffer());
-      session = WasmGameSession.newWithPack(seed, role, race, 'Hero', WasmPack.fromNhpack(bytes));
+      session = WasmGameSession.newWithPack(seed, role, race, STR.hero, WasmPack.fromNhpack(bytes));
     } else {
-      session = WasmGameSession.new_with_character(seed, role, race, 'Hero');
+      session = WasmGameSession.new_with_character(seed, role, race, STR.hero);
     }
   } catch (e) {
-    session = WasmGameSession.new_with_character(seed, role, race, 'Hero');
-    message = `Could not load pack: ${e.message || e}`;
+    session = WasmGameSession.new_with_character(seed, role, race, STR.hero);
+    message = STR.packFail(e.message || e);
     packLabel = '';
   }
   if (params.get('lang') === 'uk') session.set_locale('uk');
   messages = [];
   if (!message) {
-    const align = session.get_player_alignment().toLowerCase();
-    message = `Hello Hero, welcome to NetHackED!  You are a ${align} ${ROLES[roleIdx][2].toLowerCase()}.  (? for help)`;
+    const align = LANG === 'uk' ? session.get_localized_alignment() : session.get_player_alignment();
+    message = STR.welcome(STR.hero, align, label);
   }
   mode = 'play';
 }
@@ -306,9 +391,9 @@ function onKey(e) {
 
   if (mode === 'item') {
     if (key === 'Escape') {
-      message = 'Never mind.';
+      message = STR.never;
     } else if (key === '?' || key === '*') {
-      overlay = invLines('Inventory');
+      overlay = invLines(STR.inventory);
       draw();
       overlay = null;
       return;
@@ -317,7 +402,7 @@ function onKey(e) {
       if (key.length === 1 && idx >= 0 && idx < pending.count) {
         act(pending.action, String(idx));
       } else {
-        message = 'You don\'t have that object.';
+        message = STR.noObject;
       }
     }
     mode = 'play';
@@ -327,9 +412,9 @@ function onKey(e) {
   }
 
   if (mode === 'dir') {
-    if (key === 'Escape') message = 'Never mind.';
+    if (key === 'Escape') message = STR.never;
     else if (DIRS[key]) act(pending.action, DIRS[key]);
-    else message = 'What a strange direction!';
+    else message = STR.strangeDir;
     mode = 'play';
     pending = null;
     draw();
@@ -338,13 +423,13 @@ function onKey(e) {
 
   if (mode === 'text') {
     if (key === 'Escape') {
-      message = 'Never mind.';
+      message = STR.never;
       mode = 'play';
     } else if (key === 'Enter') {
       const text = pending.text.trim();
       mode = 'play';
       if (text) act(pending.action, text);
-      else message = 'Never mind.';
+      else message = STR.never;
     } else if (key === 'Backspace') {
       pending.text = pending.text.slice(0, -1);
       message = pending.prompt + pending.text;
@@ -366,15 +451,15 @@ function onKey(e) {
   else if (key === '>') act('descend');
   else if (key === 'p') act('pay');
   else if (key === 'P') act('pray');
-  else if (key === 'i') { overlay = invLines('Inventory'); mode = 'overlay'; }
+  else if (key === 'i') { overlay = invLines(STR.inventory); mode = 'overlay'; }
   else if (key === '?') { overlay = HELP; mode = 'overlay'; }
   else if (ITEM_CMDS[key]) itemPrompt(...ITEM_CMDS[key]);
   else if (DIR_CMDS[key]) dirPrompt(DIR_CMDS[key][0]);
   else if (key === 'E') {
-    pending = { action: 'engrave', prompt: 'What do you want to write in the dust here? ', text: '' };
+    pending = { action: 'engrave', prompt: STR.engrave, text: '' };
     message = pending.prompt;
     mode = 'text';
-  } else if (key !== 'Escape') message = `Unknown command '${key}'.  (? for help)`;
+  } else if (key !== 'Escape') message = STR.unknown(key);
   draw();
 }
 

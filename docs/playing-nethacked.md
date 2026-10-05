@@ -50,10 +50,12 @@ When several messages arrive in one turn, they are shown one line at a time with
 | Option | Effect |
 |---|---|
 | `?pack=hard-mode` | Play on a bundled rule pack. Its id is shown in the status line |
-| `?lang=uk` | Ukrainian messages and status words |
+| `?lang=uk` | Ukrainian: the page's own text (role menu, prompts, help, status labels) and the engine's messages and item names |
 | `?seed=42` | A fixed seed, so the same keys replay the same game |
 
 Options can be combined, for example `https://nethacked.yemelianov.dev/?pack=hard-mode&seed=7`.
+
+![Ukrainian, on the Hard Mode pack](images/play-uk.png)
 
 ---
 
