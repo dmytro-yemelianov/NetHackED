@@ -132,7 +132,20 @@ pub fn load_nrpack_bytes(bytes: &[u8]) -> Result<(Arc<Ruleset>, RulesetRef, NrPa
             found: computed,
         });
     }
+    // The hash covers only `ruleset`; the outer manifest must agree with it.
+    if nrpack.manifest != nrpack.ruleset.manifest {
+        return Err(PackError::Io(
+            "pack manifest does not match the hashed ruleset manifest".into(),
+        ));
+    }
+    crate::files::check_manifest_ident(&nrpack.manifest.id, &nrpack.manifest.version)?;
     nrpack.ruleset.reindex();
+    // Anyone can recompute the hash, so a loaded pack must still validate
+    // (after reindex: validation looks entries up by name).
+    let report = validate(&nrpack.ruleset);
+    if report.has_errors() {
+        return Err(PackError::Invalid(report));
+    }
     let ruleset_ref = RulesetRef {
         id: nrpack.manifest.id.clone(),
         version: nrpack.manifest.version.clone(),

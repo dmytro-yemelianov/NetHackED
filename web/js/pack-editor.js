@@ -2,6 +2,7 @@
 import { loadWasm } from './wasm.js';
 import { packsState as state, render, downloadBytes } from './packs.js';
 import { savePack } from './pack-store.js';
+import { parseEntries, serializeEntries } from './toml-lite.js';
 
 const FILES = { monsters: 'monsters.toml', items: 'items.toml', roles: 'roles.toml' };
 const ARRAY_KEY = { monsters: 'monster', items: 'item', roles: 'role' };
@@ -30,48 +31,6 @@ function loadSchemas() {
     })();
   }
   return schemasPromise;
-}
-
-// Minimal TOML for flat patch entries: [[monster]] tables with scalar fields.
-// Entries containing complex fields are written back verbatim from raw text.
-function parseEntries(text, arrayKey) {
-  const entries = [];
-  const preamble = [];
-  let cur = null;
-  let lossy = false;
-  for (const raw of text.split('\n')) {
-    const line = raw.trim();
-    if (line === `[[${arrayKey}]]`) { cur = { fields: {}, complex: false }; entries.push(cur); continue; }
-    if (!cur) {
-      if (line.startsWith('[')) lossy = true; // a non-entry table we do not model
-      preamble.push(raw);
-      continue;
-    }
-    if (line.startsWith('[')) { lossy = true; cur = null; continue; }
-    if (line.startsWith('#')) { lossy = true; continue; }
-    const m = line.match(/^([A-Za-z0-9_]+)\s*=\s*(.+)$/);
-    if (!m) continue;
-    const [, k, v] = m;
-    if (COMPLEX.has(k) || v.startsWith('[') || v.startsWith('{')) { cur.complex = true; cur.fields[k] = { raw: v }; continue; }
-    cur.fields[k] = v === 'true' ? true : v === 'false' ? false : /^-?\d+(\.\d+)?$/.test(v) ? Number(v) : v.replace(/^"(.*)"$/, '$1');
-  }
-  while (preamble.length && !preamble[preamble.length - 1].trim()) preamble.pop();
-  entries.preamble = preamble.join('\n');
-  entries.lossy = lossy || entries.some((e) => e.complex);
-  return entries;
-}
-
-function tomlValue(v) {
-  if (v && typeof v === 'object' && 'raw' in v) return v.raw;
-  if (typeof v === 'boolean' || typeof v === 'number') return String(v);
-  return JSON.stringify(String(v)); // TOML basic string == JSON string for our content
-}
-
-function serializeEntries(entries, arrayKey) {
-  const body = entries
-    .map((e) => [`[[${arrayKey}]]`, ...Object.entries(e.fields).map(([k, v]) => `${k} = ${tomlValue(v)}`)].join('\n'))
-    .join('\n\n');
-  return [entries.preamble, body].filter(Boolean).join('\n\n') + '\n';
 }
 
 function propType(schema, prop) {

@@ -27,6 +27,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Install wasm-pack
         run: curl -sSf https://rustwasm.github.io/wasm-pack/installer/init.sh | sh
+      - name: Pack editor TOML tests
+        run: node --test web/js/toml-lite.test.mjs
       - name: Build site
         run: scripts/build-web.sh --release
       - name: Check bundled pack index

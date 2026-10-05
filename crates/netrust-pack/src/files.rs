@@ -52,6 +52,31 @@ impl PackFiles {
     }
 }
 
+fn ident_ok(s: &str, max: usize, extra: &[char]) -> bool {
+    let mut chars = s.chars();
+    matches!(chars.next(), Some(c) if c.is_ascii_alphanumeric())
+        && s.len() <= max
+        && chars.all(|c| c.is_ascii_alphanumeric() || extra.contains(&c))
+}
+
+/// Pack `id` and `version` end up in file names (`<id>-<version>.nrpack`) and
+/// UI labels, so restrict them to safe slugs: no path separators, no leading
+/// dot. `id`: `[A-Za-z0-9][A-Za-z0-9._-]{0,63}`; `version`:
+/// `[A-Za-z0-9][A-Za-z0-9.+-]{0,31}`.
+pub(crate) fn check_manifest_ident(id: &str, version: &str) -> Result<(), PackError> {
+    let bad = |field: &str, value: &str, rule: &str| PackError::Toml {
+        file: "pack.toml".into(),
+        message: format!("invalid {field} {value:?}: must match {rule}"),
+    };
+    if !ident_ok(id, 64, &['.', '_', '-']) {
+        return Err(bad("id", id, "[A-Za-z0-9][A-Za-z0-9._-]{0,63}"));
+    }
+    if !ident_ok(version, 32, &['.', '+', '-']) {
+        return Err(bad("version", version, "[A-Za-z0-9][A-Za-z0-9.+-]{0,31}"));
+    }
+    Ok(())
+}
+
 fn parse_toml<T: serde::de::DeserializeOwned>(file: &str, text: &str) -> Result<T, PackError> {
     toml::from_str(text).map_err(|e| PackError::Toml {
         file: file.into(),
@@ -72,6 +97,7 @@ pub fn parse_pack_files(files: &PackFiles) -> Result<PackDir, PackError> {
             message: "only base = \"vanilla\" is supported in this version".into(),
         });
     }
+    check_manifest_ident(&manifest.id, &manifest.version)?;
 
     let monsters = match m.get("monsters.toml") {
         Some(t) => parse_toml::<MonstersToml>("monsters.toml", t)?.monster,

@@ -95,7 +95,14 @@ pub fn resolve_installed(dir: &Path, id: &str) -> Option<InstalledPack> {
 pub fn install_pack(src: &Path, dir: &Path, force: bool) -> Result<InstalledPack, PackError> {
     let (p, _) = load_any(src)?;
     std::fs::create_dir_all(dir).map_err(|e| PackError::Io(format!("{}: {e}", dir.display())))?;
-    let path = dir.join(format!("{}-{}.nrpack", p.manifest.id, p.manifest.version));
+    let file_name = format!("{}-{}.nrpack", p.manifest.id, p.manifest.version);
+    let path = dir.join(&file_name);
+    // load_any already enforced safe id/version; never write outside `dir`.
+    if path.parent() != Some(dir) || file_name.contains(['/', '\\']) {
+        return Err(PackError::Io(format!(
+            "unsafe pack file name {file_name:?}"
+        )));
+    }
     if path.exists() && !force {
         let existing = std::fs::read(&path)
             .ok()

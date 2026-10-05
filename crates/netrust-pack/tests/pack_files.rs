@@ -110,3 +110,58 @@ fn vanilla_pack_files_rebuild_to_vanilla_hash() {
     vanilla.manifest = p.ruleset.manifest.clone();
     assert_eq!(p.hash, ruleset_hash(&vanilla));
 }
+
+fn with_manifest(id: &str, version: &str) -> PackFiles {
+    let mut files = read_pack_files_from_dir(Path::new(HARD_MODE)).unwrap();
+    files.0.insert(
+        "pack.toml".into(),
+        format!("id = \"{id}\"\nname = \"X\"\nversion = \"{version}\"\nbase = \"vanilla\"\n"),
+    );
+    files
+}
+
+#[test]
+fn build_rejects_path_like_ids_and_versions() {
+    for (id, version) in [
+        ("../evil", "1.0.0"),
+        ("/tmp/evil", "1.0.0"),
+        ("a/b", "1.0.0"),
+        (".hidden", "1.0.0"),
+        ("", "1.0.0"),
+        ("ok", "../1"),
+        ("ok", "1/2"),
+    ] {
+        let err = build_from_files(&with_manifest(id, version)).unwrap_err();
+        assert!(
+            format!("{err}").contains("pack.toml"),
+            "{id} {version}: {err}"
+        );
+    }
+    assert!(build_from_files(&with_manifest("My_Pack.v2", "1.2.3-rc.1+b5")).is_ok());
+}
+
+#[test]
+fn load_nrpack_bytes_rejects_mismatched_outer_manifest() {
+    let (mut p, _) = build(Path::new(HARD_MODE)).unwrap();
+    p.manifest.id = "someone-else".into();
+    let err = load_nrpack_bytes(&nrpack_to_bytes(&p)).unwrap_err();
+    assert!(format!("{err}").contains("manifest"), "{err}");
+}
+
+#[test]
+fn load_nrpack_bytes_rejects_rehashed_invalid_ruleset() {
+    let (mut p, _) = build(Path::new(HARD_MODE)).unwrap();
+    p.ruleset.monsters.clear();
+    p.hash = ruleset_hash(&p.ruleset);
+    let err = load_nrpack_bytes(&nrpack_to_bytes(&p)).unwrap_err();
+    assert!(matches!(err, PackError::Invalid(_)), "{err}");
+}
+
+#[test]
+fn load_nrpack_bytes_rejects_path_like_id_even_when_rehashed() {
+    let (mut p, _) = build(Path::new(HARD_MODE)).unwrap();
+    p.manifest.id = "../evil".into();
+    p.ruleset.manifest.id = "../evil".into();
+    p.hash = ruleset_hash(&p.ruleset);
+    assert!(load_nrpack_bytes(&nrpack_to_bytes(&p)).is_err());
+}
