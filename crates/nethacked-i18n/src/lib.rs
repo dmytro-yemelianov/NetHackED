@@ -97,6 +97,7 @@ pub const ALL_KEYS: &[&str] = &[
     "tui.zap_prompt",
     "tui.miss",
     "tui.none",
+    "tui.more",
     "tui.cmd_bar",
     "help.west",
     "help.south",
@@ -134,6 +135,7 @@ pub const ALL_KEYS: &[&str] = &[
     "help.lang",
     "help.help",
     "help.ext",
+    "help.prevmsg",
 ];
 
 /// Lowercase monster/item names that are genuinely identical in Ukrainian.
@@ -239,6 +241,7 @@ pub fn t(key: &'static str, locale: Locale) -> &'static str {
             "tui.zap_prompt" => "Zap wand in what direction? [h/j/k/l/y/u/b/n]: ",
             "tui.miss" => "You miss the monster.",
             "tui.none" => "none",
+            "tui.more" => "--More--",
             "tui.cmd_bar" => {
                 "[hjkl: Move | s: Search | f: Fire | #: Commands | ?: Help | Esc: Quit]"
             }
@@ -278,6 +281,7 @@ pub fn t(key: &'static str, locale: Locale) -> &'static str {
             "help.lang" => "Language UK/EN",
             "help.help" => "This help",
             "help.ext" => "Ext. command (#e/#c)",
+            "help.prevmsg" => "Previous message",
             _ => key,
         },
         Locale::Uk => match key {
@@ -374,6 +378,7 @@ pub fn t(key: &'static str, locale: Locale) -> &'static str {
             "tui.zap_prompt" => "Куди спрямувати жезл? [h/j/k/l/y/u/b/n]: ",
             "tui.miss" => "Ви промахуєтесь повз чудовисько.",
             "tui.none" => "пусто",
+            "tui.more" => "--Далі--",
             "tui.cmd_bar" => {
                 "[hjkl: Рух | s: Пошук | f: Вогонь | #: Команди | ?: Довідка | Esc: Вихід]"
             }
@@ -413,6 +418,7 @@ pub fn t(key: &'static str, locale: Locale) -> &'static str {
             "help.lang" => "Мова UK/EN",
             "help.help" => "Ця довідка",
             "help.ext" => "Розш. команда (#e/#c)",
+            "help.prevmsg" => "Попереднє повідомлення",
             _ => key,
         },
     }
@@ -584,6 +590,22 @@ impl Messages {
         match locale {
             Locale::En => format!("The door is now {state}."),
             Locale::Uk => format!("Стан дверей: {state}."),
+        }
+    }
+
+    /// "The door opens." (lock.c:906 `pline_The("door opens.")`).
+    pub fn door_opens(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "The door opens.",
+            Locale::Uk => "Двері відчиняються.",
+        }
+    }
+
+    /// "The door closes." (lock.c:1040 `pline_The("door closes.")`).
+    pub fn door_closes(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "The door closes.",
+            Locale::Uk => "Двері зачиняються.",
         }
     }
 

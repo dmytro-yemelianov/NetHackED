@@ -46,9 +46,8 @@ const STR = {
     displayKeys: 'F2 system  F3 palette  F4 effects',
     pack: 'Rule pack',
     hero: 'Hero',
-    welcome: (name, align, role) => `Hello ${name}, welcome to NetHackED!  You are a ${align.toLowerCase()} ${role.toLowerCase()}.  (? for help)`,
+    welcome: (name, align, role) => `Hello ${name}, welcome to NetHackED!  You are a ${align.toLowerCase()} ${role.toLowerCase()}.`,
     title: (name, role) => `${name} the ${role}`,
-    more: '--More--',
     die: 'You die...  (press any key to start a new game)',
     inventory: 'Inventory',
     empty: 'Not carrying anything.',
@@ -74,9 +73,8 @@ const STR = {
     displayKeys: 'F2 система  F3 палітра  F4 ефекти',
     pack: 'Набір правил',
     hero: 'Герой',
-    welcome: (name, align, role) => `Вітаємо, ${name}, у NetHackED!  Ви — ${role}, шлях: ${align.toLowerCase()}.  (? — довідка)`,
+    welcome: (name, align, role) => `Вітаємо, ${name}, у NetHackED!  Ви — ${role}, шлях: ${align.toLowerCase()}.`,
     title: (name, role) => `${name} — ${role}`,
-    more: '--Далі--',
     die: 'Ви загинули...  (натисніть будь-яку клавішу, щоб почати нову гру)',
     inventory: 'Інвентар',
     empty: 'У вас нічого немає.',
@@ -130,6 +128,7 @@ const HELP_UK = [
   '          f  стріляти      F  копнути       E  написати',
   '          p  платити       P  молитися      S  жертва',
   '          ?  довідка       Esc скасовує запит',
+  '          ^P попереднє повідомлення',
   '          F2 система       F3 палітра       F4 ефекти',
   '',
   'Параметри URL: ?pack=hard-mode  ?lang=uk  ?seed=42',
@@ -149,6 +148,7 @@ const HELP_EN = [
   '          f  fire          F  kick          E  engrave',
   '          p  pay           P  pray          S  sacrifice',
   '          ?  this help     Esc cancels a prompt',
+  '          ^P previous message',
   '          F2 system        F3 palette       F4 effects',
   '',
   'URL options: ?pack=hard-mode  ?lang=uk  ?seed=42',
@@ -160,11 +160,15 @@ const HELP = LANG === 'uk' ? HELP_UK : HELP_EN;
 let session = null;
 let mode = 'pick'; // pick | play | item | dir | text | overlay | over
 let pending = null; // prompt state
-let messages = []; // queued messages (shown with --More--)
-let message = '';
 let overlay = null; // lines drawn over the map
 let packLabel = '';
 let roleLabel = '';
+
+// The message line lives in the engine (a port of the tty top line: packing,
+// --More--, ^P history). say() is a pline that is remembered for ^P; prompt()
+// shows a prompt or echo that is not.
+const say = (text) => session.msgPost(text);
+const prompt = (text) => session.msgShow(text);
 
 const esc = (s) => s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 const pad = (s) => (s.length > COLS ? s.slice(0, COLS) : s.padEnd(COLS));
@@ -223,8 +227,7 @@ function draw() {
   if (mode === 'pick') {
     lines.push(...pickScreen());
   } else {
-    const msg = messages.length ? `${messages[0]}${messages.length > 1 ? STR.more : ''}` : message;
-    lines.push(pad(msg));
+    lines.push(pad(session.msgLine()));
     const map = session.render_ascii().split('\n');
     for (let y = 0; y < 21; y++) lines.push(pad(map[y] ?? ''));
     lines.push(...statusLines().map(pad));
@@ -294,32 +297,18 @@ function fit() {
 }
 window.addEventListener('resize', fit);
 
-function pushEvents(res) {
-  if (!res) return;
-  const texts = (res.last_events || []).filter((e) => e.LogMessage).map((e) => e.LogMessage.text);
-  messages = [];
-  // Pack messages into 80-column lines, leaving room for --More--.
-  let line = '';
-  for (const t of texts) {
-    if (!line) line = t;
-    else if ((line + '  ' + t).length <= COLS - STR.more.length) line += '  ' + t;
-    else { messages.push(line); line = t; }
-  }
-  if (line) messages.push(line);
-  message = messages.length === 1 ? messages.shift() : '';
-  if (res.is_game_over) {
-    mode = 'over';
-    messages.push(STR.die);
-  }
-}
-
+// One engine step. The engine posts the turn's messages to the message line
+// (the same turn_messages the terminal UI uses); a rejected action only says why.
 function act(action, arg = null) {
   const res = JSON.parse(session.step(action, arg));
   if (res.error) {
-    message = res.error;
+    say(res.error);
     return;
   }
-  pushEvents(res);
+  if (res.is_game_over && mode !== 'over') {
+    mode = 'over';
+    session.msgAppendPage(STR.die);
+  }
 }
 
 function inventory() {
@@ -351,17 +340,17 @@ function invLines(title) {
 function itemPrompt(action, verb) {
   const items = inventory();
   if (!items.length) {
-    message = STR.nothingTo(verb);
+    say(STR.nothingTo(verb));
     return;
   }
   const last = String.fromCharCode(96 + items.length);
-  message = STR.whatTo(verb, last);
+  prompt(STR.whatTo(verb, last));
   mode = 'item';
   pending = { action, verb, count: items.length };
 }
 
 function dirPrompt(action) {
-  message = STR.direction;
+  prompt(STR.direction);
   mode = 'dir';
   pending = { action };
 }
@@ -371,6 +360,7 @@ async function newGame(roleIdx) {
   roleLabel = label;
   const seed = BigInt(params.get('seed') || Math.floor(Math.random() * 2 ** 31));
   const packId = params.get('pack');
+  let failure = '';
   try {
     if (packId) {
       const index = await (await fetch(`${BASE}packs/index.json`)).json();
@@ -383,14 +373,15 @@ async function newGame(roleIdx) {
     }
   } catch (e) {
     session = WasmGameSession.new_with_character(seed, role, race, STR.hero);
-    message = STR.packFail(e.message || e);
+    failure = STR.packFail(e.message || e);
     packLabel = '';
   }
   if (params.get('lang') === 'uk') session.set_locale('uk');
-  messages = [];
-  if (!message) {
+  if (failure) {
+    say(failure);
+  } else {
     const align = LANG === 'uk' ? session.get_localized_alignment() : session.get_player_alignment();
-    message = STR.welcome(STR.hero, align, label);
+    say(STR.welcome(STR.hero, align, label));
   }
   mode = 'play';
 }
@@ -401,12 +392,23 @@ function onDisplayKey(key) {
   const label = key === 'F2' ? pixel.cycleSystem() : key === 'F3' ? pixel.cyclePalette() : key === 'F4' ? pixel.cycleEffects() : null;
   if (label === null) return false;
   try { localStorage.setItem('nethacked.pixel', JSON.stringify(Array.from(pixel.state()))); } catch { /* storage unavailable */ }
-  if (mode !== 'pick') message = label;
+  if (session && mode !== 'pick') prompt(label);
   draw();
   return true;
 }
 
 function onKey(e) {
+  // ^P: previous message (cmd.c:164 doprev_message). Handled before the
+  // modifier early return, and preventDefault keeps the browser's print dialog
+  // away. Ignored at --More-- and outside the idle play screen.
+  if (e.ctrlKey && !e.metaKey && !e.altKey && (e.code === 'KeyP' || e.key === 'p' || e.key === 'P')) {
+    e.preventDefault();
+    if (session && mode === 'play' && !session.msgMore()) {
+      session.msgPrev();
+      draw();
+    }
+    return;
+  }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   if (onDisplayKey(e.key)) {
     e.preventDefault();
@@ -424,12 +426,14 @@ function onKey(e) {
     return;
   }
 
-  if (messages.length) {
-    // --More--: any key advances.
-    messages.shift();
-    if (!messages.length && mode === 'over') {
-      mode = 'pick';
-      session = null;
+  if (session.msgMore()) {
+    // --More--: Esc skips the rest, any other key shows the next page. The
+    // game-over line stays on screen after a skip (it is the last thing to see).
+    if (key === 'Escape') {
+      session.msgSkipRest();
+      if (mode === 'over') session.msgShow(STR.die);
+    } else {
+      session.msgDismiss();
     }
     draw();
     return;
@@ -450,59 +454,60 @@ function onKey(e) {
   }
 
   if (mode === 'item') {
-    if (key === 'Escape') {
-      message = STR.never;
-    } else if (key === '?' || key === '*') {
+    if (key === '?' || key === '*') {
       overlay = invLines(STR.inventory);
       draw();
       overlay = null;
       return;
-    } else {
-      const idx = key.charCodeAt(0) - 97;
-      if (key.length === 1 && idx >= 0 && idx < pending.count) {
-        act(pending.action, String(idx));
-      } else {
-        message = STR.noObject;
-      }
     }
+    const { action, count } = pending;
+    // Leave the prompt first: act() may turn the mode into 'over'.
     mode = 'play';
     pending = null;
+    const idx = key.charCodeAt(0) - 97;
+    if (key === 'Escape') say(STR.never);
+    else if (key.length === 1 && idx >= 0 && idx < count) act(action, String(idx));
+    else say(STR.noObject);
     draw();
     return;
   }
 
   if (mode === 'dir') {
-    if (key === 'Escape') message = STR.never;
-    else if (DIRS[key]) act(pending.action, DIRS[key]);
-    else message = STR.strangeDir;
+    const { action } = pending;
     mode = 'play';
     pending = null;
+    if (key === 'Escape') say(STR.never);
+    else if (DIRS[key]) act(action, DIRS[key]);
+    else say(STR.strangeDir);
     draw();
     return;
   }
 
   if (mode === 'text') {
     if (key === 'Escape') {
-      message = STR.never;
+      say(STR.never);
       mode = 'play';
     } else if (key === 'Enter') {
       const text = pending.text.trim();
+      const { action } = pending;
       mode = 'play';
-      if (text) act(pending.action, text);
-      else message = STR.never;
+      pending = null;
+      if (text) act(action, text);
+      else say(STR.never);
     } else if (key === 'Backspace') {
       pending.text = pending.text.slice(0, -1);
-      message = pending.prompt + pending.text;
+      prompt(pending.prompt + pending.text);
     } else if (key.length === 1 && pending.text.length < 60) {
       pending.text += key;
-      message = pending.prompt + pending.text;
+      prompt(pending.prompt + pending.text);
     }
     draw();
     return;
   }
 
-  // mode === 'play'
-  message = '';
+  // mode === 'play': the line is cleared when the next command key is read
+  // (wintty.c:4100-4102).
+  session.msgClear();
   if (DIRS[key]) act('move', DIRS[key]);
   else if (key === '.') act('wait');
   else if (key === 's') act('search');
@@ -517,9 +522,9 @@ function onKey(e) {
   else if (DIR_CMDS[key]) dirPrompt(DIR_CMDS[key][0]);
   else if (key === 'E') {
     pending = { action: 'engrave', prompt: STR.engrave, text: '' };
-    message = pending.prompt;
+    prompt(pending.prompt);
     mode = 'text';
-  } else if (key !== 'Escape') message = STR.unknown(key);
+  } else if (key !== 'Escape') say(STR.unknown(key));
   draw();
 }
 

@@ -4,6 +4,7 @@ pub mod actions;
 pub mod bones;
 pub mod combat;
 pub mod events;
+pub mod messages;
 pub mod monsters;
 pub mod peace;
 pub mod turns;
@@ -13,6 +14,7 @@ pub use actions::economy::EconomyLedger;
 pub use actions::items::{is_real_amulet, normalize_wish_name};
 pub use actions::stairs::{clamp_mysterious_force, SANCTUM_DEPTH};
 pub use events::GameEvent;
+pub use messages::{turn_messages, MessageWindow, HISTORY_LIMIT, PACK_LIMIT};
 pub use world::{default_rng, LoadError, SimulationWorld, StoredLevel, DEFAULT_PLAYER_CON};
 
 // Re-exports from related crates for convenient downstream consumption
