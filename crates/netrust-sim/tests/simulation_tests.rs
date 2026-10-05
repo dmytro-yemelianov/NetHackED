@@ -4572,6 +4572,12 @@ fn test_tourist_killing_master_of_thieves_only_applies_malign() {
     assert!(!sim.quest_state.killed_leader);
     assert_eq!(sim.divine_state.favor, favor);
     assert_eq!(sim.player_luck, luck);
+    assert!(events.iter().any(
+        |e| matches!(e, GameEvent::LogMessage { text } if text == "Master of Thieves is killed!")
+    ));
+    assert!(!events
+        .iter()
+        .any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("bad idea"))));
 }
 
 #[test]
