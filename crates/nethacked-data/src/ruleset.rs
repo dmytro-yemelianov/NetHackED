@@ -46,6 +46,15 @@ pub struct MonsterDef {
     pub mindless: bool,
     pub ai_behavior: AiBehavior,
     pub abilities: Vec<MonsterAbility>,
+    /// C `difficulty` (monsters.h): rndmonst() keeps species within the level's range.
+    #[serde(default)]
+    pub difficulty: u32,
+    /// C `G_FREQ` weight for random generation; 0 = never generated at random.
+    #[serde(default)]
+    pub frequency: u32,
+    /// C `G_*` flags, lowercase without prefix (`nogen`, `uniq`, `hell`, `nohell`, `genocide`, ...).
+    #[serde(default)]
+    pub gen_flags: Vec<String>,
 }
 
 impl MonsterDef {
@@ -602,6 +611,9 @@ fn build_vanilla_ruleset() -> Ruleset {
             mindless: arch.mindless,
             ai_behavior: arch.ai_behavior,
             abilities: arch.abilities.to_vec(),
+            difficulty: arch.difficulty,
+            frequency: arch.frequency,
+            gen_flags: arch.gen_flags.iter().map(|s| s.to_string()).collect(),
         })
         .collect();
 

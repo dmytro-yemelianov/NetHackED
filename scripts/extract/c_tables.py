@@ -416,6 +416,29 @@ def artifacts(objs, mons):
     return out
 
 
+# ------------------------------------------------------- class probabilities
+
+def class_probs():
+    """`static const struct icp NAME[] = { { prob, X_CLASS }, ... };` from mkobj.c."""
+    path = C / "src" / "mkobj.c"
+    text = path.read_text()
+    out = []
+    for m in re.finditer(r"static const struct icp (\w+)\[\]\s*=\s*\{(.*?)\};", text, re.S):
+        line = text.count("\n", 0, m.start()) + 1
+        w = f"mkobj.c:{line} {m[1]}"
+        entries = []
+        for prob, cls in re.findall(r"\{\s*(\d+)\s*,\s*(\w+)\s*\}", m[2]):
+            if cls not in NAMES or not cls.endswith("_CLASS"):
+                die(f"{w}: unknown class {cls}")
+            entries.append({"class": cls[:-6].lower(), "prob": int(prob)})
+        if sum(e["prob"] for e in entries) != 100:
+            die(f"{w}: probabilities sum to {sum(e['prob'] for e in entries)}, mkobj() rolls rnd(100)")
+        out.append({"id": m[1], "entries": entries, "src": f"src/mkobj.c:{line}"})
+    if [t["id"] for t in out] != ["mkobjprobs", "boxiprobs", "rogueprobs", "hellprobs"]:
+        die(f"unexpected icp tables {[t['id'] for t in out]}")
+    return out
+
+
 # --------------------------------------------------------------------- TOML
 
 def toml_val(v):
@@ -479,6 +502,7 @@ def main():
     files = {
         "objects.toml": to_toml("object", objs, f"{len(objs)} object types from include/objects.h"),
         "artifacts.toml": to_toml("artifact", arts, f"{len(arts)} artifacts from include/artilist.h"),
+        "class_probs.toml": to_toml("class_probs", class_probs(), "object class probabilities from src/mkobj.c"),
         "monsters.toml": to_toml("monster", mons, f"{len(mons)} monster species from include/monsters.h"),
     }
     check = "--check" in sys.argv

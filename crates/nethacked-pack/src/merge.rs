@@ -74,6 +74,10 @@ pub fn resolve(pack: &PackDir, base: &Ruleset) -> Result<Ruleset, PackError> {
                 mindless: req_m_field!(mindless),
                 ai_behavior: req_m_field!(ai_behavior),
                 abilities: req_m_field!(abilities),
+                // Optional: a new species is never generated at random unless given a weight.
+                difficulty: patch.difficulty.unwrap_or(0),
+                frequency: patch.frequency.unwrap_or(0),
+                gen_flags: patch.gen_flags.clone().unwrap_or_default(),
             };
             monsters.push(def);
         } else {
@@ -149,6 +153,15 @@ pub fn resolve(pack: &PackDir, base: &Ruleset) -> Result<Ruleset, PackError> {
             }
             if let Some(v) = &patch.abilities {
                 target.abilities = v.clone();
+            }
+            if let Some(v) = patch.difficulty {
+                target.difficulty = v;
+            }
+            if let Some(v) = patch.frequency {
+                target.frequency = v;
+            }
+            if let Some(v) = &patch.gen_flags {
+                target.gen_flags = v.clone();
             }
         }
     }

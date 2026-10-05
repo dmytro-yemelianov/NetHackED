@@ -30,7 +30,7 @@ Only 9 of the 12 `DamageType` variants are AD types (`types/lib.rs:591-610`: Phy
 | 4 | Full AD_* set (50) | include/monattk.h | 🟡 PARTIAL | types/lib.rs:591-610 (12 variants) | Most special attacks cannot even be represented |
 | 5 | Full AT_* set (16) | include/monattk.h | 🟡 PARTIAL | types/lib.rs:576-584 (9 variants) | No engulfers, exploders, huggers, stingers, spitters |
 | **makemon.c** |||||
-| 6 | Random generation by difficulty (`rndmonst`, `mkclass`) | makemon.c:1652, 1873 | ❌ MISSING | sim/actions/stairs.rs:716-748 uses a fixed depth table (depth 1 goblin, 2 hobgoblin/orc, 3 ant/skeleton, 4 vampire, 5+ silver dragon); no match for grep `difficulty` | Monster mix ignores hero level and depth; depth 5+ is all silver dragons |
+| 6 | Random generation by difficulty (`rndmonst`, `mkclass`) | makemon.c:1652, 1873 | 🟡 PARTIAL | data/generation.rs `rndmonst_adj` (difficulty window, G_FREQ, uncommon, align/temperature shift) over ruleset data; sim/actions/stairs.rs fills rooms 1/3 like mklev.c:973 | All 383 species can appear; `mkclass`, quest `qt_montype`, rogue and elemental-plane rules are still missing |
 | 7 | Ongoing random spawns over time (1/50 or 1/70 per turn) | allmain.c `makemon(NULL…)` | ❌ MISSING | sim/turns.rs has no spawn call | Cleared levels stay empty, so there is no time pressure |
 | 8 | Group generation (G_SGROUP/G_LGROUP, `m_initgrp`) | makemon.c:79 | ❌ MISSING | no match for grep `SGROUP\|m_initgrp` | No jackal packs and no hordes |
 | 9 | Monster HP `d(lvl,8)` (`newmonhp`) | makemon.c:1012 | ❌ MISSING | data/monsters.rs:2340 uses fixed `base_hp` (spec div.) | Every monster of a species has identical HP |
