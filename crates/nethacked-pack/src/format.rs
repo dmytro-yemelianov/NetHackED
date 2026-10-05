@@ -75,6 +75,12 @@ pub struct MonsterPatch {
     pub ai_behavior: Option<AiBehavior>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub abilities: Option<Vec<MonsterAbility>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub difficulty: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub frequency: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub gen_flags: Option<Vec<String>>,
 }
 
 /// Container for `[[monster]]` entries in `monsters.toml`.

@@ -75,5 +75,8 @@ jobs:
           repository: NetHack/NetHack
           ref: NetHack-5.0.0_Released
           path: NetHack-5.0.0
-          sparse-checkout: include
+          sparse-checkout: |
+            include
+            src/mkobj.c
+          sparse-checkout-cone-mode: false
       - run: python3 scripts/extract/c_tables.py --check

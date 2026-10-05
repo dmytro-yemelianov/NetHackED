@@ -10419,3 +10419,56 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         artifact: true,
     },
 ];
+
+/// C `mkobjprobs[]` (src/mkobj.c:36): `(percent, class)`, rolled with `rnd(100)`.
+pub static MKOBJPROBS: &[(u32, ItemClass)] = &[
+    (10, ItemClass::Weapon),
+    (11, ItemClass::Armor),
+    (20, ItemClass::Food),
+    (8, ItemClass::Tool),
+    (7, ItemClass::Gem),
+    (16, ItemClass::Potion),
+    (16, ItemClass::Scroll),
+    (4, ItemClass::Spellbook),
+    (4, ItemClass::Wand),
+    (3, ItemClass::Ring),
+    (1, ItemClass::Amulet),
+];
+
+/// C `boxiprobs[]` (src/mkobj.c:48): `(percent, class)`, rolled with `rnd(100)`.
+pub static BOXIPROBS: &[(u32, ItemClass)] = &[
+    (18, ItemClass::Gem),
+    (15, ItemClass::Food),
+    (18, ItemClass::Potion),
+    (18, ItemClass::Scroll),
+    (12, ItemClass::Spellbook),
+    (7, ItemClass::Coin),
+    (6, ItemClass::Wand),
+    (5, ItemClass::Ring),
+    (1, ItemClass::Amulet),
+];
+
+/// C `rogueprobs[]` (src/mkobj.c:58): `(percent, class)`, rolled with `rnd(100)`.
+pub static ROGUEPROBS: &[(u32, ItemClass)] = &[
+    (12, ItemClass::Weapon),
+    (12, ItemClass::Armor),
+    (22, ItemClass::Food),
+    (22, ItemClass::Potion),
+    (22, ItemClass::Scroll),
+    (5, ItemClass::Wand),
+    (5, ItemClass::Ring),
+];
+
+/// C `hellprobs[]` (src/mkobj.c:66): `(percent, class)`, rolled with `rnd(100)`.
+pub static HELLPROBS: &[(u32, ItemClass)] = &[
+    (20, ItemClass::Weapon),
+    (20, ItemClass::Armor),
+    (16, ItemClass::Food),
+    (12, ItemClass::Tool),
+    (10, ItemClass::Gem),
+    (1, ItemClass::Potion),
+    (1, ItemClass::Scroll),
+    (8, ItemClass::Wand),
+    (8, ItemClass::Ring),
+    (4, ItemClass::Amulet),
+];

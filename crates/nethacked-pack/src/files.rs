@@ -236,6 +236,9 @@ pub fn vanilla_pack_files() -> PackFiles {
                 mindless: Some(m.mindless),
                 ai_behavior: Some(m.ai_behavior),
                 abilities: Some(m.abilities.clone()),
+                difficulty: Some(m.difficulty),
+                frequency: Some(m.frequency),
+                gen_flags: Some(m.gen_flags.clone()),
             })
             .collect(),
     };

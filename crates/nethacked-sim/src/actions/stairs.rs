@@ -715,38 +715,89 @@ impl SimulationWorld {
 
                     self.level = new_level;
 
-                    // Spawn monsters appropriate for depth
+                    // C mklev.c fill_ordinary_room (973-975): each room gets a
+                    // random monster with probability 1/3 (always while carrying
+                    // the Amulet), chosen by makemon.c rndmonst() from the data.
+                    // The arrival room (first) and the last room stay empty here.
+                    let rs = std::sync::Arc::clone(&self.ruleset);
+                    let ctx = nethacked_data::generation::MonsterGenContext {
+                        level_difficulty: depth as i32,
+                        hero_level: self
+                            .arena
+                            .actors
+                            .get(self.player_id)
+                            .map_or(1, |p| p.level as i32),
+                        in_hell: branch == BranchId::Gehennom,
+                        align: if branch == BranchId::GnomishMines {
+                            nethacked_data::generation::DungeonAlign::Lawful
+                        } else {
+                            nethacked_data::generation::DungeonAlign::None
+                        },
+                        temperature: 0,
+                    };
+                    let has_amulet = self.hero_has_amulet();
                     let centers: Vec<Coord> = self.level.rooms.iter().map(|r| r.center()).collect();
                     for (i, &center) in centers.iter().enumerate() {
-                        if i > 0 && i != centers.len() - 1 {
-                            let species = match depth {
-                                1 => MonsterSpeciesId::GOBLIN,
-                                2 => {
-                                    if i % 2 == 0 {
-                                        MonsterSpeciesId::HOBGOBLIN
-                                    } else {
-                                        MonsterSpeciesId::HILL_ORC
-                                    }
-                                }
-                                3 => {
-                                    if i % 2 == 0 {
-                                        MonsterSpeciesId::GIANT_ANT
-                                    } else {
-                                        MonsterSpeciesId::SKELETON
-                                    }
-                                }
-                                4 => MonsterSpeciesId::VAMPIRE,
-                                _ => MonsterSpeciesId::SILVER_DRAGON,
-                            };
-                            let rs = std::sync::Arc::clone(&self.ruleset);
-                            if let Some(arch) = rs.monster_by_id(species) {
-                                if !nethacked_core::genocide::is_genocided(
-                                    &self.genocide_registry,
-                                    &arch.name,
-                                    arch.glyph,
+                        if i == 0 || i == centers.len() - 1 {
+                            continue;
+                        }
+                        if !has_amulet && self.rng.random_range(0..3u32) != 0 {
+                            continue;
+                        }
+                        let registry = &self.genocide_registry;
+                        let rng = &mut self.rng;
+                        let picked = nethacked_data::generation::rndmonst(
+                            &rs,
+                            &ctx,
+                            |d| nethacked_core::genocide::is_genocided(registry, &d.name, d.glyph),
+                            |n| rng.random_range(0..n),
+                        )
+                        .and_then(|d| d.id);
+                        if let Some(species) = picked {
+                            self.spawn_monster_near(species, center);
+                        }
+                    }
+
+                    // C mklev.c fill_ordinary_room (1157-1170): with probability
+                    // 1/3 a room gets a random object, then more while !rn2(5);
+                    // kinds come from mkobj() over the C class/prob data.
+                    // mksobj()'s per-kind init (BUC, charges, enchantment) is not
+                    // ported yet: objects are uncursed with catalog defaults.
+                    let table = if branch == BranchId::Gehennom {
+                        nethacked_data::generation::ObjectTable::Hell
+                    } else {
+                        nethacked_data::generation::ObjectTable::Dungeon
+                    };
+                    let rooms: Vec<(usize, usize, usize, usize)> = self
+                        .level
+                        .rooms
+                        .iter()
+                        .map(|r| (r.x1, r.y1, r.x2, r.y2))
+                        .collect();
+                    for (x1, y1, x2, y2) in rooms {
+                        if self.rng.random_range(0..3u32) != 0 {
+                            continue;
+                        }
+                        loop {
+                            let x = self.rng.random_range(x1..=x2);
+                            let y = self.rng.random_range(y1..=y2);
+                            let rng = &mut self.rng;
+                            let kind = nethacked_data::generation::mkobj_kind(None, table, |n| {
+                                rng.random_range(0..n)
+                            });
+                            // somexyspace(): only an open floor square
+                            let spot = Coord::new(x, y).filter(|&c| self.level.is_passable(c));
+                            if let (Some(kind), Some(c)) = (kind, spot) {
+                                if let Some(item) = self.ruleset.create_item_record_by_id(
+                                    kind,
+                                    ItemLocation::Floor(c),
+                                    Buc::Uncursed,
                                 ) {
-                                    self.spawn_monster_near(species, center);
+                                    self.arena.spawn_item(item);
                                 }
+                            }
+                            if self.rng.random_range(0..5u32) != 0 {
+                                break;
                             }
                         }
                     }
