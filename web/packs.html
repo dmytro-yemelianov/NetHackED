@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NetRust Packs</title>
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body class="packs-page">
+  <header class="packs-header">
+    <a href="index.html">← Play</a>
+    <h1>Rule packs</h1>
+  </header>
+  <main class="packs-layout">
+    <aside class="packs-sidebar">
+      <ul id="pack-list" class="pack-list"></ul>
+      <button id="new-from-vanilla">+ New from vanilla</button>
+      <label class="upload">Upload .nrpack
+        <input id="upload-nrpack" type="file" accept=".nrpack,application/json">
+      </label>
+      <label class="upload">Upload pack files
+        <input id="upload-files" type="file" accept=".toml" multiple>
+      </label>
+      <label class="upload">Upload pack folder
+        <input id="upload-folder" type="file" webkitdirectory>
+      </label>
+      <div id="drop-zone" class="drop-zone">Drop .nrpack or .toml files here</div>
+      <p id="pack-error" class="pack-error" role="alert"></p>
+    </aside>
+    <section class="packs-main">
+      <nav class="tabs" role="tablist">
+        <button data-tab="overview" class="active">Overview</button>
+        <button data-tab="monsters">Monsters</button>
+        <button data-tab="items">Items</button>
+        <button data-tab="roles">Roles</button>
+        <button data-tab="diff">Diff vs vanilla</button>
+        <button data-tab="diagnostics">Diagnostics</button>
+        <button data-tab="edit" id="edit-tab-btn">Edit</button>
+      </nav>
+      <div id="tab-overview" class="tab-panel"></div>
+      <div id="tab-monsters" class="tab-panel" hidden></div>
+      <div id="tab-items" class="tab-panel" hidden></div>
+      <div id="tab-roles" class="tab-panel" hidden></div>
+      <div id="tab-diff" class="tab-panel" hidden></div>
+      <div id="tab-diagnostics" class="tab-panel" hidden></div>
+      <div id="tab-edit" class="tab-panel" hidden></div>
+    </section>
+  </main>
+  <script type="module" src="js/packs.js"></script>
+</body>
+</html>
