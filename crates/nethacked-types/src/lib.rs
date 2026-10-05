@@ -582,9 +582,25 @@ pub enum AttackType {
     Weapon,
     Magic,
     Passive,
+    /// `AT_BUTT`
+    Butt,
+    /// `AT_STNG`
+    Sting,
+    /// `AT_HUGS`: crushing bear hug.
+    Hug,
+    /// `AT_SPIT`
+    Spit,
+    /// `AT_ENGL`: engulf.
+    Engulf,
+    /// `AT_EXPL`: explodes when it attacks.
+    Explode,
+    /// `AT_BOOM`: explodes when killed.
+    Boom,
+    /// `AT_TENT`: tentacles (mind flayer).
+    Tentacle,
 }
 
-/// C damage type (`AD_*`) for the subset used by the bestiary.
+/// C damage type (`AD_*`, include/monattk.h). Every type the C bestiary uses.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum DamageType {
@@ -608,6 +624,78 @@ pub enum DamageType {
     Spell,
     /// `AD_STUN`: stuns the defender.
     Stun,
+    /// `AD_MAGM`
+    MagicMissile,
+    /// `AD_SLEE`
+    Sleep,
+    /// `AD_DISN`
+    Disintegrate,
+    /// `AD_ELEC`
+    Elec,
+    /// `AD_ACID`
+    Acid,
+    /// `AD_BLND`
+    Blind,
+    /// `AD_DREN`
+    DrainEnergy,
+    /// `AD_LEGS`
+    Legs,
+    /// `AD_STCK`
+    Sticky,
+    /// `AD_SGLD`
+    StealGold,
+    /// `AD_SITM`
+    StealItem,
+    /// `AD_SEDU`
+    Seduce,
+    /// `AD_TLPT`
+    Teleport,
+    /// `AD_RUST`
+    Rust,
+    /// `AD_CONF`
+    Confuse,
+    /// `AD_DGST`
+    Digest,
+    /// `AD_HEAL`
+    Heal,
+    /// `AD_WRAP`
+    Wrap,
+    /// `AD_WERE`
+    Lycanthropy,
+    /// `AD_DRDX`
+    DrainDex,
+    /// `AD_DRCO`
+    DrainCon,
+    /// `AD_DRIN`
+    DrainInt,
+    /// `AD_DISE`
+    Disease,
+    /// `AD_DCAY`
+    Decay,
+    /// `AD_SSEX`
+    SeduceSex,
+    /// `AD_HALU`
+    Hallucinate,
+    /// `AD_DETH`
+    Death,
+    /// `AD_PEST`
+    Pestilence,
+    /// `AD_FAMN`
+    Famine,
+    /// `AD_SLIM`
+    Slime,
+    /// `AD_ENCH`
+    Disenchant,
+    /// `AD_CORR`
+    Corrode,
+    /// `AD_POLY`
+    Polymorph,
+    /// `AD_RBRE`
+    RandomBreath,
+    /// `AD_CURS`
+    Curse,
+    /// `AD_CNCL`
+    Cancel,
 }
 
 /// One C `ATTK(at, ad, n, d)` entry: `n`d`d` damage dice.

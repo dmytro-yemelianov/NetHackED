@@ -3,7 +3,7 @@
 use std::collections::HashSet;
 
 use nethacked_data::ruleset::{Ruleset, ENGINE_REQUIRED_ITEMS, ENGINE_REQUIRED_MONSTERS};
-use nethacked_types::{AttackType, ItemClass};
+use nethacked_types::ItemClass;
 use serde::{Deserialize, Serialize};
 
 /// A diagnostic message indicating an error or warning in a rule pack.
@@ -146,12 +146,13 @@ pub fn validate(rs: &Ruleset) -> Report {
 
     // 7. Value ranges
     for m in &rs.monsters {
-        if m.level > 49 {
+        // C stores the level in an `schar` (monsters.h has levels up to 106).
+        if m.level > 127 {
             report.errors.push(Diagnostic {
                 file: "monsters.toml".into(),
                 entry: m.name.clone(),
                 field: Some("level".into()),
-                message: format!("level out of range (0..=49): {}", m.level),
+                message: format!("level out of range (0..=127): {}", m.level),
             });
         }
         if m.speed > 60 {
@@ -205,36 +206,22 @@ pub fn validate(rs: &Ruleset) -> Report {
                 message: format!("glyph must be printable ASCII: {:?}", m.glyph),
             });
         }
+        // `n` and `d` are u8. C uses 0d0 for special attacks (engulf, gaze,
+        // seduction) and 0dN for "level+1 dice" (mhitm.c:1323-1326 and
+        // mhitu.c:2455-2458: `else if (damd) d(mlevel + 1, damd)`), so only N
+        // dice of 0 sides are invalid.
         for (i, atk) in m.attacks.iter().enumerate() {
-            let is_special_attack = matches!(
-                atk.at,
-                AttackType::Passive | AttackType::Gaze | AttackType::Magic
-            );
-            if !is_special_attack {
-                if atk.n < 1 {
-                    report.errors.push(Diagnostic {
-                        file: "monsters.toml".into(),
-                        entry: m.name.clone(),
-                        field: Some("attacks".into()),
-                        message: format!(
-                            "attack {} dice count out of range (1..=255): {}",
-                            i + 1,
-                            atk.n
-                        ),
-                    });
-                }
-                if atk.d < 1 {
-                    report.errors.push(Diagnostic {
-                        file: "monsters.toml".into(),
-                        entry: m.name.clone(),
-                        field: Some("attacks".into()),
-                        message: format!(
-                            "attack {} dice sides out of range (1..=255): {}",
-                            i + 1,
-                            atk.d
-                        ),
-                    });
-                }
+            if atk.d == 0 && atk.n > 0 {
+                report.errors.push(Diagnostic {
+                    file: "monsters.toml".into(),
+                    entry: m.name.clone(),
+                    field: Some("attacks".into()),
+                    message: format!(
+                        "attack {} has {} dice with 0 sides (C allows 0d0 and 0dN only)",
+                        i + 1,
+                        atk.n
+                    ),
+                });
             }
         }
     }

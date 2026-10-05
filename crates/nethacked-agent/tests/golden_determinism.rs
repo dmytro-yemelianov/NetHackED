@@ -1,7 +1,7 @@
 //! Frozen fingerprints of vanilla play. Recorded on main before the rule-pack
 //! refactor (P1); every later change must keep them identical.
 use nethacked_agent::arena::run_seed_games;
-use nethacked_data::monsters::BESTIARY;
+use nethacked_data::monsters::{MonsterArchetype, BESTIARY, LEGACY_SPECIES};
 use nethacked_data::roles::{get_role, Gender, RaceId, RoleId};
 use nethacked_sim::{ActionAst, SimulationWorld};
 use nethacked_types::{Coord, Direction};
@@ -162,10 +162,17 @@ const EXPECTED_COMBAT: [u64; 3] = [
     10_816_216_705_399_070_657,
 ];
 
-/// Every bestiary entry fights the hero for up to 20 alternating melee/wait steps.
+/// Every legacy bestiary entry fights the hero for up to 20 alternating
+/// melee/wait steps. The fingerprints were recorded before the full C bestiary
+/// import (`scripts/gen-bestiary.py`), so they cover the first
+/// `LEGACY_SPECIES` entries, which keep their order and data.
 fn bestiary_combat(role: RoleId) -> u64 {
+    combat_over(role, &BESTIARY[..LEGACY_SPECIES])
+}
+
+fn combat_over(role: RoleId, species: &[MonsterArchetype]) -> u64 {
     let mut all = Vec::new();
-    for arch in BESTIARY {
+    for arch in species {
         let mut world = SimulationWorld::new_with_character(11, character(role));
         let hero = world.arena.actors.get(world.player_id).expect("hero").coord;
         let mut bytes = format!("{:?}|{}|", arch.id, arch.name).into_bytes();
@@ -213,4 +220,12 @@ fn bestiary_combat(role: RoleId) -> u64 {
 fn golden_vanilla_bestiary_combat_is_unchanged() {
     let got: Vec<u64> = COMBAT_ROLES.iter().map(|&r| bestiary_combat(r)).collect();
     assert_eq!(got, EXPECTED_COMBAT);
+}
+
+/// Every C species (the full generated bestiary) can be spawned and fought
+/// without a panic. No fingerprint: this only guards the generated data.
+#[test]
+fn full_c_bestiary_spawns_and_fights() {
+    assert_eq!(BESTIARY.len(), 383, "NetHack 5.0 has 383 species");
+    let _ = combat_over(RoleId::Valkyrie, BESTIARY);
 }

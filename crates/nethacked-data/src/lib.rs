@@ -15,7 +15,7 @@ pub use items::{
 pub use monsters::{
     create_ghost_record, create_monster_record, get_monster_species, monster_archetype_by_name,
     monster_class_of, AiBehavior, Attack, AttackType, DamageType, MonsterArchetype, MonsterSize,
-    MonsterSound, MonsterSpeciesId, BESTIARY,
+    MonsterSound, MonsterSpeciesId, BESTIARY, LEGACY_SPECIES,
 };
 pub use nethacked_types::ItemClass;
 pub use pantheons::{get_pantheon_for_role, get_patron_deity};

@@ -222,7 +222,7 @@ levle = 3
 #[test]
 fn test_range_validation_rules() {
     let test_cases = [
-        ("monsters.toml", "[[monster]]\nname = \"jackal\"\nlevel = 50", "level"),
+        ("monsters.toml", "[[monster]]\nname = \"jackal\"\nlevel = 128", "level"),
         ("monsters.toml", "[[monster]]\nname = \"jackal\"\nspeed = 61", "speed"),
         ("monsters.toml", "[[monster]]\nname = \"jackal\"\nac = 21", "ac"),
         ("monsters.toml", "[[monster]]\nname = \"jackal\"\nac = -21", "ac"),
@@ -230,7 +230,6 @@ fn test_range_validation_rules() {
         ("monsters.toml", "[[monster]]\nname = \"jackal\"\nmax_hp = 10001", "max_hp"),
         ("monsters.toml", "[[monster]]\nname = \"jackal\"\nbase_hp = 50\nmax_hp = 10", "base_hp"),
         ("monsters.toml", "[[monster]]\nname = \"jackal\"\nglyph = \"🦀\"", "glyph"),
-        ("monsters.toml", "[[monster]]\nname = \"jackal\"\nattacks = [{ at = \"Bite\", ad = \"Phys\", n = 0, d = 2 }]", "attacks"),
         ("monsters.toml", "[[monster]]\nname = \"jackal\"\nattacks = [{ at = \"Bite\", ad = \"Phys\", n = 1, d = 0 }]", "attacks"),
         ("items.toml", "[[item]]\nname = \"dagger\"\nweight = 10001", "weight"),
         ("items.toml", "[[item]]\nname = \"dagger\"\ncost = 1000001", "cost"),

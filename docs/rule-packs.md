@@ -131,11 +131,11 @@ When a pack is validated (`nethacked-pack validate`) or built (`nethacked-pack b
 3. **Engine-Required Invariants**: Engine-required monsters (`shopkeeper`, `priest`, quest leaders/guardians/nemeses) and engine-required items (`amulet of yendor`, quest artifacts) cannot be removed.
 4. **Valid References**: Starting items in `roles.toml` and quest monsters must exist in the resolved ruleset.
 5. **Numerical Ranges**:
-   - `level`: 0 to 49
+   - `level`: 0 to 127 (C `schar`; Demogorgon is level 106)
    - `speed`: 0 to 60
    - `ac`: -20 to 20
    - `base_hp` / `max_hp`: 1 to 10,000 (with `base_hp <= max_hp`)
-   - `attacks`: `n` and `d` in 1..=255 (special passive/gaze/magic attacks may be 0d0)
+   - `attacks`: `n` and `d` in 0..=255; `N`d0 with `N > 0` is invalid. C uses 0d0 for special attacks (engulf, gaze, seduction) and 0dN for "monster level + 1 dice"
    - `weight`: 0 to 10,000
    - `cost`: 0 to 1,000,000
    - `glyph`: single printable ASCII character

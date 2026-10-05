@@ -1814,11 +1814,25 @@ pub fn t_monster(name: &str, locale: Locale) -> String {
         _ => {
             if let Some(rest) = name.strip_prefix("ghost of ") {
                 format!("привид героя {rest}")
+            } else if let Some(uk) = monster_uk_from_table(name) {
+                uk.to_string()
             } else {
                 name.to_string()
             }
         }
     }
+}
+
+/// Ukrainian names for species imported from C (`data/monsters.uk.tsv`).
+static MONSTERS_UK_TSV: &str = include_str!("../data/monsters.uk.tsv");
+
+fn monster_uk_from_table(name: &str) -> Option<&'static str> {
+    MONSTERS_UK_TSV
+        .lines()
+        .filter(|l| !l.starts_with('#'))
+        .filter_map(|l| l.split_once('\t'))
+        .find(|(en, _)| en.eq_ignore_ascii_case(name))
+        .map(|(_, uk)| uk)
 }
 
 #[cfg(test)]

@@ -11,7 +11,7 @@ NetHackED is a partial reimplementation of NetHack 5.0 in Rust. The [parity tabl
 | 58 (11%) | 175 (32%) | 306 (56%) | 3 |
 
 Content coverage at the same baseline:
-- 55 of 394 monster species;
+- 383 of 383 monster species as data (generated from `monsters.h`), although most monster behaviour is still missing;
 - 51 of 439 object types (0 of 28 rings);
 - 9 of 13 roles;
 - 85 commands in C, of which 7 work as in C.
@@ -139,7 +139,7 @@ Size is a rough guide to effort: **S** is days, **M** is about a week, **L** is 
 **Goal.** C's full catalogs and the remaining hero systems.
 
 **Scope:**
-- all 394 monster species and all 439 object types;
+- all 439 object types (monster species are done as data);
 - all 13 roles, with race, gender and alignment choice and the full starting kits;
 - spells with C failure rates and memory;
 - weapon skills with practice and `#enhance`;
