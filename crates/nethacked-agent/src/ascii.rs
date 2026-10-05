@@ -57,6 +57,8 @@ pub fn render_ascii_map(world: &SimulationWorld) -> String {
                     DoorState::Open => '/',
                     DoorState::Closed | DoorState::Locked => '+',
                     DoorState::Broken => '*',
+                    // Empty doorway (C D_NODOOR, rm.h:233): shown as a doorless doorway '.'.
+                    DoorState::NoDoor => '.',
                 },
                 Tile::SecretDoor { .. } => ' ',
                 Tile::Stairs { up } => {

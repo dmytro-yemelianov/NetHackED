@@ -128,3 +128,27 @@ fn peace_messages_are_translated() {
         "The warriors appear to be angry too..."
     );
 }
+
+#[test]
+fn more_label_is_8_columns_in_both_locales() {
+    // topl.c:262-269 reserves room for --More-- (wintty.c:182 defmorestr is
+    // 8 columns); the message window budget (72 + 8 = 80) relies on it.
+    assert_eq!(t("tui.more", Locale::En), "--More--");
+    assert_eq!(t("tui.more", Locale::Uk), "--Далі--");
+    for loc in [Locale::En, Locale::Uk] {
+        assert_eq!(t("tui.more", loc).chars().count(), 8, "{loc:?}");
+        assert!(ALL_KEYS.contains(&"tui.more"));
+    }
+    assert_eq!(t("help.prevmsg", Locale::En), "Previous message");
+    assert_eq!(t("help.prevmsg", Locale::Uk), "Попереднє повідомлення");
+    assert!(ALL_KEYS.contains(&"help.prevmsg"));
+}
+
+#[test]
+fn door_open_and_close_messages_match_lock_c() {
+    // lock.c:906 pline_The("door opens."); lock.c:1040 pline_The("door closes.").
+    assert_eq!(Messages::door_opens(Locale::En), "The door opens.");
+    assert_eq!(Messages::door_closes(Locale::En), "The door closes.");
+    assert_eq!(Messages::door_opens(Locale::Uk), "Двері відчиняються.");
+    assert_eq!(Messages::door_closes(Locale::Uk), "Двері зачиняються.");
+}

@@ -58,10 +58,11 @@ The game itself is the Rust engine compiled to WebAssembly, so nothing runs on a
 | `x` `z` `f` `F` | Cast, zap, fire, kick. You are prompted for a direction |
 | `E` | Engrave. Type the text and press Enter |
 | `p` `P` | Pay, pray |
+| `Ctrl+P` | Show the previous message (press again for older ones, last 20 lines) |
 | `?` | Help |
 | `Esc` | Cancel a prompt |
 
-When several messages arrive in one turn, they are shown one line at a time with `--More--`. Press any key to see the next one.
+The messages of one turn share the top line while they fit; the rest follow after `--More--`. Press any key to see the next one, or Esc to skip the rest. The line clears when you press the next command key.
 
 ![The help overlay](images/play-help.png)
 

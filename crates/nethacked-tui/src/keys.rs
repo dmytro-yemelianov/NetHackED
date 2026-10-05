@@ -34,6 +34,8 @@ pub enum KeyOutcome {
     OpenConducts,
     /// `#` extended-command prefix (`#e` / `#c`).
     ExtendedCommand,
+    /// `^P`: show the previous message (cmd.c:164 `doprev_message`, :1811).
+    PrevMessage,
     #[allow(dead_code)]
     Redraw,
     Nothing,
@@ -106,6 +108,14 @@ pub const HELP_KEYS: &[(char, &str)] = &[
     ('#', "help.ext"),
 ];
 
+/// Number of rows of the help screen's three-column key grid.
+pub const HELP_ROWS: usize = 14;
+
+/// Control-key commands listed on the help screen as `^<key> <description>`,
+/// after [`HELP_KEYS`]. Every entry must be handled by `handle_key` with the
+/// Ctrl modifier (enforced by a unit test).
+pub const HELP_CTRL_KEYS: &[(char, &str)] = &[('p', "help.prevmsg")];
+
 /// True only for `y`/`Y` (after Ukrainian layout mapping, so `н` counts).
 pub fn confirm_quit_answer(key: KeyEvent) -> bool {
     matches!(
@@ -128,6 +138,10 @@ fn opt(a: Option<ActionAst>) -> KeyOutcome {
     a.map_or(KeyOutcome::Nothing, KeyOutcome::Act)
 }
 
+/// Map a key press to what the main loop should do.
+///
+/// `Ctrl-P` is `^P` prevmsg (cmd.c:164 `doprev_message`, bound to `C('p')` at
+/// cmd.c:1811); it is tested before the letter table, where plain `p` is pay.
 pub fn handle_key(key: KeyEvent, ctx: &KeyContext) -> KeyOutcome {
     let code = match key.code {
         KeyCode::Char(c) => KeyCode::Char(map_ukrainian_key(c)),
@@ -135,6 +149,9 @@ pub fn handle_key(key: KeyEvent, ctx: &KeyContext) -> KeyOutcome {
     };
     if code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL) {
         return KeyOutcome::ConfirmQuit;
+    }
+    if code == KeyCode::Char('p') && key.modifiers.contains(KeyModifiers::CONTROL) {
+        return KeyOutcome::PrevMessage;
     }
     match code {
         KeyCode::Esc => KeyOutcome::ConfirmQuit,
@@ -370,5 +387,50 @@ mod tests {
     #[test]
     fn ukrainian_ghe_maps_to_backslash() {
         assert_eq!(map_ukrainian_key('ґ'), '\\');
+    }
+
+    fn ctrl(c: char) -> KeyEvent {
+        KeyEvent::new(KeyCode::Char(c), KeyModifiers::CONTROL)
+    }
+    #[test]
+    fn ctrl_p_is_prevmsg_not_pay() {
+        assert_eq!(handle_key(ctrl('p'), &ctx()), KeyOutcome::PrevMessage);
+        // The unmodified letters keep their meaning.
+        assert_eq!(handle_key(k('p'), &ctx()), KeyOutcome::Act(ActionAst::Pay));
+        assert_eq!(handle_key(k('P'), &ctx()), KeyOutcome::Act(ActionAst::Pray));
+    }
+    #[test]
+    fn ctrl_ukrainian_ze_is_prevmsg() {
+        // 'з' sits on the QWERTY 'p' key.
+        assert_eq!(handle_key(ctrl('з'), &ctx()), KeyOutcome::PrevMessage);
+        assert_eq!(handle_key(k('з'), &ctx()), KeyOutcome::Act(ActionAst::Pay));
+    }
+    #[test]
+    fn ctrl_c_still_confirm_quit() {
+        assert_eq!(handle_key(ctrl('c'), &ctx()), KeyOutcome::ConfirmQuit);
+        assert_eq!(handle_key(ctrl('с'), &ctx()), KeyOutcome::ConfirmQuit);
+    }
+    #[test]
+    fn help_ctrl_keys_are_registered_and_handled() {
+        for (c, key) in HELP_CTRL_KEYS {
+            assert!(
+                nethacked_i18n::ALL_KEYS.contains(key),
+                "ctrl help key '{c}' uses unregistered i18n key {key}"
+            );
+            assert!(
+                !matches!(handle_key(ctrl(*c), &ctx()), KeyOutcome::Nothing),
+                "help lists ^{c} but it does nothing"
+            );
+        }
+        assert!(HELP_CTRL_KEYS.iter().any(|(c, _)| *c == 'p'));
+    }
+    #[test]
+    fn help_grid_has_room() {
+        assert!(
+            HELP_KEYS.len() + HELP_CTRL_KEYS.len() <= HELP_ROWS * 3,
+            "{} keys do not fit {} rows x 3 columns",
+            HELP_KEYS.len() + HELP_CTRL_KEYS.len(),
+            HELP_ROWS
+        );
     }
 }

@@ -1,6 +1,7 @@
 //! Movement action handling, shopkeeper theft detection, and engraving interaction.
 
 use nethacked_core::energy::NORMAL_SPEED;
+use nethacked_core::grid::{diagonal_door_block, DiagonalDoorBlock};
 use nethacked_dungeon::RoomType;
 use nethacked_types::{Coord, Direction, DoorState, Tile};
 use rand::Rng;
@@ -9,6 +10,49 @@ use crate::events::GameEvent;
 use crate::world::SimulationWorld;
 
 impl SimulationWorld {
+    /// The door rule of C `test_move` for the single step `from` -> `to`:
+    /// no diagonal move into an intact doorway (hack.c:1141, checked first) or
+    /// out of one (hack.c:1209); `doorless_door` (hack.c:4063) makes broken
+    /// and empty doorways passable diagonally. Monsters use the same rule
+    /// (`mfndpos`, mon.c:2250-2257: a door with any `doormask` bit but
+    /// `D_BROKEN` blocks; a `D_NODOOR` doorway has none and a closed one is
+    /// impassable anyway). Not modelled: `Passes_walls`, the Rogue level.
+    pub(crate) fn diagonal_door_block_between(
+        &self,
+        from: Coord,
+        to: Coord,
+    ) -> Option<DiagonalDoorBlock> {
+        diagonal_door_block(
+            self.level.get_tile(from),
+            self.level.get_tile(to),
+            to.x as isize - from.x as isize,
+            to.y as isize - from.y as isize,
+        )
+    }
+
+    /// Whether a single step `from` -> `to` between two passable squares is
+    /// legal with respect to doors (`test_move` hack.c:1141, :1209; monsters
+    /// `mfndpos` mon.c:2250-2257). Used as the edge predicate of the monster
+    /// distance fields and for random monster steps.
+    pub(crate) fn can_step(&self, from: Coord, to: Coord) -> bool {
+        self.diagonal_door_block_between(from, to).is_none()
+    }
+
+    /// The refusal message of C `test_move` (hack.c:1147 into, :1212 out of
+    /// an intact doorway). C prints it only with `mention_walls`
+    /// (hack.c:1146, :1211); the sim always prints it, like `bump_wall`.
+    fn diagonal_door_refusal(&self, block: DiagonalDoorBlock) -> GameEvent {
+        let text = match block {
+            DiagonalDoorBlock::IntoDoorway => {
+                nethacked_i18n::Messages::no_diagonal_into_doorway(self.locale)
+            }
+            DiagonalDoorBlock::OutOfDoorway => {
+                nethacked_i18n::Messages::no_diagonal_out_of_doorway(self.locale)
+            }
+        };
+        GameEvent::LogMessage { text: text.into() }
+    }
+
     /// C `is_safemon(mon)` (display.h:159-161): `flags.safe_dog` (on by default),
     /// a peaceful monster the hero can spot, and the hero not confused,
     /// hallucinating or stunned. "Can spot" is approximated by "hero not blind".
@@ -40,6 +84,13 @@ impl SimulationWorld {
     /// trap, refuses ("You stop.  <Mon> doesn't want to swap places."); anyone
     /// else swaps places with the hero ("You swap places with the peaceful <mon>.").
     ///
+    /// A diagonal swap through an intact doorway is refused by `test_move`
+    /// (hack.c:1141, :1209), which C runs before `domove_swap_with_pet`
+    /// (hack.c:2098) and after the `do_attack` draw above; the refusal takes
+    /// no time (hack.c:2843), so the second tuple field is `false`.
+    ///
+    /// Returns the events and whether the bump used the hero's move.
+    ///
     /// Not modelled: Punished, long worms, the `dopay()` bump on a blocking
     /// shopkeeper (uhitm.c:492-494), the `mmove == 0 && rn2(6)` "doesn't seem to
     /// move" case (no BESTIARY entry has speed 0), monster traps/liquids after
@@ -49,10 +100,10 @@ impl SimulationWorld {
         target_id: nethacked_arena::ActorId,
         hero_from: Coord,
         target_coord: Coord,
-    ) -> Vec<GameEvent> {
+    ) -> (Vec<GameEvent>, bool) {
         let mut events = Vec::new();
         let Some(target) = self.arena.actors.get(target_id).cloned() else {
-            return events;
+            return (events, true);
         };
         // uhitm.c:475 `!rn2(7)` (Punished is not modelled).
         let must_stop = self.rng.random_range(0..7u32) == 0; // C `foo`
@@ -72,7 +123,13 @@ impl SimulationWorld {
                     self.locale,
                 ),
             });
-            return events;
+            return (events, true);
+        }
+        // hack.c:1141, :1209 `test_move`, run after `do_attack` returned FALSE
+        // and before `domove_swap_with_pet` (hack.c:2098).
+        if let Some(block) = self.diagonal_door_block_between(hero_from, target_coord) {
+            events.push(self.diagonal_door_refusal(block));
+            return (events, false);
         }
         let quest_cfg = nethacked_core::get_role_quest_config_or_default(&self.role_name);
         let mundisplaceable = self.ruleset.monster(&target.name).is_some_and(|a| {
@@ -93,7 +150,7 @@ impl SimulationWorld {
                     self.locale,
                 ),
             });
-            return events;
+            return (events, true);
         }
         if let Some(p) = self.arena.actors.get_mut(self.player_id) {
             p.coord = target_coord;
@@ -114,9 +171,16 @@ impl SimulationWorld {
         events.push(GameEvent::LogMessage {
             text: nethacked_i18n::Messages::swap_with_peaceful(&target.name, self.locale),
         });
-        events
+        (events, true)
     }
 
+    /// The hero steps (C `domove`, hack.c:2794-2843). Attacks are resolved
+    /// before `test_move` (hack.c:2794-2810). A closed door is auto-opened
+    /// first (hack.c:1074-1100). Then a diagonal step into (hack.c:1141) or
+    /// out of (hack.c:1209) an intact doorway is refused, costing no time
+    /// (hack.c:2843); broken and empty doorways (`doorless_door`,
+    /// hack.c:4063) allow it. Pet and peaceful swaps are refused the same way
+    /// (`test_move` precedes `domove_swap_with_pet`, hack.c:2098).
     pub(crate) fn handle_move(&mut self, dir: Direction) -> Vec<GameEvent> {
         let mut events = Vec::new();
         let Some(player) = self.arena.actors.get(self.player_id).cloned() else {
@@ -146,6 +210,7 @@ impl SimulationWorld {
         let ny = player.coord.y as isize + dy;
 
         if let Some(target_coord) = Coord::new(nx as usize, ny as usize) {
+            let door_block = self.diagonal_door_block_between(player.coord, target_coord);
             // Check if actor at target
             if let Some(target_id) = self.actor_at(target_coord) {
                 let is_target_tame = self
@@ -154,7 +219,12 @@ impl SimulationWorld {
                     .get(target_id)
                     .map(|a| a.is_tame)
                     .unwrap_or(false);
-                if is_target_tame {
+                if is_target_tame && door_block.is_some() {
+                    // hack.c:1141, :1209: test_move refuses before the pet swap.
+                    if let Some(block) = door_block {
+                        events.push(self.diagonal_door_refusal(block));
+                    }
+                } else if is_target_tame {
                     // Displacement! Non-violent position swap verified in Lean 4
                     let pet_name = self
                         .arena
@@ -185,8 +255,12 @@ impl SimulationWorld {
                     self.scheduler.hero_act(move_cost);
                 } else if self.is_safemon(target_id) {
                     // Walking into a peaceful never attacks it (C `is_safemon`).
-                    events.extend(self.bump_peaceful(target_id, player.coord, target_coord));
-                    self.scheduler.hero_act(move_cost);
+                    let (bump_events, took_time) =
+                        self.bump_peaceful(target_id, player.coord, target_coord);
+                    events.extend(bump_events);
+                    if took_time {
+                        self.scheduler.hero_act(move_cost);
+                    }
                 } else {
                     let combat_events = self.resolve_combat(self.player_id, target_id);
                     events.extend(combat_events);
@@ -273,6 +347,12 @@ impl SimulationWorld {
                             text: nethacked_i18n::Messages::drawbridge_lower(self.locale).into(),
                         });
                         self.scheduler.hero_act(move_cost);
+                    }
+                    _ if tile.is_passable() && door_block.is_some() => {
+                        // hack.c:1141 (into) / :1209 (out of): refused, no time (:2843).
+                        if let Some(block) = door_block {
+                            events.push(self.diagonal_door_refusal(block));
+                        }
                     }
                     _ if tile.is_passable() => {
                         let from = player.coord;

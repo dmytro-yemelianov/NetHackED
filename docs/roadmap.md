@@ -48,7 +48,14 @@ The roadmap below orders the remaining work by what a player notices first. Each
 
 Size is a rough guide to effort: **S** is days, **M** is about a week, **L** is a few weeks, **XL** is longer. Each milestone gets a spec and a plan in `docs/superpowers/` before work starts.
 
-### M1 — Playable core loop · M · next
+### M1 — Playable core loop · M · in progress (2 of 7 done)
+
+**Progress:**
+- ✅ Doors block diagonal moves.
+- ✅ Every message shown with `--More--`, plus `^P` history.
+- ⏳ Map memory, C glyphs, item prompts, wand choice and look commands are still to do.
+
+Spec: [m1-core-loop-design](superpowers/specs/2026-10-05-m1-core-loop-design.md). Plan: [m1-core-loop](superpowers/plans/2026-10-05-m1-core-loop.md).
 
 **Goal.** The game reads and controls like NetHack.
 

@@ -357,6 +357,9 @@ pub enum DoorState {
     Closed,
     Locked,
     Broken,
+    /// Empty doorway, C `D_NODOOR` (rm.h:233). Doorless like `Broken`
+    /// (hack.c:4063 `doorless_door`). Appended last for save compatibility.
+    NoDoor,
 }
 
 /// Map tile representation eliminating C NetHack rm.flags bitfield collisions.
@@ -413,7 +416,10 @@ impl Tile {
             | Tile::HighAltar { .. } => true,
             Tile::Drawbridge { open } => *open,
             Tile::Pit { filled } => *filled,
-            Tile::Door { state, .. } => matches!(state, DoorState::Open | DoorState::Broken),
+            Tile::Door { state, .. } => matches!(
+                state,
+                DoorState::Open | DoorState::Broken | DoorState::NoDoor
+            ),
             Tile::Pool { frozen } => *frozen,
             _ => false,
         }
@@ -432,9 +438,26 @@ impl Tile {
             | Tile::Lava
             | Tile::Moat => true,
             Tile::Drawbridge { open } => *open,
-            Tile::Door { state, .. } => matches!(state, DoorState::Open | DoorState::Broken),
+            Tile::Door { state, .. } => matches!(
+                state,
+                DoorState::Open | DoorState::Broken | DoorState::NoDoor
+            ),
             _ => false,
         }
+    }
+
+    /// True for a door that still has its door: open, closed or locked.
+    /// The complement of C `doorless_door` (hack.c:4063-4073) among door
+    /// tiles; a secret door is not a door yet (`SDOOR` is not `IS_DOOR`,
+    /// rm.h:121).
+    pub fn has_intact_door(&self) -> bool {
+        matches!(
+            self,
+            Tile::Door {
+                state: DoorState::Open | DoorState::Closed | DoorState::Locked,
+                ..
+            }
+        )
     }
 
     pub fn open_door(&mut self) {
@@ -817,6 +840,69 @@ pub struct GraveyardStats {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// `DoorState::NoDoor` (C `D_NODOOR`, rm.h:233) is an empty doorway:
+    /// passable and transparent exactly like a broken door.
+    #[test]
+    fn no_door_is_passable_and_transparent() {
+        let t = Tile::Door {
+            state: DoorState::NoDoor,
+            trapped: false,
+        };
+        assert!(t.is_passable());
+        assert!(t.is_transparent());
+        let b = Tile::Door {
+            state: DoorState::Broken,
+            trapped: false,
+        };
+        assert_eq!(t.is_passable(), b.is_passable());
+        assert_eq!(t.is_transparent(), b.is_transparent());
+    }
+
+    /// `Tile::has_intact_door` is true only for doors that still have a door
+    /// (C `IS_DOOR && !doorless_door`, hack.c:4063).
+    #[test]
+    fn has_intact_door_table() {
+        let door = |state| Tile::Door {
+            state,
+            trapped: false,
+        };
+        assert!(door(DoorState::Open).has_intact_door());
+        assert!(door(DoorState::Closed).has_intact_door());
+        assert!(door(DoorState::Locked).has_intact_door());
+        assert!(!door(DoorState::Broken).has_intact_door());
+        assert!(!door(DoorState::NoDoor).has_intact_door());
+        assert!(!Tile::SecretDoor { locked: false }.has_intact_door());
+        assert!(!Tile::Room.has_intact_door());
+        assert!(!Tile::Corr.has_intact_door());
+        assert!(!Tile::Wall { horizontal: true }.has_intact_door());
+    }
+
+    /// Every `DoorState` survives a JSON round trip, and the pre-NoDoor
+    /// spelling `"Broken"` of old saves still deserializes.
+    #[test]
+    fn door_state_serde_round_trip_including_no_door() {
+        for s in [
+            DoorState::Open,
+            DoorState::Closed,
+            DoorState::Locked,
+            DoorState::Broken,
+            DoorState::NoDoor,
+        ] {
+            let json = serde_json::to_string(&s).unwrap();
+            let back: DoorState = serde_json::from_str(&json).unwrap();
+            assert_eq!(back, s);
+        }
+        assert_eq!(
+            serde_json::to_string(&DoorState::NoDoor).unwrap(),
+            "\"NoDoor\""
+        );
+        let old: DoorState = serde_json::from_str("\"Broken\"").unwrap();
+        assert_eq!(old, DoorState::Broken);
+        let tile: Tile =
+            serde_json::from_str(r#"{"Door":{"state":"Broken","trapped":false}}"#).unwrap();
+        assert!(tile.is_passable());
+    }
 
     /// `MonsterAbility::Breath` lost its dead `range`/`damage_dice` fields;
     /// an older save that still has them loads (unknown fields are ignored).

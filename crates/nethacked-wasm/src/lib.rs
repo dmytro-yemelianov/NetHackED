@@ -7,6 +7,7 @@ use nethacked_agent::{
     AgentSession, RunResult,
 };
 use nethacked_data::roles::{CharacterConfig, RoleId};
+use nethacked_sim::{turn_messages, MessageWindow};
 use nethacked_types::Coord;
 use wasm_bindgen::prelude::*;
 
@@ -72,6 +73,18 @@ fn action_args_for(action: &str, arg: Option<String>, player: Option<Coord>) -> 
 #[wasm_bindgen]
 pub struct WasmGameSession {
     session: AgentSession,
+    /// The top message line (frontend state, like the TUI's): never part of
+    /// the simulation, so saves, RNG and events are untouched.
+    messages: MessageWindow,
+}
+
+impl WasmGameSession {
+    fn wrap(session: AgentSession) -> Self {
+        Self {
+            session,
+            messages: MessageWindow::new(),
+        }
+    }
 }
 
 #[wasm_bindgen]
@@ -79,9 +92,7 @@ impl WasmGameSession {
     /// Create a new session with seed and default character.
     #[wasm_bindgen(constructor)]
     pub fn new(seed: u64) -> Self {
-        Self {
-            session: AgentSession::new(seed),
-        }
+        Self::wrap(AgentSession::new(seed))
     }
 
     /// Create a new session with a custom character configuration.
@@ -98,9 +109,7 @@ impl WasmGameSession {
             .map_err(|e| JsValue::from_str(&e))?;
         // The web UI keeps each role's natural alignment.
         config.alignment = nethacked_data::roles::get_role(config.role).default_alignment;
-        Ok(Self {
-            session: AgentSession::new_with_character(seed, config),
-        })
+        Ok(Self::wrap(AgentSession::new_with_character(seed, config)))
     }
 
     /// Like `new_with_character` but plays on the given rule pack's ruleset.
@@ -120,14 +129,12 @@ impl WasmGameSession {
             .role(config.role)
             .map(|r| r.default_alignment)
             .unwrap_or_else(|| nethacked_data::roles::get_role(config.role).default_alignment);
-        Ok(Self {
-            session: AgentSession::new_with_ruleset(
-                seed,
-                config,
-                std::sync::Arc::clone(&pack.ruleset),
-                pack.rref.clone(),
-            ),
-        })
+        Ok(Self::wrap(AgentSession::new_with_ruleset(
+            seed,
+            config,
+            std::sync::Arc::clone(&pack.ruleset),
+            pack.rref.clone(),
+        )))
     }
 
     /// Id of the ruleset this session plays on (`vanilla` or a pack id).
@@ -156,6 +163,11 @@ impl WasmGameSession {
     }
 
     /// Step the simulation with an action string (e.g. "move", "wait", "pickup", "pay", "pray", "sacrifice").
+    ///
+    /// After a successful step the turn's messages are posted to the message
+    /// window (the same `turn_messages` and window the terminal UI uses,
+    /// win/tty/topl.c:251-303 `update_topl`). A rejected action returns before
+    /// that and leaves the window untouched.
     #[wasm_bindgen]
     pub fn step(&mut self, action_str: &str, arg: Option<String>) -> String {
         let name = action_str.trim().to_lowercase();
@@ -173,7 +185,76 @@ impl WasmGameSession {
         };
 
         let obs = self.session.step(action);
+        let texts = turn_messages(&self.session.world, &self.session.last_events);
+        self.messages.post_turn(&texts);
         serde_json::to_string(&obs).unwrap_or_default()
+    }
+
+    /// Show one message of its own on the top line and remember it for `^P`
+    /// (a `pline`, win/tty/topl.c:251 `update_topl`).
+    #[wasm_bindgen(js_name = msgPost)]
+    pub fn msg_post(&mut self, text: &str) {
+        self.messages.post(text);
+    }
+
+    /// Show a prompt or echo on the top line without remembering it
+    /// (win/tty/topl.c:421-426 `SUPPRESS_HISTORY`).
+    #[wasm_bindgen(js_name = msgShow)]
+    pub fn msg_show(&mut self, text: &str) {
+        self.messages.show(text);
+    }
+
+    /// Queue `text` as a page of its own behind a `--More--` (used for the
+    /// game-over line, win/tty/topl.c:262-269 "You die" never joins a line).
+    #[wasm_bindgen(js_name = msgAppendPage)]
+    pub fn msg_append_page(&mut self, text: &str) {
+        self.messages.append_page(text);
+    }
+
+    /// The top line as drawn: text plus the localized `--More--` label while a
+    /// page is pending (win/tty/wintty.c:182 `defmorestr`).
+    #[wasm_bindgen(js_name = msgLine)]
+    pub fn msg_line(&self) -> String {
+        let label = nethacked_i18n::t("tui.more", self.session.world.locale);
+        self.messages.line(label)
+    }
+
+    /// True while a `--More--` waits for a key.
+    #[wasm_bindgen(js_name = msgMore)]
+    pub fn msg_more(&self) -> bool {
+        self.messages.more()
+    }
+
+    /// Any key at `--More--`: show the next page (win/tty/topl.c:205 `more`).
+    #[wasm_bindgen(js_name = msgDismiss)]
+    pub fn msg_dismiss(&mut self) {
+        self.messages.dismiss();
+    }
+
+    /// Esc at `--More--`: skip the remaining pages (win/tty/topl.c:233-236).
+    #[wasm_bindgen(js_name = msgSkipRest)]
+    pub fn msg_skip_rest(&mut self) {
+        self.messages.skip_rest();
+    }
+
+    /// Clear the top line (the next command key was read, wintty.c:4100-4102).
+    #[wasm_bindgen(js_name = msgClear)]
+    pub fn msg_clear(&mut self) {
+        self.messages.clear_line();
+    }
+
+    /// `^P`: show the previous message (cmd.c:164 `doprev_message`,
+    /// win/tty/topl.c:102-119 single mode). `None` with no history or at
+    /// `--More--`.
+    #[wasm_bindgen(js_name = msgPrev)]
+    pub fn msg_prev(&mut self) -> Option<String> {
+        self.messages.recall_prev().map(str::to_string)
+    }
+
+    /// Remembered lines, oldest first, as a JSON array of strings.
+    #[wasm_bindgen(js_name = msgHistoryJson)]
+    pub fn msg_history_json(&self) -> String {
+        serde_json::to_string(&self.messages.history().collect::<Vec<_>>()).unwrap_or_default()
     }
 
     /// Return carried inventory as JSON array with detailed stats for UI rendering.
@@ -428,7 +509,9 @@ impl WasmGameSession {
                     nethacked_types::Tile::Corr => "corr",
                     nethacked_types::Tile::Door { state, .. } => match state {
                         nethacked_types::DoorState::Open => "door_open",
-                        nethacked_types::DoorState::Broken => "door_broken",
+                        nethacked_types::DoorState::Broken | nethacked_types::DoorState::NoDoor => {
+                            "door_broken"
+                        }
                         _ => "door_closed",
                     },
                     nethacked_types::Tile::SecretDoor { .. } => "stone",
@@ -617,7 +700,7 @@ pub fn run_tactical_trajectory(seed: u64, max_turns: u32) -> String {
 }
 
 /// Localized labels the clean terminal page draws itself: role and race
-/// names and the status-line labels, for `locale` (`"en"` / `"uk"`).
+/// names, the status-line labels and the `--More--` label, for `locale` (`"en"` / `"uk"`).
 #[wasm_bindgen(js_name = uiStringsJson)]
 pub fn ui_strings_json(locale: &str) -> String {
     use nethacked_i18n::t;
@@ -650,7 +733,13 @@ pub fn ui_strings_json(locale: &str) -> String {
         "ac": t("ac", loc),
         "turn": t("turn", loc),
     });
-    serde_json::json!({ "role": roles, "race": races, "status": status }).to_string()
+    serde_json::json!({
+        "role": roles,
+        "race": races,
+        "status": status,
+        "more": t("tui.more", loc),
+    })
+    .to_string()
 }
 
 #[cfg(test)]
@@ -781,5 +870,105 @@ mod tests {
         assert_eq!(val["races"].as_array().unwrap().len(), 5);
         assert_eq!(val["roles"][0]["name"], "Valkyrie");
         assert_eq!(val["races"][0]["name"], "Human");
+    }
+
+    fn long_text() -> String {
+        // Two pages: more than 72 characters with spaces.
+        (0..20)
+            .map(|i| format!("word{i:02}"))
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+
+    #[test]
+    fn step_posts_turn_messages_and_prev_recalls() {
+        let mut s = WasmGameSession::new(42);
+        assert_eq!(s.msg_line(), "");
+        let mut shown = None;
+        // Find a step whose events print something (searching a fresh level
+        // with nothing to find is enough for most seeds; fall back to a few
+        // other commands).
+        for action in ["search", "pickup", "pray", "pay"] {
+            let out = s.step(action, None);
+            assert!(!out.contains("\"error\""), "{out}");
+            let expected = nethacked_sim::turn_messages(&s.session.world, &s.session.last_events);
+            if !expected.is_empty() {
+                shown = Some(expected);
+                break;
+            }
+        }
+        let expected = shown.expect("some command prints a message");
+        let packed = nethacked_sim::messages::pack_lines(&expected);
+        let more = s.msg_more();
+        assert_eq!(more, packed.len() > 1);
+        let want = if more {
+            format!("{}--More--", packed[0])
+        } else {
+            packed[0].clone()
+        };
+        assert_eq!(s.msg_line(), want);
+        // Page through, then clear the line like the next key does.
+        while s.msg_more() {
+            s.msg_dismiss();
+        }
+        s.msg_clear();
+        assert_eq!(s.msg_line(), "");
+        // ^P recalls the newest line (the last page).
+        assert_eq!(s.msg_prev().as_deref(), packed.last().map(String::as_str));
+        assert_eq!(s.msg_line(), *packed.last().unwrap());
+        let hist: Vec<String> = serde_json::from_str(&s.msg_history_json()).unwrap();
+        assert_eq!(hist, packed);
+    }
+
+    #[test]
+    fn msg_line_appends_localized_more_label() {
+        let mut s = WasmGameSession::new(7);
+        s.msg_post(&long_text());
+        assert!(s.msg_more());
+        assert!(s.msg_line().ends_with("--More--"), "{}", s.msg_line());
+        assert!(s.msg_line().chars().count() <= 80);
+        s.msg_dismiss();
+        assert!(!s.msg_more());
+        assert!(!s.msg_line().contains("--"));
+        s.set_locale("uk");
+        s.msg_post(&long_text());
+        assert!(s.msg_line().ends_with("--Далі--"), "{}", s.msg_line());
+        s.msg_skip_rest();
+        assert!(!s.msg_more());
+        assert_eq!(s.msg_line(), "");
+    }
+
+    #[test]
+    fn msg_show_is_not_history_and_append_page_pages() {
+        let mut s = WasmGameSession::new(7);
+        s.msg_post("You hit it.");
+        s.msg_show("In what direction?");
+        assert_eq!(s.msg_line(), "In what direction?");
+        s.msg_post("You hit it again.");
+        s.msg_append_page("You die...");
+        assert!(s.msg_more());
+        s.msg_dismiss();
+        assert_eq!(s.msg_line(), "You die...");
+        let hist: Vec<String> = serde_json::from_str(&s.msg_history_json()).unwrap();
+        assert_eq!(hist, ["You hit it.", "You hit it again.", "You die..."]);
+    }
+
+    #[test]
+    fn ui_strings_json_has_more_label() {
+        let en: serde_json::Value = serde_json::from_str(&ui_strings_json("en")).unwrap();
+        assert_eq!(en["more"], "--More--");
+        let uk: serde_json::Value = serde_json::from_str(&ui_strings_json("uk")).unwrap();
+        assert_eq!(uk["more"], "--Далі--");
+    }
+
+    #[test]
+    fn step_error_does_not_touch_message_window() {
+        let mut s = WasmGameSession::new(7);
+        s.msg_post("keep me");
+        let before = s.msg_history_json();
+        assert!(s.step("dance", None).contains("\"error\""));
+        assert!(s.step("drop", Some("abc".into())).contains("\"error\""));
+        assert_eq!(s.msg_line(), "keep me");
+        assert_eq!(s.msg_history_json(), before);
     }
 }

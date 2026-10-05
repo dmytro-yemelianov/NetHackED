@@ -7,7 +7,7 @@
 
 use crossterm::{
     cursor::{Hide, MoveTo, Show},
-    event::{self, Event, KeyCode, KeyEventKind},
+    event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers},
     execute, queue,
     style::{Color, Print, ResetColor, SetForegroundColor},
     terminal::{
@@ -19,16 +19,17 @@ use nethacked_agent::commands::ZAP_ENERGY;
 use nethacked_core::skills::{enhance_skill, skill_damage_bonus, skill_to_hit_bonus};
 use nethacked_dungeon::compute_fov;
 use nethacked_i18n::{t, t_align, t_hunger_str, t_item, Locale, Messages};
+use nethacked_sim::{turn_messages, MessageWindow};
 use nethacked_sim::{
-    ActionAst, Alignment, CharacterConfig, Coord, Direction, DoorState, GameEvent, Gender,
-    HungerState, RaceId, RoleId, SimulationWorld, Tile, COLNO, ROWNO,
+    ActionAst, Alignment, CharacterConfig, Coord, Direction, DoorState, Gender, HungerState,
+    RaceId, RoleId, SimulationWorld, Tile, COLNO, ROWNO,
 };
 use nethacked_types::{ItemId, SkillClass, SkillLevel, TrapState};
 mod keys;
 mod pager;
 use keys::{
     confirm_quit_answer, handle_key, is_cancel, map_ukrainian_key, InventoryPurpose, KeyContext,
-    KeyOutcome, HELP_KEYS,
+    KeyOutcome, HELP_CTRL_KEYS, HELP_KEYS, HELP_ROWS,
 };
 use pager::Pager;
 use std::collections::HashSet;
@@ -275,6 +276,45 @@ fn select_character(
 }
 
 /// First adjacent door in the given state, scanning compass directions.
+/// Handle a key while a `--More--` is pending; true when the key was used up.
+///
+/// Esc skips the remaining pages (win/tty/topl.c:233-236 sets `WIN_STOP` on
+/// ESC at `more()`), Ctrl-C is left to the quit prompt, `^P` is ignored (the
+/// browser ignores it at `--More--` too) and any other key shows the next page
+/// (topl.c:205-245 `more`, which in C waits for space, Enter or Esc only).
+/// Without a pending `--More--` nothing is consumed.
+fn consume_more_key(win: &mut MessageWindow, key: &KeyEvent) -> bool {
+    if !win.more() {
+        return false;
+    }
+    let ctrl = key.modifiers.contains(KeyModifiers::CONTROL);
+    let letter = match key.code {
+        KeyCode::Char(c) => Some(map_ukrainian_key(c)),
+        _ => None,
+    };
+    if ctrl && letter == Some('c') {
+        return false;
+    }
+    if ctrl && letter == Some('p') {
+        return true;
+    }
+    if key.code == KeyCode::Esc {
+        win.skip_rest();
+    } else {
+        win.dismiss();
+    }
+    true
+}
+
+/// Dead-player hint on the top line. It waits until the fatal turn's pages
+/// have been paged through (win/tty/topl.c:262-269: "You die..." gets its own
+/// line and is always seen).
+fn show_died_hint(win: &mut MessageWindow, locale: Locale) {
+    if !win.more() {
+        win.show(t("tui.died", locale));
+    }
+}
+
 fn adjacent_door(world: &SimulationWorld, from: Coord, want: DoorState) -> Option<Coord> {
     Direction::all_compass().iter().find_map(|&d| {
         from.step(d).filter(
@@ -572,6 +612,8 @@ fn show_enhance_modal(stdout: &mut Stdout, world: &mut SimulationWorld) -> io::R
     Ok(())
 }
 
+/// Help screen: `HELP_KEYS` then `HELP_CTRL_KEYS` (`^p` prevmsg, cmd.c:1811
+/// `C('p')`) in a three-column grid of `HELP_ROWS` rows.
 fn show_help_modal(stdout: &mut Stdout, locale: Locale, seed: u64) -> io::Result<()> {
     let (ox, oy) = screen_offsets();
     execute!(stdout, Clear(ClearType::All))?;
@@ -585,23 +627,27 @@ fn show_help_modal(stdout: &mut Stdout, locale: Locale, seed: u64) -> io::Result
         ResetColor
     )?;
 
-    // Three columns rendered from the single-source key list.
-    const ROWS: usize = 14;
-    for (idx, (c, key)) in HELP_KEYS.iter().enumerate() {
+    // Three columns rendered from the single-source key lists: plain keys,
+    // then control keys as `^<key>`.
+    let entries = HELP_KEYS
+        .iter()
+        .map(|(c, key)| (format!("{c}"), key))
+        .chain(HELP_CTRL_KEYS.iter().map(|(c, key)| (format!("^{c}"), key)));
+    for (idx, (label, key)) in entries.enumerate() {
         let desc = t(key, locale);
-        let (col, row) = (idx / ROWS, idx % ROWS);
+        let (col, row) = (idx / HELP_ROWS, idx % HELP_ROWS);
         execute!(
             stdout,
             MoveTo(ox + 1 + col as u16 * 26, oy + 3 + row as u16),
             SetForegroundColor(Color::White),
-            Print(format!("{c} {desc}")),
+            Print(format!("{label} {desc}")),
             ResetColor
         )?;
     }
     let quit_line = t("tui.help_quit", locale);
     execute!(
         stdout,
-        MoveTo(ox + 1, oy + 3 + ROWS as u16 + 1),
+        MoveTo(ox + 1, oy + 3 + HELP_ROWS as u16 + 1),
         SetForegroundColor(Color::Yellow),
         Print(quit_line),
         ResetColor
@@ -645,6 +691,10 @@ fn show_help_modal(stdout: &mut Stdout, locale: Locale, seed: u64) -> io::Result
     Ok(())
 }
 
+/// Game loop. The top line is a [`MessageWindow`] (win/tty/topl.c:251-303
+/// `update_topl`): every message of a command is shown, `--More--` pages wait
+/// for a key, and the line is cleared when the next command key is read
+/// (wintty.c:4100-4102).
 fn main() -> io::Result<()> {
     let args: Vec<String> = std::env::args().collect();
     let tui_args = match parse_args(&args) {
@@ -715,11 +765,13 @@ fn main() -> io::Result<()> {
         ruleset_ref,
     );
     world.set_locale(tui_args.locale);
-    let mut message = Messages::tui_welcome(&char_name, tui_args.locale);
+    let mut win = MessageWindow::new();
+    win.post(&Messages::tui_welcome(&char_name, tui_args.locale));
     let mut last_dir = Direction::East;
 
     loop {
-        render(&mut stdout, &world, &message, tui_args.seed)?;
+        let top_line = win.line(t("tui.more", world.locale));
+        render(&mut stdout, &world, &top_line, tui_args.seed)?;
 
         let ev = event::read()?;
         if let Event::Resize(..) = ev {
@@ -737,12 +789,18 @@ fn main() -> io::Result<()> {
                 other => other,
             };
 
+            // A key at --More-- only pages the message line (Esc skips the
+            // rest); it is not a command.
+            if consume_more_key(&mut win, &key) {
+                continue;
+            }
+
             let player_opt = world.arena.actors.get(world.player_id).cloned();
             let Some(player) = player_opt else {
                 break;
             };
             if player.is_dead {
-                message = t("tui.died", world.locale).into();
+                show_died_hint(&mut win, world.locale);
                 if matches!(
                     handle_key(
                         key,
@@ -766,6 +824,11 @@ fn main() -> io::Result<()> {
                     last_dir,
                 },
             );
+            // The line is cleared when the next command key is read
+            // (wintty.c:4100-4102); `^P` keeps the line it recalls.
+            if !matches!(outcome, KeyOutcome::PrevMessage) {
+                win.clear_line();
+            }
             let action =
                 match outcome {
                     KeyOutcome::Quit => break,
@@ -789,7 +852,11 @@ fn main() -> io::Result<()> {
                         if quit {
                             break;
                         }
-                        message = String::new();
+                        win.clear_line();
+                        None
+                    }
+                    KeyOutcome::PrevMessage => {
+                        let _ = win.recall_prev();
                         None
                     }
                     KeyOutcome::OpenHelp => {
@@ -803,7 +870,7 @@ fn main() -> io::Result<()> {
                             Locale::Uk
                         };
                         world.set_locale(new_loc);
-                        message = t("tui.lang_switched", new_loc).into();
+                        win.post(t("tui.lang_switched", new_loc));
                         None
                     }
                     KeyOutcome::Act(act) => {
@@ -866,7 +933,7 @@ fn main() -> io::Result<()> {
                                 .get(item_id)
                                 .map(|i| i.name.as_str())
                                 .unwrap_or("item");
-                            message = Messages::quiver_success(item_name, world.locale);
+                            win.post(&Messages::quiver_success(item_name, world.locale));
                         }
                         None
                     }
@@ -909,27 +976,7 @@ fn main() -> io::Result<()> {
 
             if let Some(act) = action {
                 let events = world.step_player_action(act);
-                let loc = world.locale;
-                if let Some(last_msg) = events
-                    .iter()
-                    .filter_map(|e| match e {
-                        GameEvent::LogMessage { text } => Some(text.clone()),
-                        GameEvent::AttackLanded { damage, lethal, .. } => {
-                            Some(Messages::tui_hit(*damage, *lethal, loc))
-                        }
-                        GameEvent::AttackMissed { .. } => Some(t("tui.miss", loc).into()),
-                        GameEvent::DoorToggled { new_state, .. } => {
-                            Some(Messages::door_state(&format!("{new_state:?}"), loc))
-                        }
-                        GameEvent::LevelChanged { to_depth, .. } => {
-                            Some(Messages::level_enter(to_depth, loc))
-                        }
-                        _ => None,
-                    })
-                    .next_back()
-                {
-                    message = last_msg;
-                }
+                win.post_turn(&turn_messages(&world, &events));
             }
         }
     }
@@ -1067,6 +1114,8 @@ fn render(
                         DoorState::Open => '/',
                         DoorState::Closed | DoorState::Locked => '+',
                         DoorState::Broken => '*',
+                        // Empty doorway (C D_NODOOR, rm.h:233).
+                        DoorState::NoDoor => '.',
                     };
                     queue!(
                         stdout,
@@ -1367,6 +1416,7 @@ fn parse_seed_args(args: &[String]) -> Result<Option<u64>, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use nethacked_sim::PACK_LIMIT;
     fn s(v: &[&str]) -> Vec<String> {
         v.iter().map(|x| x.to_string()).collect()
     }
@@ -1387,6 +1437,110 @@ mod tests {
         assert_eq!(banner_line(&long, "Seed:5").chars().count(), 80);
         let uk = "ж".repeat(95);
         assert_eq!(banner_line(&uk, "Seed:5").chars().count(), 80);
+    }
+
+    fn press(code: KeyCode, mods: crossterm::event::KeyModifiers) -> crossterm::event::KeyEvent {
+        crossterm::event::KeyEvent::new(code, mods)
+    }
+    fn plain(c: char) -> crossterm::event::KeyEvent {
+        press(KeyCode::Char(c), crossterm::event::KeyModifiers::NONE)
+    }
+    fn two_pages() -> MessageWindow {
+        let mut w = MessageWindow::new();
+        w.post_turn(&["a".repeat(40), "b".repeat(40), "c".repeat(40)]);
+        w
+    }
+
+    #[test]
+    fn consume_more_key_dismisses_on_any_key() {
+        let mut w = two_pages();
+        assert!(consume_more_key(&mut w, &plain('x')));
+        assert_eq!(w.text(), "b".repeat(40));
+        assert!(consume_more_key(
+            &mut w,
+            &press(KeyCode::Enter, crossterm::event::KeyModifiers::NONE)
+        ));
+        assert_eq!(w.text(), "c".repeat(40));
+        assert!(!w.more());
+        // The key that dismissed the last --More-- is not a command.
+        assert!(!consume_more_key(&mut w, &plain('x')));
+    }
+
+    #[test]
+    fn esc_skips_rest_instead_of_quit() {
+        let mut w = two_pages();
+        assert!(consume_more_key(
+            &mut w,
+            &press(KeyCode::Esc, crossterm::event::KeyModifiers::NONE)
+        ));
+        assert!(!w.more());
+        assert_eq!(w.text(), "");
+        assert_eq!(w.history().count(), 3, "history keeps every page");
+    }
+
+    #[test]
+    fn ctrl_c_is_not_consumed() {
+        let mut w = two_pages();
+        let ctrl_c = press(KeyCode::Char('c'), crossterm::event::KeyModifiers::CONTROL);
+        assert!(!consume_more_key(&mut w, &ctrl_c));
+        // Also on a Ukrainian layout (the same physical key).
+        let ctrl_es = press(KeyCode::Char('с'), crossterm::event::KeyModifiers::CONTROL);
+        assert!(!consume_more_key(&mut w, &ctrl_es));
+        assert!(w.more(), "nothing was dismissed");
+    }
+
+    #[test]
+    fn ctrl_p_is_ignored_at_more() {
+        // ^P is only for the idle line (the web page ignores it at --More-- too).
+        let mut w = two_pages();
+        let ctrl_p = press(KeyCode::Char('p'), crossterm::event::KeyModifiers::CONTROL);
+        assert!(consume_more_key(&mut w, &ctrl_p));
+        assert_eq!(w.text(), "a".repeat(40));
+        assert!(w.more());
+    }
+
+    #[test]
+    fn not_consumed_when_no_more_pending() {
+        let mut w = MessageWindow::new();
+        w.post("hello");
+        assert!(!consume_more_key(&mut w, &plain('x')));
+        assert!(!consume_more_key(
+            &mut w,
+            &press(KeyCode::Esc, crossterm::event::KeyModifiers::NONE)
+        ));
+        assert_eq!(w.text(), "hello");
+    }
+
+    #[test]
+    fn dead_player_sees_fatal_turn_pages_before_died_hint() {
+        let mut w = MessageWindow::new();
+        let fatal = ["a".repeat(40), "You die...".to_string()];
+        w.post_turn(&fatal);
+        assert!(w.more());
+        // The hint waits while pages are pending.
+        show_died_hint(&mut w, Locale::En);
+        assert_eq!(w.text(), "a".repeat(40));
+        assert!(consume_more_key(&mut w, &plain(' ')));
+        assert_eq!(w.text(), "You die...");
+        // Now the main loop reaches the dead-player block on the next key.
+        show_died_hint(&mut w, Locale::En);
+        assert_eq!(w.text(), t("tui.died", Locale::En));
+        assert_eq!(w.history().count(), 2, "the hint is not a message");
+    }
+
+    #[test]
+    fn banner_line_with_more_label_fits_80_columns() {
+        for loc in [Locale::En, Locale::Uk] {
+            let label = t("tui.more", loc);
+            let mut w = MessageWindow::new();
+            let first = "ж".repeat(PACK_LIMIT);
+            w.post_turn(&[first.clone(), "second".into()]);
+            let shown = w.line(label);
+            assert_eq!(shown.chars().count(), 80);
+            let banner = banner_line(&shown, "Seed:5");
+            assert_eq!(banner.chars().count(), 80);
+            assert!(banner.trim_end().ends_with(label), "{banner:?}");
+        }
     }
 
     #[test]
