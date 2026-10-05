@@ -2,6 +2,8 @@
 //!
 //! Separates static game ontology and archetypes completely from the simulation runner.
 
+#[macro_use]
+mod c_id;
 pub mod items;
 pub mod monsters;
 pub mod pantheons;
@@ -15,7 +17,7 @@ pub use items::{
 pub use monsters::{
     create_ghost_record, create_monster_record, get_monster_species, monster_archetype_by_name,
     monster_class_of, AiBehavior, Attack, AttackType, DamageType, MonsterArchetype, MonsterSize,
-    MonsterSound, MonsterSpeciesId, BESTIARY, LEGACY_SPECIES,
+    MonsterSound, MonsterSpeciesId, BESTIARY,
 };
 pub use nethacked_types::ItemClass;
 pub use pantheons::{get_pantheon_for_role, get_patron_deity};
@@ -87,11 +89,11 @@ mod tests {
         // C u_init.c:91 Knight LONG_SWORD +1; u_init.c:136 Rogue LEATHER_ARMOR +1;
         // ini_inv applies trspe (u_init.c:1233-1234).
         for (role, kind, spe) in [
-            (RoleId::Knight, ItemKindId::LongSword, 1),
-            (RoleId::Rogue, ItemKindId::LeatherArmor, 1),
-            (RoleId::Rogue, ItemKindId::Dagger, 0),
-            (RoleId::Rogue, ItemKindId::ShortSword, 0),
-            (RoleId::Wizard, ItemKindId::CloakOfMagicResistance, 0),
+            (RoleId::Knight, ItemKindId::LONG_SWORD, 1),
+            (RoleId::Rogue, ItemKindId::LEATHER_ARMOR, 1),
+            (RoleId::Rogue, ItemKindId::DAGGER, 0),
+            (RoleId::Rogue, ItemKindId::SHORT_SWORD, 0),
+            (RoleId::Wizard, ItemKindId::CLOAK_OF_MAGIC_RESISTANCE, 0),
         ] {
             let mut arena = EntityArena::new();
             let config = CharacterConfig {

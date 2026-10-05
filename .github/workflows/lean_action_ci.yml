@@ -69,6 +69,7 @@ jobs:
       - run: bash scripts/check-doc-links.sh
       - run: bash scripts/check-no-static-tables.sh
       - run: python3 scripts/parity-summary.py --check
+      - run: python3 scripts/extract/gen_rust.py --check
       - uses: actions/checkout@v4
         with:
           repository: NetHack/NetHack

@@ -62,14 +62,14 @@ pub(crate) fn roll_peace_minded(input: &PeaceMindedInput, rng: &mut impl Rng) ->
 fn is_temple_priest(ruleset: &Ruleset, mon: &ActorRecord) -> bool {
     ruleset
         .monster(&mon.name)
-        .is_some_and(|a| a.id == Some(MonsterSpeciesId::Priest))
+        .is_some_and(|a| a.id == Some(MonsterSpeciesId::ALIGNED_CLERIC))
 }
 
 /// C `isshk`: the sim's shopkeepers are the `shopkeeper` species.
 fn is_shopkeeper(ruleset: &Ruleset, mon: &ActorRecord) -> bool {
     ruleset
         .monster(&mon.name)
-        .is_some_and(|a| a.id == Some(MonsterSpeciesId::Shopkeeper))
+        .is_some_and(|a| a.id == Some(MonsterSpeciesId::SHOPKEEPER))
 }
 
 impl SimulationWorld {

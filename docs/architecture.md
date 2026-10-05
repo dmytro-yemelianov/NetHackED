@@ -190,7 +190,7 @@ Each subsection follows the same pattern: what C does, what NetHackED does, and 
 
 ### 4.7 Data tables
 
-- **C:** Large macro tables: `include/monsters.h` (383 species after preprocessing; `scripts/gen-bestiary.py` generates the bestiary from it), `include/objects.h`, `include/artilist.h`.
+- **C:** Large macro tables: `include/monsters.h` (383 species), `include/objects.h` (463 object types), `include/artilist.h` (33 artifacts). `scripts/extract/c_tables.py` expands them with `cc -E` (text only, nothing is compiled or run) into `data/nethack-5.0/*.toml`; `scripts/extract/gen_rust.py` turns that data into the Rust tables in `crates/nethacked-data/src/generated/`. Ids are table indices named exactly as in C (`MonsterSpeciesId::ALIGNED_CLERIC`, `ItemKindId::WAN_WISHING`, `ItemKindId::ART_EXCALIBUR`).
 - **Rust:** `static` slices in [nethacked-data](../crates/nethacked-data/src/): `BESTIARY` (47 `MonsterArchetype`s), `ITEM_CATALOG` (66 `ItemArchetype`s), `ROLES` (9), `RACES` (5) and pantheons. They are keyed by closed enums (`MonsterSpeciesId`, `ItemKindId`). Lookups use `.iter().find()` with an `expect`, and unit tests spawn every enum variant, so a missing table row fails a test rather than a game.
 - **Why:** The tables are declarative, type-checked and exhaustive. Adding content still requires recompiling (see §9). Since fidelity pass D2, every entry carries its C values and attack list (`Attack { at, ad, n, d }`), and invented entries such as "war dog" were replaced by C ones ("large dog").
 

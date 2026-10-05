@@ -478,15 +478,15 @@ impl SimulationWorld {
             if is_nemesis {
                 nethacked_core::attack_nemesis(&mut self.quest_state, 9999);
                 let art_id = match quest_cfg.role_name.to_lowercase().as_str() {
-                    "valkyrie" => ItemKindId::OrbOfFate,
-                    "wizard" => ItemKindId::EyeOfTheAethiopica,
-                    "barbarian" => ItemKindId::HeartOfAhriman,
-                    "knight" => ItemKindId::MagicMirrorOfMerlin,
-                    "monk" => ItemKindId::EyesOfTheOverworld,
-                    "rogue" => ItemKindId::MasterKeyOfThievery,
-                    "tourist" => ItemKindId::PlatinumYendorianExpressCard,
-                    "healer" => ItemKindId::StaffOfAesculapius,
-                    _ => ItemKindId::OrbOfDetection,
+                    "valkyrie" => ItemKindId::ART_ORB_OF_FATE,
+                    "wizard" => ItemKindId::ART_EYE_OF_THE_AETHIOPICA,
+                    "barbarian" => ItemKindId::ART_HEART_OF_AHRIMAN,
+                    "knight" => ItemKindId::ART_MAGIC_MIRROR_OF_MERLIN,
+                    "monk" => ItemKindId::ART_EYES_OF_THE_OVERWORLD,
+                    "rogue" => ItemKindId::ART_MASTER_KEY_OF_THIEVERY,
+                    "tourist" => ItemKindId::ART_YENDORIAN_EXPRESS_CARD,
+                    "healer" => ItemKindId::ART_STAFF_OF_AESCULAPIUS,
+                    _ => ItemKindId::ART_ORB_OF_DETECTION,
                 };
                 if let Some(art_rec) = self.ruleset.create_item_record_by_id(
                     art_id,
@@ -505,7 +505,7 @@ impl SimulationWorld {
             }
 
             if let Some(corpse) = self.ruleset.create_item_record_by_id(
-                ItemKindId::Corpse,
+                ItemKindId::CORPSE,
                 ItemLocation::Floor(defender.coord),
                 Buc::Uncursed,
             ) {

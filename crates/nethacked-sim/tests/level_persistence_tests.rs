@@ -50,19 +50,19 @@ fn nested_floor_containers_survive_round_trip() {
     let mut sim = SimulationWorld::new_with_seed(321);
     let spot = sim.level.stairs_down;
     let outer = sim.arena.spawn_item(create_item_record(
-        ItemKindId::Sack,
+        ItemKindId::SACK,
         ItemLocation::Floor(spot),
         Buc::Uncursed,
     ));
     let mut inner_rec = create_item_record(
-        ItemKindId::Sack,
+        ItemKindId::SACK,
         ItemLocation::InContainer(outer),
         Buc::Uncursed,
     );
     inner_rec.name = "inner sack".into();
     let inner = sim.arena.spawn_item(inner_rec);
     let mut gem = create_item_record(
-        ItemKindId::Dagger,
+        ItemKindId::DAGGER,
         ItemLocation::InContainer(inner),
         Buc::Uncursed,
     );
@@ -93,12 +93,12 @@ fn nested_floor_containers_survive_round_trip() {
 fn hero_container_contents_untouched() {
     let mut sim = SimulationWorld::new_with_seed(322);
     let bag = sim.arena.spawn_item(create_item_record(
-        ItemKindId::Sack,
+        ItemKindId::SACK,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
     let inside = sim.arena.spawn_item(create_item_record(
-        ItemKindId::Dagger,
+        ItemKindId::DAGGER,
         ItemLocation::InContainer(bag),
         Buc::Uncursed,
     ));
@@ -114,12 +114,12 @@ fn hero_container_contents_untouched() {
 fn monster_inventory_survives_round_trip() {
     let mut sim = SimulationWorld::new_with_seed(323);
     let room = sim.level.rooms[0].center();
-    let mut gob = create_monster_record(MonsterSpeciesId::Goblin, room);
+    let mut gob = create_monster_record(MonsterSpeciesId::GOBLIN, room);
     gob.name = "hoarder goblin".into();
     gob.speed = 0;
     let gid = sim.arena.spawn_actor(gob);
     let mut loot = create_item_record(
-        ItemKindId::LongSword,
+        ItemKindId::LONG_SWORD,
         ItemLocation::CarriedBy(gid),
         Buc::Uncursed,
     );
@@ -181,7 +181,7 @@ fn unpaid_ledger_follows_items_over_seeds() {
 fn steed_travels_with_hero() {
     let mut sim = SimulationWorld::new_with_seed(325);
     let p = sim.arena.actors.get(sim.player_id).unwrap().coord;
-    let mut pony = create_monster_record(MonsterSpeciesId::Dog, p);
+    let mut pony = create_monster_record(MonsterSpeciesId::DOG, p);
     pony.is_tame = true;
     let steed = sim.arena.spawn_actor(pony);
     sim.hero.mount = Some(MountState {
@@ -205,7 +205,7 @@ fn quiver_cleared_when_item_left_behind() {
     let mut sim = SimulationWorld::new_with_seed(326);
     let spot = sim.level.stairs_down;
     let arrow = sim.arena.spawn_item(create_item_record(
-        ItemKindId::Dagger,
+        ItemKindId::DAGGER,
         ItemLocation::Floor(spot),
         Buc::Uncursed,
     ));
@@ -220,17 +220,17 @@ fn container_cycle_does_not_hang_pack() {
     let mut sim = SimulationWorld::new_with_seed(322);
     let spot = sim.level.stairs_down;
     let floor = sim.arena.spawn_item(create_item_record(
-        ItemKindId::Sack,
+        ItemKindId::SACK,
         ItemLocation::Floor(spot),
         Buc::Uncursed,
     ));
     let a = sim.arena.spawn_item(create_item_record(
-        ItemKindId::Sack,
+        ItemKindId::SACK,
         ItemLocation::InContainer(floor),
         Buc::Uncursed,
     ));
     let b = sim.arena.spawn_item(create_item_record(
-        ItemKindId::Sack,
+        ItemKindId::SACK,
         ItemLocation::InContainer(a),
         Buc::Uncursed,
     ));
@@ -244,7 +244,7 @@ fn stale_wielded_item_cleared_on_descend() {
     let mut sim = SimulationWorld::new_with_seed(323);
     let spot = sim.level.stairs_down;
     let d = sim.arena.spawn_item(create_item_record(
-        ItemKindId::Dagger,
+        ItemKindId::DAGGER,
         ItemLocation::Floor(spot),
         Buc::Uncursed,
     ));

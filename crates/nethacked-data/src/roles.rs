@@ -60,7 +60,7 @@ pub static ROLES: &[RoleSpec] = &[
         ac: 10,
         speed: 12,
         default_alignment: Alignment::Neutral,
-        starting_items: &[ItemKindId::LongSword, ItemKindId::PotionOfHealing],
+        starting_items: &[ItemKindId::LONG_SWORD, ItemKindId::POT_HEALING],
         initial_alignment_record: 0,
     },
     RoleSpec {
@@ -71,9 +71,9 @@ pub static ROLES: &[RoleSpec] = &[
         speed: 12,
         default_alignment: Alignment::Neutral,
         starting_items: &[
-            ItemKindId::WandOfStriking,
-            ItemKindId::ScrollOfIdentify,
-            ItemKindId::CloakOfMagicResistance,
+            ItemKindId::WAN_STRIKING,
+            ItemKindId::SCR_IDENTIFY,
+            ItemKindId::CLOAK_OF_MAGIC_RESISTANCE,
         ],
         initial_alignment_record: 0,
     },
@@ -84,7 +84,7 @@ pub static ROLES: &[RoleSpec] = &[
         ac: 10,
         speed: 12,
         default_alignment: Alignment::Chaotic,
-        starting_items: &[ItemKindId::LongSword],
+        starting_items: &[ItemKindId::LONG_SWORD],
         initial_alignment_record: 10,
     },
     RoleSpec {
@@ -95,10 +95,10 @@ pub static ROLES: &[RoleSpec] = &[
         speed: 12,
         default_alignment: Alignment::Chaotic,
         starting_items: &[
-            ItemKindId::Dagger,
-            ItemKindId::ShortSword,
-            ItemKindId::LeatherArmor,
-            ItemKindId::Sack,
+            ItemKindId::DAGGER,
+            ItemKindId::SHORT_SWORD,
+            ItemKindId::LEATHER_ARMOR,
+            ItemKindId::SACK,
         ],
         initial_alignment_record: 10,
     },
@@ -109,7 +109,7 @@ pub static ROLES: &[RoleSpec] = &[
         ac: 10,
         speed: 12,
         default_alignment: Alignment::Lawful,
-        starting_items: &[ItemKindId::LongSword],
+        starting_items: &[ItemKindId::LONG_SWORD],
         initial_alignment_record: 10,
     },
     RoleSpec {
@@ -119,10 +119,7 @@ pub static ROLES: &[RoleSpec] = &[
         ac: 10,
         speed: 12,
         default_alignment: Alignment::Neutral,
-        starting_items: &[
-            ItemKindId::PotionOfHealing,
-            ItemKindId::ScrollOfTeleportation,
-        ],
+        starting_items: &[ItemKindId::POT_HEALING, ItemKindId::SCR_TELEPORTATION],
         initial_alignment_record: 10,
     },
     RoleSpec {
@@ -132,10 +129,7 @@ pub static ROLES: &[RoleSpec] = &[
         ac: 10,
         speed: 12,
         default_alignment: Alignment::Neutral,
-        starting_items: &[
-            ItemKindId::PotionOfHealing,
-            ItemKindId::PotionOfExtraHealing,
-        ],
+        starting_items: &[ItemKindId::POT_HEALING, ItemKindId::POT_EXTRA_HEALING],
         initial_alignment_record: 10,
     },
     RoleSpec {
@@ -146,9 +140,9 @@ pub static ROLES: &[RoleSpec] = &[
         speed: 12,
         default_alignment: Alignment::Neutral,
         starting_items: &[
-            ItemKindId::GoldPieces,
-            ItemKindId::PotionOfExtraHealing,
-            ItemKindId::BagOfHolding,
+            ItemKindId::GOLD_PIECE,
+            ItemKindId::POT_EXTRA_HEALING,
+            ItemKindId::BAG_OF_HOLDING,
         ],
         initial_alignment_record: 0,
     },
@@ -159,7 +153,7 @@ pub static ROLES: &[RoleSpec] = &[
         ac: 10,
         speed: 12,
         default_alignment: Alignment::Lawful,
-        starting_items: &[ItemKindId::ShortSword, ItemKindId::Sack],
+        starting_items: &[ItemKindId::SHORT_SWORD, ItemKindId::SACK],
         initial_alignment_record: 10,
     },
 ];
@@ -170,9 +164,9 @@ pub static ROLES: &[RoleSpec] = &[
 /// skipped.
 fn weapon_skill_class(kind: ItemKindId) -> Option<SkillClass> {
     match kind {
-        ItemKindId::Dagger => Some(SkillClass::Dagger),
-        ItemKindId::ShortSword => Some(SkillClass::ShortSword),
-        ItemKindId::LongSword => Some(SkillClass::LongSword),
+        ItemKindId::DAGGER => Some(SkillClass::Dagger),
+        ItemKindId::SHORT_SWORD => Some(SkillClass::ShortSword),
+        ItemKindId::LONG_SWORD => Some(SkillClass::LongSword),
         _ => None,
     }
 }
@@ -225,7 +219,7 @@ fn role_skill_table(role: RoleId) -> (&'static [SkillClass], bool) {
 /// quarterstaff, bullwhip, scalpel, darts, lance, axes) have no `SkillClass`.
 fn c_extra_weapons(role: RoleId) -> &'static [ItemKindId] {
     match role {
-        RoleId::Valkyrie => &[ItemKindId::Dagger],
+        RoleId::Valkyrie => &[ItemKindId::DAGGER],
         _ => &[],
     }
 }
@@ -407,13 +401,13 @@ pub fn spawn_player_character(
 pub fn starting_item_spe(role: RoleId, kind: ItemKindId) -> Option<i8> {
     match (role, kind) {
         // Knight[]: { LONG_SWORD, 1, ... } (u_init.c:91)
-        (RoleId::Knight, ItemKindId::LongSword) => Some(1),
+        (RoleId::Knight, ItemKindId::LONG_SWORD) => Some(1),
         // Rogue[]: SHORT_SWORD +0, DAGGER +0, LEATHER_ARMOR +1 (u_init.c:134-136)
-        (RoleId::Rogue, ItemKindId::ShortSword) => Some(0),
-        (RoleId::Rogue, ItemKindId::Dagger) => Some(0),
-        (RoleId::Rogue, ItemKindId::LeatherArmor) => Some(1),
+        (RoleId::Rogue, ItemKindId::SHORT_SWORD) => Some(0),
+        (RoleId::Rogue, ItemKindId::DAGGER) => Some(0),
+        (RoleId::Rogue, ItemKindId::LEATHER_ARMOR) => Some(1),
         // Wizard[]: { CLOAK_OF_MAGIC_RESISTANCE, 0, ... } (u_init.c:169)
-        (RoleId::Wizard, ItemKindId::CloakOfMagicResistance) => Some(0),
+        (RoleId::Wizard, ItemKindId::CLOAK_OF_MAGIC_RESISTANCE) => Some(0),
         _ => None,
     }
 }
@@ -425,8 +419,8 @@ pub fn spawn_starting_pet(
     arena: &mut EntityArena,
 ) -> Option<ActorId> {
     let species = match role {
-        RoleId::Wizard | RoleId::Healer => crate::monsters::MonsterSpeciesId::Kitten,
-        _ => crate::monsters::MonsterSpeciesId::LittleDog,
+        RoleId::Wizard | RoleId::Healer => crate::monsters::MonsterSpeciesId::KITTEN,
+        _ => crate::monsters::MonsterSpeciesId::LITTLE_DOG,
     };
     let pet_coord = hero_coord
         .step(nethacked_types::Direction::East)

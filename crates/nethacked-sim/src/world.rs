@@ -196,7 +196,7 @@ impl SimulationWorld {
 
         // Spawn starter food in player's pack
         if let Some(item_rec) = ruleset.create_item_record_by_id(
-            ItemKindId::FoodRation,
+            ItemKindId::FOOD_RATION,
             ItemLocation::CarriedBy(player_id),
             Buc::Uncursed,
         ) {
@@ -214,9 +214,9 @@ impl SimulationWorld {
                 RoomType::Shop => {
                     // Spawn peaceful Shopkeeper
                     if let Some(mut sk) = ruleset
-                        .create_monster_record_by_id(MonsterSpeciesId::Shopkeeper, room.center())
+                        .create_monster_record_by_id(MonsterSpeciesId::SHOPKEEPER, room.center())
                     {
-                        if let Some(sk_def) = ruleset.monster_by_id(MonsterSpeciesId::Shopkeeper) {
+                        if let Some(sk_def) = ruleset.monster_by_id(MonsterSpeciesId::SHOPKEEPER) {
                             sk.malign = nethacked_core::calculate_malign(
                                 sk_def.maligntyp,
                                 config.alignment,
@@ -231,11 +231,11 @@ impl SimulationWorld {
 
                     // Spawn shop merchandise on floor
                     let items_to_sell = [
-                        ItemKindId::PotionOfExtraHealing,
-                        ItemKindId::ScrollOfIdentify,
-                        ItemKindId::LongSword,
-                        ItemKindId::WandOfStriking,
-                        ItemKindId::LeatherArmor,
+                        ItemKindId::POT_EXTRA_HEALING,
+                        ItemKindId::SCR_IDENTIFY,
+                        ItemKindId::LONG_SWORD,
+                        ItemKindId::WAN_STRIKING,
+                        ItemKindId::LEATHER_ARMOR,
                     ];
                     let mut off = 1;
                     for &kind in &items_to_sell {
@@ -258,9 +258,9 @@ impl SimulationWorld {
                 }
                 RoomType::Normal if i > 0 && i != level.rooms.len() - 1 => {
                     if let Some(mut goblin) =
-                        ruleset.create_monster_record_by_id(MonsterSpeciesId::Goblin, room.center())
+                        ruleset.create_monster_record_by_id(MonsterSpeciesId::GOBLIN, room.center())
                     {
-                        if let Some(gob_def) = ruleset.monster_by_id(MonsterSpeciesId::Goblin) {
+                        if let Some(gob_def) = ruleset.monster_by_id(MonsterSpeciesId::GOBLIN) {
                             let input = crate::peace::peace_input(
                                 gob_def,
                                 config.alignment,
@@ -289,7 +289,7 @@ impl SimulationWorld {
         let item_coord1 =
             Coord::new(level.stairs_up.x + 1, level.stairs_up.y).unwrap_or(level.stairs_up);
         if let Some(it) = ruleset.create_item_record_by_id(
-            ItemKindId::SilverSaber,
+            ItemKindId::SILVER_SABER,
             ItemLocation::Floor(item_coord1),
             Buc::Uncursed,
         ) {
@@ -299,7 +299,7 @@ impl SimulationWorld {
         let item_coord2 =
             Coord::new(level.stairs_up.x, level.stairs_up.y + 1).unwrap_or(level.stairs_up);
         if let Some(it) = ruleset.create_item_record_by_id(
-            ItemKindId::PotionOfHealing,
+            ItemKindId::POT_HEALING,
             ItemLocation::Floor(item_coord2),
             Buc::Blessed,
         ) {
@@ -309,7 +309,7 @@ impl SimulationWorld {
         let item_coord3 =
             Coord::new(level.stairs_up.x + 1, level.stairs_up.y + 1).unwrap_or(level.stairs_up);
         if let Some(it) = ruleset.create_item_record_by_id(
-            ItemKindId::BagOfHolding,
+            ItemKindId::BAG_OF_HOLDING,
             ItemLocation::Floor(item_coord3),
             Buc::Uncursed,
         ) {

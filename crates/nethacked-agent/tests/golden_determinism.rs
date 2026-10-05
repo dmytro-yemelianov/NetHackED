@@ -1,7 +1,7 @@
 //! Frozen fingerprints of vanilla play. Recorded on main before the rule-pack
 //! refactor (P1); every later change must keep them identical.
 use nethacked_agent::arena::run_seed_games;
-use nethacked_data::monsters::{MonsterArchetype, BESTIARY, LEGACY_SPECIES};
+use nethacked_data::monsters::{MonsterArchetype, BESTIARY};
 use nethacked_data::roles::{get_role, Gender, RaceId, RoleId};
 use nethacked_sim::{ActionAst, SimulationWorld};
 use nethacked_types::{Coord, Direction};
@@ -40,9 +40,9 @@ const DIRS: [Direction; 8] = [
 
 const EXPECTED_RUNS: [u64; 4] = [
     10_590_427_399_958_928_342,
-    11_826_438_408_668_846_075,
-    1_437_892_308_041_849_470,
-    5_992_343_144_856_610_526,
+    7_694_092_708_489_024_748,
+    17_147_667_920_096_113_328,
+    4_244_977_339_236_277_176,
 ];
 const EXPECTED_LOGS: [u64; 9] = [
     6_084_688_683_205_385_671,
@@ -52,7 +52,7 @@ const EXPECTED_LOGS: [u64; 9] = [
     2_131_477_169_023_326_163,
     14_544_001_921_339_539_876,
     14_894_273_454_409_416_984,
-    5_962_845_032_407_934_693,
+    13_370_509_600_343_581_488,
     9_102_617_103_894_820_477,
 ];
 
@@ -157,17 +157,16 @@ fn golden_vanilla_event_logs_are_unchanged() {
 
 const COMBAT_ROLES: [RoleId; 3] = [RoleId::Valkyrie, RoleId::Wizard, RoleId::Rogue];
 const EXPECTED_COMBAT: [u64; 3] = [
-    16_953_266_006_928_294_484,
-    11_050_519_370_090_146_935,
-    10_816_216_705_399_070_657,
+    4_392_970_861_794_522_748,
+    12_723_840_377_594_850_747,
+    6_972_671_921_932_146_888,
 ];
 
-/// Every legacy bestiary entry fights the hero for up to 20 alternating
-/// melee/wait steps. The fingerprints were recorded before the full C bestiary
-/// import (`scripts/gen-bestiary.py`), so they cover the first
-/// `LEGACY_SPECIES` entries, which keep their order and data.
+/// Every bestiary entry (all 383 C species) fights the hero for up to 20
+/// alternating melee/wait steps.
 fn bestiary_combat(role: RoleId) -> u64 {
-    combat_over(role, &BESTIARY[..LEGACY_SPECIES])
+    assert_eq!(BESTIARY.len(), 383, "NetHack 5.0 has 383 species");
+    combat_over(role, BESTIARY)
 }
 
 fn combat_over(role: RoleId, species: &[MonsterArchetype]) -> u64 {
@@ -220,12 +219,4 @@ fn combat_over(role: RoleId, species: &[MonsterArchetype]) -> u64 {
 fn golden_vanilla_bestiary_combat_is_unchanged() {
     let got: Vec<u64> = COMBAT_ROLES.iter().map(|&r| bestiary_combat(r)).collect();
     assert_eq!(got, EXPECTED_COMBAT);
-}
-
-/// Every C species (the full generated bestiary) can be spawned and fought
-/// without a panic. No fingerprint: this only guards the generated data.
-#[test]
-fn full_c_bestiary_spawns_and_fights() {
-    assert_eq!(BESTIARY.len(), 383, "NetHack 5.0 has 383 species");
-    let _ = combat_over(RoleId::Valkyrie, BESTIARY);
 }

@@ -7,7 +7,7 @@
 use nethacked_arena::{ActorId, ActorRecord, ItemLocation, ItemRecord};
 use nethacked_data::{create_monster_record, MonsterSpeciesId};
 use nethacked_sim::{ActionAst, Alignment, Coord, GameEvent, Intrinsics, SimulationWorld, Tile};
-use nethacked_types::{Buc, ItemClass, SlimingState};
+use nethacked_types::{Buc, ItemClass, MonsterAbility, MonsterSpell, SlimingState};
 
 const HERO: Coord = Coord::new_unchecked(10, 10);
 const HERO_HP: i32 = 5000;
@@ -77,7 +77,7 @@ fn east(n: usize) -> Coord {
 #[test]
 fn jackal_bite_is_1d2_one_attack_per_move() {
     let mut sim = arena_world(7);
-    let jackal = spawn(&mut sim, MonsterSpeciesId::Jackal, east(1));
+    let jackal = spawn(&mut sim, MonsterSpeciesId::JACKAL, east(1));
     let mut landed = 0;
     let mut seen = [false; 3];
     for _ in 0..200 {
@@ -97,7 +97,7 @@ fn jackal_bite_is_1d2_one_attack_per_move() {
 #[test]
 fn red_dragon_adjacent_bites_and_claws_in_order() {
     let mut sim = arena_world(11);
-    let dragon = spawn(&mut sim, MonsterSpeciesId::RedDragon, east(1));
+    let dragon = spawn(&mut sim, MonsterSpeciesId::RED_DRAGON, east(1));
     let mut groups = 0;
     for _ in 0..60 {
         reset(&mut sim, dragon, east(1));
@@ -128,7 +128,7 @@ fn red_dragon_adjacent_bites_and_claws_in_order() {
 #[test]
 fn red_dragon_breathes_6d6_fire_only_at_range_and_resistance_zeroes_it() {
     let mut sim = arena_world(5);
-    let dragon = spawn(&mut sim, MonsterSpeciesId::RedDragon, east(3));
+    let dragon = spawn(&mut sim, MonsterSpeciesId::RED_DRAGON, east(3));
     let mut breaths = 0;
     for _ in 0..60 {
         reset(&mut sim, dragon, east(3));
@@ -171,7 +171,7 @@ fn red_dragon_breathes_6d6_fire_only_at_range_and_resistance_zeroes_it() {
 fn cold_touch_is_zeroed_by_cold_resistance() {
     // C master lich: ATTK(AT_TUCH, AD_COLD, 3, 6); mhitm_ad_cold (uhitm.c:2626).
     let mut sim = arena_world(3);
-    let lich = spawn(&mut sim, MonsterSpeciesId::Lich, east(1));
+    let lich = spawn(&mut sim, MonsterSpeciesId::MASTER_LICH, east(1));
     sim.arena.actors.get_mut(lich).unwrap().abilities.clear();
     let mut landed = 0;
     for _ in 0..40 {
@@ -214,9 +214,9 @@ fn pet_uses_mhitm_to_hit_without_plus_ten() {
     let mut sim = arena_world(21);
     let pet_at = Coord::new_unchecked(10, 11);
     let foe_at = east(1);
-    let dog = spawn(&mut sim, MonsterSpeciesId::LittleDog, pet_at);
+    let dog = spawn(&mut sim, MonsterSpeciesId::LITTLE_DOG, pet_at);
     sim.arena.actors.get_mut(dog).unwrap().is_tame = true;
-    let goblin = spawn(&mut sim, MonsterSpeciesId::Goblin, foe_at);
+    let goblin = spawn(&mut sim, MonsterSpeciesId::GOBLIN, foe_at);
     sim.arena.actors.get_mut(goblin).unwrap().ac = -1;
     let mut misses = 0;
     for _ in 0..40 {
@@ -358,7 +358,7 @@ fn healing_persists_through_a_later_melee_hit() {
     quaff_healing(&mut sim);
     let healed = hero_hp(&sim);
     assert_eq!(healed, 110, "potion of healing restores 10 HP");
-    let jackal = spawn(&mut sim, MonsterSpeciesId::Jackal, east(1));
+    let jackal = spawn(&mut sim, MonsterSpeciesId::JACKAL, east(1));
     let dmg = wait_for_melee_hit(&mut sim, jackal, east(1));
     assert_eq!(hero_hp(&sim), healed - dmg);
 }
@@ -366,7 +366,7 @@ fn healing_persists_through_a_later_melee_hit() {
 #[test]
 fn breath_damage_persists_through_a_later_melee_hit() {
     let mut sim = arena_world(43);
-    let dragon = spawn(&mut sim, MonsterSpeciesId::RedDragon, east(3));
+    let dragon = spawn(&mut sim, MonsterSpeciesId::RED_DRAGON, east(3));
     let mut breathed = false;
     for _ in 0..200 {
         sim.arena.actors.get_mut(dragon).unwrap().coord = east(3);
@@ -394,7 +394,7 @@ fn breath_cooldown_keeps_breath_rate_far_below_two_thirds() {
     // monmove.c:311). Without the cooldown a lined-up dragon breathes on
     // 2/3 of its moves.
     let mut sim = arena_world(47);
-    let dragon = spawn(&mut sim, MonsterSpeciesId::RedDragon, east(3));
+    let dragon = spawn(&mut sim, MonsterSpeciesId::RED_DRAGON, east(3));
     let turns = 400;
     let mut breaths = 0;
     for _ in 0..turns {
@@ -419,7 +419,7 @@ fn fire_breath_burns_away_slime_even_when_resisted() {
         .unwrap()
         .intrinsics
         .fire_resistance = true;
-    let dragon = spawn(&mut sim, MonsterSpeciesId::RedDragon, east(3));
+    let dragon = spawn(&mut sim, MonsterSpeciesId::RED_DRAGON, east(3));
     for _ in 0..200 {
         sim.hero.afflictions.sliming = Some(SlimingState {
             turns_remaining: 10,
@@ -469,7 +469,7 @@ fn adjacent_medusa_gazes_then_resolves_her_melee_attacks() {
     // mon.c:4109-4118), then mattacku (monmove.c:971) resolves
     // W 2d4, C 1d8, B 1d6 and skips her AT_GAZE slot (mhitu.c:832-836).
     let mut sim = arena_world(29);
-    let medusa = spawn(&mut sim, MonsterSpeciesId::Medusa, east(1));
+    let medusa = spawn(&mut sim, MonsterSpeciesId::MEDUSA, east(1));
     let mut turns_with_both = 0;
     for _ in 0..30 {
         reset(&mut sim, medusa, east(1));
@@ -498,7 +498,13 @@ fn adjacent_master_lich_touches_on_a_spell_turn() {
     // C mattacku loop (mhitu.c:768): slot 0 AT_TUCH 3d6 cold resolves
     // before slot 1 AT_MAGC (`castmu`, mhitu.c:926-931) in the same round.
     let mut sim = arena_world(31);
-    let lich = spawn(&mut sim, MonsterSpeciesId::Lich, east(1));
+    let lich = spawn(&mut sim, MonsterSpeciesId::MASTER_LICH, east(1));
+    // The slot order is under test, not the spell choice: pin a spell that
+    // always has an effect (a hero with no items cannot be cursed).
+    sim.arena.actors.get_mut(lich).unwrap().abilities = vec![MonsterAbility::Spellcaster {
+        spell: MonsterSpell::SummonMonsters,
+        cooldown_turns: 8,
+    }];
     let mut spell_turns = 0;
     for _ in 0..80 {
         clear_others(&mut sim, lich);
@@ -522,7 +528,7 @@ fn breath_on_a_polymorphed_hero_rehumanizes_instead_of_killing() {
     // C zhitu -> losehp (hack.c:4256): when polymorphed, damage goes to
     // u.mh and u.mh < 1 calls rehumanize() (base u.uhp unchanged).
     let mut sim = arena_world(61);
-    let dragon = spawn(&mut sim, MonsterSpeciesId::RedDragon, east(3));
+    let dragon = spawn(&mut sim, MonsterSpeciesId::RED_DRAGON, east(3));
     let pid = sim.player_id;
     for _ in 0..300 {
         reset(&mut sim, dragon, east(3));

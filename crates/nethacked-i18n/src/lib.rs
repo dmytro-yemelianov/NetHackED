@@ -1720,7 +1720,7 @@ pub fn t_item(name: &str, locale: Locale) -> String {
         "mjollnir" => "Мйольнір".into(),
         "magicbane" => "Чарозгуба".into(),
         "the eye of the aethiopica" => "Око Етіопіки".into(),
-        "gold pieces" => "золоті монети".into(),
+        "gold piece" => "золоті монети".into(),
         "luckstone" => "камінь удачі".into(),
         "wax candle" => "воскова свічка".into(),
         "the orb of fate" => "Сфера Долі".into(),
@@ -1738,6 +1738,8 @@ pub fn t_item(name: &str, locale: Locale) -> String {
             if let Some(stripped) = lower.strip_suffix("corpse") {
                 let inner = stripped.trim();
                 format!("труп ({})", t_monster(inner, locale))
+            } else if let Some(uk) = uk_from_table(OBJECTS_UK_TSV, name) {
+                uk.to_string()
             } else {
                 name.to_string()
             }
@@ -1785,7 +1787,7 @@ pub fn t_monster(name: &str, locale: Locale) -> String {
         "gnome" => "гном".into(),
         "dwarf" => "дворф".into(),
         "watchman" => "вартовий".into(),
-        "the norn" => "Норна".into(),
+        "norn" => "Норна".into(),
         "neferet the green" => "Неферет Зелена".into(),
         "pelias" => "Пелій".into(),
         "king arthur" => "король Артур".into(),
@@ -1795,7 +1797,7 @@ pub fn t_monster(name: &str, locale: Locale) -> String {
         "twoflower" => "Двоквіт".into(),
         "lord carnarvon" => "лорд Карнарвон".into(),
         "lord surtur" => "лорд Сурт".into(),
-        "the dark one" => "Темний".into(),
+        "dark one" => "Темний".into(),
         "thoth amon" => "Тот Амон".into(),
         "ixoth" => "Іксот".into(),
         "master kaen" => "майстер Каен".into(),
@@ -1827,7 +1829,15 @@ pub fn t_monster(name: &str, locale: Locale) -> String {
 static MONSTERS_UK_TSV: &str = include_str!("../data/monsters.uk.tsv");
 
 fn monster_uk_from_table(name: &str) -> Option<&'static str> {
-    MONSTERS_UK_TSV
+    uk_from_table(MONSTERS_UK_TSV, name)
+}
+
+/// Ukrainian names of the NetHack 5.0 object kinds and artifacts.
+static OBJECTS_UK_TSV: &str = include_str!("../data/objects.uk.tsv");
+
+/// Look up `name` in an `english<TAB>ukrainian` table (`#` lines are comments).
+fn uk_from_table(table: &'static str, name: &str) -> Option<&'static str> {
+    table
         .lines()
         .filter(|l| !l.starts_with('#'))
         .filter_map(|l| l.split_once('\t'))

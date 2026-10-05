@@ -12,7 +12,7 @@ No legacy preservation: hand-written catalogs are deleted, goldens re-baselined 
   (`OBJECTS_INIT`, `MON` override) and runs `cc -E -P` — a pure text transform with
   exact C macro semantics. Symbolic names (`P_DAGGER`, `IRON`, `CLR_GRAY`, `MR_FIRE`)
   survive because their headers are not included. Replaces the hand-written
-  mini-preprocessor in `gen-bestiary.py`.
+  mini-preprocessor of the former `gen-bestiary.py`.
 - **Names and ids from C itself:** object `sn` / monster `PM_*` (the C enum names)
   become the stable ids; `OBJ(name,desc)` gives name + unidentified appearance.
 - **Fail loud:** every symbolic value goes through an exhaustive mapping; an unknown

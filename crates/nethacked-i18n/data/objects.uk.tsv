@@ -1,0 +1,401 @@
+# Ukrainian names for NetHack 5.0 object kinds and artifacts
+# (data/nethack-5.0/objects.toml, artifacts.toml). Format: english<TAB>ukrainian.
+# Names already in t_item's match keep their translation there.
+elven arrow	ельфійська стріла
+orcish arrow	орківська стріла
+silver arrow	срібна стріла
+ya	я (японська стріла)
+dart	дротик
+shuriken	сюрікен
+boomerang	бумеранг
+spear	спис
+elven spear	ельфійський спис
+orcish spear	орківський спис
+dwarvish spear	дворфський спис
+silver spear	срібний спис
+javelin	метальний спис
+trident	тризуб
+elven dagger	ельфійський кинджал
+orcish dagger	орківський кинджал
+silver dagger	срібний кинджал
+athame	атаме
+scalpel	скальпель
+knife	ніж
+stiletto	стилет
+worm tooth	зуб черв'яка
+crysknife	крисніж
+axe	сокира
+battle-axe	бойова сокира
+elven short sword	ельфійський короткий меч
+orcish short sword	орківський короткий меч
+dwarvish short sword	дворфський короткий меч
+scimitar	ятаган
+broadsword	палаш
+elven broadsword	ельфійський палаш
+two-handed sword	дворучний меч
+katana	катана
+tsurugi	цуруґі
+runesword	руничний меч
+partisan	протазан
+ranseur	рансер
+spetum	спетум
+glaive	глефа
+halberd	алебарда
+bardiche	бердиш
+voulge	вуж
+fauchard	фошар
+guisarme	гізарма
+bill-guisarme	біль-гізарма
+lucern hammer	люцернський молот
+bec de corbin	дзьоб ворона
+dwarvish mattock	дворфська кирка-мотика
+lance	лицарський спис
+silver mace	срібна булава
+morning star	моргенштерн
+war hammer	бойовий молот
+rubber hose	гумовий шланг
+quarterstaff	бойова палиця
+aklys	акліс
+flail	ціп
+bullwhip	батіг
+elven bow	ельфійський лук
+orcish bow	орківський лук
+yumi	юмі
+sling	праща
+elven leather helm	ельфійський шкіряний шолом
+orcish helm	орківський шолом
+dwarvish iron helm	дворфський залізний шолом
+fedora	федора
+cornuthaum	корнутаум
+dunce cap	ковпак дурня
+dented pot	пом'ятий горщик
+helm of brilliance	шолом блиску
+helmet	шолом
+helm of caution	шолом обережності
+helm of opposite alignment	шолом протилежного світогляду
+helm of telepathy	шолом телепатії
+gray dragon scale mail	обладунок із сірої драконячої луски
+gold dragon scale mail	обладунок із золотої драконячої луски
+red dragon scale mail	обладунок із червоної драконячої луски
+white dragon scale mail	обладунок із білої драконячої луски
+orange dragon scale mail	обладунок із помаранчевої драконячої луски
+black dragon scale mail	обладунок із чорної драконячої луски
+blue dragon scale mail	обладунок із синьої драконячої луски
+green dragon scale mail	обладунок із зеленої драконячої луски
+yellow dragon scale mail	обладунок із жовтої драконячої луски
+gray dragon scales	сіра драконяча луска
+gold dragon scales	золота драконяча луска
+silver dragon scales	срібна драконяча луска
+red dragon scales	червона драконяча луска
+white dragon scales	біла драконяча луска
+orange dragon scales	помаранчева драконяча луска
+black dragon scales	чорна драконяча луска
+blue dragon scales	синя драконяча луска
+green dragon scales	зелена драконяча луска
+yellow dragon scales	жовта драконяча луска
+crystal plate mail	кришталеві лати
+bronze plate mail	бронзові лати
+splint mail	шинний обладунок
+banded mail	смуговий обладунок
+dwarvish mithril-coat	дворфська мітрилова кольчуга
+elven mithril-coat	ельфійська мітрилова кольчуга
+orcish chain mail	орківська кольчуга
+scale mail	лускатий обладунок
+studded leather armor	шкіряний обладунок із заклепками
+ring mail	кільчастий обладунок
+orcish ring mail	орківський кільчастий обладунок
+leather jacket	шкіряна куртка
+Hawaiian shirt	гавайська сорочка
+T-shirt	футболка
+mummy wrapping	бинти мумії
+elven cloak	ельфійський плащ
+orcish cloak	орківський плащ
+dwarvish cloak	дворфський плащ
+oilskin cloak	плащ із промасленої тканини
+robe	ряса
+alchemy smock	алхімічний фартух
+leather cloak	шкіряний плащ
+cloak of protection	плащ захисту
+cloak of invisibility	плащ невидимості
+cloak of displacement	плащ зміщення
+shield of drain resistance	щит опору висмоктуванню
+shield of shock resistance	щит опору струму
+elven shield	ельфійський щит
+Uruk-hai shield	щит урук-хаїв
+orcish shield	орківський щит
+large shield	великий щит
+dwarvish roundshield	дворфський круглий щит
+shield of reflection	щит віддзеркалення
+leather gloves	шкіряні рукавиці
+gauntlets of fumbling	рукавиці незграбності
+gauntlets of power	рукавиці сили
+gauntlets of dexterity	рукавиці спритності
+low boots	низькі черевики
+iron shoes	залізні черевики
+high boots	високі чоботи
+speed boots	чоботи швидкості
+water walking boots	чоботи ходіння по воді
+jumping boots	чоботи стрибків
+elven boots	ельфійські чоботи
+kicking boots	чоботи копняків
+fumble boots	чоботи незграбності
+levitation boots	чоботи левітації
+ring of adornment	каблучка прикраси
+ring of gain strength	каблучка сили
+ring of gain constitution	каблучка витривалості
+ring of increase accuracy	каблучка влучності
+ring of increase damage	каблучка шкоди
+ring of protection	каблучка захисту
+ring of regeneration	каблучка регенерації
+ring of searching	каблучка пошуку
+ring of stealth	каблучка непомітності
+ring of sustain ability	каблучка збереження здібностей
+ring of levitation	каблучка левітації
+ring of hunger	каблучка голоду
+ring of aggravate monster	каблучка дратування монстрів
+ring of conflict	каблучка розбрату
+ring of warning	каблучка попередження
+ring of poison resistance	каблучка опору отруті
+ring of fire resistance	каблучка опору вогню
+ring of cold resistance	каблучка опору холоду
+ring of shock resistance	каблучка опору струму
+ring of free action	каблучка вільної дії
+ring of slow digestion	каблучка повільного травлення
+ring of teleportation	каблучка телепортації
+ring of teleport control	каблучка контролю телепортації
+ring of polymorph	каблучка перетворення
+ring of polymorph control	каблучка контролю перетворення
+ring of invisibility	каблучка невидимості
+ring of see invisible	каблучка бачення невидимого
+ring of protection from shape changers	каблучка захисту від перевертнів
+amulet of ESP	амулет телепатії
+amulet of life saving	амулет порятунку життя
+amulet of strangulation	амулет задушення
+amulet of restful sleep	амулет спокійного сну
+amulet versus poison	амулет проти отрути
+amulet of change	амулет зміни статі
+amulet of unchanging	амулет незмінності
+amulet of magical breathing	амулет магічного дихання
+amulet of guarding	амулет охорони
+amulet of flying	амулет польоту
+large box	велика скриня
+ice box	льодовня
+oilskin sack	мішок із промасленої тканини
+bag of tricks	мішок фокусів
+skeleton key	відмичка-ключ
+lock pick	відмичка
+credit card	кредитна картка
+tallow candle	лойова свічка
+brass lantern	латунний ліхтар
+expensive camera	дорога камера
+mirror	дзеркало
+crystal ball	кришталева куля
+lenses	лінзи
+blindfold	пов'язка на очі
+towel	рушник
+saddle	сідло
+leash	повідець
+stethoscope	стетоскоп
+tinning kit	набір для консервування
+tin opener	консервний ніж
+can of grease	бляшанка мастила
+figurine	статуетка
+land mine	міна
+beartrap	капкан
+tin whistle	бляшаний свисток
+magic whistle	чарівний свисток
+wooden flute	дерев'яна флейта
+magic flute	чарівна флейта
+tooled horn	різьблений ріг
+frost horn	ріг морозу
+fire horn	ріг вогню
+horn of plenty	ріг достатку
+wooden harp	дерев'яна арфа
+magic harp	чарівна арфа
+bell	дзвіночок
+bugle	горн
+leather drum	шкіряний барабан
+drum of earthquake	барабан землетрусу
+pick-axe	кирка
+grappling hook	абордажний гак
+unicorn horn	ріг єдинорога
+tripe ration	пайок із тельбухів
+egg	яйце
+meatball	фрикаделька
+meat stick	м'ясна паличка
+enormous meatball	величезна фрикаделька
+meat ring	м'ясне кільце
+glob of gray ooze	грудка сірого слизу
+glob of brown pudding	грудка бурого пудингу
+glob of green slime	грудка зеленого слизу
+glob of black pudding	грудка чорного пудингу
+kelp frond	лист ламінарії
+eucalyptus leaf	листок евкаліпта
+orange	апельсин
+pear	груша
+melon	диня
+banana	банан
+carrot	морква
+clove of garlic	зубчик часнику
+slime mold	слизовик
+lump of royal jelly	грудка маточного молочка
+cream pie	кремовий пиріг
+candy bar	батончик
+fortune cookie	печиво з передбаченням
+pancake	млинець
+lembas wafer	лембас
+cram ration	пайок крему
+K-ration	K-пайок
+C-ration	C-пайок
+tin	консерва
+potion of gain ability	зілля здібностей
+potion of restore ability	зілля відновлення здібностей
+potion of confusion	зілля сум'яття
+potion of blindness	зілля сліпоти
+potion of paralysis	зілля паралічу
+potion of levitation	зілля левітації
+potion of hallucination	зілля галюцинацій
+potion of invisibility	зілля невидимості
+potion of see invisible	зілля бачення невидимого
+potion of gain level	зілля рівня
+potion of enlightenment	зілля просвітлення
+potion of monster detection	зілля виявлення монстрів
+potion of object detection	зілля виявлення предметів
+potion of gain energy	зілля енергії
+potion of sleeping	зілля сну
+potion of full healing	зілля повного зцілення
+potion of booze	зілля хмелю
+potion of sickness	зілля хвороби
+potion of fruit juice	фруктовий сік
+potion of oil	олія
+scroll of destroy armor	сувій знищення обладунку
+scroll of confuse monster	сувій сум'яття монстра
+scroll of scare monster	сувій відлякування монстрів
+scroll of create monster	сувій створення монстра
+scroll of taming	сувій приручення
+scroll of light	сувій світла
+scroll of gold detection	сувій виявлення золота
+scroll of food detection	сувій виявлення їжі
+scroll of magic mapping	сувій магічної мапи
+scroll of amnesia	сувій амнезії
+scroll of fire	сувій вогню
+scroll of earth	сувій землі
+scroll of punishment	сувій покарання
+scroll of stinking cloud	сувій смердючої хмари
+scroll of mail	лист
+scroll of blank paper	чистий сувій
+spellbook of dig	книга заклять копання
+spellbook of magic missile	книга заклять магічної стріли
+spellbook of fireball	книга заклять вогняної кулі
+spellbook of cone of cold	книга заклять конуса холоду
+spellbook of sleep	книга заклять сну
+spellbook of finger of death	книга заклять перста смерті
+spellbook of light	книга заклять світла
+spellbook of detect monsters	книга заклять виявлення монстрів
+spellbook of knock	книга заклять відмикання
+spellbook of confuse monster	книга заклять сум'яття монстра
+spellbook of cure blindness	книга заклять зцілення сліпоти
+spellbook of drain life	книга заклять висмоктування життя
+spellbook of slow monster	книга заклять уповільнення монстра
+spellbook of wizard lock	книга заклять чарівного замка
+spellbook of create monster	книга заклять створення монстра
+spellbook of detect food	книга заклять виявлення їжі
+spellbook of cause fear	книга заклять страху
+spellbook of clairvoyance	книга заклять ясновидіння
+spellbook of cure sickness	книга заклять зцілення хвороби
+spellbook of charm monster	книга заклять зачарування монстра
+spellbook of haste self	книга заклять прискорення
+spellbook of detect unseen	книга заклять виявлення невидимого
+spellbook of levitation	книга заклять левітації
+spellbook of extra healing	книга заклять сильного зцілення
+spellbook of restore ability	книга заклять відновлення здібностей
+spellbook of invisibility	книга заклять невидимості
+spellbook of detect treasure	книга заклять виявлення скарбів
+spellbook of remove curse	книга заклять зняття прокляття
+spellbook of magic mapping	книга заклять магічної мапи
+spellbook of identify	книга заклять розпізнавання
+spellbook of turn undead	книга заклять вигнання нежиті
+spellbook of polymorph	книга заклять перетворення
+spellbook of teleport away	книга заклять телепортації геть
+spellbook of create familiar	книга заклять створення фамільяра
+spellbook of cancellation	книга заклять скасування
+spellbook of protection	книга заклять захисту
+spellbook of jumping	книга заклять стрибка
+spellbook of stone to flesh	книга заклять каменю в плоть
+spellbook of chain lightning	книга заклять ланцюгової блискавки
+spellbook of blank paper	чиста книга заклять
+novel	роман
+wand of light	жезл світла
+wand of enlightenment	жезл просвітлення
+wand of create monster	жезл створення монстра
+wand of stasis	жезл стазису
+wand of nothing	жезл нічого
+wand of make invisible	жезл невидимості
+wand of slow monster	жезл уповільнення монстра
+wand of speed monster	жезл прискорення монстра
+wand of undead turning	жезл вигнання нежиті
+wand of cancellation	жезл скасування
+wand of opening	жезл відмикання
+wand of locking	жезл замикання
+wand of probing	жезл дослідження
+wand of magic missile	жезл магічної стріли
+wand of lightning	жезл блискавки
+dilithium crystal	дилітієвий кристал
+diamond	діамант
+ruby	рубін
+jacinth	гіацинт
+sapphire	сапфір
+black opal	чорний опал
+emerald	смарагд
+turquoise	бірюза
+citrine	цитрин
+aquamarine	аквамарин
+amber	бурштин
+topaz	топаз
+jet	гагат
+opal	опал
+chrysoberyl	хризоберил
+garnet	гранат
+amethyst	аметист
+jasper	яшма
+fluorite	флюорит
+obsidian	обсидіан
+agate	агат
+jade	нефрит
+worthless piece of white glass	нікчемне біле скло
+worthless piece of blue glass	нікчемне синє скло
+worthless piece of red glass	нікчемне червоне скло
+worthless piece of yellowish brown glass	нікчемне жовто-буре скло
+worthless piece of orange glass	нікчемне помаранчеве скло
+worthless piece of yellow glass	нікчемне жовте скло
+worthless piece of black glass	нікчемне чорне скло
+worthless piece of green glass	нікчемне зелене скло
+worthless piece of violet glass	нікчемне фіолетове скло
+loadstone	магнітний камінь
+touchstone	пробірний камінь
+flint	кремінь
+rock	камінь
+statue	статуя
+heavy iron ball	важка залізна куля
+iron chain	залізний ланцюг
+splash of blinding venom	бризки сліпучої отрути
+splash of acid venom	бризки кислотної отрути
+Stormbringer	Буреносець
+Cleaver	Різак
+Grimtooth	Похмурий Зуб
+Orcrist	Оркріст
+Sting	Жало
+Frost Brand	Морозний Клинок
+Fire Brand	Вогняний Клинок
+Dragonbane	Згуба Драконів
+Demonbane	Згуба Демонів
+Werebane	Згуба Перевертнів
+Grayswandir	Ґрейсвандір
+Giantslayer	Убивця Велетнів
+Ogresmasher	Трощитель Огрів
+Trollsbane	Згуба Тролів
+Snickersnee	Снікерсні
+Sunsword	Сонячний Меч
+The Sceptre of Might	Скіпетр Могутності
+The Mitre of Holiness	Митра Святості
+The Longbow of Diana	Довгий Лук Діани

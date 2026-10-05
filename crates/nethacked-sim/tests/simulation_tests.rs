@@ -205,7 +205,7 @@ fn test_zap_wand_beam_propagation_and_damage() {
     let mon_id = sim.arena.spawn_actor(mon);
     // Zapping now requires a carried wand.
     sim.arena.spawn_item(create_item_record(
-        ItemKindId::WandOfStriking,
+        ItemKindId::WAN_STRIKING,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
@@ -228,7 +228,7 @@ fn test_zap_wand_beam_propagation_and_damage() {
 #[test]
 fn test_wands_of_digging_and_teleportation_do_not_damage() {
     // C zap.c:3459 (zap_dig) never hurts monsters; teleportation relocates them.
-    for kind in [ItemKindId::WandOfDigging, ItemKindId::WandOfTeleportation] {
+    for kind in [ItemKindId::WAN_DIGGING, ItemKindId::WAN_TELEPORTATION] {
         let mut sim = SimulationWorld::new_with_seed(101);
         let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
         for dx in 1..=4 {
@@ -392,12 +392,12 @@ fn test_descend_and_ascend_stairs() {
 fn test_container_put_and_take() {
     let mut sim = SimulationWorld::new_with_seed(105);
     let sack = sim.arena.spawn_item(create_item_record(
-        ItemKindId::Sack,
+        ItemKindId::SACK,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
     let dagger = sim.arena.spawn_item(create_item_record(
-        ItemKindId::Dagger,
+        ItemKindId::DAGGER,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
@@ -433,12 +433,12 @@ fn test_container_put_and_take() {
 fn test_container_boh_in_boh_explosion() {
     let mut sim = SimulationWorld::new_with_seed(106);
     let boh1 = sim.arena.spawn_item(create_item_record(
-        ItemKindId::BagOfHolding,
+        ItemKindId::BAG_OF_HOLDING,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
     let boh2 = sim.arena.spawn_item(create_item_record(
-        ItemKindId::BagOfHolding,
+        ItemKindId::BAG_OF_HOLDING,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
@@ -478,7 +478,7 @@ fn put_in(
 
 fn carried_wand(sim: &mut SimulationWorld, name: &str, charges: i8) -> nethacked_arena::ItemId {
     let mut rec = create_item_record(
-        ItemKindId::Dagger,
+        ItemKindId::DAGGER,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     );
@@ -491,7 +491,7 @@ fn carried_wand(sim: &mut SimulationWorld, name: &str, charges: i8) -> nethacked
 fn test_boh_explodes_on_charged_cancellation_not_empty() {
     let mut sim = SimulationWorld::new_with_seed(107);
     let boh = sim.arena.spawn_item(create_item_record(
-        ItemKindId::BagOfHolding,
+        ItemKindId::BAG_OF_HOLDING,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
@@ -512,17 +512,17 @@ fn test_boh_explodes_on_charged_cancellation_not_empty() {
 fn test_boh_explodes_on_sack_containing_boh() {
     let mut sim = SimulationWorld::new_with_seed(108);
     let outer = sim.arena.spawn_item(create_item_record(
-        ItemKindId::BagOfHolding,
+        ItemKindId::BAG_OF_HOLDING,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
     let sack = sim.arena.spawn_item(create_item_record(
-        ItemKindId::Sack,
+        ItemKindId::SACK,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
     let inner = sim.arena.spawn_item(create_item_record(
-        ItemKindId::BagOfHolding,
+        ItemKindId::BAG_OF_HOLDING,
         ItemLocation::InContainer(sack),
         Buc::Uncursed,
     ));
@@ -539,12 +539,12 @@ fn test_boh_explodes_on_sack_containing_boh() {
 fn test_boh_into_plain_sack_is_safe() {
     let mut sim = SimulationWorld::new_with_seed(109);
     let boh = sim.arena.spawn_item(create_item_record(
-        ItemKindId::BagOfHolding,
+        ItemKindId::BAG_OF_HOLDING,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
     let sack = sim.arena.spawn_item(create_item_record(
-        ItemKindId::Sack,
+        ItemKindId::SACK,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
@@ -561,19 +561,19 @@ fn test_boh_explosion_scatters_inserted_boh_contents_per_item() {
     // (most survive on the floor) instead of being destroyed wholesale.
     let mut sim = SimulationWorld::new_with_seed(110);
     let outer = sim.arena.spawn_item(create_item_record(
-        ItemKindId::BagOfHolding,
+        ItemKindId::BAG_OF_HOLDING,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
     let inner = sim.arena.spawn_item(create_item_record(
-        ItemKindId::BagOfHolding,
+        ItemKindId::BAG_OF_HOLDING,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
     let daggers: Vec<_> = (0..20)
         .map(|_| {
             sim.arena.spawn_item(create_item_record(
-                ItemKindId::Dagger,
+                ItemKindId::DAGGER,
                 ItemLocation::InContainer(inner),
                 Buc::Uncursed,
             ))
@@ -603,12 +603,12 @@ fn test_boh_explosion_scatters_inserted_boh_contents_per_item() {
 fn test_boh_explodes_on_charged_bag_of_tricks() {
     let mut sim = SimulationWorld::new_with_seed(111);
     let boh = sim.arena.spawn_item(create_item_record(
-        ItemKindId::BagOfHolding,
+        ItemKindId::BAG_OF_HOLDING,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
     let mut rec = create_item_record(
-        ItemKindId::Sack,
+        ItemKindId::SACK,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     );
@@ -631,17 +631,17 @@ fn test_boh_explodes_on_charged_bag_of_tricks() {
 fn test_boh_explosion_leaves_no_orphaned_contents() {
     let mut sim = SimulationWorld::new_with_seed(112);
     let boh = sim.arena.spawn_item(create_item_record(
-        ItemKindId::BagOfHolding,
+        ItemKindId::BAG_OF_HOLDING,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
     let sack = sim.arena.spawn_item(create_item_record(
-        ItemKindId::Sack,
+        ItemKindId::SACK,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
     let mut rec = create_item_record(
-        ItemKindId::Dagger,
+        ItemKindId::DAGGER,
         ItemLocation::InContainer(sack),
         Buc::Uncursed,
     );
@@ -670,7 +670,7 @@ fn test_water_dipping() {
     use nethacked_types::WaterType;
     let mut sim = SimulationWorld::new_with_seed(107);
     let weapon = sim.arena.spawn_item(create_item_record(
-        ItemKindId::LongSword,
+        ItemKindId::LONG_SWORD,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Cursed,
     ));
@@ -696,7 +696,7 @@ fn test_quaff_healing() {
     }
 
     let potion = sim.arena.spawn_item(create_item_record(
-        ItemKindId::PotionOfHealing,
+        ItemKindId::POT_HEALING,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
@@ -732,7 +732,7 @@ fn test_monster_dijkstra_hunting() {
     let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
     let goblin_id = sim
         .arena
-        .spawn_actor(create_monster_record(MonsterSpeciesId::Goblin, m_coord));
+        .spawn_actor(create_monster_record(MonsterSpeciesId::GOBLIN, m_coord));
 
     let init_dist = sim
         .arena
@@ -807,7 +807,7 @@ fn test_elbereth_repels_monsters() {
     let adj_coord = m_coord.expect("Must find adjacent tile");
     let goblin_id = sim
         .arena
-        .spawn_actor(create_monster_record(MonsterSpeciesId::Goblin, adj_coord));
+        .spawn_actor(create_monster_record(MonsterSpeciesId::GOBLIN, adj_coord));
 
     let initial_player_hp = sim.arena.actors.get(sim.player_id).unwrap().hp;
     let events = sim.step_player_action(ActionAst::Wait);
@@ -960,7 +960,7 @@ fn test_multi_floor_persistence_with_items_and_amulet() {
     assert_eq!(sim.depth, 2);
 
     let ruby = sim.arena.spawn_item(create_item_record(
-        ItemKindId::ShortSword,
+        ItemKindId::SHORT_SWORD,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Blessed,
     ));
@@ -1084,7 +1084,7 @@ fn test_magic_spellcasting_and_mana() {
     assert_eq!(sim.player_pw, 20);
 
     let spellbook = sim.arena.spawn_item(create_item_record(
-        ItemKindId::SpellbookOfHealing,
+        ItemKindId::SPE_HEALING,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
@@ -1134,7 +1134,7 @@ fn test_boulder_push_floor() {
     }
 
     let boulder_id = sim.arena.spawn_item(create_item_record(
-        ItemKindId::Boulder,
+        ItemKindId::BOULDER,
         ItemLocation::Floor(b_coord),
         Buc::Uncursed,
     ));
@@ -1165,7 +1165,7 @@ fn test_boulder_push_pit_fill() {
     }
 
     let boulder_id = sim.arena.spawn_item(create_item_record(
-        ItemKindId::Boulder,
+        ItemKindId::BOULDER,
         ItemLocation::Floor(b_coord),
         Buc::Uncursed,
     ));
@@ -1198,7 +1198,7 @@ fn test_boulder_push_blocked_by_wall() {
     }
 
     let boulder_id = sim.arena.spawn_item(create_item_record(
-        ItemKindId::Boulder,
+        ItemKindId::BOULDER,
         ItemLocation::Floor(b_coord),
         Buc::Uncursed,
     ));
@@ -1288,7 +1288,7 @@ fn test_companion_pet_displacement() {
     }
 
     let pet_id = sim.arena.spawn_actor(create_monster_record(
-        MonsterSpeciesId::LittleDog,
+        MonsterSpeciesId::LITTLE_DOG,
         pet_coord,
     ));
     assert!(sim.arena.actors.get(pet_id).unwrap().is_tame);
@@ -1337,12 +1337,12 @@ fn test_companion_pet_attacks_hostile() {
     }
 
     let _pet_id = sim.arena.spawn_actor(create_monster_record(
-        MonsterSpeciesId::LittleDog,
+        MonsterSpeciesId::LITTLE_DOG,
         pet_coord,
     ));
     let goblin_id = sim
         .arena
-        .spawn_actor(create_monster_record(MonsterSpeciesId::Goblin, enemy_coord));
+        .spawn_actor(create_monster_record(MonsterSpeciesId::GOBLIN, enemy_coord));
 
     // Deterministic setup: AC 20 guarantees the dog's d20 attack lands.
     sim.arena.actors.get_mut(goblin_id).unwrap().ac = 20;
@@ -1378,13 +1378,13 @@ fn test_companion_pet_buc_reluctance() {
     }
 
     let pet_id = sim.arena.spawn_actor(create_monster_record(
-        MonsterSpeciesId::LittleDog,
+        MonsterSpeciesId::LITTLE_DOG,
         pet_coord,
     ));
 
     // Place cursed item directly in the path between pet and player
     let cursed_sword = sim.arena.spawn_item(create_item_record(
-        ItemKindId::LongSword,
+        ItemKindId::LONG_SWORD,
         ItemLocation::Floor(cursed_tile),
         Buc::Cursed,
     ));
@@ -1416,13 +1416,13 @@ fn test_companion_pet_buc_reluctance() {
 fn test_companion_pet_feeding_and_growth() {
     let mut sim = SimulationWorld::new_with_seed(42);
     let pet_id = sim.arena.spawn_actor(create_monster_record(
-        MonsterSpeciesId::LittleDog,
+        MonsterSpeciesId::LITTLE_DOG,
         Coord::new_unchecked(5, 5),
     ));
 
-    // Little dog starts at level 2, max_hp 12
+    // Little dog starts at level 2, max_hp 9 (C LVL 2: (9*2+1)/2)
     assert_eq!(sim.arena.actors.get(pet_id).unwrap().name, "little dog");
-    assert_eq!(sim.arena.actors.get(pet_id).unwrap().max_hp, 12);
+    assert_eq!(sim.arena.actors.get(pet_id).unwrap().max_hp, 9);
 
     // Feed nutrition to reach level 4 -> promotes to dog
     let events1 = sim.feed_companion_pet(pet_id, 100);
@@ -1447,7 +1447,7 @@ fn test_scroll_of_enchant_weapon() {
     let mut sim = SimulationWorld::new_with_seed(3);
 
     let sword = sim.arena.spawn_item(create_item_record(
-        ItemKindId::LongSword,
+        ItemKindId::LONG_SWORD,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
@@ -1455,7 +1455,7 @@ fn test_scroll_of_enchant_weapon() {
     assert_eq!(sim.arena.items.get(sword).unwrap().enchantment, 0);
 
     let scroll = sim.arena.spawn_item(create_item_record(
-        ItemKindId::ScrollOfEnchantWeapon,
+        ItemKindId::SCR_ENCHANT_WEAPON,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Blessed,
     ));
@@ -1475,13 +1475,13 @@ fn test_scroll_of_enchant_armor() {
     // Uncursed +0 leather armor gains rnd(3) (read.c:1115); seed 5 draws 1.
     let mut sim = SimulationWorld::new_with_seed(5);
     sim.arena.spawn_item(create_item_record(
-        ItemKindId::LeatherArmor,
+        ItemKindId::LEATHER_ARMOR,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
 
     let scroll = sim.arena.spawn_item(create_item_record(
-        ItemKindId::ScrollOfEnchantArmor,
+        ItemKindId::SCR_ENCHANT_ARMOR,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
@@ -1509,14 +1509,14 @@ fn enchant_at_safe_limit_never_evaporates() {
         // Weapon +5 with an uncursed scroll: amount 1, no evaporation (wield.c:999).
         let mut sim = SimulationWorld::new_with_seed(seed);
         let sword = sim.arena.spawn_item(create_item_record(
-            ItemKindId::LongSword,
+            ItemKindId::LONG_SWORD,
             ItemLocation::CarriedBy(sim.player_id),
             Buc::Uncursed,
         ));
         sim.arena.items.get_mut(sword).unwrap().enchantment = 5;
         sim.wielded_item = Some(sword);
         let scroll = sim.arena.spawn_item(create_item_record(
-            ItemKindId::ScrollOfEnchantWeapon,
+            ItemKindId::SCR_ENCHANT_WEAPON,
             ItemLocation::CarriedBy(sim.player_id),
             Buc::Uncursed,
         ));
@@ -1533,14 +1533,14 @@ fn enchant_at_safe_limit_never_evaporates() {
         // -> rnd(1) = 1, no evaporation (read.c:1179), armor becomes uncursed.
         let mut sim = SimulationWorld::new_with_seed(seed);
         let mut armor_rec = create_item_record(
-            ItemKindId::LeatherArmor,
+            ItemKindId::LEATHER_ARMOR,
             ItemLocation::CarriedBy(sim.player_id),
             Buc::Cursed,
         );
         armor_rec.enchantment = 3;
         let armor_id = sim.arena.spawn_item(armor_rec);
         let scroll = sim.arena.spawn_item(create_item_record(
-            ItemKindId::ScrollOfEnchantArmor,
+            ItemKindId::SCR_ENCHANT_ARMOR,
             ItemLocation::CarriedBy(sim.player_id),
             Buc::Uncursed,
         ));
@@ -1562,12 +1562,12 @@ fn test_alchemy_potion_mixing() {
     let mut sim = SimulationWorld::new_with_seed(42);
 
     let pot_heal = sim.arena.spawn_item(create_item_record(
-        ItemKindId::PotionOfHealing,
+        ItemKindId::POT_HEALING,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
     let pot_speed = sim.arena.spawn_item(create_item_record(
-        ItemKindId::PotionOfSpeed,
+        ItemKindId::POT_SPEED,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
@@ -1637,7 +1637,7 @@ fn test_astral_plane_ascension_victory() {
 
     // Spawn Amulet of Yendor in player inventory
     let amulet = sim.arena.spawn_item(create_item_record(
-        ItemKindId::AmuletOfYendor,
+        ItemKindId::AMULET_OF_YENDOR,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Blessed,
     ));
@@ -1664,7 +1664,7 @@ fn test_astral_plane_ascension_cross_aligned_rejected() {
         .set_tile(p_coord, Tile::HighAltar { align: cross_align });
 
     let amulet = sim.arena.spawn_item(create_item_record(
-        ItemKindId::AmuletOfYendor,
+        ItemKindId::AMULET_OF_YENDOR,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Blessed,
     ));
@@ -2004,7 +2004,7 @@ fn test_wand_recharge_explosion_damage_is_d_n_k() {
         let mut sim = SimulationWorld::new_with_seed(seed);
         sim.arena.actors.get_mut(sim.player_id).unwrap().hp = 1000;
         let mut wand = create_item_record(
-            ItemKindId::WandOfStriking,
+            ItemKindId::WAN_STRIKING,
             ItemLocation::CarriedBy(sim.player_id),
             Buc::Uncursed,
         );
@@ -2176,7 +2176,7 @@ fn test_monster_dragon_breath_and_reflection() {
     }
 
     let dragon = nethacked_data::create_monster_record(
-        nethacked_data::MonsterSpeciesId::RedDragon,
+        nethacked_data::MonsterSpeciesId::RED_DRAGON,
         dragon_coord,
     );
     let dragon_id = sim.arena.spawn_actor(dragon);
@@ -2220,7 +2220,7 @@ fn test_monster_medusa_petrification_gaze() {
     }
 
     let medusa = nethacked_data::create_monster_record(
-        nethacked_data::MonsterSpeciesId::Medusa,
+        nethacked_data::MonsterSpeciesId::MEDUSA,
         medusa_coord,
     );
     let medusa_id = sim.arena.spawn_actor(medusa);
@@ -2263,8 +2263,10 @@ fn test_monster_lich_summon_and_curse() {
         recharged: 0,
     });
 
-    let mut lich =
-        nethacked_data::create_monster_record(nethacked_data::MonsterSpeciesId::Lich, lich_coord);
+    let mut lich = nethacked_data::create_monster_record(
+        nethacked_data::MonsterSpeciesId::MASTER_LICH,
+        lich_coord,
+    );
     lich.abilities = vec![nethacked_types::MonsterAbility::Spellcaster {
         spell: nethacked_types::MonsterSpell::SummonMonsters,
         cooldown_turns: 1,
@@ -2390,7 +2392,7 @@ fn test_bones_file_generation_and_ghost_encounter() {
 fn test_potion_dilution_and_water_transformation() {
     let mut sim = SimulationWorld::new_with_seed(42);
     let potion = sim.arena.spawn_item(create_item_record(
-        ItemKindId::PotionOfExtraHealing,
+        ItemKindId::POT_EXTRA_HEALING,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
@@ -2437,7 +2439,7 @@ fn test_potion_dilution_and_water_transformation() {
 fn test_magic_lamp_rub_djinni_and_wishing() {
     let mut sim = SimulationWorld::new_with_seed(42);
     let lamp = sim.arena.spawn_item(create_item_record(
-        ItemKindId::MagicLamp,
+        ItemKindId::MAGIC_LAMP,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Blessed,
     ));
@@ -2458,7 +2460,7 @@ fn test_magic_lamp_rub_djinni_and_wishing() {
 
     // Rub cursed magic lamp -> Hostile Djinni spawned
     let cursed_lamp = sim.arena.spawn_item(create_item_record(
-        ItemKindId::MagicLamp,
+        ItemKindId::MAGIC_LAMP,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Cursed,
     ));
@@ -2478,7 +2480,7 @@ fn test_shopkeeper_price_identification() {
     let mut sim = SimulationWorld::new_with_seed(42);
     // Ensure shopkeeper exists
     let sk = nethacked_data::create_monster_record(
-        nethacked_data::MonsterSpeciesId::Goblin,
+        nethacked_data::MonsterSpeciesId::GOBLIN,
         Coord::new_unchecked(5, 5),
     );
     let mut sk = sk;
@@ -2486,7 +2488,7 @@ fn test_shopkeeper_price_identification() {
     sim.arena.spawn_actor(sk);
 
     let sword = sim.arena.spawn_item(create_item_record(
-        ItemKindId::LongSword,
+        ItemKindId::LONG_SWORD,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
@@ -2503,7 +2505,7 @@ fn test_shop_buy_price_c_get_cost() {
     // (shk.c:2949); a carried dunce cap stands in for a worn one (shk.c:2947).
     let mut sim = SimulationWorld::new_with_seed(42);
     let item = sim.arena.spawn_item(create_item_record(
-        ItemKindId::LongSword,
+        ItemKindId::LONG_SWORD,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Cursed,
     ));
@@ -2518,7 +2520,7 @@ fn test_shop_buy_price_c_get_cost() {
     };
     let mut tourist = SimulationWorld::new_with_character(42, config);
     let item = tourist.arena.spawn_item(create_item_record(
-        ItemKindId::LongSword,
+        ItemKindId::LONG_SWORD,
         ItemLocation::CarriedBy(tourist.player_id),
         Buc::Uncursed,
     ));
@@ -2593,12 +2595,13 @@ fn test_minetown_temple_priest_donation_and_uncursing() {
 
     // Place a priest adjacent to the player
     let priest_coord = Coord::new_unchecked(p_coord.x + 1, p_coord.y);
-    let priest = nethacked_data::create_monster_record(MonsterSpeciesId::Priest, priest_coord);
+    let priest =
+        nethacked_data::create_monster_record(MonsterSpeciesId::ALIGNED_CLERIC, priest_coord);
     sim.arena.spawn_actor(priest);
 
     // Give player a cursed weapon
     let cursed_sword = sim.arena.spawn_item(create_item_record(
-        ItemKindId::LongSword,
+        ItemKindId::LONG_SWORD,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Cursed,
     ));
@@ -2659,7 +2662,8 @@ fn test_priest_donation_below_protection_band() {
     let mut sim = SimulationWorld::new_with_seed(42);
     let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
     let priest_coord = Coord::new_unchecked(p_coord.x + 1, p_coord.y);
-    let priest = nethacked_data::create_monster_record(MonsterSpeciesId::Priest, priest_coord);
+    let priest =
+        nethacked_data::create_monster_record(MonsterSpeciesId::ALIGNED_CLERIC, priest_coord);
     sim.arena.spawn_actor(priest);
 
     // 100 zm is below every suggested amount (>= 150): cheapskate, no protection.
@@ -2681,7 +2685,7 @@ fn test_mines_end_luckstone_preservation() {
 
     // Spawn a luckstone in player's inventory
     let luckstone = sim.arena.spawn_item(create_item_record(
-        ItemKindId::Luckstone,
+        ItemKindId::LUCKSTONE,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
@@ -2742,7 +2746,7 @@ fn test_dynamic_lighting_oil_lamp_and_dark_room() {
 
     // Spawn an oil lamp in player's inventory
     let lamp = sim.arena.spawn_item(create_item_record(
-        ItemKindId::OilLamp,
+        ItemKindId::OIL_LAMP,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
@@ -2804,11 +2808,11 @@ fn test_blindness_and_telepathy_perception() {
 
     // Spawn a Gnome (conscious mind) and a Skeleton (mindless undead construct)
     let gnome = sim.arena.spawn_actor(nethacked_data::create_monster_record(
-        MonsterSpeciesId::Gnome,
+        MonsterSpeciesId::GNOME,
         gnome_coord,
     ));
     let skel = sim.arena.spawn_actor(nethacked_data::create_monster_record(
-        MonsterSpeciesId::Skeleton,
+        MonsterSpeciesId::SKELETON,
         skel_coord,
     ));
 
@@ -2866,24 +2870,24 @@ fn test_invocation_ritual_and_moloch_sanctum_portal() {
 
     // Spawn Bell, Candelabrum, 7 Candles, Book of the Dead
     let bell = sim.arena.spawn_item(create_item_record(
-        ItemKindId::BellOfOpening,
+        ItemKindId::BELL_OF_OPENING,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Blessed,
     ));
     let cand = sim.arena.spawn_item(create_item_record(
-        ItemKindId::CandelabrumOfInvocation,
+        ItemKindId::CANDELABRUM_OF_INVOCATION,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Blessed,
     ));
     for _ in 0..7 {
         sim.arena.spawn_item(create_item_record(
-            ItemKindId::WaxCandle,
+            ItemKindId::WAX_CANDLE,
             ItemLocation::CarriedBy(sim.player_id),
             Buc::Uncursed,
         ));
     }
     let book = sim.arena.spawn_item(create_item_record(
-        ItemKindId::BookOfTheDead,
+        ItemKindId::SPE_BOOK_OF_THE_DEAD,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Blessed,
     ));
@@ -2975,7 +2979,7 @@ fn test_gehennom_mysterious_force_pushback() {
 
     // Carrying real Amulet of Yendor
     sim.arena.spawn_item(create_item_record(
-        ItemKindId::AmuletOfYendor,
+        ItemKindId::AMULET_OF_YENDOR,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Blessed,
     ));
@@ -3015,7 +3019,7 @@ fn mysterious_force_world_trigger_increments_count_and_stays_out_of_sanctum() {
         sim.current_branch = nethacked_types::BranchId::Gehennom;
         sim.depth = 1 + (seed as usize % 2); // active band (dunlev < bottom - 3)
         sim.arena.spawn_item(create_item_record(
-            ItemKindId::AmuletOfYendor,
+            ItemKindId::AMULET_OF_YENDOR,
             ItemLocation::CarriedBy(sim.player_id),
             Buc::Blessed,
         ));
@@ -3041,7 +3045,7 @@ fn mysterious_force_never_fires_in_bottom_four_levels() {
         sim.current_branch = nethacked_types::BranchId::Gehennom;
         sim.depth = 3 + (seed as usize % 4); // 3..=6
         sim.arena.spawn_item(create_item_record(
-            ItemKindId::AmuletOfYendor,
+            ItemKindId::AMULET_OF_YENDOR,
             ItemLocation::CarriedBy(sim.player_id),
             Buc::Blessed,
         ));
@@ -3074,7 +3078,7 @@ fn test_quest_branch_transition_and_leader_qualification() {
     sim.depth = 1;
     let gen_events = sim.unpack_or_generate_level(nethacked_types::BranchId::Quest, 1);
     assert!(gen_events.iter().any(
-        |e| matches!(e, GameEvent::LogMessage { text } if text.contains("Sanctuary of The Norn"))
+        |e| matches!(e, GameEvent::LogMessage { text } if text.contains("Sanctuary of Norn"))
     ));
 
     // Stand on stairs down (towards Quest Locate)
@@ -3086,7 +3090,7 @@ fn test_quest_branch_transition_and_leader_qualification() {
 
     // Attempt to descend while underleveled -> rejected by The Norn
     let events_rej = sim.step_player_action(ActionAst::Descend);
-    assert!(events_rej.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("The Norn") && text.contains("level 14"))));
+    assert!(events_rej.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("Norn") && text.contains("level 14"))));
     assert_eq!(sim.depth, 1);
     assert_eq!(
         sim.quest_state.progress,
@@ -3101,7 +3105,7 @@ fn test_quest_branch_transition_and_leader_qualification() {
 
     // Attempt to descend now -> accepted, quest assigned, descent proceeds to depth 2
     let events_acc = sim.step_player_action(ActionAst::Descend);
-    assert!(events_acc.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("The Norn") && text.contains("Lord Surtur"))));
+    assert!(events_acc.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("Norn") && text.contains("Lord Surtur"))));
     assert_eq!(sim.depth, 2);
     assert_eq!(
         sim.quest_state.progress,
@@ -3140,7 +3144,7 @@ fn test_quest_nemesis_boss_fight_and_completion() {
 
     // Give hero Vorpal Blade with +5 enchantment to strike down the nemesis
     let mut vorpal_rec = create_item_record(
-        ItemKindId::VorpalBlade,
+        ItemKindId::ART_VORPAL_BLADE,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Blessed,
     );
@@ -3187,7 +3191,7 @@ fn test_quest_nemesis_boss_fight_and_completion() {
     }
 
     let ascend_events = sim.step_player_action(ActionAst::Ascend);
-    assert!(ascend_events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("The Norn") && text.contains("bless"))));
+    assert!(ascend_events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("Norn") && text.contains("bless"))));
     assert_eq!(
         sim.quest_state.progress,
         nethacked_core::QuestProgress::Completed
@@ -4005,7 +4009,7 @@ fn test_luck_decay_fires_every_300_with_amulet() {
     let mut sim = SimulationWorld::new_with_seed(42);
     assert_eq!(sim.luck_timeout_period(), 600);
     sim.arena.spawn_item(create_item_record(
-        ItemKindId::AmuletOfYendor,
+        ItemKindId::AMULET_OF_YENDOR,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
@@ -4035,7 +4039,7 @@ fn test_bones_curse_ratio_over_seeded_deaths() {
         sim.depth = 3;
         for _ in 0..20 {
             sim.arena.spawn_item(create_item_record(
-                ItemKindId::Luckstone,
+                ItemKindId::LUCKSTONE,
                 ItemLocation::CarriedBy(sim.player_id),
                 Buc::Blessed,
             ));
@@ -4059,10 +4063,10 @@ fn test_bones_curse_ratio_over_seeded_deaths() {
 fn test_bones_amulet_and_invocation_items_always_cursed() {
     // C bones.c:173-189: Amulet, Candelabrum, Bell, Book of the Dead always cursed.
     for kind in [
-        ItemKindId::AmuletOfYendor,
-        ItemKindId::CandelabrumOfInvocation,
-        ItemKindId::BellOfOpening,
-        ItemKindId::BookOfTheDead,
+        ItemKindId::AMULET_OF_YENDOR,
+        ItemKindId::CANDELABRUM_OF_INVOCATION,
+        ItemKindId::BELL_OF_OPENING,
+        ItemKindId::SPE_BOOK_OF_THE_DEAD,
     ] {
         for seed in 0..50u64 {
             let mut sim = SimulationWorld::new_with_seed(seed);
@@ -4088,7 +4092,7 @@ fn test_bones_quest_artifact_takes_normal_curse_roll() {
         let mut sim = SimulationWorld::new_with_seed(seed);
         sim.depth = 3;
         sim.arena.spawn_item(create_item_record(
-            ItemKindId::OrbOfFate,
+            ItemKindId::ART_ORB_OF_FATE,
             ItemLocation::CarriedBy(sim.player_id),
             Buc::Blessed,
         ));
@@ -4096,7 +4100,9 @@ fn test_bones_quest_artifact_takes_normal_curse_roll() {
         let orb = bones
             .items
             .iter()
-            .find(|i| i.name == nethacked_data::get_item_archetype(ItemKindId::OrbOfFate).name)
+            .find(|i| {
+                i.name == nethacked_data::get_item_archetype(ItemKindId::ART_ORB_OF_FATE).name
+            })
             .unwrap();
         match orb.buc {
             Buc::Cursed => cursed += 1,
@@ -4156,7 +4162,7 @@ fn quest_nemesis_kill_completes_for(role: &str, nemesis: &str, artifact: &str) {
         p.level = 15;
     }
     let mut vorpal_rec = create_item_record(
-        ItemKindId::VorpalBlade,
+        ItemKindId::ART_VORPAL_BLADE,
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Blessed,
     );
@@ -4472,7 +4478,7 @@ fn test_spawned_monsters_malign_matches_c_set_malign() {
     // Kobold: maligntyp = -2, always_hostile = true.
     // Crossaligned always_hostile (Lawful vs Chaotic): max(5, 2) = 5
     let kob_id = sim
-        .spawn_monster_near(MonsterSpeciesId::Kobold, sim.level.stairs_up)
+        .spawn_monster_near(MonsterSpeciesId::KOBOLD, sim.level.stairs_up)
         .expect("spawn kobold");
     let kob = sim.arena.actors.get(kob_id).unwrap();
     assert_eq!(
@@ -4483,7 +4489,7 @@ fn test_spawned_monsters_malign_matches_c_set_malign() {
     // Goblin: maligntyp = -3, always_hostile = false.
     // Crossaligned (Lawful vs Chaotic): abs(mal) = 3
     let gob_id = sim
-        .spawn_monster_near(MonsterSpeciesId::Goblin, sim.level.stairs_up)
+        .spawn_monster_near(MonsterSpeciesId::GOBLIN, sim.level.stairs_up)
         .expect("spawn goblin");
     let gob = sim.arena.actors.get(gob_id).unwrap();
     assert_eq!(
@@ -4494,7 +4500,7 @@ fn test_spawned_monsters_malign_matches_c_set_malign() {
     // Shopkeeper: always_peaceful = true, maligntyp = 0.
     // Peaceful: -3 * max(5, 0) = -15
     let shk_id = sim
-        .spawn_monster_near(MonsterSpeciesId::Shopkeeper, sim.level.stairs_up)
+        .spawn_monster_near(MonsterSpeciesId::SHOPKEEPER, sim.level.stairs_up)
         .expect("spawn shopkeeper");
     let shk = sim.arena.actors.get(shk_id).unwrap();
     assert_eq!(
@@ -4517,7 +4523,7 @@ fn test_spawned_monsters_malign_matches_c_set_malign() {
     // Kobold: maligntyp = -2, always_hostile = true.
     // Coaligned always_hostile (Chaotic vs Chaotic): 0
     let kob_chaotic_id = sim_chaotic
-        .spawn_monster_near(MonsterSpeciesId::Kobold, sim_chaotic.level.stairs_up)
+        .spawn_monster_near(MonsterSpeciesId::KOBOLD, sim_chaotic.level.stairs_up)
         .expect("spawn kobold for chaotic hero");
     let kob_chaotic = sim_chaotic.arena.actors.get(kob_chaotic_id).unwrap();
     assert_eq!(

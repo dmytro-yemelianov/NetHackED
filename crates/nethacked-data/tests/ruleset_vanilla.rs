@@ -1,5 +1,4 @@
 use nethacked_arena::{EntityArena, ItemLocation};
-use nethacked_core::ac::{armor_base_ac, armor_slot};
 use nethacked_core::quest::get_role_quest_config;
 use nethacked_data::ruleset::Ruleset;
 use nethacked_data::{
@@ -67,8 +66,8 @@ fn test_ruleset_vanilla_items_parity() {
         assert_eq!(def.nutrition, arch.nutrition);
 
         if arch.class == ItemClass::Armor {
-            let slot = armor_slot(arch.name).expect("armor slot for catalog armor");
-            let base_ac = armor_base_ac(arch.name);
+            let slot = arch.armor_slot.expect("armor slot for catalog armor");
+            let base_ac = arch.ac_bonus;
             let armor_def = def
                 .armor
                 .as_ref()
