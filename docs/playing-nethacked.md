@@ -80,7 +80,9 @@ Packs you upload stay in your browser, in IndexedDB. They are never sent anywher
 
 ## 3. In a terminal
 
-![The native terminal UI](images/tui.png)
+![The native terminal UI: role selection](images/tui-title.png)
+
+![The native terminal UI: in the dungeon](images/tui.png)
 
 ```bash
 cargo install --path crates/nethacked-tui --locked   # installs `nethacked` into ~/.cargo/bin

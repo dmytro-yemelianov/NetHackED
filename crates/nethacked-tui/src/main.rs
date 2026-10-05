@@ -109,7 +109,7 @@ fn select_character(
         "+------------------------------------------------------------------------------+";
     let title_line = format!(
         "|{:^78}|",
-        "NETHACKED: Classic NetHack 5.0 in Rust & Lean 4"
+        "NetHackED: Classic NetHack 5.0 in Rust & Lean 4"
     );
     let border_mid = format!("+{:-^78}+", " from Yemelianov (Emelyanov Dmytro) ");
     let border_bot =
