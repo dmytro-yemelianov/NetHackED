@@ -4395,3 +4395,35 @@ fn test_fainting_at_zero_hp_logs_death_message_in_both_locales() {
         assert_eq!(n, 1, "missing/duplicate faint death message {expected:?}");
     }
 }
+
+#[test]
+fn test_initial_alignment_record_per_role_matches_c() {
+    let roles = [
+        (RoleId::Valkyrie, 0),
+        (RoleId::Wizard, 0),
+        (RoleId::Tourist, 0),
+        (RoleId::Barbarian, 10),
+        (RoleId::Rogue, 10),
+        (RoleId::Knight, 10),
+        (RoleId::Monk, 10),
+        (RoleId::Healer, 10),
+        (RoleId::Archaeologist, 10),
+    ];
+
+    for (role, expected_record) in roles {
+        let sim = SimulationWorld::new_with_character(
+            42,
+            CharacterConfig {
+                role,
+                race: RaceId::Human,
+                name: "Tester".to_string(),
+                gender: Gender::Male,
+                alignment: Alignment::Neutral,
+            },
+        );
+        assert_eq!(
+            sim.alignment_record, expected_record,
+            "Role {role:?} should have initial alignment record {expected_record} matching NetHack C urole.initrecord"
+        );
+    }
+}

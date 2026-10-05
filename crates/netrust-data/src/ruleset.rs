@@ -215,7 +215,13 @@ pub struct RoleDef {
     pub skills: Vec<(SkillClass, SkillLevel)>,
     pub pantheon: [String; 3],
     pub quest: Option<QuestDef>,
+    /// NetHack 5.0 C `urole.initrecord` (`role.c`, `attrib.c:1094`).
+    #[serde(default = "default_initial_alignment_record")]
     pub initial_alignment_record: i32,
+}
+
+fn default_initial_alignment_record() -> i32 {
+    10
 }
 
 /// Owned definition of a player character race.
@@ -666,7 +672,7 @@ fn build_vanilla_ruleset() -> Ruleset {
                     pantheon.chaotic.name,
                 ],
                 quest,
-                initial_alignment_record: 25,
+                initial_alignment_record: role.initial_alignment_record,
             }
         })
         .collect();
@@ -750,3 +756,52 @@ pub const ENGINE_REQUIRED_ITEMS: &[&str] = &[
     "The Staff of Aesculapius",
     "The Orb of Detection",
 ];
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_role_def_serde_default_initial_alignment_record() {
+        let json_without_field = r#"{
+            "id": "Barbarian",
+            "name": "Barbarian",
+            "base_hp": 20,
+            "ac": 10,
+            "speed": 12,
+            "default_alignment": "Chaotic",
+            "starting_items": [],
+            "skills": [],
+            "pantheon": ["Mitra", "Crom", "Set"],
+            "quest": null
+        }"#;
+
+        let role_def: RoleDef =
+            serde_json::from_str(json_without_field).expect("deserialization should succeed");
+        assert_eq!(
+            role_def.initial_alignment_record, 10,
+            "omitted initial_alignment_record must default to 10"
+        );
+    }
+
+    #[test]
+    fn test_vanilla_roles_canonical_initrecord_values() {
+        let ruleset = Ruleset::vanilla();
+        for role in &ruleset.roles {
+            let expected = match role.id {
+                RoleId::Valkyrie | RoleId::Wizard | RoleId::Tourist => 0,
+                RoleId::Barbarian
+                | RoleId::Rogue
+                | RoleId::Knight
+                | RoleId::Monk
+                | RoleId::Healer
+                | RoleId::Archaeologist => 10,
+            };
+            assert_eq!(
+                role.initial_alignment_record, expected,
+                "role {:?} initial_alignment_record should match NetHack C urole.initrecord",
+                role.id
+            );
+        }
+    }
+}

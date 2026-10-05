@@ -101,7 +101,7 @@ fn test_ruleset_vanilla_roles_parity() {
         assert_eq!(def.ac, role.ac);
         assert_eq!(def.speed, role.speed);
         assert_eq!(def.default_alignment, role.default_alignment);
-        assert_eq!(def.initial_alignment_record, 25);
+        assert_eq!(def.initial_alignment_record, role.initial_alignment_record);
         assert_eq!(def.skills, starting_skills(role.id));
 
         let pantheon = get_pantheon_for_role(role.id);

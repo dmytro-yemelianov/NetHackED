@@ -126,9 +126,9 @@ pub struct SimulationWorld {
     pub conducts: netrust_types::ConductTracker,
 }
 
-/// The sim's starting alignment record (C starts at `urole.initrecord`,
-/// attrib.c:1094; documented divergence).
-pub const INITIAL_ALIGNMENT_RECORD: i32 = 25;
+/// The sim's fallback starting alignment record when a role definition is missing
+/// (C starts at `urole.initrecord`, attrib.c:1094; roles default to 10).
+pub const INITIAL_ALIGNMENT_RECORD: i32 = 10;
 
 /// Default maximum length of the sliding window for `event_log` (prevents unbounded memory growth).
 pub const DEFAULT_MAX_EVENT_LOG_LEN: usize = 10_000;
