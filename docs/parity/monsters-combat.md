@@ -68,13 +68,13 @@ Only 9 of the 12 `DamageType` variants are AD types (`types/lib.rs:591-610`: Phy
 | 38 | AD_DRST / DRDX / DRCO (poison, attribute loss, instadeath) | uhitm.c `mhitm_ad_drst` | ❌ MISSING | enum DrainStr exists, no effect (spec div. (a)) | Poison is plain damage, so killer bees and soldier ants cannot kill outright |
 | 39 | AD_DRLI (level drain) | `mhitm_ad_drli` | ❌ MISSING | spec div. (a) | Vampires and wraiths do not drain levels |
 | 40 | AD_STON (stoning touch) | `mhitm_ad_ston` | ❌ MISSING | spec div. (a) | No cockatrice stoning (no cockatrices either) |
-| 41 | AD_SLOW / AD_PLYS / AD_STUN | `mhitm_ad_slow/plys/stun` | ❌ MISSING | spec div. (a) | No paralysis deaths, no slowing |
+| 41 | AD_SLOW / AD_PLYS / AD_STUN | `mhitm_ad_slow/plys/stun` | 🟡 PARTIAL | sim/ad_effects.rs: AD_SLOW (`u_slow_down`) and AD_STUN (stun timer, half damage) on the hero; AD_PLYS melee still missing | Slowing and stunning hits work against the hero; no paralysis from melee yet |
 | 42 | AD_SAMU (Wizard steals the Amulet) | `mhitm_ad_samu` | ❌ MISSING | enum StealAmulet, no effect | The Amulet is never stolen |
 | 43 | AD_SGLD / AD_SITM / AD_SEDU (gold and item theft) | `mhitm_ad_sgld/sitm/sedu`, steal.c:58, 343 | ❌ MISSING | no match for grep `nymph\|leprechaun` | No nymph or leprechaun theft |
 | 44 | AD_SSEX (seduction, foocubi) | mhitu.c:1985 `doseduce` | ❌ MISSING | no match for grep `seduc` | None |
-| 45 | AD_ELEC / AD_ACID / AD_MAGM / AD_SLEE / AD_DISN | `mhitm_ad_*` | ❌ MISSING | not in DamageType | No shock, acid, sleep, or disintegration attacks |
+| 45 | AD_ELEC / AD_ACID / AD_MAGM / AD_SLEE / AD_DISN | `mhitm_ad_*` | 🟡 PARTIAL | sim/ad_effects.rs: AD_ELEC (shock resistance, MC), AD_ACID (1/3, acid resistance), AD_SLEE (sleep `rnd(10)` turns, sleep resistance, MC) on the hero; AD_MAGM and AD_DISN missing; no item destruction | Shock, acid and sleep hits work against the hero |
 | 46 | AD_RUST / AD_CORR / AD_DCAY / AD_ENCH (equipment damage) | `mhitm_ad_rust` etc. | ❌ MISSING | not in enum | Armor and weapons never erode in melee |
-| 47 | AD_BLND / AD_CONF / AD_HALU | `mhitm_ad_blnd` etc. | ❌ MISSING | not in enum | None |
+| 47 | AD_BLND / AD_CONF / AD_HALU | `mhitm_ad_blnd` etc. | 🟡 PARTIAL | sim/ad_effects.rs: AD_BLND (blindness timeout), AD_CONF (confusion, `mspec_used`) on the hero; AD_HALU missing; `can_blnd` approximated | Blinding and confusing hits work; confusion/stun randomize movement (hack.c:2420) |
 | 48 | AD_TLPT / AD_LEGS / AD_STCK / AD_WRAP / AD_DGST (engulf-digest) | `mhitm_ad_*`, mhitu.c:1289 `gulpmu` | ❌ MISSING | AT_ENGL absent | No engulfing, no drowning by eels, no sticking |
 | 49 | AD_WERE (lycanthropy) | `mhitm_ad_were` | ❌ MISSING | polymorph.rs mentions lycanthropy but there is no were species | None |
 | 50 | AD_DISE / AD_PEST / AD_FAMN / AD_DETH (Riders) | `mhitm_ad_*` | ❌ MISSING | no Riders | Endgame Riders are absent |
@@ -83,7 +83,7 @@ Only 9 of the 12 `DamageType` variants are AD types (`types/lib.rs:591-610`: Phy
 | 53 | Explode-on-hit (AT_EXPL, `explmu`) | mhitu.c:1591 | ❌ MISSING | no AT_EXPL | No yellow lights or gas spores |
 | 54 | Gaze attacks (`gazemu`) | mhitu.c:1668 | 🟡 PARTIAL | sim/monsters.rs:454-492: Medusa only, flat damage | Simplified |
 | 55 | Hero passive vs monster (`passiveum`) | mhitu.c:2435 | ❌ MISSING | no match | Polymorphed-hero passives do nothing |
-| 56 | Magic cancellation (MC) | mhitu.c `mhitm_mgc_atk_negated` | ❌ MISSING | spec div. (a) | Cloaks give no protection against special attacks (moot today) |
+| 56 | Magic cancellation (MC) | mhitu.c `mhitm_mgc_atk_negated` | 🟡 PARTIAL | sim/ad_effects.rs `hero_negates`: best `a_can` of carried armor (from objects.h data), `rn2(10) < 3*mc`; Protection and amulet of guarding not counted | Cloaks protect against the handled special attacks |
 | 57 | AC damage reduction `rnd(-u.uac)` | mhitu.c:1208 | ✅ PRESENT | core/combat.rs:181 | Matches C |
 | **mhitm.c (monster vs monster)** |||||
 | 58 | `mattackm` to-hit and damage | mhitm.c:293, 375-441, 1016 | ✅ PRESENT | core/combat.rs:238 `mhitm_to_hit`, sim/combat.rs:558 | Pet fights use C numbers |

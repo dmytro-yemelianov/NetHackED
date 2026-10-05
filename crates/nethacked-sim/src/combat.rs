@@ -639,7 +639,10 @@ impl SimulationWorld {
             } else {
                 None
             };
-            let dmg = monster_hit_damage(attack, &rolls, is_resisted, hero);
+            let mut dmg = monster_hit_damage(attack, &rolls, is_resisted, hero);
+            if hero_defender {
+                dmg = self.hero_ad_effect(&attacker, attacker_id, attack, dmg, &mut events);
+            }
             if self.land_hit(
                 attacker_id,
                 &attacker,

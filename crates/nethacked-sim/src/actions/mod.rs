@@ -11,6 +11,7 @@ pub mod religion;
 pub mod stairs;
 
 use nethacked_core::{energy::NORMAL_SPEED, ActionAst};
+use rand::Rng;
 
 use crate::events::GameEvent;
 use crate::world::SimulationWorld;
@@ -30,6 +31,31 @@ impl SimulationWorld {
 
         let energy_before = self.scheduler.hero_energy;
         let turn_before = self.scheduler.turn;
+
+        // C multi < 0 (fall_asleep, paralysis): the hero cannot act this turn.
+        let action = if self.hero.afflictions.transient.helpless > 0 {
+            ActionAst::Wait
+        } else {
+            action
+        };
+        // C domove (hack.c:2420-2435): u_maybe_impaired() -> confdir().
+        let action = match action {
+            ActionAst::Move(_) if self.hero_moves_at_random() => {
+                use nethacked_types::Direction as D;
+                const DIRS: [D; 8] = [
+                    D::North,
+                    D::NorthEast,
+                    D::East,
+                    D::SouthEast,
+                    D::South,
+                    D::SouthWest,
+                    D::West,
+                    D::NorthWest,
+                ];
+                ActionAst::Move(DIRS[self.rng.random_range(0..DIRS.len())])
+            }
+            other => other,
+        };
 
         match action {
             ActionAst::Move(dir) => events.extend(self.handle_move(dir)),

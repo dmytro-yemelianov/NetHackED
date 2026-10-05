@@ -103,6 +103,9 @@ impl MonsterDef {
 pub struct ArmorDef {
     pub slot: ArmorSlot,
     pub base_ac: i32,
+    /// C `a_can` (objects.h `oc2` for armor): magic cancellation level 0..=3.
+    #[serde(default)]
+    pub magic_cancellation: u32,
 }
 
 /// Owned definition of an item archetype.
@@ -623,6 +626,7 @@ fn build_vanilla_ruleset() -> Ruleset {
             let armor = arch.armor_slot.map(|slot| ArmorDef {
                 slot,
                 base_ac: arch.ac_bonus,
+                magic_cancellation: arch.magic_cancellation,
             });
             ItemDef {
                 id: Some(arch.id),

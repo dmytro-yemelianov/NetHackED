@@ -5,9 +5,9 @@
 //! :320, `rnd(20 + i)` :441), `breamm` (mthrowu.c:1093).
 
 use nethacked_arena::{ActorId, ActorRecord, ItemLocation, ItemRecord};
-use nethacked_data::{create_monster_record, MonsterSpeciesId};
+use nethacked_data::{create_monster_record, ItemKindId, MonsterSpeciesId};
 use nethacked_sim::{ActionAst, Alignment, Coord, GameEvent, Intrinsics, SimulationWorld, Tile};
-use nethacked_types::{Buc, ItemClass, MonsterAbility, MonsterSpell, SlimingState};
+use nethacked_types::{Buc, Direction, ItemClass, MonsterAbility, MonsterSpell, SlimingState};
 
 const HERO: Coord = Coord::new_unchecked(10, 10);
 const HERO_HP: i32 = 5000;
@@ -561,4 +561,134 @@ fn breath_on_a_polymorphed_hero_rehumanizes_instead_of_killing() {
         }
     }
     panic!("the dragon never breathed on the hero");
+}
+
+// ---- C mhitm_ad_* hero branches (sim/ad_effects.rs) ----
+
+/// Run up to `turns` waits next to `mon`, resetting both each turn, and
+/// collect every event.
+fn fight(sim: &mut SimulationWorld, mon: ActorId, turns: usize) -> Vec<GameEvent> {
+    let mut all = Vec::new();
+    for _ in 0..turns {
+        clear_others(sim, mon);
+        reset(sim, mon, east(1));
+        all.extend(sim.step_player_action(ActionAst::Wait));
+    }
+    all
+}
+
+#[test]
+fn elec_bite_zaps_and_shock_resistance_zeroes_it() {
+    // C grid bug: ATTK(AT_BITE, AD_ELEC, 1, 1); uhitm.c:2706-2721.
+    let mut sim = arena_world(5);
+    let bug = spawn(&mut sim, MonsterSpeciesId::GRID_BUG, east(1));
+    assert!(msg_index(&fight(&mut sim, bug, 60), "You get zapped!").is_some());
+    sim.arena
+        .actors
+        .get_mut(sim.player_id)
+        .unwrap()
+        .intrinsics
+        .shock_resistance = true;
+    for _ in 0..60 {
+        let ev = fight(&mut sim, bug, 1);
+        if msg_index(&ev, "You get zapped!").is_some() {
+            assert!(msg_index(&ev, "doesn't shock you").is_some());
+            assert_eq!(hero_hp(&sim), HERO_HP);
+        }
+    }
+}
+
+#[test]
+fn magic_cancellation_3_mostly_negates_elec() {
+    // C magic_negation: best worn a_can; cloak of protection has a_can 3, so
+    // rn2(10) < 9 negates 90% (uhitm.c:87).
+    let mut sim = arena_world(6);
+    let pid = sim.player_id;
+    let cloak = sim
+        .ruleset
+        .create_item_record_by_id(
+            ItemKindId::CLOAK_OF_PROTECTION,
+            ItemLocation::CarriedBy(pid),
+            Buc::Uncursed,
+        )
+        .unwrap();
+    sim.arena.spawn_item(cloak);
+    let bug = spawn(&mut sim, MonsterSpeciesId::GRID_BUG, east(1));
+    let ev = fight(&mut sim, bug, 200);
+    let avoided = ev
+        .iter()
+        .filter(|e| matches!(e, GameEvent::LogMessage { text } if text == "You avoid harm."))
+        .count();
+    let zapped = ev
+        .iter()
+        .filter(|e| matches!(e, GameEvent::LogMessage { text } if text == "You get zapped!"))
+        .count();
+    assert!(
+        avoided > 0 && avoided > 3 * zapped,
+        "avoided {avoided}, zapped {zapped}"
+    );
+}
+
+#[test]
+fn sleep_bite_makes_the_hero_helpless_then_wakes() {
+    // C homunculus: ATTK(AT_BITE, AD_SLEE, 1, 3); fall_asleep(-rnd(10)).
+    let mut sim = arena_world(7);
+    let homunculus = spawn(&mut sim, MonsterSpeciesId::HOMUNCULUS, east(1));
+    let mut slept = false;
+    for _ in 0..200 {
+        let ev = fight(&mut sim, homunculus, 1);
+        if msg_index(&ev, "You are put to sleep").is_some() {
+            slept = true;
+            break;
+        }
+    }
+    assert!(slept);
+    assert!(sim.hero.afflictions.transient.helpless > 0);
+    let pid = sim.player_id;
+    sim.arena.actors.retain(|id, _| id == pid);
+    let before = sim.arena.actors[pid].coord;
+    sim.step_player_action(ActionAst::Move(Direction::West));
+    assert_eq!(
+        sim.arena.actors[pid].coord, before,
+        "a sleeping hero cannot move"
+    );
+    let mut woke = false;
+    for _ in 0..12 {
+        let ev = sim.step_player_action(ActionAst::Wait);
+        woke |= msg_index(&ev, "You wake up.").is_some();
+    }
+    assert!(woke && sim.hero.afflictions.transient.helpless == 0);
+}
+
+#[test]
+fn blinding_claw_blinds_until_the_timeout_runs_out() {
+    // C raven: ATTK(AT_CLAW, AD_BLND, 1, 6); make_blinded(BlindedTimeout + dmg).
+    let mut sim = arena_world(8);
+    let raven = spawn(&mut sim, MonsterSpeciesId::RAVEN, east(1));
+    let ev = fight(&mut sim, raven, 80);
+    assert!(msg_index(&ev, "blinds you!").is_some());
+    let pid = sim.player_id;
+    sim.arena.actors.retain(|id, _| id == pid);
+    assert!(sim.arena.actors[pid].intrinsics.blind);
+    let mut cleared = false;
+    for _ in 0..600 {
+        let ev = sim.step_player_action(ActionAst::Wait);
+        if msg_index(&ev, "You can see again.").is_some() {
+            cleared = true;
+            break;
+        }
+    }
+    assert!(cleared && !sim.arena.actors[pid].intrinsics.blind);
+}
+
+#[test]
+fn slowing_touch_removes_intrinsic_speed() {
+    // C skeleton: ATTK(AT_TUCH, AD_SLOW, 1, 6); u_slow_down().
+    let mut sim = arena_world(9);
+    let pid = sim.player_id;
+    let skel = spawn(&mut sim, MonsterSpeciesId::SKELETON, east(1));
+    sim.arena.actors.get_mut(pid).unwrap().intrinsics.fast = true;
+    let ev = fight(&mut sim, skel, 200);
+    assert!(msg_index(&ev, "You slow down.").is_some());
+    assert!(!sim.arena.actors[pid].intrinsics.fast);
 }
