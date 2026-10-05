@@ -1,6 +1,6 @@
 //! Inventory, Container Hierarchy, and Encumbrance Mechanics.
 //!
-//! Formalized and verified in `NetMechanics.Inventory`.
+//! Modelled in Lean 4 in `NetMechanics.Inventory` (machine-checked model; not formally linked to this code).
 //! Unlike NetHack's intrusive `union vptrs`, nested containment is a safe tree.
 
 use crate::buc::Buc;

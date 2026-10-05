@@ -1,6 +1,6 @@
 //! Dungeon Grid and Tile Mechanics.
 //!
-//! Formalized and verified in `NetMechanics.Grid`.
+//! Modelled in Lean 4 in `NetMechanics.Grid` (machine-checked model; not formally linked to this code).
 //! Replaces NetHack's overloaded 5-bit flags (`rm.h:struct rm`) with an algebraic sum type.
 
 pub use nethacked_types::{Alignment, Coord, DoorState, Tile, COLNO, ROWNO};

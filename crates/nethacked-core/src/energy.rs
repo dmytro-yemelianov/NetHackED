@@ -1,6 +1,6 @@
 //! Turn Scheduler & Energy System.
 //!
-//! Formalized and verified in `NetMechanics.Energy`.
+//! Modelled in Lean 4 in `NetMechanics.Energy` (machine-checked model; not formally linked to this code).
 //! Implements the speed tick model from NetHack's `allmain.c:moveloop_core`.
 
 use serde::{Deserialize, Serialize};

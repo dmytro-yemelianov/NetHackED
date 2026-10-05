@@ -414,5 +414,5 @@ As of today, all content and rules are compiled-in Rust statics and `match` arms
 - [lean4-verification-guide.md](lean4-verification-guide.md): the Lean theorem catalog and how it maps to proptests.
 - [ontology-and-taxonomy.md](ontology-and-taxonomy.md): domain ontology and taxonomies.
 - [agent-and-mcp-integration.md](agent-and-mcp-integration.md): MCP, JSON-RPC and GraphQL usage.
-- [master-roadmap-to-nethack-parity.md](master-roadmap-to-nethack-parity.md): the roadmap toward NetHack parity.
+- [roadmap.md](roadmap.md) and [parity/](parity/README.md): the roadmap toward NetHack parity and the feature-by-feature status it is measured against.
 - [superpowers/specs/](superpowers/specs/): design specs, including the D1 fidelity pass and the hardening work.
