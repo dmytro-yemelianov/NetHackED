@@ -1,0 +1,16 @@
+// Clean keyboard-only NetRust game, served as static assets (no Worker code).
+// Build: scripts/build-cf.sh   Deploy: (cd deploy/cloudflare && npx wrangler deploy)
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "netrust",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  },
+  "routes": [
+    { "pattern": "netrust.yemelianov.dev", "custom_domain": true }
+  ],
+  "workers_dev": false,
+  "preview_urls": false
+}
