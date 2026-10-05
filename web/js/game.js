@@ -1,8 +1,10 @@
 // Game page: session UI, HUD, input, inventory, i18n, plus the AI arena and
 // benchmark panels (they share the session and renderer).
 import { loadWasm } from './wasm.js';
+import { listPacks, openPack, ACTIVE_KEY } from './pack-store.js';
 
-const { WasmGameSession, TournamentRun, run_tactical_trajectory } = await loadWasm();
+const wasmModule = await loadWasm();
+const { WasmGameSession, TournamentRun, run_tactical_trajectory } = wasmModule;
 
 let session = null;
 let selectedRole = 'valkyrie';
@@ -673,6 +675,9 @@ function applyLocalization(locale) {
   if (lblCharCreation) lblCharCreation.textContent = isUk ? 'Створення персонажа' : 'Character Creation';
   const lblCharName = document.getElementById('lblCharName');
   if (lblCharName) lblCharName.textContent = isUk ? 'Ім\'я героя:' : 'Character Name:';
+  document.getElementById('lblRuleset').textContent = isUk ? 'Набір правил:' : 'Ruleset:';
+  document.getElementById('lnkManagePacks').textContent = isUk ? 'Керувати наборами…' : 'Manage packs…';
+  document.getElementById('lblHudRuleset').textContent = isUk ? 'Правила:' : 'Rules:';
   const lblChooseRole = document.getElementById('lblChooseRole');
   if (lblChooseRole) lblChooseRole.textContent = isUk ? 'Оберіть клас / роль:' : 'Choose Class / Role:';
   const btnStartGame = document.getElementById('btnStartGame');
@@ -1087,8 +1092,56 @@ function updateRecentMatchesTable() {
   });
 }
 
+// ---- Ruleset (rule pack) selection ----
+function activeRulesetKey() {
+  try {
+    return localStorage.getItem(ACTIVE_KEY) || 'vanilla';
+  } catch {
+    return 'vanilla';
+  }
+}
+
+async function populateRulesetSelect() {
+  const sel = document.getElementById('rulesetSelect');
+  const entries = await listPacks();
+  const active = activeRulesetKey();
+  sel.innerHTML = entries
+    .map((e) => `<option value="${escapeHtml(e.key)}">${escapeHtml(e.title)}${e.version ? ' ' + escapeHtml(e.version) : ''}${e.origin === 'stored' ? ' (uploaded)' : ''}</option>`)
+    .join('');
+  sel.value = entries.some((e) => e.key === active) ? active : 'vanilla';
+  sel.onchange = () => {
+    try { localStorage.setItem(ACTIVE_KEY, sel.value); } catch { /* storage unavailable */ }
+  };
+}
+
+// Create a session on the selected ruleset; vanilla keeps the original path.
+async function createSession(seed, role, race, name) {
+  const key = document.getElementById('rulesetSelect').value || activeRulesetKey();
+  let s;
+  if (key === 'vanilla') {
+    s = WasmGameSession.new_with_character(seed, role, race, name);
+  } else {
+    const pack = await openPack(wasmModule, key);
+    s = WasmGameSession.newWithPack(seed, role, race, name, pack);
+  }
+  const hudItem = document.getElementById('hudRulesetItem');
+  hudItem.hidden = key === 'vanilla';
+  document.getElementById('statRuleset').textContent =
+    key === 'vanilla' ? '' : `${s.rulesetId()} · ${s.rulesetHash().slice(7, 19)}`;
+  return s;
+}
+
 async function start() {
+  await populateRulesetSelect();
   session = new WasmGameSession(42n);
+  if (activeRulesetKey() !== 'vanilla') {
+    try {
+      session = await createSession(42n, selectedRole, selectedRace, 'Hero');
+      messageBarEl.textContent = `Playing with rule pack: ${session.rulesetId()}`;
+    } catch (err) {
+      messageBarEl.textContent = `Could not load rule pack: ${err.message || err}`;
+    }
+  }
   applyDisplayMode();
   updateUi(null);
   loadLeaderboard();
@@ -1320,12 +1373,12 @@ document.querySelectorAll('.role-btn').forEach(btn => {
   });
 });
 
-document.getElementById('btnStartGame').addEventListener('click', () => {
+document.getElementById('btnStartGame').addEventListener('click', async () => {
   const name = document.getElementById('charName').value.trim() || 'Hero';
   try {
-    session = WasmGameSession.new_with_character(42n, selectedRole, selectedRace, name);
+    session = await createSession(42n, selectedRole, selectedRace, name);
   } catch (err) {
-    messageBarEl.textContent = `Could not create character: ${err}`;
+    messageBarEl.textContent = `Could not create character: ${err.message || err}`;
     return;
   }
   messageBarEl.textContent = `Welcome, ${name} the ${selectedRole.toUpperCase()}! Your quest begins.`;
@@ -1333,9 +1386,13 @@ document.getElementById('btnStartGame').addEventListener('click', () => {
   updateUi(null);
 });
 
-document.getElementById('btnReset').addEventListener('click', () => {
+document.getElementById('btnReset').addEventListener('click', async () => {
   stopAiMatch();
-  session = new WasmGameSession(42n);
+  try {
+    session = await createSession(42n, selectedRole, selectedRace, 'Hero');
+  } catch {
+    session = new WasmGameSession(42n);
+  }
   messageBarEl.textContent = "Simulation reset to seed 42.";
   updateUi(null);
 });

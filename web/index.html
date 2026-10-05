@@ -38,6 +38,7 @@
         <div class="status-item"><span id="lblAc" class="status-label">AC:</span><span id="statAc" class="status-val">7</span></div>
         <div class="status-item"><span id="lblNutr" class="status-label">Nutr:</span><span id="statNutr" class="status-val">Normal</span></div>
         <div class="status-item"><span id="lblTurn" class="status-label">Turn:</span><span id="statTurn" class="status-val">1</span></div>
+        <div class="status-item" id="hudRulesetItem" hidden><span id="lblHudRuleset" class="status-label">Rules:</span><span id="statRuleset" class="status-val"></span></div>
       </div>
     </div>
 
@@ -227,6 +228,11 @@
         <button class="role-btn" data-role="tourist" data-race="human" id="roleBtnTourist">Tourist (Human)</button>
         <button class="role-btn" data-role="archaeologist" data-race="human" id="roleBtnArchaeologist">Archaeologist (Human)</button>
       </div>
+    </div>
+    <div class="form-group">
+      <label for="rulesetSelect" id="lblRuleset">Ruleset:</label>
+      <select id="rulesetSelect" style="width:100%; padding:0.4rem; background:#000; color:#fff; border:1px solid var(--border-color); font-family:var(--font-mono); border-radius:4px;"></select>
+      <a href="packs.html" id="lnkManagePacks">Manage packs…</a>
     </div>
     <div class="dialog-footer">
       <button class="start-btn" id="btnStartGame">Embark Into Dungeon</button>
