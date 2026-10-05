@@ -34,38 +34,39 @@ use pager::Pager;
 use std::collections::HashSet;
 use std::io::{self, stdout, Stdout, Write};
 
-/// Character-select rows: (role key, race key, description key, hotkey).
-const ROLE_ROWS: &[(&str, &str, &str, char)] = &[
-    (
-        "role.valkyrie",
-        "role.valkyrie.race",
-        "role.valkyrie.desc",
-        'v',
-    ),
-    ("role.wizard", "role.wizard.race", "role.wizard.desc", 'w'),
-    (
-        "role.barbarian",
-        "role.barbarian.race",
-        "role.barbarian.desc",
-        'b',
-    ),
-    ("role.rogue", "role.rogue.race", "role.rogue.desc", 'r'),
-    ("role.knight", "role.knight.race", "role.knight.desc", 'k'),
-    ("role.monk", "role.monk.race", "role.monk.desc", 'm'),
-    ("role.healer", "role.healer.race", "role.healer.desc", 'h'),
-    (
-        "role.tourist",
-        "role.tourist.race",
-        "role.tourist.desc",
-        't',
-    ),
-    (
-        "role.archaeologist",
-        "role.archaeologist.race",
-        "role.archaeologist.desc",
-        'a',
-    ),
-];
+fn role_ui_keys(role_id: RoleId) -> (char, &'static str, &'static str, &'static str) {
+    match role_id {
+        RoleId::Valkyrie => (
+            'v',
+            "role.valkyrie",
+            "role.valkyrie.race",
+            "role.valkyrie.desc",
+        ),
+        RoleId::Wizard => ('w', "role.wizard", "role.wizard.race", "role.wizard.desc"),
+        RoleId::Barbarian => (
+            'b',
+            "role.barbarian",
+            "role.barbarian.race",
+            "role.barbarian.desc",
+        ),
+        RoleId::Rogue => ('r', "role.rogue", "role.rogue.race", "role.rogue.desc"),
+        RoleId::Knight => ('k', "role.knight", "role.knight.race", "role.knight.desc"),
+        RoleId::Monk => ('m', "role.monk", "role.monk.race", "role.monk.desc"),
+        RoleId::Healer => ('h', "role.healer", "role.healer.race", "role.healer.desc"),
+        RoleId::Tourist => (
+            't',
+            "role.tourist",
+            "role.tourist.race",
+            "role.tourist.desc",
+        ),
+        RoleId::Archaeologist => (
+            'a',
+            "role.archaeologist",
+            "role.archaeologist.race",
+            "role.archaeologist.desc",
+        ),
+    }
+}
 
 struct TerminalGuard;
 
@@ -96,7 +97,11 @@ fn screen_offsets() -> (u16, u16) {
     (offset_x, offset_y)
 }
 
-fn select_character(stdout: &mut Stdout, locale: Locale) -> io::Result<Option<CharacterConfig>> {
+fn select_character(
+    stdout: &mut Stdout,
+    locale: Locale,
+    ruleset: &netrust_data::ruleset::Ruleset,
+) -> io::Result<Option<CharacterConfig>> {
     let (ox, oy) = screen_offsets();
     execute!(stdout, Clear(ClearType::All))?;
 
@@ -133,9 +138,11 @@ fn select_character(stdout: &mut Stdout, locale: Locale) -> io::Result<Option<Ch
         ResetColor
     )?;
 
-    let roles: Vec<(String, &str, &str)> = ROLE_ROWS
+    let roles: Vec<(String, &str, &str)> = ruleset
+        .roles
         .iter()
-        .map(|(key, race_key, desc_key, hotkey)| {
+        .map(|r| {
+            let (hotkey, key, race_key, desc_key) = role_ui_keys(r.id);
             (
                 format!("[{hotkey}] {}", t(key, locale)),
                 t(race_key, locale),
@@ -639,29 +646,47 @@ fn show_help_modal(stdout: &mut Stdout, locale: Locale, seed: u64) -> io::Result
 
 fn main() -> io::Result<()> {
     let args: Vec<String> = std::env::args().collect();
-    let mut locale = Locale::En;
-    for (i, arg) in args.iter().enumerate() {
-        if arg == "--lang" || arg == "-l" {
-            if let Some(val) = args.get(i + 1) {
-                locale = Locale::parse(val);
-            }
-        } else if arg == "--uk" {
-            locale = Locale::Uk;
-        } else if arg == "--en" {
-            locale = Locale::En;
-        }
-    }
-
-    let seed = match parse_seed_args(&args) {
-        Ok(Some(seed)) => seed,
-        Ok(None) => std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_nanos() as u64)
-            .unwrap_or(42),
+    let tui_args = match parse_args(&args) {
+        Ok(a) => a,
         Err(msg) => {
             eprintln!("{msg}");
-            std::process::exit(2);
+            std::process::exit(1);
         }
+    };
+    let seed = tui_args.seed;
+
+    let (ruleset, ruleset_ref) = if let Some(ref path) = tui_args.pack_path {
+        if path.is_dir() {
+            match netrust_pack::build(path) {
+                Ok((nrpack, _report)) => {
+                    let mut ruleset = nrpack.ruleset;
+                    ruleset.reindex();
+                    let ruleset_ref = netrust_data::ruleset::RulesetRef {
+                        id: nrpack.manifest.id,
+                        version: nrpack.manifest.version,
+                        hash: nrpack.hash,
+                    };
+                    (std::sync::Arc::new(ruleset), ruleset_ref)
+                }
+                Err(e) => {
+                    eprintln!("error building pack {}: {e}", path.display());
+                    std::process::exit(1);
+                }
+            }
+        } else {
+            match netrust_pack::load_nrpack(path) {
+                Ok(res) => res,
+                Err(e) => {
+                    eprintln!("error loading pack {}: {e}", path.display());
+                    std::process::exit(1);
+                }
+            }
+        }
+    } else {
+        (
+            netrust_data::ruleset::Ruleset::vanilla(),
+            netrust_data::ruleset::RulesetRef::vanilla(),
+        )
     };
 
     // Installed before the guard so a panic anywhere restores the terminal first.
@@ -675,20 +700,25 @@ fn main() -> io::Result<()> {
     let mut stdout = stdout();
     let _guard = TerminalGuard::new(&mut stdout)?;
 
-    let config = match select_character(&mut stdout, locale)? {
+    let config = match select_character(&mut stdout, tui_args.locale, &ruleset)? {
         Some(cfg) => cfg,
         None => return Ok(()),
     };
     execute!(stdout, Clear(ClearType::All))?;
 
     let char_name = config.name.clone();
-    let mut world = SimulationWorld::new_with_character(seed, config);
-    world.set_locale(locale);
-    let mut message = Messages::tui_welcome(&char_name, locale);
+    let mut world = SimulationWorld::new_with_character_and_ruleset(
+        tui_args.seed,
+        config,
+        ruleset,
+        ruleset_ref,
+    );
+    world.set_locale(tui_args.locale);
+    let mut message = Messages::tui_welcome(&char_name, tui_args.locale);
     let mut last_dir = Direction::East;
 
     loop {
-        render(&mut stdout, &world, &message, seed)?;
+        render(&mut stdout, &world, &message, tui_args.seed)?;
 
         let ev = event::read()?;
         if let Event::Resize(..) = ev {
@@ -1174,8 +1204,14 @@ fn render(
         format!(" {}", affliction_tags.join(" "))
     };
 
+    let pack_suffix = if world.ruleset_ref.id != "vanilla" {
+        format!(" [{}]", world.ruleset.manifest.name)
+    } else {
+        String::new()
+    };
+
     let status = format!(
-        "{}:{} {}:{:<2} {}:{} {}:{}({}) {}:{}({}) {}:{:<2} {:<6} T:{:<4} {}:{}{}",
+        "{}:{} {}:{:<2} {}:{} {}:{}({}) {}:{}({}) {}:{:<2} {:<6} T:{:<4} {}:{}{}{}",
         name,
         align_short,
         t("dlvl", locale),
@@ -1198,7 +1234,8 @@ fn render(
             .and_then(|id| world.arena.items.get(id))
             .map(|i| t_item(&i.name, locale))
             .unwrap_or_else(|| none_str.to_string()),
-        aff_str
+        aff_str,
+        pack_suffix
     );
     queue!(
         stdout,
@@ -1232,7 +1269,77 @@ fn banner_line(message: &str, seed_tag: &str) -> String {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TuiArgs {
+    pub locale: Locale,
+    pub seed: u64,
+    pub pack_path: Option<std::path::PathBuf>,
+}
+
+pub fn parse_args(args: &[String]) -> Result<TuiArgs, String> {
+    let mut locale = Locale::En;
+    let mut seed = None;
+    let mut pack_path = None;
+
+    let mut i = 1;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--lang" | "-l" => {
+                if let Some(val) = args.get(i + 1) {
+                    locale = Locale::parse(val);
+                    i += 1;
+                } else {
+                    return Err("Missing language code after --lang".into());
+                }
+            }
+            "--uk" => locale = Locale::Uk,
+            "--en" => locale = Locale::En,
+            "--seed" | "-s" => {
+                if let Some(val) = args.get(i + 1) {
+                    seed = Some(
+                        val.parse::<u64>()
+                            .map_err(|_| format!("invalid --seed value: {val}"))?,
+                    );
+                    i += 1;
+                } else {
+                    return Err("--seed requires a numeric value".into());
+                }
+            }
+            "--pack" => {
+                if let Some(val) = args.get(i + 1) {
+                    let pb = std::path::PathBuf::from(val);
+                    if !pb.exists() {
+                        return Err(format!("Rule pack not found: {val}"));
+                    }
+                    pack_path = Some(pb);
+                    i += 1;
+                } else {
+                    return Err("--pack requires a file path".into());
+                }
+            }
+            other => {
+                return Err(format!("unknown argument: {other}"));
+            }
+        }
+        i += 1;
+    }
+
+    let resolved_seed = seed.unwrap_or_else(|| {
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos() as u64)
+            .unwrap_or(42)
+    });
+
+    Ok(TuiArgs {
+        locale,
+        seed: resolved_seed,
+        pack_path,
+    })
+}
+
 /// Parse `--seed N` from the argument list.
+#[cfg(test)]
 fn parse_seed_args(args: &[String]) -> Result<Option<u64>, String> {
     let Some(pos) = args.iter().position(|a| a == "--seed") else {
         return Ok(None);
@@ -1269,5 +1376,13 @@ mod tests {
         );
         assert!(parse_seed_args(&s(&["netrust", "--seed"])).is_err());
         assert!(parse_seed_args(&s(&["netrust", "--seed", "x"])).is_err());
+    }
+
+    #[test]
+    fn test_parse_args_pack_missing() {
+        let res = parse_args(&s(&["netrust", "--pack", "missing.nrpack"]));
+        assert!(res.is_err());
+        let err = res.unwrap_err();
+        assert!(err.contains("missing.nrpack"));
     }
 }

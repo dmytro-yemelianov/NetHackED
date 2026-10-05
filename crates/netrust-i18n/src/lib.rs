@@ -1205,6 +1205,47 @@ impl Messages {
         }
     }
 
+    pub fn no_unpaid_items(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You have no unpaid items to pay for.",
+            Locale::Uk => "У вас немає неоплачених речей для розрахунку.",
+        }
+    }
+
+    pub fn not_enough_gold(due: u32, gold: u32, locale: Locale) -> String {
+        match locale {
+            Locale::En => {
+                format!("You don't have enough gold! You owe {due} zorkmids but only have {gold}.")
+            }
+            Locale::Uk => {
+                format!("У вас недостатньо золота! Ви винні {due} зоркмідів, а маєте лише {gold}.")
+            }
+        }
+    }
+
+    pub fn pay_shopkeeper(paid: u32, locale: Locale) -> String {
+        match locale {
+            Locale::En => {
+                format!("You pay the shopkeeper {paid} zorkmids. 'Thank you for your business!'")
+            }
+            Locale::Uk => format!("Ви платите крамарю {paid} зоркмідів. 'Дякую за покупку!'"),
+        }
+    }
+
+    pub fn no_item_to_appraise(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You don't have that item to appraise.",
+            Locale::Uk => "У вас немає цього предмета для оцінки.",
+        }
+    }
+
+    pub fn no_shopkeeper_to_appraise(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "There is no shopkeeper here to appraise your goods.",
+            Locale::Uk => "Тут немає крамаря, щоб оцінити ваші товари.",
+        }
+    }
+
     pub fn quiver_success(item_name: &str, locale: Locale) -> String {
         let item_name = tn(item_name, locale);
         match locale {
@@ -1315,6 +1356,270 @@ impl Messages {
         match locale {
             Locale::En => "The fire burns away the slime!",
             Locale::Uk => "Вогонь випалює слиз!",
+        }
+    }
+
+    pub fn displace_pet(pet_name: &str, locale: Locale) -> String {
+        let pet_name = tn(pet_name, locale);
+        match locale {
+            Locale::En => format!("You displace {pet_name}."),
+            Locale::Uk => format!("Ви міняєтеся місцями з {pet_name}."),
+        }
+    }
+
+    pub fn push_boulder(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You push the boulder.",
+            Locale::Uk => "Ви штовхаєте валун.",
+        }
+    }
+
+    pub fn boulder_falls_into_pit(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "The boulder falls into the pit and fills it!",
+            Locale::Uk => "Валун падає в яму і заповнює її!",
+        }
+    }
+
+    pub fn boulder_wont_budge(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You try to move the boulder, but it won't budge.",
+            Locale::Uk => "Ви намагаєтеся зрушити валун, але він не піддається.",
+        }
+    }
+
+    pub fn drawbridge_lower(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You lower the drawbridge over the moat. The portcullis creaks open.",
+            Locale::Uk => "Ви опускаєте розвідний міст через рів. Грати з рипінням відчиняються.",
+        }
+    }
+
+    pub fn engraving_wiped_by_footsteps(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => {
+                "The engraving in the dust has been completely wiped away by your footsteps."
+            }
+            Locale::Uk => "Напис у пилу повністю стерто вашими кроками.",
+        }
+    }
+
+    pub fn floor_engraving_text(text: &str, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!("There is something written on the floor here: \"{text}\"."),
+            Locale::Uk => format!("Тут на підлозі щось написано: \"{text}\"."),
+        }
+    }
+
+    pub fn trap_shoots(trap_name: &str, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!("A {trap_name} trap shoots you!"),
+            Locale::Uk => format!("Пастка ({trap_name}) стріляє у вас!"),
+        }
+    }
+
+    pub fn trap_teleport(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You trigger a teleport trap!",
+            Locale::Uk => "Ви активуєте пастку телепортації!",
+        }
+    }
+
+    pub fn trap_level_teleport(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You trigger a level teleport trap!",
+            Locale::Uk => "Ви активуєте пастку міжрівневої телепортації!",
+        }
+    }
+
+    pub fn trap_fall_into_pit(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You fall into a pit!",
+            Locale::Uk => "Ви падаєте в яму!",
+        }
+    }
+
+    pub fn trap_trigger_generic(trap_name: &str, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!("You trigger a {trap_name} trap!"),
+            Locale::Uk => format!("Ви активуєте пастку: {trap_name}!"),
+        }
+    }
+
+    pub fn enter_sokoban(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You step into the legendary Sokoban puzzle maze! Boulders and pits line the corridors.",
+            Locale::Uk => "Ви ступаєте у легендарний лабіринт головоломок Сокобан! Валуни та ями перекривають коридори.",
+        }
+    }
+
+    pub fn enter_minetown(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "Welcome to Minetown! Bustling shops and an ancient sanctuary stand before you.",
+            Locale::Uk => "Ласкаво просимо до Шахтарського містечка! Перед вами гамірні крамниці та стародавнє святилище.",
+        }
+    }
+
+    pub fn reach_mines_end(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => {
+                "You reach Mines' End! A legendary luckstone rests in the deepest shrine."
+            }
+            Locale::Uk => {
+                "Ви досягли Кінця Шахт! Легендарний камінь удачі спочиває у найглибшому святилищі."
+            }
+        }
+    }
+
+    pub fn descend_gnomish_mines(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You descend into the rugged, dark caverns of the Gnomish Mines.",
+            Locale::Uk => "Ви спускаєтеся в суворі темні печери Гном'ячих Шахт.",
+        }
+    }
+
+    pub fn cross_valley_of_dead(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You cross into the gloomy, desolate Valley of the Dead...",
+            Locale::Uk => "Ви переходите у похмуру, спустошену Долину Мертвих...",
+        }
+    }
+
+    pub fn reach_bottom_gehennom(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You reach the infernal bottom of Gehennom. A cryptic vibration resonates beneath the stone.",
+            Locale::Uk => "Ви дісталися пекельного дна Геєнни. Таємнича вібрація відлунює з-під каменю.",
+        }
+    }
+
+    pub fn enter_moloch_sanctum(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You enter Moloch's Sanctum! Rivers of boiling lava surround the unholy high altar!",
+            Locale::Uk => "Ви входите до Святилища Молоха! Річки киплячої лави оточують нечестивий верховний вівтар!",
+        }
+    }
+
+    pub fn delve_gehennom(depth: usize, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!(
+                "You delve through the fiery, twisting corridors of Gehennom (level {depth})."
+            ),
+            Locale::Uk => {
+                format!("Ви пробираєтеся крізь вогняні звивисті коридори Геєнни (рівень {depth}).")
+            }
+        }
+    }
+
+    pub fn enter_quest_sanctuary(leader: &str, home_desc: &str, locale: Locale) -> String {
+        let leader = tn(leader, locale);
+        match locale {
+            Locale::En => format!("You enter the Sanctuary of {leader}: '{home_desc}'."),
+            Locale::Uk => format!("Ви входите до Святилища {leader}: '{home_desc}'."),
+        }
+    }
+
+    pub fn labyrinth_quest_trial(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You navigate the treacherous labyrinth of the Quest trial.",
+            Locale::Uk => "Ви блукаєте небезпечним лабіринтом випробування Завдання.",
+        }
+    }
+
+    pub fn arrive_quest_nemesis(goal_desc: &str, nemesis_name: &str, locale: Locale) -> String {
+        let nemesis_name = tn(nemesis_name, locale);
+        match locale {
+            Locale::En => format!("You arrive at the inner sanctum: {goal_desc}! {nemesis_name} glares at you with burning hatred!"),
+            Locale::Uk => format!("Ви прибуваєте до внутрішнього святилища: {goal_desc}! {nemesis_name} люто витріщається на вас з палаючою ненавистю!"),
+        }
+    }
+
+    pub fn amulet_cosmic_radiance(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => {
+                "A primordial cosmic radiance emanates from the deepest chamber of this floor..."
+            }
+            Locale::Uk => {
+                "Первісне космічне сяйво випромінюється з найглибшої кімнати цього рівня..."
+            }
+        }
+    }
+
+    pub fn portal_moloch_sanctum(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You step through the subterranean portal into Moloch's Sanctum!",
+            Locale::Uk => "Ви робите крок крізь підземний портал до Святилища Молоха!",
+        }
+    }
+
+    pub fn portal_sealed_need_ritual(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You feel a strange vibration beneath your feet, but the subterranean way remains sealed. Perform the Invocation Ritual!",
+            Locale::Uk => "Ви відчуваєте дивну вібрацію під ногами, але підземний шлях лишається запечатаним. Здійсніть Ритуал Заклинання!",
+        }
+    }
+
+    pub fn descend_deeper(depth: usize, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!("You descend deeper into dungeon level {depth}."),
+            Locale::Uk => format!("Ви спускаєтеся глибше на рівень підземелля {depth}."),
+        }
+    }
+
+    pub fn enter_branch(branch: &str, level: usize, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!("You enter the {branch} branch (level {level})."),
+            Locale::Uk => format!("Ви входите до відгалуження {branch} (рівень {level})."),
+        }
+    }
+
+    pub fn mysterious_force_surrounds(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "A mysterious force momentarily surrounds you...",
+            Locale::Uk => "Таємнича сила на мить огортає вас...",
+        }
+    }
+
+    pub fn mysterious_force_pushes(depth: usize, locale: Locale) -> String {
+        match locale {
+            Locale::En => {
+                format!("An eldritch Mysterious Force pushes you downward to level {depth}!")
+            }
+            Locale::Uk => format!("Потойбічна Таємнича Сила штовхає вас униз на рівень {depth}!"),
+        }
+    }
+
+    pub fn ascend_to_level(depth: usize, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!("You ascend to dungeon level {depth}."),
+            Locale::Uk => format!("Ви піднімаєтеся на рівень підземелля {depth}."),
+        }
+    }
+
+    pub fn victory_ascend_amulet(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "You ascend from the dungeon carrying the Amulet of Yendor! An astral chorus welcomes you into immortality! You have won NetRust!",
+            Locale::Uk => "Ви виходите з підземелля з Амулетом Єндора! Астральний хор вітає вас у безсмерті! Ви перемогли в NetRust!",
+        }
+    }
+
+    pub fn celestial_force_bars_escape(locale: Locale) -> &'static str {
+        match locale {
+            Locale::En => "An unseen celestial force bars your escape from the dungeon without the Amulet of Yendor!",
+            Locale::Uk => "Невидима небесна сила блокує вашу втечу з підземелля без Амулета Єндора!",
+        }
+    }
+
+    pub fn return_to_level(depth: usize, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!("You return to dungeon level {depth}."),
+            Locale::Uk => format!("Ви повертаєтеся на рівень підземелля {depth}."),
+        }
+    }
+
+    pub fn return_to_branch_level(branch: &str, level: usize, locale: Locale) -> String {
+        match locale {
+            Locale::En => format!("You return to {branch} level {level}."),
+            Locale::Uk => format!("Ви повертаєтеся до {branch} на рівень {level}."),
         }
     }
 }

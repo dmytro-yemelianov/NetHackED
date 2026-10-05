@@ -1,6 +1,5 @@
 //! JSON-RPC 2.0 message parser and dispatcher for Model Context Protocol (MCP).
 
-use netrust_data::roles::{RACES, ROLES};
 use netrust_sim::SimulationWorld;
 use serde_json::{json, Value};
 
@@ -201,8 +200,9 @@ fn call_tool(session: &mut AgentSession, name: &str, args: &Value) -> Result<Str
             Ok(serde_json::to_string_pretty(&obs).unwrap_or_default())
         }
         "netrust_get_roles" => {
+            let rs = std::sync::Arc::clone(&session.world.ruleset);
             let data = json!({
-                "roles": ROLES.iter().map(|r| json!({
+                "roles": rs.roles.iter().map(|r| json!({
                     "id": format!("{:?}", r.id),
                     "name": r.name,
                     "base_hp": r.base_hp,
@@ -210,7 +210,7 @@ fn call_tool(session: &mut AgentSession, name: &str, args: &Value) -> Result<Str
                     "speed": r.speed,
                     "default_alignment": format!("{:?}", r.default_alignment),
                 })).collect::<Vec<_>>(),
-                "races": RACES.iter().map(|r| json!({
+                "races": rs.races.iter().map(|r| json!({
                     "id": format!("{:?}", r.id),
                     "name": r.name,
                 })).collect::<Vec<_>>()

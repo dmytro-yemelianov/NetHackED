@@ -53,29 +53,45 @@ impl DijkstraField {
         c.x * ROWNO + c.y
     }
 
-    /// Build a discrete distance field from target over passable grid tiles.
-    pub fn compute<F>(target: Coord, mut is_passable: F) -> Self
+    /// Reuses an existing DijkstraField allocation, clearing and computing distances from `target`.
+    pub fn compute_into<F>(&mut self, target: Coord, mut is_passable: F)
     where
         F: FnMut(Coord) -> bool,
     {
-        let mut distances = vec![Self::UNREACHABLE; COLNO * ROWNO];
-        let mut queue = VecDeque::new();
+        self.target = target;
+        let total = COLNO * ROWNO;
+        if self.distances.len() != total {
+            self.distances.resize(total, Self::UNREACHABLE);
+        }
+        self.distances.fill(Self::UNREACHABLE);
 
-        distances[Self::idx(target)] = 0;
+        let mut queue = VecDeque::with_capacity(128);
+        self.distances[Self::idx(target)] = 0;
         queue.push_back(target);
 
         while let Some(current) = queue.pop_front() {
-            let cur_dist = distances[Self::idx(current)];
+            let cur_dist = self.distances[Self::idx(current)];
             for neighbor in current.neighbors() {
                 let n_idx = Self::idx(neighbor);
-                if is_passable(neighbor) && distances[n_idx] == Self::UNREACHABLE {
-                    distances[n_idx] = cur_dist + 1;
+                if is_passable(neighbor) && self.distances[n_idx] == Self::UNREACHABLE {
+                    self.distances[n_idx] = cur_dist + 1;
                     queue.push_back(neighbor);
                 }
             }
         }
+    }
 
-        Self { distances, target }
+    /// Build a discrete distance field from target over passable grid tiles.
+    pub fn compute<F>(target: Coord, is_passable: F) -> Self
+    where
+        F: FnMut(Coord) -> bool,
+    {
+        let mut field = Self {
+            distances: vec![Self::UNREACHABLE; COLNO * ROWNO],
+            target,
+        };
+        field.compute_into(target, is_passable);
+        field
     }
 
     /// Returns the distance from `c` to the target.

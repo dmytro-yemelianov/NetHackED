@@ -2,7 +2,7 @@
 
 use netrust_arena::ItemLocation;
 use netrust_core::{buc::WaterType, energy::NORMAL_SPEED, SpellKind};
-use netrust_data::{create_item_record, ItemKindId};
+use netrust_data::ItemKindId;
 use netrust_dungeon::trace_beam_path;
 use netrust_types::{Buc, Coord, Direction, ItemClass};
 use rand::{Rng, RngCore};
@@ -192,12 +192,13 @@ impl SimulationWorld {
                             .get(self.player_id)
                             .map(|p| p.coord)
                             .unwrap_or(Coord::new_unchecked(1, 1));
-                        let gift = create_item_record(
+                        if let Some(gift) = self.ruleset.create_item_record_by_id(
                             ItemKindId::ScrollOfIdentify,
                             ItemLocation::Floor(player_c),
                             Buc::Blessed,
-                        );
-                        self.arena.spawn_item(gift);
+                        ) {
+                            self.arena.spawn_item(gift);
+                        }
                     }
                     netrust_core::RubResult::PeacefulDjinni => {
                         events.push(GameEvent::LogMessage {
@@ -219,12 +220,13 @@ impl SimulationWorld {
                             .into_iter()
                             .find(|&c| self.level.is_passable(c) && self.actor_at(c).is_none())
                             .unwrap_or(player_c);
-                        let mut mon = netrust_data::create_monster_record(
+                        if let Some(mut mon) = self.ruleset.create_monster_record_by_id(
                             netrust_data::MonsterSpeciesId::Djinni,
                             spawn_c,
-                        );
-                        mon.name = "hostile djinni".into();
-                        self.arena.spawn_actor(mon);
+                        ) {
+                            mon.name = "hostile djinni".into();
+                            self.arena.spawn_actor(mon);
+                        }
                     }
                     _ => {
                         events.push(GameEvent::LogMessage {
@@ -492,7 +494,7 @@ impl SimulationWorld {
                             let is_wishing = wand_name.contains("wishing");
                             // Catalog `wand_dir` (objects.h oc_dir); wands outside the catalog
                             // fall back to the NODIR name list.
-                            let nodir = match netrust_data::item_archetype_by_name(&wand_name) {
+                            let nodir = match self.ruleset.item(&wand_name) {
                                 Some(a) => a.wand_dir == Some(netrust_data::WandDir::NoDir),
                                 None => [
                                     "light",
@@ -610,12 +612,13 @@ impl SimulationWorld {
                                             self.level.is_passable(c) && self.actor_at(c).is_none()
                                         })
                                         .unwrap_or(player_c);
-                                    let mut mon = netrust_data::create_monster_record(
+                                    if let Some(mut mon) = self.ruleset.create_monster_record_by_id(
                                         netrust_data::MonsterSpeciesId::Goblin,
                                         spawn_c,
-                                    );
-                                    mon.name = "hostile goblin".into();
-                                    self.arena.spawn_actor(mon);
+                                    ) {
+                                        mon.name = "hostile goblin".into();
+                                        self.arena.spawn_actor(mon);
+                                    }
                                 }
                                 events.push(GameEvent::LogMessage {
                                     text:
@@ -739,7 +742,7 @@ impl SimulationWorld {
                     self.arena.destroy_item(item_id);
                     // Catalog `oc_nutrition` (objects.h FOOD); corpses (catalog 0, C takes it
                     // from the monster) and uncatalogued food keep the flat 400.
-                    let nut_gain = match netrust_data::item_archetype_by_name(&item.name) {
+                    let nut_gain = match self.ruleset.item(&item.name) {
                         Some(a) if a.nutrition > 0 => a.nutrition as i32,
                         _ => {
                             if item.name.contains("ration") {
@@ -753,7 +756,12 @@ impl SimulationWorld {
                     };
                     self.player_nutrition = (self.player_nutrition + nut_gain).min(2000);
 
-                    if item.name.contains("corpse") {
+                    let is_meat = self
+                        .ruleset
+                        .item(&item.name)
+                        .map(|i| i.is_meat())
+                        .unwrap_or_else(|| item.name.contains("corpse"));
+                    if is_meat {
                         netrust_core::conducts::record_eat_meat(&mut self.conducts);
                         let corpse_race = item.corpse_race.as_deref().unwrap_or("unknown");
                         if netrust_core::nutrition::is_cannibalism(corpse_race, "human") {
@@ -871,12 +879,15 @@ impl SimulationWorld {
                                             events.push(GameEvent::LogMessage {
                                                 text: format!("{} is slain by magic!", target.name),
                                             });
-                                            let corpse = create_item_record(
-                                                ItemKindId::Corpse,
-                                                ItemLocation::Floor(target.coord),
-                                                Buc::Uncursed,
-                                            );
-                                            self.arena.spawn_item(corpse);
+                                            if let Some(corpse) =
+                                                self.ruleset.create_item_record_by_id(
+                                                    ItemKindId::Corpse,
+                                                    ItemLocation::Floor(target.coord),
+                                                    Buc::Uncursed,
+                                                )
+                                            {
+                                                self.arena.spawn_item(corpse);
+                                            }
                                         }
                                     }
                                     // C bhitm (zap.c:552-554, force bolt) and buzz
@@ -1070,13 +1081,14 @@ impl SimulationWorld {
                             if !target.is_unique && !target.is_player {
                                 // transform monster
                                 let new_species = netrust_data::MonsterSpeciesId::Goblin; // simplified
-                                let new_arch = netrust_data::get_monster_species(new_species);
-                                target.name = new_arch.name.to_string();
-                                target.hp = new_arch.base_hp;
-                                target.max_hp = new_arch.max_hp;
-                                target.ac = new_arch.ac;
-                                target.speed = new_arch.speed;
-                                target.level = new_arch.level;
+                                if let Some(new_arch) = self.ruleset.monster_by_id(new_species) {
+                                    target.name = new_arch.name.to_string();
+                                    target.hp = new_arch.base_hp;
+                                    target.max_hp = new_arch.max_hp;
+                                    target.ac = new_arch.ac;
+                                    target.speed = new_arch.speed;
+                                    target.level = new_arch.level;
+                                }
                                 events.push(GameEvent::LogMessage {
                                     text: format!("The monster turns into a {}!", target.name),
                                 });
@@ -1101,12 +1113,13 @@ impl SimulationWorld {
                             events.push(GameEvent::LogMessage {
                                 text: format!("{} is destroyed by the wand beam!", target.name),
                             });
-                            let corpse = create_item_record(
+                            if let Some(corpse) = self.ruleset.create_item_record_by_id(
                                 ItemKindId::Corpse,
                                 ItemLocation::Floor(target.coord),
                                 Buc::Uncursed,
-                            );
-                            self.arena.spawn_item(corpse);
+                            ) {
+                                self.arena.spawn_item(corpse);
+                            }
                         }
                     }
                     // C bhitm (zap.c:552-554) / buzz (zap.c:4948): a surviving
@@ -1176,16 +1189,18 @@ impl SimulationWorld {
         if let Some((item_query, ench, buc)) = netrust_core::artifacts_wands::parse_wish(&wish_str)
         {
             let wanted = normalize_wish_name(&item_query);
-            let matched_arch = netrust_data::ITEM_CATALOG
-                .iter()
-                .find(|arch| arch.name.to_lowercase() == wanted);
+            let matched_arch = self.ruleset.item(&wanted).cloned();
 
             match matched_arch {
-                Some(arch) if arch.id == ItemKindId::AmuletOfYendor => {
-                    let mut fake =
-                        create_item_record(arch.id, ItemLocation::Floor(player.coord), buc);
-                    fake.name = "cheap plastic imitation of the Amulet of Yendor".into();
-                    self.arena.spawn_item(fake);
+                Some(arch) if arch.id == Some(ItemKindId::AmuletOfYendor) => {
+                    if let Some(mut fake) = self.ruleset.create_item_record(
+                        &arch.name,
+                        ItemLocation::Floor(player.coord),
+                        buc,
+                    ) {
+                        fake.name = "cheap plastic imitation of the Amulet of Yendor".into();
+                        self.arena.spawn_item(fake);
+                    }
                     events.push(GameEvent::LogMessage {
                         text: netrust_i18n::Messages::wish_granted(
                             "cheap plastic imitation of the Amulet of Yendor",
@@ -1193,7 +1208,7 @@ impl SimulationWorld {
                         ),
                     });
                 }
-                Some(arch) if UNWISHABLE.contains(&arch.id) => {
+                Some(arch) if arch.id.map(|id| UNWISHABLE.contains(&id)).unwrap_or(false) => {
                     events.push(GameEvent::LogMessage {
                         text: format!(
                             "You feel a vague sense of loss. The {} cannot be wished for.",
@@ -1202,17 +1217,25 @@ impl SimulationWorld {
                     });
                 }
                 Some(arch) => {
-                    let mut record =
-                        create_item_record(arch.id, ItemLocation::Floor(player.coord), buc);
-                    // Wands keep their initial charges; the parsed enchantment applies to other items.
-                    if record.class != ItemClass::Wand {
-                        record.enchantment = ench;
+                    if let Some(mut record) = self.ruleset.create_item_record(
+                        &arch.name,
+                        ItemLocation::Floor(player.coord),
+                        buc,
+                    ) {
+                        // Wands keep their initial charges; the parsed enchantment applies to other items.
+                        if record.class != ItemClass::Wand {
+                            record.enchantment = ench;
+                        }
+                        let spawned_id = self.arena.spawn_item(record);
+                        let item_name = self.arena.items.get(spawned_id).unwrap().name.clone();
+                        events.push(GameEvent::LogMessage {
+                            text: netrust_i18n::Messages::wish_granted(&item_name, self.locale),
+                        });
+                    } else {
+                        events.push(GameEvent::LogMessage {
+                            text: format!("You feel a vague sense of loss. You wished for '{wish_str}', but received nothing."),
+                        });
                     }
-                    let spawned_id = self.arena.spawn_item(record);
-                    let item_name = self.arena.items.get(spawned_id).unwrap().name.clone();
-                    events.push(GameEvent::LogMessage {
-                        text: netrust_i18n::Messages::wish_granted(&item_name, self.locale),
-                    });
                 }
                 None => {
                     events.push(GameEvent::LogMessage {

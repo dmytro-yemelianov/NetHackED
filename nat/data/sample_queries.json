@@ -1,0 +1,14 @@
+[
+  {
+    "name": "audit_golden_determinism",
+    "prompt": "Verify that vanilla gameplay fingerprints match frozen Task 1 constants and report the status."
+  },
+  {
+    "name": "audit_rulepacks_constraints",
+    "prompt": "Audit the Rule Packs P1 implementation progress and check wasm dependency hygiene."
+  },
+  {
+    "name": "run_all_gates",
+    "prompt": "Run all NetRust CI verification gates (fmt, clippy, tests, wasm build, python bindings check, doc links, and lean proofs) and report any issues."
+  }
+]

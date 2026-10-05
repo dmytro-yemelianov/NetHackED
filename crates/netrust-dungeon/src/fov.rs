@@ -9,7 +9,19 @@ use std::collections::HashSet;
 /// Compute Field of View (FOV) using symmetric raycasting.
 /// Is intended to mirror the reflexivity and symmetry theorems stated in `NetMechanics.FOV` (no proptest links them).
 pub fn compute_fov(level: &DungeonLevel, origin: Coord, max_radius: usize) -> HashSet<Coord> {
-    let mut visible = HashSet::new();
+    let capacity = (max_radius * 2 + 1).saturating_mul(max_radius * 2 + 1);
+    let mut visible = HashSet::with_capacity(capacity.min(COLNO * ROWNO));
+    compute_fov_into(level, origin, max_radius, &mut visible);
+    visible
+}
+
+/// Compute Field of View (FOV) into an existing HashSet to minimize reallocations.
+pub fn compute_fov_into(
+    level: &DungeonLevel,
+    origin: Coord,
+    max_radius: usize,
+    visible: &mut HashSet<Coord>,
+) {
     visible.insert(origin);
 
     // Cast rays to perimeter of the bounding square [origin - max_radius, origin + max_radius]
@@ -19,15 +31,13 @@ pub fn compute_fov(level: &DungeonLevel, origin: Coord, max_radius: usize) -> Ha
     let max_y = (origin.y + max_radius).min(ROWNO - 1);
 
     for x in min_x..=max_x {
-        cast_ray(level, origin, Coord::new_unchecked(x, min_y), &mut visible);
-        cast_ray(level, origin, Coord::new_unchecked(x, max_y), &mut visible);
+        cast_ray(level, origin, Coord::new_unchecked(x, min_y), visible);
+        cast_ray(level, origin, Coord::new_unchecked(x, max_y), visible);
     }
     for y in min_y..=max_y {
-        cast_ray(level, origin, Coord::new_unchecked(min_x, y), &mut visible);
-        cast_ray(level, origin, Coord::new_unchecked(max_x, y), &mut visible);
+        cast_ray(level, origin, Coord::new_unchecked(min_x, y), visible);
+        cast_ray(level, origin, Coord::new_unchecked(max_x, y), visible);
     }
-
-    visible
 }
 
 fn cast_ray(level: &DungeonLevel, from: Coord, to: Coord, visible: &mut HashSet<Coord>) {
@@ -77,8 +87,7 @@ pub fn compute_illumination(
     let mut illuminated = HashSet::new();
     for &(origin, radius) in light_sources {
         if radius > 0 {
-            let fov = compute_fov(level, origin, radius as usize);
-            illuminated.extend(fov);
+            compute_fov_into(level, origin, radius as usize, &mut illuminated);
         }
     }
     illuminated

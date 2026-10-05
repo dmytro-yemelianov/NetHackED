@@ -5,10 +5,8 @@
 use netrust_arena::{ActorId, ActorRecord};
 use netrust_core::engraving::Engraving;
 use netrust_core::{adjalign, alignlim, peace_minded, PeaceMindedInput};
-use netrust_data::{
-    get_monster_species, monster_archetype_by_name, race_hostile, race_peaceful, MonsterArchetype,
-    MonsterSound, MonsterSpeciesId, RaceId,
-};
+use netrust_data::ruleset::{MonsterDef, Ruleset};
+use netrust_data::{race_hostile, race_peaceful, MonsterSound, MonsterSpeciesId, RaceId};
 use netrust_types::{Alignment, Coord};
 use rand::Rng;
 
@@ -17,8 +15,8 @@ use crate::world::SimulationWorld;
 
 /// Whether C `Monnam` (`x_monnam`, `do_name.c`) puts "the" before this monster:
 /// every non-unique monster (unique ones carry proper names).
-pub(crate) fn monnam_article(name: &str) -> bool {
-    !monster_archetype_by_name(name).is_some_and(|a| a.is_unique)
+pub(crate) fn monnam_article(ruleset: &Ruleset, name: &str) -> bool {
+    !ruleset.monster(name).is_some_and(|a| a.is_unique)
 }
 
 /// C `u.ualign.type` as a number (`A_LAWFUL` 1, `A_NEUTRAL` 0, `A_CHAOTIC` -1).
@@ -31,10 +29,8 @@ pub(crate) fn alignment_type(a: Alignment) -> i32 {
 }
 
 /// The `peace_minded` inputs for `arch` and the given hero state.
-/// No BESTIARY entry has `M2_MINION` (pinned by the bestiary C table), so
-/// `is_minion` is false.
 pub(crate) fn peace_input(
-    arch: &MonsterArchetype,
+    arch: &MonsterDef,
     hero_alignment: Alignment,
     hero_race: RaceId,
     hero_align_record: i32,
@@ -63,13 +59,17 @@ pub(crate) fn roll_peace_minded(input: &PeaceMindedInput, rng: &mut impl Rng) ->
 
 /// Whether the monster is a temple priest (C `ispriest`): the sim creates the
 /// aligned cleric only as a temple priest (Minetown, Moloch's Sanctum).
-fn is_temple_priest(mon: &ActorRecord) -> bool {
-    monster_archetype_by_name(&mon.name).is_some_and(|a| a.id == MonsterSpeciesId::Priest)
+fn is_temple_priest(ruleset: &Ruleset, mon: &ActorRecord) -> bool {
+    ruleset
+        .monster(&mon.name)
+        .is_some_and(|a| a.id == Some(MonsterSpeciesId::Priest))
 }
 
 /// C `isshk`: the sim's shopkeepers are the `shopkeeper` species.
-fn is_shopkeeper(mon: &ActorRecord) -> bool {
-    monster_archetype_by_name(&mon.name).is_some_and(|a| a.id == MonsterSpeciesId::Shopkeeper)
+fn is_shopkeeper(ruleset: &Ruleset, mon: &ActorRecord) -> bool {
+    ruleset
+        .monster(&mon.name)
+        .is_some_and(|a| a.id == Some(MonsterSpeciesId::Shopkeeper))
 }
 
 impl SimulationWorld {
@@ -97,8 +97,12 @@ impl SimulationWorld {
     /// C `makemon` (`makemon.c:1299`): `mpeaceful = peace_minded(ptr)` for a
     /// newly created monster of `species`, drawing from the sim RNG only when C does.
     pub(crate) fn roll_spawn_peaceful(&mut self, species: MonsterSpeciesId) -> bool {
+        let rs = std::sync::Arc::clone(&self.ruleset);
+        let Some(def) = rs.monster_by_id(species) else {
+            return false;
+        };
         let input = peace_input(
-            get_monster_species(species),
+            def,
             self.hero_alignment(),
             self.hero_race,
             self.alignment_record,
@@ -114,10 +118,14 @@ impl SimulationWorld {
     /// archetype glyph. No BESTIARY entry is a minotaur, a Rider or a vault guard,
     /// so those exemptions are always false here (the core predicate keeps them).
     pub(crate) fn elbereth_scares(&self, mon: &ActorRecord, engraving: Option<&Engraving>) -> bool {
-        let arch = monster_archetype_by_name(&mon.name);
-        let is_s_human = arch.is_some_and(|a| a.glyph == '@');
-        let exempt =
-            netrust_core::engraving::onscary_exempt(is_s_human, false, is_shopkeeper(mon), false);
+        let arch = self.ruleset.monster(&mon.name);
+        let is_s_human = arch.is_some_and(|a| a.is_human);
+        let exempt = netrust_core::engraving::onscary_exempt(
+            is_s_human,
+            false,
+            is_shopkeeper(&self.ruleset, mon),
+            false,
+        );
         netrust_core::engraving::is_elbereth_ward_active(
             engraving,
             mon.intrinsics.blind,
@@ -183,7 +191,7 @@ impl SimulationWorld {
         if let Some(t) = self.arena.actors.get_mut(target_id) {
             t.is_peaceful = false;
         }
-        let delta = if is_temple_priest(&target) {
+        let delta = if is_temple_priest(&self.ruleset, &target) {
             // priest.c:370 p_coaligned: u.ualign.type == priest alignment.
             if target.alignment == player.alignment {
                 -5
@@ -197,7 +205,7 @@ impl SimulationWorld {
         events.push(GameEvent::LogMessage {
             text: netrust_i18n::Messages::gets_angry(
                 &target.name,
-                monnam_article(&target.name),
+                monnam_article(&self.ruleset, &target.name),
                 self.locale,
             ),
         });

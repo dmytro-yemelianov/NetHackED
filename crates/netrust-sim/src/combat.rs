@@ -9,9 +9,7 @@ use netrust_core::{
     },
     Combatant,
 };
-use netrust_data::{
-    create_item_record, item_archetype_by_name, monster_archetype_by_name, ItemKindId, MonsterSize,
-};
+use netrust_data::{ItemKindId, MonsterSize};
 use netrust_types::{Attack, AttackType, Buc, DamageType};
 use rand::{Rng, RngCore};
 
@@ -85,17 +83,10 @@ impl SimulationWorld {
         if attacker_id == self.player_id {
             if let Some(wid) = self.wielded_item {
                 if let Some(w) = self.arena.items.get(wid) {
-                    let sk = match w.name.to_lowercase().as_str() {
-                        n if n.contains("dagger") => Some(netrust_types::SkillClass::Dagger),
-                        n if n.contains("long sword") => Some(netrust_types::SkillClass::LongSword),
-                        n if n.contains("short sword") => {
-                            Some(netrust_types::SkillClass::ShortSword)
-                        }
-                        n if n.contains("bow") => Some(netrust_types::SkillClass::Bow),
-                        n if n.contains("crossbow") => Some(netrust_types::SkillClass::Crossbow),
-                        n if n.contains("club") => Some(netrust_types::SkillClass::Club),
-                        _ => None,
-                    };
+                    let sk = self
+                        .ruleset
+                        .item(&w.name)
+                        .and_then(|item_def| item_def.weapon_skill());
                     if let Some(skill_class) = sk {
                         let level = self
                             .hero
@@ -124,32 +115,12 @@ impl SimulationWorld {
 
         let weapon_dice = if let Some(wid) = self.wielded_item {
             if let Some(w) = self.arena.items.get(wid) {
-                if let Some(arch) = item_archetype_by_name(&w.name) {
-                    if arch.damage_small.1 > 0 || arch.damage_large.1 > 0 {
-                        Some((arch.damage_small.1, arch.damage_large.1))
-                    } else {
-                        // C uhitm.c:895: non-weapon object wielded as weapon deals rnd(2)
-                        Some((2, 2))
-                    }
-                } else {
-                    let lower = w.name.to_lowercase();
-                    if lower.contains("dagger") {
-                        Some((4, 3))
-                    } else if lower.contains("short sword") {
-                        Some((6, 8))
-                    } else if lower.contains("long sword")
-                        || lower.contains("excalibur")
-                        || lower.contains("vorpal blade")
-                    {
-                        Some((8, 12))
-                    } else if lower.contains("silver saber") {
-                        Some((8, 8))
-                    } else if lower.contains("mace") {
-                        Some((6, 6))
-                    } else {
-                        Some((2, 2))
-                    }
-                }
+                let dice = self
+                    .ruleset
+                    .item(&w.name)
+                    .and_then(|i| i.weapon_damage_dice())
+                    .unwrap_or((2, 2));
+                Some(dice)
             } else {
                 None
             }
@@ -157,7 +128,9 @@ impl SimulationWorld {
             None
         };
 
-        let target_large = monster_archetype_by_name(&defender.name)
+        let target_large = self
+            .ruleset
+            .monster(&defender.name)
             .map(|m| m.size >= MonsterSize::Large)
             .unwrap_or(false);
         let martial_arts = self.role_name.eq_ignore_ascii_case("monk");
@@ -198,11 +171,18 @@ impl SimulationWorld {
         );
 
         if result.hit {
-            let is_demon_or_undead = defender.name.to_lowercase().contains("demon")
-                || defender.name.to_lowercase().contains("lich")
-                || defender.name.to_lowercase().contains("vampire")
-                || defender.name.to_lowercase().contains("zombie")
-                || defender.name.to_lowercase().contains("skeleton");
+            let is_demon_or_undead = self
+                .ruleset
+                .monster(&defender.name)
+                .map(|m| m.is_demon_or_undead())
+                .unwrap_or_else(|| {
+                    let lower = defender.name.to_lowercase();
+                    lower.contains("demon")
+                        || lower.contains("lich")
+                        || lower.contains("vampire")
+                        || lower.contains("zombie")
+                        || lower.contains("skeleton")
+                });
 
             let mut final_damage = result.damage_dealt;
             if let Some(art) = artifact {
@@ -374,12 +354,13 @@ impl SimulationWorld {
                         "healer" => ItemKindId::StaffOfAesculapius,
                         _ => ItemKindId::OrbOfDetection,
                     };
-                    let art_rec = create_item_record(
+                    if let Some(art_rec) = self.ruleset.create_item_record_by_id(
                         art_id,
                         ItemLocation::Floor(defender.coord),
                         Buc::Blessed,
-                    );
-                    self.arena.spawn_item(art_rec);
+                    ) {
+                        self.arena.spawn_item(art_rec);
+                    }
                     events.push(GameEvent::LogMessage {
                         text: netrust_i18n::Messages::quest_nemesis_defeat(
                             quest_cfg.nemesis_name,
@@ -389,12 +370,13 @@ impl SimulationWorld {
                     });
                 }
 
-                let corpse = create_item_record(
+                if let Some(corpse) = self.ruleset.create_item_record_by_id(
                     ItemKindId::Corpse,
                     ItemLocation::Floor(defender.coord),
                     Buc::Uncursed,
-                );
-                self.arena.spawn_item(corpse);
+                ) {
+                    self.arena.spawn_item(corpse);
+                }
             }
         }
         lethal
@@ -453,9 +435,12 @@ impl SimulationWorld {
         let Some(defender) = self.arena.actors.get(defender_id).cloned() else {
             return events;
         };
-        let attacks: &[Attack] = monster_archetype_by_name(&attacker.name)
-            .map(|arch| arch.attacks)
-            .unwrap_or(std::slice::from_ref(&FALLBACK_ATTACK));
+        let rs = std::sync::Arc::clone(&self.ruleset);
+        let fallback_slice = [FALLBACK_ATTACK];
+        let attacks: &[Attack] = rs
+            .monster(&attacker.name)
+            .map(|arch| arch.attacks.as_slice())
+            .unwrap_or(&fallback_slice);
         let def_ac = self.defender_ac(defender_id, &defender);
         let hero_defender = defender_id == self.player_id;
         let m_lev = attacker.level as i32;

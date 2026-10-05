@@ -3,7 +3,7 @@
 
 use netrust_arena::ActorId;
 use netrust_core::pathfinding::DijkstraField;
-use netrust_data::AiBehavior;
+use netrust_data::{AiBehavior, MonsterSpeciesId};
 use netrust_i18n::Messages;
 use netrust_types::{
     Attack, AttackType, BreathType, Buc, Coord, DamageType, GazeEffect, GazeType, MonsterAbility,
@@ -214,7 +214,8 @@ impl SimulationWorld {
                     continue;
                 }
 
-                let archetype = netrust_data::monster_archetype_by_name(&mon.name);
+                let rs = std::sync::Arc::clone(&self.ruleset);
+                let archetype = rs.monster(&mon.name);
 
                 if mon.is_peaceful {
                     // Peaceful monsters do not attack or approach the hero.
@@ -514,20 +515,20 @@ impl SimulationWorld {
                         break;
                     }
                     if self.level.is_passable(neighbor) && self.actor_at(neighbor).is_none() {
-                        let skeleton = netrust_data::create_monster_record(
-                            netrust_data::MonsterSpeciesId::Skeleton,
-                            neighbor,
-                        );
-                        let arch = netrust_data::get_monster_species(
-                            netrust_data::MonsterSpeciesId::Skeleton,
-                        );
-                        if !netrust_core::genocide::is_genocided(
-                            &self.genocide_registry,
-                            arch.name,
-                            arch.glyph,
-                        ) {
-                            self.arena.spawn_actor(skeleton);
-                            spawned += 1;
+                        let rs = std::sync::Arc::clone(&self.ruleset);
+                        if let Some(arch) = rs.monster_by_id(MonsterSpeciesId::Skeleton) {
+                            if !netrust_core::genocide::is_genocided(
+                                &self.genocide_registry,
+                                &arch.name,
+                                arch.glyph,
+                            ) {
+                                if let Some(skeleton) =
+                                    rs.create_monster_record(&arch.name, neighbor)
+                                {
+                                    self.arena.spawn_actor(skeleton);
+                                    spawned += 1;
+                                }
+                            }
                         }
                     }
                 }
@@ -667,20 +668,14 @@ impl SimulationWorld {
         let new_level = pet.level + exp_gain;
         pet.level = new_level;
 
-        let cur_tier = if pet.name.contains("little dog") {
-            Some(netrust_core::PetSpeciesTier::LittleDog)
-        } else if pet.name.contains("large dog") {
-            Some(netrust_core::PetSpeciesTier::LargeDog)
-        } else if pet.name.contains("dog") {
-            Some(netrust_core::PetSpeciesTier::Dog)
-        } else if pet.name.contains("kitten") {
-            Some(netrust_core::PetSpeciesTier::Kitten)
-        } else if pet.name.contains("large cat") {
-            Some(netrust_core::PetSpeciesTier::LargeCat)
-        } else if pet.name.contains("housecat") {
-            Some(netrust_core::PetSpeciesTier::Housecat)
-        } else {
-            None
+        let cur_tier = match pet.name.to_lowercase().as_str() {
+            "little dog" => Some(netrust_core::PetSpeciesTier::LittleDog),
+            "dog" => Some(netrust_core::PetSpeciesTier::Dog),
+            "large dog" => Some(netrust_core::PetSpeciesTier::LargeDog),
+            "kitten" => Some(netrust_core::PetSpeciesTier::Kitten),
+            "housecat" => Some(netrust_core::PetSpeciesTier::Housecat),
+            "large cat" => Some(netrust_core::PetSpeciesTier::LargeCat),
+            _ => None,
         };
 
         if let Some(tier) = cur_tier {
@@ -710,7 +705,7 @@ impl SimulationWorld {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use netrust_data::{create_monster_record, monster_archetype_by_name, MonsterSpeciesId};
+    use netrust_data::MonsterSpeciesId;
 
     /// C mattacku computes `AC_VALUE(u.uac)` (mhitu.c:709) before its loop,
     /// so a breather in range draws `rnd(-u.uac)` when `u.uac < 0` even on
@@ -728,12 +723,16 @@ mod tests {
             }
         }
         sim.arena.actors.get_mut(pid).unwrap().coord = hero;
-        let mut rec =
-            create_monster_record(MonsterSpeciesId::RedDragon, Coord::new_unchecked(13, 10));
+        let mut rec = sim
+            .ruleset
+            .create_monster_record_by_id(MonsterSpeciesId::RedDragon, Coord::new_unchecked(13, 10))
+            .unwrap();
         rec.mspec_used = 5;
         let id = sim.arena.spawn_actor(rec);
         let mon = sim.arena.actors.get(id).unwrap().clone();
-        let breath = *monster_archetype_by_name("red dragon")
+        let breath = *sim
+            .ruleset
+            .monster("red dragon")
             .unwrap()
             .attacks
             .iter()

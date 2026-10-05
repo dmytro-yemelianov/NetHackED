@@ -11,6 +11,7 @@ pub const AC_MAX: i32 = 99;
 /// Canonical armor slots in NetHack (C `enum obj_armor_types` `ARM_SUIT` ..
 /// `ARM_SHIRT`, `include/objclass.h:37-45`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum ArmorSlot {
     Suit,
     Cloak,

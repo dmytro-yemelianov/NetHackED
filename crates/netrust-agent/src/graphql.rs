@@ -2,10 +2,7 @@
 
 use crate::{parse_action, parse_character, render_ascii_map, ActionArgs, AgentSession};
 use async_graphql::{Context, EmptySubscription, Object, Schema, SimpleObject};
-use netrust_data::{
-    roles::{RACES, ROLES},
-    BESTIARY, ITEM_CATALOG,
-};
+use netrust_data::ruleset::Ruleset;
 use std::sync::{Arc, Mutex};
 
 pub type NetRustSchema = Schema<QueryRoot, MutationRoot, EmptySubscription>;
@@ -126,8 +123,12 @@ impl QueryRoot {
     }
 
     /// Returns the declarative bestiary.
-    async fn bestiary(&self) -> Vec<BestiaryEntryGql> {
-        BESTIARY
+    async fn bestiary(&self, ctx: &Context<'_>) -> Vec<BestiaryEntryGql> {
+        let rs = ctx
+            .data_opt::<AppState>()
+            .map(|s| std::sync::Arc::clone(&s.session.lock().unwrap().world.ruleset))
+            .unwrap_or_else(Ruleset::vanilla);
+        rs.monsters
             .iter()
             .map(|m| BestiaryEntryGql {
                 name: m.name.to_string(),
@@ -141,8 +142,12 @@ impl QueryRoot {
     }
 
     /// Returns the declarative item catalog.
-    async fn item_catalog(&self) -> Vec<ItemEntryGql> {
-        ITEM_CATALOG
+    async fn item_catalog(&self, ctx: &Context<'_>) -> Vec<ItemEntryGql> {
+        let rs = ctx
+            .data_opt::<AppState>()
+            .map(|s| std::sync::Arc::clone(&s.session.lock().unwrap().world.ruleset))
+            .unwrap_or_else(Ruleset::vanilla);
+        rs.items
             .iter()
             .map(|i| ItemEntryGql {
                 name: i.name.to_string(),
@@ -156,8 +161,12 @@ impl QueryRoot {
     }
 
     /// Returns available classic player roles.
-    async fn roles(&self) -> Vec<RoleEntryGql> {
-        ROLES
+    async fn roles(&self, ctx: &Context<'_>) -> Vec<RoleEntryGql> {
+        let rs = ctx
+            .data_opt::<AppState>()
+            .map(|s| std::sync::Arc::clone(&s.session.lock().unwrap().world.ruleset))
+            .unwrap_or_else(Ruleset::vanilla);
+        rs.roles
             .iter()
             .map(|r| RoleEntryGql {
                 id: format!("{:?}", r.id),
@@ -169,15 +178,19 @@ impl QueryRoot {
                 starting_items: r
                     .starting_items
                     .iter()
-                    .map(|item| format!("{item:?}"))
+                    .map(|item| item.item.clone())
                     .collect(),
             })
             .collect()
     }
 
     /// Returns available player races.
-    async fn races(&self) -> Vec<RaceEntryGql> {
-        RACES
+    async fn races(&self, ctx: &Context<'_>) -> Vec<RaceEntryGql> {
+        let rs = ctx
+            .data_opt::<AppState>()
+            .map(|s| std::sync::Arc::clone(&s.session.lock().unwrap().world.ruleset))
+            .unwrap_or_else(Ruleset::vanilla);
+        rs.races
             .iter()
             .map(|r| RaceEntryGql {
                 id: format!("{:?}", r.id),
@@ -388,6 +401,23 @@ mod tests {
         assert_eq!(data["playerState"]["hp"], 18);
         assert!(data["bestiary"].as_array().unwrap().len() >= 10);
         assert_eq!(data["roles"].as_array().unwrap().len(), 9);
+    }
+
+    #[tokio::test]
+    async fn test_graphql_races_and_item_catalog() {
+        let session = AgentSession::new(42);
+        let state = AppState {
+            session: Arc::new(Mutex::new(session)),
+        };
+        let schema = create_schema(state);
+
+        let res = schema
+            .execute("{ races { name } itemCatalog { name } }")
+            .await;
+        assert!(res.is_ok());
+        let data = res.data.into_json().unwrap();
+        assert_eq!(data["races"].as_array().unwrap().len(), 5);
+        assert!(data["itemCatalog"].as_array().unwrap().len() >= 20);
     }
 
     #[tokio::test]

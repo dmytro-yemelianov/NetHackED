@@ -1,0 +1,46 @@
+# SPDX-License-Identifier: Apache-2.0
+# NeMo Agent Toolkit (NAT) Configuration for NetRust using OpenAI backend
+
+general:
+  telemetry:
+    tracing:
+      file_trace:
+        _type: file
+        output_path: .nat/traces/
+        project: netrust-rule-packs-openai
+
+llms:
+  openai_llm:
+    _type: openai
+    model_name: gpt-4o
+    api_key: ${OPENAI_API_KEY}
+    temperature: 0.1
+    max_tokens: 4096
+
+functions:
+  netrust_workspace_reader:
+    _type: netrust_workspace_reader
+    max_read_lines: 500
+
+  netrust_cargo_runner:
+    _type: netrust_cargo_runner
+    timeout_seconds: 300
+
+  netrust_golden_verifier:
+    _type: netrust_golden_verifier
+    timeout_seconds: 180
+
+  netrust_rulepacks_auditor:
+    _type: netrust_rulepacks_auditor
+
+workflow:
+  _type: react_agent
+  llm_name: openai_llm
+  tool_names:
+    - netrust_workspace_reader
+    - netrust_cargo_runner
+    - netrust_golden_verifier
+    - netrust_rulepacks_auditor
+  max_tool_calls: 10
+  retry_agent_response_parsing_errors: true
+  use_native_tool_calling: true

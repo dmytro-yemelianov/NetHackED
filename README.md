@@ -41,6 +41,9 @@ The repository includes a comprehensive, formal architectural reference suite in
 6. **[docs/architecture.md](docs/architecture.md)**:
    * **Architecture Article**: How NetRust is built today compared with the original NetHack 5.0 C architecture: crate layering, entity arenas, action/event model, deterministic RNG, level persistence, measured performance, reliability measures, NetHack fidelity status, and known limitations.
 
+7. **[docs/rule-packs.md](docs/rule-packs.md)**:
+   * **Rule Pack Author Guide**: Declarative monster, item, and role modding, format specification, validation rules, CLI tool, and replay-deterministic execution.
+
 ---
 
 ## Repository Structure
@@ -145,6 +148,8 @@ Then visit **`http://localhost:8080`** in your browser:
 ### 2. Play in Terminal (Human Interactive TUI)
 ```bash
 cargo run --bin netrust
+# Or load a custom rule pack (.nrpack or directory)
+cargo run --bin netrust -- --pack packs/examples/hard-mode
 ```
 * Character selection prompt upon boot.
 * Standard NetHack keyboard controls: Vi-keys, arrows, `o` (open), `c` (close), `K` (kick), `z` (zap wand), `,` (pick up), `p` (pay shopkeeper), `P` (pray at altar), `S` (sacrifice item), `d` (drop), `w` (wield), `<` (ascend), `>` (descend), `.` (wait), `Esc` (quit), `q` (quaff).

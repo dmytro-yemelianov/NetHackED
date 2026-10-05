@@ -1,7 +1,7 @@
 //! Shared action and character parsing for all frontends.
 
 use netrust_core::EngravingMedium;
-use netrust_data::{CharacterConfig, Gender, RACES, ROLES};
+use netrust_data::{CharacterConfig, Gender};
 use netrust_sim::{ActionAst, Alignment, Coord, Direction};
 use netrust_types::WaterType;
 
@@ -169,23 +169,26 @@ pub fn parse_character(
     if let Some(n) = name {
         c.name = n.to_string();
     }
+    let rs = netrust_data::ruleset::Ruleset::vanilla();
     if let Some(r) = role {
-        c.role = ROLES
+        c.role = rs
+            .roles
             .iter()
             .find(|s| s.name.eq_ignore_ascii_case(r))
             .map(|s| s.id)
             .ok_or_else(|| {
-                let names: Vec<&str> = ROLES.iter().map(|s| s.name).collect();
+                let names: Vec<&str> = rs.roles.iter().map(|s| s.name.as_str()).collect();
                 format!("unknown role '{r}'; expected one of: {}", names.join(", "))
             })?;
     }
     if let Some(r) = race {
-        c.race = RACES
+        c.race = rs
+            .races
             .iter()
             .find(|s| s.name.eq_ignore_ascii_case(r))
             .map(|s| s.id)
             .ok_or_else(|| {
-                let names: Vec<&str> = RACES.iter().map(|s| s.name).collect();
+                let names: Vec<&str> = rs.races.iter().map(|s| s.name.as_str()).collect();
                 format!("unknown race '{r}'; expected one of: {}", names.join(", "))
             })?;
     }

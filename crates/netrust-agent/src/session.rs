@@ -27,6 +27,18 @@ impl AgentSession {
         }
     }
 
+    pub fn new_with_ruleset(
+        seed: u64,
+        config: CharacterConfig,
+        rs: std::sync::Arc<netrust_data::ruleset::Ruleset>,
+        rref: netrust_data::ruleset::RulesetRef,
+    ) -> Self {
+        Self {
+            world: SimulationWorld::new_with_character_and_ruleset(seed, config, rs, rref),
+            last_events: Vec::new(),
+        }
+    }
+
     /// Current player coordinate, if the player actor exists.
     pub fn player_coord(&self) -> Option<Coord> {
         self.world

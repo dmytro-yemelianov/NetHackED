@@ -42,6 +42,13 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.88.0
       - uses: Swatinem/rust-cache@v2
       - run: cargo test --workspace --exclude netrust-py --locked
+      - name: Validate, build and simulate example rule pack
+        run: |
+          cargo run -p netrust-pack --locked -- validate packs/examples/hard-mode
+          cargo run -p netrust-pack --locked -- build packs/examples/hard-mode -o hard-mode.nrpack
+          cargo run -p netrust-pack --locked -- validate hard-mode.nrpack
+          cargo run -p netrust-pack --locked -- simulate hard-mode.nrpack --seeds 2 --turns 200
+          rm hard-mode.nrpack
 
   wasm:
     name: wasm build
@@ -60,3 +67,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: bash scripts/check-doc-links.sh
+      - run: bash scripts/check-no-static-tables.sh

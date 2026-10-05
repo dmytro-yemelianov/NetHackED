@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 /// Enumeration of canonical item kinds.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum ItemKindId {
     // Weapons
     Dagger,
@@ -92,6 +93,7 @@ pub enum ItemKindId {
 /// Wand direction class (C `oc_dir`, `include/objects.h:1445-1500`): `NODIR` wands
 /// need no aim, `IMMEDIATE` wands affect the first target hit, `RAY` wands fire a beam.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum WandDir {
     NoDir,
     Immediate,

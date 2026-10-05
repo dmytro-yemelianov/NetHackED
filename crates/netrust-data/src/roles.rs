@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 
 /// Classic NetHack Player Roles.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum RoleId {
     Valkyrie,
     Wizard,
@@ -21,6 +22,7 @@ pub enum RoleId {
 
 /// Player Character Races.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum RaceId {
     #[default]
     Human,

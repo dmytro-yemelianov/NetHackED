@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: Apache-2.0
+# NeMo Agent Toolkit (NAT) Configuration for NetRust Architectural & Review Workflows
+
+general:
+  telemetry:
+    tracing:
+      file_trace:
+        _type: file
+        output_path: .nat/traces/
+        project: netrust-rule-packs-review
+
+llms:
+  nim_llm:
+    _type: openai
+    model_name: meta/llama-3.2-90b-vision-instruct
+    base_url: https://integrate.api.nvidia.com/v1
+    api_key: ${NVIDIA_API_KEY}
+    temperature: 0.05
+    max_tokens: 2048
+
+functions:
+  netrust_workspace_reader:
+    _type: netrust_workspace_reader
+    max_read_lines: 100
+
+  netrust_cargo_runner:
+    _type: netrust_cargo_runner
+    timeout_seconds: 300
+
+  netrust_golden_verifier:
+    _type: netrust_golden_verifier
+    timeout_seconds: 180
+
+  netrust_rulepacks_auditor:
+    _type: netrust_rulepacks_auditor
+
+workflow:
+  _type: react_agent
+  llm_name: nim_llm
+  tool_names:
+    - netrust_workspace_reader
+    - netrust_cargo_runner
+    - netrust_golden_verifier
+    - netrust_rulepacks_auditor
+  max_tool_calls: 10
+  retry_agent_response_parsing_errors: true
+  use_native_tool_calling: true
+  additional_instructions: |
+    You are a meticulous NetRust Code Reviewer and Architectural Auditor.
+    Focus on:
+    - Invariant preservation: Golden determinism must stay bit-for-bit identical to vanilla.
+    - WASM boundary cleanliness: no toml, clap, schemars in the wasm dependency graph.
+    - Deterministic ordering: No HashMap/HashSet iteration influencing game state.
+    - Canonical JSON formatting and schema validation rules.

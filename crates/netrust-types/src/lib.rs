@@ -259,6 +259,7 @@ pub enum AscensionOutcome {
 
 /// Alignment in NetHack.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum Alignment {
     Lawful,
     Neutral,
@@ -484,6 +485,7 @@ impl Tile {
 
 /// NetHack's 17 core item classes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum ItemClass {
     Illegal,
     Weapon,
@@ -569,6 +571,7 @@ pub enum WaterType {
 
 /// C attack type (`AT_*`, include/monattk.h). `Passive` is `AT_NONE`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum AttackType {
     Claw,
     Bite,
@@ -583,6 +586,7 @@ pub enum AttackType {
 
 /// C damage type (`AD_*`) for the subset used by the bestiary.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum DamageType {
     Phys,
     Fire,
@@ -608,6 +612,7 @@ pub enum DamageType {
 
 /// One C `ATTK(at, ad, n, d)` entry: `n`d`d` damage dice.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct Attack {
     pub at: AttackType,
     pub ad: DamageType,
@@ -617,6 +622,8 @@ pub struct Attack {
 
 /// Intrinsic and Extrinsic flags.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(default)]
 pub struct Intrinsics {
     pub fire_resistance: bool,
     pub cold_resistance: bool,
@@ -706,6 +713,7 @@ impl Intrinsics {
 
 /// Element type for monster breath weapons and beam attacks.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum BreathType {
     Fire,
     Cold,
@@ -717,6 +725,7 @@ pub enum BreathType {
 
 /// Types of gaze attacks (e.g. Floating Eye, Medusa).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum GazeType {
     Paralysis,
     Petrification,
@@ -733,6 +742,7 @@ pub enum GazeEffect {
 
 /// Spells castable by intelligent monsters (e.g. liches, demons).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum MonsterSpell {
     SummonMonsters,
     CurseItems,
@@ -742,6 +752,7 @@ pub enum MonsterSpell {
 
 /// Special tactical attack ability of a monster.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum MonsterAbility {
     /// Legacy marker: breath is driven by the archetype's C AT_BREA attack
     /// (dice and range included), so this variant carries only the element.
@@ -893,6 +904,7 @@ pub struct AfflictionState {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum SkillClass {
     Dagger,
     LongSword,
@@ -904,6 +916,7 @@ pub enum SkillClass {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum SkillLevel {
     Unskilled,
     Basic,
