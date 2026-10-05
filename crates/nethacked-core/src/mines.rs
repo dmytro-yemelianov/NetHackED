@@ -1,6 +1,6 @@
 //! Gnomish Mines, Minetown Temple Priest, and Mines' End Luckstone Mechanics.
 //!
-//! Formalized and verified in `NetMechanics.Mines`.
+//! Modelled in Lean 4 in `NetMechanics.Mines` (machine-checked model; not formally linked to this code).
 //! Models branch mechanics, divine AC protection donations, item uncursing,
 //! and Luckstone positive luck preservation.
 

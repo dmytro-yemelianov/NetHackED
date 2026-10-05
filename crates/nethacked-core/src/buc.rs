@@ -1,6 +1,6 @@
 //! BUC (Blessed / Uncursed / Cursed) Mechanics.
 //!
-//! Formalized and verified in `NetMechanics.BUC`.
+//! Modelled in Lean 4 in `NetMechanics.BUC` (machine-checked model; not formally linked to this code).
 //! In C NetHack (obj.h), bitfields `Bitfield(cursed, 1)` and `Bitfield(blessed, 1)`
 //! allow contradictory states. In Rust, `Buc` is an enum with mutually exclusive variants.
 

@@ -1,6 +1,6 @@
 //! Combat Resolution Mechanics.
 //!
-//! Formalized and verified in `NetMechanics.Combat`.
+//! Modelled in Lean 4 in `NetMechanics.Combat` (machine-checked model; not formally linked to this code).
 //! Replaces NetHack's `uhitm.c` / `mhitm.c` to-hit and AC calculation with a pure transition.
 
 use nethacked_types::{Attack, AttackType, DamageType, Intrinsics};

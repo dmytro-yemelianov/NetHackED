@@ -540,8 +540,12 @@ impl Messages {
 
     pub fn tui_welcome(name: &str, locale: Locale) -> String {
         match locale {
-            Locale::En => format!("Welcome to NetHackED, {name}! 100% canonical NetHack 5.0 formalized & verified in Lean 4."),
-            Locale::Uk => format!("Ласкаво просимо до NetHackED, {name}! 100% канонічний NetHack 5.0, формалізований у Lean 4."),
+            Locale::En => {
+                format!("Welcome to NetHackED, {name}! NetHack in Rust, a work in progress.")
+            }
+            Locale::Uk => {
+                format!("Ласкаво просимо до NetHackED, {name}! NetHack на Rust, у розробці.")
+            }
         }
     }
 

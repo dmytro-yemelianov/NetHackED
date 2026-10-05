@@ -1,6 +1,6 @@
 //! Action and Effect AST in Safe Rust.
 //!
-//! Formalized and verified in `NetMechanics.AST`.
+//! Modelled in Lean 4 in `NetMechanics.AST` (machine-checked model; not formally linked to this code).
 //! Implements deep embedding of actions, atomic state effects, and operational semantics.
 
 use crate::buc::{Buc, WaterType};
