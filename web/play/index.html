@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NetHackED — from Yemelianov (Emelyanov Dmytro)</title>
+  <meta name="nethacked-base" content="../">
+  <meta name="description" content="NetHackED: classic NetHack reimplemented in Rust, running as WebAssembly in your browser.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='14' font-family='monospace' fill='%23fff'>@</text></svg>">
+  <style>
+    :root { color-scheme: dark; --bg: #000; --fg: #c0c0c0; }
+    html, body { margin: 0; height: 100%; background: var(--bg); }
+    body { display: grid; place-items: center; }
+    #term {
+      margin: 0;
+      font: 16px/1.15 ui-monospace, "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+      color: var(--fg);
+      white-space: pre;
+      outline: none;
+      transform-origin: center;
+    }
+    .c-hero { color: #fff; font-weight: 700; }
+    .c-mon { color: #ff5555; }
+    .c-pet { color: #ffffff; }
+    .c-gold { color: #f1fa8c; }
+    .c-item { color: #8be9fd; }
+    .c-stair { color: #fff; }
+    .c-door { color: #b8860b; }
+    .c-wall { color: #9a9a9a; }
+    .c-dim { color: #555; }
+    .c-water { color: #4a7dff; }
+    .c-hl { color: #fff; }
+    .c-bad { color: #ff5555; }
+  </style>
+</head>
+<body>
+  <pre id="term" tabindex="0" aria-label="NetHackED terminal">Loading NetHackED…</pre>
+  <script type="module" src="play.js"></script>
+</body>
+</html>

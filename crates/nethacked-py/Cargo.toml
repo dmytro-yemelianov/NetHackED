@@ -1,0 +1,25 @@
+[package]
+name = "nethacked-py"
+license = "NGPL"
+version = "0.3.0"
+authors = ["Dmytro Yemelianov (Emelyanov)"]
+edition = "2021"
+description = "PyO3 Python Gym / RL Environment bindings for NetHackED"
+
+[lib]
+name = "nethacked_py"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+pyo3 = { version = "0.23", features = ["abi3-py310"] }
+nethacked-types = { path = "../nethacked-types" }
+nethacked-arena = { path = "../nethacked-arena" }
+nethacked-core = { path = "../nethacked-core" }
+nethacked-sim = { path = "../nethacked-sim" }
+nethacked-agent = { path = "../nethacked-agent" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[features]
+default = ["extension-module"]
+extension-module = ["pyo3/extension-module"]

@@ -1,4 +1,4 @@
-# NetRust Rule Packs Guide
+# NetHackED Rule Packs Guide
 
 Rule packs allow modders, tournament organizers, and researchers to modify game data—such as monster stats and attacks, item attributes and costs, and role starting inventories—without recompiling the engine or breaking replay determinism.
 
@@ -14,7 +14,7 @@ Packs can:
 - **Provide localized names** for new entities in supported languages (English and Ukrainian).
 
 Packs **cannot**:
-- Introduce arbitrary code execution. NetRust rule packs are pure data (declarative TOML or JSON).
+- Introduce arbitrary code execution. NetHackED rule packs are pure data (declarative TOML or JSON).
 - Break replay determinism. Given the same ruleset and seed, simulation execution is 100% reproducible bit-for-bit across platforms.
 - Add new roles or attack types in P1 (roles may only be patched; new roles and mechanics knobs arrive in P2).
 
@@ -42,7 +42,7 @@ id = "hard-mode"
 name = "Hard Mode"
 version = "0.1.0"
 base = "vanilla"
-description = "A harder NetRust challenge pack with buffed jackals and a new dire jackal"
+description = "A harder NetHackED challenge pack with buffed jackals and a new dire jackal"
 ```
 > [!NOTE]
 > In Phase 1, `base` must be `"vanilla"`. Deriving from other packs is reserved for future extensions.
@@ -125,7 +125,7 @@ Flat key-value mappings of English names to translations:
 
 ## Validation Rules
 
-When a pack is validated (`netrust-pack validate`) or built (`netrust-pack build`), the engine verifies:
+When a pack is validated (`nethacked-pack validate`) or built (`nethacked-pack build`), the engine verifies:
 1. **Unique Names**: Monster and item names must be unique within their catalogs.
 2. **Target Existence**: Patches and removals must reference existing entities.
 3. **Engine-Required Invariants**: Engine-required monsters (`shopkeeper`, `priest`, quest leaders/guardians/nemeses) and engine-required items (`amulet of yendor`, quest artifacts) cannot be removed.
@@ -144,81 +144,106 @@ When a pack is validated (`netrust-pack validate`) or built (`netrust-pack build
 
 ---
 
-## Pack Distribution: `.nrpack` Files
+## Pack Distribution: `.nhpack` Files
 
-While pack authors edit human-readable TOML directories, packs can be compiled into `.nrpack` files:
+While pack authors edit human-readable TOML directories, packs can be compiled into `.nhpack` files:
 ```bash
-cargo run -p netrust-pack -- build packs/examples/hard-mode -o hard-mode.nrpack
+cargo run -p nethacked-pack -- build packs/examples/hard-mode -o hard-mode.nhpack
 ```
 
-An `.nrpack` file is a deterministic, canonical JSON file containing:
+An `.nhpack` file is a deterministic, canonical JSON file containing:
 - `format`: Pack format version (`1`).
 - `manifest`: Pack metadata (`id`, `name`, `version`, `base`, `description`).
 - `ruleset`: Complete resolved ruleset data.
 - `hash`: Cryptographic SHA-256 digest (`sha256:<hex>`) of the canonical ruleset JSON.
 
-If an `.nrpack` file is tampered with or corrupted, `load_nrpack` detects the hash mismatch and refuses to load it.
+If an `.nhpack` file is tampered with or corrupted, `load_nhpack` detects the hash mismatch and refuses to load it.
 
 ---
 
-## `netrust-pack` CLI Reference
+## `nethacked-pack` CLI Reference
 
-The workspace includes a command-line tool `netrust-pack`:
+The workspace includes a command-line tool `nethacked-pack`:
 
 ### `new`
 Scaffold a new rule pack directory with commented template files:
 ```bash
-cargo run -p netrust-pack -- new packs/my-pack --id my-pack --name "My Pack"
+cargo run -p nethacked-pack -- new packs/my-pack --id my-pack --name "My Pack"
 ```
 
 ### `validate`
-Check a pack directory or `.nrpack` file for syntax errors, missing fields, range violations, or broken references:
+Check a pack directory or `.nhpack` file for syntax errors, missing fields, range violations, or broken references:
 ```bash
-cargo run -p netrust-pack -- validate packs/examples/hard-mode
+cargo run -p nethacked-pack -- validate packs/examples/hard-mode
 ```
 
 ### `build`
-Compile and validate a pack directory into a distribution `.nrpack` file and print its SHA-256 hash:
+Compile and validate a pack directory into a distribution `.nhpack` file and print its SHA-256 hash:
 ```bash
-cargo run -p netrust-pack -- build packs/examples/hard-mode -o hard-mode.nrpack
+cargo run -p nethacked-pack -- build packs/examples/hard-mode -o hard-mode.nhpack
 ```
 
 ### `diff`
-Display deterministic, field-by-field differences between two rulesets (supports `vanilla`, directory, or `.nrpack`):
+Display deterministic, field-by-field differences between two rulesets (supports `vanilla`, directory, or `.nhpack`):
 ```bash
-cargo run -p netrust-pack -- diff vanilla hard-mode.nrpack
+cargo run -p nethacked-pack -- diff vanilla hard-mode.nhpack
 ```
 
 ### `export-vanilla`
 Export the built-in vanilla ruleset as a clean directory of TOML files:
 ```bash
-cargo run -p netrust-pack -- export-vanilla packs/vanilla-exported
+cargo run -p nethacked-pack -- export-vanilla packs/vanilla-exported
 ```
 
 ### `schema`
 Generate JSON Schema files (`pack.schema.json`, `monsters.schema.json`, `items.schema.json`, `roles.schema.json`) for IDE auto-completion and linting:
 ```bash
-cargo run -p netrust-pack -- schema -o schemas/
+cargo run -p nethacked-pack -- schema -o schemas/
 ```
 
 ### `simulate`
 Run autonomous agent simulations across roles and seeds to stress-test game balance and check for panics or crashes:
 ```bash
-cargo run -p netrust-pack -- simulate hard-mode.nrpack --seeds 5 --turns 500
+cargo run -p nethacked-pack -- simulate hard-mode.nhpack --seeds 5 --turns 500
 ```
+
+### `install`, `list`, `info`
+Install packs into a local packs directory (`$NETHACKED_PACKS_DIR`, else `~/.nethacked/packs`) so tools can refer to them by id:
+```bash
+cargo run -p nethacked-pack -- install packs/examples/hard-mode   # validates, builds, copies <id>-<version>.nhpack
+cargo run -p nethacked-pack -- list                               # id, version, hash, path
+cargo run -p nethacked-pack -- info hard-mode                     # manifest, hash, counts, diff size vs vanilla
+```
+`install` refuses to overwrite an installed pack that has the same id and version but a different hash, unless you pass `--force`. Pack `id` and `version` must be safe slugs (`[A-Za-z0-9][A-Za-z0-9._-]*` and `[A-Za-z0-9][A-Za-z0-9.+-]*`), because they become file names.
+
+---
+
+## Rule Packs in the Browser
+
+The developer web client includes a pack manager at [`packs.html`](https://dmytro-yemelianov.github.io/NetHackED/packs.html). It runs the same Rust pack library compiled to WebAssembly, so a pack it builds is byte-identical to the CLI's. It can:
+- load vanilla, the bundled example packs, or your own uploads (`.nhpack`, pack `.toml` files, or a pack folder);
+- show monsters, items and roles, validation diagnostics, and a field-level diff against vanilla;
+- edit patches in a form (typed from the pack JSON schemas) or as raw TOML, rebuilding live, then save the pack or download the `.nhpack`.
+
+![Pack manager: Hard Mode vs vanilla](images/pack-manager-diff.png)
+
+To play on a pack in the browser, use **Play with this pack** in the manager, or the clean terminal's URL option: `https://nethacked.yemelianov.dev/?pack=hard-mode`.
 
 ---
 
 ## Using Rule Packs in the TUI
 
-To launch the NetRust Terminal User Interface with a rule pack:
+To launch the NetHackED Terminal User Interface with a rule pack:
 
 ```bash
-# Using a compiled .nrpack file
-cargo run --bin netrust -- --pack hard-mode.nrpack
+# Using a compiled .nhpack file
+cargo run --bin nethacked -- --pack hard-mode.nhpack
 
 # Using a pack directory directly
-cargo run --bin netrust -- --pack packs/examples/hard-mode
+cargo run --bin nethacked -- --pack packs/examples/hard-mode
+
+# Using an installed pack by id (highest installed version wins)
+cargo run --bin nethacked -- --pack hard-mode
 ```
 
 When a custom pack is active, its name is displayed in the bottom status line:
@@ -230,7 +255,7 @@ Hero:Neu Dlvl:1  $:0  HP:12(12) Pw:1(1) AC:10  T:1    Wield:none [Hard Mode]
 
 ## Save File Compatibility & Determinism
 
-Every NetRust save file records a `ruleset_ref` containing:
+Every NetHackED save file records a `ruleset_ref` containing:
 - `id`: The pack identifier.
 - `version`: The pack version string.
 - `hash`: The cryptographic SHA-256 ruleset hash (or `"vanilla"` for vanilla).

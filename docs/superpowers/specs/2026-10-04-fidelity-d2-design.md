@@ -20,7 +20,7 @@ telepathy only while blind; item kinds on records (name lookup stays the mechani
 
 ## Principles (inherited from D1)
 
-- Explicit rolls in pure `netrust-core` fns; `netrust-sim` draws from the world RNG, each roll once,
+- Explicit rolls in pure `nethacked-core` fns; `nethacked-sim` draws from the world RNG, each roll once,
   only when C draws it.
 - Lean models and theorems updated where a modelled formula changes; no `sorry`/`admit`/new axioms/
   `native_decide`; `#print axioms` audit.
@@ -31,7 +31,7 @@ telepathy only while blind; item kinds on records (name lookup stays the mechani
 
 ## Design
 
-### 1. Bestiary data (`netrust-data/src/monsters.rs`)
+### 1. Bestiary data (`nethacked-data/src/monsters.rs`)
 
 - Every BESTIARY entry gets C values: class letter (`glyph`), level, speed, AC, alignment, size,
   and an **attack list** replacing `damage_dice`:
@@ -50,14 +50,14 @@ telepathy only while blind; item kinds on records (name lookup stays the mechani
   insensitive) — the sim maps actors to archetypes by name (documented divergence: no species id on
   records until D3).
 
-### 2. Item catalog (`netrust-data/src/items.rs`)
+### 2. Item catalog (`nethacked-data/src/items.rs`)
 
 - Every ITEM_CATALOG entry gets C cost, weight, damage small/large (weapons only; non-weapons 0),
   AC (armor), `oc_magic` flag, wand `direction: WandDir {NoDir, Immediate, Ray}`, food nutrition.
-- Wands of digging/teleportation no longer deal beam damage (C: dig / teleport effects; NetRust
+- Wands of digging/teleportation no longer deal beam damage (C: dig / teleport effects; NetHackED
   keeps their non-damage effects as they are or a no-op message, documented).
 
-### 3. Combat uses the data (`netrust-core/src/combat.rs`, `netrust-sim/src/combat.rs`, `monsters.rs`)
+### 3. Combat uses the data (`nethacked-core/src/combat.rs`, `nethacked-sim/src/combat.rs`, `monsters.rs`)
 
 - **Monster → hero:** each melee-type attack in the monster's list is resolved in order (C
   mattacku): to-hit per attack (D1 formula), damage `d(n, d)` rolled per hit, AC absorb (D1),
@@ -73,7 +73,7 @@ telepathy only while blind; item kinds on records (name lookup stays the mechani
 - Lean: `Combat.lean` damage model generalised to a variable die size (`base_roll ∈ 1..=die`),
   damage ≥ 1 theorem kept.
 
-### 4. Armor AC (`netrust-core`, `netrust-sim`, `netrust-data/src/roles.rs`)
+### 4. Armor AC (`nethacked-core`, `nethacked-sim`, `nethacked-data/src/roles.rs`)
 
 - Hero AC = 10 − Σ over worn armor of `a_ac + spe − min(erosion, a_ac)` (C `find_ac` /
   `ARM_BONUS`), ring/protection bonus (`divine_protection`) subtracted as C `u.ublessed`.
@@ -81,12 +81,12 @@ telepathy only while blind; item kinds on records (name lookup stays the mechani
   slot from the item name/kind table; extra carried pieces of the same slot don't stack
   (documented approximation until equipment slots exist in D3).
 - Role base AC in `roles.rs` drops hardcoded armor; starting inventories gain the C starting
-  armor where NetRust has the item kind; AC recomputed on pickup/drop/creation.
+  armor where NetHackED has the item kind; AC recomputed on pickup/drop/creation.
 - Monster defender AC = archetype AC (data) − carried armor enchantment as today.
 - Lean: new `ArmorClass.lean` (or within `Combat.lean`): `findAc` model + theorems (more armor never
   increases AC; AC ≤ 10 with no negative-enchanted armor).
 
-### 5. Peacefulness (`netrust-arena` ActorRecord, `netrust-sim`, `netrust-core/src/engraving.rs`)
+### 5. Peacefulness (`nethacked-arena` ActorRecord, `nethacked-sim`, `nethacked-core/src/engraving.rs`)
 
 - `ActorRecord.is_peaceful: bool` (`#[serde(default)]`), set at spawn by
   `peace_minded(archetype, hero_alignment, hero_align_record, roll)` per C `makemon.c`:

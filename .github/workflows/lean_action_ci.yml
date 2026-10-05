@@ -41,14 +41,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.88.0
       - uses: Swatinem/rust-cache@v2
-      - run: cargo test --workspace --exclude netrust-py --locked
+      - run: cargo test --workspace --exclude nethacked-py --locked
       - name: Validate, build and simulate example rule pack
         run: |
-          cargo run -p netrust-pack --locked -- validate packs/examples/hard-mode
-          cargo run -p netrust-pack --locked -- build packs/examples/hard-mode -o hard-mode.nrpack
-          cargo run -p netrust-pack --locked -- validate hard-mode.nrpack
-          cargo run -p netrust-pack --locked -- simulate hard-mode.nrpack --seeds 2 --turns 200
-          rm hard-mode.nrpack
+          cargo run -p nethacked-pack --locked -- validate packs/examples/hard-mode
+          cargo run -p nethacked-pack --locked -- build packs/examples/hard-mode -o hard-mode.nhpack
+          cargo run -p nethacked-pack --locked -- validate hard-mode.nhpack
+          cargo run -p nethacked-pack --locked -- simulate hard-mode.nhpack --seeds 2 --turns 200
+          rm hard-mode.nhpack
 
   wasm:
     name: wasm build
@@ -59,7 +59,7 @@ jobs:
         with:
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
-      - run: cargo build -p netrust-wasm --target wasm32-unknown-unknown --locked
+      - run: cargo build -p nethacked-wasm --target wasm32-unknown-unknown --locked
 
   docs:
     name: doc links

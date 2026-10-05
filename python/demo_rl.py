@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""NetRust Gymnasium RL Autonomous Agent Demonstration & Benchmark.
+"""NetHackED Gymnasium RL Autonomous Agent Demonstration & Benchmark.
 
 Evaluates autonomous agent policies with action masking and voluntary conducts:
 1. Pacifist Explorer (action-masked strict conduct obedience)
@@ -14,17 +14,17 @@ from pathlib import Path
 # Add python directory to path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-# Ensure target/debug or target/release has netrust_py
+# Ensure target/debug or target/release has nethacked_py
 repo_root = Path(__file__).resolve().parent.parent
 target_debug = repo_root / "target" / "debug"
-if (target_debug / "libnetrust_py.dylib").exists() and not (target_debug / "netrust_py.so").exists():
+if (target_debug / "libnethacked_py.dylib").exists() and not (target_debug / "nethacked_py.so").exists():
     import shutil
-    shutil.copy(target_debug / "libnetrust_py.dylib", target_debug / "netrust_py.so")
+    shutil.copy(target_debug / "libnethacked_py.dylib", target_debug / "nethacked_py.so")
 
-from netrust_gym import NetRustGymEnv, ACTION_NAMES
+from nethacked_gym import NetHackEDGymEnv, ACTION_NAMES
 
 def run_agent_episode(policy_name: str = "pacifist", seed: int = 42, max_steps: int = 150):
-    env = NetRustGymEnv(seed=seed, max_steps=max_steps, render_mode="ansi", conduct_masking=True)
+    env = NetHackEDGymEnv(seed=seed, max_steps=max_steps, render_mode="ansi", conduct_masking=True)
     obs, info = env.reset(seed=seed)
 
     total_reward = 0.0
@@ -33,7 +33,7 @@ def run_agent_episode(policy_name: str = "pacifist", seed: int = 42, max_steps: 
     truncated = False
 
     print(f"\n{'=' * 68}")
-    print(f" NetRust RL Episode: {policy_name.upper()} (Seed {seed})")
+    print(f" NetHackED RL Episode: {policy_name.upper()} (Seed {seed})")
     print(f"{'=' * 68}")
 
     while not (terminated or truncated):

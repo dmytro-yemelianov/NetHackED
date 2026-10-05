@@ -1,6 +1,6 @@
-# NetRust Gym - Python Reinforcement Learning Environment
+# NetHackED Gym - Python Reinforcement Learning Environment
 
-A standard [Gymnasium](https://gymnasium.farama.org/) interface for **NetRust**, a high-performance Rust reimplementation of NetHack mechanics written in Rust.
+A standard [Gymnasium](https://gymnasium.farama.org/) interface for **NetHackED**, a high-performance Rust reimplementation of NetHack mechanics written in Rust.
 
 ## Features
 - **Blazing Fast**: Native Rust simulation core powered by PyO3 and ABI3 bindings (>100,000 steps/sec).
@@ -12,10 +12,10 @@ A standard [Gymnasium](https://gymnasium.farama.org/) interface for **NetRust**,
 
 1. Build the Rust extension:
    ```bash
-   cargo build -p netrust-py
+   cargo build -p nethacked-py
    # Or install via maturin
    pip install maturin
-   maturin develop --manifest-path crates/netrust-py/Cargo.toml
+   maturin develop --manifest-path crates/nethacked-py/Cargo.toml
    ```
 
 2. Run the demo agent:
@@ -24,7 +24,7 @@ A standard [Gymnasium](https://gymnasium.farama.org/) interface for **NetRust**,
    ```
 
 ## Action Space (Discrete 26)
-`netrust_gym.ACTION_NAMES` lists all 26 actions: 0-7 compass moves, 8 WAIT, 9 DESCEND, 10 ASCEND, 11 PICKUP, 12 SEARCH, 13 UNTRAP, 14-17 FIRE (N/E/S/W), 18 QUIVER, 19 EAT, 20 QUAFF, 21 READ, 22 ZAP_WAND, 23 PRAY, 24 PAY, 25 ENGRAVE_ELBERETH.
+`nethacked_gym.ACTION_NAMES` lists all 26 actions: 0-7 compass moves, 8 WAIT, 9 DESCEND, 10 ASCEND, 11 PICKUP, 12 SEARCH, 13 UNTRAP, 14-17 FIRE (N/E/S/W), 18 QUIVER, 19 EAT, 20 QUAFF, 21 READ, 22 ZAP_WAND, 23 PRAY, 24 PAY, 25 ENGRAVE_ELBERETH.
 `env.action_masks()` returns the currently valid actions (including voluntary-conduct filtering).
 
 ## Observations

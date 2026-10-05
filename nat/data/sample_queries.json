@@ -9,6 +9,6 @@
   },
   {
     "name": "run_all_gates",
-    "prompt": "Run all NetRust CI verification gates (fmt, clippy, tests, wasm build, python bindings check, doc links, and lean proofs) and report any issues."
+    "prompt": "Run all NetHackED CI verification gates (fmt, clippy, tests, wasm build, python bindings check, doc links, and lean proofs) and report any issues."
   }
 ]

@@ -1,9 +1,9 @@
 // Catalog of rule packs: vanilla, bundled (web/packs/index.json), and packs
 // the visitor uploaded or edited (IndexedDB, keyed by hash).
 
-const DB_NAME = 'netrust-packs';
+const DB_NAME = 'nethacked-packs';
 const STORE = 'packs';
-export const ACTIVE_KEY = 'netrust.activePack';
+export const ACTIVE_KEY = 'nethacked.activePack';
 
 function openDb() {
   return new Promise((resolve, reject) => {
@@ -64,11 +64,11 @@ export async function openPack(wasm, key) {
     if (!b) throw new Error(`Unknown bundled pack ${key}`);
     const r = await fetch(`packs/${b.file}`);
     if (!r.ok) throw new Error(`Could not download ${b.file} (${r.status})`);
-    return wasm.WasmPack.fromNrpack(new Uint8Array(await r.arrayBuffer()));
+    return wasm.WasmPack.fromNhpack(new Uint8Array(await r.arrayBuffer()));
   }
   const rec = await tx('readonly', (s) => s.get(key));
   if (!rec) throw new Error(`Pack ${key} is no longer stored`);
-  return wasm.WasmPack.fromNrpack(rec.bytes);
+  return wasm.WasmPack.fromNhpack(rec.bytes);
 }
 
 export async function getSources(key) {
@@ -90,7 +90,7 @@ export async function getSources(key) {
 }
 
 export async function savePack(wasm, { bytes, sources = null }) {
-  const pack = wasm.WasmPack.fromNrpack(bytes); // verifies format + hash
+  const pack = wasm.WasmPack.fromNhpack(bytes); // verifies format + hash
   const m = JSON.parse(pack.manifestJson());
   const rec = { key: `stored:${pack.hash()}`, id: m.id, version: m.version, title: m.name || m.id, hash: pack.hash(), bytes, sources };
   await tx('readwrite', (s) => s.put(rec));

@@ -1,0 +1,23 @@
+[package]
+name = "nethacked-tui"
+license = "NGPL"
+version = "0.3.0"
+authors = ["Dmytro Yemelianov (Emelyanov)"]
+edition = "2021"
+description = "Terminal User Interface (TUI) for NetHackED with classic NetHack ASCII rendering"
+
+[dependencies]
+nethacked-types = { path = "../nethacked-types" }
+nethacked-arena = { path = "../nethacked-arena" }
+nethacked-core = { path = "../nethacked-core" }
+nethacked-dungeon = { path = "../nethacked-dungeon" }
+nethacked-sim = { path = "../nethacked-sim" }
+nethacked-data = { path = "../nethacked-data" }
+nethacked-agent = { path = "../nethacked-agent" }
+nethacked-i18n = { path = "../nethacked-i18n" }
+nethacked-pack = { path = "../nethacked-pack" }
+crossterm = "0.28"
+
+[[bin]]
+name = "nethacked"
+path = "src/main.rs"

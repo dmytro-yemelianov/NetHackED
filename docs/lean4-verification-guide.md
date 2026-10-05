@@ -1,6 +1,6 @@
 # Lean 4 Verification Reference & Rust Bridge
 
-This guide details the formal verification architecture of **NetMechanics** in Lean 4 and specifies the automated bridge to property-based testing in **NetRust**.
+This guide details the formal verification architecture of **NetMechanics** in Lean 4 and specifies the automated bridge to property-based testing in **NetHackED**.
 
 ---
 
@@ -51,11 +51,11 @@ Unlike unit tests that sample specific inputs, Lean 4 proofs are verified by the
 
 ## 3. The Lean 4 to Rust Verification Bridge
 
-The Rust engine is an independent, hand-written implementation. **Nothing machine-links the Lean models to the Rust code**: there is no extraction, translation, or proof that the Rust functions satisfy the Lean theorems. Instead, many Lean theorems are mirrored by hand as Rust property-based tests (`proptest`), so that the Rust code is at least checked against the same stated properties on randomized inputs. `crates/netrust-core/tests/proptest_mechanics.rs` currently holds 106 such `prop_` tests; they cover a selection of the Lean theorems, not all 306. A proptest passing is evidence, not proof, that Rust agrees with the Lean property.
+The Rust engine is an independent, hand-written implementation. **Nothing machine-links the Lean models to the Rust code**: there is no extraction, translation, or proof that the Rust functions satisfy the Lean theorems. Instead, many Lean theorems are mirrored by hand as Rust property-based tests (`proptest`), so that the Rust code is at least checked against the same stated properties on randomized inputs. `crates/nethacked-core/tests/proptest_mechanics.rs` currently holds 106 such `prop_` tests; they cover a selection of the Lean theorems, not all 306. A proptest passing is evidence, not proof, that Rust agrees with the Lean property.
 
 ```
     [Lean 4 Formal Specification]               [Rust Implementation]
-      NetMechanics/BUC.lean                     crates/netrust-core/src/buc.rs
+      NetMechanics/BUC.lean                     crates/nethacked-core/src/buc.rs
                  │                                           │
                  v                                           v
        Theorem dip_holy_idempotent                 fn dip_water(...)
@@ -65,7 +65,7 @@ The Rust engine is an independent, hand-written implementation. **Nothing machin
                                      │
                                      v
                        [Rust Property-Based Test]
-                      crates/netrust-core/tests/
+                      crates/nethacked-core/tests/
                      proptest! {
                        fn prop_dip_holy_idempotent(b: Buc) {
                          assert_eq!(dip(Holy, dip(Holy, b)), dip(Holy, b));
@@ -144,5 +144,5 @@ When formalizing a new NetHack mechanic in Lean 4:
    * Add the module import to [NetMechanics.lean](../NetMechanics.lean).
    * Verify compilation with `lake build`.
 6. **Implement Rust Mirror**:
-   * Mirror the data types and functions in [crates/netrust-core/src/](../crates/netrust-core/src/).
-   * Add property-based tests in `netrust-core` validating the exact same theorem.
+   * Mirror the data types and functions in [crates/nethacked-core/src/](../crates/nethacked-core/src/).
+   * Add property-based tests in `nethacked-core` validating the exact same theorem.

@@ -2,7 +2,7 @@
 
 ## 1. Overview and Objectives
 
-Deliverable 3 (D3) eliminates two major documented divergences between NetRust and NetHack 5.0 C:
+Deliverable 3 (D3) eliminates two major documented divergences between NetHackED and NetHack 5.0 C:
 1. **Per-Role Initial Alignment Record**:
    Replace the hardcoded `INITIAL_ALIGNMENT_RECORD = 25` with NetHack's role-specific `initrecord` (10 for Archeologist, Barbarian, Healer, Knight, Monk, Rogue; 0 for Tourist, Valkyrie, Wizard).
 2. **Canonical Monster Malign and Kill Adjustments**:
@@ -21,14 +21,14 @@ Deliverable 3 (D3) eliminates two major documented divergences between NetRust a
                                      |
                                      v
 +-----------------------+   +-----------------------+   +-----------------------+
-| netrust-data          |   | netrust-core          |   | netrust-arena         |
+| nethacked-data          |   | nethacked-core          |   | nethacked-arena         |
 | RoleSpec.initrecord   |   | calculate_malign      |   | ActorRecord.malign    |
 | RoleDef.initrecord    |   | adjalign, alignlim    |   | QuestState            |
 | MonsterDef.maligntyp  |   | (Pure, 0 side effects)|   | .killed_leader        |
 +-----------+-----------+   +-----------+-----------+   +-----------+-----------+
             \                           |                           /
              \                          v                          /
-              +-----------------> netrust-sim <-------------------+
+              +-----------------> nethacked-sim <-------------------+
                                   - World creation: init alignment from role
                                   - Monster spawn: set actor.malign
                                   - Combat/Kill: on_actor_killed calls adjalign
@@ -39,7 +39,7 @@ Deliverable 3 (D3) eliminates two major documented divergences between NetRust a
 ## 3. Detailed Specifications
 
 ### 3.1 Per-Role Initial Alignment Record
-In `netrust-data`:
+In `nethacked-data`:
 - Add `initial_alignment_record: i32` to `RoleSpec`:
   - `RoleId::Valkyrie` -> 0
   - `RoleId::Wizard` -> 0
@@ -54,11 +54,11 @@ In `netrust-data`:
   - `#[serde(default = "default_initial_alignment_record")] pub initial_alignment_record: i32`
   - Helper `fn default_initial_alignment_record() -> i32 { 10 }`
   - In `vanilla_ruleset()`, set from the role's canonical `initrecord`.
-- In `netrust-sim`:
+- In `nethacked-sim`:
   - `world.alignment_record` initializes to `ruleset.role(config.role).map(|r| r.initial_alignment_record).unwrap_or(INITIAL_ALIGNMENT_RECORD)`.
 
-### 3.2 Monster Malign Calculation (`netrust-core`)
-Add pure function in `crates/netrust-core/src/peace.rs` (or `crates/netrust-core/src/alignment.rs`):
+### 3.2 Monster Malign Calculation (`nethacked-core`)
+Add pure function in `crates/nethacked-core/src/peace.rs` (or `crates/nethacked-core/src/alignment.rs`):
 ```rust
 /// Compute C `malign` (makemon.c:2320-2366) upon monster creation.
 ///
@@ -96,7 +96,7 @@ Rules (verbatim C `makemon.c:2338-2366`):
 8. Else (not coaligned and therefore hostile):
    `malign = mal.abs();`
 
-### 3.3 ActorRecord Storage & Serde (`netrust-arena`)
+### 3.3 ActorRecord Storage & Serde (`nethacked-arena`)
 - In `ActorRecord`:
   ```rust
   /// C `malign` (`makemon.c:2320-2366`). Precalculated alignment adjustment upon death.
@@ -105,12 +105,12 @@ Rules (verbatim C `makemon.c:2338-2366`):
   ```
 - Serde default test verifying older saves without `malign` load safely with `malign == 0`.
 
-### 3.4 Kill-Based Alignment Adjustments (`netrust-sim`)
-In `crates/netrust-sim/src/combat.rs`:
+### 3.4 Kill-Based Alignment Adjustments (`nethacked-sim`)
+In `crates/nethacked-sim/src/combat.rs`:
 When a monster is killed by the hero (`attacker_id == self.player_id`):
 ```rust
-let lim = netrust_core::alignlim(self.scheduler.turn);
-let quest_cfg = netrust_core::get_role_quest_config_or_default(&self.role_name);
+let lim = nethacked_core::alignlim(self.scheduler.turn);
+let quest_cfg = nethacked_core::get_role_quest_config_or_default(&self.role_name);
 let is_leader = defender.name.eq_ignore_ascii_case(quest_cfg.leader_name);
 let is_nemesis = defender.name.eq_ignore_ascii_case(quest_cfg.nemesis_name);
 let is_guardian = defender.name.eq_ignore_ascii_case(quest_cfg.guardian_name);
@@ -119,7 +119,7 @@ let is_priest = defender.name.to_lowercase().contains("priest");
 if is_leader {
     // REAL BAD! mon.c:3678
     let penalty = -(self.alignment_record + lim / 2);
-    self.alignment_record = netrust_core::adjalign(self.alignment_record, penalty, lim);
+    self.alignment_record = nethacked_core::adjalign(self.alignment_record, penalty, lim);
     self.quest_state.killed_leader = true;
     self.god_anger = self.god_anger.saturating_add(7);
     self.hero.luck = self.hero.luck.saturating_sub(20);
@@ -128,32 +128,32 @@ if is_leader {
 } else if is_nemesis {
     // Real good! mon.c:3685
     if !self.quest_state.killed_leader {
-        self.alignment_record = netrust_core::adjalign(self.alignment_record, lim / 4, lim);
+        self.alignment_record = nethacked_core::adjalign(self.alignment_record, lim / 4, lim);
     }
 } else if is_guardian {
     // Bad mon.c:3689
-    self.alignment_record = netrust_core::adjalign(self.alignment_record, -(lim / 8), lim);
+    self.alignment_record = nethacked_core::adjalign(self.alignment_record, -(lim / 8), lim);
     self.god_anger = self.god_anger.saturating_add(1);
     self.hero.luck = self.hero.luck.saturating_sub(4);
 } else if is_priest {
     let coaligned = defender.alignment == self.hero_alignment;
     let n = if coaligned { -2 } else { 2 };
-    self.alignment_record = netrust_core::adjalign(self.alignment_record, n, lim);
+    self.alignment_record = nethacked_core::adjalign(self.alignment_record, n, lim);
     if coaligned {
         self.divine_protection = 0;
     }
     // High priest of Moloch
     if defender_maligntyp == -128 {
-        self.alignment_record = netrust_core::adjalign(self.alignment_record, lim / 4, lim);
+        self.alignment_record = nethacked_core::adjalign(self.alignment_record, lim / 4, lim);
     }
 } else if defender.is_tame {
-    self.alignment_record = netrust_core::adjalign(self.alignment_record, -15, lim);
+    self.alignment_record = nethacked_core::adjalign(self.alignment_record, -15, lim);
 } else if defender.is_peaceful {
-    self.alignment_record = netrust_core::adjalign(self.alignment_record, -5, lim);
+    self.alignment_record = nethacked_core::adjalign(self.alignment_record, -5, lim);
 }
 
 // Unconditionally apply precalculated malign (mon.c:3725)
-self.alignment_record = netrust_core::adjalign(self.alignment_record, defender.malign, lim);
+self.alignment_record = nethacked_core::adjalign(self.alignment_record, defender.malign, lim);
 ```
 
 ---
@@ -165,4 +165,4 @@ self.alignment_record = netrust_core::adjalign(self.alignment_record, defender.m
 2. **Serde Backward Compatibility**:
    Save files missing `malign` on `ActorRecord` or `killed_leader` on `QuestState` deserialize with defaults.
 3. **Determinism & Baseline Fingerprints**:
-   Update `crates/netrust-agent/tests/golden_determinism.rs` baselines since initial alignment and monster malign kill updates alter game progression deterministically.
+   Update `crates/nethacked-agent/tests/golden_determinism.rs` baselines since initial alignment and monster malign kill updates alter game progression deterministically.

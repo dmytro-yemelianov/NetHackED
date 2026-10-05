@@ -34,7 +34,7 @@ jobs:
       - name: Check bundled pack index
         run: |
           python3 -c "import json;d=json.load(open('web/packs/index.json'));assert d and all(e['hash'].startswith('sha256:') for e in d), d"
-          test -s web/pkg/netrust_wasm_bg.wasm
+          test -s web/pkg/nethacked_wasm_bg.wasm
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request'
         with:

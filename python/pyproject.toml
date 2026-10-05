@@ -3,11 +3,11 @@ requires = ["maturin>=1.5,<2.0"]
 build-backend = "maturin"
 
 [project]
-name = "netrust-gym"
-version = "0.2.0"
+name = "nethacked-gym"
+version = "0.3.0"
 description = "NetHack reimplementation in Rust - Gymnasium RL Environment"
 readme = "README.md"
-authors = [{ name = "NetRust Contributors" }]
+authors = [{ name = "Dmytro Yemelianov (Emelyanov)" }]
 license = { text = "NGPL" }
 requires-python = ">=3.10"
 dependencies = [
@@ -22,6 +22,6 @@ rl = [
 ]
 
 [tool.maturin]
-manifest-path = "../crates/netrust-py/Cargo.toml"
-module-name = "netrust_py"
+manifest-path = "../crates/nethacked-py/Cargo.toml"
+module-name = "nethacked_py"
 features = ["pyo3/extension-module"]

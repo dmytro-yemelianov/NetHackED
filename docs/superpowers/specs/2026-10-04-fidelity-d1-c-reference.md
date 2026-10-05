@@ -1,6 +1,6 @@
-# D1 research: C reference vs NetRust Rust/Lean/proptests
+# D1 research: C reference vs NetHackED Rust/Lean/proptests
 
-Notation: rnd(n)=1..n, rn2(n)=0..n-1, rn1(x,y)=y..y+x-1. C = NetHack-5.0.0/src. Rust core = crates/netrust-core/src. Sim = crates/netrust-sim/src. PT = crates/netrust-core/tests/proptest_mechanics.rs.
+Notation: rnd(n)=1..n, rn2(n)=0..n-1, rn1(x,y)=y..y+x-1. C = NetHack-5.0.0/src. Rust core = crates/nethacked-core/src. Sim = crates/nethacked-sim/src. PT = crates/nethacked-core/tests/proptest_mechanics.rs.
 
 ---------------------------------------------------------------------
 ## 1. Hero melee to-hit
@@ -27,7 +27,7 @@ Hit test: uhitm.c:780-782 `dieroll = rnd(20); mhit = (tmp > dieroll || u.uswallo
 - hitval weapon.c:149: +spe (weapons/weptools), +oc_hitbon, +2 blessed vs undead/demon, misc.
 - weapon_hit_bonus weapon.c:1545: weapon skill Restricted/Unskilled -4, Basic 0, Skilled +2, Expert +3. Bare-handed (weapon.c:1601): ((max(P,1)-1)+2)*(martial?2:1)/2 -> unskilled/basic +1, skilled/expert +2 (martial arts +3..+7). Riding penalty if mounted.
 - find_mac (worn.c:717) = monster AC incl. worn armor.
-Minimal model given NetRust state (level, luck, enchant, skill, target AC): `tmp = 1 + abon + targetAC + level + luckBonus(luck) + enchant + skillBonus (+ encumbrance penalty if tracked)`; hit iff `rnd(20) < tmp`. abon can be 0 (or +1 for level<3) if Str/Dex not tracked.
+Minimal model given NetHackED state (level, luck, enchant, skill, target AC): `tmp = 1 + abon + targetAC + level + luckBonus(luck) + enchant + skillBonus (+ encumbrance penalty if tracked)`; hit iff `rnd(20) < tmp`. abon can be 0 (or +1 for level<3) if Str/Dex not tracked.
 Monster->hero (mhitu.c:709): `tmp = AC_VALUE(u.uac) + 10 + m_lev` (+4 if hero helpless, -2 hero invisible & !perceives, -2 mtrapped, min 1); AC_VALUE(ac) = ac>=0 ? ac : -rnd(-ac) (hack.h:1538); hit iff tmp > rnd(20).
 
 (b) Rust: combat.rs:30 `to_hit_threshold(attacker_bonus, target_ac) -> i32 { 10 + target_ac + attacker_bonus }`, combat.rs:34 `attack_lands(d20, thr) = d20 <= thr`, combat.rs:60 `resolve_melee_attack(attacker_bonus, attacker_dmg_bonus, defender, d20_roll, dmg_roll, weapon_enchant)`. Sim passes attacker_bonus = level + weapon_ench + skill (sim/combat.rs:115).
@@ -73,7 +73,7 @@ else if (!forcetrap) {
 }
 ```
 So: web is NOT avoided by flying (Rust/Lean treat it as floor trap). Seen-trap escape chance 1/5 (rn2(5)==0) is not modelled anywhere.
-(b) Rust traps.rs:3 `is_floor_trap` = {Pit, SpikedPit, Web}; traps.rs:10 `can_trigger_trap(trap, is_flying)`; traps.rs:20 `trigger_trap`. TrapType (netrust-types lib ~:189) has Arrow, Dart, RockFall, Pit, SpikedPit, Teleport, Fire, LevelTeleport, Polymorph, AntiMagic, SleepingGas, Rust, Web. Correct set: {Arrow, Dart, RockFall, Pit, SpikedPit, Fire, SleepingGas, Rust} (Web/Teleport/LevelTeleport/Polymorph/AntiMagic false). Add `escape_roll: Option<u32>` (rn2(5)) for revealed traps.
+(b) Rust traps.rs:3 `is_floor_trap` = {Pit, SpikedPit, Web}; traps.rs:10 `can_trigger_trap(trap, is_flying)`; traps.rs:20 `trigger_trap`. TrapType (nethacked-types lib ~:189) has Arrow, Dart, RockFall, Pit, SpikedPit, Teleport, Fire, LevelTeleport, Polymorph, AntiMagic, SleepingGas, Rust, Web. Correct set: {Arrow, Dart, RockFall, Pit, SpikedPit, Fire, SleepingGas, Rust} (Web/Teleport/LevelTeleport/Polymorph/AntiMagic false). Add `escape_roll: Option<u32>` (rn2(5)) for revealed traps.
 (c) Lean Traps.lean:23 `isFloorTrap` (Pit/SpikedPit/Web), :42 `attemptTrigger`. Theorems `flying_avoids_floor_traps` (:56), `non_flying_triggers_floor_trap` (:61), `triggering_reveals_hidden_trap` (:66), `disarm_trap_neutralizes` (:71) all remain true after changing the isFloorTrap table (proofs are generic). If seen-trap escape is added, `non_flying_triggers_floor_trap` must be restated with hypothesis "hidden or escape roll ≠ 0". Effort S.
 (d) PT: `prop_flying_bypasses_floor_traps` (:1676), `prop_disarmed_trap_never_triggers` (:1686), `prop_trigger_trap_reveals_hidden` (:1692), `prop_disarm_trap_transitions_to_disarmed` (:1700); arb_trap_type (:1634).
 (e) actions/movement.rs:205-214: is_flying = intrinsics.levitation only (no Flying intrinsic); would pass escape roll.
@@ -134,7 +134,7 @@ if (wc <= 1) return OVERLOADED;
 cap = (wt * 2 / wc) + 1;  return min(cap, OVERLOADED /*5*/);
 ```
 i.e. excess e = total-wc: Burdened 0<e and 2e<wc; Stressed wc<=2e<2wc; Strained 2wc<=2e<3wc; Overtaxed 3wc<=2e<4wc; Overloaded 2e>=4wc. In total weight terms: Burdened wc<W<1.5wc, Stressed 1.5wc<=W<2wc, Strained 2wc<=W<2.5wc, Overtaxed 2.5wc<=W<3wc, Overloaded W>=3wc.
-(b) Rust inventory.rs:107 `calculate_encumbrance(weight, capacity)` uses `<=` at each boundary: W=1.5wc -> Burdened (C Stressed), W=2wc -> Stressed (C Strained), W=2.5wc -> Strained, W=3wc -> Overtaxed (C Overloaded); integer: C uses floor(2e/wc), Rust uses cap/2 floor — differ on odd wc. No weight_cap function exists. Suggest `weight_cap(str, con, levitating, ...) -> u32` and `calculate_encumbrance(weight, wc) { if weight<=wc Unencumbered else tier = min((weight-wc)*2/wc + 1, 5) }`. Note arena (netrust-arena/src/lib.rs:149 `calculate_total_weight`) uses BoH (cwt+1)/2 for all BUC; C: blessed (cwt+3)/4, uncursed (cwt+1)/2, cursed cwt*2 (not asked, flag).
+(b) Rust inventory.rs:107 `calculate_encumbrance(weight, capacity)` uses `<=` at each boundary: W=1.5wc -> Burdened (C Stressed), W=2wc -> Stressed (C Strained), W=2.5wc -> Strained, W=3wc -> Overtaxed (C Overloaded); integer: C uses floor(2e/wc), Rust uses cap/2 floor — differ on odd wc. No weight_cap function exists. Suggest `weight_cap(str, con, levitating, ...) -> u32` and `calculate_encumbrance(weight, wc) { if weight<=wc Unencumbered else tier = min((weight-wc)*2/wc + 1, 5) }`. Note arena (nethacked-arena/src/lib.rs:149 `calculate_total_weight`) uses BoH (cwt+1)/2 for all BUC; C: blessed (cwt+3)/4, uncursed (cwt+1)/2, cursed cwt*2 (not asked, flag).
 (c) Lean Inventory.lean:120 `calculateEncumbrance`, `unencumbered_when_le_cap` (:139) stays true; restate as closed form `tierRank (calculateEncumbrance w c) = min ((w-c)*2/c + 1) 5` for w>c. Monotonicity is only a proptest. Effort S.
 (d) PT `prop_unencumbered_when_le_cap` (:115), `prop_encumbrance_monotonic` (:121) — both still hold.
 (e) No sim caller of calculate_encumbrance (sim never applies encumbrance). To-hit (mech 1) and speed would need it.
@@ -245,7 +245,7 @@ polyself.c:1367 rehumanize: if Unchanging && u.mh<1 -> die ("killed while stuck 
 (b) Rust polymorph.rs:152 `apply_poly_damage(hero: &mut Hero, damage: i32) -> PolyDamageResult` subtracts excess from base_hp and can return Dead; PolyDamageResult::Reverted{excess_damage} (:148); also `PolyEntity::apply_damage` (:39, excess at :71-72). Fix: Reverted with base_hp untouched; add `unchanging: bool` -> Dead.
 (c) Lean Polymorph.lean:30 `applyPolyDamage` (excess penetrates). Theorems: `poly_fatal_damage_reverts` (:52) TRUE; `poly_exact_depletion_preserves_base_hp` (:63) TRUE (generalises to all damage ≥ poly.hp); `poly_non_fatal_damage_preserves_poly` (:71) TRUE; `poly_damage_preserves_base_max_hp` (:79) TRUE; `poly_reversion_preserves_base_stats` (:89) TRUE but hypothesis `hsurvives` becomes unnecessary. Add `poly_reversion_preserves_base_hp`. Effort S (proofs simplify).
 (d) PT `prop_poly_damage_preserves_base_max_hp` (:344), `prop_poly_fatal_damage_reverts` (:371), `prop_poly_damage_absorption_and_reversion` (:1330 — asserts base_hp - excess and Dead; must change).
-(e) sim/combat.rs:158-184 (match on Reverted/Dead); netrust-agent/src/bin/demo.rs:478,486. No roll needed.
+(e) sim/combat.rs:158-184 (match on Reverted/Dead); nethacked-agent/src/bin/demo.rs:478,486. No roll needed.
 
 ---------------------------------------------------------------------
 ## 12. Bones cursing
@@ -326,7 +326,7 @@ C (role.c line of PM_<ROLE>; leader +2, nemesis +4, artifact +9; home/goal strin
 Rust quest.rs:149 `get_role_quest_config`: WRONG — Rogue leader/nemesis swapped (Rust leader "Master Assassin", nemesis "Master of Thieves"), Tourist nemesis "Master Kaen" (C: Master of Thieves). Others match (modulo "The Norn"/"The Dark One" article). home_desc/goal_desc strings are invented (none match C). Unknown role defaults to Archaeologist silently.
 (c) Lean Quest.lean has no per-role names (only eligibility/progress theorems) -> no impact. Effort S (data fix).
 (d) PT `prop_leader_qualification_theorems` (:1262), `prop_nemesis_combat_and_artifact_theorems` (:1288) don't check names.
-(e) Callers using names: sim/combat.rs:223, actions/stairs.rs:458, 518, 703, 923, actions/inventory.rs:47; netrust-data monsters.rs:587/743 define both monsters (check nemesis spawn uses cfg.nemesis_name).
+(e) Callers using names: sim/combat.rs:223, actions/stairs.rs:458, 518, 703, 923, actions/inventory.rs:47; nethacked-data monsters.rs:587/743 define both monsters (check nemesis spawn uses cfg.nemesis_name).
 
 ---------------------------------------------------------------------
 ## 16. Lean vacuity / weak theorems

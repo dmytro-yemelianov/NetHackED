@@ -1,0 +1,28 @@
+[package]
+name = "nethacked-wasm"
+license = "NGPL"
+version = "0.3.0"
+authors = ["Dmytro Yemelianov (Emelyanov)"]
+edition = "2021"
+description = "WebAssembly (WASM) browser bindings and runner for NetHackED"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+nethacked-types = { path = "../nethacked-types" }
+nethacked-arena = { path = "../nethacked-arena" }
+nethacked-data = { path = "../nethacked-data" }
+nethacked-core = { path = "../nethacked-core" }
+nethacked-dungeon = { path = "../nethacked-dungeon" }
+nethacked-sim = { path = "../nethacked-sim" }
+nethacked-agent = { path = "../nethacked-agent" }
+nethacked-i18n = { path = "../nethacked-i18n" }
+nethacked-pack = { path = "../nethacked-pack", default-features = false }
+wasm-bindgen = "0.2.129"
+console_error_panic_hook = "0.1"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+getrandom = { version = "0.2", features = ["js"] }
+getrandom_03 = { package = "getrandom", version = "0.3", features = ["wasm_js"] }
+

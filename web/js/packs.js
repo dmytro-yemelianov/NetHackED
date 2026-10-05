@@ -76,11 +76,11 @@ export function render() {
     </dl>
     <div class="actions">
       ${state.key === 'new' ? '<em>Unsaved: use Edit → Save to store it, then play.</em>' : '<button id="act-play">Play with this pack</button>'}
-      <button id="act-download">Download .nrpack</button>
+      <button id="act-download">Download .nhpack</button>
       ${entry?.origin === 'stored' ? '<button id="act-delete" class="danger">Delete</button>' : ''}
     </div>`;
   if ($('act-play')) $('act-play').onclick = () => { localStorage.setItem(ACTIVE_KEY, state.key); location.href = 'index.html'; };
-  $('act-download').onclick = () => downloadBytes(`${m.id}-${m.version}.nrpack`, p.nrpackBytes());
+  $('act-download').onclick = () => downloadBytes(`${m.id}-${m.version}.nhpack`, p.nhpackBytes());
   const del = $('act-delete');
   if (del) del.onclick = async () => { await deletePack(state.key); await refreshList('vanilla'); };
 
@@ -128,14 +128,14 @@ async function importFiles(files) {
   if (!Object.keys(files).length) return showError('No .toml files found.');
   try {
     const pack = state.wasm.WasmPack.fromFiles(JSON.stringify(files));
-    const entry = await savePack(state.wasm, { bytes: pack.nrpackBytes(), sources: files });
+    const entry = await savePack(state.wasm, { bytes: pack.nhpackBytes(), sources: files });
     await refreshList(entry.key);
   } catch (e) {
     showError(String(e.message || e));
   }
 }
 
-async function importNrpack(file) {
+async function importNhpack(file) {
   showError('');
   try {
     const entry = await savePack(state.wasm, { bytes: new Uint8Array(await file.arrayBuffer()) });
@@ -156,7 +156,7 @@ async function main() {
     };
   }
   $('pack-list').onclick = (e) => { const b = e.target.closest('button[data-key]'); if (b) select(b.dataset.key); };
-  $('upload-nrpack').onchange = (e) => e.target.files[0] && importNrpack(e.target.files[0]);
+  $('upload-nhpack').onchange = (e) => e.target.files[0] && importNhpack(e.target.files[0]);
   $('upload-files').onchange = async (e) => importFiles(await filesFromInput(e.target.files));
   $('upload-folder').onchange = async (e) => importFiles(await filesFromInput(e.target.files));
   const dz = $('drop-zone');
@@ -166,15 +166,15 @@ async function main() {
     e.preventDefault();
     dz.classList.remove('over');
     const list = [...e.dataTransfer.files];
-    const nr = list.find((f) => f.name.endsWith('.nrpack'));
-    if (nr) return importNrpack(nr);
+    const nr = list.find((f) => f.name.endsWith('.nhpack') || f.name.endsWith('.nrpack')); // .nrpack: pre-rename name
+    if (nr) return importNhpack(nr);
     importFiles(await filesFromInput(list));
   };
 
   $('new-from-vanilla').onclick = async () => {
     const files = JSON.parse(state.wasm.vanillaPackFilesJson());
     // Start from an empty patch set on top of vanilla, not a full dump.
-    files['pack.toml'] = 'id = "my-pack"\nname = "My Pack"\nversion = "0.1.0"\nbase = "vanilla"\ndescription = "Created in the NetRust web pack editor"\n';
+    files['pack.toml'] = 'id = "my-pack"\nname = "My Pack"\nversion = "0.1.0"\nbase = "vanilla"\ndescription = "Created in the NetHackED web pack editor"\n';
     files['monsters.toml'] = '# [[monster]]\n# name = "jackal"\n# level = 3\n';
     files['items.toml'] = '# [[item]]\n# name = "leather armor"\n# cost = 10\n';
     files['roles.toml'] = '# [[role]]\n# name = "Valkyrie"\n# base_hp = 20\n';

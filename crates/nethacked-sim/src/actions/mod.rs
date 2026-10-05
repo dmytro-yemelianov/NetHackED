@@ -1,0 +1,160 @@
+//! Action execution and dispatch across modular domain handlers.
+
+pub mod doors;
+pub mod economy;
+pub mod engrave;
+pub mod inventory;
+pub mod items;
+pub mod movement;
+pub mod ranged;
+pub mod religion;
+pub mod stairs;
+
+use nethacked_core::{energy::NORMAL_SPEED, ActionAst};
+
+use crate::events::GameEvent;
+use crate::world::SimulationWorld;
+
+impl SimulationWorld {
+    /// Step the simulation with a player action, processing subsequent monster turns.
+    pub fn step_player_action(&mut self, action: ActionAst) -> Vec<GameEvent> {
+        let mut events = Vec::new();
+
+        let Some(player) = self.arena.actors.get(self.player_id).cloned() else {
+            return events;
+        };
+
+        if player.is_dead {
+            return events;
+        }
+
+        let energy_before = self.scheduler.hero_energy;
+        let turn_before = self.scheduler.turn;
+
+        match action {
+            ActionAst::Move(dir) => events.extend(self.handle_move(dir)),
+            ActionAst::OpenDoor(coord) => events.extend(self.handle_open_door(coord)),
+            ActionAst::CloseDoor(coord) => events.extend(self.handle_close_door(coord)),
+            ActionAst::Kick(coord) => events.extend(self.handle_kick(coord)),
+            ActionAst::MeleeAttack(coord) => events.extend(self.handle_melee_attack(coord)),
+            ActionAst::Descend => events.extend(self.handle_descend()),
+            ActionAst::Ascend => events.extend(self.handle_ascend()),
+            ActionAst::PickUp => events.extend(self.handle_pickup()),
+            ActionAst::Drop(idx) => events.extend(self.handle_drop(idx)),
+            ActionAst::Wield(idx) => events.extend(self.handle_wield(idx)),
+            ActionAst::PutInContainer {
+                item_index,
+                container_index,
+            } => events.extend(self.handle_put_in_container(item_index, container_index)),
+            ActionAst::TakeFromContainer {
+                container_index,
+                item_index,
+            } => events.extend(self.handle_take_from_container(container_index, item_index)),
+            ActionAst::Dip {
+                item_index,
+                into_water,
+            } => events.extend(self.handle_dip(item_index, into_water)),
+            ActionAst::Quaff(idx) => events.extend(self.handle_quaff(idx)),
+            ActionAst::Read(idx) => events.extend(self.handle_read(idx)),
+            ActionAst::Eat(idx) => events.extend(self.handle_eat(idx)),
+            ActionAst::Cast { spell_index, dir } => {
+                events.extend(self.handle_cast(spell_index, dir))
+            }
+            ActionAst::ZapWand { dir, energy } => events.extend(self.handle_zap_wand(dir, energy)),
+            ActionAst::Wish(wish_str) => events.extend(self.handle_wish(wish_str)),
+            ActionAst::Pray => events.extend(self.handle_pray()),
+            ActionAst::Sacrifice(idx) => events.extend(self.handle_sacrifice(idx)),
+            ActionAst::Pay => events.extend(self.handle_pay()),
+            ActionAst::Engrave { text, medium } => events.extend(self.handle_engrave(text, medium)),
+            ActionAst::Rub(idx) => events.extend(self.handle_rub(idx)),
+            ActionAst::PriceCheck(idx) => events.extend(self.handle_price_check(idx)),
+            ActionAst::Donate(amt) => events.extend(self.handle_donate(amt)),
+            ActionAst::Apply(idx) => events.extend(self.handle_apply(idx)),
+            ActionAst::Quiver(idx) => events.extend(self.handle_quiver(idx)),
+            ActionAst::Fire(dir) => events.extend(self.handle_fire(dir)),
+            ActionAst::Mount(actor_id) => events.extend(self.handle_mount(actor_id)),
+            ActionAst::Dismount => events.extend(self.handle_dismount()),
+            ActionAst::Search => {
+                let mut found = false;
+                for neighbor in self
+                    .arena
+                    .actors
+                    .get(self.player_id)
+                    .unwrap()
+                    .coord
+                    .neighbors()
+                {
+                    if let Some(trap) = self.level.traps.get_mut(&neighbor) {
+                        if trap.state == nethacked_types::TrapState::Hidden {
+                            trap.state = nethacked_types::TrapState::Revealed;
+                            events.push(GameEvent::LogMessage {
+                                text: format!("You find a {:?} trap!", trap.trap_type),
+                            });
+                            found = true;
+                        }
+                    }
+                }
+                if !found {
+                    events.push(GameEvent::LogMessage {
+                        text: nethacked_i18n::Messages::search_nothing(self.locale).into(),
+                    });
+                }
+                self.scheduler.hero_act(NORMAL_SPEED);
+            }
+            ActionAst::Untrap(coord) => {
+                if let Some(trap) = self.level.traps.get_mut(&coord) {
+                    if nethacked_core::traps::disarm_trap(trap) {
+                        events.push(GameEvent::LogMessage {
+                            text: nethacked_i18n::Messages::trap_disarmed(self.locale).into(),
+                        });
+                    } else {
+                        let text = if self.locale == nethacked_i18n::Locale::Uk {
+                            "Пастку вже знешкоджено."
+                        } else {
+                            "The trap is already disarmed."
+                        };
+                        events.push(GameEvent::LogMessage { text: text.into() });
+                    }
+                } else {
+                    events.push(GameEvent::LogMessage {
+                        text: nethacked_i18n::Messages::no_trap(self.locale).into(),
+                    });
+                }
+                self.scheduler.hero_act(NORMAL_SPEED);
+            }
+            ActionAst::Wait => {
+                self.scheduler.hero_act(NORMAL_SPEED);
+            }
+        }
+
+        let spent_time = self.scheduler.hero_energy != energy_before;
+
+        // Hero AC is derived state (C `find_ac`, `do_wear.c:2473-2507`): refresh it
+        // once after any action so monster attacks this turn see the current worn
+        // armor, enchantment and divine protection.
+        self.recompute_hero_ac();
+
+        // Process monster actions and turn scheduler ticks
+        let sim_events = self.process_turn_ticks();
+        events.extend(sim_events);
+
+        if spent_time {
+            self.divine_state.prayer_timeout =
+                nethacked_core::religion::tick_prayer_timeout(self.divine_state.prayer_timeout);
+        }
+
+        if self.scheduler.turn != turn_before
+            && self.scheduler.turn > 0
+            && self.scheduler.turn % self.luck_timeout_period() == 0
+        {
+            self.tick_luck_decay();
+        }
+
+        // Monster turns can also change worn armor (theft, erosion); refresh again
+        // so `ActorRecord::ac` is never stale between steps.
+        self.recompute_hero_ac();
+
+        self.record_events(&events);
+        events
+    }
+}

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# NeMo Agent Toolkit (NAT) Configuration for NetRust Architectural & Review Workflows
+# NeMo Agent Toolkit (NAT) Configuration for NetHackED Architectural & Review Workflows
 
 general:
   telemetry:
@@ -7,7 +7,7 @@ general:
       file_trace:
         _type: file
         output_path: .nat/traces/
-        project: netrust-rule-packs-review
+        project: nethacked-rule-packs-review
 
 llms:
   nim_llm:
@@ -19,34 +19,34 @@ llms:
     max_tokens: 2048
 
 functions:
-  netrust_workspace_reader:
-    _type: netrust_workspace_reader
+  nethacked_workspace_reader:
+    _type: nethacked_workspace_reader
     max_read_lines: 100
 
-  netrust_cargo_runner:
-    _type: netrust_cargo_runner
+  nethacked_cargo_runner:
+    _type: nethacked_cargo_runner
     timeout_seconds: 300
 
-  netrust_golden_verifier:
-    _type: netrust_golden_verifier
+  nethacked_golden_verifier:
+    _type: nethacked_golden_verifier
     timeout_seconds: 180
 
-  netrust_rulepacks_auditor:
-    _type: netrust_rulepacks_auditor
+  nethacked_rulepacks_auditor:
+    _type: nethacked_rulepacks_auditor
 
 workflow:
   _type: react_agent
   llm_name: nim_llm
   tool_names:
-    - netrust_workspace_reader
-    - netrust_cargo_runner
-    - netrust_golden_verifier
-    - netrust_rulepacks_auditor
+    - nethacked_workspace_reader
+    - nethacked_cargo_runner
+    - nethacked_golden_verifier
+    - nethacked_rulepacks_auditor
   max_tool_calls: 10
   retry_agent_response_parsing_errors: true
   use_native_tool_calling: true
   additional_instructions: |
-    You are a meticulous NetRust Code Reviewer and Architectural Auditor.
+    You are a meticulous NetHackED Code Reviewer and Architectural Auditor.
     Focus on:
     - Invariant preservation: Golden determinism must stay bit-for-bit identical to vanilla.
     - WASM boundary cleanliness: no toml, clap, schemars in the wasm dependency graph.

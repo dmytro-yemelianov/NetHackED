@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# NeMo Agent Toolkit (NAT) Configuration for NetRust using OpenAI backend
+# NeMo Agent Toolkit (NAT) Configuration for NetHackED using OpenAI backend
 
 general:
   telemetry:
@@ -7,7 +7,7 @@ general:
       file_trace:
         _type: file
         output_path: .nat/traces/
-        project: netrust-rule-packs-openai
+        project: nethacked-rule-packs-openai
 
 llms:
   openai_llm:
@@ -18,29 +18,29 @@ llms:
     max_tokens: 4096
 
 functions:
-  netrust_workspace_reader:
-    _type: netrust_workspace_reader
+  nethacked_workspace_reader:
+    _type: nethacked_workspace_reader
     max_read_lines: 500
 
-  netrust_cargo_runner:
-    _type: netrust_cargo_runner
+  nethacked_cargo_runner:
+    _type: nethacked_cargo_runner
     timeout_seconds: 300
 
-  netrust_golden_verifier:
-    _type: netrust_golden_verifier
+  nethacked_golden_verifier:
+    _type: nethacked_golden_verifier
     timeout_seconds: 180
 
-  netrust_rulepacks_auditor:
-    _type: netrust_rulepacks_auditor
+  nethacked_rulepacks_auditor:
+    _type: nethacked_rulepacks_auditor
 
 workflow:
   _type: react_agent
   llm_name: openai_llm
   tool_names:
-    - netrust_workspace_reader
-    - netrust_cargo_runner
-    - netrust_golden_verifier
-    - netrust_rulepacks_auditor
+    - nethacked_workspace_reader
+    - nethacked_cargo_runner
+    - nethacked_golden_verifier
+    - nethacked_rulepacks_auditor
   max_tool_calls: 10
   retry_agent_response_parsing_errors: true
   use_native_tool_calling: true

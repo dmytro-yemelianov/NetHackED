@@ -3,7 +3,7 @@
   Model of `do.c:1541-1573` (`goto_level`): the force that pushes a hero who
   ascends Gehennom with the Amulet of Yendor back down.
   Rolls are raw draws reduced modulo the C range, mirroring the Rust
-  `mysterious_force` in `crates/netrust-core/src/gehennom.rs`.
+  `mysterious_force` in `crates/nethacked-core/src/gehennom.rs`.
 -/
 
 import NetMechanics.Grid

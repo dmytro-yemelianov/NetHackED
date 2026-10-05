@@ -936,8 +936,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "743fb55ba31b18fb1ecef6bdc9aa2743314978ac084044301a7eee33fb99a20d"
 
 [[package]]
-name = "netrust-agent"
-version = "0.2.0"
+name = "nethacked-agent"
+version = "0.3.0"
 dependencies = [
  "async-graphql",
  "async-graphql-axum",
@@ -945,12 +945,12 @@ dependencies = [
  "async-graphql-parser",
  "async-graphql-value",
  "axum",
- "netrust-arena",
- "netrust-core",
- "netrust-data",
- "netrust-dungeon",
- "netrust-sim",
- "netrust-types",
+ "nethacked-arena",
+ "nethacked-core",
+ "nethacked-data",
+ "nethacked-dungeon",
+ "nethacked-sim",
+ "nethacked-types",
  "rand 0.8.8",
  "rand_chacha 0.3.1",
  "serde",
@@ -959,10 +959,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "netrust-arena"
-version = "0.2.0"
+name = "nethacked-arena"
+version = "0.3.0"
 dependencies = [
- "netrust-types",
+ "nethacked-types",
  "proptest",
  "serde",
  "serde_json",
@@ -970,10 +970,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "netrust-core"
-version = "0.2.0"
+name = "nethacked-core"
+version = "0.3.0"
 dependencies = [
- "netrust-types",
+ "nethacked-types",
  "proptest",
  "schemars",
  "serde",
@@ -981,23 +981,23 @@ dependencies = [
 ]
 
 [[package]]
-name = "netrust-data"
-version = "0.2.0"
+name = "nethacked-data"
+version = "0.3.0"
 dependencies = [
- "netrust-arena",
- "netrust-core",
- "netrust-types",
+ "nethacked-arena",
+ "nethacked-core",
+ "nethacked-types",
  "schemars",
  "serde",
  "serde_json",
 ]
 
 [[package]]
-name = "netrust-dungeon"
-version = "0.2.0"
+name = "nethacked-dungeon"
+version = "0.3.0"
 dependencies = [
- "netrust-core",
- "netrust-types",
+ "nethacked-core",
+ "nethacked-types",
  "proptest",
  "rand 0.9.5",
  "rand_chacha 0.9.0",
@@ -1005,24 +1005,24 @@ dependencies = [
 ]
 
 [[package]]
-name = "netrust-i18n"
-version = "0.2.0"
+name = "nethacked-i18n"
+version = "0.3.0"
 dependencies = [
- "netrust-data",
- "netrust-types",
+ "nethacked-data",
+ "nethacked-types",
  "serde",
 ]
 
 [[package]]
-name = "netrust-pack"
-version = "0.2.0"
+name = "nethacked-pack"
+version = "0.3.0"
 dependencies = [
  "clap",
- "netrust-agent",
- "netrust-core",
- "netrust-data",
- "netrust-sim",
- "netrust-types",
+ "nethacked-agent",
+ "nethacked-core",
+ "nethacked-data",
+ "nethacked-sim",
+ "nethacked-types",
  "proptest",
  "schemars",
  "serde",
@@ -1032,29 +1032,29 @@ dependencies = [
 ]
 
 [[package]]
-name = "netrust-py"
-version = "0.2.0"
+name = "nethacked-py"
+version = "0.3.0"
 dependencies = [
- "netrust-agent",
- "netrust-arena",
- "netrust-core",
- "netrust-sim",
- "netrust-types",
+ "nethacked-agent",
+ "nethacked-arena",
+ "nethacked-core",
+ "nethacked-sim",
+ "nethacked-types",
  "pyo3",
  "serde",
  "serde_json",
 ]
 
 [[package]]
-name = "netrust-sim"
-version = "0.2.0"
+name = "nethacked-sim"
+version = "0.3.0"
 dependencies = [
- "netrust-arena",
- "netrust-core",
- "netrust-data",
- "netrust-dungeon",
- "netrust-i18n",
- "netrust-types",
+ "nethacked-arena",
+ "nethacked-core",
+ "nethacked-data",
+ "nethacked-dungeon",
+ "nethacked-i18n",
+ "nethacked-types",
  "proptest",
  "rand 0.9.5",
  "rand_chacha 0.9.0",
@@ -1063,24 +1063,24 @@ dependencies = [
 ]
 
 [[package]]
-name = "netrust-tui"
-version = "0.2.0"
+name = "nethacked-tui"
+version = "0.3.0"
 dependencies = [
  "crossterm",
- "netrust-agent",
- "netrust-arena",
- "netrust-core",
- "netrust-data",
- "netrust-dungeon",
- "netrust-i18n",
- "netrust-pack",
- "netrust-sim",
- "netrust-types",
+ "nethacked-agent",
+ "nethacked-arena",
+ "nethacked-core",
+ "nethacked-data",
+ "nethacked-dungeon",
+ "nethacked-i18n",
+ "nethacked-pack",
+ "nethacked-sim",
+ "nethacked-types",
 ]
 
 [[package]]
-name = "netrust-types"
-version = "0.2.0"
+name = "nethacked-types"
+version = "0.3.0"
 dependencies = [
  "proptest",
  "schemars",
@@ -1090,21 +1090,21 @@ dependencies = [
 ]
 
 [[package]]
-name = "netrust-wasm"
-version = "0.2.0"
+name = "nethacked-wasm"
+version = "0.3.0"
 dependencies = [
  "console_error_panic_hook",
  "getrandom 0.2.17",
  "getrandom 0.3.4",
- "netrust-agent",
- "netrust-arena",
- "netrust-core",
- "netrust-data",
- "netrust-dungeon",
- "netrust-i18n",
- "netrust-pack",
- "netrust-sim",
- "netrust-types",
+ "nethacked-agent",
+ "nethacked-arena",
+ "nethacked-core",
+ "nethacked-data",
+ "nethacked-dungeon",
+ "nethacked-i18n",
+ "nethacked-pack",
+ "nethacked-sim",
+ "nethacked-types",
  "serde",
  "serde_json",
  "wasm-bindgen",

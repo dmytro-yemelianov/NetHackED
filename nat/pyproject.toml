@@ -3,9 +3,10 @@ requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "netrust-nat"
-version = "0.2.0"
-description = "NVIDIA NeMo Agent Toolkit (NAT) configuration and tools for NetRust review and development"
+name = "nethacked-nat"
+version = "0.3.0"
+authors = [{ name = "Dmytro Yemelianov (Emelyanov)" }]
+description = "NVIDIA NeMo Agent Toolkit (NAT) configuration and tools for NetHackED review and development"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -13,4 +14,4 @@ dependencies = [
 ]
 
 [project.entry-points.'nat.components']
-netrust_nat = "netrust_nat.register"
+nethacked_nat = "nethacked_nat.register"

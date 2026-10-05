@@ -1,0 +1,16 @@
+[package]
+name = "nethacked-arena"
+license = "NGPL"
+version = "0.3.0"
+authors = ["Dmytro Yemelianov (Emelyanov)"]
+edition = "2021"
+description = "Generational arena entity storage replacing intrusive pointers for NetHackED"
+
+[dependencies]
+nethacked-types = { path = "../nethacked-types" }
+slotmap = { version = "1.0", features = ["serde"] }
+serde = { version = "1.0", features = ["derive"] }
+
+[dev-dependencies]
+proptest = "1.5"
+serde_json = "1"

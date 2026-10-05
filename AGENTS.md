@@ -1,4 +1,4 @@
-# AGENTS.md - NetRust Workspace Conventions
+# AGENTS.md - NetHackED Workspace Conventions
 
 Keep workspace conventions here.
 
