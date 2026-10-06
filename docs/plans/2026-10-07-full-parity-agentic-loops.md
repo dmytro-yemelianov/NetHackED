@@ -106,3 +106,7 @@ One independent Luna/high read-only check passed without findings. Documentation
 ## P01a execution record
 
 On 2026-10-07, Luna/high reconciled 15 rows at `792e2e5`; fresh Sol/medium review passed after factual corrections. The coordinator applied the reviewed evidence and [obligation register](../parity/obligations/2026-10-07-p01a.json). Four missing rows became partial; no row became present. Public corpse-payload and poison stat-value assertions remain explicit test gaps. No production, dependency or golden changes occurred. Same-source full acceptance (770 tests, three goldens, 12 gates) is reused after input-digest verification; changed documentation checks are rerun. No escalation; actual token usage unavailable.
+
+## P02 execution record
+
+The [ordinary HP fixture unit](2026-10-07-source-derived-hp-fixtures.md) passed fresh Sol/high review after Sol/medium implementation. Six independent prescribed-draw cases establish the fixture convention; 773 workspace tests, all three unchanged goldens and 12 gates passed. No production changes, findings, repairs or escalation. Broader HP parity remains partial.
