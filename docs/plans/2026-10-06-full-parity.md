@@ -69,7 +69,7 @@ These are proposed contracts, not findings that each subsystem is entirely missi
 
 Then expand combat/effect families, inventories/AI/pets, full class effects, role/quest/level variants and command/text coverage. Each unit gets a small source-evidenced contract; avoid broad “port all combat” assignments.
 
-Use the [existing agentic loop](2026-10-06-agentic-loops.md): one Sol/medium implementer, fresh Sol/high semantic reviewer, deterministic local verification, bounded repair limits and coordinator acceptance. No fleet or duplicate discovery. Count remaining acceptance units only after their obligations/dependencies are scoped; no reliable total time or token estimate is available yet.
+Use the [full-parity execution loops](2026-10-07-full-parity-agentic-loops.md), which refine the [existing agentic loop](2026-10-06-agentic-loops.md): one Sol/medium implementer, fresh Sol/high semantic reviewer, deterministic local verification, bounded repair limits and coordinator acceptance. No fleet or duplicate discovery. Count remaining acceptance units only after their obligations/dependencies are scoped; no reliable total time or token estimate is available yet.
 
 ## Planning acceptance
 
