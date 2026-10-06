@@ -359,6 +359,7 @@ pub fn spawn_player_character(
     let race = get_race(config.race);
 
     let actor = ActorRecord {
+        species: None,
         name: config.name.clone(),
         is_unique: true,
         coord,

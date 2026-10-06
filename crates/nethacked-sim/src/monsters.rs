@@ -215,7 +215,7 @@ impl SimulationWorld {
                 }
 
                 let rs = std::sync::Arc::clone(&self.ruleset);
-                let archetype = rs.monster(&mon.name);
+                let archetype = rs.monster_for_actor(&mon);
 
                 if mon.is_peaceful {
                     // Peaceful monsters do not attack or approach the hero.
@@ -673,7 +673,7 @@ impl SimulationWorld {
         let new_level = pet.level + exp_gain;
         pet.level = new_level;
 
-        let cur_tier = match pet.name.to_lowercase().as_str() {
+        let tier_by_name = |name: &str| match name.to_lowercase().as_str() {
             "little dog" => Some(nethacked_core::PetSpeciesTier::LittleDog),
             "dog" => Some(nethacked_core::PetSpeciesTier::Dog),
             "large dog" => Some(nethacked_core::PetSpeciesTier::LargeDog),
@@ -682,18 +682,60 @@ impl SimulationWorld {
             "large cat" => Some(nethacked_core::PetSpeciesTier::LargeCat),
             _ => None,
         };
+        let cur_tier = self
+            .ruleset
+            .monster_for_actor(pet)
+            .and_then(|def| match def.id {
+                Some(nethacked_data::MonsterSpeciesId::LITTLE_DOG) => {
+                    Some(nethacked_core::PetSpeciesTier::LittleDog)
+                }
+                Some(nethacked_data::MonsterSpeciesId::DOG) => {
+                    Some(nethacked_core::PetSpeciesTier::Dog)
+                }
+                Some(nethacked_data::MonsterSpeciesId::LARGE_DOG) => {
+                    Some(nethacked_core::PetSpeciesTier::LargeDog)
+                }
+                Some(nethacked_data::MonsterSpeciesId::KITTEN) => {
+                    Some(nethacked_core::PetSpeciesTier::Kitten)
+                }
+                Some(nethacked_data::MonsterSpeciesId::HOUSECAT) => {
+                    Some(nethacked_core::PetSpeciesTier::Housecat)
+                }
+                Some(nethacked_data::MonsterSpeciesId::LARGE_CAT) => {
+                    Some(nethacked_core::PetSpeciesTier::LargeCat)
+                }
+                None => tier_by_name(&def.name),
+                _ => None,
+            })
+            .or_else(|| {
+                pet.species
+                    .is_none()
+                    .then(|| tier_by_name(&pet.name))
+                    .flatten()
+            });
 
         if let Some(tier) = cur_tier {
             let promoted = nethacked_core::promote_pet(tier, pet.level);
             if promoted != tier {
                 let old_name = pet.name.clone();
-                let (new_name, new_max_hp) = match promoted {
-                    nethacked_core::PetSpeciesTier::Dog => ("dog", 24),
-                    nethacked_core::PetSpeciesTier::LargeDog => ("large dog", 45),
-                    nethacked_core::PetSpeciesTier::Housecat => ("housecat", 20),
-                    nethacked_core::PetSpeciesTier::LargeCat => ("large cat", 40),
-                    _ => (old_name.as_str(), pet.max_hp),
+                let (new_name, new_max_hp, new_id) = match promoted {
+                    nethacked_core::PetSpeciesTier::Dog => {
+                        ("dog", 24, nethacked_data::MonsterSpeciesId::DOG)
+                    }
+                    nethacked_core::PetSpeciesTier::LargeDog => {
+                        ("large dog", 45, nethacked_data::MonsterSpeciesId::LARGE_DOG)
+                    }
+                    nethacked_core::PetSpeciesTier::Housecat => {
+                        ("housecat", 20, nethacked_data::MonsterSpeciesId::HOUSECAT)
+                    }
+                    nethacked_core::PetSpeciesTier::LargeCat => {
+                        ("large cat", 40, nethacked_data::MonsterSpeciesId::LARGE_CAT)
+                    }
+                    _ => unreachable!("promotion only advances to an adult tier"),
                 };
+                pet.species = Some(nethacked_arena::ActorSpecies::Vanilla(
+                    new_id.c_name().into(),
+                ));
                 pet.name = new_name.into();
                 pet.max_hp = new_max_hp;
                 pet.hp = new_max_hp;

@@ -104,8 +104,19 @@ fn is_one(value: &u32) -> bool {
     *value == 1
 }
 
+/// Persisted species key; display names may change independently.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ActorSpecies {
+    /// Canonical C PM_* symbol, without its prefix.
+    Vanilla(String),
+    /// Case-normalized exact owned definition name, without runtime decorations.
+    Custom(String),
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ActorRecord {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub species: Option<ActorSpecies>,
     pub name: String,
     pub coord: Coord,
     pub hp: u32,
@@ -352,6 +363,7 @@ mod tests {
     fn test_spawn_and_retrieve_actor() {
         let mut arena = EntityArena::new();
         let actor = ActorRecord {
+            species: None,
             name: "Agent".into(),
             coord: Coord::new(5, 5).unwrap(),
             hp: 20,
@@ -382,6 +394,7 @@ mod tests {
     fn test_actor_record_serde_default_is_peaceful() {
         let mut arena = EntityArena::new();
         let actor = ActorRecord {
+            species: None,
             name: "priest".into(),
             coord: Coord::new(5, 5).unwrap(),
             hp: 60,
@@ -414,6 +427,7 @@ mod tests {
     fn test_actor_record_serde_default_mspec_used() {
         let mut arena = EntityArena::new();
         let id = arena.spawn_actor(ActorRecord {
+            species: None,
             name: "red dragon".into(),
             coord: Coord::new(5, 5).unwrap(),
             hp: 80,
@@ -446,6 +460,7 @@ mod tests {
     fn test_actor_record_serde_default_malign() {
         let mut arena = EntityArena::new();
         let id = arena.spawn_actor(ActorRecord {
+            species: None,
             name: "goblin".into(),
             coord: Coord::new(5, 5).unwrap(),
             hp: 8,

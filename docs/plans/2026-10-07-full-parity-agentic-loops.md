@@ -110,3 +110,7 @@ On 2026-10-07, Luna/high reconciled 15 rows at `792e2e5`; fresh Sol/medium revie
 ## P02 execution record
 
 The [ordinary HP fixture unit](2026-10-07-source-derived-hp-fixtures.md) passed fresh Sol/high review after Sol/medium implementation. Six independent prescribed-draw cases establish the fixture convention; 773 workspace tests, all three unchanged goldens and 12 gates passed. No production changes, findings, repairs or escalation. Broader HP parity remains partial.
+
+## P03 execution record
+
+The [actor identity foundation](2026-10-07-actor-identity.md) passed fresh Sol/high review after Sol/medium implementation. One static ownership gate failure was repaired on the first attempt and narrowly re-reviewed. The final full run passed 780 workspace tests, all three unchanged goldens and all 12 gates. Direct name-based behaviors remain explicit follow-ups; no escalation or golden rebaseline. P04 attribute formula integration is the next dependency-ready workstream, split into bounded formulas.

@@ -4,7 +4,9 @@ use std::collections::HashMap;
 use std::sync::{Arc, OnceLock};
 
 use crate::monsters::{compute_monster_hp, monster_spawn_level, MonsterSpawnContext};
-use nethacked_arena::{ActorId, ActorRecord, EntityArena, ItemId, ItemLocation, ItemRecord};
+use nethacked_arena::{
+    ActorId, ActorRecord, ActorSpecies, EntityArena, ItemId, ItemLocation, ItemRecord,
+};
 use nethacked_core::ac::ArmorSlot;
 use nethacked_core::quest::get_role_quest_config;
 use nethacked_types::{
@@ -70,6 +72,13 @@ pub struct MonsterDef {
 }
 
 impl MonsterDef {
+    pub fn actor_species(&self) -> ActorSpecies {
+        match self.id {
+            Some(id) => ActorSpecies::Vanilla(id.c_name().to_owned()),
+            None => ActorSpecies::Custom(self.name.to_ascii_lowercase()),
+        }
+    }
+
     /// Construct a record with HP already determined (including bones).
     pub fn create_record_with_hp(
         &self,
@@ -79,6 +88,7 @@ impl MonsterDef {
         level: u32,
     ) -> ActorRecord {
         ActorRecord {
+            species: Some(self.actor_species()),
             name: self.name.clone(),
             coord,
             hp,
@@ -563,6 +573,23 @@ impl Ruleset {
             .and_then(|&i| self.monsters.get(i))
     }
 
+    /// Resolve persisted identity first. An explicit missing identity never
+    /// falls back to a mutable display name. Old saves retain decorated lookup.
+    pub fn monster_for_actor(&self, actor: &ActorRecord) -> Option<&MonsterDef> {
+        match &actor.species {
+            Some(ActorSpecies::Vanilla(key)) => {
+                self.monster_by_id(MonsterSpeciesId::from_c_name(key)?)
+            }
+            Some(ActorSpecies::Custom(key)) => self
+                .index
+                .monsters_by_name
+                .get(key)
+                .and_then(|&i| self.monsters.get(i))
+                .filter(|def| def.id.is_none()),
+            None => self.monster(&actor.name),
+        }
+    }
+
     /// Look up a monster by its canonical species ID.
     pub fn monster_by_id(&self, id: MonsterSpeciesId) -> Option<&MonsterDef> {
         self.index
@@ -740,6 +767,7 @@ impl Ruleset {
         let race = self.race(cfg.race).expect("Race must exist in ruleset");
 
         let actor = ActorRecord {
+            species: None,
             name: cfg.name.clone(),
             coord,
             hp: role.base_hp,

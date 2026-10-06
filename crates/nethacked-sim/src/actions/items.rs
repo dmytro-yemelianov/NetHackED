@@ -1108,6 +1108,7 @@ impl SimulationWorld {
                                 // transform monster
                                 let new_species = nethacked_data::MonsterSpeciesId::GOBLIN; // simplified
                                 if let Some(new_arch) = self.ruleset.monster_by_id(new_species) {
+                                    target.species = Some(new_arch.actor_species());
                                     target.name = new_arch.name.to_string();
                                     target.hp = new_arch.base_hp;
                                     target.max_hp = new_arch.max_hp;

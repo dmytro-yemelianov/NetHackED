@@ -252,6 +252,7 @@ fn pet_uses_mhitm_to_hit_without_plus_ten() {
 
 fn named_monster(name: &str, at: Coord) -> ActorRecord {
     ActorRecord {
+        species: None,
         name: name.into(),
         coord: at,
         hp: 50,

@@ -61,14 +61,14 @@ pub(crate) fn roll_peace_minded(input: &PeaceMindedInput, rng: &mut impl Rng) ->
 /// aligned cleric only as a temple priest (Minetown, Moloch's Sanctum).
 fn is_temple_priest(ruleset: &Ruleset, mon: &ActorRecord) -> bool {
     ruleset
-        .monster(&mon.name)
+        .monster_for_actor(mon)
         .is_some_and(|a| a.id == Some(MonsterSpeciesId::ALIGNED_CLERIC))
 }
 
 /// C `isshk`: the sim's shopkeepers are the `shopkeeper` species.
 fn is_shopkeeper(ruleset: &Ruleset, mon: &ActorRecord) -> bool {
     ruleset
-        .monster(&mon.name)
+        .monster_for_actor(mon)
         .is_some_and(|a| a.id == Some(MonsterSpeciesId::SHOPKEEPER))
 }
 
@@ -133,7 +133,7 @@ impl SimulationWorld {
     /// archetype glyph. No BESTIARY entry is a minotaur, a Rider or a vault guard,
     /// so those exemptions are always false here (the core predicate keeps them).
     pub(crate) fn elbereth_scares(&self, mon: &ActorRecord, engraving: Option<&Engraving>) -> bool {
-        let arch = self.ruleset.monster(&mon.name);
+        let arch = self.ruleset.monster_for_actor(mon);
         let is_s_human = arch.is_some_and(|a| a.is_human);
         let exempt = nethacked_core::engraving::onscary_exempt(
             is_s_human,

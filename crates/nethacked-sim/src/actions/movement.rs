@@ -75,7 +75,7 @@ impl SimulationWorld {
             return events;
         }
         let quest_cfg = nethacked_core::get_role_quest_config_or_default(&self.role_name);
-        let mundisplaceable = self.ruleset.monster(&target.name).is_some_and(|a| {
+        let mundisplaceable = self.ruleset.monster_for_actor(&target).is_some_and(|a| {
             matches!(
                 a.id,
                 Some(

@@ -133,7 +133,7 @@ impl SimulationWorld {
 
         let target_large = self
             .ruleset
-            .monster(&defender.name)
+            .monster_for_actor(&defender)
             .map(|m| m.size >= MonsterSize::Large)
             .unwrap_or(false);
         let martial_arts = self.role_name.eq_ignore_ascii_case("monk");
@@ -176,9 +176,12 @@ impl SimulationWorld {
         if result.hit {
             let is_demon_or_undead = self
                 .ruleset
-                .monster(&defender.name)
+                .monster_for_actor(&defender)
                 .map(|m| m.is_demon_or_undead())
                 .unwrap_or_else(|| {
+                    if defender.species.is_some() {
+                        return false;
+                    }
                     let lower = defender.name.to_lowercase();
                     lower.contains("demon")
                         || lower.contains("lich")
@@ -358,7 +361,7 @@ impl SimulationWorld {
                     && (actor.name.eq_ignore_ascii_case(quest_cfg.guardian_name)
                         || self
                             .ruleset
-                            .monster(&actor.name)
+                            .monster_for_actor(actor)
                             .is_some_and(|m| m.msound == MonsterSound::Guardian))
             })
             .map(|(id, _)| id)
@@ -404,7 +407,7 @@ impl SimulationWorld {
 
         if defender_id != self.player_id {
             let quest_cfg = nethacked_core::get_role_quest_config_or_default(&self.role_name);
-            let mdef = self.ruleset.monster(&defender.name);
+            let mdef = self.ruleset.monster_for_actor(&defender);
             // C mon.c:3684 tests `m_id == quest_status.leader_m_id`: only the
             // hero's own quest leader, not any MS_LEADER monster (the Tourist
             // nemesis, Master of Thieves, is MS_LEADER).
@@ -507,7 +510,7 @@ impl SimulationWorld {
 
             if let Some(corpse) = self
                 .ruleset
-                .create_corpse_record(&defender.name, ItemLocation::Floor(defender.coord))
+                .create_corpse_record_for_actor(&defender, ItemLocation::Floor(defender.coord))
             {
                 self.arena.spawn_item(corpse);
             }
@@ -570,7 +573,7 @@ impl SimulationWorld {
         let rs = std::sync::Arc::clone(&self.ruleset);
         let fallback_slice = [FALLBACK_ATTACK];
         let attacks: &[Attack] = rs
-            .monster(&attacker.name)
+            .monster_for_actor(&attacker)
             .map(|arch| arch.attacks.as_slice())
             .unwrap_or(&fallback_slice);
         let def_ac = self.defender_ac(defender_id, &defender);
@@ -698,6 +701,7 @@ mod tests {
         };
         // AC -60: find_roll_to_hit `tmp` is far below 1, so every rnd(20) misses.
         let dummy = sim.arena.spawn_actor(ActorRecord {
+            species: None,
             name: "training dummy".into(),
             coord: at,
             hp: 50,

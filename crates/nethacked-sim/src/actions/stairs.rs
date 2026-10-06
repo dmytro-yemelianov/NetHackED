@@ -711,7 +711,7 @@ impl SimulationWorld {
                         let rs = std::sync::Arc::clone(&self.ruleset);
                         if let Some(mut a) = self.arena.actors.get(id).cloned() {
                             a.is_peaceful = false;
-                            if let Some(def) = rs.monster(&a.name) {
+                            if let Some(def) = rs.monster_for_actor(&a) {
                                 self.set_monster_malign(&mut a, def);
                             }
                             if let Some(slot) = self.arena.actors.get_mut(id) {

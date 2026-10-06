@@ -131,6 +131,7 @@ fn test_melee_attack_action() {
     let mon_coord = Coord::new(p_coord.x + 1, p_coord.y).unwrap();
 
     let goblin = ActorRecord {
+        species: None,
         name: "Orc".into(),
         coord: mon_coord,
         hp: 5,
@@ -183,6 +184,7 @@ fn test_zap_wand_beam_propagation_and_damage() {
 
     let target_coord = Coord::new(p_coord.x + 2, p_coord.y).unwrap();
     let mon = ActorRecord {
+        species: None,
         name: "Goblin Archer".into(),
         coord: target_coord,
         hp: 10,
@@ -238,6 +240,7 @@ fn test_wands_of_digging_and_teleportation_do_not_damage() {
 
         let target_coord = Coord::new(p_coord.x + 2, p_coord.y).unwrap();
         let mon = ActorRecord {
+            species: None,
             name: "Goblin Archer".into(),
             coord: target_coord,
             hp: 10,
@@ -2166,6 +2169,7 @@ fn test_artifact_combat_bonus_and_vorpal_blade() {
     }
 
     let monster_id = sim.arena.spawn_actor(nethacked_arena::ActorRecord {
+        species: None,
         name: "vampire".into(),
         coord: mon_coord,
         hp: 50,
@@ -2231,6 +2235,7 @@ fn test_ukrainian_i18n_simulation_logging() {
     }
 
     let _mon = sim.arena.spawn_actor(nethacked_arena::ActorRecord {
+        species: None,
         name: "гоблін".into(),
         coord: mon_coord,
         hp: 30,
@@ -3398,6 +3403,7 @@ fn test_hero_polymorph_potion_and_damage_reversion() {
 
     let mon_coord = nethacked_types::Coord::new_unchecked(p_coord.x + 1, p_coord.y);
     let mon = ActorRecord {
+        species: None,
         name: "Orc".into(),
         coord: mon_coord,
         hp: 50,
@@ -3452,6 +3458,7 @@ fn test_wand_of_polymorph_unique_monster_invariant() {
         );
     }
     let vlad_id = sim1.arena.spawn_actor(ActorRecord {
+        species: None,
         name: "Vlad the Impaler".into(),
         coord: nethacked_types::Coord::new_unchecked(p_coord1.x + 1, p_coord1.y),
         hp: 50,
@@ -3514,6 +3521,7 @@ fn test_wand_of_polymorph_unique_monster_invariant() {
         );
     }
     let orc_id = sim2.arena.spawn_actor(ActorRecord {
+        species: None,
         name: "Orc".into(),
         coord: nethacked_types::Coord::new_unchecked(p_coord2.x + 1, p_coord2.y),
         hp: 10,
@@ -3578,6 +3586,7 @@ fn test_scroll_of_genocide_conduct_and_level_wipe() {
     let mon_c = nethacked_types::Coord::new_unchecked(player_c.x + 1, player_c.y);
     sim.level.set_tile(mon_c, nethacked_types::Tile::Room);
     let goblin_id = sim.arena.spawn_actor(ActorRecord {
+        species: None,
         name: "goblin".into(),
         coord: mon_c,
         hp: 10,
@@ -3843,6 +3852,7 @@ fn test_weapon_skill_combat_bonus() {
     sim.level.set_tile(mon_coord, Tile::Room);
 
     let mon_id = sim.arena.spawn_actor(ActorRecord {
+        species: None,
         name: "Orc".into(),
         coord: mon_coord,
         hp: 50,
@@ -3889,6 +3899,7 @@ fn test_ranged_fire_arrow_hits_monster() {
     sim.level.set_tile(mon_coord, Tile::Room);
 
     let mon_id = sim.arena.spawn_actor(ActorRecord {
+        species: None,
         name: "Orc".into(),
         coord: mon_coord,
         hp: 15,
@@ -3964,6 +3975,7 @@ fn test_steed_mounting_and_effective_movement() {
     sim.level.set_tile(mon_coord, Tile::Room);
 
     let horse_id = sim.arena.spawn_actor(ActorRecord {
+        species: None,
         name: "horse".into(),
         coord: mon_coord,
         hp: 30,
@@ -4208,6 +4220,7 @@ fn test_pacifist_conduct_violation_on_kill() {
     let monster_pos = player.coord.step(Direction::East).unwrap();
 
     let monster = ActorRecord {
+        species: None,
         name: "goblin".into(),
         coord: monster_pos,
         hp: 1, // 1 HP to ensure a kill
@@ -4526,6 +4539,7 @@ fn valkyrie_first_swing_hits(ac: i32, seeds: u64) -> u64 {
         let p = sim.arena.actors.get(sim.player_id).unwrap().coord;
         let mc = Coord::new(p.x + 1, p.y).unwrap();
         let mon = ActorRecord {
+            species: None,
             name: "Dummy".into(),
             coord: mc,
             hp: 500,
@@ -4777,6 +4791,7 @@ fn make_test_actor(
     is_tame: bool,
 ) -> ActorRecord {
     ActorRecord {
+        species: None,
         name: name.into(),
         coord,
         hp: 50,

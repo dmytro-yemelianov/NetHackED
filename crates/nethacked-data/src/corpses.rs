@@ -57,6 +57,24 @@ impl Ruleset {
         Some(item)
     }
 
+    /// Death factory using authoritative actor identity, including renamed actors.
+    pub fn create_corpse_record_for_actor(
+        &self,
+        actor: &nethacked_arena::ActorRecord,
+        location: ItemLocation,
+    ) -> Option<ItemRecord> {
+        let mut item =
+            self.create_item_record_by_id(crate::ItemKindId::CORPSE, location, Buc::Uncursed)?;
+        if let Some(def) = self.monster_for_actor(actor) {
+            let def = def
+                .id
+                .and_then(|id| self.monster_by_id(undead_to_corpse(id)))
+                .unwrap_or(def);
+            self.set_corpse_species(&mut item, def);
+        }
+        Some(item)
+    }
+
     /// C rndmonnum: actual level-context selection, then uniform canonical range
     /// rejection when no level-appropriate common monster exists. Plan B ignores
     /// genocide/extinction like C. Cap at 256 trials for malformed pack flags;
