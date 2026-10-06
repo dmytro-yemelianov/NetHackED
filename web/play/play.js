@@ -407,6 +407,7 @@ function onDisplayKey(key) {
 }
 
 function onKey(e) {
+  if (e.target.closest?.('.project-links a')) return;
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   if (onDisplayKey(e.key)) {
     e.preventDefault();

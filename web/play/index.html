@@ -49,11 +49,37 @@
     .c-water { color: #4a7dff; }
     .c-hl { color: #fff; }
     .c-bad { color: #ff5555; }
+    .project-links {
+      position: fixed;
+      top: max(0.5rem, env(safe-area-inset-top));
+      right: max(0.5rem, env(safe-area-inset-right));
+      display: flex;
+      gap: 0.4rem;
+      z-index: 1;
+      font: 0.75rem/1 ui-monospace, "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+    }
+    .project-links a {
+      padding: 0.45rem 0.55rem;
+      color: #c0c0c0;
+      background: rgba(5, 7, 10, 0.9);
+      border: 1px solid #596273;
+      border-radius: 3px;
+      text-decoration: none;
+    }
+    .project-links a:hover, .project-links a:focus-visible {
+      color: #fff;
+      border-color: #fff;
+      outline: none;
+    }
   </style>
 </head>
 <body>
   <canvas id="screen" width="1280" height="800" aria-hidden="true"></canvas>
   <pre id="term" tabindex="0" aria-label="NetHackED terminal">Loading NetHackED…</pre>
+  <nav class="project-links" aria-label="Project links">
+    <a href="https://yemelianov.dev/">Portfolio</a>
+    <a href="https://github.com/dmytro-yemelianov/NetHackED">Source</a>
+  </nav>
   <script type="module" src="play.js"></script>
 </body>
 </html>

@@ -54,6 +54,46 @@ header {
 .header-actions {
   display: flex;
   gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.project-links {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.project-links a,
+.packs-header > a {
+  color: var(--text-cyan);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.75rem;
+  text-decoration: none;
+}
+
+.project-links a:hover,
+.project-links a:focus-visible,
+.packs-header > a:hover,
+.packs-header > a:focus-visible {
+  color: var(--text-white);
+  border-color: var(--text-cyan);
+  outline: 2px solid var(--text-cyan);
+  outline-offset: 2px;
+}
+
+.app-project-links {
+  position: fixed;
+  top: max(0.5rem, env(safe-area-inset-top));
+  right: max(0.5rem, env(safe-area-inset-right));
+  z-index: 2;
+  padding: 0.25rem;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--bg-color) 92%, transparent);
 }
 
 button {
@@ -436,6 +476,11 @@ body.crt-mode .viewport::after {
 /* ---- Pack manager ---- */
 .packs-page { min-height: 100vh; }
 .packs-header { display: flex; gap: 1rem; align-items: baseline; padding: .75rem 1rem; }
+@media (max-width: 760px) {
+  header, .packs-header { align-items: flex-start; flex-wrap: wrap; }
+  .header-actions { justify-content: flex-start; }
+  .packs-header .project-links { width: 100%; }
+}
 .packs-layout { display: grid; grid-template-columns: 260px 1fr; gap: 1rem; padding: 0 1rem 1rem; }
 @media (max-width: 760px) { .packs-layout { grid-template-columns: 1fr; } }
 .pack-list { list-style: none; padding: 0; margin: 0 0 .75rem; }
