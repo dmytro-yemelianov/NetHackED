@@ -100,6 +100,7 @@ abilities = []
         .monster("dire jackal")
         .expect("dire jackal exists");
     assert_eq!(dire.id, None);
+    assert!(!dire.sample_hp);
     assert_eq!(dire.level, 2);
     assert_eq!(dire.speed, 14);
     assert_eq!(dire.ac, 5);
@@ -437,4 +438,44 @@ proptest! {
             prop_assert!(["level", "ac", "speed"].contains(&entry.field.as_str()));
         }
     }
+}
+
+#[test]
+fn hp_override_policy_is_fixed_unless_explicitly_sampled() {
+    let vanilla = Ruleset::vanilla();
+    let dir = temp_pack_dir("hp-policy");
+    write_vanilla_manifest(&dir, "hp-policy");
+    for sampled in [false, true] {
+        let extra = if sampled { "sample_hp = true\n" } else { "" };
+        fs::write(
+            dir.join("monsters.toml"),
+            format!("[[monster]]\nname = \"jackal\"\nbase_hp = 11\nmax_hp = 17\n{extra}"),
+        )
+        .unwrap();
+        let (built, report) = build(&dir).unwrap();
+        assert!(report.is_ok());
+        let def = built.ruleset.monster("jackal").unwrap();
+        assert_eq!((def.base_hp, def.max_hp, def.sample_hp), (11, 17, sampled));
+        assert!(vanilla.monster("jackal").unwrap().sample_hp);
+    }
+}
+
+#[test]
+fn old_fixed_hp_pack_loads_without_changing_its_hash() {
+    let mut rules = (*Ruleset::vanilla()).clone();
+    for def in &mut rules.monsters {
+        def.sample_hp = false;
+    }
+    let bundle = nethacked_pack::NhPack {
+        format: nethacked_pack::PACK_FORMAT_VERSION,
+        manifest: rules.manifest.clone(),
+        hash: ruleset_hash(&rules),
+        ruleset: rules,
+    };
+    let bytes = nethacked_pack::nhpack_to_bytes(&bundle);
+    // False is omitted, preserving the pre-sampling canonical representation.
+    assert!(!std::str::from_utf8(&bytes).unwrap().contains("sample_hp"));
+    let (loaded, reference, _) = nethacked_pack::load_nhpack_bytes(&bytes).unwrap();
+    assert_eq!(reference.hash, bundle.hash);
+    assert!(loaded.monsters.iter().all(|def| !def.sample_hp));
 }

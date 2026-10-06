@@ -156,10 +156,19 @@ fn test_records_generation_parity() {
 
     // Monsters record parity
     for arch in BESTIARY {
-        let free_rec = create_monster_record(arch.id, coord);
+        use rand::{RngCore, SeedableRng};
+        let mut rng = rand::rngs::StdRng::seed_from_u64(arch.id.index() as u64);
+        let mut rs_rng = rng.clone();
+        let free_rec = create_monster_record(arch.id, coord, &mut rng);
         let rs_rec = vanilla
-            .create_monster_record(arch.name, coord)
+            .create_monster_record(arch.name, coord, &mut rs_rng)
             .expect("create_monster_record");
+        assert_eq!(
+            rng.next_u64(),
+            rs_rng.next_u64(),
+            "RNG parity for {}",
+            arch.name
+        );
         assert_eq!(rs_rec, free_rec);
     }
 

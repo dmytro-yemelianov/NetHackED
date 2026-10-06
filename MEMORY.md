@@ -7,6 +7,8 @@
 - **NeMo Agent Toolkit (`nat`)**: Installed at `.venv` (`nvidia-nat==1.9.0`) with custom extension package `nethacked-nat` (`nat/`) registering 4 tools: `nethacked_workspace_reader`, `nethacked_cargo_runner`, `nethacked_golden_verifier`, `nethacked_rulepacks_auditor`.
 
 ## Rules & Constraints
+- **2026-10-06 HP policy (explicit user decision)**: vanilla monsters sample HP using C `newmonhp` formulas and the owned Ruleset/world RNG. Explicit pack HP overrides and custom definitions stay fixed by default; `sample_hp` controls opt-in/out. Bones ghosts keep supplied HP without a discarded roll. Sampling uses definition level (`adj_lev` remains unmodelled); Astral context is integrated, other planes sampler-only.
+- **2026-10-06 approved HP rebaseline**: `EXPECTED_RUNS` and `EXPECTED_COMBAT` changed after independent verification; `EXPECTED_LOGS` stayed identical. Full gate and all three golden tests passed (695 workspace tests). This is an approved intentional HP/RNG change, not permission for unrelated automatic rebaselines. T1 completed without a commit; timer ownership and custom-species generation remain pending.
 - Branch: `feat/rule-packs-p1`. Never commit to `main`.
 - Canonical JSON = `serde_json::to_vec(&serde_json::to_value(x)?)` with sorted keys (serde_json default BTreeMap map, no `preserve_order`).
 - `nethacked-wasm` must never include `toml`, `clap`, `schemars`, or `nethacked-pack`.

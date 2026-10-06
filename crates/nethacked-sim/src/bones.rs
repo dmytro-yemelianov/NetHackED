@@ -2,7 +2,6 @@
 
 use nethacked_arena::{ItemLocation, ItemRecord};
 use nethacked_core::{corrupt_buc_on_death, is_valid_bones_level};
-use nethacked_data::create_ghost_record;
 use nethacked_i18n::Messages;
 use nethacked_types::{BonesData, BonesItem};
 use rand::Rng;
@@ -74,16 +73,17 @@ impl SimulationWorld {
 
             // 1. Spawn the vengeful ghost at the death site
             let ghost_hp = nethacked_core::create_ghost_hp(bones.max_hp);
-            let mut ghost = create_ghost_record(
-                &bones.hero_name,
-                bones.hero_level,
-                ghost_hp,
-                bones.death_coord,
-            );
             if let Some(def) = self.ruleset.monster("ghost") {
+                let mut ghost = def.create_record_with_hp(
+                    bones.death_coord,
+                    ghost_hp,
+                    ghost_hp,
+                    bones.hero_level,
+                );
+                ghost.name = format!("ghost of {}", bones.hero_name);
                 self.set_monster_malign(&mut ghost, def);
+                self.arena.spawn_actor(ghost);
             }
-            self.arena.spawn_actor(ghost);
 
             // 2. Scatter corrupted (cursed) equipment across neighboring floor tiles
             let mut scatter_coords = bones.death_coord.neighbors();

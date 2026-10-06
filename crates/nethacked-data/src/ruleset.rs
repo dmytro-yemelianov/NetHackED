@@ -3,12 +3,14 @@
 use std::collections::HashMap;
 use std::sync::{Arc, OnceLock};
 
+use crate::monsters::{compute_monster_hp, monster_spawn_level, MonsterSpawnContext};
 use nethacked_arena::{ActorId, ActorRecord, EntityArena, ItemId, ItemLocation, ItemRecord};
 use nethacked_core::ac::ArmorSlot;
 use nethacked_core::quest::get_role_quest_config;
 use nethacked_types::{
     Alignment, Attack, Buc, Coord, Intrinsics, ItemClass, MonsterAbility, SkillClass, SkillLevel,
 };
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::items::{get_item_archetype, ItemKindId, WandDir, ITEM_CATALOG};
@@ -29,6 +31,9 @@ pub struct MonsterDef {
     pub glyph: char,
     pub base_hp: u32,
     pub max_hp: u32,
+    /// Sample C-style HP at spawn; absent in old definitions means fixed HP.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub sample_hp: bool,
     pub ac: i32,
     pub level: u32,
     pub speed: u32,
@@ -61,6 +66,40 @@ pub struct MonsterDef {
 }
 
 impl MonsterDef {
+    /// Construct a record with HP already determined (including bones).
+    pub fn create_record_with_hp(
+        &self,
+        coord: Coord,
+        hp: u32,
+        max_hp: u32,
+        level: u32,
+    ) -> ActorRecord {
+        ActorRecord {
+            name: self.name.clone(),
+            coord,
+            hp,
+            max_hp,
+            ac: self.ac,
+            level,
+            speed: self.speed,
+            alignment: self.alignment,
+            intrinsics: self.intrinsics,
+            is_player: false,
+            is_unique: self.is_unique,
+            is_dead: false,
+            is_tame: self.ai_behavior == AiBehavior::CompanionPet,
+            tameness: if self.ai_behavior == AiBehavior::CompanionPet {
+                5
+            } else {
+                0
+            },
+            abilities: self.abilities.clone(),
+            is_peaceful: self.peaceful_by_default,
+            mspec_used: 0,
+            malign: 0,
+        }
+    }
+
     /// Does the species carry the C monster flag `flag` (e.g. `"nasty"` for `M2_NASTY`)?
     pub fn has_flag(&self, flag: &str) -> bool {
         self.flags.iter().any(|f| f == flag)
@@ -454,32 +493,41 @@ impl Ruleset {
     }
 
     /// Spawn an ActorRecord from ruleset monster data.
-    pub fn create_monster_record(&self, name: &str, coord: Coord) -> Option<ActorRecord> {
+    pub fn create_monster_record(
+        &self,
+        name: &str,
+        coord: Coord,
+        rng: &mut impl Rng,
+    ) -> Option<ActorRecord> {
         let def = self.monster(name)?;
-        Some(ActorRecord {
-            name: def.name.clone(),
-            coord,
-            hp: def.base_hp,
-            max_hp: def.max_hp,
-            ac: def.ac,
-            level: def.level,
-            speed: def.speed,
-            alignment: def.alignment,
-            intrinsics: def.intrinsics,
-            is_player: false,
-            is_unique: def.is_unique,
-            is_dead: false,
-            is_tame: def.ai_behavior == AiBehavior::CompanionPet,
-            tameness: if def.ai_behavior == AiBehavior::CompanionPet {
-                5
-            } else {
-                0
-            },
-            abilities: def.abilities.clone(),
-            is_peaceful: def.peaceful_by_default,
-            mspec_used: 0,
-            malign: 0,
-        })
+        Some(self.create_monster_record_from_def(def, coord, MonsterSpawnContext::default(), rng))
+    }
+
+    /// Spawn using explicit plane context and this ruleset's owned definition.
+    pub fn create_monster_record_with_context(
+        &self,
+        name: &str,
+        coord: Coord,
+        context: MonsterSpawnContext,
+        rng: &mut impl Rng,
+    ) -> Option<ActorRecord> {
+        Some(self.create_monster_record_from_def(self.monster(name)?, coord, context, rng))
+    }
+
+    pub fn create_monster_record_from_def(
+        &self,
+        def: &MonsterDef,
+        coord: Coord,
+        context: MonsterSpawnContext,
+        rng: &mut impl Rng,
+    ) -> ActorRecord {
+        if def.sample_hp {
+            let hp = compute_monster_hp(def, context, rng);
+            let level = monster_spawn_level(def, hp);
+            def.create_record_with_hp(coord, hp, hp, level)
+        } else {
+            def.create_record_with_hp(coord, def.base_hp, def.max_hp, def.level)
+        }
     }
 
     /// Spawn an ActorRecord by its canonical species ID.
@@ -487,9 +535,20 @@ impl Ruleset {
         &self,
         id: MonsterSpeciesId,
         coord: Coord,
+        rng: &mut impl Rng,
     ) -> Option<ActorRecord> {
         let def = self.monster_by_id(id)?;
-        self.create_monster_record(&def.name, coord)
+        Some(self.create_monster_record_from_def(def, coord, MonsterSpawnContext::default(), rng))
+    }
+
+    pub fn create_monster_record_by_id_with_context(
+        &self,
+        id: MonsterSpeciesId,
+        coord: Coord,
+        context: MonsterSpawnContext,
+        rng: &mut impl Rng,
+    ) -> Option<ActorRecord> {
+        Some(self.create_monster_record_from_def(self.monster_by_id(id)?, coord, context, rng))
     }
 
     /// Spawn an ItemRecord from ruleset item data.
@@ -607,6 +666,7 @@ fn build_vanilla_ruleset() -> Ruleset {
             glyph: arch.glyph,
             base_hp: arch.base_hp,
             max_hp: arch.max_hp,
+            sample_hp: true,
             ac: arch.ac,
             level: arch.level,
             speed: arch.speed,

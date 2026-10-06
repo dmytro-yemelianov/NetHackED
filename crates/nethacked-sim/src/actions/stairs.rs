@@ -85,7 +85,12 @@ impl SimulationWorld {
                         && c != self.level.stairs_down
                         && self.actor_at(c).is_none()
                     {
-                        let mut rec = rs.create_monster_record(name, c)?;
+                        let mut rec = rs.create_monster_record_with_context(
+                            name,
+                            c,
+                            self.monster_spawn_context(),
+                            &mut self.rng,
+                        )?;
                         if let Some(species) = def.id {
                             rec.is_peaceful = self.roll_spawn_peaceful(species);
                         } else {

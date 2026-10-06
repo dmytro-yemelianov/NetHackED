@@ -1,5 +1,6 @@
-//! Frozen fingerprints of vanilla play. Recorded on main before the rule-pack
-//! refactor (P1); every later change must keep them identical.
+//! Frozen fingerprints of vanilla play. Arena runs and bestiary combat were
+//! rebaselined on 2026-10-06 for the user-approved C-correct sampled-HP migration.
+//! Event-log fingerprints remain unchanged. Future unintended changes must fail.
 use nethacked_agent::arena::run_seed_games;
 use nethacked_data::monsters::{MonsterArchetype, BESTIARY};
 use nethacked_data::roles::{get_role, Gender, RaceId, RoleId};
@@ -40,9 +41,9 @@ const DIRS: [Direction; 8] = [
 
 const EXPECTED_RUNS: [u64; 4] = [
     10_590_427_399_958_928_342,
-    12_118_786_947_810_789_310,
-    4_448_730_587_361_906_125,
-    18_366_352_040_718_067_863,
+    205_152_250_578_490_892,
+    17_794_119_955_160_552_436,
+    13_803_201_863_293_933_442,
 ];
 const EXPECTED_LOGS: [u64; 9] = [
     6_084_688_683_205_385_671,
@@ -157,9 +158,9 @@ fn golden_vanilla_event_logs_are_unchanged() {
 
 const COMBAT_ROLES: [RoleId; 3] = [RoleId::Valkyrie, RoleId::Wizard, RoleId::Rogue];
 const EXPECTED_COMBAT: [u64; 3] = [
-    17_113_970_142_040_990_724,
-    9_986_869_593_722_566_816,
-    15_847_441_438_018_235_210,
+    17_879_615_147_181_408_734,
+    5_566_202_075_069_252_702,
+    1_012_340_265_263_046_192,
 ];
 
 /// Every bestiary entry (all 383 C species) fights the hero for up to 20

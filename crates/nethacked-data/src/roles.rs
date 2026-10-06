@@ -414,6 +414,7 @@ pub fn starting_item_spe(role: RoleId, kind: ItemKindId) -> Option<i8> {
 
 /// Spawns an initial companion pet (Little Dog or Kitten) adjacent to the hero.
 pub fn spawn_starting_pet(
+    rng: &mut impl rand::Rng,
     role: RoleId,
     hero_coord: Coord,
     arena: &mut EntityArena,
@@ -425,7 +426,7 @@ pub fn spawn_starting_pet(
     let pet_coord = hero_coord
         .step(nethacked_types::Direction::East)
         .unwrap_or(hero_coord);
-    let pet_record = crate::monsters::create_monster_record(species, pet_coord);
+    let pet_record = crate::monsters::create_monster_record(species, pet_coord, rng);
     Some(arena.spawn_actor(pet_record))
 }
 

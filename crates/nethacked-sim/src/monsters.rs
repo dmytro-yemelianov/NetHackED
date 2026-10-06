@@ -522,9 +522,12 @@ impl SimulationWorld {
                                 &arch.name,
                                 arch.glyph,
                             ) {
-                                if let Some(mut skeleton) =
-                                    rs.create_monster_record(&arch.name, neighbor)
-                                {
+                                if let Some(mut skeleton) = rs.create_monster_record_with_context(
+                                    &arch.name,
+                                    neighbor,
+                                    self.monster_spawn_context(),
+                                    &mut self.rng,
+                                ) {
                                     self.set_monster_malign(&mut skeleton, arch);
                                     self.arena.spawn_actor(skeleton);
                                     spawned += 1;
@@ -727,7 +730,11 @@ mod tests {
         sim.arena.actors.get_mut(pid).unwrap().coord = hero;
         let mut rec = sim
             .ruleset
-            .create_monster_record_by_id(MonsterSpeciesId::RED_DRAGON, Coord::new_unchecked(13, 10))
+            .create_monster_record_by_id(
+                MonsterSpeciesId::RED_DRAGON,
+                Coord::new_unchecked(13, 10),
+                &mut sim.rng,
+            )
             .unwrap();
         rec.mspec_used = 5;
         let id = sim.arena.spawn_actor(rec);

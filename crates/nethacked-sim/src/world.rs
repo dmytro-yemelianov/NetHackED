@@ -142,6 +142,15 @@ pub fn default_rng() -> ChaCha8Rng {
 }
 
 impl SimulationWorld {
+    /// Current sim geography exposes Astral only; elemental planes can be
+    /// supplied directly to the data factory when that geography is modeled.
+    pub(crate) fn monster_spawn_context(&self) -> nethacked_data::monsters::MonsterSpawnContext {
+        nethacked_data::monsters::MonsterSpawnContext {
+            endgame_plane: (self.current_branch == nethacked_types::BranchId::AstralPlane)
+                .then_some(nethacked_types::EndgamePlane::Astral),
+        }
+    }
+
     /// Default maximum length of the sliding window for `event_log` (prevents unbounded memory growth).
     pub const DEFAULT_MAX_EVENT_LOG_LEN: usize = DEFAULT_MAX_EVENT_LOG_LEN;
 
@@ -217,9 +226,11 @@ impl SimulationWorld {
             match room.room_type {
                 RoomType::Shop => {
                     // Spawn peaceful Shopkeeper
-                    if let Some(mut sk) = ruleset
-                        .create_monster_record_by_id(MonsterSpeciesId::SHOPKEEPER, room.center())
-                    {
+                    if let Some(mut sk) = ruleset.create_monster_record_by_id(
+                        MonsterSpeciesId::SHOPKEEPER,
+                        room.center(),
+                        &mut rng,
+                    ) {
                         if let Some(sk_def) = ruleset.monster_by_id(MonsterSpeciesId::SHOPKEEPER) {
                             sk.malign = nethacked_core::calculate_malign(
                                 sk_def.maligntyp,
@@ -261,9 +272,11 @@ impl SimulationWorld {
                     }
                 }
                 RoomType::Normal if i > 0 && i != level.rooms.len() - 1 => {
-                    if let Some(mut goblin) =
-                        ruleset.create_monster_record_by_id(MonsterSpeciesId::GOBLIN, room.center())
-                    {
+                    if let Some(mut goblin) = ruleset.create_monster_record_by_id(
+                        MonsterSpeciesId::GOBLIN,
+                        room.center(),
+                        &mut rng,
+                    ) {
                         if let Some(gob_def) = ruleset.monster_by_id(MonsterSpeciesId::GOBLIN) {
                             let input = crate::peace::peace_input(
                                 gob_def,

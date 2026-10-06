@@ -46,7 +46,11 @@ fn test_hero_dagger_damage_vs_small_and_large_monsters() {
         sim.step_player_action(ActionAst::Wield(idx));
 
         let east = open_east(&mut sim);
-        let mut mon = create_monster_record(MonsterSpeciesId::JACKAL, east);
+        let mut mon = create_monster_record(
+            MonsterSpeciesId::JACKAL,
+            east,
+            &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
+        );
         mon.ac = 30; // guarantees hit
         mon.hp = 1000;
         mon.max_hp = 1000;
@@ -80,7 +84,11 @@ fn test_hero_dagger_damage_vs_small_and_large_monsters() {
         sim.step_player_action(ActionAst::Wield(idx));
 
         let east = open_east(&mut sim);
-        let mut mon = create_monster_record(MonsterSpeciesId::RED_DRAGON, east);
+        let mut mon = create_monster_record(
+            MonsterSpeciesId::RED_DRAGON,
+            east,
+            &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
+        );
         mon.ac = 30; // guarantees hit
         mon.hp = 1000;
         mon.max_hp = 1000;
@@ -145,7 +153,11 @@ fn test_hero_long_sword_damage_vs_small_and_large_monsters() {
         sim.step_player_action(ActionAst::Wield(idx));
 
         let east = open_east(&mut sim);
-        let mut mon = create_monster_record(MonsterSpeciesId::JACKAL, east);
+        let mut mon = create_monster_record(
+            MonsterSpeciesId::JACKAL,
+            east,
+            &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
+        );
         mon.ac = 30;
         mon.hp = 1000;
         mon.max_hp = 1000;
@@ -179,7 +191,11 @@ fn test_hero_long_sword_damage_vs_small_and_large_monsters() {
         sim.step_player_action(ActionAst::Wield(idx));
 
         let east = open_east(&mut sim);
-        let mut mon = create_monster_record(MonsterSpeciesId::RED_DRAGON, east);
+        let mut mon = create_monster_record(
+            MonsterSpeciesId::RED_DRAGON,
+            east,
+            &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
+        );
         mon.ac = 30;
         mon.hp = 1000;
         mon.max_hp = 1000;
@@ -237,7 +253,11 @@ fn test_hero_bare_hands_damage_non_monk() {
             .insert(SkillClass::BareHanded, SkillLevel::Basic);
 
         let east = open_east(&mut sim);
-        let mut mon = create_monster_record(MonsterSpeciesId::JACKAL, east);
+        let mut mon = create_monster_record(
+            MonsterSpeciesId::JACKAL,
+            east,
+            &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
+        );
         mon.ac = 30;
         mon.hp = 1000;
         mon.max_hp = 1000;
@@ -280,7 +300,11 @@ fn test_hero_bare_hands_damage_monk_martial_arts() {
             .insert(SkillClass::BareHanded, SkillLevel::Basic);
 
         let east = open_east(&mut sim);
-        let mut mon = create_monster_record(MonsterSpeciesId::JACKAL, east);
+        let mut mon = create_monster_record(
+            MonsterSpeciesId::JACKAL,
+            east,
+            &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
+        );
         mon.ac = 30;
         mon.hp = 1000;
         mon.max_hp = 1000;

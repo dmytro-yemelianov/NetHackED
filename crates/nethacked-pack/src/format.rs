@@ -42,6 +42,8 @@ pub struct MonsterPatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub max_hp: Option<u32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sample_hp: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ac: Option<i32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub level: Option<u32>,

@@ -121,7 +121,8 @@ fn main() {
     let layout = nethacked_dungeon::generate_minetown_level(&mut sim.rng);
     sim.level = layout.level;
     let priest_coord = layout.priest_coord;
-    let mut priest_rec = create_monster_record(MonsterSpeciesId::ALIGNED_CLERIC, priest_coord);
+    let mut priest_rec =
+        create_monster_record(MonsterSpeciesId::ALIGNED_CLERIC, priest_coord, &mut sim.rng);
     priest_rec.is_tame = true;
     sim.arena.spawn_actor(priest_rec);
     if let Some(p) = sim.arena.actors.get_mut(sim.player_id) {
@@ -193,9 +194,9 @@ fn main() {
     let p_pos = sim.arena.actors.get(sim.player_id).unwrap().coord;
     let gnome_c = Coord::new_unchecked(p_pos.x + 3, p_pos.y);
     let skel_c = Coord::new_unchecked(p_pos.x - 3, p_pos.y);
-    let mut gnome_rec = create_monster_record(MonsterSpeciesId::GNOME, gnome_c);
+    let mut gnome_rec = create_monster_record(MonsterSpeciesId::GNOME, gnome_c, &mut sim.rng);
     gnome_rec.is_tame = true;
-    let mut skel_rec = create_monster_record(MonsterSpeciesId::SKELETON, skel_c);
+    let mut skel_rec = create_monster_record(MonsterSpeciesId::SKELETON, skel_c, &mut sim.rng);
     skel_rec.is_tame = true;
     sim.arena.spawn_actor(gnome_rec);
     sim.arena.spawn_actor(skel_rec);
@@ -503,6 +504,7 @@ fn main() {
     let orc = sim.arena.spawn_actor(create_monster_record(
         MonsterSpeciesId::HILL_ORC,
         Coord::new_unchecked(15, 10),
+        &mut sim.rng,
     ));
     println!("Prior to genocide:");
     println!("  Orc on floor: {:?}", sim.arena.actors.get(orc).is_some());

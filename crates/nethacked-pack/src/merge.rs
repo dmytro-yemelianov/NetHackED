@@ -57,6 +57,7 @@ pub fn resolve(pack: &PackDir, base: &Ruleset) -> Result<Ruleset, PackError> {
                 glyph: req_m_field!(glyph),
                 base_hp: req_m_field!(base_hp),
                 max_hp: req_m_field!(max_hp),
+                sample_hp: patch.sample_hp.unwrap_or(false),
                 ac: req_m_field!(ac),
                 level: req_m_field!(level),
                 speed: req_m_field!(speed),
@@ -95,6 +96,12 @@ pub fn resolve(pack: &PackDir, base: &Ruleset) -> Result<Ruleset, PackError> {
                     })
                 })?;
 
+            if patch.base_hp.is_some() || patch.max_hp.is_some() {
+                target.sample_hp = false;
+            }
+            if let Some(v) = patch.sample_hp {
+                target.sample_hp = v;
+            }
             if let Some(v) = patch.glyph {
                 target.glyph = v;
             }

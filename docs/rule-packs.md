@@ -52,6 +52,12 @@ Contains a list of `[[monster]]` tables.
 
 #### Patching an existing monster:
 Specify the target monster's `name` and only the fields you wish to override. Unspecified fields retain their vanilla values.
+
+Vanilla monsters sample HP from their level using the NetHack formulas, including special rules for golems, Riders, adult dragons and endgame elementals. Patching `base_hp` or `max_hp` selects fixed HP, so existing HP overrides keep their meaning. New monsters also use fixed HP by default. Set `sample_hp = true` to opt into sampling, or `sample_hp = false` to use the declared `base_hp` and `max_hp`; an explicit `sample_hp` value takes precedence over HP fields in the same patch. Sampling uses the simulation's seeded RNG.
+
+Sampling currently uses the definition's `level`; NetHack's depth- and hero-based `adj_lev` adjustment is not yet modelled. The simulation supplies Astral-plane context; the sampler also supports other elemental-plane contexts for future level integration.
+
+Resolved definitions loaded without `sample_hp` default to fixed HP. Current vanilla definitions explicitly enable sampling. Pack hashes include this policy, so a save must be loaded with its matching ruleset.
 ```toml
 [[monster]]
 name = "jackal"

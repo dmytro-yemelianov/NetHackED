@@ -67,7 +67,11 @@ fn hero_hp(sim: &SimulationWorld) -> i32 {
 }
 
 fn spawn(sim: &mut SimulationWorld, id: MonsterSpeciesId, at: Coord) -> ActorId {
-    sim.arena.spawn_actor(create_monster_record(id, at))
+    sim.arena.spawn_actor(create_monster_record(
+        id,
+        at,
+        &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
+    ))
 }
 
 fn east(n: usize) -> Coord {

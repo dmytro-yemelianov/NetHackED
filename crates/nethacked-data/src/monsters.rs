@@ -7,6 +7,7 @@ use nethacked_types::{
 use serde::{Deserialize, Serialize};
 
 use crate::roles::RaceId;
+use rand::Rng;
 
 /// Re-exported from `nethacked-types` so `nethacked-core` combat can take an [`Attack`].
 pub use nethacked_types::{Attack, AttackType, DamageType};
@@ -134,41 +135,139 @@ pub fn get_monster_species(id: MonsterSpeciesId) -> &'static MonsterArchetype {
     &BESTIARY[id.index()]
 }
 
-/// Factory function to spawn an ActorRecord from declarative archetype data.
-pub fn create_monster_record(id: MonsterSpeciesId, coord: Coord) -> ActorRecord {
-    let arch = get_monster_species(id);
-    ActorRecord {
-        name: arch.name.to_string(),
-        coord,
-        hp: arch.base_hp,
-        max_hp: arch.max_hp,
-        ac: arch.ac,
-        level: arch.level,
-        speed: arch.speed,
-        alignment: arch.alignment,
-        intrinsics: arch.intrinsics,
-        is_player: false,
-        is_unique: arch.is_unique,
-        is_dead: false,
-        is_tame: arch.ai_behavior == AiBehavior::CompanionPet,
-        tameness: if arch.ai_behavior == AiBehavior::CompanionPet {
-            5
-        } else {
-            0
-        },
-        abilities: arch.abilities.to_vec(),
-        is_peaceful: arch.peaceful_by_default,
-        mspec_used: 0,
-        malign: 0,
+/// Spawn location facts used by C `newmonhp()` special cases.
+/// The simulation currently exposes only the Astral branch; callers with an
+/// elemental-plane model can supply the matching plane here.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct MonsterSpawnContext {
+    pub endgame_plane: Option<nethacked_types::EndgamePlane>,
+}
+
+/// C `newmonhp()` (makemon.c:1012–1053), using the owned species definition.
+/// `level` is the definition's spawn level; dungeon/hero `adj_lev` is not modeled.
+/// This sampler is independent of the definition's fixed/sampled spawn policy.
+pub fn compute_monster_hp(
+    def: &crate::ruleset::MonsterDef,
+    context: MonsterSpawnContext,
+    rng: &mut impl Rng,
+) -> u32 {
+    use nethacked_types::EndgamePlane;
+    let (hp, minimum) = if let Some(hp) = golem_hp(def.id) {
+        (hp, 0)
+    } else if matches!(
+        def.id,
+        Some(MonsterSpeciesId::FAMINE | MonsterSpeciesId::PESTILENCE | MonsterSpeciesId::DEATH)
+    ) {
+        (roll_hp_dice(rng, 10, 8), 10)
+    } else if def.level > 49 {
+        (2 * (def.level - 6), 0)
+    } else if matches!(
+        def.id,
+        Some(
+            MonsterSpeciesId::RED_DRAGON
+                | MonsterSpeciesId::BLACK_DRAGON
+                | MonsterSpeciesId::GREEN_DRAGON
+                | MonsterSpeciesId::WHITE_DRAGON
+                | MonsterSpeciesId::BLUE_DRAGON
+                | MonsterSpeciesId::SILVER_DRAGON
+                | MonsterSpeciesId::GRAY_DRAGON
+                | MonsterSpeciesId::YELLOW_DRAGON
+                | MonsterSpeciesId::ORANGE_DRAGON
+        )
+    ) {
+        (
+            if context.endgame_plane.is_some() {
+                8 * def.level
+            } else {
+                4 * def.level + roll_hp_dice(rng, def.level, 4)
+            },
+            def.level,
+        )
+    } else if def.level == 0 {
+        (rng.random_range(1..=4), 1)
+    } else {
+        let home = matches!(
+            (def.id, context.endgame_plane),
+            (
+                Some(MonsterSpeciesId::AIR_ELEMENTAL),
+                Some(EndgamePlane::Air)
+            ) | (
+                Some(MonsterSpeciesId::EARTH_ELEMENTAL),
+                Some(EndgamePlane::Earth)
+            ) | (
+                Some(MonsterSpeciesId::FIRE_ELEMENTAL),
+                Some(EndgamePlane::Fire)
+            ) | (
+                Some(MonsterSpeciesId::WATER_ELEMENTAL),
+                Some(EndgamePlane::Water)
+            )
+        );
+        (
+            roll_hp_dice(rng, def.level, 8) * if home { 3 } else { 1 },
+            def.level,
+        )
+    };
+    if hp == minimum {
+        hp + 1
+    } else {
+        hp
     }
 }
 
-/// Spawns a hostile ghost representing a deceased adventurer from a graveyard bones file.
+/// Factory for vanilla species; shares the owned-ruleset spawning policy.
+pub fn create_monster_record(
+    id: MonsterSpeciesId,
+    coord: Coord,
+    rng: &mut impl Rng,
+) -> ActorRecord {
+    crate::ruleset::Ruleset::vanilla()
+        .create_monster_record_by_id(id, coord, rng)
+        .expect("vanilla species exists")
+}
+
+/// Bones HP is already determined; never sample and discard random HP.
 pub fn create_ghost_record(name: &str, level: u32, hp: u32, coord: Coord) -> ActorRecord {
-    let mut rec = create_monster_record(MonsterSpeciesId::GHOST, coord);
+    let ruleset = crate::ruleset::Ruleset::vanilla();
+    let def = ruleset
+        .monster_by_id(MonsterSpeciesId::GHOST)
+        .expect("ghost exists");
+    let mut rec = def.create_record_with_hp(coord, hp, hp, level);
     rec.name = format!("ghost of {name}");
-    rec.level = level;
-    rec.max_hp = hp;
-    rec.hp = hp;
     rec
+}
+
+fn roll_hp_dice(rng: &mut impl Rng, count: u32, sides: u32) -> u32 {
+    (0..count).map(|_| rng.random_range(1..=sides)).sum()
+}
+
+/// C golemhp(), makemon.c:2233–2263. Fixed species facts, distinct
+/// from the catalog's historical average HP estimates.
+fn golem_hp(id: Option<MonsterSpeciesId>) -> Option<u32> {
+    match id {
+        Some(MonsterSpeciesId::STRAW_GOLEM | MonsterSpeciesId::PAPER_GOLEM) => Some(20),
+        Some(MonsterSpeciesId::ROPE_GOLEM) => Some(30),
+        Some(MonsterSpeciesId::LEATHER_GOLEM | MonsterSpeciesId::FLESH_GOLEM) => Some(40),
+        Some(MonsterSpeciesId::GOLD_GOLEM) => Some(60),
+        Some(MonsterSpeciesId::WOOD_GOLEM) => Some(50),
+        Some(MonsterSpeciesId::CLAY_GOLEM) => Some(70),
+        Some(MonsterSpeciesId::STONE_GOLEM) => Some(100),
+        Some(MonsterSpeciesId::GLASS_GOLEM) => Some(80),
+        Some(MonsterSpeciesId::IRON_GOLEM) => Some(120),
+        _ => None,
+    }
+}
+
+/// C newmonhp branch ordering: golems and Riders precede encoded mlevel.
+pub(crate) fn monster_spawn_level(def: &crate::ruleset::MonsterDef, hp: u32) -> u32 {
+    if def.level > 49
+        && golem_hp(def.id).is_none()
+        && !matches!(
+            def.id,
+            Some(MonsterSpeciesId::DEATH | MonsterSpeciesId::FAMINE | MonsterSpeciesId::PESTILENCE)
+        )
+    {
+        hp / 4
+    } else {
+        def.level
+    }
 }

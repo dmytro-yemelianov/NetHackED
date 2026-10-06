@@ -730,9 +730,11 @@ fn test_monster_dijkstra_hunting() {
     }
     let m_coord = m_coord.unwrap_or(sim.level.rooms[0].center());
     let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
-    let goblin_id = sim
-        .arena
-        .spawn_actor(create_monster_record(MonsterSpeciesId::GOBLIN, m_coord));
+    let goblin_id = sim.arena.spawn_actor(create_monster_record(
+        MonsterSpeciesId::GOBLIN,
+        m_coord,
+        &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
+    ));
 
     let init_dist = sim
         .arena
@@ -805,9 +807,11 @@ fn test_elbereth_repels_monsters() {
         }
     }
     let adj_coord = m_coord.expect("Must find adjacent tile");
-    let goblin_id = sim
-        .arena
-        .spawn_actor(create_monster_record(MonsterSpeciesId::GOBLIN, adj_coord));
+    let goblin_id = sim.arena.spawn_actor(create_monster_record(
+        MonsterSpeciesId::GOBLIN,
+        adj_coord,
+        &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
+    ));
 
     let initial_player_hp = sim.arena.actors.get(sim.player_id).unwrap().hp;
     let events = sim.step_player_action(ActionAst::Wait);
@@ -1290,6 +1294,7 @@ fn test_companion_pet_displacement() {
     let pet_id = sim.arena.spawn_actor(create_monster_record(
         MonsterSpeciesId::LITTLE_DOG,
         pet_coord,
+        &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
     ));
     assert!(sim.arena.actors.get(pet_id).unwrap().is_tame);
 
@@ -1339,10 +1344,13 @@ fn test_companion_pet_attacks_hostile() {
     let _pet_id = sim.arena.spawn_actor(create_monster_record(
         MonsterSpeciesId::LITTLE_DOG,
         pet_coord,
+        &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
     ));
-    let goblin_id = sim
-        .arena
-        .spawn_actor(create_monster_record(MonsterSpeciesId::GOBLIN, enemy_coord));
+    let goblin_id = sim.arena.spawn_actor(create_monster_record(
+        MonsterSpeciesId::GOBLIN,
+        enemy_coord,
+        &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
+    ));
 
     // Deterministic setup: AC 20 guarantees the dog's d20 attack lands.
     sim.arena.actors.get_mut(goblin_id).unwrap().ac = 20;
@@ -1380,6 +1388,7 @@ fn test_companion_pet_buc_reluctance() {
     let pet_id = sim.arena.spawn_actor(create_monster_record(
         MonsterSpeciesId::LITTLE_DOG,
         pet_coord,
+        &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
     ));
 
     // Place cursed item directly in the path between pet and player
@@ -1418,11 +1427,12 @@ fn test_companion_pet_feeding_and_growth() {
     let pet_id = sim.arena.spawn_actor(create_monster_record(
         MonsterSpeciesId::LITTLE_DOG,
         Coord::new_unchecked(5, 5),
+        &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
     ));
 
-    // Little dog starts at level 2, max_hp 9 (C LVL 2: (9*2+1)/2)
+    // Little dog starts at level 2; seeded 2d8 samples 13 HP.
     assert_eq!(sim.arena.actors.get(pet_id).unwrap().name, "little dog");
-    assert_eq!(sim.arena.actors.get(pet_id).unwrap().max_hp, 9);
+    assert_eq!(sim.arena.actors.get(pet_id).unwrap().max_hp, 13);
 
     // Feed nutrition to reach level 4 -> promotes to dog
     let events1 = sim.feed_companion_pet(pet_id, 100);
@@ -1443,8 +1453,14 @@ fn test_companion_pet_feeding_and_growth() {
 
 #[test]
 fn test_scroll_of_enchant_weapon() {
-    // Blessed amount is rnd(3) at +0 (read.c:1667); seed 3 draws 2.
+    // Blessed amount is rnd(3) at +0 (read.c:1667). Isolate the
+    // known draw from level generation's HP sampling and other setup draws.
+    use rand::{Rng, SeedableRng};
     let mut sim = SimulationWorld::new_with_seed(3);
+    sim.rng = (0..32)
+        .map(rand_chacha::ChaCha8Rng::seed_from_u64)
+        .find(|rng| rng.clone().random_range(1..=3u32) == 2)
+        .expect("a seeded fixture for rnd(3) = 2");
 
     let sword = sim.arena.spawn_item(create_item_record(
         ItemKindId::LONG_SWORD,
@@ -2178,6 +2194,7 @@ fn test_monster_dragon_breath_and_reflection() {
     let dragon = nethacked_data::create_monster_record(
         nethacked_data::MonsterSpeciesId::RED_DRAGON,
         dragon_coord,
+        &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
     );
     let dragon_id = sim.arena.spawn_actor(dragon);
     let dragon_hp = sim.arena.actors.get(dragon_id).unwrap().hp;
@@ -2222,6 +2239,7 @@ fn test_monster_medusa_petrification_gaze() {
     let medusa = nethacked_data::create_monster_record(
         nethacked_data::MonsterSpeciesId::MEDUSA,
         medusa_coord,
+        &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
     );
     let medusa_id = sim.arena.spawn_actor(medusa);
 
@@ -2266,6 +2284,7 @@ fn test_monster_lich_summon_and_curse() {
     let mut lich = nethacked_data::create_monster_record(
         nethacked_data::MonsterSpeciesId::MASTER_LICH,
         lich_coord,
+        &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
     );
     lich.abilities = vec![nethacked_types::MonsterAbility::Spellcaster {
         spell: nethacked_types::MonsterSpell::SummonMonsters,
@@ -2482,6 +2501,7 @@ fn test_shopkeeper_price_identification() {
     let sk = nethacked_data::create_monster_record(
         nethacked_data::MonsterSpeciesId::GOBLIN,
         Coord::new_unchecked(5, 5),
+        &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
     );
     let mut sk = sk;
     sk.name = "shopkeeper".into();
@@ -2595,8 +2615,11 @@ fn test_minetown_temple_priest_donation_and_uncursing() {
 
     // Place a priest adjacent to the player
     let priest_coord = Coord::new_unchecked(p_coord.x + 1, p_coord.y);
-    let priest =
-        nethacked_data::create_monster_record(MonsterSpeciesId::ALIGNED_CLERIC, priest_coord);
+    let priest = nethacked_data::create_monster_record(
+        MonsterSpeciesId::ALIGNED_CLERIC,
+        priest_coord,
+        &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
+    );
     sim.arena.spawn_actor(priest);
 
     // Give player a cursed weapon
@@ -2662,8 +2685,11 @@ fn test_priest_donation_below_protection_band() {
     let mut sim = SimulationWorld::new_with_seed(42);
     let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
     let priest_coord = Coord::new_unchecked(p_coord.x + 1, p_coord.y);
-    let priest =
-        nethacked_data::create_monster_record(MonsterSpeciesId::ALIGNED_CLERIC, priest_coord);
+    let priest = nethacked_data::create_monster_record(
+        MonsterSpeciesId::ALIGNED_CLERIC,
+        priest_coord,
+        &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
+    );
     sim.arena.spawn_actor(priest);
 
     // 100 zm is below every suggested amount (>= 150): cheapskate, no protection.
@@ -2810,10 +2836,12 @@ fn test_blindness_and_telepathy_perception() {
     let gnome = sim.arena.spawn_actor(nethacked_data::create_monster_record(
         MonsterSpeciesId::GNOME,
         gnome_coord,
+        &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
     ));
     let skel = sim.arena.spawn_actor(nethacked_data::create_monster_record(
         MonsterSpeciesId::SKELETON,
         skel_coord,
+        &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
     ));
 
     // Case 1: Normal sight (not blind) -> both monsters visible

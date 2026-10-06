@@ -220,10 +220,14 @@ impl SimulationWorld {
                             .into_iter()
                             .find(|&c| self.level.is_passable(c) && self.actor_at(c).is_none())
                             .unwrap_or(player_c);
-                        if let Some(mut mon) = self.ruleset.create_monster_record_by_id(
-                            nethacked_data::MonsterSpeciesId::DJINNI,
-                            spawn_c,
-                        ) {
+                        if let Some(mut mon) =
+                            self.ruleset.create_monster_record_by_id_with_context(
+                                nethacked_data::MonsterSpeciesId::DJINNI,
+                                spawn_c,
+                                self.monster_spawn_context(),
+                                &mut self.rng,
+                            )
+                        {
                             mon.name = "hostile djinni".into();
                             mon.is_peaceful = false;
                             if let Some(def) = self
@@ -621,10 +625,14 @@ impl SimulationWorld {
                                             self.level.is_passable(c) && self.actor_at(c).is_none()
                                         })
                                         .unwrap_or(player_c);
-                                    if let Some(mut mon) = self.ruleset.create_monster_record_by_id(
-                                        nethacked_data::MonsterSpeciesId::GOBLIN,
-                                        spawn_c,
-                                    ) {
+                                    if let Some(mut mon) =
+                                        self.ruleset.create_monster_record_by_id_with_context(
+                                            nethacked_data::MonsterSpeciesId::GOBLIN,
+                                            spawn_c,
+                                            self.monster_spawn_context(),
+                                            &mut self.rng,
+                                        )
+                                    {
                                         mon.name = "hostile goblin".into();
                                         mon.is_peaceful = false;
                                         if let Some(def) = self

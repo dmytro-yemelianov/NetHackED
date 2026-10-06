@@ -219,6 +219,7 @@ pub fn vanilla_pack_files() -> PackFiles {
                 glyph: Some(m.glyph),
                 base_hp: Some(m.base_hp),
                 max_hp: Some(m.max_hp),
+                sample_hp: Some(m.sample_hp),
                 ac: Some(m.ac),
                 level: Some(m.level),
                 speed: Some(m.speed),
