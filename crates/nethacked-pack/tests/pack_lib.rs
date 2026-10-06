@@ -744,3 +744,33 @@ fn container_profiles_validate_flags_and_generation_weight() {
         .iter()
         .any(|d| d.message.contains("generation_weight")));
 }
+
+#[test]
+fn old_corpse_body_facts_load_defaults_and_preserve_canonical_hash() {
+    let mut rules = (*Ruleset::vanilla()).clone();
+    for def in &mut rules.monsters {
+        def.body_weight = 0;
+        def.corpse_nutrition = 0;
+    }
+    let bundle = nethacked_pack::NhPack {
+        format: nethacked_pack::PACK_FORMAT_VERSION,
+        manifest: rules.manifest.clone(),
+        hash: ruleset_hash(&rules),
+        ruleset: rules,
+    };
+    let bytes = nethacked_pack::nhpack_to_bytes(&bundle);
+    let json = std::str::from_utf8(&bytes).unwrap();
+    assert!(!json.contains("body_weight") && !json.contains("corpse_nutrition"));
+    let (loaded, reference, _) = nethacked_pack::load_nhpack_bytes(&bytes).unwrap();
+    assert_eq!(reference.hash, bundle.hash);
+    assert!(loaded
+        .monsters
+        .iter()
+        .all(|m| m.body_weight == 0 && m.corpse_nutrition == 0));
+    let mut changed = (*loaded).clone();
+    changed.monsters[0].body_weight = 19;
+    assert_ne!(ruleset_hash(&changed), reference.hash);
+    changed.monsters[0].body_weight = 0;
+    changed.monsters[0].corpse_nutrition = 20;
+    assert_ne!(ruleset_hash(&changed), reference.hash);
+}

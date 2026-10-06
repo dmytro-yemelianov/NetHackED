@@ -439,6 +439,31 @@ impl SimulationWorld {
             });
         }
         world.ruleset = rs;
+        // Old saves lack these optional tags. Resolve through the owned
+        // definition's canonical identity/profile, without guessing by name.
+        let restore_tags = |item: &mut nethacked_arena::ItemRecord| {
+            if let Some(def) = world.ruleset.item(&item.name) {
+                if def.id == Some(ItemKindId::CORPSE) && item.corpse_species.is_none() {
+                    item.corpse_species = Some(nethacked_arena::CorpseSpecies::Unspecified);
+                }
+                if matches!(
+                    def.initialization,
+                    nethacked_data::item_init::ItemInitProfile::Container {
+                        container: nethacked_data::item_init::ContainerInit::IceBox
+                    }
+                ) {
+                    item.is_ice_box = true;
+                }
+            }
+        };
+        for (_, item) in world.arena.items.iter_mut() {
+            restore_tags(item);
+        }
+        for (_, stored) in &mut world.stored_levels {
+            for (_, item) in &mut stored.items {
+                restore_tags(item);
+            }
+        }
         Ok(world)
     }
 

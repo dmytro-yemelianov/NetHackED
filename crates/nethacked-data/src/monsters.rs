@@ -71,6 +71,9 @@ pub struct MonsterArchetype {
     pub attacks: &'static [Attack],
     /// C `msize` (`MZ_*`; `MZ_HUMAN` is `MZ_MEDIUM`).
     pub size: MonsterSize,
+    /// Extracted C cwt and cnutrit, independent of the item catalog.
+    pub body_weight: u32,
+    pub corpse_nutrition: u32,
     /// C `M2_PEACEFUL` (monst.c flags; always peaceful before alignment checks).
     pub peaceful_by_default: bool,
     /// C `M2_HOSTILE` (`always_hostile`, mondata.h:116; `peace_minded` makemon.c:2274).

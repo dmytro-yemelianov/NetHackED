@@ -97,6 +97,9 @@ pub fn create_item_record(id: ItemKindId, location: ItemLocation, buc: Buc) -> I
         erosion: 0,
         proofed: false,
         location,
+        corpse_species: (id == ItemKindId::CORPSE)
+            .then_some(nethacked_arena::CorpseSpecies::Unspecified),
+        is_ice_box: id == ItemKindId::ICE_BOX,
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,

@@ -134,6 +134,8 @@ def monster_entry(m, name):
         intrinsics: {intr},
         attacks: &[{", ".join(attacks)}],
         size: MonsterSize::{pick(SIZE, m['size'], w)},
+        body_weight: {m['weight']},
+        corpse_nutrition: {m['nutrition']},
         peaceful_by_default: {str('peaceful' in f2).lower()},
         always_hostile: {str('hostile' in f2).lower()},
         maligntyp: {max(-128, min(127, aln))},
@@ -222,7 +224,7 @@ def initialization_profile(o, artifact):
     if cls == "gem" and kind != "LOADSTONE":
         return profile + f"Gem {{ rock: {boolean(kind == 'ROCK')}, luckstone: {boolean(kind == 'LUCKSTONE')} }}"
     if cls == "tool":
-        container = {"CHEST": "Chest", "LARGE_BOX": "LargeBox", "SACK": "Sack", "OILSKIN_SACK": "OilskinSack", "BAG_OF_HOLDING": "HoldingBag"}.get(kind)
+        container = {"ICE_BOX": "IceBox", "CHEST": "Chest", "LARGE_BOX": "LargeBox", "SACK": "Sack", "OILSKIN_SACK": "OilskinSack", "BAG_OF_HOLDING": "HoldingBag"}.get(kind)
         if container:
             return profile + f"Container {{ container: {prefix}ContainerInit::{container} }}"
         charges = {

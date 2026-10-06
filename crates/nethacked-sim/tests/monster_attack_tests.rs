@@ -315,6 +315,8 @@ fn quaff_healing(sim: &mut SimulationWorld) {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(pid),
+        corpse_species: None,
+        is_ice_box: false,
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 0,

@@ -6,7 +6,7 @@
 //! uppercase-only rule (1679) and the elemental planes' `wrong_elem_type()`.
 //!
 //! Supported BUC/spe and weapon stack/poison initialization lives in `item_init`.
-//! Ordinary represented container contents live in `containers`. Species/fuel, ice-box contents, artifact chance and erosion remain gaps.
+//! Represented container contents and corpse species live in `containers`/`corpses`. Other species payloads, corpse gender/timers, fuel, artifact chance and erosion remain gaps.
 
 use crate::items::{ItemKindId, BOXIPROBS, HELLPROBS, ITEM_CATALOG, MKOBJPROBS, ROGUEPROBS};
 use crate::monsters::MonsterSpeciesId;

@@ -82,6 +82,10 @@ pub struct MonsterPatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub frequency: Option<u32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub body_weight: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub corpse_nutrition: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub gen_flags: Option<Vec<String>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub flags: Option<Vec<String>>,

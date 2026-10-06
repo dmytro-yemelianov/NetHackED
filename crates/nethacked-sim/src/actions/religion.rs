@@ -174,6 +174,8 @@ impl SimulationWorld {
                                 erosion: 0,
                                 proofed: true,
                                 location: ItemLocation::CarriedBy(self.player_id),
+                                corpse_species: None,
+                                is_ice_box: false,
                                 corpse_race: None,
                                 corpse_age: 0,
                                 rot_threshold: 50,

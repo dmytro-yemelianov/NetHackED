@@ -53,6 +53,8 @@ async fn test_networked_bones_flow_and_ghost_reincarnation() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim1.player_id),
+        corpse_species: None,
+        is_ice_box: false,
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,

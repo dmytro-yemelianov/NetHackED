@@ -239,6 +239,8 @@ pub fn vanilla_pack_files() -> PackFiles {
                 abilities: Some(m.abilities.clone()),
                 difficulty: Some(m.difficulty),
                 frequency: Some(m.frequency),
+                body_weight: Some(m.body_weight),
+                corpse_nutrition: Some(m.corpse_nutrition),
                 gen_flags: Some(m.gen_flags.clone()),
                 flags: Some(m.flags.clone()),
             })

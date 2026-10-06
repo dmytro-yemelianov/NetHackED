@@ -41,6 +41,10 @@ pub struct MonsterDef {
     pub intrinsics: Intrinsics,
     pub attacks: Vec<Attack>,
     pub size: MonsterSize,
+    #[serde(default, skip_serializing_if = "is_zero_weight")]
+    pub body_weight: u32,
+    #[serde(default, skip_serializing_if = "is_zero_weight")]
+    pub corpse_nutrition: u32,
     pub peaceful_by_default: bool,
     pub always_hostile: bool,
     pub maligntyp: i8,
@@ -593,6 +597,14 @@ impl Ruleset {
             erosion: 0,
             proofed: false,
             location,
+            corpse_species: (def.id == Some(ItemKindId::CORPSE))
+                .then_some(nethacked_arena::CorpseSpecies::Unspecified),
+            is_ice_box: matches!(
+                def.initialization,
+                crate::item_init::ItemInitProfile::Container {
+                    container: crate::item_init::ContainerInit::IceBox
+                }
+            ),
             corpse_race: None,
             corpse_age: 0,
             rot_threshold: 50,
@@ -692,6 +704,8 @@ fn build_vanilla_ruleset() -> Ruleset {
             intrinsics: arch.intrinsics,
             attacks: arch.attacks.to_vec(),
             size: arch.size,
+            body_weight: arch.body_weight,
+            corpse_nutrition: arch.corpse_nutrition,
             peaceful_by_default: arch.peaceful_by_default,
             always_hostile: arch.always_hostile,
             maligntyp: arch.maligntyp,

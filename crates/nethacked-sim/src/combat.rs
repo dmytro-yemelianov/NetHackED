@@ -505,11 +505,10 @@ impl SimulationWorld {
                 });
             }
 
-            if let Some(corpse) = self.ruleset.create_item_record_by_id(
-                ItemKindId::CORPSE,
-                ItemLocation::Floor(defender.coord),
-                Buc::Uncursed,
-            ) {
+            if let Some(corpse) = self
+                .ruleset
+                .create_corpse_record(&defender.name, ItemLocation::Floor(defender.coord))
+            {
                 self.arena.spawn_item(corpse);
             }
         }

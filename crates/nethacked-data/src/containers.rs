@@ -1,5 +1,5 @@
 //! Represented ordinary-container contents (mkobj.c:304-393).
-//! Species, food variants, fuel, erosion, ice boxes and artifacts remain unsupported.
+//! Food variants, fuel, erosion, corpse timers and artifacts remain unsupported.
 use crate::item_init::{ContainerInit, ItemInitProfile};
 use crate::items::BOXIPROBS;
 use crate::{ItemDef, ItemKindId, Ruleset};
@@ -35,6 +35,12 @@ impl GeneratedItem {
 
 fn draw(rn2: &mut impl FnMut(u32) -> u32, n: u32) -> u32 {
     rn2(n).min(n - 1)
+}
+
+struct TreeContext<'a> {
+    container: ContainerContext,
+    monsters: &'a crate::generation::MonsterGenContext,
+    gone: &'a dyn Fn(&crate::MonsterDef) -> bool,
 }
 
 impl Ruleset {
@@ -119,15 +125,53 @@ impl Ruleset {
         ctx: ContainerContext,
         mut rn2: impl FnMut(u32) -> u32,
     ) -> Option<GeneratedItem> {
+        let monster_ctx = crate::generation::MonsterGenContext {
+            hero_level: ctx.hero_level.min(i32::MAX as u32) as i32,
+            level_difficulty: ctx.level_difficulty.min(i32::MAX as u32) as i32,
+            in_hell: false,
+            align: crate::generation::DungeonAlign::None,
+            temperature: 0,
+        };
+        self.create_random_item_tree_with_monsters(
+            name,
+            location,
+            ctx,
+            &monster_ctx,
+            |_| false,
+            &mut rn2,
+        )
+    }
+
+    /// Generation with the caller's actual monster geography and vitals registry.
+    pub fn create_random_item_tree_with_monsters(
+        &self,
+        name: &str,
+        location: ItemLocation,
+        ctx: ContainerContext,
+        monster_ctx: &crate::generation::MonsterGenContext,
+        gone: impl Fn(&crate::MonsterDef) -> bool,
+        mut rn2: impl FnMut(u32) -> u32,
+    ) -> Option<GeneratedItem> {
         let mut budget = 1024;
-        self.item_tree(name, location, ctx, 0, &mut budget, &mut rn2)
+        self.item_tree(
+            name,
+            location,
+            &TreeContext {
+                container: ctx,
+                monsters: monster_ctx,
+                gone: &gone,
+            },
+            0,
+            &mut budget,
+            &mut rn2,
+        )
     }
 
     fn item_tree(
         &self,
         name: &str,
         location: ItemLocation,
-        ctx: ContainerContext,
+        ctx: &TreeContext<'_>,
         depth: u32,
         budget: &mut u32,
         rn2: &mut impl FnMut(u32) -> u32,
@@ -140,13 +184,19 @@ impl Ruleset {
         let item = self.create_random_item_supported_fields_by_name(
             name,
             location,
-            ctx.hero_level,
+            ctx.container.hero_level,
             &mut *rn2,
         )?;
         let mut tree = GeneratedItem {
             item,
             contents: Vec::new(),
         };
+        if def.id == Some(ItemKindId::CORPSE) {
+            if let Some(species) = self.random_corpse_definition(ctx.monsters, ctx.gone, &mut *rn2)
+            {
+                self.set_corpse_species(&mut tree.item, species);
+            }
+        }
         let ItemInitProfile::Container { container } = def.initialization else {
             return Some(tree);
         };
@@ -159,6 +209,7 @@ impl Ruleset {
             return Some(tree);
         }
         let max = match container {
+            ContainerInit::IceBox => 20,
             ContainerInit::Chest => {
                 if tree.item.locked {
                     7
@@ -173,7 +224,9 @@ impl Ruleset {
                     3
                 }
             }
-            ContainerInit::Sack | ContainerInit::OilskinSack if ctx.moves <= 1 && !ctx.in_mklev => {
+            ContainerInit::Sack | ContainerInit::OilskinSack
+                if ctx.container.moves <= 1 && !ctx.container.in_mklev =>
+            {
                 0
             }
             _ => 1,
@@ -183,7 +236,12 @@ impl Ruleset {
             if *budget == 0 {
                 break;
             }
-            let Some(child_def) = self.box_item_definition(&mut *rn2) else {
+            let child_def = if container == ContainerInit::IceBox {
+                self.item_by_id(ItemKindId::CORPSE)
+            } else {
+                self.box_item_definition(&mut *rn2)
+            };
+            let Some(child_def) = child_def else {
                 continue;
             };
             let Some(mut child) = self.item_tree(
@@ -196,10 +254,13 @@ impl Ruleset {
             ) else {
                 continue;
             };
+            if container == ContainerInit::IceBox {
+                child.item.corpse_age = 0;
+            }
             if child.item.class == ItemClass::Coin {
-                child.item.quantity = (draw(rn2, ctx.level_difficulty.saturating_add(2).max(1))
-                    + 1)
-                .saturating_mul(draw(rn2, 75) + 1);
+                child.item.quantity =
+                    (draw(rn2, ctx.container.level_difficulty.saturating_add(2).max(1)) + 1)
+                        .saturating_mul(draw(rn2, 75) + 1);
                 // mkobj.c:1966: coin weight is rounded per hundred, not per coin.
                 child.item.weight = (child.item.quantity.saturating_add(50) / 100).max(1);
             } else if child_def.id == Some(ItemKindId::ROCK) {
@@ -271,6 +332,12 @@ fn replace_kind(item: &mut ItemRecord, def: &ItemDef) {
     item.weight = def.weight.saturating_mul(item.quantity);
     item.is_container = def.is_container;
     item.is_bag_of_holding = def.is_bag_of_holding;
+    item.is_ice_box = matches!(
+        def.initialization,
+        ItemInitProfile::Container {
+            container: ContainerInit::IceBox
+        }
+    );
 }
 
 #[cfg(test)]
@@ -290,7 +357,17 @@ mod tests {
                 .item_tree(
                     &rules.item_by_id(ItemKindId::SACK).unwrap().name,
                     ItemLocation::Limbo,
-                    ctx,
+                    &TreeContext {
+                        container: ctx,
+                        monsters: &crate::generation::MonsterGenContext {
+                            hero_level: 1,
+                            level_difficulty: 1,
+                            in_hell: false,
+                            align: crate::generation::DungeonAlign::None,
+                            temperature: 0,
+                        },
+                        gone: &|_| false,
+                    },
                     depth,
                     &mut budget,
                     &mut |_| panic!("bounded contents must not draw"),

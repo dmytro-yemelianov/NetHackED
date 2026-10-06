@@ -17,6 +17,30 @@ impl SimulationWorld {
                     events.extend(self.step_monsters());
                 }
                 StepAction::TurnTick => {
+                    self.arena.advance_corpse_ages();
+                    // Cached records retain original handles for ancestry lookup.
+                    for (_, stored) in &mut self.stored_levels {
+                        let advancing: Vec<_> = stored
+                            .items
+                            .iter()
+                            .enumerate()
+                            .filter_map(|(index, (_, item))| {
+                                (item.is_corpse()
+                                    && !nethacked_arena::frozen_in_ice_box(item, |parent| {
+                                        stored
+                                            .items
+                                            .iter()
+                                            .find(|(id, _)| *id == parent)
+                                            .map(|(_, item)| item)
+                                    }))
+                                .then_some(index)
+                            })
+                            .collect();
+                        for index in advancing {
+                            stored.items[index].1.corpse_age =
+                                stored.items[index].1.corpse_age.saturating_add(1);
+                        }
+                    }
                     events.push(GameEvent::TurnAdvanced {
                         turn: self.scheduler.turn,
                     });

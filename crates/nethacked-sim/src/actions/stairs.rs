@@ -24,17 +24,29 @@ fn roll_room_object(
     coord: Option<Coord>,
     table: nethacked_data::generation::ObjectTable,
     ctx: nethacked_data::containers::ContainerContext,
+    monsters: Option<(
+        &nethacked_data::generation::MonsterGenContext,
+        &nethacked_types::GenocideRegistry,
+    )>,
     mut rn2: impl FnMut(u32) -> u32,
 ) -> (Option<nethacked_data::containers::GeneratedItem>, bool) {
     let kind = nethacked_data::generation::mkobj_kind(None, table, &mut rn2);
     let spot = coord.filter(|&c| level.is_passable(c));
     let item = kind.and_then(|kind| {
-        rules.create_random_item_tree(
-            &rules.item_by_id(kind)?.name,
-            spot.map_or(ItemLocation::Limbo, ItemLocation::Floor),
-            ctx,
-            &mut rn2,
-        )
+        let name = &rules.item_by_id(kind)?.name;
+        let location = spot.map_or(ItemLocation::Limbo, ItemLocation::Floor);
+        if let Some((monster_ctx, registry)) = monsters {
+            rules.create_random_item_tree_with_monsters(
+                name,
+                location,
+                ctx,
+                monster_ctx,
+                |d| nethacked_core::genocide::is_genocided(registry, &d.name, d.glyph),
+                &mut rn2,
+            )
+        } else {
+            rules.create_random_item_tree(name, location, ctx, &mut rn2)
+        }
     });
     let item = item.filter(|_| spot.is_some());
     let keep_generating = rn2(5) == 0;
@@ -823,6 +835,7 @@ impl SimulationWorld {
                                     moves: self.scheduler.turn,
                                     in_mklev: true,
                                 },
+                                Some((&ctx, &self.genocide_registry)),
                                 |n| self.rng.random_range(0..n),
                             );
                             if let Some(item) = item {
@@ -1295,6 +1308,7 @@ mod room_item_tests {
                     moves: 1,
                     in_mklev: true,
                 },
+                None,
                 |n| {
                     let &(bound, value) = draws.next().expect("unexpected draw");
                     assert_eq!(
@@ -1372,6 +1386,7 @@ mod room_item_tests {
                     moves: 1,
                     in_mklev: true,
                 },
+                None,
                 |n| {
                     let &(bound, value) = draws.next().expect("unexpected room-container draw");
                     assert_eq!(n, bound);
@@ -1384,6 +1399,113 @@ mod room_item_tests {
             if let Some(tree) = tree {
                 assert!(tree.item.locked && tree.item.trapped && tree.item.trap_known);
                 assert_eq!(tree.contents[0].item.quantity, 225);
+            }
+        }
+    }
+    #[test]
+    fn ice_box_room_uses_actual_species_context_registry_and_draws_before_continuation() {
+        let mut rules = (*nethacked_data::Ruleset::vanilla()).clone();
+        for def in &mut rules.monsters {
+            def.frequency = u32::from(def.id == Some(MonsterSpeciesId::JACKAL));
+            def.maligntyp = 0;
+        }
+        let jackal = rules
+            .monster_by_id(MonsterSpeciesId::JACKAL)
+            .unwrap()
+            .name
+            .clone();
+        let tool_total: u32 = catalog
+            .iter()
+            .filter(|a| a.class == nethacked_types::ItemClass::Tool && !a.artifact)
+            .map(|a| a.prob)
+            .sum(); // static-ok: independent test oracle
+        let ice_roll: u32 = catalog
+            .iter()
+            .filter(|a| {
+                a.class == nethacked_types::ItemClass::Tool
+                    && !a.artifact
+                    && a.id < ItemKindId::ICE_BOX
+            })
+            .map(|a| a.prob)
+            .sum(); // static-ok: independent test oracle
+                    // Lawful alignment adds weight 2 to frequency 1, unlike convenience context.
+        let context = nethacked_data::generation::MonsterGenContext {
+            hero_level: 1,
+            level_difficulty: 1,
+            in_hell: false,
+            align: nethacked_data::generation::DungeonAlign::Lawful,
+            temperature: 0,
+        };
+        // Eliminate alignment bonuses on the other definitions: uncommon flag.
+        for def in &mut rules.monsters {
+            if def.id != Some(MonsterSpeciesId::JACKAL) {
+                def.gen_flags.push("nogen".into());
+            }
+        }
+        for genocided in [false, true] {
+            let mut registry = nethacked_types::GenocideRegistry::default();
+            if genocided {
+                registry.genocided_species.insert(jackal.clone());
+            }
+            let selection = if genocided {
+                (
+                    MonsterSpeciesId::LONG_WORM_TAIL.index() as u32,
+                    MonsterSpeciesId::JACKAL.index() as u32,
+                )
+            } else {
+                (3, 0)
+            };
+            let trace = [
+                (100, 41),
+                (tool_total, ice_roll),
+                (21, 1),
+                selection,
+                (5, 1),
+            ];
+            for passable in [false, true] {
+                let level = nethacked_dungeon::DungeonLevel::new_solid(if passable {
+                    Tile::Room
+                } else {
+                    Tile::Stone
+                });
+                let mut rng = ChaCha8Rng::seed_from_u64(811);
+                let mut expected_rng = rng.clone();
+                for _ in &trace {
+                    expected_rng.next_u64();
+                }
+                let mut draws = trace.iter();
+                let (tree, keep) = roll_room_object(
+                    &rules,
+                    &level,
+                    Coord::new(3, 4),
+                    ObjectTable::Dungeon,
+                    nethacked_data::containers::ContainerContext {
+                        hero_level: 1,
+                        level_difficulty: 1,
+                        moves: 1,
+                        in_mklev: true,
+                    },
+                    Some((&context, &registry)),
+                    |n| {
+                        let &(bound, value) = draws.next().expect("unexpected ice-box room draw");
+                        assert_eq!(n, bound);
+                        rng.next_u64();
+                        value
+                    },
+                );
+                assert_eq!(draws.len(), 0);
+                assert_eq!(rng.next_u64(), expected_rng.next_u64());
+                assert!(!keep);
+                assert_eq!(tree.is_some(), passable);
+                if let Some(tree) = tree {
+                    assert!(tree.item.is_ice_box);
+                    assert_eq!(tree.contents.len(), 1);
+                    assert_eq!(
+                        tree.contents[0].item.corpse_species,
+                        Some(nethacked_arena::CorpseSpecies::Vanilla("JACKAL".into()))
+                    );
+                    assert_eq!(tree.contents[0].item.corpse_age, 0);
+                }
             }
         }
     }

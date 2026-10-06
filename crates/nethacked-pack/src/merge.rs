@@ -78,6 +78,8 @@ pub fn resolve(pack: &PackDir, base: &Ruleset) -> Result<Ruleset, PackError> {
                 // Optional: a new species is never generated at random unless given a weight.
                 difficulty: patch.difficulty.unwrap_or(0),
                 frequency: patch.frequency.unwrap_or(0),
+                body_weight: patch.body_weight.unwrap_or(0),
+                corpse_nutrition: patch.corpse_nutrition.unwrap_or(0),
                 gen_flags: patch.gen_flags.clone().unwrap_or_default(),
                 flags: patch.flags.clone().unwrap_or_default(),
             };
@@ -164,6 +166,12 @@ pub fn resolve(pack: &PackDir, base: &Ruleset) -> Result<Ruleset, PackError> {
             }
             if let Some(v) = patch.difficulty {
                 target.difficulty = v;
+            }
+            if let Some(v) = patch.body_weight {
+                target.body_weight = v;
+            }
+            if let Some(v) = patch.corpse_nutrition {
+                target.corpse_nutrition = v;
             }
             if let Some(v) = patch.frequency {
                 target.frequency = v;

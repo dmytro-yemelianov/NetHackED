@@ -103,6 +103,8 @@ impl SimulationWorld {
                         erosion: 0,
                         proofed: false,
                         location: ItemLocation::Floor(target_coord),
+                        corpse_species: None,
+                        is_ice_box: false,
                         corpse_race: None,
                         corpse_age: 0,
                         rot_threshold: 50,

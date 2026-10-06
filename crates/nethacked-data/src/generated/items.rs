@@ -5334,7 +5334,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
-        initialization: crate::item_init::ItemInitProfile::Fixed,
+        initialization: crate::item_init::ItemInitProfile::Container { container: crate::item_init::ContainerInit::IceBox },
     },
     ItemArchetype {
         // include/objects.h:906

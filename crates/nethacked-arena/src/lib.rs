@@ -16,6 +16,17 @@ pub enum ItemLocation {
     Limbo,
 }
 
+/// Stable species identity, independent of table order and display names.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CorpseSpecies {
+    /// Explicit corpse factory without supplied species (no invented identity).
+    Unspecified,
+    /// Canonical C PM_* symbol, with its prefix omitted.
+    Vanilla(String),
+    /// Owned ruleset key for a pack-added species.
+    Custom(String),
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ItemRecord {
     pub name: String,
@@ -28,6 +39,11 @@ pub struct ItemRecord {
     pub erosion: u8,
     pub proofed: bool,
     pub location: ItemLocation,
+    /// Species identity is distinct from the race used for cannibalism.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub corpse_species: Option<CorpseSpecies>,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub is_ice_box: bool,
     pub corpse_race: Option<String>,
     pub corpse_age: u32,
     pub rot_threshold: u32,
@@ -45,6 +61,37 @@ pub struct ItemRecord {
     pub trapped: bool,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub trap_known: bool,
+}
+
+/// Does any containing ancestor preserve corpse age? Repeated or dangling
+/// handles terminate traversal, so malformed saves cannot loop forever.
+pub fn frozen_in_ice_box<'a>(
+    item: &ItemRecord,
+    lookup: impl Fn(ItemId) -> Option<&'a ItemRecord>,
+) -> bool {
+    let mut location = &item.location;
+    let mut seen = Vec::new();
+    while let ItemLocation::InContainer(id) = location {
+        if seen.contains(id) {
+            return false;
+        }
+        seen.push(*id);
+        let Some(parent) = lookup(*id) else {
+            return false;
+        };
+        if parent.is_ice_box {
+            return true;
+        }
+        location = &parent.location;
+    }
+    false
+}
+
+impl ItemRecord {
+    /// Legacy records with a supplied race remain corpses even without payload.
+    pub fn is_corpse(&self) -> bool {
+        self.corpse_species.is_some() || self.corpse_race.is_some()
+    }
 }
 
 fn one() -> u32 {
@@ -177,6 +224,24 @@ impl EntityArena {
         false
     }
 
+    /// Advance represented elapsed corpse age, once per world turn. Ice boxes
+    /// preserve the current age; removal resumes from that preserved value.
+    pub fn advance_corpse_ages(&mut self) {
+        let advancing: Vec<_> = self
+            .items
+            .iter()
+            .filter_map(|(id, item)| {
+                (item.is_corpse() && !frozen_in_ice_box(item, |parent| self.items.get(parent)))
+                    .then_some(id)
+            })
+            .collect();
+        for id in advancing {
+            if let Some(item) = self.items.get_mut(id) {
+                item.corpse_age = item.corpse_age.saturating_add(1);
+            }
+        }
+    }
+
     /// Calculate the recursive weight of an item or container in the arena.
     pub fn calculate_total_weight(&self, id: ItemId) -> u32 {
         let Some(item) = self.items.get(id) else {
@@ -226,6 +291,8 @@ mod tests {
             erosion: 1,
             proofed: false,
             location: ItemLocation::Floor(Coord::new(1, 1).unwrap()),
+            corpse_species: None,
+            is_ice_box: false,
             corpse_race: None,
             corpse_age: 0,
             rot_threshold: 50,
@@ -405,6 +472,8 @@ mod tests {
             erosion: 0,
             proofed: false,
             location: ItemLocation::Limbo,
+            corpse_species: None,
+            is_ice_box: false,
             corpse_race: None,
             corpse_age: 0,
             rot_threshold: 50,
@@ -427,6 +496,8 @@ mod tests {
             erosion: 0,
             proofed: false,
             location: ItemLocation::Floor(Coord::new(10, 10).unwrap()),
+            corpse_species: None,
+            is_ice_box: false,
             corpse_race: None,
             corpse_age: 0,
             rot_threshold: 50,
@@ -462,6 +533,8 @@ mod tests {
             erosion: 0,
             proofed: false,
             location: ItemLocation::Limbo,
+            corpse_species: None,
+            is_ice_box: false,
             corpse_race: None,
             corpse_age: 0,
             rot_threshold: 50,
@@ -483,6 +556,8 @@ mod tests {
             erosion: 0,
             proofed: false,
             location: ItemLocation::InContainer(box1),
+            corpse_species: None,
+            is_ice_box: false,
             corpse_race: None,
             corpse_age: 0,
             rot_threshold: 50,

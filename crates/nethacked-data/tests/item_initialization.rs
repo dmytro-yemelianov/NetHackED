@@ -160,6 +160,15 @@ fn generated_profiles_use_c_facts_and_exclude_contextual_payloads() {
             }
         );
     }
+    assert_eq!(
+        Ruleset::vanilla()
+            .item_by_id(K::ICE_BOX)
+            .unwrap()
+            .initialization,
+        ItemInitProfile::Container {
+            container: nethacked_data::item_init::ContainerInit::IceBox
+        }
+    );
     for kind in [
         K::CORPSE,
         K::EGG,
@@ -168,7 +177,6 @@ fn generated_profiles_use_c_facts_and_exclude_contextual_payloads() {
         K::STATUE,
         K::OIL_LAMP,
         K::WAX_CANDLE,
-        K::ICE_BOX,
     ] {
         assert!(Ruleset::vanilla()
             .item_by_id(kind)

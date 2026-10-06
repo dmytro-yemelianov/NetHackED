@@ -46,6 +46,7 @@ pub enum ItemInitProfile {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum ContainerInit {
+    IceBox,
     Chest,
     LargeBox,
     Sack,
@@ -125,10 +126,32 @@ pub fn ring_zero_spe(rn2_4: u32, rn2_3: u32) -> i8 {
     rn2_4.min(3) as i8 - rn2_3.min(2) as i8
 }
 
+/// C mkobj.c:1956 corpse weight clips its long product to LARGEST_INT
+/// (32767, explicitly defined in include/global.h:135).
+pub fn corpse_stack_weight(body_weight: u32, quantity: u32) -> u32 {
+    (u64::from(body_weight) * u64::from(quantity)).min(32767) as u32
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use proptest::prelude::*;
+
+    #[test]
+    fn corpse_weight_c_largest_int_boundaries() {
+        for (body, quantity, expected) in [
+            (20000, 2, 32767),
+            (32766, 1, 32766),
+            (32767, 1, 32767),
+            (32768, 1, 32767),
+            (u32::MAX, 1, 32767),
+            (u32::MAX, u32::MAX, 32767),
+            (0, u32::MAX, 0),
+            (u32::MAX, 0, 0),
+        ] {
+            assert_eq!(corpse_stack_weight(body, quantity), expected);
+        }
+    }
 
     proptest! {
         #[test]
