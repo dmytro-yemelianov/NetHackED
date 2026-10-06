@@ -380,6 +380,83 @@ impl SimulationWorld {
                 }
                 dmg
             }
+            // uhitm.c:??? -> clerical spell (angel attacks)
+            DamageType::Clerical => {
+                if !self.hero_negates(true, events) {
+                    self.handle_clerical_attack(attacker, dmg, events);
+                }
+                dmg
+            }
+            // uhitm.c:3837-4295 -> touch of death (Death)
+            DamageType::Death => {
+                if !self.hero_negates(true, events) {
+                    self.handle_death_touch(attacker, dmg, events);
+                }
+                dmg
+            }
+            // uhitm.c:4492-4569 -> digest (engulfing)
+            DamageType::Digest => {
+                // Digest is part of engulfing; no separate hero-side effect
+                dmg
+            }
+            // uhitm.c:3777-3807 -> Famine: exercise A_CON, morehungry
+            DamageType::Famine => {
+                if !self.hero_negates(false, events) {
+                    say(
+                        events,
+                        &format!(
+                            "{} reaches out, and your body shrivels!",
+                            capitalize(&attacker.name)
+                        ),
+                    );
+                    self.exercise_attr(crate::progress::A_CON, false, events);
+                    self.more_hungry(40, events);
+                }
+                dmg
+            }
+            // uhitm.c:4296-4491 -> nurse heal
+            DamageType::Heal => {
+                self.handle_nurse_heal(attacker, events);
+                0
+            }
+            // uhitm.c:3808-3836 -> Pestilence: diseasemu -> make_sick
+            DamageType::Pestilence => {
+                if self.rng.random_range(0..2u32) == 0 && !self.hero_negates(false, events) {
+                    say(
+                        events,
+                        &format!(
+                            "{} reaches out, and you feel fever and chills!",
+                            capitalize(&attacker.name)
+                        ),
+                    );
+                    self.make_sick(dmg, events);
+                }
+                dmg
+            }
+            // uhitm.c:??? -> random breath
+            DamageType::RandomBreath => {
+                // Handled via breath system, not melee
+                dmg
+            }
+            // uhitm.c:4570-4750 -> steal Amulet/quest artifact
+            DamageType::StealAmulet => {
+                if !self.hero_negates(true, events) {
+                    self.steal_hero_amulet(attacker, events);
+                }
+                0
+            }
+            // uhitm.c:??? -> mage spell (castmu)
+            DamageType::Spell => {
+                // Spell attacks handled via spell system
+                dmg
+            }
+            // uhitm.c:4751-4789 -> seduction (foocubus) - alternate
+            DamageType::SeduceSex => {
+                if !self.hero_negates(true, events) {
+                    self.seduce_hero(attacker, events);
+                }
+                dmg
+            }
             _ => dmg,
         }
     }

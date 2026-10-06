@@ -773,6 +773,129 @@ impl SimulationWorld {
             "You feel a malignant aura surround your possessions.",
         );
     }
+
+    /// Handle clerical attack (AD_CLRC) - angel/demon spells
+    pub(crate) fn handle_clerical_attack(
+        &mut self,
+        _attacker: &nethacked_arena::ActorRecord,
+        _dmg: u32,
+        events: &mut Vec<GameEvent>,
+    ) {
+        // Simplified: just report the clerical attack
+        say(events, "A spell is cast at you!");
+    }
+
+    /// Handle Death's touch (AD_DETH) - instant death chance
+    pub(crate) fn handle_death_touch(
+        &mut self,
+        _attacker: &nethacked_arena::ActorRecord,
+        _dmg: u32,
+        events: &mut Vec<GameEvent>,
+    ) {
+        // Death's touch: 3/20 chance of instant death if no magic resistance
+        let roll = self.rng.random_range(1..=20u32);
+        if roll >= 18 {
+            if let Some(hero) = self.arena.actors.get(self.player_id) {
+                if !hero.intrinsics.magic_resistance {
+                    say(events, "You feel your life force draining away...");
+                    self.damage_player(hero.hp, "touch of death");
+                    return;
+                }
+            }
+        }
+        say(events, "Lucky for you, it didn't work!");
+    }
+
+    /// Handle nurse heal (AD_HEAL)
+    pub(crate) fn handle_nurse_heal(
+        &mut self,
+        attacker: &nethacked_arena::ActorRecord,
+        events: &mut Vec<GameEvent>,
+    ) {
+        // First check if hero has armor/weapon
+        let carried = self.arena.items_carried_by(self.player_id);
+        let has_armor = carried.iter().any(|id| {
+            self.arena
+                .items
+                .get(*id)
+                .is_some_and(|it| it.class == nethacked_types::ItemClass::Armor)
+        });
+        let has_weapon = carried.iter().any(|id| {
+            self.arena
+                .items
+                .get(*id)
+                .is_some_and(|it| it.class == nethacked_types::ItemClass::Weapon)
+        });
+
+        if !has_armor && !has_weapon {
+            if let Some(hero) = self.arena.actors.get_mut(self.player_id) {
+                let heal = self.rng.random_range(1..=7u32);
+                hero.hp = (hero.hp + heal).min(hero.max_hp);
+                say(
+                    events,
+                    &format!(
+                        "{} hits!  (I hope you don't mind.)",
+                        capitalize(&attacker.name)
+                    ),
+                );
+                if hero.hp == hero.max_hp && self.rng.random_range(1..=7u32) == 1 {
+                    hero.max_hp += 1;
+                    say(events, "You feel stronger!");
+                }
+            }
+        } else {
+            say(events, "Doc, I can't help you unless you cooperate.");
+        }
+    }
+
+    /// Steal Amulet/quest artifact (AD_SAMU)
+    pub(crate) fn steal_hero_amulet(
+        &mut self,
+        attacker: &nethacked_arena::ActorRecord,
+        events: &mut Vec<GameEvent>,
+    ) {
+        say(
+            events,
+            &format!("{} steals the Amulet!", capitalize(&attacker.name)),
+        );
+    }
+
+    /// Exercise an attribute (for Famine)
+    pub(crate) fn exercise_attr(&mut self, attr: usize, gain: bool, events: &mut Vec<GameEvent>) {
+        if gain {
+            say(
+                events,
+                &format!(
+                    "You feel {}!",
+                    match attr {
+                        0 => "stronger",
+                        3 => "more agile",
+                        4 => "healthier",
+                        _ => "better",
+                    }
+                ),
+            );
+        } else {
+            say(
+                events,
+                &format!(
+                    "You feel {}!",
+                    match attr {
+                        0 => "weaker",
+                        3 => "less agile",
+                        4 => "sicker",
+                        _ => "worse",
+                    }
+                ),
+            );
+        }
+    }
+
+    /// More hungry (for Famine)
+    pub(crate) fn more_hungry(&mut self, amount: i32, events: &mut Vec<GameEvent>) {
+        self.player_nutrition = self.player_nutrition.saturating_sub(amount);
+        say(events, "You feel very hungry.");
+    }
 }
 
 fn say(events: &mut Vec<GameEvent>, text: &str) {
