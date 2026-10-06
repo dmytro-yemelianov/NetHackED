@@ -5,8 +5,8 @@
 //! Not modelled yet: the quest's `qt_montype()` (1673), the rogue level's
 //! uppercase-only rule (1679) and the elemental planes' `wrong_elem_type()`.
 //!
-//! Item initialization (`mksobj_init`, mkobj.c:869) — BUC, spe, charges,
-//! container contents, artifact chance, erosion, poison.
+//! Supported BUC/spe and weapon stack/poison initialization lives in `item_init`.
+//! Species/fuel, container contents, artifact chance and erosion remain gaps.
 
 use crate::items::{ItemKindId, BOXIPROBS, HELLPROBS, ITEM_CATALOG, MKOBJPROBS, ROGUEPROBS};
 use crate::monsters::MonsterSpeciesId;

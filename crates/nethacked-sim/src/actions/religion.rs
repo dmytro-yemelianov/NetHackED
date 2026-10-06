@@ -178,6 +178,8 @@ impl SimulationWorld {
                                 corpse_age: 0,
                                 rot_threshold: 50,
                                 recharged: 0,
+                                quantity: 1,
+                                poisoned: false,
                             };
                             self.arena.spawn_item(gift_record);
                             events.push(GameEvent::LogMessage {

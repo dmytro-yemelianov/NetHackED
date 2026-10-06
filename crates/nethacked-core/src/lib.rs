@@ -20,6 +20,7 @@ pub mod grid;
 pub mod identification;
 pub mod inventory;
 pub mod inventory_interaction;
+pub mod item_init;
 pub mod lighting;
 pub mod magic;
 pub mod mines;

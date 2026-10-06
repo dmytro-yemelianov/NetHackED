@@ -620,3 +620,90 @@ fn old_fixed_hp_pack_loads_without_changing_its_hash() {
     assert_eq!(reference.hash, bundle.hash);
     assert!(loaded.monsters.iter().all(|def| !def.sample_hp));
 }
+
+#[test]
+fn old_item_profiles_load_fixed_without_changing_hash() {
+    use nethacked_data::item_init::ItemInitProfile;
+    let mut rules = (*Ruleset::vanilla()).clone();
+    for item in &mut rules.items {
+        item.initialization = ItemInitProfile::Fixed;
+    }
+    let bundle = nethacked_pack::NhPack {
+        format: nethacked_pack::PACK_FORMAT_VERSION,
+        manifest: rules.manifest.clone(),
+        hash: ruleset_hash(&rules),
+        ruleset: rules,
+    };
+    let bytes = nethacked_pack::nhpack_to_bytes(&bundle);
+    assert!(!std::str::from_utf8(&bytes)
+        .unwrap()
+        .contains("initialization"));
+    let (loaded, reference, _) = nethacked_pack::load_nhpack_bytes(&bytes).unwrap();
+    assert_eq!(reference.hash, bundle.hash);
+    assert!(loaded.items.iter().all(|i| i.initialization.is_fixed()));
+}
+
+#[test]
+fn item_profiles_are_explicit_custom_opt_in_and_class_validated() {
+    use nethacked_data::item_init::ItemInitProfile;
+    let dir = temp_pack_dir("item-profile");
+    write_vanilla_manifest(&dir, "item-profile");
+    let custom = r#"
+[[item]]
+name = "custom camera"
+new = true
+class = "Tool"
+weight = 17
+cost = 30
+damage_small = [0, 0]
+damage_large = [0, 0]
+ac_bonus = 0
+is_container = false
+is_bag_of_holding = false
+oc_magic = false
+nutrition = 0
+"#;
+    fs::write(dir.join("items.toml"), custom).unwrap();
+    let (fixed, report) = build(&dir).unwrap();
+    assert!(report.is_ok());
+    assert_eq!(
+        fixed.ruleset.item("custom camera").unwrap().initialization,
+        ItemInitProfile::Fixed
+    );
+    let item = fixed
+        .ruleset
+        .create_random_item_supported_fields_by_name(
+            "custom camera",
+            serde_json::from_str("\"Limbo\"").unwrap(),
+            1,
+            |_| panic!("custom fixed draw"),
+        )
+        .unwrap();
+    assert_eq!((item.weight, item.enchantment), (17, 0));
+    fs::write(
+        dir.join("items.toml"),
+        format!("{custom}initialization = {{ kind = \"tool\", charges = \"camera\" }}\n"),
+    )
+    .unwrap();
+    let (sampled, report) = build(&dir).unwrap();
+    assert!(report.is_ok());
+    let item = sampled
+        .ruleset
+        .create_random_item_supported_fields_by_name(
+            "custom camera",
+            serde_json::from_str("\"Limbo\"").unwrap(),
+            1,
+            |n| {
+                assert_eq!(n, 70);
+                69
+            },
+        )
+        .unwrap();
+    assert_eq!((item.weight, item.enchantment), (17, 99));
+    fs::write(
+        dir.join("items.toml"),
+        format!("{custom}initialization = {{ kind = \"wand\", charges = \"standard\" }}\n"),
+    )
+    .unwrap();
+    assert!(build(&dir).is_err());
+}

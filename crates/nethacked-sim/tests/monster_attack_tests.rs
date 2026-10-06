@@ -319,6 +319,8 @@ fn quaff_healing(sim: &mut SimulationWorld) {
         corpse_age: 0,
         rot_threshold: 0,
         recharged: 0,
+        quantity: 1,
+        poisoned: false,
     });
     let idx = sim
         .arena

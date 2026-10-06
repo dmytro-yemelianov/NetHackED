@@ -227,6 +227,14 @@ pub fn validate(rs: &Ruleset) -> Report {
     }
 
     for item in &rs.items {
+        if !item.initialization.matches_class(item.class) {
+            report.errors.push(Diagnostic {
+                file: "items.toml".into(),
+                entry: item.name.clone(),
+                field: Some("initialization".into()),
+                message: "initialization profile does not match item class".into(),
+            });
+        }
         if item.weight > 10000 {
             report.errors.push(Diagnostic {
                 file: "items.toml".into(),

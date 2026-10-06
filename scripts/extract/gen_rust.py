@@ -190,6 +190,49 @@ def object_name(o):
     return prefix + o["name"]
 
 
+def initialization_profile(o, artifact):
+    """Supported mkobj.c:869 switch branches; special cases use C kind IDs.
+
+    Species/fuel/context branches are intentionally fixed. obj.h:260-267
+    defines multigen and poisonability via the negative bow..shuriken skill.
+    """
+    prefix = "crate::item_init::"
+    profile = prefix + "ItemInitProfile::"
+    kind, cls = o["id"], o["class"]
+    boolean = lambda value: str(value).lower()
+    if artifact:
+        return profile + "Fixed"
+    if cls == "weapon":
+        multi = bool(o.get("skill_is_ammo") and o.get("skill") in ("bow", "sling", "crossbow", "dart", "shuriken"))
+        return profile + f"Weapon {{ multigen: {boolean(multi)}, poisonable: {boolean(multi)} }}"
+    if cls == "armor":
+        harmful = kind in ("FUMBLE_BOOTS", "LEVITATION_BOOTS", "HELM_OF_OPPOSITE_ALIGNMENT", "GAUNTLETS_OF_FUMBLING")
+        return profile + f"Armor {{ harmful: {boolean(harmful)} }}"
+    if cls == "wand":
+        charges = {"WAN_WISHING": "Wishing", "WAN_STASIS": "Stasis"}.get(kind, "Standard")
+        return profile + f"Wand {{ charges: {prefix}WandCharges::{charges} }}"
+    if cls == "ring":
+        harmful = kind in ("RIN_TELEPORTATION", "RIN_POLYMORPH", "RIN_AGGRAVATE_MONSTER", "RIN_HUNGER")
+        return profile + f"Ring {{ charged: {boolean('charged' in o.get('flags', []))}, harmful: {boolean(harmful)} }}"
+    if cls == "amulet":
+        harmful = kind in ("AMULET_OF_STRANGULATION", "AMULET_OF_CHANGE", "AMULET_OF_RESTFUL_SLEEP")
+        return profile + f"Amulet {{ harmful: {boolean(harmful)} }}"
+    if cls in ("potion", "scroll", "spbook") and kind != "SCR_MAIL":
+        return profile + {"potion": "Potion", "scroll": "Scroll", "spbook": "Book"}[cls]
+    if cls == "tool":
+        charges = {
+            "EXPENSIVE_CAMERA": "Camera", "TINNING_KIT": "Camera", "MAGIC_MARKER": "Camera",
+            "CAN_OF_GREASE": "Grease", "CRYSTAL_BALL": "CrystalBall",
+            "HORN_OF_PLENTY": "HornOrBag", "BAG_OF_TRICKS": "HornOrBag",
+            "MAGIC_FLUTE": "Instrument", "MAGIC_HARP": "Instrument", "FROST_HORN": "Instrument",
+            "FIRE_HORN": "Instrument", "DRUM_OF_EARTHQUAKE": "Instrument",
+            "BELL_OF_OPENING": "Bell", "MAGIC_LAMP": "MagicLamp",
+        }.get(kind)
+        if charges:
+            return profile + f"Tool {{ charges: {prefix}ToolCharges::{charges} }}"
+    return profile + ("Loadstone" if kind == "LOADSTONE" else "Fixed")
+
+
 def item_entry(variant, name, o, artifact=None):
     w = o["src"]
     cls = pick(CLASS, o["class"], w)
@@ -220,6 +263,7 @@ def item_entry(variant, name, o, artifact=None):
         magic_cancellation: {o['oc2'] if armor else 0},
         armor_slot: {f"Some(ArmorSlot::{pick(SLOT, o['armor_slot'], w)})" if armor else 'None'},
         artifact: {str(artifact is not None).lower()},
+        initialization: {initialization_profile(o, artifact)},
     }},
 """
 

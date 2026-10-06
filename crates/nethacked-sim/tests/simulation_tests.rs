@@ -302,6 +302,8 @@ fn test_pickup_and_drop_lifecycle() {
         corpse_age: 0,
         rot_threshold: 50,
         recharged: 0,
+        quantity: 1,
+        poisoned: false,
     });
 
     let events_pickup = sim.step_player_action(ActionAst::PickUp);
@@ -343,6 +345,8 @@ fn test_wield_weapon() {
         corpse_age: 0,
         rot_threshold: 50,
         recharged: 0,
+        quantity: 1,
+        poisoned: false,
     });
 
     let carried = sim.arena.items_carried_by(sim.player_id);
@@ -1048,6 +1052,8 @@ fn test_nutrition_decay_and_eating() {
         corpse_age: 0,
         rot_threshold: 50,
         recharged: 0,
+        quantity: 1,
+        poisoned: false,
     });
     let carried2 = sim.arena.items_carried_by(sim.player_id);
     let corpse_idx = carried2.iter().position(|&id| id == corpse).unwrap();
@@ -1746,6 +1752,8 @@ fn test_altar_sacrifice_and_divine_crowning() {
         corpse_age: 0,
         rot_threshold: 50,
         recharged: 0,
+        quantity: 1,
+        poisoned: false,
     });
 
     let carried = sim.arena.items_carried_by(sim.player_id);
@@ -1795,6 +1803,8 @@ fn test_altar_holy_water_consecration() {
         corpse_age: 0,
         rot_threshold: 50,
         recharged: 0,
+        quantity: 1,
+        poisoned: false,
     });
 
     let events = sim.step_player_action(ActionAst::Pray);
@@ -1822,6 +1832,8 @@ fn test_wand_of_wishing_spawns_item() {
         corpse_age: 0,
         rot_threshold: 50,
         recharged: 0,
+        quantity: 1,
+        poisoned: false,
     });
 
     let events = sim.step_player_action(ActionAst::Wish(
@@ -1879,6 +1891,8 @@ fn test_wand_of_striking_destroys_drawbridge() {
         corpse_age: 0,
         rot_threshold: 50,
         recharged: 0,
+        quantity: 1,
+        poisoned: false,
     });
 
     let events = sim.step_player_action(ActionAst::ZapWand {
@@ -1920,6 +1934,8 @@ fn test_wand_of_cold_freezes_pool() {
         corpse_age: 0,
         rot_threshold: 50,
         recharged: 0,
+        quantity: 1,
+        poisoned: false,
     });
 
     let events = sim.step_player_action(ActionAst::ZapWand {
@@ -1951,6 +1967,8 @@ fn test_scroll_of_charging_and_explosion() {
         corpse_age: 0,
         rot_threshold: 50,
         recharged: 0,
+        quantity: 1,
+        poisoned: false,
     });
 
     let scroll = sim.arena.spawn_item(ItemRecord {
@@ -1968,6 +1986,8 @@ fn test_scroll_of_charging_and_explosion() {
         corpse_age: 0,
         rot_threshold: 50,
         recharged: 0,
+        quantity: 1,
+        poisoned: false,
     });
 
     let carried = sim.arena.items_carried_by(sim.player_id);
@@ -2003,6 +2023,8 @@ fn test_scroll_of_charging_and_explosion() {
         corpse_age: 0,
         rot_threshold: 50,
         recharged: 0,
+        quantity: 1,
+        poisoned: false,
     });
     let carried2 = sim.arena.items_carried_by(sim.player_id);
     let s2_idx = carried2.iter().position(|&id| id == scroll2).unwrap();
@@ -2042,6 +2064,8 @@ fn test_wand_recharge_explosion_damage_is_d_n_k() {
             corpse_age: 0,
             rot_threshold: 50,
             recharged: 0,
+            quantity: 1,
+            poisoned: false,
         });
         let idx = sim
             .arena
@@ -2106,6 +2130,8 @@ fn test_artifact_combat_bonus_and_vorpal_blade() {
         corpse_age: 0,
         rot_threshold: 50,
         recharged: 0,
+        quantity: 1,
+        poisoned: false,
     });
     sim.wielded_item = Some(excalibur);
 
@@ -2166,6 +2192,8 @@ fn test_ukrainian_i18n_simulation_logging() {
         corpse_age: 0,
         rot_threshold: 50,
         recharged: 0,
+        quantity: 1,
+        poisoned: false,
     });
 
     let wish_events = sim.step_player_action(ActionAst::Wish(
@@ -2279,6 +2307,8 @@ fn test_monster_lich_summon_and_curse() {
         corpse_age: 0,
         rot_threshold: 50,
         recharged: 0,
+        quantity: 1,
+        poisoned: false,
     });
 
     let mut lich = nethacked_data::create_monster_record(
@@ -2330,6 +2360,8 @@ fn test_bones_file_generation_and_ghost_encounter() {
         corpse_age: 0,
         rot_threshold: 50,
         recharged: 0,
+        quantity: 1,
+        poisoned: false,
     });
 
     // Save bones on death
@@ -3251,6 +3283,8 @@ fn test_hero_polymorph_potion_and_damage_reversion() {
         corpse_age: 0,
         rot_threshold: 50,
         recharged: 0,
+        quantity: 1,
+        poisoned: false,
     });
     let carried = sim.arena.items_carried_by(sim.player_id);
     let idx = carried.iter().position(|&id| id == potion).unwrap();
@@ -3350,6 +3384,8 @@ fn test_wand_of_polymorph_unique_monster_invariant() {
         corpse_age: 0,
         rot_threshold: 50,
         recharged: 0,
+        quantity: 1,
+        poisoned: false,
     });
     sim1.step_player_action(ActionAst::ZapWand {
         dir: nethacked_types::Direction::East,
@@ -3404,6 +3440,8 @@ fn test_wand_of_polymorph_unique_monster_invariant() {
         corpse_age: 0,
         rot_threshold: 50,
         recharged: 0,
+        quantity: 1,
+        poisoned: false,
     });
     sim2.step_player_action(ActionAst::ZapWand {
         dir: nethacked_types::Direction::East,
@@ -3461,6 +3499,8 @@ fn test_scroll_of_genocide_conduct_and_level_wipe() {
         corpse_age: 0,
         rot_threshold: 50,
         recharged: 0,
+        quantity: 1,
+        poisoned: false,
     });
 
     assert!(sim.conducts.genocideless);
@@ -3507,6 +3547,8 @@ fn test_cursed_scroll_of_genocide_summons() {
         corpse_age: 0,
         rot_threshold: 50,
         recharged: 0,
+        quantity: 1,
+        poisoned: false,
     });
 
     let before_count = sim.arena.actors.len();
@@ -3573,6 +3615,8 @@ fn test_petrification_countdown_and_lizard_cure() {
         corpse_age: 0,
         rot_threshold: 50,
         recharged: 0,
+        quantity: 1,
+        poisoned: false,
     });
 
     let carried = sim.arena.items_carried_by(sim.player_id);
@@ -3646,6 +3690,8 @@ fn test_weapon_skill_combat_bonus() {
         corpse_age: 0,
         rot_threshold: 50,
         recharged: 0,
+        quantity: 1,
+        poisoned: false,
     });
 
     // Wield it
@@ -3741,6 +3787,8 @@ fn test_ranged_fire_arrow_hits_monster() {
         corpse_age: 0,
         rot_threshold: 50,
         recharged: 0,
+        quantity: 1,
+        poisoned: false,
     });
 
     // Quiver the arrow
@@ -3927,6 +3975,8 @@ fn test_corpse_eating_and_conduct_invalidation() {
         corpse_age: 0,
         rot_threshold: 50,
         recharged: 0,
+        quantity: 1,
+        poisoned: false,
     };
 
     let corpse_id = sim.arena.items.insert(corpse);
@@ -3970,6 +4020,8 @@ fn test_cannibalism_detection() {
         corpse_age: 0,
         rot_threshold: 50,
         recharged: 0,
+        quantity: 1,
+        poisoned: false,
     };
 
     let corpse_id = sim.arena.items.insert(human_corpse);

@@ -178,6 +178,12 @@ pub struct ItemDef {
     pub nutrition: u32,
     /// Armor slot and C base AC (from `nethacked_core::ac` table); `None` for non-armor.
     pub armor: Option<ArmorDef>,
+    /// Missing metadata preserves the old fixed factory behavior and hash.
+    #[serde(
+        default,
+        skip_serializing_if = "crate::item_init::ItemInitProfile::is_fixed"
+    )]
+    pub initialization: crate::item_init::ItemInitProfile,
 }
 
 impl ItemDef {
@@ -584,6 +590,8 @@ impl Ruleset {
             corpse_age: 0,
             rot_threshold: 50,
             recharged: 0,
+            quantity: 1,
+            poisoned: false,
         })
     }
 
@@ -714,6 +722,7 @@ fn build_vanilla_ruleset() -> Ruleset {
                 wand_dir: arch.wand_dir,
                 nutrition: arch.nutrition,
                 armor,
+                initialization: arch.initialization,
             }
         })
         .collect();

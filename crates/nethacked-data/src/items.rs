@@ -48,6 +48,9 @@ pub struct ItemArchetype {
     pub armor_slot: Option<ArmorSlot>,
     /// An `artilist[]` artifact (properties of its base object, its own cost).
     pub artifact: bool,
+    /// Generated supported-field profile from C class, flags and special kinds.
+    #[serde(default)]
+    pub initialization: crate::item_init::ItemInitProfile,
 }
 
 include!("generated/items.rs");
@@ -98,5 +101,7 @@ pub fn create_item_record(id: ItemKindId, location: ItemLocation, buc: Buc) -> I
         corpse_age: 0,
         rot_threshold: 50,
         recharged: 0,
+        quantity: 1,
+        poisoned: false,
     }
 }

@@ -264,6 +264,7 @@ pub fn vanilla_pack_files() -> PackFiles {
                 wand_dir: i.wand_dir.map(Some),
                 nutrition: Some(i.nutrition),
                 armor: i.armor.clone().map(Some),
+                initialization: Some(i.initialization),
             })
             .collect(),
     };

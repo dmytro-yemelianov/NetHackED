@@ -15,6 +15,32 @@ use crate::world::{SimulationWorld, StoredLevel};
 
 pub const SANCTUM_DEPTH: usize = 6;
 
+/// C `NetHack-5.0.0/src/mklev.c:1158-1168` and `src/mkobj.c:270,869`:
+/// kind selection, supported initialization, then the room continuation draw.
+/// Rejected placement still consumes initialization for the selected object.
+fn roll_room_object(
+    rules: &nethacked_data::Ruleset,
+    level: &nethacked_dungeon::DungeonLevel,
+    coord: Option<Coord>,
+    table: nethacked_data::generation::ObjectTable,
+    hero_level: u32,
+    mut rn2: impl FnMut(u32) -> u32,
+) -> (Option<nethacked_arena::ItemRecord>, bool) {
+    let kind = nethacked_data::generation::mkobj_kind(None, table, &mut rn2);
+    let spot = coord.filter(|&c| level.is_passable(c));
+    let item = kind.and_then(|kind| {
+        rules.create_random_item_supported_fields(
+            kind,
+            spot.map_or(ItemLocation::Limbo, ItemLocation::Floor),
+            hero_level,
+            &mut rn2,
+        )
+    });
+    let item = item.filter(|_| spot.is_some());
+    let keep_generating = rn2(5) == 0;
+    (item, keep_generating)
+}
+
 /// Without the completed invocation, the push can never land on Moloch's Sanctum.
 pub fn clamp_mysterious_force(pushed: usize, sanctum_open: bool) -> usize {
     if sanctum_open {
@@ -766,8 +792,8 @@ impl SimulationWorld {
                     // C mklev.c fill_ordinary_room (1157-1170): with probability
                     // 1/3 a room gets a random object, then more while !rn2(5);
                     // kinds come from mkobj() over the C class/prob data.
-                    // mksobj()'s per-kind init (BUC, charges, enchantment) is not
-                    // ported yet: objects are uncursed with catalog defaults.
+                    // C mkobj.c:869: supported BUC/spe and weapon stack/poison
+                    // fields. Species/fuel/erosion/containers/artifacts remain gaps.
                     let table = if branch == BranchId::Gehennom {
                         nethacked_data::generation::ObjectTable::Hell
                     } else {
@@ -786,22 +812,18 @@ impl SimulationWorld {
                         loop {
                             let x = self.rng.random_range(x1..=x2);
                             let y = self.rng.random_range(y1..=y2);
-                            let rng = &mut self.rng;
-                            let kind = nethacked_data::generation::mkobj_kind(None, table, |n| {
-                                rng.random_range(0..n)
-                            });
-                            // somexyspace(): only an open floor square
-                            let spot = Coord::new(x, y).filter(|&c| self.level.is_passable(c));
-                            if let (Some(kind), Some(c)) = (kind, spot) {
-                                if let Some(item) = self.ruleset.create_item_record_by_id(
-                                    kind,
-                                    ItemLocation::Floor(c),
-                                    Buc::Uncursed,
-                                ) {
-                                    self.arena.spawn_item(item);
-                                }
+                            let (item, keep_generating) = roll_room_object(
+                                &self.ruleset,
+                                &self.level,
+                                Coord::new(x, y),
+                                table,
+                                ctx.hero_level.max(1) as u32,
+                                |n| self.rng.random_range(0..n),
+                            );
+                            if let Some(item) = item {
+                                self.arena.spawn_item(item);
                             }
-                            if self.rng.random_range(0..5u32) != 0 {
+                            if !keep_generating {
                                 break;
                             }
                         }
@@ -1209,5 +1231,80 @@ impl SimulationWorld {
         }
 
         events
+    }
+}
+
+#[cfg(test)]
+mod room_item_tests {
+    use super::*;
+    use nethacked_data::generation::ObjectTable;
+    use rand::{RngCore, SeedableRng};
+    use rand_chacha::ChaCha8Rng;
+
+    use nethacked_data::ITEM_CATALOG as catalog; // static-ok: independent test oracle
+
+    #[test]
+    fn rejected_room_object_initializes_before_continuation_draw() {
+        let rules = nethacked_data::Ruleset::vanilla();
+        // Independent C class total; selecting zero gives the first kind, arrow.
+        let total: u32 = catalog
+            .iter() // static-ok: test oracle
+            .filter(|a| a.class == nethacked_types::ItemClass::Weapon && !a.artifact)
+            .map(|a| a.prob)
+            .sum();
+        let trace = [
+            (100, 0),   // mkobj class: weapon
+            (total, 0), // kind: arrow
+            (6, 0),     // multigen quantity: 6
+            (11, 0),    // positive enchantment branch
+            (3, 1),     // rne(3): +1
+            (2, 1),     // blessed
+            (100, 0),   // poisoned
+            (5, 1),     // room continuation: stop
+        ];
+        for passable in [false, true] {
+            let level = nethacked_dungeon::DungeonLevel::new_solid(if passable {
+                Tile::Room
+            } else {
+                Tile::Stone
+            });
+            let coord = Coord::new(3, 4).unwrap();
+            assert_eq!(level.is_passable(coord), passable);
+            let mut rng = ChaCha8Rng::seed_from_u64(918);
+            let mut expected_rng = rng.clone();
+            // This state oracle is independent of both the helper and replay:
+            // one consumed word for each of the eight prescribed C draws.
+            for _ in 0..8 {
+                expected_rng.next_u64();
+            }
+            let mut draws = trace.iter();
+            let (item, keep_generating) =
+                roll_room_object(&rules, &level, Some(coord), ObjectTable::Dungeon, 1, |n| {
+                    let &(bound, value) = draws.next().expect("unexpected draw");
+                    assert_eq!(
+                        n, bound,
+                        "initializer must precede continuation, including rejected placement"
+                    );
+                    rng.next_u64();
+                    value
+                });
+            assert_eq!(draws.len(), 0);
+            assert_eq!(rng.next_u64(), expected_rng.next_u64());
+            assert!(!keep_generating);
+            if passable {
+                let item = item.unwrap();
+                assert_eq!(item.name, rules.item_by_id(ItemKindId::ARROW).unwrap().name);
+                assert_eq!(item.location, ItemLocation::Floor(coord));
+                assert_eq!(
+                    (item.quantity, item.enchantment, item.buc, item.poisoned),
+                    (6, 1, Buc::Blessed, true)
+                );
+            } else {
+                assert!(
+                    item.is_none(),
+                    "walled room rejects the fully initialized object"
+                );
+            }
+        }
     }
 }

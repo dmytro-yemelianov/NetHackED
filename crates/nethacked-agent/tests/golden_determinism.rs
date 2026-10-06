@@ -1,6 +1,7 @@
 //! Frozen fingerprints of vanilla play. Arena runs and bestiary combat were
 //! rebaselined on 2026-10-06 for the user-approved C-correct sampled-HP migration.
-//! Event-log fingerprints remain unchanged. Future unintended changes must fail.
+//! Arena runs were rebaselined again for approved item initialization/RNG draws.
+//! Event logs and bestiary combat retain their HP-era values. Unintended changes fail.
 use nethacked_agent::arena::run_seed_games;
 use nethacked_data::monsters::{MonsterArchetype, BESTIARY};
 use nethacked_data::roles::{get_role, Gender, RaceId, RoleId};
@@ -41,9 +42,9 @@ const DIRS: [Direction; 8] = [
 
 const EXPECTED_RUNS: [u64; 4] = [
     10_590_427_399_958_928_342,
-    205_152_250_578_490_892,
-    17_794_119_955_160_552_436,
-    13_803_201_863_293_933_442,
+    2_931_762_791_910_734_826,
+    15_099_196_031_471_267_318,
+    2_591_149_320_877_621_302,
 ];
 const EXPECTED_LOGS: [u64; 9] = [
     6_084_688_683_205_385_671,

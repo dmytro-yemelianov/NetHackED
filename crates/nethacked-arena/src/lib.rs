@@ -34,6 +34,18 @@ pub struct ItemRecord {
     /// Times recharged (C `obj->recharged`, read.c:729); distinct from `erosion`.
     #[serde(default)]
     pub recharged: u8,
+    /// Stack size; weight stores the total stack weight (C obj->owt).
+    #[serde(default = "one", skip_serializing_if = "is_one")]
+    pub quantity: u32,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub poisoned: bool,
+}
+
+fn one() -> u32 {
+    1
+}
+fn is_one(value: &u32) -> bool {
+    *value == 1
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -208,6 +220,8 @@ mod tests {
             corpse_age: 0,
             rot_threshold: 50,
             recharged: 3,
+            quantity: 1,
+            poisoned: false,
         });
         let mut v = serde_json::to_value(arena.items.get(id).unwrap()).unwrap();
         assert_eq!(v["recharged"], 3);
@@ -215,6 +229,23 @@ mod tests {
         let back: ItemRecord = serde_json::from_value(v).unwrap();
         assert_eq!(back.recharged, 0);
         assert_eq!(back.erosion, 1);
+        assert_eq!(back.quantity, 1);
+        assert!(!back.poisoned);
+        let mut old = serde_json::to_value(&back).unwrap();
+        assert!(old.get("quantity").is_none());
+        assert!(old.get("poisoned").is_none());
+        old.as_object_mut().unwrap().remove("quantity");
+        old.as_object_mut().unwrap().remove("poisoned");
+        let mut loaded: ItemRecord = serde_json::from_value(old).unwrap();
+        assert_eq!(loaded.quantity, 1);
+        assert!(!loaded.poisoned);
+        loaded.quantity = 9;
+        loaded.poisoned = true;
+        let encoded = serde_json::to_string(&loaded).unwrap();
+        assert_eq!(
+            serde_json::from_str::<ItemRecord>(&encoded).unwrap(),
+            loaded
+        );
     }
 
     #[test]
@@ -361,6 +392,8 @@ mod tests {
             corpse_age: 0,
             rot_threshold: 50,
             recharged: 0,
+            quantity: 1,
+            poisoned: false,
         });
 
         let boh = arena.spawn_item(ItemRecord {
@@ -378,6 +411,8 @@ mod tests {
             corpse_age: 0,
             rot_threshold: 50,
             recharged: 0,
+            quantity: 1,
+            poisoned: false,
         });
 
         // Place dagger inside bag
@@ -408,6 +443,8 @@ mod tests {
             corpse_age: 0,
             rot_threshold: 50,
             recharged: 0,
+            quantity: 1,
+            poisoned: false,
         });
         let box2 = arena.spawn_item(ItemRecord {
             name: "box 2".into(),
@@ -424,6 +461,8 @@ mod tests {
             corpse_age: 0,
             rot_threshold: 50,
             recharged: 0,
+            quantity: 1,
+            poisoned: false,
         });
 
         assert!(arena.contains_transitive(box1, box2));

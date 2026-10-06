@@ -978,6 +978,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: true, poisonable: true },
     },
     ItemArchetype {
         // include/objects.h:146
@@ -999,6 +1000,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: true, poisonable: true },
     },
     ItemArchetype {
         // include/objects.h:149
@@ -1020,6 +1022,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: true, poisonable: true },
     },
     ItemArchetype {
         // include/objects.h:152
@@ -1041,6 +1044,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: true, poisonable: true },
     },
     ItemArchetype {
         // include/objects.h:154
@@ -1062,6 +1066,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: true, poisonable: true },
     },
     ItemArchetype {
         // include/objects.h:157
@@ -1083,6 +1088,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: true, poisonable: true },
     },
     ItemArchetype {
         // include/objects.h:162
@@ -1104,6 +1110,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: true, poisonable: true },
     },
     ItemArchetype {
         // include/objects.h:165
@@ -1125,6 +1132,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: true, poisonable: true },
     },
     ItemArchetype {
         // include/objects.h:168
@@ -1146,6 +1154,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:176
@@ -1167,6 +1176,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:179
@@ -1188,6 +1198,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:182
@@ -1209,6 +1220,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:185
@@ -1230,6 +1242,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:188
@@ -1251,6 +1264,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:191
@@ -1272,6 +1286,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:196
@@ -1293,6 +1308,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:202
@@ -1314,6 +1330,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:205
@@ -1335,6 +1352,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:208
@@ -1356,6 +1374,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:211
@@ -1377,6 +1396,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:214
@@ -1398,6 +1418,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:217
@@ -1419,6 +1440,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:220
@@ -1440,6 +1462,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:223
@@ -1461,6 +1484,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:230
@@ -1482,6 +1506,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:233
@@ -1503,6 +1528,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:238
@@ -1524,6 +1550,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:241
@@ -1545,6 +1572,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:246
@@ -1566,6 +1594,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:249
@@ -1587,6 +1616,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:252
@@ -1608,6 +1638,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:255
@@ -1629,6 +1660,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:258
@@ -1650,6 +1682,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:261
@@ -1671,6 +1704,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:264
@@ -1692,6 +1726,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:268
@@ -1713,6 +1748,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:272
@@ -1734,6 +1770,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:276
@@ -1755,6 +1792,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:280
@@ -1776,6 +1814,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:285
@@ -1797,6 +1836,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:289
@@ -1818,6 +1858,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:296
@@ -1839,6 +1880,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:300
@@ -1860,6 +1902,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:304
@@ -1881,6 +1924,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:308
@@ -1902,6 +1946,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:312
@@ -1923,6 +1968,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:316
@@ -1944,6 +1990,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:320
@@ -1965,6 +2012,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:325
@@ -1986,6 +2034,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:328
@@ -2007,6 +2056,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:332
@@ -2028,6 +2078,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:337
@@ -2049,6 +2100,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:341
@@ -2070,6 +2122,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:347
@@ -2091,6 +2144,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:350
@@ -2112,6 +2166,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:357
@@ -2133,6 +2188,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:361
@@ -2154,6 +2210,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:365
@@ -2175,6 +2232,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:369
@@ -2196,6 +2254,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:373
@@ -2217,6 +2276,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:376
@@ -2238,6 +2298,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:379
@@ -2259,6 +2320,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:383
@@ -2280,6 +2342,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:386
@@ -2301,6 +2364,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:392
@@ -2322,6 +2386,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:396
@@ -2343,6 +2408,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:398
@@ -2364,6 +2430,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:400
@@ -2385,6 +2452,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:402
@@ -2406,6 +2474,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:404
@@ -2427,6 +2496,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:406
@@ -2448,6 +2518,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Weapon { multigen: false, poisonable: false },
     },
     ItemArchetype {
         // include/objects.h:447
@@ -2469,6 +2540,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Helmet),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:450
@@ -2490,6 +2562,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Helmet),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:453
@@ -2511,6 +2584,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Helmet),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:456
@@ -2532,6 +2606,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Helmet),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:461
@@ -2553,6 +2628,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 1,
         armor_slot: Some(ArmorSlot::Helmet),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:466
@@ -2574,6 +2650,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Helmet),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:469
@@ -2595,6 +2672,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Helmet),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:474
@@ -2616,6 +2694,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Helmet),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:478
@@ -2637,6 +2716,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Helmet),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:481
@@ -2658,6 +2738,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Helmet),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:484
@@ -2679,6 +2760,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Helmet),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: true },
     },
     ItemArchetype {
         // include/objects.h:487
@@ -2700,6 +2782,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Helmet),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:503
@@ -2721,6 +2804,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:506
@@ -2742,6 +2826,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:508
@@ -2763,6 +2848,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:514
@@ -2784,6 +2870,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:516
@@ -2805,6 +2892,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:518
@@ -2826,6 +2914,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:520
@@ -2847,6 +2936,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:522
@@ -2868,6 +2958,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:524
@@ -2889,6 +2980,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:526
@@ -2910,6 +3002,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:531
@@ -2931,6 +3024,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:533
@@ -2952,6 +3046,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:535
@@ -2973,6 +3068,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:541
@@ -2994,6 +3090,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:543
@@ -3015,6 +3112,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:545
@@ -3036,6 +3134,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:547
@@ -3057,6 +3156,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:549
@@ -3078,6 +3178,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:551
@@ -3099,6 +3200,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:553
@@ -3120,6 +3222,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:558
@@ -3141,6 +3244,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 2,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:561
@@ -3162,6 +3266,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 2,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:564
@@ -3183,6 +3288,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 1,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:567
@@ -3204,6 +3310,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 1,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:570
@@ -3225,6 +3332,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 1,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:573
@@ -3246,6 +3354,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 2,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:576
@@ -3267,6 +3376,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 2,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:579
@@ -3288,6 +3398,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 1,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:582
@@ -3309,6 +3420,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 1,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:585
@@ -3330,6 +3442,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 1,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:588
@@ -3351,6 +3464,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 1,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:591
@@ -3372,6 +3486,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 1,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:594
@@ -3393,6 +3508,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 1,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:597
@@ -3414,6 +3530,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 1,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:600
@@ -3435,6 +3552,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Suit),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:605
@@ -3456,6 +3574,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Shirt),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:608
@@ -3477,6 +3596,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Shirt),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:613
@@ -3498,6 +3618,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 1,
         armor_slot: Some(ArmorSlot::Cloak),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:616
@@ -3519,6 +3640,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 1,
         armor_slot: Some(ArmorSlot::Cloak),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:619
@@ -3540,6 +3662,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 1,
         armor_slot: Some(ArmorSlot::Cloak),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:622
@@ -3561,6 +3684,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 1,
         armor_slot: Some(ArmorSlot::Cloak),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:625
@@ -3582,6 +3706,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 2,
         armor_slot: Some(ArmorSlot::Cloak),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:627
@@ -3603,6 +3728,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 2,
         armor_slot: Some(ArmorSlot::Cloak),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:632
@@ -3624,6 +3750,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 1,
         armor_slot: Some(ArmorSlot::Cloak),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:635
@@ -3645,6 +3772,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 1,
         armor_slot: Some(ArmorSlot::Cloak),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:639
@@ -3666,6 +3794,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 3,
         armor_slot: Some(ArmorSlot::Cloak),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:643
@@ -3687,6 +3816,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 1,
         armor_slot: Some(ArmorSlot::Cloak),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:646
@@ -3708,6 +3838,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 1,
         armor_slot: Some(ArmorSlot::Cloak),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:650
@@ -3729,6 +3860,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 1,
         armor_slot: Some(ArmorSlot::Cloak),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:655
@@ -3750,6 +3882,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Shield),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:658
@@ -3771,6 +3904,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Shield),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:661
@@ -3792,6 +3926,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Shield),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:664
@@ -3813,6 +3948,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Shield),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:667
@@ -3834,6 +3970,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Shield),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:670
@@ -3855,6 +3992,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Shield),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:673
@@ -3876,6 +4014,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Shield),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:676
@@ -3897,6 +4036,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Shield),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:679
@@ -3918,6 +4058,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Shield),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:688
@@ -3939,6 +4080,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Gloves),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:691
@@ -3960,6 +4102,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Gloves),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: true },
     },
     ItemArchetype {
         // include/objects.h:694
@@ -3981,6 +4124,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Gloves),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:697
@@ -4002,6 +4146,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Gloves),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:701
@@ -4023,6 +4168,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Boots),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:703
@@ -4044,6 +4190,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Boots),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:705
@@ -4065,6 +4212,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Boots),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:708
@@ -4086,6 +4234,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Boots),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:711
@@ -4107,6 +4256,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Boots),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:714
@@ -4128,6 +4278,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Boots),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:717
@@ -4149,6 +4300,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Boots),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:720
@@ -4170,6 +4322,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Boots),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:724
@@ -4191,6 +4344,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Boots),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: true },
     },
     ItemArchetype {
         // include/objects.h:727
@@ -4212,6 +4366,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Boots),
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Armor { harmful: true },
     },
     ItemArchetype {
         // include/objects.h:742
@@ -4233,6 +4388,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Ring { charged: true, harmful: false },
     },
     ItemArchetype {
         // include/objects.h:745
@@ -4254,6 +4410,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Ring { charged: true, harmful: false },
     },
     ItemArchetype {
         // include/objects.h:748
@@ -4275,6 +4432,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Ring { charged: true, harmful: false },
     },
     ItemArchetype {
         // include/objects.h:751
@@ -4296,6 +4454,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Ring { charged: true, harmful: false },
     },
     ItemArchetype {
         // include/objects.h:754
@@ -4317,6 +4476,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Ring { charged: true, harmful: false },
     },
     ItemArchetype {
         // include/objects.h:757
@@ -4338,6 +4498,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Ring { charged: true, harmful: false },
     },
     ItemArchetype {
         // include/objects.h:764
@@ -4359,6 +4520,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Ring { charged: false, harmful: false },
     },
     ItemArchetype {
         // include/objects.h:767
@@ -4380,6 +4542,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Ring { charged: false, harmful: false },
     },
     ItemArchetype {
         // include/objects.h:770
@@ -4401,6 +4564,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Ring { charged: false, harmful: false },
     },
     ItemArchetype {
         // include/objects.h:773
@@ -4422,6 +4586,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Ring { charged: false, harmful: false },
     },
     ItemArchetype {
         // include/objects.h:776
@@ -4443,6 +4608,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Ring { charged: false, harmful: false },
     },
     ItemArchetype {
         // include/objects.h:779
@@ -4464,6 +4630,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Ring { charged: false, harmful: true },
     },
     ItemArchetype {
         // include/objects.h:782
@@ -4485,6 +4652,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Ring { charged: false, harmful: true },
     },
     ItemArchetype {
         // include/objects.h:785
@@ -4506,6 +4674,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Ring { charged: false, harmful: false },
     },
     ItemArchetype {
         // include/objects.h:788
@@ -4527,6 +4696,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Ring { charged: false, harmful: false },
     },
     ItemArchetype {
         // include/objects.h:791
@@ -4548,6 +4718,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Ring { charged: false, harmful: false },
     },
     ItemArchetype {
         // include/objects.h:794
@@ -4569,6 +4740,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Ring { charged: false, harmful: false },
     },
     ItemArchetype {
         // include/objects.h:797
@@ -4590,6 +4762,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Ring { charged: false, harmful: false },
     },
     ItemArchetype {
         // include/objects.h:800
@@ -4611,6 +4784,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Ring { charged: false, harmful: false },
     },
     ItemArchetype {
         // include/objects.h:803
@@ -4632,6 +4806,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Ring { charged: false, harmful: false },
     },
     ItemArchetype {
         // include/objects.h:806
@@ -4653,6 +4828,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Ring { charged: false, harmful: false },
     },
     ItemArchetype {
         // include/objects.h:809
@@ -4674,6 +4850,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Ring { charged: false, harmful: true },
     },
     ItemArchetype {
         // include/objects.h:812
@@ -4695,6 +4872,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Ring { charged: false, harmful: false },
     },
     ItemArchetype {
         // include/objects.h:815
@@ -4716,6 +4894,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Ring { charged: false, harmful: true },
     },
     ItemArchetype {
         // include/objects.h:818
@@ -4737,6 +4916,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Ring { charged: false, harmful: false },
     },
     ItemArchetype {
         // include/objects.h:821
@@ -4758,6 +4938,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Ring { charged: false, harmful: false },
     },
     ItemArchetype {
         // include/objects.h:824
@@ -4779,6 +4960,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Ring { charged: false, harmful: false },
     },
     ItemArchetype {
         // include/objects.h:827
@@ -4800,6 +4982,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Ring { charged: false, harmful: false },
     },
     ItemArchetype {
         // include/objects.h:836
@@ -4821,6 +5004,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Amulet { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:839
@@ -4842,6 +5026,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Amulet { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:841
@@ -4863,6 +5048,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Amulet { harmful: true },
     },
     ItemArchetype {
         // include/objects.h:843
@@ -4884,6 +5070,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Amulet { harmful: true },
     },
     ItemArchetype {
         // include/objects.h:845
@@ -4905,6 +5092,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Amulet { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:847
@@ -4926,6 +5114,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Amulet { harmful: true },
     },
     ItemArchetype {
         // include/objects.h:849
@@ -4947,6 +5136,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Amulet { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:851
@@ -4968,6 +5158,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Amulet { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:853
@@ -4989,6 +5180,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Amulet { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:856
@@ -5010,6 +5202,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Amulet { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:860
@@ -5031,6 +5224,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Amulet { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:869
@@ -5052,6 +5246,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Amulet { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:874
@@ -5073,6 +5268,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Amulet { harmful: false },
     },
     ItemArchetype {
         // include/objects.h:900
@@ -5094,6 +5290,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:902
@@ -5115,6 +5312,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:904
@@ -5136,6 +5334,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:906
@@ -5157,6 +5356,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:908
@@ -5178,6 +5378,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:910
@@ -5199,6 +5400,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:912
@@ -5220,6 +5422,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Tool { charges: crate::item_init::ToolCharges::HornOrBag },
     },
     ItemArchetype {
         // include/objects.h:917
@@ -5241,6 +5444,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:919
@@ -5262,6 +5466,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:921
@@ -5283,6 +5488,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:924
@@ -5304,6 +5510,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:926
@@ -5325,6 +5532,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:928
@@ -5346,6 +5554,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:930
@@ -5367,6 +5576,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:932
@@ -5388,6 +5598,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Tool { charges: crate::item_init::ToolCharges::MagicLamp },
     },
     ItemArchetype {
         // include/objects.h:935
@@ -5409,6 +5620,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Tool { charges: crate::item_init::ToolCharges::Camera },
     },
     ItemArchetype {
         // include/objects.h:937
@@ -5430,6 +5642,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:939
@@ -5451,6 +5664,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Tool { charges: crate::item_init::ToolCharges::CrystalBall },
     },
     ItemArchetype {
         // include/objects.h:945
@@ -5472,6 +5686,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:947
@@ -5493,6 +5708,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:949
@@ -5514,6 +5730,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:954
@@ -5535,6 +5752,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:956
@@ -5556,6 +5774,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:958
@@ -5577,6 +5796,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:960
@@ -5598,6 +5818,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Tool { charges: crate::item_init::ToolCharges::Camera },
     },
     ItemArchetype {
         // include/objects.h:962
@@ -5619,6 +5840,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:964
@@ -5640,6 +5862,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Tool { charges: crate::item_init::ToolCharges::Grease },
     },
     ItemArchetype {
         // include/objects.h:966
@@ -5661,6 +5884,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:969
@@ -5682,6 +5906,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Tool { charges: crate::item_init::ToolCharges::Camera },
     },
     ItemArchetype {
         // include/objects.h:972
@@ -5703,6 +5928,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:974
@@ -5724,6 +5950,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:978
@@ -5745,6 +5972,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:980
@@ -5766,6 +5994,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:982
@@ -5787,6 +6016,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:984
@@ -5808,6 +6038,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Tool { charges: crate::item_init::ToolCharges::Instrument },
     },
     ItemArchetype {
         // include/objects.h:986
@@ -5829,6 +6060,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:988
@@ -5850,6 +6082,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Tool { charges: crate::item_init::ToolCharges::Instrument },
     },
     ItemArchetype {
         // include/objects.h:990
@@ -5871,6 +6104,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Tool { charges: crate::item_init::ToolCharges::Instrument },
     },
     ItemArchetype {
         // include/objects.h:992
@@ -5892,6 +6126,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Tool { charges: crate::item_init::ToolCharges::HornOrBag },
     },
     ItemArchetype {
         // include/objects.h:995
@@ -5913,6 +6148,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:997
@@ -5934,6 +6170,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Tool { charges: crate::item_init::ToolCharges::Instrument },
     },
     ItemArchetype {
         // include/objects.h:999
@@ -5955,6 +6192,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1001
@@ -5976,6 +6214,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1003
@@ -5997,6 +6236,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1005
@@ -6018,6 +6258,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Tool { charges: crate::item_init::ToolCharges::Instrument },
     },
     ItemArchetype {
         // include/objects.h:1009
@@ -6039,6 +6280,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1012
@@ -6060,6 +6302,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1016
@@ -6081,6 +6324,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1024
@@ -6102,6 +6346,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1028
@@ -6123,6 +6368,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Tool { charges: crate::item_init::ToolCharges::Bell },
     },
     ItemArchetype {
         // include/objects.h:1049
@@ -6144,6 +6390,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1051
@@ -6165,6 +6412,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1053
@@ -6186,6 +6434,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1055
@@ -6207,6 +6456,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1057
@@ -6228,6 +6478,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1060
@@ -6249,6 +6500,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1064
@@ -6270,6 +6522,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1068
@@ -6291,6 +6544,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1070
@@ -6312,6 +6566,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1072
@@ -6333,6 +6588,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1074
@@ -6354,6 +6610,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1077
@@ -6375,6 +6632,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1079
@@ -6396,6 +6654,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1080
@@ -6417,6 +6676,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1081
@@ -6438,6 +6698,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1083
@@ -6459,6 +6720,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1085
@@ -6480,6 +6742,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1086
@@ -6501,6 +6764,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1087
@@ -6522,6 +6786,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1089
@@ -6543,6 +6808,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1091
@@ -6564,6 +6830,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1095
@@ -6585,6 +6852,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1099
@@ -6606,6 +6874,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1100
@@ -6627,6 +6896,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1102
@@ -6648,6 +6918,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1104
@@ -6669,6 +6940,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1105
@@ -6690,6 +6962,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1107
@@ -6711,6 +6984,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1109
@@ -6732,6 +7006,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1111
@@ -6753,6 +7028,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1112
@@ -6774,6 +7050,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1113
@@ -6795,6 +7072,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1117
@@ -6816,6 +7094,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1126
@@ -6837,6 +7116,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Potion,
     },
     ItemArchetype {
         // include/objects.h:1128
@@ -6858,6 +7138,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Potion,
     },
     ItemArchetype {
         // include/objects.h:1130
@@ -6879,6 +7160,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Potion,
     },
     ItemArchetype {
         // include/objects.h:1132
@@ -6900,6 +7182,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Potion,
     },
     ItemArchetype {
         // include/objects.h:1134
@@ -6921,6 +7204,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Potion,
     },
     ItemArchetype {
         // include/objects.h:1136
@@ -6942,6 +7226,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Potion,
     },
     ItemArchetype {
         // include/objects.h:1138
@@ -6963,6 +7248,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Potion,
     },
     ItemArchetype {
         // include/objects.h:1140
@@ -6984,6 +7270,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Potion,
     },
     ItemArchetype {
         // include/objects.h:1142
@@ -7005,6 +7292,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Potion,
     },
     ItemArchetype {
         // include/objects.h:1144
@@ -7026,6 +7314,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Potion,
     },
     ItemArchetype {
         // include/objects.h:1146
@@ -7047,6 +7336,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Potion,
     },
     ItemArchetype {
         // include/objects.h:1148
@@ -7068,6 +7358,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Potion,
     },
     ItemArchetype {
         // include/objects.h:1150
@@ -7089,6 +7380,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Potion,
     },
     ItemArchetype {
         // include/objects.h:1152
@@ -7110,6 +7402,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Potion,
     },
     ItemArchetype {
         // include/objects.h:1154
@@ -7131,6 +7424,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Potion,
     },
     ItemArchetype {
         // include/objects.h:1156
@@ -7152,6 +7446,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Potion,
     },
     ItemArchetype {
         // include/objects.h:1158
@@ -7173,6 +7468,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Potion,
     },
     ItemArchetype {
         // include/objects.h:1160
@@ -7194,6 +7490,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Potion,
     },
     ItemArchetype {
         // include/objects.h:1162
@@ -7215,6 +7512,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Potion,
     },
     ItemArchetype {
         // include/objects.h:1164
@@ -7236,6 +7534,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Potion,
     },
     ItemArchetype {
         // include/objects.h:1166
@@ -7257,6 +7556,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Potion,
     },
     ItemArchetype {
         // include/objects.h:1168
@@ -7278,6 +7578,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Potion,
     },
     ItemArchetype {
         // include/objects.h:1170
@@ -7299,6 +7600,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Potion,
     },
     ItemArchetype {
         // include/objects.h:1172
@@ -7320,6 +7622,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Potion,
     },
     ItemArchetype {
         // include/objects.h:1174
@@ -7341,6 +7644,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Potion,
     },
     ItemArchetype {
         // include/objects.h:1178
@@ -7362,6 +7666,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Potion,
     },
     ItemArchetype {
         // include/objects.h:1188
@@ -7383,6 +7688,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Scroll,
     },
     ItemArchetype {
         // include/objects.h:1190
@@ -7404,6 +7710,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Scroll,
     },
     ItemArchetype {
         // include/objects.h:1192
@@ -7425,6 +7732,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Scroll,
     },
     ItemArchetype {
         // include/objects.h:1194
@@ -7446,6 +7754,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Scroll,
     },
     ItemArchetype {
         // include/objects.h:1196
@@ -7467,6 +7776,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Scroll,
     },
     ItemArchetype {
         // include/objects.h:1198
@@ -7488,6 +7798,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Scroll,
     },
     ItemArchetype {
         // include/objects.h:1200
@@ -7509,6 +7820,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Scroll,
     },
     ItemArchetype {
         // include/objects.h:1202
@@ -7530,6 +7842,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Scroll,
     },
     ItemArchetype {
         // include/objects.h:1204
@@ -7551,6 +7864,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Scroll,
     },
     ItemArchetype {
         // include/objects.h:1206
@@ -7572,6 +7886,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Scroll,
     },
     ItemArchetype {
         // include/objects.h:1208
@@ -7593,6 +7908,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Scroll,
     },
     ItemArchetype {
         // include/objects.h:1210
@@ -7614,6 +7930,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Scroll,
     },
     ItemArchetype {
         // include/objects.h:1212
@@ -7635,6 +7952,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Scroll,
     },
     ItemArchetype {
         // include/objects.h:1214
@@ -7656,6 +7974,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Scroll,
     },
     ItemArchetype {
         // include/objects.h:1216
@@ -7677,6 +7996,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Scroll,
     },
     ItemArchetype {
         // include/objects.h:1218
@@ -7698,6 +8018,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Scroll,
     },
     ItemArchetype {
         // include/objects.h:1220
@@ -7719,6 +8040,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Scroll,
     },
     ItemArchetype {
         // include/objects.h:1222
@@ -7740,6 +8062,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Scroll,
     },
     ItemArchetype {
         // include/objects.h:1224
@@ -7761,6 +8084,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Scroll,
     },
     ItemArchetype {
         // include/objects.h:1226
@@ -7782,6 +8106,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Scroll,
     },
     ItemArchetype {
         // include/objects.h:1228
@@ -7803,6 +8128,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Scroll,
     },
     ItemArchetype {
         // include/objects.h:1263
@@ -7824,6 +8150,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1265
@@ -7845,6 +8172,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Scroll,
     },
     ItemArchetype {
         // include/objects.h:1294
@@ -7866,6 +8194,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1298
@@ -7887,6 +8216,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1301
@@ -7908,6 +8238,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1303
@@ -7929,6 +8260,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1305
@@ -7950,6 +8282,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1307
@@ -7971,6 +8304,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1309
@@ -7992,6 +8326,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1312
@@ -8013,6 +8348,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1315
@@ -8034,6 +8370,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1318
@@ -8055,6 +8392,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1321
@@ -8076,6 +8414,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1324
@@ -8097,6 +8436,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1327
@@ -8118,6 +8458,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1330
@@ -8139,6 +8480,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1333
@@ -8160,6 +8502,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1336
@@ -8181,6 +8524,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1339
@@ -8202,6 +8546,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1342
@@ -8223,6 +8568,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1345
@@ -8244,6 +8590,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1348
@@ -8265,6 +8612,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1351
@@ -8286,6 +8634,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1354
@@ -8307,6 +8656,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1357
@@ -8328,6 +8678,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1360
@@ -8349,6 +8700,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1363
@@ -8370,6 +8722,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1366
@@ -8391,6 +8744,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1369
@@ -8412,6 +8766,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1372
@@ -8433,6 +8788,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1375
@@ -8454,6 +8810,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1378
@@ -8475,6 +8832,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1381
@@ -8496,6 +8854,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1384
@@ -8517,6 +8876,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1387
@@ -8538,6 +8898,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1390
@@ -8559,6 +8920,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1393
@@ -8580,6 +8942,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1396
@@ -8601,6 +8964,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1399
@@ -8622,6 +8986,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1402
@@ -8643,6 +9008,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1405
@@ -8664,6 +9030,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1408
@@ -8685,6 +9052,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1411
@@ -8706,6 +9074,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1426
@@ -8727,6 +9096,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1436
@@ -8748,6 +9118,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1441
@@ -8769,6 +9140,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Book,
     },
     ItemArchetype {
         // include/objects.h:1450
@@ -8790,6 +9162,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Wand { charges: crate::item_init::WandCharges::Standard },
     },
     ItemArchetype {
         // include/objects.h:1453
@@ -8811,6 +9184,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Wand { charges: crate::item_init::WandCharges::Standard },
     },
     ItemArchetype {
         // include/objects.h:1455
@@ -8832,6 +9206,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Wand { charges: crate::item_init::WandCharges::Standard },
     },
     ItemArchetype {
         // include/objects.h:1457
@@ -8853,6 +9228,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Wand { charges: crate::item_init::WandCharges::Standard },
     },
     ItemArchetype {
         // include/objects.h:1459
@@ -8874,6 +9250,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Wand { charges: crate::item_init::WandCharges::Wishing },
     },
     ItemArchetype {
         // include/objects.h:1461
@@ -8895,6 +9272,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Wand { charges: crate::item_init::WandCharges::Stasis },
     },
     ItemArchetype {
         // include/objects.h:1463
@@ -8916,6 +9294,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Wand { charges: crate::item_init::WandCharges::Standard },
     },
     ItemArchetype {
         // include/objects.h:1465
@@ -8937,6 +9316,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Wand { charges: crate::item_init::WandCharges::Standard },
     },
     ItemArchetype {
         // include/objects.h:1467
@@ -8958,6 +9338,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Wand { charges: crate::item_init::WandCharges::Standard },
     },
     ItemArchetype {
         // include/objects.h:1469
@@ -8979,6 +9360,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Wand { charges: crate::item_init::WandCharges::Standard },
     },
     ItemArchetype {
         // include/objects.h:1471
@@ -9000,6 +9382,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Wand { charges: crate::item_init::WandCharges::Standard },
     },
     ItemArchetype {
         // include/objects.h:1473
@@ -9021,6 +9404,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Wand { charges: crate::item_init::WandCharges::Standard },
     },
     ItemArchetype {
         // include/objects.h:1475
@@ -9042,6 +9426,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Wand { charges: crate::item_init::WandCharges::Standard },
     },
     ItemArchetype {
         // include/objects.h:1477
@@ -9063,6 +9448,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Wand { charges: crate::item_init::WandCharges::Standard },
     },
     ItemArchetype {
         // include/objects.h:1479
@@ -9084,6 +9470,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Wand { charges: crate::item_init::WandCharges::Standard },
     },
     ItemArchetype {
         // include/objects.h:1481
@@ -9105,6 +9492,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Wand { charges: crate::item_init::WandCharges::Standard },
     },
     ItemArchetype {
         // include/objects.h:1483
@@ -9126,6 +9514,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Wand { charges: crate::item_init::WandCharges::Standard },
     },
     ItemArchetype {
         // include/objects.h:1485
@@ -9147,6 +9536,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Wand { charges: crate::item_init::WandCharges::Standard },
     },
     ItemArchetype {
         // include/objects.h:1487
@@ -9168,6 +9558,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Wand { charges: crate::item_init::WandCharges::Standard },
     },
     ItemArchetype {
         // include/objects.h:1490
@@ -9189,6 +9580,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Wand { charges: crate::item_init::WandCharges::Standard },
     },
     ItemArchetype {
         // include/objects.h:1492
@@ -9210,6 +9602,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Wand { charges: crate::item_init::WandCharges::Standard },
     },
     ItemArchetype {
         // include/objects.h:1494
@@ -9231,6 +9624,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Wand { charges: crate::item_init::WandCharges::Standard },
     },
     ItemArchetype {
         // include/objects.h:1496
@@ -9252,6 +9646,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Wand { charges: crate::item_init::WandCharges::Standard },
     },
     ItemArchetype {
         // include/objects.h:1498
@@ -9273,6 +9668,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Wand { charges: crate::item_init::WandCharges::Standard },
     },
     ItemArchetype {
         // include/objects.h:1500
@@ -9294,6 +9690,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Wand { charges: crate::item_init::WandCharges::Standard },
     },
     ItemArchetype {
         // include/objects.h:1512
@@ -9315,6 +9712,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1527
@@ -9336,6 +9734,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1530
@@ -9357,6 +9756,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1532
@@ -9378,6 +9778,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1534
@@ -9399,6 +9800,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1536
@@ -9420,6 +9822,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1538
@@ -9441,6 +9844,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1540
@@ -9462,6 +9866,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1542
@@ -9483,6 +9888,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1544
@@ -9504,6 +9910,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1546
@@ -9525,6 +9932,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1548
@@ -9546,6 +9954,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1550
@@ -9567,6 +9976,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1552
@@ -9588,6 +9998,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1554
@@ -9609,6 +10020,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1556
@@ -9630,6 +10042,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1558
@@ -9651,6 +10064,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1560
@@ -9672,6 +10086,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1562
@@ -9693,6 +10108,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1564
@@ -9714,6 +10130,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1566
@@ -9735,6 +10152,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1568
@@ -9756,6 +10174,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1570
@@ -9777,6 +10196,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1573
@@ -9798,6 +10218,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1576
@@ -9819,6 +10240,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1578
@@ -9840,6 +10262,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1580
@@ -9861,6 +10284,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1582
@@ -9882,6 +10306,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1584
@@ -9903,6 +10328,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1586
@@ -9924,6 +10350,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1588
@@ -9945,6 +10372,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1590
@@ -9966,6 +10394,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1599
@@ -9987,6 +10416,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1601
@@ -10008,6 +10438,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Loadstone,
     },
     ItemArchetype {
         // include/objects.h:1603
@@ -10029,6 +10460,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1605
@@ -10050,6 +10482,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1607
@@ -10071,6 +10504,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1619
@@ -10092,6 +10526,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1622
@@ -10113,6 +10548,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1627
@@ -10134,6 +10570,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1631
@@ -10155,6 +10592,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1639
@@ -10176,6 +10614,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/objects.h:1642
@@ -10197,6 +10636,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: false,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:88
@@ -10218,6 +10658,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:96
@@ -10239,6 +10680,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:112
@@ -10260,6 +10702,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:116
@@ -10281,6 +10724,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:126
@@ -10302,6 +10746,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:136
@@ -10323,6 +10768,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:140
@@ -10344,6 +10790,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:147
@@ -10365,6 +10812,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:151
@@ -10386,6 +10834,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:155
@@ -10407,6 +10856,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:160
@@ -10428,6 +10878,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:164
@@ -10449,6 +10900,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:168
@@ -10470,6 +10922,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:172
@@ -10491,6 +10944,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:176
@@ -10512,6 +10966,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:180
@@ -10533,6 +10988,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:184
@@ -10554,6 +11010,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:193
@@ -10575,6 +11032,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:205
@@ -10596,6 +11054,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:212
@@ -10617,6 +11076,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:223
@@ -10638,6 +11098,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:230
@@ -10659,6 +11120,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:235
@@ -10680,6 +11142,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:253
@@ -10701,6 +11164,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:258
@@ -10722,6 +11186,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:263
@@ -10743,6 +11208,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:269
@@ -10764,6 +11230,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: Some(ArmorSlot::Helmet),
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:274
@@ -10785,6 +11252,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:283
@@ -10806,6 +11274,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:289
@@ -10827,6 +11296,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:295
@@ -10848,6 +11318,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:301
@@ -10869,6 +11340,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
     ItemArchetype {
         // include/artilist.h:307
@@ -10890,6 +11362,7 @@ pub static ITEM_CATALOG: &[ItemArchetype] = &[
         magic_cancellation: 0,
         armor_slot: None,
         artifact: true,
+        initialization: crate::item_init::ItemInitProfile::Fixed,
     },
 ];
 
