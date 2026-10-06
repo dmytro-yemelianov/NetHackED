@@ -21,6 +21,8 @@ impl SimulationWorld {
                         turn: self.scheduler.turn,
                     });
 
+                    self.tick_hero_afflictions(&mut events);
+
                     // C mcalcdistress -> m_calcdistress -> mon_regen (mon.c:1193,
                     // monmove.c:311): once per turn, `if (mspec_used) mspec_used--`.
                     for (_, m) in self.arena.actors.iter_mut() {

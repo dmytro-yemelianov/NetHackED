@@ -8,7 +8,7 @@ judged in the other parity tables.
 | Category | Total | Referenced | % |
 |---|---|---|---|
 | Attack types (AT_*) | 17 | 9 | 52% |
-| Damage types (AD_*) | 47 | 6 | 12% |
+| Damage types (AD_*) | 47 | 14 | 29% |
 | Objects: wands | 25 | 7 | 28% |
 | Objects: potions | 26 | 3 | 11% |
 | Objects: scrolls | 23 | 2 | 8% |
@@ -43,11 +43,11 @@ judged in the other parity tables.
 
 | C | Rust | Species using it | Engine references it |
 |---|---|---|---|
-| `AD_ACID` | `DamageType::Acid` | 7 | ❌ |
-| `AD_BLND` | `DamageType::Blind` | 5 | ❌ |
+| `AD_ACID` | `DamageType::Acid` | 7 | ✅ |
+| `AD_BLND` | `DamageType::Blind` | 5 | ✅ |
 | `AD_CLRC` | `DamageType::Clerical` | 10 | ❌ |
 | `AD_COLD` | `DamageType::Cold` | 16 | ✅ |
-| `AD_CONF` | `DamageType::Confuse` | 2 | ❌ |
+| `AD_CONF` | `DamageType::Confuse` | 2 | ✅ |
 | `AD_CORR` | `DamageType::Corrode` | 1 | ❌ |
 | `AD_CURS` | `DamageType::Curse` | 1 | ❌ |
 | `AD_DCAY` | `DamageType::Decay` | 1 | ❌ |
@@ -57,11 +57,11 @@ judged in the other parity tables.
 | `AD_DISN` | `DamageType::Disintegrate` | 1 | ❌ |
 | `AD_DRCO` | `DamageType::DrainCon` | 1 | ❌ |
 | `AD_DRDX` | `DamageType::DrainDex` | 1 | ❌ |
-| `AD_DREN` | `DamageType::DrainEnergy` | 1 | ❌ |
+| `AD_DREN` | `DamageType::DrainEnergy` | 1 | ✅ |
 | `AD_DRIN` | `DamageType::DrainInt` | 2 | ❌ |
 | `AD_DRLI` | `DamageType::DrainLife` | 7 | ❌ |
 | `AD_DRST` | `DamageType::DrainStr` | 23 | ✅ |
-| `AD_ELEC` | `DamageType::Elec` | 5 | ❌ |
+| `AD_ELEC` | `DamageType::Elec` | 5 | ✅ |
 | `AD_ENCH` | `DamageType::Disenchant` | 1 | ❌ |
 | `AD_FAMN` | `DamageType::Famine` | 1 | ❌ |
 | `AD_FIRE` | `DamageType::Fire` | 14 | ✅ |
@@ -79,14 +79,14 @@ judged in the other parity tables.
 | `AD_SEDU` | `DamageType::Seduce` | 3 | ❌ |
 | `AD_SGLD` | `DamageType::StealGold` | 1 | ❌ |
 | `AD_SITM` | `DamageType::StealItem` | 4 | ❌ |
-| `AD_SLEE` | `DamageType::Sleep` | 3 | ❌ |
+| `AD_SLEE` | `DamageType::Sleep` | 3 | ✅ |
 | `AD_SLIM` | `DamageType::Slime` | 1 | ❌ |
-| `AD_SLOW` | `DamageType::Slow` | 3 | ❌ |
+| `AD_SLOW` | `DamageType::Slow` | 3 | ✅ |
 | `AD_SPEL` | `DamageType::Spell` | 29 | ❌ |
 | `AD_SSEX` | `DamageType::SeduceSex` | 1 | ❌ |
 | `AD_STCK` | `DamageType::Sticky` | 5 | ❌ |
 | `AD_STON` | `DamageType::Stone` | 3 | ✅ |
-| `AD_STUN` | `DamageType::Stun` | 3 | ❌ |
+| `AD_STUN` | `DamageType::Stun` | 3 | ✅ |
 | `AD_TLPT` | `DamageType::Teleport` | 1 | ❌ |
 | `AD_WERE` | `DamageType::Lycanthropy` | 3 | ❌ |
 | `AD_WRAP` | `DamageType::Wrap` | 8 | ❌ |

@@ -982,6 +982,12 @@ pub struct TransientAfflictions {
     pub confused: u32,
     pub stunned: u32,
     pub hallucinating: u32,
+    /// C `Blinded` timeout (turns of temporary blindness).
+    #[serde(default)]
+    pub blinded: u32,
+    /// C `multi < 0`: turns the hero is asleep or paralyzed and cannot act.
+    #[serde(default)]
+    pub helpless: u32,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]

@@ -40,9 +40,9 @@ const DIRS: [Direction; 8] = [
 
 const EXPECTED_RUNS: [u64; 4] = [
     10_590_427_399_958_928_342,
-    5_851_926_545_638_829_079,
-    6_575_111_144_931_471_423,
-    13_769_611_620_460_411_800,
+    8_833_379_957_446_577_598,
+    11_954_752_972_249_075_311,
+    16_018_676_110_969_041_428,
 ];
 const EXPECTED_LOGS: [u64; 9] = [
     6_084_688_683_205_385_671,
@@ -157,9 +157,9 @@ fn golden_vanilla_event_logs_are_unchanged() {
 
 const COMBAT_ROLES: [RoleId; 3] = [RoleId::Valkyrie, RoleId::Wizard, RoleId::Rogue];
 const EXPECTED_COMBAT: [u64; 3] = [
-    4_392_970_861_794_522_748,
-    12_723_840_377_594_850_747,
-    6_972_671_921_932_146_888,
+    982_551_997_549_531_727,
+    16_576_002_197_206_805_760,
+    17_452_821_858_697_387_021,
 ];
 
 /// Every bestiary entry (all 383 C species) fights the hero for up to 20

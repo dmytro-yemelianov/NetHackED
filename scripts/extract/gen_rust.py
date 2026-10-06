@@ -213,6 +213,7 @@ def item_entry(variant, name, o, artifact=None):
         nutrition: {o['nutrition']},
         prob: {0 if artifact else o['prob']},
         material: {rs(o.get('material', 'none'))},
+        magic_cancellation: {o['oc2'] if armor else 0},
         armor_slot: {f"Some(ArmorSlot::{pick(SLOT, o['armor_slot'], w)})" if armor else 'None'},
         artifact: {str(artifact is not None).lower()},
     }},

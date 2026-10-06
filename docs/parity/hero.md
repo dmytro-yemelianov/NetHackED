@@ -112,7 +112,7 @@ Context: the player-facing action set is the `ActionAst` enum (core/ast.rs). It 
 | Sickness / food poisoning / illness death | timeout.c Sick handling; eat.c rotten | ❌ MISSING | no sick field in Hero | Rotten food and Demogorgon sickness are harmless |
 | Vomiting | timeout.c:vomiting_dialogue (197) | ❌ MISSING | no match | n/a |
 | Levitation timeout and landing | timeout.c:levitation_dialogue (353) | ❌ MISSING | `intrinsics.levitation` is never set (grep `levitation = true` in sim: no match); only read for traps (movement.rs:328) | No levitation gameplay |
-| Confusion/stun/hallucination timers | timeout.c:nh_timeout HConfusion etc. | 🟡 PARTIAL | core/afflictions.rs:29-38 decrement; nothing in sim ever sets them | Status effects never occur |
+| Confusion/stun/hallucination timers | timeout.c:nh_timeout HConfusion etc. | 🟡 PARTIAL | sim/ad_effects.rs `tick_hero_afflictions`: stun, confusion, blindness and sleep run down per turn with the C end messages; set by monster hits; hallucination never set | Stun/confusion randomize movement; sleep skips turns |
 | Blindness timer | timeout.c Blinded | 🟡 PARTIAL | `intrinsics.blind` bool, no duration; sources unclear | Permanent if set; no timed blindness |
 | Sleep / fall_asleep | timeout.c:fall_asleep (951), sleep_dialogue (268) | ❌ MISSING | no match | Sleep attacks or traps never knock the hero out |
 | Speed intrinsic effect | timeout.c / allmain.c moveamt (Fast) | ❌ MISSING | potion of speed sets `intrinsics.fast` (items.rs:315) but the scheduler never reads it (grep `.fast` in core/energy.rs: no match) | Speed potion is a placebo |

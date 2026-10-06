@@ -1,6 +1,7 @@
 //! Complete, deterministic simulation engine for NetHackED.
 
 pub mod actions;
+mod ad_effects;
 pub mod bones;
 pub mod combat;
 pub mod events;

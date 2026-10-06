@@ -42,6 +42,8 @@ pub struct ItemArchetype {
     pub prob: u32,
     /// C material (`objclass.h` `obj_material_types`), lowercase.
     pub material: &'static str,
+    /// C `a_can` (armor `oc2`): magic cancellation 0..=3; 0 for non-armor.
+    pub magic_cancellation: u32,
     /// Armor category (C `oc_armcat`); `None` for non-armor.
     pub armor_slot: Option<ArmorSlot>,
     /// An `artilist[]` artifact (properties of its base object, its own cost).
