@@ -147,6 +147,147 @@ abilities = []
 }
 
 #[test]
+fn pack_added_monsters_spawn_in_ordinary_rooms_with_generation_filters() {
+    use nethacked_data::roles::CharacterConfig;
+    use nethacked_sim::SimulationWorld;
+    use nethacked_types::BranchId;
+
+    for peaceful in [false, true] {
+        let dir = temp_pack_dir(&format!("ordinary-room-custom-{peaceful}"));
+        write_vanilla_manifest(&dir, "ordinary-room-custom");
+        // Isolate the custom candidates using authored patches, leaving every
+        // vanilla definition available for world initialization and items.
+        let mut monsters = String::new();
+        for def in &Ruleset::vanilla().monsters {
+            monsters.push_str(&format!(
+                "[[monster]]\nname = {:?}\nfrequency = 0\n",
+                def.name
+            ));
+        }
+        for (name, frequency, difficulty, flags) in [
+            ("dire jackal", 7, 2, "[]"),
+            ("silent jackal", 0, 2, "[]"),
+            ("forbidden jackal", 7, 2, "[\"nogen\"]"),
+            ("overpowered jackal", 7, 99, "[]"),
+        ] {
+            monsters.push_str(&format!(
+                r#"
+[[monster]]
+name = "{name}"
+new = true
+glyph = "d"
+base_hp = 17
+max_hp = 17
+ac = -3
+level = 2
+speed = 19
+alignment = "Neutral"
+intrinsics = {{ fire_resistance = true }}
+attacks = [{{ at = "Bite", ad = "Phys", n = 2, d = 4 }}]
+size = "Medium"
+peaceful_by_default = {peaceful}
+always_hostile = false
+maligntyp = 0
+msound = "Other"
+is_human = false
+is_unique = false
+mindless = false
+ai_behavior = "MeleeHunter"
+abilities = []
+frequency = {frequency}
+difficulty = {difficulty}
+gen_flags = {flags}
+"#
+            ));
+        }
+        fs::write(dir.join("monsters.toml"), monsters).unwrap();
+        let (pack, report) = build(&dir).unwrap();
+        assert!(report.is_ok(), "{report:?}");
+        let path = dir.join("custom.nhpack");
+        write_nhpack(&pack, &path).unwrap();
+        let (rules, reference) = load_nhpack(&path).unwrap();
+        let def = rules.monster("dire jackal").unwrap();
+        assert_eq!(def.id, None);
+        assert_eq!(def.frequency, 7);
+        assert!(!def.sample_hp);
+
+        for exclusion in ["none", "species", "class"] {
+            let mut spawned = 0;
+            for seed in 0..8 {
+                let mut world = SimulationWorld::new_with_character_and_ruleset(
+                    seed,
+                    CharacterConfig::default(),
+                    rules.clone(),
+                    reference.clone(),
+                );
+                // Discard the starting floor's population before requesting a
+                // real new floor through the same generator used by stairs.
+                let old_ids: Vec<_> = world
+                    .arena
+                    .actors
+                    .iter()
+                    .filter_map(|(id, _)| (id != world.player_id).then_some(id))
+                    .collect();
+                for id in old_ids {
+                    world.arena.actors.remove(id);
+                }
+                match exclusion {
+                    "species" => {
+                        world
+                            .genocide_registry
+                            .genocided_species
+                            .insert("dire jackal".into());
+                    }
+                    "class" => {
+                        world.genocide_registry.genocided_classes.insert('d');
+                    }
+                    _ => {}
+                }
+                world.unpack_or_generate_level(BranchId::DungeonsOfDoom, 4);
+                assert!(world.level.rooms.len() > 2);
+                let actors: Vec<_> = world
+                    .arena
+                    .actors
+                    .iter()
+                    .filter(|(id, _)| *id != world.player_id)
+                    .map(|(_, actor)| actor)
+                    .collect();
+                if exclusion != "none" {
+                    assert!(actors.is_empty(), "{exclusion}, seed {seed}: {actors:?}");
+                    continue;
+                }
+                for actor in actors {
+                    spawned += 1;
+                    assert_eq!(actor.name, "dire jackal");
+                    assert_eq!((actor.hp, actor.max_hp), (17, 17));
+                    assert_eq!((actor.level, actor.ac, actor.speed), (2, -3, 19));
+                    assert!(actor.intrinsics.fire_resistance);
+                    assert_eq!(actor.is_peaceful, peaceful);
+                    assert_eq!(
+                        actor.malign,
+                        nethacked_core::calculate_malign(
+                            0,
+                            world.arena.actors.get(world.player_id).unwrap().alignment,
+                            peaceful,
+                            false,
+                            peaceful,
+                            false,
+                        )
+                    );
+                    assert!(world.level.is_passable(actor.coord));
+                }
+            }
+            if exclusion == "none" {
+                assert!(
+                    spawned > 0,
+                    "custom species must spawn, peaceful={peaceful}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
 fn test_remove_monster() {
     let dir = temp_pack_dir("remove-monster");
     write_vanilla_manifest(&dir, "remove-monster");

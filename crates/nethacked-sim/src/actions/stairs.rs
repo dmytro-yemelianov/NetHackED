@@ -756,10 +756,10 @@ impl SimulationWorld {
                             &ctx,
                             |d| nethacked_core::genocide::is_genocided(registry, &d.name, d.glyph),
                             |n| rng.random_range(0..n),
-                        )
-                        .and_then(|d| d.id);
-                        if let Some(species) = picked {
-                            self.spawn_monster_near(species, center);
+                        );
+                        if let Some(def) = picked {
+                            // Pack-added definitions have names but no built-in species ID.
+                            self.spawn_monster_by_name(&def.name, center);
                         }
                     }
 

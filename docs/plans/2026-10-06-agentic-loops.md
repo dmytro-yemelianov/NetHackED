@@ -1,6 +1,6 @@
 # Agentic repair loops — NetHackED
 
-Planning status: complete; independently checked with `gpt-6-luna` / `high`. This document plans execution; it does not start repairs or change live model/NAT settings.
+Status: repair plan executed; T1–T3 accepted and final integration verified. Planning was independently checked with `gpt-6-luna` / `high`; execution used sequential Sol implementers/reviewers and local verification tools. Live NAT model settings were not changed.
 
 Execution 2026-10-06: T1 started after user approval. The user explicitly selected C-correct sampled HP by default, with affected test expectations and goldens updated after verification. That decision supersedes the frozen-golden rule for this intentional HP/RNG change. Parent owns rebaselining after independent review; explicit pack HP overrides remain fixed, custom definitions default fixed, and bones ghosts keep their supplied HP without discarded RNG draws.
 
@@ -114,3 +114,9 @@ Planning validation: documentation-link check passed. Independent review's retry
 ## T2 execution — 2026-10-06
 
 T1 committed as `049ed98` after explicit user authorization. T2 accepted after independent Sol/medium review and the full required gate: 699 workspace tests, including all three unchanged goldens. Core owns all five transient countdowns; simulation recovery messages and blindness clearing derive from transitions. Four regressions cover durations 1/2/4, fast hero actions, recovery once, and lethal countdown precedence. Fatal ticks preserve core early returns and leave transient counters unchanged, without recovery events. No escalation or repair cycle was needed; token usage unavailable. Evidence: `/tmp/netrust-t2-focused.log` and `/tmp/netrust-t2-gates/`. T3 remains pending.
+
+## T3 and final integration — 2026-10-06
+
+T2 committed as `aefca8f`. T3 accepted after independent Sol/medium review: random generation keeps the selected definition and spawns by name, including custom definitions with no built-in ID. The actual authored/built/loaded-pack regression exercises ordinary-room generation over eight seeds, verifies stats, peacefulness and malign, and excludes zero-frequency, `nogen`, high-difficulty and species/class-genocided candidates. The old selector fails this regression; the repair passes all 12 pack tests. An initial test argument-order compile error was corrected; no review repair or escalation was needed.
+
+Full final gate passed: 700 workspace tests (all three goldens unchanged from the approved T1 baseline), formatting, Clippy, WASM, Python, Lean, static-table guard, extraction/generated-data/coverage/parity checks and doc links. Source digest was unchanged through verification; Cargo.lock and golden source were unchanged since T1. T4 reuses this same-tree evidence rather than rerunning the suite. Logs: `/tmp/netrust-t3-focused.log` and `/tmp/netrust-t3-gates/`. Model usage remains unavailable. All seven original review findings are repaired; the separate undelivered `mksobj_init` work and documented HP `adj_lev`/plane limitations remain outside this repair scope.

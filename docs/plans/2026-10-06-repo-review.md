@@ -68,3 +68,5 @@ Delivery discrepancy: commit `7cee518` (merged in #22) describes a full `mksobj_
 Suggested fix order: restore compilability; centralize ruleset-aware HP sampling and correct special cases; fix timer ownership and custom monster spawning; rerun gates and actual golden comparisons. Preserve golden expectations during fixes unless an intentional behaviour change is separately authorized.
 
 T2 follow-up: finding 6 resolved. Core countdown ownership prevents duplicate stun/confusion ticks; recovery events are emitted on expiry once. Independent review and the full gate passed; goldens unchanged. Finding 7 remains pending.
+
+T3 follow-up: finding 7 resolved by spawning the selected definition by name. Real loaded-pack generation regression fails with the old selector and passes with the repair. Independent review and the full final gate passed (700tests and all3 goldens). All seven reported findings are now repaired; the separate `mksobj_init` delivery discrepancy remains outstanding.
