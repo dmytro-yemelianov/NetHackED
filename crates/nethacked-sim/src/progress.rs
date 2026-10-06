@@ -14,8 +14,19 @@ use crate::world::SimulationWorld;
 
 /// C `A_STR` .. `A_CHA` indices.
 pub const A_STR: usize = 0;
+pub const A_INT: usize = 1;
+pub const A_WIS: usize = 2;
 pub const A_DEX: usize = 3;
 pub const A_CON: usize = 4;
+pub const A_CHA: usize = 5;
+
+/// Erosion kind for armor (C ERODE_RUST, ERODE_CORRODE, ERODE_ROT).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ErosionKind {
+    Rust,
+    Corrode,
+    Rot,
+}
 
 /// C `MAXULEV` (global.h).
 const MAXULEV: u32 = 30;

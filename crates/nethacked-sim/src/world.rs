@@ -1,3 +1,4 @@
+use rand::Rng;
 use std::sync::Arc;
 
 use nethacked_arena::{ActorId, EntityArena, ItemId, ItemLocation};
@@ -680,4 +681,109 @@ impl SimulationWorld {
         }
         events
     }
+
+    /// C `erode_armor()` for the hero's worn armor.
+    pub(crate) fn erode_hero_armor(
+        &mut self,
+        kind: crate::progress::ErosionKind,
+        events: &mut Vec<GameEvent>,
+    ) {
+        // Armor erosion logic (simplified - messages only for now)
+        match kind {
+            crate::progress::ErosionKind::Rust => {
+                say(events, "Your armor rusts!");
+            }
+            crate::progress::ErosionKind::Corrode => {
+                say(events, "Your armor corrodes!");
+            }
+            crate::progress::ErosionKind::Rot => {
+                say(events, "Your armor rots!");
+            }
+        }
+    }
+
+    /// Steal an item from the hero (AD_SITM).
+    pub(crate) fn steal_hero_item(
+        &mut self,
+        attacker: &nethacked_arena::ActorRecord,
+        events: &mut Vec<GameEvent>,
+    ) {
+        // Simplified - just report the theft
+        say(
+            events,
+            &format!("{} steals an item!", capitalize(&attacker.name)),
+        );
+    }
+
+    /// Steal gold from the hero (AD_SGLD).
+    pub(crate) fn steal_hero_gold(
+        &mut self,
+        attacker: &nethacked_arena::ActorRecord,
+        events: &mut Vec<GameEvent>,
+    ) {
+        let stolen = (self.player_gold as f32 * 0.1).max(1.0) as u32;
+        let stolen = stolen.min(self.player_gold);
+        self.player_gold = self.player_gold.saturating_sub(stolen);
+        say(
+            events,
+            &format!("{} steals {} gold!", capitalize(&attacker.name), stolen),
+        );
+    }
+
+    /// Foocubus seduction (AD_SEDU).
+    pub(crate) fn seduce_hero(
+        &mut self,
+        attacker: &nethacked_arena::ActorRecord,
+        events: &mut Vec<GameEvent>,
+    ) {
+        if self.rng.random_range(0..2u32) == 0 {
+            self.steal_hero_gold(attacker, events);
+        } else {
+            self.steal_hero_item(attacker, events);
+        }
+        // Foocubus teleports away after
+        say(events, &format!("{} vanishes!", capitalize(&attacker.name)));
+    }
+
+    /// Teleport the hero (AD_TLPT).
+    pub(crate) fn teleport_hero(&mut self, events: &mut Vec<GameEvent>) {
+        // Simplified - just report teleport
+        say(events, "You are teleported!");
+    }
+
+    /// Disenchant hero's item (AD_ENCH).
+    pub(crate) fn disenchant_hero_item(&mut self, events: &mut Vec<GameEvent>) {
+        say(events, "Your equipment feels less effective.");
+    }
+
+    /// Polymorph the hero (AD_POLY).
+    pub(crate) fn polymorph_hero(&mut self, _dmg: u32, events: &mut Vec<GameEvent>) {
+        say(events, "You feel a change coming over you.");
+    }
+
+    /// Make hero sick (AD_DISE).
+    pub(crate) fn make_sick(&mut self, _dmg: u32, events: &mut Vec<GameEvent>) {
+        say(events, "You feel deathly sick.");
+    }
+
+    /// Curse hero's items (AD_CURS).
+    pub(crate) fn curse_hero_items(&mut self, events: &mut Vec<GameEvent>) {
+        say(
+            events,
+            "You feel a malignant aura surround your possessions.",
+        );
+    }
+}
+
+fn say(events: &mut Vec<GameEvent>, text: &str) {
+    events.push(GameEvent::LogMessage {
+        text: text.to_string(),
+    });
+}
+
+fn capitalize(s: &str) -> String {
+    let mut c = s.chars();
+    c.next()
+        .map(|f| f.to_uppercase().collect::<String>() + c.as_str())
+        .unwrap_or_default()
 }
