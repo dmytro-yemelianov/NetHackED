@@ -14,7 +14,10 @@ Usage: behaviour-coverage.py [--check]
 """
 import re
 import sys
-import tomllib
+try:
+    import tomllib
+except ImportError:
+    import tomli as tomllib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]

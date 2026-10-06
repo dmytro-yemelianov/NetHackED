@@ -395,6 +395,7 @@ impl SimulationWorld {
 
         if attacker_id == self.player_id {
             nethacked_core::conducts::record_kill(&mut self.conducts);
+            self.award_kill_experience(&defender, events);
         }
 
         events.push(GameEvent::LogMessage {

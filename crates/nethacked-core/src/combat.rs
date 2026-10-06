@@ -213,12 +213,16 @@ pub fn calculate_damage(
 /// AT_BREA (ranged only, `mhitu.c:873`), AT_GAZE (`mhitu.c:832`), AT_MAGC
 /// (`mhitu.c:926`) and AT_NONE (passive) are not melee hits.
 pub fn is_melee_attack(at: AttackType) -> bool {
+    // mhitu.c:794-800: AT_CLAW, AT_KICK, AT_BITE, AT_STNG, AT_TUCH, AT_BUTT, AT_TENT
     matches!(
         at,
         AttackType::Claw
             | AttackType::Bite
             | AttackType::Kick
+            | AttackType::Sting
             | AttackType::Touch
+            | AttackType::Butt
+            | AttackType::Tentacle
             | AttackType::Weapon
     )
 }

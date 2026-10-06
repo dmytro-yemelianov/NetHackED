@@ -164,6 +164,32 @@ impl SimulationWorld {
                 }
                 0
             }
+            // uhitm.c:2479-2488 -> losexp("life drainage"); Drain resistance
+            // is not carried in Intrinsics yet.
+            DamageType::DrainLife => {
+                if self.rng.random_range(0..3u32) == 0 && !self.hero_negates(true, events) {
+                    self.losexp(Some("life drainage"), events);
+                }
+                dmg
+            }
+            // uhitm.c:3143-3158 -> poisoned(buf, A_STR/A_DEX/A_CON, ..., 30, FALSE)
+            DamageType::DrainStr | DamageType::DrainDex | DamageType::DrainCon => {
+                let negated = self.hero_negates(false, events);
+                if !negated && self.rng.random_range(0..8u32) == 0 {
+                    let typ = match attack.ad {
+                        DamageType::DrainDex => crate::progress::A_DEX,
+                        DamageType::DrainCon => crate::progress::A_CON,
+                        _ => crate::progress::A_STR,
+                    };
+                    let reason = format!(
+                        "{}'s {}",
+                        capitalize(&attacker.name),
+                        poison_subject(attack.at)
+                    );
+                    self.poisoned(&reason, typ, events);
+                }
+                dmg
+            }
             _ => dmg,
         }
     }
@@ -256,4 +282,16 @@ fn capitalize(s: &str) -> String {
     c.next()
         .map(|f| f.to_uppercase().collect::<String>() + c.as_str())
         .unwrap_or_default()
+}
+
+/// C `mpoisons_subj()` (mhitu.c:145) for a monster without a poisoned weapon.
+fn poison_subject(at: nethacked_types::AttackType) -> &'static str {
+    use nethacked_types::AttackType as A;
+    match at {
+        A::Weapon => "attack",
+        A::Touch => "contact",
+        A::Gaze => "gaze",
+        A::Bite => "bite",
+        _ => "sting",
+    }
 }

@@ -7,8 +7,8 @@ judged in the other parity tables.
 
 | Category | Total | Referenced | % |
 |---|---|---|---|
-| Attack types (AT_*) | 17 | 9 | 52% |
-| Damage types (AD_*) | 47 | 14 | 29% |
+| Attack types (AT_*) | 17 | 12 | 70% |
+| Damage types (AD_*) | 47 | 20 | 42% |
 | Objects: wands | 25 | 7 | 28% |
 | Objects: potions | 26 | 3 | 11% |
 | Objects: scrolls | 23 | 2 | 8% |
@@ -24,7 +24,7 @@ judged in the other parity tables.
 | `AT_BITE` | `AttackType::Bite` | 141 | ✅ |
 | `AT_BOOM` | `AttackType::Boom` | 1 | ❌ |
 | `AT_BREA` | `AttackType::Breath` | 19 | ✅ |
-| `AT_BUTT` | `AttackType::Butt` | 7 | ❌ |
+| `AT_BUTT` | `AttackType::Butt` | 7 | ✅ |
 | `AT_CLAW` | `AttackType::Claw` | 125 | ✅ |
 | `AT_ENGL` | `AttackType::Engulf` | 12 | ❌ |
 | `AT_EXPL` | `AttackType::Explode` | 5 | ❌ |
@@ -34,8 +34,8 @@ judged in the other parity tables.
 | `AT_MAGC` | `AttackType::Magic` | 42 | ✅ |
 | `AT_NONE` | `AttackType::Passive` | 20 | ✅ |
 | `AT_SPIT` | `AttackType::Spit` | 4 | ❌ |
-| `AT_STNG` | `AttackType::Sting` | 15 | ❌ |
-| `AT_TENT` | `AttackType::Tentacle` | 2 | ❌ |
+| `AT_STNG` | `AttackType::Sting` | 15 | ✅ |
+| `AT_TENT` | `AttackType::Tentacle` | 2 | ✅ |
 | `AT_TUCH` | `AttackType::Touch` | 26 | ✅ |
 | `AT_WEAP` | `AttackType::Weapon` | 133 | ✅ |
 
@@ -54,12 +54,12 @@ judged in the other parity tables.
 | `AD_DETH` | `DamageType::Death` | 1 | ❌ |
 | `AD_DGST` | `DamageType::Digest` | 1 | ❌ |
 | `AD_DISE` | `DamageType::Disease` | 3 | ❌ |
-| `AD_DISN` | `DamageType::Disintegrate` | 1 | ❌ |
-| `AD_DRCO` | `DamageType::DrainCon` | 1 | ❌ |
-| `AD_DRDX` | `DamageType::DrainDex` | 1 | ❌ |
+| `AD_DISN` | `DamageType::Disintegrate` | 1 | ✅ |
+| `AD_DRCO` | `DamageType::DrainCon` | 1 | ✅ |
+| `AD_DRDX` | `DamageType::DrainDex` | 1 | ✅ |
 | `AD_DREN` | `DamageType::DrainEnergy` | 1 | ✅ |
 | `AD_DRIN` | `DamageType::DrainInt` | 2 | ❌ |
-| `AD_DRLI` | `DamageType::DrainLife` | 7 | ❌ |
+| `AD_DRLI` | `DamageType::DrainLife` | 7 | ✅ |
 | `AD_DRST` | `DamageType::DrainStr` | 23 | ✅ |
 | `AD_ELEC` | `DamageType::Elec` | 5 | ✅ |
 | `AD_ENCH` | `DamageType::Disenchant` | 1 | ❌ |
@@ -68,7 +68,7 @@ judged in the other parity tables.
 | `AD_HALU` | `DamageType::Hallucinate` | 1 | ❌ |
 | `AD_HEAL` | `DamageType::Heal` | 1 | ❌ |
 | `AD_LEGS` | `DamageType::Legs` | 1 | ❌ |
-| `AD_MAGM` | `DamageType::MagicMissile` | 4 | ❌ |
+| `AD_MAGM` | `DamageType::MagicMissile` | 4 | ✅ |
 | `AD_PEST` | `DamageType::Pestilence` | 1 | ❌ |
 | `AD_PHYS` | `DamageType::Phys` | 307 | ✅ |
 | `AD_PLYS` | `DamageType::Paralyze` | 6 | ✅ |
@@ -80,7 +80,7 @@ judged in the other parity tables.
 | `AD_SGLD` | `DamageType::StealGold` | 1 | ❌ |
 | `AD_SITM` | `DamageType::StealItem` | 4 | ❌ |
 | `AD_SLEE` | `DamageType::Sleep` | 3 | ✅ |
-| `AD_SLIM` | `DamageType::Slime` | 1 | ❌ |
+| `AD_SLIM` | `DamageType::Slime` | 1 | ✅ |
 | `AD_SLOW` | `DamageType::Slow` | 3 | ✅ |
 | `AD_SPEL` | `DamageType::Spell` | 29 | ❌ |
 | `AD_SSEX` | `DamageType::SeduceSex` | 1 | ❌ |

@@ -55,6 +55,16 @@ pub struct MonsterDef {
     /// C `G_*` flags, lowercase without prefix (`nogen`, `uniq`, `hell`, `nohell`, `genocide`, ...).
     #[serde(default)]
     pub gen_flags: Vec<String>,
+    /// C `M1_*`/`M2_*`/`M3_*` flags, lowercase without prefix (`fly`, `nasty`, ...).
+    #[serde(default)]
+    pub flags: Vec<String>,
+}
+
+impl MonsterDef {
+    /// Does the species carry the C monster flag `flag` (e.g. `"nasty"` for `M2_NASTY`)?
+    pub fn has_flag(&self, flag: &str) -> bool {
+        self.flags.iter().any(|f| f == flag)
+    }
 }
 
 impl MonsterDef {
@@ -617,6 +627,7 @@ fn build_vanilla_ruleset() -> Ruleset {
             difficulty: arch.difficulty,
             frequency: arch.frequency,
             gen_flags: arch.gen_flags.iter().map(|s| s.to_string()).collect(),
+            flags: arch.flags.iter().map(|s| s.to_string()).collect(),
         })
         .collect();
 

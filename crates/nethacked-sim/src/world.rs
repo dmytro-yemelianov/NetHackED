@@ -124,6 +124,9 @@ pub struct SimulationWorld {
     pub genocide_registry: nethacked_types::GenocideRegistry,
     #[serde(default)]
     pub conducts: nethacked_types::ConductTracker,
+    /// Hero attributes and experience (C `u.acurr`, `u.uexp`, `u.uhpinc`).
+    #[serde(default)]
+    pub progress: crate::progress::HeroProgress,
 }
 
 /// The sim's fallback starting alignment record when a role definition is missing
@@ -385,7 +388,9 @@ impl SimulationWorld {
             max_event_log_len: Some(DEFAULT_MAX_EVENT_LOG_LEN),
             genocide_registry: nethacked_types::GenocideRegistry::default(),
             conducts: nethacked_types::ConductTracker::default(),
+            progress: crate::progress::HeroProgress::default(),
         };
+        sim.init_hero_attributes();
         sim.recompute_hero_ac();
         sim
     }

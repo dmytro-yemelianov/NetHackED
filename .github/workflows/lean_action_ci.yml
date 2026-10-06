@@ -79,5 +79,6 @@ jobs:
           sparse-checkout: |
             include
             src/mkobj.c
+            src/role.c
           sparse-checkout-cone-mode: false
       - run: python3 scripts/extract/c_tables.py --check

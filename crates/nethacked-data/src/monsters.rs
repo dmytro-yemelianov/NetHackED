@@ -100,6 +100,8 @@ pub struct MonsterArchetype {
     pub frequency: u32,
     /// C `G_*` generation flags, lowercase without prefix (`nogen`, `uniq`, `hell`, ...).
     pub gen_flags: &'static [&'static str],
+    /// C `M1_*`/`M2_*`/`M3_*` flags, lowercase without prefix (`fly`, `nasty`, ...).
+    pub flags: &'static [&'static str],
 }
 
 include!("generated/monsters.rs");

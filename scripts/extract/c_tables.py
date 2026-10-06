@@ -34,7 +34,7 @@ def header_defs():
     """All identifiers the relevant headers define, with integer values where known."""
     names, values = set(), {}
     for h in ["objclass.h", "skills.h", "prop.h", "color.h", "monattk.h",
-              "monflag.h", "weight.h", "align.h", "artifact.h", "defsym.h", "sym.h"]:
+              "monflag.h", "weight.h", "align.h", "artifact.h", "you.h", "attrib.h", "defsym.h", "sym.h"]:
         text = (INC / h).read_text(errors="replace")
         for m in re.finditer(r"^\s*#\s*define\s+([A-Z_][A-Z0-9_]*)\s+(\S+)", text, re.M):
             names.add(m[1])
@@ -439,6 +439,99 @@ def class_probs():
     return out
 
 
+# ------------------------------------------------------------ roles / races
+
+def c_array(path, decl):
+    """The `{ ... }` initializer body of `decl` (e.g. `roles[NUM_ROLES+1]`)."""
+    text = path.read_text()
+    start = text.index("{", text.index(decl))
+    depth = 0
+    for i in range(start, len(text)):
+        depth += {"{": 1, "}": -1}.get(text[i], 0)
+        if depth == 0:
+            return text[start:i + 1], text.count("\n", 0, start) + 1
+    die(f"{path.name}: unterminated {decl}")
+
+
+def roles_races(objs, mons, arts):
+    path = C / "src" / "role.c"
+    NAMES.update("PM_" + m["id"] for m in mons)
+    NAMES.update("ART_" + a["id"] for a in arts)
+    NAMES.update(o["id"] for o in objs)
+    NAMES.update(["NON_PM"])
+    stats = ["str", "int", "wis", "dex", "con", "cha"]
+    adv = ["infix", "inrnd", "lofix", "lornd", "hifix", "hirnd"]
+
+    def advance(v, w):
+        return dict(zip(adv, (num(scalar(x, w), w) for x in v)))
+
+    def pm(v, w):
+        s_ = sym(scalar(v, w), w)
+        return None if s_ in (None, "non_pm") else s_.upper()[3:]
+
+    def rolename(v, w):
+        m, f = (scalar(x, w) for x in v)
+        return {k: x for k, x in (("male", m), ("female", f)) if x not in (None, [(1, 0)])}
+
+    roles, races = [], []
+    body, line = c_array(path, "roles[NUM_ROLES+1]")
+    (tree,) = parse_records(cpp('#define STR18(x) (18 + (x))\n@@ ROLES ' + body), "ROLES")
+    for r in tree:
+        if len(r) != 32:
+            continue  # terminator / trailing comma
+        name = rolename(r[0], "role.c")
+        w = f"role.c roles[] {name['male']}"
+        (rname, ranks, lg, ng, cg, fc, home, inter, mnum, pet, ldr, guard, nem, en1, en2, es1, es2,
+         qarti, allow, abase, adist, hpadv, enadv, xlev, initrec, sbase, sheal, sshld, sarmr, sstat,
+         sspec, ssbon) = r
+        roles.append({
+            "id": name["male"].upper(), "name": name["male"], "name_female": name.get("female"),
+            "ranks": [rolename(x, w) for x in ranks],
+            # Priests have no gods of their own (0): they borrow another role's pantheon
+            "gods": [g if isinstance(g, str) else "" for g in (scalar(x, w) for x in (lg, ng, cg))],
+            "filecode": scalar(fc, w), "homebase": scalar(home, w), "intermed": scalar(inter, w),
+            "monster": pm(mnum, w), "pet": pm(pet, w), "leader": pm(ldr, w), "guardian": pm(guard, w),
+            "nemesis": pm(nem, w), "enemy1": pm(en1, w), "enemy2": pm(en2, w),
+            "enemy1_class": sym(scalar(es1, w), w, "S_"), "enemy2_class": sym(scalar(es2, w), w, "S_"),
+            "quest_artifact": (sym(scalar(qarti, w), w) or "").upper()[4:] or None,
+            "allow": [t[1].lower() for t in scalar(allow, w) if isinstance(t[1], str)],
+            "attr_base": dict(zip(stats, (num(scalar(x, w), w) for x in abase))),
+            "attr_dist": dict(zip(stats, (num(scalar(x, w), w) for x in adist))),
+            "hp_advance": advance(hpadv, w), "energy_advance": advance(enadv, w),
+            "xlev": num(scalar(xlev, w), w), "initial_record": num(scalar(initrec, w), w),
+            "spell_base": num(scalar(sbase, w), w), "spell_heal": num(scalar(sheal, w), w),
+            "spell_shield": num(scalar(sshld, w), w), "spell_armor": num(scalar(sarmr, w), w),
+            "spell_stat": sym(scalar(sstat, w), w, "A_"), "spell_special": sym(scalar(sspec, w), w).upper(),
+            "spell_special_bonus": num(scalar(ssbon, w), w),
+            "src": f"src/role.c:{line}",
+        })
+    body, line = c_array(path, "races[NUM_RACES + 1]")
+    (tree,) = parse_records(cpp('#define STR18(x) (18 + (x))\n@@ RACES ' + body), "RACES")
+    for r in tree:
+        if len(r) != 16:
+            continue  # UNDEFINED_RACE terminator / trailing comma
+        noun = scalar(r[0], "role.c")
+        if noun in (None, [(1, 0)]):
+            continue
+        w = f"role.c races[] {noun}"
+        (noun_, adj, coll, fc, indiv, mnum, mummy, zombie, allow, selfmask, lovemask, hatemask,
+         amin, amax, hpadv, enadv) = r
+        flagl = lambda v: [t[1].lower() for t in (scalar(v, w) or []) if isinstance(t[1], str)]
+        races.append({
+            "id": noun.upper(), "noun": noun, "adjective": scalar(adj, w), "collective": scalar(coll, w),
+            "filecode": scalar(fc, w), "individual": rolename(indiv, w),
+            "monster": pm(mnum, w), "mummy": pm(mummy, w), "zombie": pm(zombie, w),
+            "allow": flagl(allow), "self": flagl(selfmask), "loves": flagl(lovemask), "hates": flagl(hatemask),
+            "attr_min": dict(zip(stats, (num(scalar(x, w), w) for x in amin))),
+            "attr_max": dict(zip(stats, (num(scalar(x, w), w) for x in amax))),
+            "hp_advance": advance(hpadv, w), "energy_advance": advance(enadv, w),
+            "src": f"src/role.c:{line}",
+        })
+    if len(roles) != 13 or len(races) != 5:
+        die(f"{len(roles)} roles / {len(races)} races, expected 13 / 5")
+    return roles, races
+
+
 # --------------------------------------------------------------------- TOML
 
 def toml_val(v):
@@ -449,7 +542,7 @@ def toml_val(v):
     if isinstance(v, str):
         return '"' + v.replace("\\", "\\\\").replace('"', '\\"') + '"'
     if isinstance(v, dict):
-        return "{ " + ", ".join(f"{k} = {toml_val(x)}" for k, x in v.items()) + " }"
+        return "{ " + ", ".join(f"{k} = {toml_val(x)}" for k, x in v.items() if x is not None) + " }"
     if isinstance(v, list):
         if v and isinstance(v[0], dict):
             return "[\n" + "".join("  { " + ", ".join(f"{k} = {toml_val(x)}" for k, x in d.items()) + " },\n" for d in v) + "]"
@@ -503,6 +596,7 @@ def main():
         "objects.toml": to_toml("object", objs, f"{len(objs)} object types from include/objects.h"),
         "artifacts.toml": to_toml("artifact", arts, f"{len(arts)} artifacts from include/artilist.h"),
         "class_probs.toml": to_toml("class_probs", class_probs(), "object class probabilities from src/mkobj.c"),
+        **dict(zip(("roles.toml", "races.toml"), (to_toml(t, recs, f"{t}s from src/role.c") for t, recs in zip(("role", "race"), roles_races(objs, mons, arts))))),
         "monsters.toml": to_toml("monster", mons, f"{len(mons)} monster species from include/monsters.h"),
     }
     check = "--check" in sys.argv

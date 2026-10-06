@@ -9,15 +9,15 @@ Context: the player-facing action set is the `ActionAst` enum (core/ast.rs). It 
 | Mechanic | C reference | NetHackED status | Evidence | Player impact |
 |---|---|---|---|---|
 | **Experience (exper.c)** | | | | |
-| XP awarded for kills | exper.c:experience (85), more_experienced (169) | ❌ MISSING | sim/combat.rs:386-517 `on_actor_killed` gives alignment and a corpse, no XP; grep `experience\|u.uexp` in sim: no match | Killing monsters never advances the hero |
-| Level gain (newexplevel/pluslvl) | exper.c:newexplevel (300), pluslvl (307) | ❌ MISSING | hero `ActorRecord.level` is set to 1 (data/ruleset.rs:536) and never written for the player; grep `pluslvl\|level_up`: no match | Hero stays XL1 for the whole game; quest gate (XL14, core/quest.rs:7) is unreachable |
-| HP growth per level (newhp) | attrib.c:newhp (1080) | ❌ MISSING | no level-up path; only +1 max HP per sacrifice (sim/actions/religion.rs:154) | Max HP never scales; late game is unwinnable by HP |
-| Pw growth per level (newpw/enermod) | exper.c:newpw (45), enermod (26) | ❌ MISSING | sim/world.rs:190-195 fixed per-role Pw; no other write to `player_max_pw` | Casters never get more energy |
-| Level loss / drain (losexp) | exper.c:losexp (207) | ❌ MISSING | grep `losexp\|drain`: no match; KD says monster AD_DRLI is physical damage only | No level-drain threat from vampires or wraiths |
+| XP awarded for kills | exper.c:experience (85), more_experienced (169) | 🟡 PARTIAL | sim/progress.rs `experience` from monster data, `award_kill_experience` in `on_actor_killed` | Kills give C experience points |
+| Level gain (newexplevel/pluslvl) | exper.c:newexplevel (300), pluslvl (307) | 🟡 PARTIAL | sim/progress.rs: `newhp`/`newpw` from role.c data, "Welcome to experience level N." | Levels grow from kills; new intrinsics (`adjabil`) and rank titles missing |
+| HP growth per level (newhp) | attrib.c:newhp (1080) | 🟡 PARTIAL | sim/progress.rs `newhp` (role/race `hpadv` from role.c, Con bonus); initial HP still the role base | Max HP grows on level up as in C |
+| Pw growth per level (newpw/enermod) | exper.c:newpw (45), enermod (26) | 🟡 PARTIAL | sim/progress.rs `newpw` (role/race `enadv`, `enermod`); Wis term not modelled | Energy grows on level up |
+| Level loss / drain (losexp) | exper.c:losexp (207) | 🟡 PARTIAL | sim/progress.rs `losexp` (HP/energy from recorded increments, C minimum) | Level drain works; `adjabil` loss missing |
 | Potion/wraith gain level | exper.c:pluslvl via potion.c / eat.c | ❌ MISSING | no gain-level potion in data/items.rs; wraith corpse not special | Missing a classic progression tool |
 | Score/rank titles by XL | exper.c / botl.c rank | ❌ MISSING | no XL progression | Status line rank never changes |
 | **Attributes (attrib.c)** | | | | |
-| St/Dx/Co/In/Wi/Ch tracked | attrib.c:acurr (1200), init_attr (723) | ❌ MISSING | KD "Attributes: no Charisma, Constitution..."; sim/world.rs:13 `DEFAULT_PLAYER_CON = 10`; no attribute fields in Hero | No stat-based character differences at all |
+| St/Dx/Co/In/Wi/Ch tracked | attrib.c:acurr (1200), init_attr (723) | 🟡 PARTIAL | sim/progress.rs `HeroProgress` (ABASE/AMAX), `init_attr(75)` from role.c tables, `adjattrib` decrease path | Attributes exist and drop from poison; not yet used by to-hit, carrying capacity or other formulas; no exercise |
 | Str/Dex to-hit and damage (abon/dbon) | weapon.c:abon (950), dbon (993) | ❌ MISSING | KD "`abon()` omitted"; core/combat.rs:55 `to_hit_value` has no attribute term | Strong fighters hit no harder; low-XL +1 to-hit is absent |
 | Exercise / abuse (exerchk) | attrib.c:exercise (489), exerper (521), exerchk (598) | ❌ MISSING | grep `exercise\|exerchk`: no match | No stat training from actions or hunger |
 | Attribute gain/loss (adjattrib, gainstr, losestr) | attrib.c:117/203/221 | ❌ MISSING | no attributes; no gain-ability/restore-ability or poison Str loss | Poison and potions never touch stats |
@@ -30,7 +30,7 @@ Context: the player-facing action set is the `ActionAst` enum (core/ast.rs). It 
 | Starting Pw | exper.c:newpw; u_init.c:1408-1411 | 🟡 PARTIAL | sim/world.rs:190-195 hard-coded (Wizard 25, Healer 20, Knight/Monk 10, others 5) | Approximate; not rolled from role/race enadv |
 | Starting inventory | u_init.c:ini_inv (1301) | 🟡 PARTIAL | KD "Starting inventories still differ"; data/lib.rs:94 role items; every role also gets a food ration (sim/world.rs:198) | Wrong kit for several roles (e.g. Valkyrie has no small shield, so AC 10) |
 | Starting spells / pre-known objects | u_init.c:knows_object (575), ini_inv spellbook | 🟡 PARTIAL | sim/world.rs:191-192 gives Wizard force bolt and Healer cure light wounds only | Only 2 roles start with spells; no pre-identified items |
-| Starting attributes / alignment record | attrib.c:init_attr; u_init alignment record | 🟡 PARTIAL | alignment record per role is present (KD); attributes MISSING | Alignment record is right; stats are absent |
+| Starting attributes / alignment record | attrib.c:init_attr; u_init alignment record | 🟡 PARTIAL | alignment record per role is present (KD); attributes rolled by `init_attr` (sim/progress.rs) | Starting attributes follow the C role tables |
 | Starting intrinsics (role/race, e.g. Valk cold res, Monk fast) | attrib.c role/race intrinsic tables (adjabil) | 🟡 PARTIAL | data/roles.rs:272-292 race intrinsics only (elf see-invis, orc poison res); no role intrinsics or level-gated ones | Valkyrie lacks cold res and stealth; Monk lacks Fast, etc. |
 | Starting pet | u_init.c / dog.c makedog | ❔ UNSURE | not in hero files audited; pet code exists (sim/monsters.rs:660ff) | Out of scope; see the pets audit |
 | **Eating (eat.c)** | | | | |

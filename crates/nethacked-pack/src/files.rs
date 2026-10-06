@@ -239,6 +239,7 @@ pub fn vanilla_pack_files() -> PackFiles {
                 difficulty: Some(m.difficulty),
                 frequency: Some(m.frequency),
                 gen_flags: Some(m.gen_flags.clone()),
+                flags: Some(m.flags.clone()),
             })
             .collect(),
     };
