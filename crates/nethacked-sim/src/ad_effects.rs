@@ -190,6 +190,196 @@ impl SimulationWorld {
                 }
                 dmg
             }
+            // uhitm.c:3431-3478 -> paralyze_monst/nomul(-rnd(10)); Free_action resists
+            DamageType::Paralyze => {
+                if self.rng.random_range(0..3u32) == 0 && !self.hero_negates(true, events) {
+                    if intr.poison_resistance {
+                        say(events, "You momentarily stiffen.");
+                    } else {
+                        if intr.blind {
+                            say(events, "You are frozen!");
+                        } else {
+                            say(events, &format!("You are frozen by {}!", attacker.name));
+                        }
+                        self.hero.afflictions.transient.helpless = self.rng.random_range(1..=10u32);
+                    }
+                }
+                dmg
+            }
+            // uhitm.c:2281-2337 -> erode_armor(ERODE_RUST); completelyrusts -> rehumanize
+            DamageType::Rust => {
+                if !self.hero_negates(false, events) {
+                    self.erode_hero_armor(crate::progress::ErosionKind::Rust, events);
+                }
+                dmg
+            }
+            // uhitm.c:2338-2362 -> erode_armor(ERODE_CORRODE)
+            DamageType::Corrode => {
+                if !self.hero_negates(false, events) {
+                    self.erode_hero_armor(crate::progress::ErosionKind::Corrode, events);
+                }
+                dmg
+            }
+            // uhitm.c:2363-2417 -> erode_armor(ERODE_ROT)
+            DamageType::Decay => {
+                if !self.hero_negates(false, events) {
+                    self.erode_hero_armor(crate::progress::ErosionKind::Rot, events);
+                }
+                dmg
+            }
+            // uhitm.c:3897-3980 -> make_hallucinated(HHallucination + dmg); damage = 0
+            DamageType::Hallucinate => {
+                if !self.hero_negates(false, events) {
+                    let t = &mut self.hero.afflictions.transient;
+                    if t.hallucinating == 0 {
+                        say(events, "You are freaking out.");
+                    } else {
+                        say(events, "You are getting even more confused.");
+                    }
+                    t.hallucinating = t.hallucinating.saturating_add(dmg);
+                }
+                0
+            }
+            // uhitm.c:3832-3836 -> diseasemu(pa) -> make_sick
+            DamageType::Disease => {
+                if self.rng.random_range(0..2u32) == 0 && !self.hero_negates(false, events) {
+                    say(
+                        events,
+                        &format!("You feel fever and chills from {}!", attacker.name),
+                    );
+                    self.make_sick(dmg, events);
+                }
+                dmg
+            }
+            // uhitm.c:3306-3336 -> set_ustuck if !sticks && !negated
+            DamageType::Sticky => {
+                if !self.hero_negates(false, events) {
+                    say(events, &format!("You stick to {}!", attacker.name));
+                    // ustuck tracking not fully modelled; message only
+                }
+                dmg
+            }
+            // uhitm.c:3337-3430 -> set_ustuck, drowning if in pool
+            DamageType::Wrap => {
+                if !self.hero_negates(false, events) {
+                    say(
+                        events,
+                        &format!("{} coils around you!", capitalize(&attacker.name)),
+                    );
+                    // ustuck tracking not fully modelled; message only
+                }
+                dmg
+            }
+            // uhitm.c:2790-2858 -> steal item, mhm->damage = 0
+            DamageType::StealItem => {
+                if !self.hero_negates(true, events) {
+                    self.steal_hero_item(attacker, events);
+                }
+                0
+            }
+            // uhitm.c:2790-2858 -> steal gold
+            DamageType::StealGold => {
+                if !self.hero_negates(true, events) {
+                    self.steal_hero_gold(attacker, events);
+                }
+                0
+            }
+            // uhitm.c:??? -> seduction steal (foocubus)
+            DamageType::Seduce => {
+                if !self.hero_negates(true, events) {
+                    // Foocubus: steal item or gold, then teleport away
+                    self.seduce_hero(attacker, events);
+                }
+                dmg
+            }
+            // uhitm.c:2859-2957 -> teleport hero, damage = 0
+            DamageType::Teleport => {
+                if !self.hero_negates(false, events) {
+                    say(events, "Your position suddenly seems very uncertain!");
+                    self.teleport_hero(events);
+                }
+                0
+            }
+            // uhitm.c:3603-3651 -> drain_item (erode armor/rings)
+            DamageType::Disenchant => {
+                if !self.hero_negates(false, events) {
+                    self.disenchant_hero_item(events);
+                }
+                dmg
+            }
+            // uhitm.c:??? -> AD_LEGS (leprechaun legs?)
+            DamageType::Legs => {
+                // No hero-side effect modelled yet (leprechaun kick doesn't do special hero effect)
+                dmg
+            }
+            // uhitm.c:3168-3305 -> losexp + attr drain (INT)
+            DamageType::DrainInt => {
+                if self.rng.random_range(0..3u32) == 0 && !self.hero_negates(true, events) {
+                    self.losexp(Some("intelligence drain"), events);
+                    // Also drain INT via poisoned
+                    self.poisoned(
+                        &format!("{}'s attack", capitalize(&attacker.name)),
+                        crate::progress::A_INT,
+                        events,
+                    );
+                }
+                dmg
+            }
+            // uhitm.c:3729-3776 -> mon_poly (hero polymorph)
+            DamageType::Polymorph => {
+                if !self.hero_negates(false, events) {
+                    say(events, "You feel a change coming over you.");
+                    self.polymorph_hero(dmg, events);
+                }
+                0
+            }
+            // uhitm.c:4203-4264 -> do_stone_u (petrification)
+            DamageType::Stone => {
+                if !self.hero_negates(true, events)
+                    && !intr.disintegration_resistance
+                    && self.hero.afflictions.petrification.is_none()
+                {
+                    say(
+                        events,
+                        &format!("{} turns you to stone!", capitalize(&attacker.name)),
+                    );
+                    self.hero.afflictions.petrification =
+                        Some(nethacked_types::PetrificationState { turns_remaining: 5 });
+                }
+                dmg
+            }
+            // uhitm.c:3526-3602 -> make_slimed
+            DamageType::Slime => {
+                if self.rng.random_range(0..4u32) == 0
+                    && !self.hero_negates(false, events)
+                    && self.hero.afflictions.sliming.is_none()
+                {
+                    say(events, "You don't feel very well.");
+                    self.hero.afflictions.sliming = Some(nethacked_types::SlimingState {
+                        turns_remaining: 10,
+                    });
+                }
+                dmg
+            }
+            // uhitm.c:4265-4271 -> lycanthropy
+            DamageType::Lycanthropy => {
+                if self.rng.random_range(0..2u32) == 0 && !self.hero_negates(false, events) {
+                    say(
+                        events,
+                        &format!("You feel feverish from {}'s bite!", attacker.name),
+                    );
+                    // Lycanthropy not fully modelled; message only
+                }
+                dmg
+            }
+            // uhitm.c:3015-3097 -> curse items (attrcurse)
+            DamageType::Curse => {
+                if self.rng.random_range(0..10u32) == 0 && !self.hero_negates(false, events) {
+                    say(events, &format!("{} chuckles.", capitalize(&attacker.name)));
+                    self.curse_hero_items(events);
+                }
+                dmg
+            }
             _ => dmg,
         }
     }
