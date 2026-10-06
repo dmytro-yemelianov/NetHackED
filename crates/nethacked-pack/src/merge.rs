@@ -78,6 +78,7 @@ pub fn resolve(pack: &PackDir, base: &Ruleset) -> Result<Ruleset, PackError> {
                 difficulty: patch.difficulty.unwrap_or(0),
                 frequency: patch.frequency.unwrap_or(0),
                 gen_flags: patch.gen_flags.clone().unwrap_or_default(),
+                flags: patch.flags.clone().unwrap_or_default(),
             };
             monsters.push(def);
         } else {
@@ -162,6 +163,9 @@ pub fn resolve(pack: &PackDir, base: &Ruleset) -> Result<Ruleset, PackError> {
             }
             if let Some(v) = &patch.gen_flags {
                 target.gen_flags = v.clone();
+            }
+            if let Some(v) = &patch.flags {
+                target.flags = v.clone();
             }
         }
     }

@@ -805,6 +805,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 4,
         frequency: 3,
         gen_flags: &["geno", "sgroup"],
+        flags: &["animal", "nohands", "oviparous", "carnivore", "hostile"],
     },
     MonsterArchetype {
         // include/monsters.h:102
@@ -833,6 +834,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 6,
         frequency: 2,
         gen_flags: &["geno", "lgroup"],
+        flags: &["animal", "fly", "nohands", "pois", "hostile", "female"],
     },
     MonsterArchetype {
         // include/monsters.h:110
@@ -861,6 +863,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 2,
         gen_flags: &["geno", "sgroup"],
+        flags: &["animal", "nohands", "oviparous", "pois", "carnivore", "hostile"],
     },
     MonsterArchetype {
         // include/monsters.h:118
@@ -889,6 +892,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 6,
         frequency: 1,
         gen_flags: &["geno", "sgroup"],
+        flags: &["animal", "nohands", "oviparous", "carnivore", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:125
@@ -917,6 +921,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 6,
         frequency: 3,
         gen_flags: &["geno"],
+        flags: &["animal", "nohands", "pois", "carnivore", "hostile"],
     },
     MonsterArchetype {
         // include/monsters.h:133
@@ -945,6 +950,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 12,
         frequency: 0,
         gen_flags: &["geno", "nogen"],
+        flags: &["animal", "fly", "nohands", "oviparous", "pois", "hostile", "female", "prince"],
     },
     MonsterArchetype {
         // include/monsters.h:146
@@ -973,6 +979,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 2,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["breathless", "amorphous", "noeyes", "nolimbs", "nohead", "mindless", "acid", "wander", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:154
@@ -1001,6 +1008,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 6,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["noeyes", "nolimbs", "nohead", "mindless", "wander", "hostile", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:166
@@ -1029,6 +1037,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["noeyes", "nolimbs", "nohead", "mindless", "omnivore", "acid", "wander", "hostile", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:177
@@ -1057,6 +1066,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 1,
         gen_flags: &["geno", "sgroup"],
+        flags: &["animal", "nohands", "omnivore", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:186
@@ -1085,6 +1095,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 5,
         gen_flags: &["geno"],
+        flags: &["animal", "nohands", "omnivore", "oviparous", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:195
@@ -1113,6 +1124,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["animal", "nohands", "omnivore", "oviparous", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:205
@@ -1141,6 +1153,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 1,
         frequency: 3,
         gen_flags: &["geno", "sgroup"],
+        flags: &["animal", "nohands", "carnivore", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:212
@@ -1169,6 +1182,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 1,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["animal", "nohands", "carnivore", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:219
@@ -1197,6 +1211,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 2,
         frequency: 1,
         gen_flags: &["geno", "sgroup"],
+        flags: &["animal", "nohands", "carnivore", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:227
@@ -1225,6 +1240,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 4,
         frequency: 0,
         gen_flags: &["nogen", "nocorpse"],
+        flags: &["nohands", "pois", "regen", "carnivore", "nopoly", "were", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:234
@@ -1253,6 +1269,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 3,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["animal", "nohands", "carnivore", "domestic", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:241
@@ -1281,6 +1298,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 5,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["animal", "nohands", "carnivore", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:248
@@ -1309,6 +1327,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 5,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["animal", "nohands", "carnivore", "domestic", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:256
@@ -1337,6 +1356,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["animal", "nohands", "carnivore", "strong", "domestic", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:263
@@ -1365,6 +1385,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 6,
         frequency: 2,
         gen_flags: &["geno", "sgroup"],
+        flags: &["animal", "nohands", "carnivore", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:274
@@ -1393,6 +1414,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 0,
         gen_flags: &["nogen", "nocorpse"],
+        flags: &["nohands", "pois", "regen", "carnivore", "nopoly", "were", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:282
@@ -1421,6 +1443,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 2,
         gen_flags: &["nohell", "geno", "sgroup"],
+        flags: &["animal", "nohands", "carnivore", "hostile"],
     },
     MonsterArchetype {
         // include/monsters.h:289
@@ -1449,6 +1472,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 2,
         gen_flags: &["geno", "sgroup"],
+        flags: &["animal", "nohands", "carnivore", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:296
@@ -1477,6 +1501,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 9,
         frequency: 1,
         gen_flags: &["nohell", "geno"],
+        flags: &["animal", "nohands", "carnivore", "hostile", "strong"],
     },
     MonsterArchetype {
         // include/monsters.h:303
@@ -1505,6 +1530,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 9,
         frequency: 1,
         gen_flags: &["hell", "geno", "sgroup"],
+        flags: &["animal", "nohands", "carnivore", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:310
@@ -1533,6 +1559,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 14,
         frequency: 1,
         gen_flags: &["hell", "geno"],
+        flags: &["animal", "nohands", "carnivore", "hostile", "strong", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:332
@@ -1561,6 +1588,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 2,
         frequency: 1,
         gen_flags: &["nocorpse", "geno"],
+        flags: &["fly", "breathless", "nolimbs", "nohead", "mindless", "hostile", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:340
@@ -1589,6 +1617,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 3,
         frequency: 5,
         gen_flags: &["geno"],
+        flags: &["fly", "amphibious", "nolimbs", "nohead", "notake", "hostile", "neuter", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:349
@@ -1617,6 +1646,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 9,
         frequency: 2,
         gen_flags: &["nocorpse", "nohell", "geno"],
+        flags: &["fly", "breathless", "nolimbs", "nohead", "mindless", "notake", "hostile", "neuter", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:357
@@ -1645,6 +1675,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 9,
         frequency: 2,
         gen_flags: &["nocorpse", "geno"],
+        flags: &["fly", "breathless", "nolimbs", "nohead", "mindless", "notake", "hostile", "neuter", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:366
@@ -1673,6 +1704,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 10,
         frequency: 2,
         gen_flags: &["nocorpse", "geno"],
+        flags: &["fly", "breathless", "nolimbs", "nohead", "mindless", "notake", "hostile", "neuter", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:388
@@ -1701,6 +1733,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 3,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["animal", "nohands", "carnivore", "wander", "domestic", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:396
@@ -1729,6 +1762,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 5,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["animal", "nohands", "carnivore", "domestic", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:404
@@ -1757,6 +1791,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 6,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["animal", "nohands", "carnivore", "hostile", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:412
@@ -1785,6 +1820,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["animal", "nohands", "carnivore", "hostile", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:420
@@ -1813,6 +1849,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["animal", "nohands", "carnivore", "hostile", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:428
@@ -1841,6 +1878,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["animal", "nohands", "carnivore", "strong", "domestic", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:436
@@ -1869,6 +1907,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["animal", "nohands", "carnivore", "hostile", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:444
@@ -1897,6 +1936,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 14,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["animal", "nohands", "carnivore", "hostile", "nasty", "infravisible", "infravision", "displaces"],
     },
     MonsterArchetype {
         // include/monsters.h:455
@@ -1925,6 +1965,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["swim", "humanoid", "pois", "stalk", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:465
@@ -1953,6 +1994,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["humanoid", "thick_hide", "breathless", "hostile", "strong"],
     },
     MonsterArchetype {
         // include/monsters.h:473
@@ -1981,6 +2023,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 11,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["fly", "humanoid", "thick_hide", "breathless", "oviparous", "lord", "hostile", "strong", "magic"],
     },
     MonsterArchetype {
         // include/monsters.h:483
@@ -2009,6 +2052,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 2,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["humanoid", "omnivore", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:493
@@ -2037,6 +2081,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 4,
         frequency: 3,
         gen_flags: &["geno"],
+        flags: &["tunnel", "needpick", "humanoid", "omnivore", "dwarf", "strong", "greedy", "jewels", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:501
@@ -2065,6 +2110,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 5,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["humanoid", "omnivore", "strong", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:510
@@ -2093,6 +2139,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 6,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["tunnel", "needpick", "humanoid", "omnivore", "dwarf", "strong", "lord", "greedy", "jewels", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:520
@@ -2121,6 +2168,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["tunnel", "needpick", "humanoid", "omnivore", "dwarf", "strong", "prince", "greedy", "jewels", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:530
@@ -2149,6 +2197,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 13,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["humanoid", "fly", "see_invis", "omnivore", "hostile", "nasty", "greedy", "jewels", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:540
@@ -2177,6 +2226,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 19,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["humanoid", "fly", "see_invis", "omnivore", "hostile", "nasty", "greedy", "jewels", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:550
@@ -2205,6 +2255,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 3,
         frequency: 1,
         gen_flags: &["geno", "lgroup", "nocorpse"],
+        flags: &["pois", "hostile", "stalk", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:558
@@ -2233,6 +2284,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 3,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["fly", "pois", "stalk", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:565
@@ -2261,6 +2313,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 4,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["regen", "wander", "stalk", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:573
@@ -2289,6 +2342,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 5,
         frequency: 1,
         gen_flags: &["hell", "geno", "lgroup", "nocorpse"],
+        flags: &["pois", "regen", "hostile", "wander", "stalk", "neuter", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:580
@@ -2317,6 +2371,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["regen", "stalk", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:587
@@ -2345,6 +2400,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 3,
         gen_flags: &["geno"],
+        flags: &["tport", "tport_cntrl", "stalk", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:600
@@ -2373,6 +2429,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 5,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["breathless", "amorphous", "noeyes", "nolimbs", "nohead", "mindless", "notake", "hostile", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:610
@@ -2401,6 +2458,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 6,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["breathless", "amorphous", "noeyes", "nolimbs", "nohead", "mindless", "acid", "notake", "hostile", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:620
@@ -2429,6 +2487,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["breathless", "amorphous", "noeyes", "nolimbs", "nohead", "mindless", "acid", "notake", "hostile", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:631
@@ -2457,6 +2516,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 1,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["humanoid", "pois", "omnivore", "hostile", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:639
@@ -2485,6 +2545,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 2,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["humanoid", "pois", "omnivore", "hostile", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:648
@@ -2513,6 +2574,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 3,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["humanoid", "pois", "omnivore", "hostile", "lord", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:656
@@ -2541,6 +2603,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 4,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["humanoid", "pois", "omnivore", "hostile", "magic", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:666
@@ -2569,6 +2632,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 4,
         frequency: 4,
         gen_flags: &["geno"],
+        flags: &["humanoid", "tport", "hostile", "greedy", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:678
@@ -2597,6 +2661,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["breathless", "amorphous", "hide", "animal", "noeyes", "nohead", "nolimbs", "thick_hide", "carnivore", "hostile"],
     },
     MonsterArchetype {
         // include/monsters.h:688
@@ -2625,6 +2690,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 9,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["cling", "breathless", "amorphous", "hide", "animal", "noeyes", "nohead", "nolimbs", "thick_hide", "carnivore", "hostile", "strong"],
     },
     MonsterArchetype {
         // include/monsters.h:698
@@ -2653,6 +2719,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 11,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["cling", "breathless", "amorphous", "hide", "animal", "noeyes", "nohead", "nolimbs", "thick_hide", "carnivore", "hostile", "strong"],
     },
     MonsterArchetype {
         // include/monsters.h:708
@@ -2681,6 +2748,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 5,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["humanoid", "tport", "hostile", "female", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:716
@@ -2709,6 +2777,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 5,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["humanoid", "tport", "swim", "hostile", "female", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:723
@@ -2737,6 +2806,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 5,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["humanoid", "tport", "hostile", "female", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:733
@@ -2765,6 +2835,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 1,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["humanoid", "omnivore", "orc", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:739
@@ -2793,6 +2864,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 3,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["humanoid", "omnivore", "orc", "strong", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:751
@@ -2821,6 +2893,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 3,
         frequency: 0,
         gen_flags: &["geno", "nogen", "lgroup"],
+        flags: &["humanoid", "omnivore", "nopoly", "orc", "strong", "greedy", "jewels", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:760
@@ -2849,6 +2922,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 4,
         frequency: 2,
         gen_flags: &["geno", "lgroup"],
+        flags: &["humanoid", "omnivore", "orc", "strong", "greedy", "jewels", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:769
@@ -2877,6 +2951,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 5,
         frequency: 1,
         gen_flags: &["geno", "lgroup"],
+        flags: &["humanoid", "omnivore", "orc", "strong", "greedy", "jewels", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:778
@@ -2905,6 +2980,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 5,
         frequency: 1,
         gen_flags: &["geno", "lgroup"],
+        flags: &["humanoid", "omnivore", "orc", "strong", "greedy", "jewels", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:787
@@ -2933,6 +3009,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 5,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["humanoid", "omnivore", "orc", "greedy", "jewels", "magic", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:796
@@ -2961,6 +3038,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["humanoid", "omnivore", "orc", "strong", "greedy", "jewels", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:808
@@ -2989,6 +3067,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 4,
         frequency: 4,
         gen_flags: &["geno"],
+        flags: &["cling", "hide", "animal", "noeyes", "nolimbs", "carnivore", "notake", "hostile"],
     },
     MonsterArchetype {
         // include/monsters.h:817
@@ -3017,6 +3096,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 6,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["cling", "hide", "animal", "noeyes", "nolimbs", "carnivore", "notake", "hostile"],
     },
     MonsterArchetype {
         // include/monsters.h:826
@@ -3045,6 +3125,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 9,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["cling", "hide", "animal", "noeyes", "nolimbs", "carnivore", "notake", "hostile"],
     },
     MonsterArchetype {
         // include/monsters.h:837
@@ -3073,6 +3154,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 4,
         frequency: 4,
         gen_flags: &["geno", "sgroup"],
+        flags: &["animal", "nohands", "omnivore", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:845
@@ -3101,6 +3183,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["animal", "thick_hide", "nohands", "herbivore", "hostile", "strong", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:853
@@ -3129,6 +3212,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["animal", "nohands", "omnivore", "hostile", "strong", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:861
@@ -3157,6 +3241,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 9,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["cling", "animal", "nohands", "omnivore", "hostile", "strong", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:869
@@ -3185,6 +3270,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 13,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["animal", "thick_hide", "nohands", "herbivore", "hostile", "strong", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:877
@@ -3213,6 +3299,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 15,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["animal", "thick_hide", "nohands", "herbivore", "hostile", "strong", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:885
@@ -3241,6 +3328,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 22,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["animal", "thick_hide", "nohands", "herbivore", "hostile", "strong", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:895
@@ -3269,6 +3357,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 1,
         frequency: 1,
         gen_flags: &["geno", "sgroup"],
+        flags: &["animal", "nohands", "carnivore", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:902
@@ -3297,6 +3386,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 2,
         frequency: 2,
         gen_flags: &["geno", "sgroup"],
+        flags: &["animal", "nohands", "carnivore", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:910
@@ -3325,6 +3415,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 4,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["animal", "nohands", "pois", "carnivore", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:918
@@ -3353,6 +3444,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 4,
         frequency: 0,
         gen_flags: &["nogen", "nocorpse"],
+        flags: &["nohands", "pois", "regen", "carnivore", "nopoly", "were", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:926
@@ -3381,6 +3473,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 4,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["tunnel", "animal", "nohands", "metallivore", "hostile", "greedy", "jewels", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:936
@@ -3409,6 +3502,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 4,
         frequency: 0,
         gen_flags: &["nogen", "geno"],
+        flags: &["tunnel", "animal", "nohands", "swim", "herbivore", "wander", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:947
@@ -3437,6 +3531,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 3,
         frequency: 2,
         gen_flags: &["geno", "sgroup"],
+        flags: &["conceal", "animal", "nohands", "oviparous", "carnivore", "hostile"],
     },
     MonsterArchetype {
         // include/monsters.h:955
@@ -3465,6 +3560,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 4,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["conceal", "animal", "nohands", "oviparous", "carnivore", "hostile"],
     },
     MonsterArchetype {
         // include/monsters.h:963
@@ -3493,6 +3589,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["animal", "nohands", "oviparous", "pois", "carnivore", "hostile", "strong"],
     },
     MonsterArchetype {
         // include/monsters.h:972
@@ -3521,6 +3618,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["conceal", "animal", "nohands", "oviparous", "pois", "carnivore", "hostile"],
     },
     MonsterArchetype {
         // include/monsters.h:989
@@ -3549,6 +3647,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 12,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["hide", "fly", "animal", "noeyes", "nolimbs", "nohead", "carnivore", "hostile", "stalk", "strong"],
     },
     MonsterArchetype {
         // include/monsters.h:998
@@ -3577,6 +3676,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 14,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["hide", "animal", "noeyes", "nolimbs", "nohead", "carnivore", "hostile", "stalk", "strong"],
     },
     MonsterArchetype {
         // include/monsters.h:1009
@@ -3605,6 +3705,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 4,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["animal", "nohands", "herbivore", "wander", "strong", "domestic", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1017
@@ -3633,6 +3734,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 6,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["nohands", "herbivore", "wander", "strong", "jewels", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1025
@@ -3661,6 +3763,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 6,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["nohands", "herbivore", "wander", "strong", "jewels", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1033
@@ -3689,6 +3792,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 6,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["nohands", "herbivore", "wander", "strong", "jewels", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1041
@@ -3717,6 +3821,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["animal", "nohands", "herbivore", "wander", "strong", "domestic", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1049
@@ -3745,6 +3850,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 9,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["animal", "nohands", "herbivore", "wander", "strong", "domestic", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1061
@@ -3773,6 +3879,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 4,
         frequency: 2,
         gen_flags: &["geno", "nocorpse"],
+        flags: &["fly", "breathless", "noeyes", "nolimbs", "nohead", "mindless", "amorphous", "unsolid", "hostile", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:1070
@@ -3801,6 +3908,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 6,
         frequency: 2,
         gen_flags: &["geno", "nocorpse"],
+        flags: &["fly", "breathless", "noeyes", "nolimbs", "nohead", "mindless", "hostile", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:1080
@@ -3829,6 +3937,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 1,
         gen_flags: &["nohell", "geno", "nocorpse"],
+        flags: &["fly", "breathless", "noeyes", "nolimbs", "nohead", "mindless", "hostile", "neuter", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1090
@@ -3857,6 +3966,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 9,
         frequency: 1,
         gen_flags: &["geno", "nocorpse"],
+        flags: &["fly", "breathless", "noeyes", "nolimbs", "nohead", "mindless", "unsolid", "hostile", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:1100
@@ -3885,6 +3995,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 9,
         frequency: 2,
         gen_flags: &["hell", "geno", "nocorpse"],
+        flags: &["fly", "breathless", "noeyes", "nolimbs", "nohead", "mindless", "unsolid", "hostile", "neuter", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1110
@@ -3913,6 +4024,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 10,
         frequency: 1,
         gen_flags: &["hell", "geno", "nocorpse"],
+        flags: &["fly", "breathless", "noeyes", "nolimbs", "nohead", "mindless", "unsolid", "hostile", "neuter", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1121
@@ -3941,6 +4053,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 6,
         frequency: 0,
         gen_flags: &["geno"],
+        flags: &["animal", "slithy", "nolimbs", "carnivore", "notake", "hostile"],
     },
     MonsterArchetype {
         // include/monsters.h:1128
@@ -3969,6 +4082,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 9,
         frequency: 0,
         gen_flags: &["geno"],
+        flags: &["animal", "slithy", "nolimbs", "carnivore", "hostile"],
     },
     MonsterArchetype {
         // include/monsters.h:1137
@@ -3997,6 +4111,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 10,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["animal", "slithy", "nolimbs", "oviparous", "carnivore", "notake", "hostile", "strong", "nasty"],
     },
     MonsterArchetype {
         // include/monsters.h:1145
@@ -4025,6 +4140,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 17,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["animal", "slithy", "nolimbs", "oviparous", "carnivore", "hostile", "strong", "nasty"],
     },
     MonsterArchetype {
         // include/monsters.h:1156
@@ -4053,6 +4169,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 1,
         frequency: 3,
         gen_flags: &["geno", "sgroup", "nocorpse"],
+        flags: &["animal", "nohands", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1164
@@ -4081,6 +4198,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 9,
         frequency: 3,
         gen_flags: &["geno"],
+        flags: &["fly", "animal", "nohands", "pois", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1179
@@ -4109,6 +4227,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 5,
         frequency: 4,
         gen_flags: &["nocorpse", "geno"],
+        flags: &["fly", "breathless", "amorphous", "noeyes", "nolimbs", "nohead", "mindless", "unsolid", "notake", "hostile", "neuter", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1191
@@ -4137,6 +4256,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 2,
         gen_flags: &["nocorpse", "geno"],
+        flags: &["fly", "breathless", "amorphous", "noeyes", "nolimbs", "nohead", "mindless", "unsolid", "see_invis", "notake", "hostile", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:1202
@@ -4165,6 +4285,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 11,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["animal", "humanoid", "carnivore", "hostile", "strong", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1214
@@ -4193,6 +4314,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 11,
         frequency: 1,
         gen_flags: &["nohell", "sgroup", "nocorpse"],
+        flags: &["fly", "nohands", "slithy", "pois", "minion", "stalk", "strong", "nasty", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1224
@@ -4221,6 +4343,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 12,
         frequency: 1,
         gen_flags: &["nohell", "nocorpse"],
+        flags: &["humanoid", "see_invis", "minion", "stalk", "nasty", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1239
@@ -4249,6 +4372,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 19,
         frequency: 1,
         gen_flags: &["nohell", "nocorpse"],
+        flags: &["fly", "humanoid", "see_invis", "nopoly", "minion", "stalk", "strong", "nasty", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1253
@@ -4277,6 +4401,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 21,
         frequency: 1,
         gen_flags: &["nohell", "nocorpse"],
+        flags: &["fly", "nohands", "see_invis", "nopoly", "minion", "stalk", "strong", "nasty", "lord", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1265
@@ -4305,6 +4430,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 26,
         frequency: 1,
         gen_flags: &["nohell", "nocorpse"],
+        flags: &["fly", "humanoid", "see_invis", "regen", "nopoly", "minion", "stalk", "strong", "nasty", "lord", "collect", "magic", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1275
@@ -4333,6 +4459,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 2,
         frequency: 1,
         gen_flags: &["geno", "sgroup"],
+        flags: &["fly", "animal", "nohands", "carnivore", "wander", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1283
@@ -4361,6 +4488,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 3,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["fly", "animal", "nohands", "carnivore", "wander", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1290
@@ -4389,6 +4517,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 6,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["fly", "animal", "nohands", "oviparous", "carnivore", "wander", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1297
@@ -4417,6 +4546,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["fly", "animal", "nohands", "pois", "regen", "omnivore", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1307
@@ -4445,6 +4575,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 6,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["humanoid", "omnivore", "strong", "greedy", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1315
@@ -4473,6 +4604,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["humanoid", "omnivore", "strong", "greedy", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1323
@@ -4501,6 +4633,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 9,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["humanoid", "omnivore", "strong", "greedy", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1348
@@ -4529,6 +4662,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 13,
         frequency: 0,
         gen_flags: &["geno"],
+        flags: &["fly", "thick_hide", "nohands", "carnivore", "hostile", "strong", "greedy", "jewels"],
     },
     MonsterArchetype {
         // include/monsters.h:1356
@@ -4557,6 +4691,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 13,
         frequency: 0,
         gen_flags: &["geno"],
+        flags: &["fly", "thick_hide", "nohands", "carnivore", "hostile", "strong", "greedy", "jewels", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1364
@@ -4585,6 +4720,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 13,
         frequency: 0,
         gen_flags: &["geno"],
+        flags: &["fly", "thick_hide", "nohands", "carnivore", "hostile", "strong", "greedy", "jewels"],
     },
     MonsterArchetype {
         // include/monsters.h:1383
@@ -4613,6 +4749,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 13,
         frequency: 0,
         gen_flags: &["geno"],
+        flags: &["fly", "thick_hide", "nohands", "carnivore", "hostile", "strong", "greedy", "jewels", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1391
@@ -4641,6 +4778,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 13,
         frequency: 0,
         gen_flags: &["geno"],
+        flags: &["fly", "thick_hide", "nohands", "carnivore", "hostile", "strong", "greedy", "jewels"],
     },
     MonsterArchetype {
         // include/monsters.h:1399
@@ -4669,6 +4807,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 13,
         frequency: 0,
         gen_flags: &["geno"],
+        flags: &["fly", "thick_hide", "nohands", "carnivore", "hostile", "strong", "greedy", "jewels"],
     },
     MonsterArchetype {
         // include/monsters.h:1407
@@ -4697,6 +4836,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 13,
         frequency: 0,
         gen_flags: &["geno"],
+        flags: &["fly", "thick_hide", "nohands", "carnivore", "hostile", "strong", "greedy", "jewels"],
     },
     MonsterArchetype {
         // include/monsters.h:1415
@@ -4725,6 +4865,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 13,
         frequency: 0,
         gen_flags: &["geno"],
+        flags: &["fly", "thick_hide", "nohands", "carnivore", "hostile", "strong", "greedy", "jewels"],
     },
     MonsterArchetype {
         // include/monsters.h:1423
@@ -4753,6 +4894,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 13,
         frequency: 0,
         gen_flags: &["geno"],
+        flags: &["fly", "thick_hide", "nohands", "carnivore", "pois", "hostile", "strong", "greedy", "jewels"],
     },
     MonsterArchetype {
         // include/monsters.h:1431
@@ -4781,6 +4923,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 13,
         frequency: 0,
         gen_flags: &["geno"],
+        flags: &["fly", "thick_hide", "nohands", "carnivore", "acid", "hostile", "strong", "greedy", "jewels"],
     },
     MonsterArchetype {
         // include/monsters.h:1442
@@ -4809,6 +4952,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 20,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["fly", "thick_hide", "nohands", "see_invis", "oviparous", "carnivore", "hostile", "strong", "nasty", "greedy", "jewels", "magic"],
     },
     MonsterArchetype {
         // include/monsters.h:1454
@@ -4837,6 +4981,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 20,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["fly", "thick_hide", "nohands", "see_invis", "oviparous", "carnivore", "hostile", "strong", "nasty", "greedy", "jewels", "magic", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1465
@@ -4865,6 +5010,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 20,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["fly", "thick_hide", "nohands", "see_invis", "oviparous", "carnivore", "hostile", "strong", "nasty", "greedy", "jewels", "magic"],
     },
     MonsterArchetype {
         // include/monsters.h:1494
@@ -4893,6 +5039,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 20,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["fly", "thick_hide", "nohands", "see_invis", "oviparous", "carnivore", "hostile", "strong", "nasty", "greedy", "jewels", "magic", "infravision", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1505
@@ -4921,6 +5068,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 20,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["fly", "thick_hide", "nohands", "see_invis", "oviparous", "carnivore", "hostile", "strong", "nasty", "greedy", "jewels", "magic"],
     },
     MonsterArchetype {
         // include/monsters.h:1516
@@ -4949,6 +5097,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 20,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["fly", "thick_hide", "nohands", "see_invis", "oviparous", "carnivore", "hostile", "strong", "nasty", "greedy", "jewels", "magic"],
     },
     MonsterArchetype {
         // include/monsters.h:1528
@@ -4977,6 +5126,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 20,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["fly", "thick_hide", "nohands", "see_invis", "oviparous", "carnivore", "hostile", "strong", "nasty", "greedy", "jewels", "magic"],
     },
     MonsterArchetype {
         // include/monsters.h:1539
@@ -5005,6 +5155,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 20,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["fly", "thick_hide", "nohands", "see_invis", "oviparous", "carnivore", "hostile", "strong", "nasty", "greedy", "jewels", "magic"],
     },
     MonsterArchetype {
         // include/monsters.h:1550
@@ -5033,6 +5184,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 20,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["fly", "thick_hide", "nohands", "see_invis", "oviparous", "carnivore", "pois", "hostile", "strong", "nasty", "greedy", "jewels", "magic"],
     },
     MonsterArchetype {
         // include/monsters.h:1562
@@ -5061,6 +5213,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 20,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["fly", "thick_hide", "nohands", "see_invis", "oviparous", "carnivore", "acid", "hostile", "strong", "nasty", "greedy", "jewels", "magic"],
     },
     MonsterArchetype {
         // include/monsters.h:1573
@@ -5089,6 +5242,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 9,
         frequency: 3,
         gen_flags: &["geno"],
+        flags: &["animal", "fly", "see_invis", "wander", "stalk", "hostile", "strong", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1582
@@ -5117,6 +5271,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 10,
         frequency: 1,
         gen_flags: &["nocorpse"],
+        flags: &["noeyes", "nolimbs", "nohead", "mindless", "breathless", "unsolid", "fly", "strong", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:1591
@@ -5145,6 +5300,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 10,
         frequency: 1,
         gen_flags: &["nocorpse"],
+        flags: &["noeyes", "nolimbs", "nohead", "mindless", "breathless", "unsolid", "fly", "notake", "strong", "neuter", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1601
@@ -5173,6 +5329,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 10,
         frequency: 1,
         gen_flags: &["nocorpse"],
+        flags: &["noeyes", "nolimbs", "nohead", "mindless", "breathless", "wallwalk", "thick_hide", "strong", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:1610
@@ -5201,6 +5358,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 10,
         frequency: 1,
         gen_flags: &["nocorpse"],
+        flags: &["noeyes", "nolimbs", "nohead", "mindless", "breathless", "unsolid", "amphibious", "swim", "strong", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:1622
@@ -5229,6 +5387,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 1,
         frequency: 4,
         gen_flags: &["geno"],
+        flags: &["breathless", "noeyes", "nolimbs", "nohead", "mindless", "notake", "hostile", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:1631
@@ -5257,6 +5416,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 2,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["breathless", "noeyes", "nolimbs", "nohead", "mindless", "notake", "hostile", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:1640
@@ -5285,6 +5445,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 2,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["breathless", "noeyes", "nolimbs", "nohead", "mindless", "pois", "notake", "hostile", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:1650
@@ -5313,6 +5474,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 2,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["breathless", "noeyes", "nolimbs", "nohead", "mindless", "acid", "notake", "hostile", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:1659
@@ -5341,6 +5503,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 2,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["breathless", "noeyes", "nolimbs", "nohead", "mindless", "notake", "hostile", "neuter", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1667
@@ -5369,6 +5532,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 2,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["breathless", "noeyes", "nolimbs", "nohead", "mindless", "notake", "hostile", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:1676
@@ -5397,6 +5561,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 5,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["breathless", "noeyes", "nolimbs", "nohead", "mindless", "notake", "hostile", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:1687
@@ -5425,6 +5590,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 3,
         frequency: 1,
         gen_flags: &["geno", "sgroup"],
+        flags: &["humanoid", "omnivore", "gnome", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1694
@@ -5453,6 +5619,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 4,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["humanoid", "omnivore", "gnome", "lord", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1701
@@ -5481,6 +5648,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 5,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["humanoid", "omnivore", "gnome", "magic", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1709
@@ -5509,6 +5677,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 6,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["humanoid", "omnivore", "gnome", "prince", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1721
@@ -5537,6 +5706,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 1,
         gen_flags: &["geno", "nogen"],
+        flags: &["humanoid", "carnivore", "giant", "strong", "rockthrow", "nasty", "collect", "jewels", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1730
@@ -5565,6 +5735,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 1,
         gen_flags: &["geno", "sgroup"],
+        flags: &["humanoid", "carnivore", "giant", "strong", "rockthrow", "nasty", "collect", "jewels", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1739
@@ -5593,6 +5764,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 10,
         frequency: 1,
         gen_flags: &["geno", "sgroup"],
+        flags: &["humanoid", "carnivore", "giant", "strong", "rockthrow", "nasty", "collect", "jewels", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1748
@@ -5621,6 +5793,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 11,
         frequency: 1,
         gen_flags: &["geno", "sgroup"],
+        flags: &["humanoid", "carnivore", "giant", "strong", "rockthrow", "nasty", "collect", "jewels", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1757
@@ -5649,6 +5822,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 13,
         frequency: 1,
         gen_flags: &["nohell", "geno", "sgroup"],
+        flags: &["humanoid", "carnivore", "giant", "strong", "rockthrow", "nasty", "collect", "jewels", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1767
@@ -5677,6 +5851,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 13,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["animal", "humanoid", "carnivore", "hostile", "strong", "nasty", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1776
@@ -5705,6 +5880,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 19,
         frequency: 1,
         gen_flags: &["geno", "sgroup"],
+        flags: &["humanoid", "carnivore", "giant", "strong", "rockthrow", "nasty", "collect", "jewels", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1785
@@ -5733,6 +5909,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 20,
         frequency: 1,
         gen_flags: &[],
+        flags: &["fly", "humanoid", "omnivore", "strong", "rockthrow", "nasty", "collect", "magic", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1793
@@ -5761,6 +5938,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 17,
         frequency: 0,
         gen_flags: &["geno", "nogen"],
+        flags: &["animal", "humanoid", "carnivore", "hostile", "strong", "nasty", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1814
@@ -5789,6 +5967,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 18,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["animal", "fly", "carnivore", "hostile", "strong", "nasty", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1836
@@ -5817,6 +5996,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 3,
         frequency: 0,
         gen_flags: &["geno", "lgroup", "nogen"],
+        flags: &["humanoid", "human", "wander", "hostile", "male", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1844
@@ -5845,6 +6025,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 4,
         frequency: 0,
         gen_flags: &["geno", "sgroup", "nogen"],
+        flags: &["humanoid", "human", "wander", "hostile", "strong", "male", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1852
@@ -5873,6 +6054,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 5,
         frequency: 0,
         gen_flags: &["geno", "nogen"],
+        flags: &["humanoid", "human", "wander", "hostile", "strong", "male", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1860
@@ -5901,6 +6083,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 6,
         frequency: 0,
         gen_flags: &["geno", "nogen"],
+        flags: &["humanoid", "human", "wander", "hostile", "strong", "male", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1871
@@ -5929,6 +6112,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 14,
         frequency: 1,
         gen_flags: &["geno", "nocorpse"],
+        flags: &["breathless", "humanoid", "pois", "regen", "undead", "hostile", "magic", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1879
@@ -5957,6 +6141,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 18,
         frequency: 1,
         gen_flags: &["geno", "nocorpse"],
+        flags: &["breathless", "humanoid", "pois", "regen", "undead", "hostile", "magic", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1888
@@ -5985,6 +6170,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 21,
         frequency: 1,
         gen_flags: &["hell", "geno", "nocorpse"],
+        flags: &["breathless", "humanoid", "pois", "regen", "undead", "hostile", "magic", "wantsbook", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1897
@@ -6013,6 +6199,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 29,
         frequency: 1,
         gen_flags: &["hell", "geno", "nocorpse"],
+        flags: &["breathless", "humanoid", "pois", "regen", "undead", "hostile", "magic", "wantsbook", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1908
@@ -6041,6 +6228,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 4,
         frequency: 1,
         gen_flags: &["geno", "nocorpse"],
+        flags: &["breathless", "mindless", "humanoid", "pois", "undead", "hostile", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1916
@@ -6069,6 +6257,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 5,
         frequency: 1,
         gen_flags: &["geno", "nocorpse"],
+        flags: &["breathless", "mindless", "humanoid", "pois", "undead", "hostile", "gnome", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1925
@@ -6097,6 +6286,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 6,
         frequency: 1,
         gen_flags: &["geno", "nocorpse"],
+        flags: &["breathless", "mindless", "humanoid", "pois", "undead", "hostile", "strong", "orc", "greedy", "jewels", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1934
@@ -6125,6 +6315,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 6,
         frequency: 1,
         gen_flags: &["geno", "nocorpse"],
+        flags: &["breathless", "mindless", "humanoid", "pois", "undead", "hostile", "dwarf", "greedy", "jewels", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1942
@@ -6153,6 +6344,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 1,
         gen_flags: &["geno", "nocorpse"],
+        flags: &["breathless", "mindless", "humanoid", "pois", "undead", "hostile", "elf", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1951
@@ -6181,6 +6373,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 1,
         gen_flags: &["geno", "nocorpse"],
+        flags: &["breathless", "mindless", "humanoid", "pois", "undead", "hostile", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1959
@@ -6209,6 +6402,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 1,
         gen_flags: &["geno", "nocorpse"],
+        flags: &["breathless", "mindless", "humanoid", "pois", "undead", "hostile", "strong", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1968
@@ -6237,6 +6431,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 10,
         frequency: 1,
         gen_flags: &["geno", "nocorpse"],
+        flags: &["breathless", "mindless", "humanoid", "pois", "undead", "hostile", "giant", "strong", "jewels", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:1979
@@ -6265,6 +6460,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 4,
         frequency: 0,
         gen_flags: &["geno"],
+        flags: &["nolimbs", "slithy", "thick_hide", "notake", "omnivore", "strong", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:1989
@@ -6293,6 +6489,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 4,
         frequency: 0,
         gen_flags: &["geno"],
+        flags: &["nolimbs", "slithy", "thick_hide", "acid", "notake", "carnivore", "strong"],
     },
     MonsterArchetype {
         // include/monsters.h:1997
@@ -6321,6 +6518,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 4,
         frequency: 0,
         gen_flags: &["geno"],
+        flags: &["nolimbs", "slithy", "thick_hide", "notake", "omnivore", "strong"],
     },
     MonsterArchetype {
         // include/monsters.h:2005
@@ -6349,6 +6547,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 4,
         frequency: 0,
         gen_flags: &["geno"],
+        flags: &["nolimbs", "slithy", "thick_hide", "notake", "omnivore", "strong"],
     },
     MonsterArchetype {
         // include/monsters.h:2014
@@ -6377,6 +6576,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["nolimbs", "slithy", "thick_hide", "oviparous", "notake", "omnivore", "strong", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2024
@@ -6405,6 +6605,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 10,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["nolimbs", "slithy", "thick_hide", "oviparous", "acid", "notake", "carnivore", "strong"],
     },
     MonsterArchetype {
         // include/monsters.h:2033
@@ -6433,6 +6634,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 13,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["nolimbs", "slithy", "thick_hide", "oviparous", "notake", "omnivore", "strong"],
     },
     MonsterArchetype {
         // include/monsters.h:2048
@@ -6461,6 +6663,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 17,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["nolimbs", "slithy", "thick_hide", "oviparous", "pois", "notake", "omnivore", "strong"],
     },
     MonsterArchetype {
         // include/monsters.h:2059
@@ -6489,6 +6692,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 1,
         gen_flags: &["sgroup", "geno"],
+        flags: &["humanoid", "carnivore", "strong", "greedy", "jewels", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2067
@@ -6517,6 +6721,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 9,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["humanoid", "carnivore", "strong", "lord", "greedy", "jewels", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2075
@@ -6545,6 +6750,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 11,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["humanoid", "carnivore", "strong", "prince", "greedy", "jewels", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2091
@@ -6573,6 +6779,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 4,
         frequency: 2,
         gen_flags: &["geno", "nocorpse"],
+        flags: &["breathless", "amorphous", "noeyes", "nolimbs", "nohead", "mindless", "omnivore", "acid", "hostile", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:2102
@@ -6601,6 +6808,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 6,
         frequency: 1,
         gen_flags: &["geno", "nocorpse"],
+        flags: &["breathless", "amorphous", "noeyes", "nolimbs", "nohead", "mindless", "omnivore", "acid", "hostile", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:2112
@@ -6629,6 +6837,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 1,
         gen_flags: &["hell", "geno", "nocorpse"],
+        flags: &["breathless", "amorphous", "noeyes", "nolimbs", "nohead", "mindless", "omnivore", "acid", "pois", "hostile", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:2123
@@ -6657,6 +6866,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 12,
         frequency: 1,
         gen_flags: &["geno", "nocorpse"],
+        flags: &["breathless", "amorphous", "noeyes", "nolimbs", "nohead", "mindless", "omnivore", "acid", "hostile", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:2134
@@ -6685,6 +6895,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 9,
         frequency: 3,
         gen_flags: &["geno"],
+        flags: &["humanoid", "omnivore", "pois", "tport", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2143
@@ -6713,6 +6924,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 14,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["humanoid", "omnivore", "pois", "tport", "hostile", "nasty", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2154
@@ -6741,6 +6953,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["swim", "animal", "nohands", "metallivore", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2161
@@ -6769,6 +6982,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 14,
         frequency: 2,
         gen_flags: &["hell", "geno"],
+        flags: &["animal", "carnivore", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2175
@@ -6797,6 +7011,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 3,
         frequency: 1,
         gen_flags: &["lgroup", "geno"],
+        flags: &["swim", "conceal", "nolimbs", "animal", "slithy", "oviparous", "carnivore", "notake"],
     },
     MonsterArchetype {
         // include/monsters.h:2184
@@ -6825,6 +7040,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 6,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["swim", "conceal", "nolimbs", "animal", "slithy", "pois", "oviparous", "carnivore", "notake", "hostile"],
     },
     MonsterArchetype {
         // include/monsters.h:2193
@@ -6853,6 +7069,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 0,
         gen_flags: &["geno", "nogen", "lgroup"],
+        flags: &["swim", "conceal", "nolimbs", "animal", "slithy", "pois", "carnivore", "oviparous", "notake", "hostile"],
     },
     MonsterArchetype {
         // include/monsters.h:2203
@@ -6881,6 +7098,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["swim", "nolimbs", "animal", "slithy", "carnivore", "oviparous", "notake", "hostile", "strong", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2212
@@ -6909,6 +7127,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 9,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["swim", "conceal", "nolimbs", "animal", "slithy", "pois", "carnivore", "oviparous", "notake", "hostile", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2221
@@ -6937,6 +7156,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 10,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["swim", "conceal", "nolimbs", "animal", "slithy", "pois", "carnivore", "oviparous", "notake", "hostile"],
     },
     MonsterArchetype {
         // include/monsters.h:2232
@@ -6965,6 +7185,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 9,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["humanoid", "regen", "carnivore", "strong", "stalk", "hostile", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2240
@@ -6993,6 +7214,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 12,
         frequency: 1,
         gen_flags: &["nohell", "geno"],
+        flags: &["humanoid", "regen", "carnivore", "strong", "stalk", "hostile", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2249
@@ -7021,6 +7243,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 12,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["humanoid", "regen", "carnivore", "strong", "stalk", "hostile", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2257
@@ -7049,6 +7272,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 13,
         frequency: 0,
         gen_flags: &["nogen", "geno"],
+        flags: &["humanoid", "regen", "carnivore", "swim", "strong", "stalk", "hostile", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2266
@@ -7077,6 +7301,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 16,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["humanoid", "regen", "carnivore", "strong", "stalk", "hostile", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2277
@@ -7105,6 +7330,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 12,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["tunnel", "carnivore", "strong", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2290
@@ -7133,6 +7359,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 12,
         frequency: 1,
         gen_flags: &["geno", "nocorpse"],
+        flags: &["fly", "breathless", "humanoid", "pois", "regen", "undead", "stalk", "hostile", "strong", "nasty", "shapeshifter", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2300
@@ -7161,6 +7388,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 14,
         frequency: 1,
         gen_flags: &["geno", "nocorpse"],
+        flags: &["fly", "breathless", "humanoid", "pois", "regen", "undead", "stalk", "hostile", "strong", "nasty", "lord", "shapeshifter", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2322
@@ -7189,6 +7417,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 32,
         frequency: 0,
         gen_flags: &["nogen", "nocorpse", "uniq"],
+        flags: &["fly", "breathless", "humanoid", "pois", "regen", "nopoly", "undead", "stalk", "hostile", "pname", "strong", "nasty", "prince", "male", "shapeshifter", "waitforu", "wantscand", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2334
@@ -7217,6 +7446,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 1,
         gen_flags: &["geno", "nocorpse"],
+        flags: &["breathless", "humanoid", "undead", "stalk", "hostile", "collect"],
     },
     MonsterArchetype {
         // include/monsters.h:2344
@@ -7245,6 +7475,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["breathless", "fly", "humanoid", "unsolid", "undead", "stalk", "hostile"],
     },
     MonsterArchetype {
         // include/monsters.h:2353
@@ -7273,6 +7504,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 17,
         frequency: 1,
         gen_flags: &["geno", "nocorpse"],
+        flags: &["breathless", "humanoid", "see_invis", "nopoly", "undead", "stalk", "strong", "hostile", "male", "collect"],
     },
     MonsterArchetype {
         // include/monsters.h:2366
@@ -7301,6 +7533,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 11,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["breathless", "wallwalk", "thick_hide", "metallivore", "hostile", "strong"],
     },
     MonsterArchetype {
         // include/monsters.h:2378
@@ -7329,6 +7562,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 4,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["animal", "humanoid", "omnivore", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2385
@@ -7357,6 +7591,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 6,
         frequency: 2,
         gen_flags: &["geno", "sgroup"],
+        flags: &["animal", "humanoid", "omnivore", "strong", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2393
@@ -7385,6 +7620,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 3,
         gen_flags: &["geno"],
+        flags: &["animal", "humanoid", "carnivore", "hostile", "strong", "nasty", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2401
@@ -7413,6 +7649,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["animal", "humanoid", "carnivore", "hostile", "strong", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2409
@@ -7441,6 +7678,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["animal", "humanoid", "carnivore", "hostile", "strong", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2417
@@ -7469,6 +7707,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 9,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["animal", "humanoid", "see_invis", "omnivore", "strong", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2428
@@ -7497,6 +7736,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 1,
         frequency: 1,
         gen_flags: &["geno", "nocorpse"],
+        flags: &["breathless", "mindless", "humanoid", "pois", "undead", "stalk", "hostile", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2436
@@ -7525,6 +7765,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 2,
         frequency: 1,
         gen_flags: &["geno", "nocorpse"],
+        flags: &["breathless", "mindless", "humanoid", "pois", "undead", "stalk", "hostile", "gnome", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2444
@@ -7553,6 +7794,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 3,
         frequency: 1,
         gen_flags: &["geno", "sgroup", "nocorpse"],
+        flags: &["breathless", "mindless", "humanoid", "pois", "undead", "stalk", "hostile", "orc", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2452
@@ -7581,6 +7823,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 3,
         frequency: 1,
         gen_flags: &["geno", "sgroup", "nocorpse"],
+        flags: &["breathless", "mindless", "humanoid", "pois", "undead", "stalk", "hostile", "dwarf", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2460
@@ -7609,6 +7852,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 4,
         frequency: 1,
         gen_flags: &["geno", "sgroup", "nocorpse"],
+        flags: &["breathless", "mindless", "humanoid", "undead", "stalk", "hostile", "elf", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2469
@@ -7637,6 +7881,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 5,
         frequency: 1,
         gen_flags: &["geno", "sgroup", "nocorpse"],
+        flags: &["breathless", "mindless", "humanoid", "undead", "stalk", "hostile", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2477
@@ -7665,6 +7910,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 1,
         gen_flags: &["geno", "nocorpse"],
+        flags: &["breathless", "mindless", "humanoid", "undead", "stalk", "hostile", "strong", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2485
@@ -7693,6 +7939,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 5,
         frequency: 1,
         gen_flags: &["geno", "nocorpse"],
+        flags: &["breathless", "mindless", "humanoid", "pois", "omnivore", "undead", "wander", "hostile", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2494
@@ -7721,6 +7968,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 9,
         frequency: 1,
         gen_flags: &["geno", "nocorpse"],
+        flags: &["breathless", "mindless", "humanoid", "undead", "stalk", "hostile", "giant", "strong", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2505
@@ -7749,6 +7997,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 14,
         frequency: 0,
         gen_flags: &["nocorpse", "nogen"],
+        flags: &["breathless", "mindless", "humanoid", "thick_hide", "undead", "wander", "hostile", "strong", "collect", "nasty", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2515
@@ -7777,6 +8026,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 4,
         frequency: 1,
         gen_flags: &["nocorpse"],
+        flags: &["breathless", "mindless", "humanoid", "hostile", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:2522
@@ -7805,6 +8055,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 4,
         frequency: 1,
         gen_flags: &["nocorpse"],
+        flags: &["breathless", "mindless", "humanoid", "hostile", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:2529
@@ -7833,6 +8084,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 6,
         frequency: 1,
         gen_flags: &["nocorpse"],
+        flags: &["breathless", "mindless", "humanoid", "hostile", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:2537
@@ -7861,6 +8113,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 6,
         frequency: 1,
         gen_flags: &["nocorpse"],
+        flags: &["breathless", "mindless", "humanoid", "thick_hide", "hostile", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:2544
@@ -7889,6 +8142,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 1,
         gen_flags: &["nocorpse"],
+        flags: &["breathless", "mindless", "humanoid", "hostile", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:2552
@@ -7917,6 +8171,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 1,
         gen_flags: &["nocorpse"],
+        flags: &["breathless", "mindless", "humanoid", "thick_hide", "hostile", "neuter"],
     },
     MonsterArchetype {
         // include/monsters.h:2561
@@ -7945,6 +8200,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 10,
         frequency: 1,
         gen_flags: &[],
+        flags: &["breathless", "mindless", "humanoid", "hostile", "strong"],
     },
     MonsterArchetype {
         // include/monsters.h:2569
@@ -7973,6 +8229,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 12,
         frequency: 1,
         gen_flags: &["nocorpse"],
+        flags: &["breathless", "mindless", "humanoid", "thick_hide", "hostile", "strong"],
     },
     MonsterArchetype {
         // include/monsters.h:2577
@@ -8001,6 +8258,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 15,
         frequency: 1,
         gen_flags: &["nocorpse"],
+        flags: &["breathless", "mindless", "humanoid", "thick_hide", "hostile", "strong"],
     },
     MonsterArchetype {
         // include/monsters.h:2585
@@ -8029,6 +8287,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 18,
         frequency: 1,
         gen_flags: &["nocorpse"],
+        flags: &["breathless", "mindless", "humanoid", "thick_hide", "hostile", "strong"],
     },
     MonsterArchetype {
         // include/monsters.h:2594
@@ -8057,6 +8316,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 22,
         frequency: 1,
         gen_flags: &["nocorpse"],
+        flags: &["breathless", "mindless", "humanoid", "thick_hide", "pois", "hostile", "strong", "collect"],
     },
     MonsterArchetype {
         // include/monsters.h:2608
@@ -8085,6 +8345,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 2,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "strong", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2617
@@ -8113,6 +8374,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 3,
         frequency: 1,
         gen_flags: &[],
+        flags: &["humanoid", "pois", "regen", "omnivore", "nopoly", "were", "hostile", "human", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2626
@@ -8141,6 +8403,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 3,
         frequency: 1,
         gen_flags: &[],
+        flags: &["humanoid", "pois", "regen", "omnivore", "nopoly", "were", "hostile", "human", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2635
@@ -8169,6 +8432,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 6,
         frequency: 1,
         gen_flags: &[],
+        flags: &["humanoid", "pois", "regen", "omnivore", "nopoly", "were", "hostile", "human", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2645
@@ -8197,6 +8461,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 1,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "omnivore", "see_invis", "nopoly", "elf", "collect", "infravision", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2653
@@ -8225,6 +8490,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 6,
         frequency: 2,
         gen_flags: &["geno", "sgroup"],
+        flags: &["humanoid", "omnivore", "see_invis", "elf", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2661
@@ -8253,6 +8519,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 2,
         gen_flags: &["geno", "sgroup"],
+        flags: &["humanoid", "omnivore", "see_invis", "elf", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2669
@@ -8281,6 +8548,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 2,
         gen_flags: &["geno", "sgroup"],
+        flags: &["humanoid", "omnivore", "see_invis", "elf", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2678
@@ -8309,6 +8577,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 11,
         frequency: 2,
         gen_flags: &["geno", "sgroup"],
+        flags: &["humanoid", "omnivore", "see_invis", "elf", "strong", "lord", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2687
@@ -8337,6 +8606,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 11,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["humanoid", "omnivore", "see_invis", "elf", "strong", "prince", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2697
@@ -8365,6 +8635,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 11,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "hostile", "strong", "collect", "shapeshifter", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2716
@@ -8393,6 +8664,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 15,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "peaceful", "strong", "collect", "magic", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2726
@@ -8421,6 +8693,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 14,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "merc", "peaceful", "strong", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2736
@@ -8449,6 +8722,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 14,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "peaceful", "strong", "collect", "infravisible", "close"],
     },
     MonsterArchetype {
         // include/monsters.h:2745
@@ -8477,6 +8751,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 13,
         frequency: 0,
         gen_flags: &["nogen", "uniq"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "peaceful", "female", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2757
@@ -8505,6 +8780,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 15,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "lord", "peaceful", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2771
@@ -8533,6 +8809,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 30,
         frequency: 0,
         gen_flags: &["nogen", "uniq"],
+        flags: &["humanoid", "see_invis", "omnivore", "nopoly", "human", "minion", "prince", "nasty", "collect", "magic", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2780
@@ -8561,6 +8838,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 1,
         gen_flags: &["sgroup", "geno"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "merc", "stalk", "hostile", "strong", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2789
@@ -8589,6 +8867,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 10,
         frequency: 1,
         gen_flags: &["sgroup", "geno"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "merc", "stalk", "hostile", "strong", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2797
@@ -8617,6 +8896,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 13,
         frequency: 3,
         gen_flags: &["geno"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2806
@@ -8645,6 +8925,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 12,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "merc", "stalk", "hostile", "strong", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2815
@@ -8673,6 +8954,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 14,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "merc", "stalk", "hostile", "strong", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2824
@@ -8701,6 +8983,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 1,
         gen_flags: &["sgroup", "nogen", "geno"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "merc", "stalk", "peaceful", "strong", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2833
@@ -8729,6 +9012,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 12,
         frequency: 1,
         gen_flags: &["nogen", "geno"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "merc", "stalk", "peaceful", "strong", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2846
@@ -8757,6 +9041,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 25,
         frequency: 0,
         gen_flags: &["nogen", "uniq"],
+        flags: &["fly", "swim", "amphibious", "humanoid", "pois", "omnivore", "nopoly", "hostile", "strong", "pname", "female", "waitforu", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2858
@@ -8785,6 +9070,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 34,
         frequency: 0,
         gen_flags: &["nogen", "uniq"],
+        flags: &["fly", "breathless", "humanoid", "regen", "see_invis", "tport", "tport_cntrl", "omnivore", "nopoly", "human", "hostile", "strong", "nasty", "prince", "male", "magic", "covetous", "waitforu", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2869
@@ -8813,6 +9099,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 22,
         frequency: 0,
         gen_flags: &["uniq", "nogen"],
+        flags: &["humanoid", "see_invis", "omnivore", "nopoly", "human", "stalk", "hostile", "strong", "nasty", "pname", "prince", "male", "greedy", "jewels", "collect", "magic", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:2896
@@ -8841,6 +9128,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 12,
         frequency: 0,
         gen_flags: &["nocorpse", "nogen"],
+        flags: &["fly", "breathless", "wallwalk", "humanoid", "unsolid", "nopoly", "undead", "stalk", "hostile", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2907
@@ -8869,6 +9157,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 14,
         frequency: 0,
         gen_flags: &["nocorpse", "nogen"],
+        flags: &["fly", "breathless", "wallwalk", "humanoid", "unsolid", "see_invis", "nopoly", "undead", "wander", "stalk", "hostile", "nasty", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2919
@@ -8897,6 +9186,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 11,
         frequency: 0,
         gen_flags: &["nocorpse", "nogen"],
+        flags: &["humanoid", "pois", "swim", "nopoly", "demon", "stalk", "hostile", "nasty", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2938
@@ -8925,6 +9215,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 1,
         gen_flags: &["nocorpse"],
+        flags: &["humanoid", "fly", "pois", "demon", "stalk", "hostile", "nasty", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2947
@@ -8953,6 +9244,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 9,
         frequency: 2,
         gen_flags: &["hell", "nocorpse"],
+        flags: &["pois", "thick_hide", "demon", "stalk", "hostile", "nasty", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2961
@@ -8981,6 +9273,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 10,
         frequency: 2,
         gen_flags: &["hell", "nocorpse", "sgroup"],
+        flags: &["humanoid", "pois", "nopoly", "demon", "stalk", "strong", "nasty", "female", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2969
@@ -9009,6 +9302,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 11,
         frequency: 2,
         gen_flags: &["hell", "nocorpse", "sgroup"],
+        flags: &["pois", "thick_hide", "demon", "stalk", "hostile", "nasty", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2979
@@ -9037,6 +9331,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 11,
         frequency: 1,
         gen_flags: &["hell", "nocorpse"],
+        flags: &["humanoid", "slithy", "see_invis", "pois", "demon", "stalk", "hostile", "nasty", "female", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2988
@@ -9065,6 +9360,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 11,
         frequency: 2,
         gen_flags: &["hell", "nocorpse", "sgroup"],
+        flags: &["pois", "demon", "stalk", "hostile", "nasty", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:2996
@@ -9093,6 +9389,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 12,
         frequency: 2,
         gen_flags: &["hell", "nocorpse", "sgroup"],
+        flags: &["humanoid", "pois", "demon", "stalk", "hostile", "nasty", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:3004
@@ -9121,6 +9418,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 13,
         frequency: 2,
         gen_flags: &["hell", "nocorpse", "sgroup"],
+        flags: &["pois", "demon", "stalk", "hostile", "nasty", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:3014
@@ -9149,6 +9447,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 15,
         frequency: 2,
         gen_flags: &["hell", "nocorpse"],
+        flags: &["see_invis", "pois", "demon", "stalk", "hostile", "nasty", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:3023
@@ -9177,6 +9476,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 15,
         frequency: 1,
         gen_flags: &["hell", "nocorpse"],
+        flags: &["humanoid", "pois", "demon", "stalk", "hostile", "nasty", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:3032
@@ -9205,6 +9505,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 16,
         frequency: 2,
         gen_flags: &["hell", "nocorpse"],
+        flags: &["see_invis", "pois", "demon", "stalk", "hostile", "nasty", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:3042
@@ -9233,6 +9534,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 15,
         frequency: 1,
         gen_flags: &["hell", "nocorpse"],
+        flags: &["humanoid", "nopoly", "stalk", "strong", "collect", "shapeshifter", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:3051
@@ -9261,6 +9563,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 20,
         frequency: 1,
         gen_flags: &["hell", "nocorpse"],
+        flags: &["fly", "see_invis", "pois", "demon", "stalk", "hostile", "strong", "nasty", "collect", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:3066
@@ -9289,6 +9592,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 26,
         frequency: 0,
         gen_flags: &["hell", "nocorpse", "nogen", "uniq"],
+        flags: &["amphibious", "amorphous", "nohead", "fly", "see_invis", "acid", "pois", "nopoly", "demon", "stalk", "hostile", "pname", "nasty", "lord", "male", "waitforu", "wantsamul", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:3077
@@ -9317,6 +9621,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 31,
         frequency: 0,
         gen_flags: &["hell", "nocorpse", "nogen", "uniq"],
+        flags: &["fly", "see_invis", "pois", "nopoly", "demon", "stalk", "hostile", "pname", "nasty", "lord", "male", "collect", "wantsamul", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:3089
@@ -9345,6 +9650,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 36,
         frequency: 0,
         gen_flags: &["hell", "nocorpse", "nogen", "uniq"],
+        flags: &["fly", "see_invis", "pois", "nopoly", "demon", "stalk", "hostile", "pname", "nasty", "prince", "male", "collect", "waitforu", "wantsbook", "wantsamul", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:3099
@@ -9373,6 +9679,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 36,
         frequency: 0,
         gen_flags: &["hell", "nocorpse", "nogen", "uniq"],
+        flags: &["fly", "see_invis", "pois", "slithy", "nopoly", "demon", "stalk", "hostile", "pname", "nasty", "prince", "male", "wantsamul", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:3109
@@ -9401,6 +9708,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 40,
         frequency: 0,
         gen_flags: &["hell", "nocorpse", "nogen", "uniq"],
+        flags: &["fly", "see_invis", "pois", "humanoid", "nopoly", "demon", "stalk", "hostile", "pname", "nasty", "prince", "male", "collect", "wantsamul", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:3119
@@ -9429,6 +9737,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 45,
         frequency: 0,
         gen_flags: &["hell", "nocorpse", "nogen", "uniq"],
+        flags: &["fly", "see_invis", "pois", "nopoly", "demon", "stalk", "hostile", "pname", "nasty", "prince", "male", "wantsamul", "waitforu", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:3129
@@ -9457,6 +9766,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 53,
         frequency: 0,
         gen_flags: &["hell", "nocorpse", "nogen", "uniq"],
+        flags: &["fly", "see_invis", "humanoid", "pois", "nopoly", "demon", "stalk", "hostile", "pname", "strong", "nasty", "prince", "male", "wantsamul", "waitforu", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:3140
@@ -9485,6 +9795,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 57,
         frequency: 0,
         gen_flags: &["hell", "nocorpse", "nogen", "uniq"],
+        flags: &["fly", "see_invis", "nohands", "pois", "nopoly", "demon", "stalk", "hostile", "pname", "nasty", "prince", "male", "wantsamul", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:3153
@@ -9513,6 +9824,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 34,
         frequency: 0,
         gen_flags: &["uniq", "nogen"],
+        flags: &["fly", "humanoid", "regen", "see_invis", "tport_cntrl", "nopoly", "stalk", "hostile", "pname", "strong", "nasty", "infravisible", "infravision", "displaces"],
     },
     MonsterArchetype {
         // include/monsters.h:3163
@@ -9541,6 +9853,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 34,
         frequency: 0,
         gen_flags: &["uniq", "nogen"],
+        flags: &["fly", "humanoid", "regen", "see_invis", "tport_cntrl", "nopoly", "stalk", "hostile", "pname", "strong", "nasty", "infravisible", "infravision", "displaces"],
     },
     MonsterArchetype {
         // include/monsters.h:3173
@@ -9569,6 +9882,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 34,
         frequency: 0,
         gen_flags: &["uniq", "nogen"],
+        flags: &["fly", "humanoid", "regen", "see_invis", "tport_cntrl", "nopoly", "stalk", "hostile", "pname", "strong", "nasty", "infravisible", "infravision", "displaces"],
     },
     MonsterArchetype {
         // include/monsters.h:3185
@@ -9597,6 +9911,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 26,
         frequency: 0,
         gen_flags: &["nogen", "nocorpse"],
+        flags: &["fly", "swim", "breathless", "see_invis", "humanoid", "pois", "nopoly", "stalk", "peaceful", "infravisible", "infravision"],
     },
     MonsterArchetype {
         // include/monsters.h:3194
@@ -9625,6 +9940,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 0,
         gen_flags: &["nogen", "nocorpse"],
+        flags: &["humanoid", "fly", "pois", "nopoly", "stalk", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3212
@@ -9653,6 +9969,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 5,
         frequency: 0,
         gen_flags: &["geno", "nogen"],
+        flags: &["swim", "amphibious", "nolimbs", "nohead", "notake", "pois", "hostile"],
     },
     MonsterArchetype {
         // include/monsters.h:3220
@@ -9681,6 +9998,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 0,
         gen_flags: &["geno", "nogen", "sgroup"],
+        flags: &["swim", "amphibious", "animal", "nolimbs", "carnivore", "oviparous", "notake", "hostile"],
     },
     MonsterArchetype {
         // include/monsters.h:3229
@@ -9709,6 +10027,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 9,
         frequency: 0,
         gen_flags: &["geno", "nogen"],
+        flags: &["swim", "amphibious", "animal", "nolimbs", "carnivore", "oviparous", "thick_hide", "notake", "hostile"],
     },
     MonsterArchetype {
         // include/monsters.h:3238
@@ -9737,6 +10056,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 0,
         gen_flags: &["geno", "nogen"],
+        flags: &["swim", "amphibious", "animal", "slithy", "nolimbs", "carnivore", "oviparous", "notake", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3247
@@ -9765,6 +10085,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 10,
         frequency: 0,
         gen_flags: &["geno", "nogen"],
+        flags: &["swim", "amphibious", "animal", "slithy", "nolimbs", "carnivore", "oviparous", "notake", "hostile", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3256
@@ -9793,6 +10114,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 22,
         frequency: 0,
         gen_flags: &["geno", "nogen"],
+        flags: &["swim", "amphibious", "animal", "nohands", "carnivore", "nopoly", "hostile", "strong", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3267
@@ -9821,6 +10143,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 1,
         frequency: 5,
         gen_flags: &["geno"],
+        flags: &["swim", "amphibious", "animal", "nohands", "carnivore", "hostile"],
     },
     MonsterArchetype {
         // include/monsters.h:3274
@@ -9849,6 +10172,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 2,
         frequency: 5,
         gen_flags: &["geno"],
+        flags: &["animal", "nohands", "carnivore", "hostile"],
     },
     MonsterArchetype {
         // include/monsters.h:3281
@@ -9877,6 +10201,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 3,
         frequency: 5,
         gen_flags: &["geno"],
+        flags: &["animal", "nohands", "carnivore", "hostile"],
     },
     MonsterArchetype {
         // include/monsters.h:3289
@@ -9905,6 +10230,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 4,
         frequency: 0,
         gen_flags: &["geno"],
+        flags: &["swim", "amphibious", "animal", "nohands", "carnivore", "hostile"],
     },
     MonsterArchetype {
         // include/monsters.h:3298
@@ -9933,6 +10259,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 6,
         frequency: 5,
         gen_flags: &["geno"],
+        flags: &["animal", "nohands", "carnivore", "hostile"],
     },
     MonsterArchetype {
         // include/monsters.h:3306
@@ -9961,6 +10288,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 2,
         gen_flags: &["geno"],
+        flags: &["animal", "nohands", "carnivore", "nopoly", "hostile", "shapeshifter"],
     },
     MonsterArchetype {
         // include/monsters.h:3315
@@ -9989,6 +10317,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 1,
         gen_flags: &["geno"],
+        flags: &["swim", "amphibious", "animal", "thick_hide", "nohands", "oviparous", "carnivore", "strong", "hostile"],
     },
     MonsterArchetype {
         // include/monsters.h:3324
@@ -10017,6 +10346,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 12,
         frequency: 1,
         gen_flags: &["hell"],
+        flags: &["humanoid", "slithy", "thick_hide", "pois", "stalk", "hostile", "collect", "magic", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3334
@@ -10045,6 +10375,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 1,
         frequency: 0,
         gen_flags: &["nogen", "nocorpse", "uniq"],
+        flags: &["nopoly"],
     },
     MonsterArchetype {
         // include/monsters.h:3352
@@ -10073,6 +10404,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 12,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "tunnel", "needpick", "omnivore", "nopoly", "human", "strong", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3360
@@ -10101,6 +10433,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 12,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "strong", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3369
@@ -10129,6 +10462,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 12,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "strong", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3377
@@ -10157,6 +10491,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 12,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "strong", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3385
@@ -10185,6 +10520,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 12,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "strong", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3394
@@ -10213,6 +10549,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 11,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "herbivore", "nopoly", "human", "strong", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3404
@@ -10241,6 +10578,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 12,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "strong", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3412
@@ -10269,6 +10607,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 12,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "strong", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3421
@@ -10297,6 +10636,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 12,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "strong", "greedy", "jewels", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3429
@@ -10325,6 +10665,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 12,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "strong", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3437
@@ -10353,6 +10694,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 12,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "strong", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3451
@@ -10381,6 +10723,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 12,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "strong", "female", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3460
@@ -10409,6 +10752,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 12,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "strong", "collect", "magic", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3472
@@ -10437,6 +10781,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 24,
         frequency: 0,
         gen_flags: &["nogen", "uniq"],
+        flags: &["tunnel", "needpick", "humanoid", "omnivore", "nopoly", "human", "pname", "peaceful", "strong", "male", "collect", "magic", "close", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3481
@@ -10465,6 +10810,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 24,
         frequency: 0,
         gen_flags: &["nogen", "uniq"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "pname", "peaceful", "strong", "male", "collect", "magic", "close", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3490
@@ -10493,6 +10839,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 24,
         frequency: 0,
         gen_flags: &["nogen", "uniq"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "pname", "peaceful", "strong", "male", "collect", "magic", "close", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3523
@@ -10521,6 +10868,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 26,
         frequency: 0,
         gen_flags: &["nogen", "uniq"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "pname", "peaceful", "strong", "male", "collect", "magic", "close", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3532
@@ -10549,6 +10897,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 24,
         frequency: 0,
         gen_flags: &["nogen", "uniq"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "pname", "peaceful", "strong", "male", "collect", "magic", "close", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3543
@@ -10577,6 +10926,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 30,
         frequency: 0,
         gen_flags: &["nogen", "uniq"],
+        flags: &["humanoid", "see_invis", "herbivore", "nopoly", "human", "peaceful", "strong", "male", "nasty", "magic", "close", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3554
@@ -10605,6 +10955,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 30,
         frequency: 0,
         gen_flags: &["nogen", "uniq"],
+        flags: &["humanoid", "see_invis", "omnivore", "nopoly", "human", "peaceful", "strong", "male", "collect", "magic", "close", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3563
@@ -10633,6 +10984,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 24,
         frequency: 0,
         gen_flags: &["nogen", "uniq"],
+        flags: &["humanoid", "omnivore", "see_invis", "swim", "amphibious", "nopoly", "human", "pname", "peaceful", "strong", "male", "collect", "magic", "close", "infravision", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3575
@@ -10661,6 +11013,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 24,
         frequency: 0,
         gen_flags: &["nogen", "uniq"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "peaceful", "strong", "male", "greedy", "jewels", "collect", "magic", "close", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3583
@@ -10689,6 +11042,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 24,
         frequency: 0,
         gen_flags: &["nogen", "uniq"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "pname", "peaceful", "strong", "male", "collect", "magic", "close", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3592
@@ -10717,6 +11071,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 22,
         frequency: 0,
         gen_flags: &["nogen", "uniq"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "pname", "peaceful", "strong", "male", "collect", "magic", "close", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3603
@@ -10745,6 +11100,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 24,
         frequency: 0,
         gen_flags: &["nogen", "uniq"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "peaceful", "strong", "female", "collect", "magic", "close", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3612
@@ -10773,6 +11129,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 25,
         frequency: 0,
         gen_flags: &["nogen", "uniq"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "female", "pname", "peaceful", "strong", "collect", "magic", "close", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3626
@@ -10801,6 +11158,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 23,
         frequency: 0,
         gen_flags: &["nocorpse", "nogen", "uniq"],
+        flags: &["fly", "see_invis", "pois", "nopoly", "demon", "stalk", "hostile", "strong", "nasty", "collect", "wantsarti", "waitforu", "infravision", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3637
@@ -10829,6 +11187,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 22,
         frequency: 0,
         gen_flags: &["nogen", "uniq", "nocorpse"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "pname", "strong", "male", "stalk", "hostile", "nasty", "collect", "magic", "wantsarti", "waitforu", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3656
@@ -10857,6 +11216,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 23,
         frequency: 0,
         gen_flags: &["nogen", "uniq"],
+        flags: &["thick_hide", "nohands", "carnivore", "see_invis", "pois", "nopoly", "hostile", "female", "stalk", "strong", "nasty", "greedy", "jewels", "magic", "wantsarti", "waitforu", "infravision", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3678
@@ -10885,6 +11245,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 23,
         frequency: 0,
         gen_flags: &["nogen", "uniq"],
+        flags: &["humanoid", "omnivore", "nopoly", "giant", "strong", "rockthrow", "stalk", "hostile", "nasty", "male", "jewels", "collect", "wantsarti", "waitforu", "infravision", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3690
@@ -10913,6 +11274,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 22,
         frequency: 0,
         gen_flags: &["nogen", "uniq"],
+        flags: &["fly", "thick_hide", "nohands", "carnivore", "see_invis", "nopoly", "male", "pname", "hostile", "strong", "nasty", "stalk", "greedy", "jewels", "magic", "wantsarti", "waitforu", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3701
@@ -10941,6 +11303,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 31,
         frequency: 0,
         gen_flags: &["nogen", "uniq"],
+        flags: &["humanoid", "herbivore", "see_invis", "nopoly", "human", "male", "pname", "hostile", "strong", "nasty", "stalk", "collect", "magic", "wantsarti", "waitforu", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3712
@@ -10969,6 +11332,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 23,
         frequency: 0,
         gen_flags: &["nogen", "uniq", "nocorpse"],
+        flags: &["fly", "see_invis", "pois", "nopoly", "demon", "male", "pname", "hostile", "strong", "stalk", "nasty", "collect", "wantsarti", "waitforu", "infravision", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3722
@@ -10997,6 +11361,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 17,
         frequency: 0,
         gen_flags: &["nogen", "uniq"],
+        flags: &["animal", "nohands", "oviparous", "pois", "carnivore", "nopoly", "male", "pname", "hostile", "strong", "stalk", "nasty", "collect", "magic", "wantsarti", "waitforu"],
     },
     MonsterArchetype {
         // include/monsters.h:3732
@@ -11025,6 +11390,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 20,
         frequency: 0,
         gen_flags: &["nogen", "uniq"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "strong", "male", "hostile", "stalk", "nasty", "collect", "magic", "wantsarti", "waitforu", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3745
@@ -11053,6 +11419,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 19,
         frequency: 0,
         gen_flags: &["nogen", "uniq", "nocorpse"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "pname", "hostile", "strong", "stalk", "nasty", "male", "collect", "magic", "wantsarti", "waitforu", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3758
@@ -11081,6 +11448,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 19,
         frequency: 0,
         gen_flags: &["nogen", "uniq"],
+        flags: &["humanoid", "omnivore", "nopoly", "giant", "male", "pname", "hostile", "stalk", "strong", "nasty", "rockthrow", "jewels", "collect", "wantsarti", "waitforu", "infravision", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3769
@@ -11109,6 +11477,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 20,
         frequency: 0,
         gen_flags: &["nogen", "uniq", "nocorpse"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "strong", "hostile", "stalk", "nasty", "collect", "magic", "wantsarti", "waitforu", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3781
@@ -11137,6 +11506,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["tunnel", "needpick", "humanoid", "omnivore", "nopoly", "human", "peaceful", "strong", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3790
@@ -11165,6 +11535,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "peaceful", "strong", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3799
@@ -11193,6 +11564,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "peaceful", "strong", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3821
@@ -11221,6 +11593,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "peaceful", "strong", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3830
@@ -11249,6 +11622,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "peaceful", "strong", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3839
@@ -11277,6 +11651,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "herbivore", "nopoly", "human", "peaceful", "strong", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3848
@@ -11305,6 +11680,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "peaceful", "strong", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3857
@@ -11333,6 +11709,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "see_invis", "omnivore", "nopoly", "human", "peaceful", "strong", "collect", "infravision", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3866
@@ -11361,6 +11738,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "peaceful", "strong", "greedy", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3875
@@ -11389,6 +11767,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "hostile", "strong", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3884
@@ -11417,6 +11796,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "peaceful", "strong", "collect", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3893
@@ -11445,6 +11825,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "peaceful", "strong", "collect", "magic", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3905
@@ -11473,6 +11854,7 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 7,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "peaceful", "strong", "collect", "female", "infravisible"],
     },
     MonsterArchetype {
         // include/monsters.h:3914
@@ -11501,5 +11883,6 @@ pub static BESTIARY: &[MonsterArchetype] = &[
         difficulty: 8,
         frequency: 0,
         gen_flags: &["nogen"],
+        flags: &["humanoid", "omnivore", "nopoly", "human", "peaceful", "strong", "collect", "magic", "infravisible"],
     },
 ];

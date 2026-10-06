@@ -428,3 +428,70 @@ pub fn spawn_starting_pet(
     let pet_record = crate::monsters::create_monster_record(species, pet_coord);
     Some(arena.spawn_actor(pet_record))
 }
+
+/// C `struct RoleAdvance` (you.h:23): HP or energy gained at creation
+/// (`in*`), per level below `xlev` (`lo*`) and from `xlev` on (`hi*`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Advance {
+    pub infix: i32,
+    pub inrnd: i32,
+    pub lofix: i32,
+    pub lornd: i32,
+    pub hifix: i32,
+    pub hirnd: i32,
+}
+
+/// Per-role attribute and advancement data from C `roles[]`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RoleStats {
+    pub name: &'static str,
+    /// Str, Int, Wis, Dex, Con, Cha starting minimums.
+    pub attr_base: [i32; 6],
+    /// Weights for distributing the remaining attribute points.
+    pub attr_dist: [i32; 6],
+    pub hp: Advance,
+    pub energy: Advance,
+    /// Experience level where advancement switches from `lo*` to `hi*`.
+    pub xlev: u32,
+    pub initial_record: i32,
+}
+
+/// Per-race attribute limits and advancement from C `races[]`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RaceStats {
+    pub noun: &'static str,
+    pub attr_min: [i32; 6],
+    /// `STR18(100)` = 118 for 18/100 strength.
+    pub attr_max: [i32; 6],
+    pub hp: Advance,
+    pub energy: Advance,
+}
+
+include!("generated/roles.rs");
+
+/// C role data by role name (case-insensitive; "Archaeologist" = C "Archeologist").
+pub fn role_stats(name: &str) -> Option<&'static RoleStats> {
+    let name = if name.eq_ignore_ascii_case("archaeologist") {
+        "archeologist"
+    } else {
+        name
+    };
+    ROLE_STATS
+        .iter()
+        .find(|r| r.name.eq_ignore_ascii_case(name))
+}
+
+/// C race data for a [`RaceId`].
+pub fn race_stats(race: RaceId) -> &'static RaceStats {
+    let noun = match race {
+        RaceId::Human => "human",
+        RaceId::Elf => "elf",
+        RaceId::Dwarf => "dwarf",
+        RaceId::Gnome => "gnome",
+        RaceId::Orc => "orc",
+    };
+    RACE_STATS
+        .iter()
+        .find(|r| r.noun == noun)
+        .expect("every RaceId has a C race")
+}

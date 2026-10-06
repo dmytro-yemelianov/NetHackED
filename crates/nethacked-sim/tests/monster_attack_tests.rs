@@ -692,3 +692,35 @@ fn slowing_touch_removes_intrinsic_speed() {
     assert!(msg_index(&ev, "You slow down.").is_some());
     assert!(!sim.arena.actors[pid].intrinsics.fast);
 }
+
+#[test]
+fn level_drain_touch_costs_a_level() {
+    // C wraith: ATTK(AT_TUCH, AD_DRLI, 1, 6); !rn2(3) -> losexp("life drainage").
+    let mut sim = arena_world(10);
+    let pid = sim.player_id;
+    sim.arena.actors.get_mut(pid).unwrap().level = 5;
+    let wraith = spawn(&mut sim, MonsterSpeciesId::WRAITH, east(1));
+    let ev = fight(&mut sim, wraith, 60);
+    assert!(msg_index(&ev, "Goodbye level 5.").is_some());
+    assert!(sim.arena.actors[pid].level < 5);
+}
+
+#[test]
+fn poisonous_sting_poisons_unless_resistant() {
+    // C soldier ant: ATTK(AT_STNG, AD_DRST, 3, 4); !rn2(8) -> poisoned(..., A_STR, 30).
+    let mut sim = arena_world(11);
+    let ant = spawn(&mut sim, MonsterSpeciesId::SOLDIER_ANT, east(1));
+    let ev = fight(&mut sim, ant, 120);
+    assert!(msg_index(&ev, "Soldier ant's sting was poisoned!").is_some());
+    let pid = sim.player_id;
+    sim.arena
+        .actors
+        .get_mut(pid)
+        .unwrap()
+        .intrinsics
+        .poison_resistance = true;
+    let ev = fight(&mut sim, ant, 120);
+    if msg_index(&ev, "was poisoned!").is_some() {
+        assert!(msg_index(&ev, "doesn't seem to affect you").is_some());
+    }
+}

@@ -42,7 +42,7 @@ Only 9 of the 12 `DamageType` variants are AD types (`types/lib.rs:591-610`: Phy
 | 15 | Genocide blocks spawns | makemon.c | ✅ PRESENT | sim/actions/stairs.rs:65, 740 | Works |
 | **mon.c** |||||
 | 16 | Corpse on death (`make_corpse`, `corpse_chance`) | mon.c:564, 3186 | 🟡 PARTIAL | sim/combat.rs:503-509 always drops a generic `Corpse` (no species or race name) | A corpse appears 100% of the time but carries no species, so eating it gives no intrinsics and cannot be cannibalism |
-| 17 | Hero experience from kills (`experience`, `more_experienced`, `pluslvl`) | exper.c:85, 169, 307; mon.c:3484 `xkilled` | ❌ MISSING | no match for grep `experience\|uexp\|pluslvl` in sim | **The hero never gains levels**, and the quest (needs XL 14, core/quest.rs:88) cannot be reached by playing |
+| 17 | Hero experience from kills (`experience`, `more_experienced`, `pluslvl`) | exper.c:85, 169, 307; mon.c:3484 `xkilled` | 🟡 PARTIAL | sim/progress.rs `experience`/`gain_experience`/`pluslvl`, called from `on_actor_killed` | Kills give C experience and levels; revived/cloned discounts, eel bonus and rank titles missing |
 | 18 | Kill alignment, luck, and favor adjustments | mon.c:3676-3726 | ✅ PRESENT | sim/combat.rs:420-480 | Matches C |
 | 19 | Death drops monster inventory (`relobj`) | steal.c:875 | ❌ MISSING | monsters carry nothing | No loot |
 | 20 | Shapeshifters (chameleon, `newcham`) | mon.c:5287 | ❌ MISSING | no match for grep `chameleon\|newcham` | None |
@@ -65,8 +65,8 @@ Only 9 of the 12 `DamageType` variants are AD types (`types/lib.rs:591-610`: Phy
 | 35 | Melee slot loop, to-hit `rnd(20+i)`, `d(n,d)` | mhitu.c:768-912, 1187 | ✅ PRESENT | sim/combat.rs:558-656, core/combat.rs:228-325 | Melee numbers match C |
 | 36 | AD_PHYS | mhitu.c `hitmu` | ✅ PRESENT | core/combat.rs:293 | Matches C |
 | 37 | AD_FIRE / AD_COLD (resistance zeroes damage) | mhitu.c, uhitm.c `mhitm_ad_fire/cold` | 🟡 PARTIAL | core/combat.rs:278 `resisted`; no item burning or freezing | Potions and scrolls are never destroyed |
-| 38 | AD_DRST / DRDX / DRCO (poison, attribute loss, instadeath) | uhitm.c `mhitm_ad_drst` | ❌ MISSING | enum DrainStr exists, no effect (spec div. (a)) | Poison is plain damage, so killer bees and soldier ants cannot kill outright |
-| 39 | AD_DRLI (level drain) | `mhitm_ad_drli` | ❌ MISSING | spec div. (a) | Vampires and wraiths do not drain levels |
+| 38 | AD_DRST / DRDX / DRCO (poison, attribute loss, instadeath) | uhitm.c `mhitm_ad_drst` | 🟡 PARTIAL | sim/ad_effects.rs + sim/progress.rs `poisoned` (attrib.c:317): 1/8, MC, poison resistance, 1/30 deadly, HP or attribute loss | Poisonous stings and bites work against the hero; Str-dependent HP loss at Str 3 missing |
+| 39 | AD_DRLI (level drain) | `mhitm_ad_drli` | 🟡 PARTIAL | sim/ad_effects.rs: 1/3, MC -> `losexp("life drainage")` (exper.c:207) using recorded `uhpinc`; no drain resistance intrinsic yet | Wraiths and vampires drain levels; a level-1 hero dies |
 | 40 | AD_STON (stoning touch) | `mhitm_ad_ston` | ❌ MISSING | spec div. (a) | No cockatrice stoning (no cockatrices either) |
 | 41 | AD_SLOW / AD_PLYS / AD_STUN | `mhitm_ad_slow/plys/stun` | 🟡 PARTIAL | sim/ad_effects.rs: AD_SLOW (`u_slow_down`) and AD_STUN (stun timer, half damage) on the hero; AD_PLYS melee still missing | Slowing and stunning hits work against the hero; no paralysis from melee yet |
 | 42 | AD_SAMU (Wizard steals the Amulet) | `mhitm_ad_samu` | ❌ MISSING | enum StealAmulet, no effect | The Amulet is never stolen |
