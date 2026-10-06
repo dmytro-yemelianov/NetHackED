@@ -4,6 +4,8 @@ These tables compare NetHackED with the NetHack 5.0 C source, one player-visible
 
 **Audit baseline:** 2026-10-05, NetHackED `main` @ `cdd7f2d` (v0.3.0 plus the pixel renderer). C reference: the NetHack 5.0.0 tree (`src/`, `include/`, `dat/`).
 
+**Current-evidence note (2026-10-06):** the generated counts summarize checked-in statuses, not a fresh audit at current HEAD. Recent HP, timers, item/container/artifact initialization and owned generation fixes need reconciliation with their affected rows. Some old prose is stale (attributes are now stored). Use the [full-parity plan](../plans/2026-10-06-full-parity.md) for scope and verification policy; reference coverage and catalog counts are not semantic parity percentages.
+
 ## How to read the tables
 
 | Status | Meaning |

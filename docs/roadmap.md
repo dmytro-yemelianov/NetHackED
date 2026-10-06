@@ -26,6 +26,10 @@ What already works well:
 
 The roadmap below orders the remaining work by what a player notices first. Each milestone is defined by the parity-table rows it must turn green.
 
+## Full-parity planning update — 2026-10-06
+
+The initial counts above are historical. The checked-in parity summary has changed, and recent repairs are not fully reconciled with all rows. See the [full-parity scope and execution map](plans/2026-10-06-full-parity.md) for evidence limits, complete workstreams, dependencies and the first ten bounded units. This update preserves the M1–M8 milestone order; no current overall completion percentage or schedule is claimed.
+
 ## Rules this roadmap follows
 
 1. **The tables are the source of truth.** A feature is ✅ only when its row says so, with Rust evidence and a test that encodes the C behavior. The README and release notes never claim more than the tables.
