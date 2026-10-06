@@ -288,6 +288,7 @@ fn test_pickup_and_drop_lifecycle() {
     let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
 
     let gem_id = sim.arena.spawn_item(ItemRecord {
+        artifact_id: None,
         name: "emerald".into(),
         class: ItemClass::Gem,
         weight: 1,
@@ -336,6 +337,7 @@ fn test_pickup_and_drop_lifecycle() {
 fn test_wield_weapon() {
     let mut sim = SimulationWorld::new_with_seed(103);
     let sword_id = sim.arena.spawn_item(ItemRecord {
+        artifact_id: None,
         name: "long sword".into(),
         class: ItemClass::Weapon,
         weight: 30,
@@ -1048,6 +1050,7 @@ fn test_nutrition_decay_and_eating() {
     assert!(sim.player_nutrition > nut_before);
 
     let corpse = sim.arena.spawn_item(ItemRecord {
+        artifact_id: None,
         name: "giant ant corpse".into(),
         class: ItemClass::Food,
         weight: 50,
@@ -1753,6 +1756,7 @@ fn test_altar_sacrifice_and_divine_crowning() {
     sim.divine_state.favor = 14;
 
     let corpse = sim.arena.spawn_item(ItemRecord {
+        artifact_id: None,
         name: "goblin corpse".into(),
         class: ItemClass::Food,
         weight: 50,
@@ -1809,6 +1813,7 @@ fn test_altar_holy_water_consecration() {
     sim.divine_state.favor = 8;
 
     let water = sim.arena.spawn_item(ItemRecord {
+        artifact_id: None,
         name: "potion of water".into(),
         class: ItemClass::Potion,
         weight: 20,
@@ -1843,6 +1848,7 @@ fn test_wand_of_wishing_spawns_item() {
     let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
 
     let wand_id = sim.arena.spawn_item(ItemRecord {
+        artifact_id: None,
         name: "wand of wishing".into(),
         class: ItemClass::Wand,
         weight: 7,
@@ -1907,6 +1913,7 @@ fn test_wand_of_striking_destroys_drawbridge() {
     }
 
     let _wand = sim.arena.spawn_item(ItemRecord {
+        artifact_id: None,
         name: "wand of striking".into(),
         class: ItemClass::Wand,
         weight: 7,
@@ -1955,6 +1962,7 @@ fn test_wand_of_cold_freezes_pool() {
     }
 
     let _wand = sim.arena.spawn_item(ItemRecord {
+        artifact_id: None,
         name: "wand of cold".into(),
         class: ItemClass::Wand,
         weight: 7,
@@ -1993,6 +2001,7 @@ fn test_scroll_of_charging_and_explosion() {
     let mut sim = SimulationWorld::new_with_seed(42);
 
     let wand = sim.arena.spawn_item(ItemRecord {
+        artifact_id: None,
         name: "wand of striking".into(),
         class: ItemClass::Wand,
         weight: 7,
@@ -2017,6 +2026,7 @@ fn test_scroll_of_charging_and_explosion() {
     });
 
     let scroll = sim.arena.spawn_item(ItemRecord {
+        artifact_id: None,
         name: "scroll of charging".into(),
         class: ItemClass::Scroll,
         weight: 5,
@@ -2059,6 +2069,7 @@ fn test_scroll_of_charging_and_explosion() {
         w.recharged = 7;
     }
     let scroll2 = sim.arena.spawn_item(ItemRecord {
+        artifact_id: None,
         name: "scroll of charging".into(),
         class: ItemClass::Scroll,
         weight: 5,
@@ -2105,6 +2116,7 @@ fn test_wand_recharge_explosion_damage_is_d_n_k() {
         wand.recharged = 7;
         let wid = sim.arena.spawn_item(wand);
         let scroll = sim.arena.spawn_item(ItemRecord {
+            artifact_id: None,
             name: "scroll of charging".into(),
             class: ItemClass::Scroll,
             weight: 5,
@@ -2176,6 +2188,7 @@ fn test_artifact_combat_bonus_and_vorpal_blade() {
     });
 
     let excalibur = sim.arena.spawn_item(ItemRecord {
+        artifact_id: None,
         name: "Excalibur".into(),
         class: ItemClass::Weapon,
         weight: 30,
@@ -2243,6 +2256,7 @@ fn test_ukrainian_i18n_simulation_logging() {
 
     // Test wishing in Ukrainian
     let _wand_id = sim.arena.spawn_item(ItemRecord {
+        artifact_id: None,
         name: "wand of wishing".into(),
         class: ItemClass::Wand,
         weight: 7,
@@ -2363,6 +2377,7 @@ fn test_monster_lich_summon_and_curse() {
     }
 
     let potion = sim.arena.spawn_item(ItemRecord {
+        artifact_id: None,
         name: "potion of healing".into(),
         class: ItemClass::Potion,
         weight: 20,
@@ -2421,6 +2436,7 @@ fn test_bones_file_generation_and_ghost_encounter() {
     }
 
     let _sword = sim1.arena.spawn_item(ItemRecord {
+        artifact_id: None,
         name: "long sword".into(),
         class: ItemClass::Weapon,
         weight: 30,
@@ -3349,6 +3365,7 @@ fn test_hero_polymorph_potion_and_damage_reversion() {
     }
 
     let potion = sim.arena.spawn_item(ItemRecord {
+        artifact_id: None,
         name: "potion of polymorph".into(),
         class: ItemClass::Potion,
         weight: 2,
@@ -3455,6 +3472,7 @@ fn test_wand_of_polymorph_unique_monster_invariant() {
         malign: 0,
     });
     sim1.arena.spawn_item(ItemRecord {
+        artifact_id: None,
         name: "wand of polymorph".into(),
         class: ItemClass::Wand,
         weight: 7,
@@ -3516,6 +3534,7 @@ fn test_wand_of_polymorph_unique_monster_invariant() {
         malign: 0,
     });
     sim2.arena.spawn_item(ItemRecord {
+        artifact_id: None,
         name: "wand of polymorph".into(),
         class: ItemClass::Wand,
         weight: 7,
@@ -3580,6 +3599,7 @@ fn test_scroll_of_genocide_conduct_and_level_wipe() {
     });
 
     let scroll_id = sim.arena.spawn_item(ItemRecord {
+        artifact_id: None,
         name: "scroll of genocide".into(),
         class: ItemClass::Scroll,
         weight: 2,
@@ -3633,6 +3653,7 @@ fn test_cursed_scroll_of_genocide_summons() {
     }
 
     let scroll_id = sim.arena.spawn_item(ItemRecord {
+        artifact_id: None,
         name: "scroll of genocide".into(),
         class: ItemClass::Scroll,
         weight: 2,
@@ -3706,6 +3727,7 @@ fn test_petrification_countdown_and_lizard_cure() {
 
     // Spawn and eat lizard corpse
     let lizard = sim.arena.spawn_item(ItemRecord {
+        artifact_id: None,
         name: "lizard corpse".into(),
         class: ItemClass::Food,
         weight: 10,
@@ -3786,6 +3808,7 @@ fn test_weapon_skill_combat_bonus() {
 
     // Spawn long sword
     let sword = sim.arena.spawn_item(ItemRecord {
+        artifact_id: None,
         name: "long sword".into(),
         class: ItemClass::Weapon,
         weight: 40,
@@ -3888,6 +3911,7 @@ fn test_ranged_fire_arrow_hits_monster() {
 
     // Put arrow in hero inventory
     let arrow_id = sim.arena.spawn_item(ItemRecord {
+        artifact_id: None,
         name: "arrow".into(),
         class: ItemClass::Weapon,
         weight: 1,
@@ -4081,6 +4105,7 @@ fn test_corpse_eating_and_conduct_invalidation() {
     let mut sim = SimulationWorld::new_with_seed(42);
 
     let corpse = ItemRecord {
+        artifact_id: None,
         name: "goblin corpse".into(),
         class: ItemClass::Food,
         weight: 10,
@@ -4131,6 +4156,7 @@ fn test_cannibalism_detection() {
     let mut sim = SimulationWorld::new_with_seed(42);
 
     let human_corpse = ItemRecord {
+        artifact_id: None,
         name: "human corpse".into(),
         class: ItemClass::Food,
         weight: 10,

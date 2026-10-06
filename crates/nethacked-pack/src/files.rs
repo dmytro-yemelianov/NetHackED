@@ -268,6 +268,7 @@ pub fn vanilla_pack_files() -> PackFiles {
                 armor: i.armor.clone().map(Some),
                 initialization: Some(i.initialization),
                 generation_weight: Some(i.generation_weight),
+                unique: Some(i.unique),
             })
             .collect(),
     };

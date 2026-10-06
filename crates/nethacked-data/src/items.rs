@@ -48,6 +48,7 @@ pub struct ItemArchetype {
     pub armor_slot: Option<ArmorSlot>,
     /// An `artilist[]` artifact (properties of its base object, its own cost).
     pub artifact: bool,
+    pub unique: bool,
     /// Generated supported-field profile from C class, flags and special kinds.
     #[serde(default)]
     pub initialization: crate::item_init::ItemInitProfile,
@@ -87,6 +88,7 @@ pub fn initial_wand_charges(id: ItemKindId) -> i8 {
 pub fn create_item_record(id: ItemKindId, location: ItemLocation, buc: Buc) -> ItemRecord {
     let arch = get_item_archetype(id);
     ItemRecord {
+        artifact_id: crate::artifacts::canonical_artifact_id(id).map(str::to_owned),
         name: arch.name.to_string(),
         class: arch.class,
         weight: arch.weight,

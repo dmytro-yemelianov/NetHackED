@@ -43,6 +43,7 @@ async fn test_networked_bones_flow_and_ghost_reincarnation() {
 
     // Give Conan a blessed long sword
     sim1.arena.spawn_item(ItemRecord {
+        artifact_id: None,
         name: "long sword".into(),
         class: ItemClass::Weapon,
         weight: 40,

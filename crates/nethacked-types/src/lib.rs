@@ -861,6 +861,8 @@ pub enum MonsterAbility {
 /// An item preserved in a graveyard bones file.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BonesItem {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub artifact_id: Option<String>,
     pub name: String,
     pub class: ItemClass,
     pub weight: u32,

@@ -1,5 +1,6 @@
 //! Partial random initialization: represented BUC, spe, weapon/gem quantity, poison and container lock/trap state.
-//! No species/fuel/erosion/artifact initialization or discarded draws. Contents live in containers.
+//! No species/fuel/erosion initialization or discarded draws. Contents live in containers;
+//! existing-object artifacts use the separately enabled room-generation hook.
 
 use nethacked_arena::{ItemLocation, ItemRecord};
 use nethacked_core::item_init::{blessorcurse_result, ring_zero_spe, rne_cap};

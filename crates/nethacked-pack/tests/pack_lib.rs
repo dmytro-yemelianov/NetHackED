@@ -774,3 +774,62 @@ fn old_corpse_body_facts_load_defaults_and_preserve_canonical_hash() {
     changed.monsters[0].corpse_nutrition = 20;
     assert_ne!(ruleset_hash(&changed), reference.hash);
 }
+
+#[test]
+fn artifact_metadata_rejects_invalid_identity_and_duplicate_at_pack_boundary() {
+    let mut rs = (*Ruleset::vanilla()).clone();
+    assert!(validate(&rs).errors.is_empty());
+    rs.artifacts[0].id = "ART_FAKED".into();
+    assert!(validate(&rs)
+        .errors
+        .iter()
+        .any(|d| d.field.as_deref() == Some("artifacts")));
+    let mut rs = (*Ruleset::vanilla()).clone();
+    rs.artifacts.push(rs.artifacts[0].clone());
+    assert!(validate(&rs)
+        .errors
+        .iter()
+        .any(|d| d.field.as_deref() == Some("artifacts")));
+    let mut rs = (*Ruleset::vanilla()).clone();
+    rs.artifacts[0].base = rs.artifacts[0].item;
+    assert!(validate(&rs)
+        .errors
+        .iter()
+        .any(|d| d.field.as_deref() == Some("artifacts")));
+}
+
+#[test]
+fn old_compiled_ruleset_preserves_canonical_hash_when_new_metadata_is_absent() {
+    let mut value = serde_json::to_value(&*Ruleset::vanilla()).unwrap();
+    value.as_object_mut().unwrap().remove("artifacts");
+    for item in value["items"].as_array_mut().unwrap() {
+        item.as_object_mut().unwrap().remove("unique");
+    }
+    let old_json = serde_json::to_vec(&value).unwrap();
+    let rs: Ruleset = serde_json::from_slice(&old_json).unwrap();
+    assert_eq!(
+        serde_json::to_vec(&serde_json::to_value(&rs).unwrap()).unwrap(),
+        old_json
+    );
+}
+
+#[test]
+fn old_compiled_artifact_metadata_defaults_load_with_verified_hash() {
+    let mut value = serde_json::to_value(&*Ruleset::vanilla()).unwrap();
+    value.as_object_mut().unwrap().remove("artifacts");
+    for item in value["items"].as_array_mut().unwrap() {
+        item.as_object_mut().unwrap().remove("unique");
+    }
+    let old: Ruleset = serde_json::from_value(value.clone()).unwrap();
+    let hash = ruleset_hash(&old);
+    let packed =
+        serde_json::json!({"format":1,"manifest":value["manifest"],"ruleset":value,"hash":hash});
+    let (loaded, reference, _) =
+        nethacked_pack::load_nhpack_bytes(&serde_json::to_vec(&packed).unwrap()).unwrap();
+    assert_eq!(reference.hash, hash);
+    assert!(loaded.artifacts.is_empty());
+    assert_eq!(
+        loaded.artifact_id_for_item("Excalibur"),
+        Some("ART_EXCALIBUR")
+    );
+}

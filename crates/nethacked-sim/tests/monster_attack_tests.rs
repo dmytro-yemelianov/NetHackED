@@ -305,6 +305,7 @@ fn unknown_species_falls_back_to_one_d6_attack() {
 fn quaff_healing(sim: &mut SimulationWorld) {
     let pid = sim.player_id;
     let potion = sim.arena.spawn_item(ItemRecord {
+        artifact_id: None,
         name: "potion of healing".into(),
         class: ItemClass::Potion,
         weight: 20,

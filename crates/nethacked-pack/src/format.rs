@@ -138,6 +138,8 @@ pub struct ItemPatch {
     pub initialization: Option<nethacked_data::item_init::ItemInitProfile>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub generation_weight: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unique: Option<bool>,
 }
 
 /// Container for `[[item]]` entries in `items.toml`.

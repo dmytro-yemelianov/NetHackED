@@ -226,6 +226,7 @@ pub fn resolve(pack: &PackDir, base: &Ruleset) -> Result<Ruleset, PackError> {
             }
 
             let def = ItemDef {
+                unique: patch.unique.unwrap_or_default(),
                 id: None,
                 name: patch.name.clone(),
                 class: req_i_field!(class),
@@ -287,6 +288,9 @@ pub fn resolve(pack: &PackDir, base: &Ruleset) -> Result<Ruleset, PackError> {
             }
             if let Some(v) = patch.wand_dir {
                 target.wand_dir = v;
+            }
+            if let Some(v) = patch.unique {
+                target.unique = v;
             }
             if let Some(v) = patch.generation_weight {
                 target.generation_weight = v;

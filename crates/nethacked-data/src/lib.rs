@@ -4,6 +4,7 @@
 
 #[macro_use]
 mod c_id;
+pub mod artifacts;
 pub mod containers;
 pub mod corpses;
 pub mod generation;

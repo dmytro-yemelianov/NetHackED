@@ -18,6 +18,7 @@ pub const SANCTUM_DEPTH: usize = 6;
 /// C `NetHack-5.0.0/src/mklev.c:1158-1168` and `src/mkobj.c:270,869`:
 /// kind selection, supported initialization, then the room continuation draw.
 /// Rejected placement still consumes initialization for the selected object.
+#[cfg(test)]
 fn roll_room_object(
     rules: &nethacked_data::Ruleset,
     level: &nethacked_dungeon::DungeonLevel,
@@ -28,6 +29,23 @@ fn roll_room_object(
         &nethacked_data::generation::MonsterGenContext,
         &nethacked_types::GenocideRegistry,
     )>,
+    mut rn2: impl FnMut(u32) -> u32,
+) -> (Option<nethacked_data::containers::GeneratedItem>, bool) {
+    roll_room_object_with_artifacts(rules, level, coord, table, ctx, monsters, None, &mut rn2)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn roll_room_object_with_artifacts(
+    rules: &nethacked_data::Ruleset,
+    level: &nethacked_dungeon::DungeonLevel,
+    coord: Option<Coord>,
+    table: nethacked_data::generation::ObjectTable,
+    ctx: nethacked_data::containers::ContainerContext,
+    monsters: Option<(
+        &nethacked_data::generation::MonsterGenContext,
+        &nethacked_types::GenocideRegistry,
+    )>,
+    mut artifacts: Option<(&str, &mut std::collections::BTreeSet<String>)>,
     mut rn2: impl FnMut(u32) -> u32,
 ) -> (Option<nethacked_data::containers::GeneratedItem>, bool) {
     let kind = nethacked_data::generation::mkobj_kind(None, table, &mut rn2);
@@ -47,6 +65,12 @@ fn roll_room_object(
         } else {
             rules.create_random_item_tree(name, location, ctx, &mut rn2)
         }
+    });
+    let item = item.map(|mut tree| {
+        if let (Some(kind), Some((role, history))) = (kind, artifacts.as_mut()) {
+            rules.random_existing_artifact(&mut tree.item, kind, role, history, &mut rn2);
+        }
+        tree
     });
     let item = item.filter(|_| spot.is_some());
     let keep_generating = rn2(5) == 0;
@@ -163,6 +187,7 @@ impl SimulationWorld {
     /// those containers (cycle-safe), plus their unpaid-ledger entries. Items the hero carries
     /// stay in the arena; stale quiver/wield references are cleared first.
     pub(crate) fn pack_current_level(&mut self) {
+        self.register_existing_artifacts();
         let from_key = (self.current_branch, self.depth);
         let steed_id = self.hero.mount.as_ref().map(|m| m.steed_id);
 
@@ -274,6 +299,7 @@ impl SimulationWorld {
 
     /// Restore an existing cached level or procedurally generate a new level.
     pub fn unpack_or_generate_level(&mut self, branch: BranchId, depth: usize) -> Vec<GameEvent> {
+        self.register_existing_artifacts();
         let mut events = Vec::new();
         let target_key = (branch, depth);
 
@@ -805,7 +831,7 @@ impl SimulationWorld {
                     // 1/3 a room gets a random object, then more while !rn2(5);
                     // kinds come from mkobj() over the C class/prob data.
                     // C mkobj.c:869: supported BUC/spe and weapon stack/poison
-                    // fields. Species/fuel/erosion/containers/artifacts remain gaps.
+                    // fields. Species/fuel/erosion remain gaps; containers and existing-object artifacts are supported.
                     let table = if branch == BranchId::Gehennom {
                         nethacked_data::generation::ObjectTable::Hell
                     } else {
@@ -824,7 +850,8 @@ impl SimulationWorld {
                         loop {
                             let x = self.rng.random_range(x1..=x2);
                             let y = self.rng.random_range(y1..=y2);
-                            let (item, keep_generating) = roll_room_object(
+                            self.register_existing_artifacts();
+                            let (item, keep_generating) = roll_room_object_with_artifacts(
                                 &self.ruleset,
                                 &self.level,
                                 Coord::new(x, y),
@@ -836,6 +863,7 @@ impl SimulationWorld {
                                     in_mklev: true,
                                 },
                                 Some((&ctx, &self.genocide_registry)),
+                                Some((&self.role_name, &mut self.arena.artifact_history)),
                                 |n| self.rng.random_range(0..n),
                             );
                             if let Some(item) = item {
@@ -1508,5 +1536,161 @@ mod room_item_tests {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod artifact_room_tests {
+    use super::*;
+    use nethacked_data::generation::ObjectTable;
+    use std::collections::BTreeSet;
+
+    #[test]
+    fn accepted_and_rejected_rooms_consume_artifact_draw_before_continuation() {
+        let rules = nethacked_data::Ruleset::vanilla();
+        let weapons: Vec<_> = rules
+            .items
+            .iter()
+            .filter(|a| a.class == nethacked_types::ItemClass::Weapon && a.generation_weight > 0)
+            .collect();
+        let total: u32 = weapons.iter().map(|a| a.generation_weight).sum();
+        let offset: u32 = weapons
+            .iter()
+            .take_while(|a| a.id != Some(ItemKindId::LONG_SWORD))
+            .map(|a| a.generation_weight)
+            .sum();
+        for passable in [true, false] {
+            let level = nethacked_dungeon::DungeonLevel::new_solid(if passable {
+                Tile::Room
+            } else {
+                Tile::Stone
+            });
+            let mut history = BTreeSet::new();
+            let mut trace = [
+                (100, 0),
+                (total, offset),
+                (11, 1),
+                (10, 1),
+                (10, 1),
+                (20, 0),
+                (5, 1),
+                (5, 1),
+            ]
+            .into_iter();
+            let (tree, keep) = roll_room_object_with_artifacts(
+                &rules,
+                &level,
+                Coord::new(3, 4),
+                ObjectTable::Dungeon,
+                nethacked_data::containers::ContainerContext {
+                    hero_level: 1,
+                    level_difficulty: 1,
+                    moves: 1,
+                    in_mklev: true,
+                },
+                None,
+                Some(("Wizard", &mut history)),
+                |n| {
+                    let (bound, roll) = trace.next().expect("unexpected draw");
+                    assert_eq!(n, bound);
+                    roll
+                },
+            );
+            assert!(trace.next().is_none());
+            assert!(!keep);
+            assert_eq!(history, BTreeSet::from(["ART_FIRE_BRAND".to_owned()]));
+            assert_eq!(tree.is_some(), passable);
+            if let Some(tree) = tree {
+                assert_eq!(tree.item.artifact_id.as_deref(), Some("ART_FIRE_BRAND"));
+            }
+        }
+    }
+
+    #[test]
+    fn poison_draw_precedes_artifact_chance_even_without_candidates() {
+        let rules = nethacked_data::Ruleset::vanilla();
+        let total: u32 = rules
+            .items
+            .iter()
+            .filter(|a| a.class == nethacked_types::ItemClass::Weapon && a.generation_weight > 0)
+            .map(|a| a.generation_weight)
+            .sum();
+        let mut trace = [
+            (100, 0),
+            (total, 0),
+            (6, 0),
+            (11, 0),
+            (3, 1),
+            (2, 1),
+            (100, 0),
+            (20, 0),
+            (5, 1),
+        ]
+        .into_iter();
+        let mut history = BTreeSet::new();
+        let level = nethacked_dungeon::DungeonLevel::new_solid(Tile::Room);
+        let (tree, _) = roll_room_object_with_artifacts(
+            &rules,
+            &level,
+            Coord::new(3, 4),
+            ObjectTable::Dungeon,
+            nethacked_data::containers::ContainerContext {
+                hero_level: 1,
+                level_difficulty: 1,
+                moves: 1,
+                in_mklev: true,
+            },
+            None,
+            Some(("Wizard", &mut history)),
+            |n| {
+                let (bound, roll) = trace.next().expect("extra draw");
+                assert_eq!(n, bound);
+                roll
+            },
+        );
+        assert!(trace.next().is_none());
+        assert!(history.is_empty());
+        let item = tree.unwrap().item;
+        assert!(item.poisoned);
+        assert_eq!(item.quantity, 6);
+        assert!(item.artifact_id.is_none());
+    }
+}
+
+#[cfg(test)]
+mod artifact_cache_tests {
+    use super::*;
+    #[test]
+    fn packing_registers_mutated_legacy_artifacts_and_restores_stable_identity() {
+        let mut world = SimulationWorld::new_with_seed(7);
+        let mut item = world
+            .ruleset
+            .create_item_record_by_id(
+                ItemKindId::ART_EXCALIBUR,
+                ItemLocation::Floor(Coord::new(3, 4).unwrap()),
+                Buc::Blessed,
+            )
+            .unwrap();
+        item.artifact_id = None;
+        let id = world.arena.spawn_item(item);
+        assert!(!world.arena.artifact_history.contains("ART_EXCALIBUR"));
+        world.pack_current_level();
+        assert!(!world.arena.items.contains_key(id));
+        assert!(world.arena.artifact_history.contains("ART_EXCALIBUR"));
+        assert!(world
+            .stored_levels
+            .iter()
+            .flat_map(|(_, l)| l.items.iter())
+            .any(|(_, i)| i.artifact_id.as_deref() == Some("ART_EXCALIBUR")));
+        let save = world.to_save_json().unwrap();
+        let mut loaded =
+            SimulationWorld::from_save_json(&save, world.ruleset.clone(), &world.ruleset_ref)
+                .unwrap();
+        loaded.unpack_or_generate_level(world.current_branch, world.depth);
+        assert!(loaded
+            .arena
+            .items
+            .iter()
+            .any(|(_, i)| i.artifact_id.as_deref() == Some("ART_EXCALIBUR")));
     }
 }

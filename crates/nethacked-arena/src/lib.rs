@@ -29,6 +29,9 @@ pub enum CorpseSpecies {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ItemRecord {
+    /// Canonical C ART_* symbol; independent of display name.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub artifact_id: Option<String>,
     pub name: String,
     pub class: ItemClass,
     pub weight: u32,
@@ -134,6 +137,9 @@ pub struct ActorRecord {
 /// The centralized entity arena replacing all ambient pointers.
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct EntityArena {
+    /// All artifacts ever created, including destroyed and cached objects.
+    #[serde(default, skip_serializing_if = "std::collections::BTreeSet::is_empty")]
+    pub artifact_history: std::collections::BTreeSet<String>,
     pub items: SlotMap<ItemId, ItemRecord>,
     pub actors: SlotMap<ActorId, ActorRecord>,
 }
@@ -145,7 +151,14 @@ impl EntityArena {
 
     /// Insert an item into the arena.
     pub fn spawn_item(&mut self, item: ItemRecord) -> ItemId {
+        self.register_artifact(&item);
         self.items.insert(item)
+    }
+
+    pub fn register_artifact(&mut self, item: &ItemRecord) {
+        if let Some(id) = &item.artifact_id {
+            self.artifact_history.insert(id.clone());
+        }
     }
 
     /// Insert an actor into the arena.
@@ -155,7 +168,9 @@ impl EntityArena {
 
     /// Safely remove an item.
     pub fn destroy_item(&mut self, id: ItemId) -> Option<ItemRecord> {
-        self.items.remove(id)
+        let item = self.items.remove(id)?;
+        self.register_artifact(&item);
+        Some(item)
     }
 
     /// Safely remove an actor.
@@ -281,6 +296,7 @@ mod tests {
     fn item_record_without_recharged_deserializes_to_zero() {
         let mut arena = EntityArena::new();
         let id = arena.spawn_item(ItemRecord {
+            artifact_id: None,
             name: "wand of striking".into(),
             class: ItemClass::Wand,
             weight: 7,
@@ -462,6 +478,7 @@ mod tests {
     fn test_container_hierarchy_and_weight() {
         let mut arena = EntityArena::new();
         let dagger = arena.spawn_item(ItemRecord {
+            artifact_id: None,
             name: "dagger".into(),
             class: ItemClass::Weapon,
             weight: 12,
@@ -486,6 +503,7 @@ mod tests {
         });
 
         let boh = arena.spawn_item(ItemRecord {
+            artifact_id: None,
             name: "bag of holding".into(),
             class: ItemClass::Tool,
             weight: 15,
@@ -523,6 +541,7 @@ mod tests {
     fn test_cycle_detection() {
         let mut arena = EntityArena::new();
         let box1 = arena.spawn_item(ItemRecord {
+            artifact_id: None,
             name: "box 1".into(),
             class: ItemClass::Tool,
             weight: 10,
@@ -546,6 +565,7 @@ mod tests {
             trap_known: false,
         });
         let box2 = arena.spawn_item(ItemRecord {
+            artifact_id: None,
             name: "box 2".into(),
             class: ItemClass::Tool,
             weight: 10,

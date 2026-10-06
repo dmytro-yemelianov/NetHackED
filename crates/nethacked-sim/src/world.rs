@@ -421,7 +421,9 @@ impl SimulationWorld {
 
     /// Serialize the simulation state to JSON string.
     pub fn to_save_json(&self) -> Result<String, serde_json::Error> {
-        serde_json::to_string(self)
+        let mut snapshot = self.clone();
+        snapshot.register_existing_artifacts();
+        serde_json::to_string(&snapshot)
     }
 
     /// Deserialize a saved simulation world, validating ruleset reference compatibility.
@@ -464,7 +466,30 @@ impl SimulationWorld {
                 restore_tags(item);
             }
         }
+        world.register_existing_artifacts();
         Ok(world)
+    }
+
+    /// Register imported, cached and explicitly mutated records without RNG.
+    pub fn register_existing_artifacts(&mut self) {
+        let rules = &self.ruleset;
+        let history = &mut self.arena.artifact_history;
+        let mut register = |item: &mut nethacked_arena::ItemRecord| {
+            if item.artifact_id.is_none() {
+                item.artifact_id = rules.artifact_id_for_item(&item.name).map(str::to_owned);
+            }
+            if let Some(id) = &item.artifact_id {
+                history.insert(id.clone());
+            }
+        };
+        for (_, item) in self.arena.items.iter_mut() {
+            register(item);
+        }
+        for (_, stored) in &mut self.stored_levels {
+            for (_, item) in &mut stored.items {
+                register(item);
+            }
+        }
     }
 
     /// Returns the current coordinate of the player character.

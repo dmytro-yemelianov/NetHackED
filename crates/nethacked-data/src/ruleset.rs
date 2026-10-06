@@ -166,6 +166,8 @@ pub struct ArmorDef {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct ItemDef {
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub unique: bool,
     #[serde(default)]
     pub id: Option<ItemKindId>,
     pub name: String,
@@ -373,6 +375,8 @@ struct RulesetIndex {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Ruleset {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub artifacts: Vec<crate::artifacts::ArtifactDef>,
     pub manifest: PackManifest,
     pub monsters: Vec<MonsterDef>,
     pub items: Vec<ItemDef>,
@@ -386,7 +390,8 @@ pub struct Ruleset {
 
 impl PartialEq for Ruleset {
     fn eq(&self, other: &Self) -> bool {
-        self.manifest == other.manifest
+        self.artifacts == other.artifacts
+            && self.manifest == other.manifest
             && self.monsters == other.monsters
             && self.items == other.items
             && self.roles == other.roles
@@ -413,6 +418,7 @@ impl Ruleset {
         mechanics: MechanicsSection,
     ) -> Self {
         let mut rs = Self {
+            artifacts: crate::artifacts::vanilla_artifacts(),
             manifest,
             monsters,
             items,
@@ -587,6 +593,7 @@ impl Ruleset {
             }
         };
         Some(ItemRecord {
+            artifact_id: self.artifact_id_for_item(&def.name).map(str::to_owned),
             name: def.name.clone(),
             class: def.class,
             weight: def.weight,
@@ -732,6 +739,7 @@ fn build_vanilla_ruleset() -> Ruleset {
                 magic_cancellation: arch.magic_cancellation,
             });
             ItemDef {
+                unique: arch.unique,
                 id: Some(arch.id),
                 name: arch.name.to_string(),
                 class: arch.class,

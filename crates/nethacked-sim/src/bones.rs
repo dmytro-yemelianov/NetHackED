@@ -27,6 +27,7 @@ pub fn always_cursed_in_bones(name: &str) -> bool {
 impl SimulationWorld {
     /// Saves dead adventurer state and corrupted gear to the bones graveyard file.
     pub fn save_bones(&mut self, killer: &str) -> Option<BonesData> {
+        self.register_existing_artifacts();
         if !is_valid_bones_level(self.depth as u32) {
             return None;
         }
@@ -39,6 +40,7 @@ impl SimulationWorld {
             let roll = self.rng.random_range(0..5u32);
             if let Some(item) = self.arena.items.get(id) {
                 bones_items.push(BonesItem {
+                    artifact_id: item.artifact_id.clone(),
                     name: item.name.clone(),
                     class: item.class,
                     weight: item.weight,
@@ -93,6 +95,11 @@ impl SimulationWorld {
                 let target_coord = scatter_coords[i % scatter_coords.len()];
                 if self.level.is_passable(target_coord) {
                     let item_record = ItemRecord {
+                        artifact_id: b_item.artifact_id.or_else(|| {
+                            self.ruleset
+                                .artifact_id_for_item(&b_item.name)
+                                .map(str::to_owned)
+                        }),
                         name: b_item.name,
                         class: b_item.class,
                         weight: b_item.weight,

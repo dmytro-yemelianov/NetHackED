@@ -164,6 +164,10 @@ impl SimulationWorld {
                         }
                         SacrificeResult::DivineGift(artifact_name) => {
                             let gift_record = ItemRecord {
+                                artifact_id: self
+                                    .ruleset
+                                    .artifact_id_for_item(&artifact_name)
+                                    .map(str::to_owned),
                                 name: artifact_name.clone(),
                                 class: ItemClass::Weapon,
                                 weight: 30,
