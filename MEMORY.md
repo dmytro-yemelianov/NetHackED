@@ -8,8 +8,8 @@
 
 ## Rules & Constraints
 - **2026-10-06 HP policy (explicit user decision)**: vanilla monsters sample HP using C `newmonhp` formulas and the owned Ruleset/world RNG. Explicit pack HP overrides and custom definitions stay fixed by default; `sample_hp` controls opt-in/out. Bones ghosts keep supplied HP without a discarded roll. Sampling uses definition level (`adj_lev` remains unmodelled); Astral context is integrated, other planes sampler-only.
-- **2026-10-06 approved HP rebaseline**: `EXPECTED_RUNS` and `EXPECTED_COMBAT` changed after independent verification; `EXPECTED_LOGS` stayed identical. Full gate and all three golden tests passed (695 workspace tests). This is an approved intentional HP/RNG change, not permission for unrelated automatic rebaselines. T1 completed without a commit; timer ownership and custom-species generation remain pending.
-- Branch: `feat/rule-packs-p1`. Never commit to `main`.
+- **2026-10-06 approved HP rebaseline**: `EXPECTED_RUNS` and `EXPECTED_COMBAT` changed after independent verification; `EXPECTED_LOGS` stayed identical. Full gate and all three golden tests passed (695 workspace tests). This is an approved intentional HP/RNG change, not permission for unrelated automatic rebaselines. T1 committed as `049ed98` after user authorization; follow-up verification is recorded in the execution plan.
+- Original P1 branch: `feat/rule-packs-p1`; current authorized repair branch: `feat/monster-hp-d8`. Never commit to `main`.
 - Canonical JSON = `serde_json::to_vec(&serde_json::to_value(x)?)` with sorted keys (serde_json default BTreeMap map, no `preserve_order`).
 - `nethacked-wasm` must never include `toml`, `clap`, `schemars`, or `nethacked-pack`.
 - Commit trailer required:

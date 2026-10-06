@@ -21,7 +21,7 @@ impl SimulationWorld {
                         turn: self.scheduler.turn,
                     });
 
-                    self.tick_hero_afflictions(&mut events);
+                    let affliction_result = self.tick_hero_afflictions(&mut events);
 
                     // C mcalcdistress -> m_calcdistress -> mon_regen (mon.c:1193,
                     // monmove.c:311): once per turn, `if (mspec_used) mspec_used--`.
@@ -31,7 +31,7 @@ impl SimulationWorld {
                         }
                     }
 
-                    match nethacked_core::afflictions::tick_afflictions(&mut self.hero) {
+                    match affliction_result {
                         nethacked_core::afflictions::AfflictionTickResult::StoneDeath => {
                             if let Some(p) = self.arena.actors.get_mut(self.player_id) {
                                 p.is_dead = true;

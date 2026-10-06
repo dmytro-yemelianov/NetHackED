@@ -490,35 +490,27 @@ impl SimulationWorld {
 
     /// C `nh_timeout()` (timeout.c:730-750) for the hero's transient
     /// afflictions, once per turn: counters run down and announce their end.
-    pub(crate) fn tick_hero_afflictions(&mut self, events: &mut Vec<GameEvent>) {
-        let t = &mut self.hero.afflictions.transient;
+    pub(crate) fn tick_hero_afflictions(
+        &mut self,
+        events: &mut Vec<GameEvent>,
+    ) -> nethacked_core::afflictions::AfflictionTickResult {
+        let before = self.hero.afflictions.transient.clone();
+        let result = nethacked_core::afflictions::tick_afflictions(&mut self.hero);
+        let t = &self.hero.afflictions.transient;
         let mut msgs: Vec<&str> = Vec::new();
-        if t.stunned > 0 {
-            t.stunned -= 1;
-            if t.stunned == 0 {
-                msgs.push("You feel a bit steadier now.");
-            }
+        if before.stunned > 0 && t.stunned == 0 {
+            msgs.push("You feel a bit steadier now.");
         }
-        if t.confused > 0 {
-            t.confused -= 1;
-            if t.confused == 0 {
-                msgs.push("You feel less confused now.");
-            }
+        if before.confused > 0 && t.confused == 0 {
+            msgs.push("You feel less confused now.");
         }
-        let mut cleared_blind = false;
-        if t.blinded > 0 {
-            t.blinded -= 1;
-            if t.blinded == 0 {
-                cleared_blind = true;
-                msgs.push("You can see again.");
-            }
+        let cleared_blind = before.blinded > 0 && t.blinded == 0;
+        if cleared_blind {
+            msgs.push("You can see again.");
         }
-        if t.helpless > 0 {
-            t.helpless -= 1;
-            if t.helpless == 0 {
-                // hack.c:973 fall_asleep wakeup message
-                msgs.push("You wake up.");
-            }
+        if before.helpless > 0 && t.helpless == 0 {
+            // hack.c:973 fall_asleep wakeup message
+            msgs.push("You wake up.");
         }
         if cleared_blind {
             if let Some(h) = self.arena.actors.get_mut(self.player_id) {
@@ -528,6 +520,7 @@ impl SimulationWorld {
         for m in msgs {
             say(events, m);
         }
+        result
     }
 
     /// C `u_maybe_impaired()` (hack.c:2420): stunned, or confused and `!rn2(5)`.

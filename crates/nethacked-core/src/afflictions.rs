@@ -7,6 +7,10 @@ pub enum AfflictionTickResult {
     SlimeDeath,
 }
 
+/// Own all hero affliction countdowns; call once per elapsed world turn.
+/// C `nh_timeout()` (timeout.c:671) decrements timed properties once, called
+/// from `moveloop_core()` (allmain.c:274); helpless `multi` advances once in
+/// allmain.c:381-383. The sim derives recovery messages from these transitions.
 pub fn tick_afflictions(hero: &mut Hero) -> AfflictionTickResult {
     if let Some(ref mut petrification) = hero.afflictions.petrification {
         if petrification.turns_remaining > 0 {
@@ -36,6 +40,8 @@ pub fn tick_afflictions(hero: &mut Hero) -> AfflictionTickResult {
     if trans.hallucinating > 0 {
         trans.hallucinating -= 1;
     }
+    trans.blinded = trans.blinded.saturating_sub(1);
+    trans.helpless = trans.helpless.saturating_sub(1);
 
     AfflictionTickResult::Survived
 }

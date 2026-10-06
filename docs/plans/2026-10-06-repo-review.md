@@ -66,3 +66,5 @@ The graph still references `crates/netrust-*`; current-source reads were necessa
 Delivery discrepancy: commit `7cee518` (merged in #22) describes a full `mksobj_init` implementation, but its actual diff is only seven lines: a dependency/lock update and documentation/imports. No initializer exists, and `actions/stairs.rs:764–765` still records per-kind initialization as unported. Keep that work outstanding in planning; do not count the commit message as completion.
 
 Suggested fix order: restore compilability; centralize ruleset-aware HP sampling and correct special cases; fix timer ownership and custom monster spawning; rerun gates and actual golden comparisons. Preserve golden expectations during fixes unless an intentional behaviour change is separately authorized.
+
+T2 follow-up: finding 6 resolved. Core countdown ownership prevents duplicate stun/confusion ticks; recovery events are emitted on expiry once. Independent review and the full gate passed; goldens unchanged. Finding 7 remains pending.
