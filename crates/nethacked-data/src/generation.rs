@@ -4,11 +4,16 @@
 //!
 //! Not modelled yet: the quest's `qt_montype()` (1673), the rogue level's
 //! uppercase-only rule (1679) and the elemental planes' `wrong_elem_type()`.
+//!
+//! Item initialization (`mksobj_init`, mkobj.c:869) — BUC, spe, charges,
+//! container contents, artifact chance, erosion, poison.
 
 use crate::items::{ItemKindId, BOXIPROBS, HELLPROBS, ITEM_CATALOG, MKOBJPROBS, ROGUEPROBS};
 use crate::monsters::MonsterSpeciesId;
 use crate::ruleset::{MonsterDef, Ruleset};
 use nethacked_types::ItemClass;
+#[allow(unused_imports)]
+use rand::Rng;
 
 /// C `ALIGNWEIGHT` (global.h:411).
 const ALIGNWEIGHT: i32 = 4;

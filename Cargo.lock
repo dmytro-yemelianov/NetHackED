@@ -987,6 +987,7 @@ dependencies = [
  "nethacked-arena",
  "nethacked-core",
  "nethacked-types",
+ "rand 0.9.5",
  "schemars",
  "serde",
  "serde_json",
