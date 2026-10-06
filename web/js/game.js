@@ -1173,7 +1173,8 @@ function confirmEngrave() {
 
 // Keybindings
 window.addEventListener('keydown', (e) => {
-  if (document.activeElement === document.getElementById('charName') ||
+  if (e.target.closest?.('.project-links a') ||
+      document.activeElement === document.getElementById('charName') ||
       document.activeElement === document.getElementById('engraveText') ||
       charDialog.open || leaderboardDialog.open || inventoryDialog.open || engraveDialog.open) {
     return;
