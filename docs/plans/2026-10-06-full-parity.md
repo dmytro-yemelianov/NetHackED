@@ -16,7 +16,7 @@ Custom rule-pack extensions are tested separately from canonical vanilla conform
 
 ## What the existing numbers establish
 
-The checked-in parity tables contain 542 rows: 60 present, 189 partial, 290 missing, 3 unsure. Thus 482 rows are marked non-present. These are edited historical inventory statuses, not 482 validated remaining tasks at current HEAD and not a trustworthy current completion percentage. Rows have different sizes, some bundle multiple behaviors, and the inventory may omit additional C obligations. The initial roadmap snapshot 58/175/306 describes an older count. Refresh affected rows before estimating remaining effort.
+At the planning baseline (`6248cc6`, 2026-10-06), the checked-in parity tables contained 542 rows: 60 present, 189 partial, 290 missing, 3 unsure. The [inventory summary](../parity/README.md) reports subsequently refreshed statuses. Thus 482 rows are marked non-present. These are edited historical inventory statuses, not 482 validated remaining tasks at current HEAD and not a trustworthy current completion percentage. Rows have different sizes, some bundle multiple behaviors, and the inventory may omit additional C obligations. The initial roadmap snapshot 58/175/306 describes an older count. Refresh affected rows before estimating remaining effort.
 
 Catalog extraction covers 383 species, 440 object kinds and 33 artifacts as data. That does not establish their behavior. [Behaviour coverage](../parity/behaviour-coverage.md) scans references:47/47 damage tags means they are named in engine code, not that every C side effect and context matches.
 

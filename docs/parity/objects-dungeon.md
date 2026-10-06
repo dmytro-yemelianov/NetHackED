@@ -1,5 +1,7 @@
 # Gap audit: Objects and the Dungeon (NetHack 5.0 C vs NetHackED)
 
+Limited refresh, 2026-10-07: P01a reconciles 15 rows across three tables. The [obligation register](obligations/2026-10-07-p01a.json) separates implemented subsets, test evidence and remaining gaps; other rows retain their historical audit.
+
 Date: 2026-10-05. C: the NetHack 5.0.0 source tree (src/, include/objects.h, dat/*.lua). Rust: `crates/*`.
 Paths below are relative to the NetRust repo unless they start with `C:`.
 
@@ -30,7 +32,7 @@ NetHackED generates its catalog from that data (`crates/nethacked-data/src/gener
 
 ## Feature table
 
-Status totals: 119 rows: MISSING 59, PARTIAL 50, PRESENT 10 (2 rows also carry an UNSURE note).
+Current status totals are generated in the [inventory summary](README.md); the original audit totals are historical.
 
 | Feature | C reference | NetHackED status | Evidence | Player impact |
 |---|---|---|---|---|
@@ -45,17 +47,17 @@ Status totals: 119 rows: MISSING 59, PARTIAL 50, PRESENT 10 (2 rows also carry a
 | Per-object knowledge flags (known/bknown/dknown/oc_name_known) | obj.h, objnam.c | ❌ MISSING | identification.rs:9-30 is a standalone lattice; ItemRecord has no knowledge fields | BUC and enchantment are never hidden, so altars and price-ID lose their point. |
 | Price identification | shk.c get_cost/o_id surcharge | 🟡 PARTIAL | inventory_interaction.rs:105-182 has the formulas; economy.rs:94 says "No identification model exists" | Price math exists, but there is nothing to identify. |
 | Object naming: doname (BUC/+N/erosion/charges/"(being worn)") | objnam.c doname/xname | ❌ MISSING | TUI prints `name - weight` only (nethacked-tui/src/main.rs:363-367) | The player cannot see an item's enchantment, BUC, erosion or charges. |
-| Pluralization, articles, quantities | objnam.c makeplural/an/the | ❌ MISSING | ItemRecord has no `quan` field (arena lib.rs:20-37) | No stacks: 20 darts would be 20 separate items. |
-| Object stacking/merging | invent.c merged/mergable | ❌ MISSING | no quantity field | Inventory clutter; no stack splitting. |
+| Pluralization, articles, quantities | objnam.c makeplural/an/the | ❌ MISSING | `ItemRecord.quantity` now represents stack size and defaults compatibly (`crates/nethacked-arena/src/lib.rs:56-60`); object naming/pluralization paths remain absent. | Generated stacks can store quantities, but names/articles and player-facing pluralization remain unavailable. |
+| Object stacking/merging | invent.c merged/mergable | ❌ MISSING | `ItemRecord.quantity` exists and generated quantities carry total weight (`crates/nethacked-arena/src/lib.rs:56-60; crates/nethacked-data/src/item_init.rs:95-101`); inventory still lacks merge/split behavior. | Some generated objects are represented as stacks, but separate compatible inventory objects do not merge or split. |
 | #name / #call | do_name.c | ❌ MISSING | no ActionAst variant (core ast.rs:16-62) | Not needed while items are pre-identified. |
 | Wishing parser | objnam.c readobjnam | 🟡 PARTIAL | artifacts_wands.rs:159-198 parses only BUC and ±N, then matches the name exactly; no quantity, erosion/fixed, "+N > rnd(5) -> 0" cap, artifact naming or appearance names | Any of the 51 types can be wished at any enchantment (e.g. "+127"); most C wishes fail. |
 | Wish restrictions (AoY -> fake, quest artifacts and invocation items unwishable) | objnam.c readobjnam | ✅ PRESENT | items.rs:22-37 UNWISHABLE, :1214-1236 | Matches C for the covered items. |
-| Random object generation on levels | mkobj.c mkobj/mkobj_at, mklev.c | 🟡 PARTIAL | data/generation.rs `mkobj_kind` (C class tables from src/mkobj.c + `oc_prob`); sim/actions/stairs.rs room fill as mklev.c:1157-1170 | Levels carry random loot; niches, supply chests, boxes and gold are not generated yet |
-| BUC at creation (blessorcurse/curse rates) | mkobj.c mksobj_init | ❌ MISSING | the caller hard-codes BUC (e.g. world.rs:200 `Buc::Uncursed`) | BUC carries no risk. |
-| Initial enchantment/charges | mkobj.c mksobj_init | 🟡 PARTIAL | wand charges follow C (items.rs:1155); weapon/armor spe never rolled | No random cursed -3 armor or +2 weapons on the floor. |
+| Random object generation on levels | mkobj.c mkobj/mkobj_at, mklev.c | 🟡 PARTIAL | Ordinary-room generation selects owned definitions by name, initializes recursive contents, then applies existing-object artifact hooks (`crates/nethacked-sim/src/actions/stairs.rs:38-75,831-866`); selection excludes existing artifact definitions, uses canonical built-in IDs then stable custom order, and distinguishes omitted legacy weights from explicit zero (`crates/nethacked-data/src/generation.rs:209-257; crates/nethacked-data/src/containers.rs:58-78`). | Room loot honors owned definitions and weights, including custom items; C niches, supply chests, gold placement and other level-generation contexts remain absent. |
+| BUC at creation (blessorcurse/curse rates) | mkobj.c mksobj_init | 🟡 PARTIAL | Random room items use `create_random_item_supported_fields_by_name` after selection (`crates/nethacked-data/src/item_init.rs:45-79`); class profiles roll supported BUC via `bc` and per-class branches (`crates/nethacked-data/src/item_init.rs:25-34,94-180`). Explicit constructors remain RNG-free. | Supported generated classes can begin blessed, uncursed or cursed; unmodeled `mksobj_init` cases still use fixed defaults. |
+| Initial enchantment/charges | mkobj.c mksobj_init | 🟡 PARTIAL | I1 now rolls supported weapon/armor `spe`, wand charges and charged-ring values with class-specific order/caps; generated fields are dispatched in `crates/nethacked-data/src/item_init.rs:83-180`. Room path uses this initializer before its continuation draw (`crates/nethacked-sim/src/actions/stairs.rs:831-855`). | Supported floor weapons, armor, wands and rings receive C-style initial values; many item payloads and later erosion/fuel draws remain missing. |
 | Erosion and erodeproofing | mkobj.c, trap.c erode_obj | 🟡 PARTIAL | enchantment.rs:258 apply_erosion; one `erosion: u8` (arena lib.rs:28) and no separate oeroded/oeroded2 types | Rust and corrosion cannot be told apart, and erosion is invisible. |
-| Corpse aging/rotting | mkobj.c, eat.c rottenfood | 🟡 PARTIAL | arena lib.rs:31-33 corpse_age/rot_threshold; items.rs:779-830 | Simplified food poisoning; few corpse species. |
-| Container contents at creation | mkobj.c mkbox_cnts | ❌ MISSING | no contents generation | Boxes and chests are always empty. |
+| Corpse aging/rotting | mkobj.c, eat.c rottenfood | 🟡 PARTIAL | Active arena corpses age once per elapsed world turn and nested ice-box ancestry freezes age (`crates/nethacked-arena/src/lib.rs:69-98,242-258`); cached-level items receive the same once-per-turn treatment (`crates/nethacked-sim/src/turns.rs:19-43`). | Elapsed age is preserved through nested ice boxes and cached levels; rot effects and corpse timer lifecycle remain partial. |
+| Container contents at creation | mkobj.c mkbox_cnts | 🟡 PARTIAL | Recursive initialization covers five ordinary container kinds with C class probabilities, owned kind weights and attached children (`crates/nethacked-data/src/containers.rs:25-34,82-95,126-177,209-310`); ice boxes create direct typed corpse children and set age zero. Room generation supplies actual monster geography/genocide context (`crates/nethacked-sim/src/actions/stairs.rs:58-66,853-865`). | Supported room containers and ice boxes can contain generated objects/corpses; unsupported content types and full C container-generation behavior remain absent. |
 | Potions: quaff effects | potion.c dodrink/peffects | 🟡 PARTIAL | items.rs:297-367 handles healing (flat +10; extra healing gets the same branch), speed, polymorph (dummy form id 1), acid; everything else "tastes like water" | Potion effects are mostly missing or flat. |
 | Potion vapors, breaking, thrown potions | potion.c potionbreathe/potionhit | ❌ MISSING | no handler | No vapor effects or potion throwing. |
 | Dipping (holy/unholy water, dilution) | potion.c dodip | 🟡 PARTIAL | items.rs:94-157; core buc.rs:11 dip_water | Holy water BUC changes work; no excalibur dip (fountains do not exist). |

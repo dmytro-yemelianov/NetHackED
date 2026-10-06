@@ -1,0 +1,393 @@
+{
+  "schema_version": 1,
+  "batch": "P01a",
+  "checked_date": "2026-10-07",
+  "checked_head": "792e2e5",
+  "scope": "15 affected inventory rows; remaining rows retain their historical audit status.",
+  "evidence_policy": "Completed subsets describe implementation evidence. Listed tests establish only their asserted cases; neither source presence nor a passing Rust regression proves full C equivalence.",
+  "c_reference": "Vendored NetHack-5.0.0; source facts only, no C runtime.",
+  "review": {
+    "head": "792e2e5",
+    "result": "PASS after factual artifact corrections",
+    "scope": "15 proposed inventory rows only; no runtime/project edits or test/gate reruns",
+    "source_discovery": "MCP search returned no matches; bounded current-source fallback",
+    "test_oracle_gaps": [
+      "Public kill/drop corpse payload assertion absent from cited tests",
+      "Poison attack regression checks messages/resistance, not stat values"
+    ],
+    "accepted_baseline": "Parent-provided unchanged 770 tests/all three goldens/full gates; not newly executed by this review"
+  },
+  "obligations": [
+    {
+      "id": "monsters-combat.md#6",
+      "table": "docs/parity/monsters-combat.md",
+      "feature": "Random generation by difficulty (`rndmonst`, `mkclass`)",
+      "status": "🟡 PARTIAL",
+      "c_symbols": [
+        "makemon.c:rndmonst_adj",
+        "makemon.c:rndmonst",
+        "makemon.c:makemon"
+      ],
+      "implemented_subsets": [
+        "owned custom definitions selected by frequency/difficulty and spawned by name",
+        "genocide species/class filters on actual generated floor"
+      ],
+      "tests": [
+        "crates/nethacked-pack/tests/pack_lib.rs::pack_added_monsters_spawn_in_ordinary_rooms_with_generation_filters"
+      ],
+      "remaining": [
+        "mkclass",
+        "quest qt_montype",
+        "rogue and elemental-plane generation contexts",
+        "group flags/start inventory"
+      ],
+      "uncertain": [],
+      "evidence": "`generation::rndmonst_adj` samples owned ruleset definitions, applies difficulty/rarity/alignment/temperature filters (`crates/nethacked-data/src/generation.rs:90-134`); ordinary-room generation passes selected definitions by name and applies genocide filtering (`crates/nethacked-sim/src/actions/stairs.rs:788-829`)."
+    },
+    {
+      "id": "monsters-combat.md#9",
+      "table": "docs/parity/monsters-combat.md",
+      "feature": "Monster HP `d(lvl,8)` (`newmonhp`)",
+      "status": "🟡 PARTIAL",
+      "c_symbols": [
+        "makemon.c:newmonhp",
+        "makemon.c:makemon"
+      ],
+      "implemented_subsets": [
+        "owned RNG sampler and public spawn-policy dispatch",
+        "Astral branch integrated; elemental cases tested at sampler"
+      ],
+      "tests": [
+        "crates/nethacked-data/tests/monster_hp.rs::fixed_special_cases_do_not_draw_rng",
+        "crates/nethacked-data/tests/monster_hp.rs::home_elementals_triple_only_on_matching_plane",
+        "crates/nethacked-sim/tests/monster_hp_tests.rs::real_spawns_use_world_rng_owned_level_and_plane",
+        "crates/nethacked-sim/tests/monster_hp_tests.rs::bones_hp_preserves_owned_definition_without_rng_draws"
+      ],
+      "remaining": [
+        "definition level is used instead of depth/hero `adj_lev`",
+        "world geography only supplies Astral context",
+        "pack fixed HP defaults require explicit `sample_hp`"
+      ],
+      "uncertain": [
+        "Whether any non-Astral planes should become public generation contexts is future scope."
+      ],
+      "evidence": "`compute_monster_hp` implements owned-definition dice, golem/Rider/adult-dragon/level-zero branches and explicit spawn context (`crates/nethacked-data/src/monsters.rs:149-218`); `Ruleset::create_monster_record_from_def` samples only when `sample_hp` is enabled (`crates/nethacked-data/src/ruleset.rs:634-648`), and public spawns use that path (`crates/nethacked-sim/src/actions/stairs.rs:151-163`)."
+    },
+    {
+      "id": "monsters-combat.md#16",
+      "table": "docs/parity/monsters-combat.md",
+      "feature": "Corpse on death (`make_corpse`, `corpse_chance`)",
+      "status": "🟡 PARTIAL",
+      "c_symbols": [
+        "mon.c:make_corpse",
+        "mon.c:corpse_chance"
+      ],
+      "implemented_subsets": [
+        "RNG-free kill corpse factory receives the killed actor name",
+        "canonical and custom species identity/race/body-weight facts"
+      ],
+      "tests": [
+        "crates/nethacked-data/tests/ice_box_initialization.rs::custom_species_payload_and_body_facts_are_owned_and_old_definitions_default"
+      ],
+      "remaining": [
+        "C corpse chance",
+        "corpse gender and other payload variants",
+        "corpse callbacks and full C side effects"
+      ],
+      "uncertain": [
+        "No focused sim assertion currently verifies corpse fields after the public kill/drop path; status remains partial."
+      ],
+      "evidence": "Monster death calls `Ruleset::create_corpse_record` (`crates/nethacked-sim/src/combat.rs:508-513`); that factory stores canonical/custom species, optional metadata-derived race and owned body weight when a definition resolves (`crates/nethacked-data/src/corpses.rs:24-57`)."
+    },
+    {
+      "id": "objects-dungeon.md#Random object generation on levels",
+      "table": "docs/parity/objects-dungeon.md",
+      "feature": "Random object generation on levels",
+      "status": "🟡 PARTIAL",
+      "c_symbols": [
+        "mklev.c:fill_ordinary_room",
+        "mkobj.c:mkobj"
+      ],
+      "implemented_subsets": [
+        "G1 owned weight/name selection and custom item eligibility",
+        "public authored-pack generation/save continuation regression"
+      ],
+      "tests": [
+        "crates/nethacked-data/tests/room_item_generation.rs::owned_weights_names_canonical_ids_custom_order_zero_and_artifacts",
+        "crates/nethacked-data/tests/room_item_generation.rs::legacy_absence_and_explicit_zero_round_trip_distinctly",
+        "crates/nethacked-pack/tests/pack_lib.rs::authored_owned_items_reach_public_levels_and_replay_full_saves"
+      ],
+      "remaining": [
+        "C niches/supply chest/other level placement contexts",
+        "class pool and floor-fill probabilities remain partial"
+      ],
+      "uncertain": [],
+      "evidence": "Ordinary-room generation selects owned definitions by name, initializes recursive contents, then applies existing-object artifact hooks (`crates/nethacked-sim/src/actions/stairs.rs:38-75,831-866`); selection excludes existing artifact definitions, uses canonical built-in IDs then stable custom order, and distinguishes omitted legacy weights from explicit zero (`crates/nethacked-data/src/generation.rs:209-257; crates/nethacked-data/src/containers.rs:58-78`)."
+    },
+    {
+      "id": "objects-dungeon.md#BUC at creation (blessorcurse/curse rates)",
+      "table": "docs/parity/objects-dungeon.md",
+      "feature": "BUC at creation (blessorcurse/curse rates)",
+      "status": "🟡 PARTIAL",
+      "c_symbols": [
+        "mkobj.c:mksobj_init",
+        "mkobj.c:blessorcurse",
+        "rnd.c:rne"
+      ],
+      "implemented_subsets": [
+        "supported class-specific BUC rolls use bounded ordered world draws"
+      ],
+      "tests": [
+        "crates/nethacked-data/tests/item_initialization.rs::weapon_quantity_buc_poison_and_weight_order",
+        "crates/nethacked-data/tests/item_initialization.rs::armor_draw_order_and_short_circuits",
+        "crates/nethacked-data/tests/item_initialization.rs::charge_endpoints_and_class_buc",
+        "crates/nethacked-data/tests/item_initialization.rs::generated_profiles_use_c_facts_and_exclude_contextual_payloads"
+      ],
+      "remaining": [
+        "unsupported food/tin/figurine/fuel/erosion initialization and other C branches (gem stack quantity is represented)"
+      ],
+      "uncertain": [],
+      "evidence": "Random room items use `create_random_item_supported_fields_by_name` after selection (`crates/nethacked-data/src/item_init.rs:45-79`); class profiles roll supported BUC via `bc` and per-class branches (`crates/nethacked-data/src/item_init.rs:25-34,94-180`). Explicit constructors remain RNG-free."
+    },
+    {
+      "id": "objects-dungeon.md#Initial enchantment/charges",
+      "table": "docs/parity/objects-dungeon.md",
+      "feature": "Initial enchantment/charges",
+      "status": "🟡 PARTIAL",
+      "c_symbols": [
+        "mkobj.c:mksobj_init",
+        "mkobj.c:blessorcurse",
+        "rnd.c:rne"
+      ],
+      "implemented_subsets": [
+        "supported `spe`/charges cases and exact draw order/caps"
+      ],
+      "tests": [
+        "crates/nethacked-data/tests/item_initialization.rs::weapon_quantity_buc_poison_and_weight_order",
+        "crates/nethacked-data/tests/item_initialization.rs::armor_draw_order_and_short_circuits",
+        "crates/nethacked-data/tests/item_initialization.rs::ring_inner_draw_sign_and_zero_fallback",
+        "crates/nethacked-data/tests/item_initialization.rs::rne_stops_at_level_dependent_cap_without_extra_draw"
+      ],
+      "remaining": [
+        "unsupported item classes, fuel, erosion and payload draws"
+      ],
+      "uncertain": [],
+      "evidence": "I1 now rolls supported weapon/armor `spe`, wand charges and charged-ring values with class-specific order/caps; generated fields are dispatched in `crates/nethacked-data/src/item_init.rs:83-180`. Room path uses this initializer before its continuation draw (`crates/nethacked-sim/src/actions/stairs.rs:831-855`)."
+    },
+    {
+      "id": "objects-dungeon.md#Corpse aging/rotting",
+      "table": "docs/parity/objects-dungeon.md",
+      "feature": "Corpse aging/rotting",
+      "status": "🟡 PARTIAL",
+      "c_symbols": [
+        "eat.c:rottenfood",
+        "timeout.c:nh_timeout"
+      ],
+      "implemented_subsets": [
+        "once-per-world-turn active/cached corpse age",
+        "nested ice-box freeze/removal and save-load continuity"
+      ],
+      "tests": [
+        "crates/nethacked-sim/tests/ice_box_tests.rs::elapsed_age_ticks_once_per_world_turn_even_with_multiple_hero_actions",
+        "crates/nethacked-sim/tests/ice_box_tests.rs::nested_ice_ancestry_freezes_existing_age_and_removal_resumes_across_save",
+        "crates/nethacked-sim/tests/ice_box_tests.rs::cached_level_original_handle_ancestry_ages_once_and_survives_reload"
+      ],
+      "remaining": [
+        "corpse rot/deletion/revival/glob timers and associated effects"
+      ],
+      "uncertain": [],
+      "evidence": "Active arena corpses age once per elapsed world turn and nested ice-box ancestry freezes age (`crates/nethacked-arena/src/lib.rs:69-98,242-258`); cached-level items receive the same once-per-turn treatment (`crates/nethacked-sim/src/turns.rs:19-43`)."
+    },
+    {
+      "id": "objects-dungeon.md#Container contents at creation",
+      "table": "docs/parity/objects-dungeon.md",
+      "feature": "Container contents at creation",
+      "status": "🟡 PARTIAL",
+      "c_symbols": [
+        "mkobj.c:mkbox_cnts",
+        "mkobj.c:mksobj_init"
+      ],
+      "implemented_subsets": [
+        "ordinary chest/box/sack/oilskin/holding-bag contents",
+        "typed ice-box corpses and frozen initial age"
+      ],
+      "tests": [
+        "crates/nethacked-data/tests/container_initialization.rs::count_caps_trap_short_circuit_and_initial_sack_rn2_one",
+        "crates/nethacked-data/tests/container_initialization.rs::full_chest_count_and_nested_attachment_weights",
+        "crates/nethacked-data/tests/ice_box_initialization.rs::ice_box_count_and_direct_corpse_draws_owned_weight_and_zero_age",
+        "crates/nethacked-sim/tests/ice_box_tests.rs::old_save_missing_tags_restores_owned_ice_and_corpse_identity_without_age_reset"
+      ],
+      "remaining": [
+        "pathological safety caps differ from unbounded C retry",
+        "missing corpse gender/revival/glob/rot lifecycle",
+        "unsupported food variants/fuel/erosion and full C initialization tail"
+      ],
+      "uncertain": [],
+      "evidence": "Recursive initialization covers five ordinary container kinds with C class probabilities, owned kind weights and attached children (`crates/nethacked-data/src/containers.rs:25-34,82-95,126-177,209-310`); ice boxes create direct typed corpse children and set age zero. Room generation supplies actual monster geography/genocide context (`crates/nethacked-sim/src/actions/stairs.rs:58-66,853-865`)."
+    },
+    {
+      "id": "objects-dungeon.md#Pluralization, articles, quantities",
+      "table": "docs/parity/objects-dungeon.md",
+      "feature": "Pluralization, articles, quantities",
+      "status": "❌ MISSING",
+      "c_symbols": [
+        "objnam.c:makeplural",
+        "objnam.c:doname"
+      ],
+      "implemented_subsets": [
+        "quantity representation on generated supported branches"
+      ],
+      "tests": [
+        "crates/nethacked-data/tests/item_initialization.rs::weapon_quantity_buc_poison_and_weight_order",
+        "crates/nethacked-data/tests/container_initialization.rs::represented_gem_stack_quantity_matches_c_branch_endpoints"
+      ],
+      "remaining": [
+        "pluralization/articles/quantity-aware display"
+      ],
+      "uncertain": [],
+      "evidence": "`ItemRecord.quantity` now represents stack size and defaults compatibly (`crates/nethacked-arena/src/lib.rs:56-60`); object naming/pluralization paths remain absent."
+    },
+    {
+      "id": "objects-dungeon.md#Object stacking/merging",
+      "table": "docs/parity/objects-dungeon.md",
+      "feature": "Object stacking/merging",
+      "status": "❌ MISSING",
+      "c_symbols": [
+        "invent.c:merged",
+        "invent.c:mergable"
+      ],
+      "implemented_subsets": [
+        "stored stack quantity for weapon/gem and container coin paths"
+      ],
+      "tests": [
+        "crates/nethacked-data/tests/item_initialization.rs::weapon_quantity_buc_poison_and_weight_order",
+        "crates/nethacked-data/tests/room_item_generation.rs::owned_weights_names_canonical_ids_custom_order_zero_and_artifacts"
+      ],
+      "remaining": [
+        "inventory merge/split and selection semantics"
+      ],
+      "uncertain": [],
+      "evidence": "`ItemRecord.quantity` exists and generated quantities carry total weight (`crates/nethacked-arena/src/lib.rs:56-60; crates/nethacked-data/src/item_init.rs:95-101`); inventory still lacks merge/split behavior."
+    },
+    {
+      "id": "hero.md#Attribute gain/loss (adjattrib, gainstr, losestr)",
+      "table": "docs/parity/hero.md",
+      "feature": "Attribute gain/loss (adjattrib, gainstr, losestr)",
+      "status": "🟡 PARTIAL",
+      "c_symbols": [
+        "attrib.c:adjattrib",
+        "attrib.c:gainstr",
+        "attrib.c:losestr",
+        "attrib.c:poisoned"
+      ],
+      "implemented_subsets": [
+        "some attribute decrease branches on the production poison path"
+      ],
+      "tests": [
+        "crates/nethacked-sim/src/progress.rs::attributes_start_from_the_c_role_tables",
+        "crates/nethacked-sim/tests/monster_attack_tests.rs::poisonous_sting_poisons_unless_resistant"
+      ],
+      "remaining": [
+        "gain-ability/restore-ability production integration and other C attribute causes/formulas"
+      ],
+      "uncertain": [
+        "Existing poison regression asserts poison/resistance messages, not attribute values; no focused public-path stat-loss assertion is cited."
+      ],
+      "evidence": "`HeroProgress` stores attributes and `adjattrib` supports clamped changes (`crates/nethacked-sim/src/progress.rs:34-50,189-210`). Unresisted poison can lower the selected attribute; its severe branch also lowers Con only if the hero survives the HP loss (`crates/nethacked-sim/src/progress.rs:367-420`)."
+    },
+    {
+      "id": "hero.md#Species-specific corpses",
+      "table": "docs/parity/hero.md",
+      "feature": "Species-specific corpses",
+      "status": "🟡 PARTIAL",
+      "c_symbols": [
+        "mon.c:make_corpse",
+        "eat.c:eatcorpse"
+      ],
+      "implemented_subsets": [
+        "death path routes actor identity into species-aware factory"
+      ],
+      "tests": [
+        "crates/nethacked-data/tests/ice_box_initialization.rs::custom_species_payload_and_body_facts_are_owned_and_old_definitions_default",
+        "crates/nethacked-sim/tests/simulation_tests.rs::test_corpse_eating_and_conduct_invalidation"
+      ],
+      "remaining": [
+        "public death/drop assertion",
+        "species-specific consumption and corpse chances/payload"
+      ],
+      "uncertain": [
+        "Status is deliberately only partial; the sim test exercises eating setup, while the typed factory has its own data test."
+      ],
+      "evidence": "Public monster-death handling calls the owned corpse factory (`crates/nethacked-sim/src/combat.rs:508-513`); the factory attaches canonical/custom species, optional metadata-derived race and body weight (`crates/nethacked-data/src/corpses.rs:24-57`). Eating still reads `item.name`, so typed species payload is not yet consumed by species-specific eating logic (`crates/nethacked-sim/src/actions/items.rs:805-824`)."
+    },
+    {
+      "id": "hero.md#Corpse intrinsics (givit, intrinsic_possible)",
+      "table": "docs/parity/hero.md",
+      "feature": "Corpse intrinsics (givit, intrinsic_possible)",
+      "status": "🟡 PARTIAL",
+      "c_symbols": [
+        "eat.c:givit",
+        "eat.c:intrinsic_possible",
+        "eat.c:cpostfx"
+      ],
+      "implemented_subsets": [
+        "separate species payload storage"
+      ],
+      "tests": [
+        "crates/nethacked-data/tests/ice_box_initialization.rs::custom_species_payload_and_body_facts_are_owned_and_old_definitions_default",
+        "crates/nethacked-sim/tests/simulation_tests.rs::test_corpse_eating_and_conduct_invalidation"
+      ],
+      "remaining": [
+        "consume species identity in eating path",
+        "C probability/level rules and additional effects"
+      ],
+      "uncertain": [],
+      "evidence": "The eat path still derives intrinsic candidates from `item.name` (`crates/nethacked-sim/src/actions/items.rs:805-824`), while corpse identity is now stored separately in `corpse_species` (`crates/nethacked-arena/src/lib.rs:45-51`) and kill factories leave the generic item name."
+    },
+    {
+      "id": "hero.md#Cannibalism penalty",
+      "table": "docs/parity/hero.md",
+      "feature": "Cannibalism penalty",
+      "status": "🟡 PARTIAL",
+      "c_symbols": [
+        "eat.c:maybe_cannibal"
+      ],
+      "implemented_subsets": [
+        "race field generation and eat-path comparison/message"
+      ],
+      "tests": [
+        "crates/nethacked-data/tests/ice_box_initialization.rs::custom_species_payload_and_body_facts_are_owned_and_old_definitions_default",
+        "crates/nethacked-sim/tests/simulation_tests.rs::test_cannibalism_detection"
+      ],
+      "remaining": [
+        "player race integration and C gameplay penalties"
+      ],
+      "uncertain": [
+        "The sim assertion uses a manually constructed human corpse; factory data assertions do not cover public kill/drop payload integration."
+      ],
+      "evidence": "Corpse factories now populate race when owned monster metadata has `m2_race` (`crates/nethacked-data/src/corpses.rs:24-42`); eating compares that field with the currently hard-coded hero race `human` (`crates/nethacked-sim/src/actions/items.rs:783-795`)."
+    },
+    {
+      "id": "hero.md#Blindness timer",
+      "table": "docs/parity/hero.md",
+      "feature": "Blindness timer",
+      "status": "🟡 PARTIAL",
+      "c_symbols": [
+        "timeout.c:nh_timeout",
+        "timeout.c:Blinded"
+      ],
+      "implemented_subsets": [
+        "timer state, recovery message and blind flag recovery"
+      ],
+      "tests": [
+        "crates/nethacked-sim/tests/affliction_timer_tests.rs::transient_timers_decrement_once_and_recover_once_per_world_turn",
+        "crates/nethacked-sim/tests/monster_attack_tests.rs::blinding_claw_blinds_until_the_timeout_runs_out"
+      ],
+      "remaining": [
+        "other blindness sources and protection conditions"
+      ],
+      "uncertain": [],
+      "evidence": "Blinding attacks add to `TransientAfflictions.blinded` (`crates/nethacked-sim/src/ad_effects.rs:84-96`); CORE `tick_afflictions` owns countdowns (`crates/nethacked-core/src/afflictions.rs:14-44`), while sim derives recovery messages and clears the actor blind flag on expiration (`crates/nethacked-sim/src/ad_effects.rs:493-523`)."
+    }
+  ]
+}

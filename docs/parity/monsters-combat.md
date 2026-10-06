@@ -1,5 +1,7 @@
 # Gap audit: Monsters and Combat (NetHack 5.0 C vs NetHackED)
 
+Limited refresh, 2026-10-07: P01a reconciles 15 rows across three tables. The [obligation register](obligations/2026-10-07-p01a.json) separates implemented subsets, test evidence and remaining gaps; other rows retain their historical audit.
+
 Audited 2026-10-05. C tree: the NetHack 5.0.0 source tree (src/, include/). Rust: `crates/nethacked-*`.
 Paths: `sim/` = `crates/nethacked-sim/src/`, `core/` = `crates/nethacked-core/src/`, `data/` = `crates/nethacked-data/src/`, `types/` = `crates/nethacked-types/src/lib.rs`.
 "Spec div." means the gap is already listed under *Known divergences* in `docs/formal-mechanics-spec.md`.
@@ -30,10 +32,10 @@ Only 9 of the 12 `DamageType` variants are AD types (`types/lib.rs:591-610`: Phy
 | 4 | Full AD_* set (50) | include/monattk.h | 🟡 PARTIAL | types/lib.rs:591-610 (12 variants) | Most special attacks cannot even be represented |
 | 5 | Full AT_* set (16) | include/monattk.h | 🟡 PARTIAL | types/lib.rs:576-584 (9 variants) | No engulfers, exploders, huggers, stingers, spitters |
 | **makemon.c** |||||
-| 6 | Random generation by difficulty (`rndmonst`, `mkclass`) | makemon.c:1652, 1873 | 🟡 PARTIAL | data/generation.rs `rndmonst_adj` (difficulty window, G_FREQ, uncommon, align/temperature shift) over ruleset data; sim/actions/stairs.rs fills rooms 1/3 like mklev.c:973 | All 383 species can appear; `mkclass`, quest `qt_montype`, rogue and elemental-plane rules are still missing |
+| 6 | Random generation by difficulty (`rndmonst`, `mkclass`) | makemon.c:1652, 1873 | 🟡 PARTIAL | `generation::rndmonst_adj` samples owned ruleset definitions, applies difficulty/rarity/alignment/temperature filters (`crates/nethacked-data/src/generation.rs:90-134`); ordinary-room generation passes selected definitions by name and applies genocide filtering (`crates/nethacked-sim/src/actions/stairs.rs:788-829`). | Eligible pack-added monsters can spawn in generated ordinary rooms; the broader C generation contexts remain incomplete. |
 | 7 | Ongoing random spawns over time (1/50 or 1/70 per turn) | allmain.c `makemon(NULL…)` | ❌ MISSING | sim/turns.rs has no spawn call | Cleared levels stay empty, so there is no time pressure |
 | 8 | Group generation (G_SGROUP/G_LGROUP, `m_initgrp`) | makemon.c:79 | ❌ MISSING | no match for grep `SGROUP\|m_initgrp` | No jackal packs and no hordes |
-| 9 | Monster HP `d(lvl,8)` (`newmonhp`) | makemon.c:1012 | 🟡 PARTIAL | data/monsters.rs:compute_monster_hp; owned Ruleset/world RNG; C golem, Rider, adult dragon, level-zero and encoded-level cases; explicit fixed pack overrides | Definition level is used; depth/hero `adj_lev` remains unmodelled. Astral context is integrated; other elemental planes are supported by the sampler only. |
+| 9 | Monster HP `d(lvl,8)` (`newmonhp`) | makemon.c:1012 | 🟡 PARTIAL | `compute_monster_hp` implements owned-definition dice, golem/Rider/adult-dragon/level-zero branches and explicit spawn context (`crates/nethacked-data/src/monsters.rs:149-218`); `Ruleset::create_monster_record_from_def` samples only when `sample_hp` is enabled (`crates/nethacked-data/src/ruleset.rs:634-648`), and public spawns use that path (`crates/nethacked-sim/src/actions/stairs.rs:151-163`). | Sampled vanilla and opted-in definitions use world RNG and C-style HP branches, using definition level instead of depth/hero `adj_lev`; public geography supplies Astral only. Fixed custom/pack HP overrides remain fixed. |
 | 10 | Starting weapons (`m_initweap`) | makemon.c:161 | ❌ MISSING | create_monster_record (data/monsters.rs:2335) gives no items | Orcs and dwarves do not carry or drop weapons; no early-game dwarvish mattock or pick |
 | 11 | Starting inventory (`m_initinv`) | makemon.c:589 | ❌ MISSING | same | No loot from kills; shopkeepers carry no gold; no wands on soldiers |
 | 12 | `peace_minded` at creation | makemon.c:2268-2308 | ✅ PRESENT | sim/peace.rs:99, core/peace.rs:111 | Co-aligned peacefuls work as in C |
@@ -41,7 +43,7 @@ Only 9 of the 12 `DamageType` variants are AD types (`types/lib.rs:591-610`: Phy
 | 14 | Monster growth from kills (`grow_up`) | makemon.c:2051 | ❌ MISSING | no match for grep `grow_up`; pets grow only via feed_companion_pet (sim/monsters.rs:653) | Pets and monsters never level up by fighting |
 | 15 | Genocide blocks spawns | makemon.c | ✅ PRESENT | sim/actions/stairs.rs:65, 740 | Works |
 | **mon.c** |||||
-| 16 | Corpse on death (`make_corpse`, `corpse_chance`) | mon.c:564, 3186 | 🟡 PARTIAL | sim/combat.rs:503-509 always drops a generic `Corpse` (no species or race name) | A corpse appears 100% of the time but carries no species, so eating it gives no intrinsics and cannot be cannibalism |
+| 16 | Corpse on death (`make_corpse`, `corpse_chance`) | mon.c:564, 3186 | 🟡 PARTIAL | Monster death calls `Ruleset::create_corpse_record` (`crates/nethacked-sim/src/combat.rs:508-513`); that factory stores canonical/custom species, optional metadata-derived race and owned body weight when a definition resolves (`crates/nethacked-data/src/corpses.rs:24-57`). | A resolved monster death yields species identity and optional race metadata; C corpse probability and full corpse payload rules are not modeled. |
 | 17 | Hero experience from kills (`experience`, `more_experienced`, `pluslvl`) | exper.c:85, 169, 307; mon.c:3484 `xkilled` | 🟡 PARTIAL | sim/progress.rs `experience`/`gain_experience`/`pluslvl`, called from `on_actor_killed` | Kills give C experience and levels; revived/cloned discounts, eel bonus and rank titles missing |
 | 18 | Kill alignment, luck, and favor adjustments | mon.c:3676-3726 | ✅ PRESENT | sim/combat.rs:420-480 | Matches C |
 | 19 | Death drops monster inventory (`relobj`) | steal.c:875 | ❌ MISSING | monsters carry nothing | No loot |

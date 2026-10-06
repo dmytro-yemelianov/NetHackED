@@ -1,6 +1,6 @@
 # Agentic loops for full-parity work
 
-Planning baseline: `b39a7e3`, `feat/monster-hp-d8`, 2026-10-07. This specifies execution of the [full-parity map](2026-10-06-full-parity.md); implementation has not started. Keep the [existing loop constraints](2026-10-06-agentic-loops.md), P1 ledger and current user policies. Gameplay/content/command semantics remain the working target; exact C replay, original presentation and C binary files require separate scope decisions.
+Planning baseline: `b39a7e3`, `feat/monster-hp-d8`, 2026-10-07. This specifies execution of the [full-parity map](2026-10-06-full-parity.md); The planning snapshot preceded implementation; execution records follow below. Keep the [existing loop constraints](2026-10-06-agentic-loops.md), P1 ledger and current user policies. Gameplay/content/command semantics remain the working target; exact C replay, original presentation and C binary files require separate scope decisions.
 
 ## Model routing and authority
 
@@ -102,3 +102,7 @@ Completion record: unit/dependencies, models/efforts, source/config hashes, repa
 ## Planning acceptance — 2026-10-07
 
 One independent Luna/high read-only check passed without findings. Documentation links, parity-summary freshness and whitespace checks passed. No implementation, live model configuration, dependencies or golden constants changed. The complete accepted G1 gate is reused only after confirming unchanged production inputs; no duplicate Cargo run. Model token usage was not exposed and remains unknown. The next planned unit is P01 inventory reconciliation, bounded to 20 affected rows per packet; it has not started.
+
+## P01a execution record
+
+On 2026-10-07, Luna/high reconciled 15 rows at `792e2e5`; fresh Sol/medium review passed after factual corrections. The coordinator applied the reviewed evidence and [obligation register](../parity/obligations/2026-10-07-p01a.json). Four missing rows became partial; no row became present. Public corpse-payload and poison stat-value assertions remain explicit test gaps. No production, dependency or golden changes occurred. Same-source full acceptance (770 tests, three goldens, 12 gates) is reused after input-digest verification; changed documentation checks are rerun. No escalation; actual token usage unavailable.
