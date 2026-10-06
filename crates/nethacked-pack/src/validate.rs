@@ -227,6 +227,20 @@ pub fn validate(rs: &Ruleset) -> Report {
     }
 
     for item in &rs.items {
+        let container_invalid = match item.initialization {
+            nethacked_data::item_init::ItemInitProfile::Container { container } => {
+                !item.is_container
+                    || item.is_bag_of_holding
+                        != (container == nethacked_data::item_init::ContainerInit::HoldingBag)
+            }
+            _ => false,
+        };
+        if container_invalid || item.generation_weight > 10000 {
+            report.errors.push(Diagnostic {
+                file: "items.toml".into(), entry: item.name.clone(), field: Some("initialization/generation_weight".into()),
+                message: "container profile requires coherent container/holding flags; generation_weight must be <=10000".into(),
+            });
+        }
         if !item.initialization.matches_class(item.class) {
             report.errors.push(Diagnostic {
                 file: "items.toml".into(),

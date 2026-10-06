@@ -39,6 +39,12 @@ pub struct ItemRecord {
     pub quantity: u32,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub poisoned: bool,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub locked: bool,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub trapped: bool,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub trap_known: bool,
 }
 
 fn one() -> u32 {
@@ -189,12 +195,16 @@ impl EntityArena {
 
         let effective_inner = if item.is_bag_of_holding {
             // NetHack 5.0 rounding up: (cwt + 1) / 2 for uncursed default
-            inner_weight.div_ceil(2)
+            match item.buc {
+                Buc::Blessed => inner_weight.div_ceil(4),
+                Buc::Uncursed => inner_weight.div_ceil(2),
+                Buc::Cursed => inner_weight.saturating_mul(2),
+            }
         } else {
             inner_weight
         };
 
-        item.weight + effective_inner
+        item.weight.saturating_add(effective_inner)
     }
 }
 
@@ -222,6 +232,9 @@ mod tests {
             recharged: 3,
             quantity: 1,
             poisoned: false,
+            locked: false,
+            trapped: false,
+            trap_known: false,
         });
         let mut v = serde_json::to_value(arena.items.get(id).unwrap()).unwrap();
         assert_eq!(v["recharged"], 3);
@@ -239,8 +252,12 @@ mod tests {
         let mut loaded: ItemRecord = serde_json::from_value(old).unwrap();
         assert_eq!(loaded.quantity, 1);
         assert!(!loaded.poisoned);
+        assert!(!loaded.locked && !loaded.trapped && !loaded.trap_known);
         loaded.quantity = 9;
         loaded.poisoned = true;
+        loaded.locked = true;
+        loaded.trapped = true;
+        loaded.trap_known = true;
         let encoded = serde_json::to_string(&loaded).unwrap();
         assert_eq!(
             serde_json::from_str::<ItemRecord>(&encoded).unwrap(),
@@ -394,6 +411,9 @@ mod tests {
             recharged: 0,
             quantity: 1,
             poisoned: false,
+            locked: false,
+            trapped: false,
+            trap_known: false,
         });
 
         let boh = arena.spawn_item(ItemRecord {
@@ -413,6 +433,9 @@ mod tests {
             recharged: 0,
             quantity: 1,
             poisoned: false,
+            locked: false,
+            trapped: false,
+            trap_known: false,
         });
 
         // Place dagger inside bag
@@ -445,6 +468,9 @@ mod tests {
             recharged: 0,
             quantity: 1,
             poisoned: false,
+            locked: false,
+            trapped: false,
+            trap_known: false,
         });
         let box2 = arena.spawn_item(ItemRecord {
             name: "box 2".into(),
@@ -463,6 +489,9 @@ mod tests {
             recharged: 0,
             quantity: 1,
             poisoned: false,
+            locked: false,
+            trapped: false,
+            trap_known: false,
         });
 
         assert!(arena.contains_transitive(box1, box2));

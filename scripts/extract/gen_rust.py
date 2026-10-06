@@ -219,7 +219,12 @@ def initialization_profile(o, artifact):
         return profile + f"Amulet {{ harmful: {boolean(harmful)} }}"
     if cls in ("potion", "scroll", "spbook") and kind != "SCR_MAIL":
         return profile + {"potion": "Potion", "scroll": "Scroll", "spbook": "Book"}[cls]
+    if cls == "gem" and kind != "LOADSTONE":
+        return profile + f"Gem {{ rock: {boolean(kind == 'ROCK')}, luckstone: {boolean(kind == 'LUCKSTONE')} }}"
     if cls == "tool":
+        container = {"CHEST": "Chest", "LARGE_BOX": "LargeBox", "SACK": "Sack", "OILSKIN_SACK": "OilskinSack", "BAG_OF_HOLDING": "HoldingBag"}.get(kind)
+        if container:
+            return profile + f"Container {{ container: {prefix}ContainerInit::{container} }}"
         charges = {
             "EXPENSIVE_CAMERA": "Camera", "TINNING_KIT": "Camera", "MAGIC_MARKER": "Camera",
             "CAN_OF_GREASE": "Grease", "CRYSTAL_BALL": "CrystalBall",

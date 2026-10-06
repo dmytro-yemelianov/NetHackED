@@ -23,16 +23,16 @@ fn roll_room_object(
     level: &nethacked_dungeon::DungeonLevel,
     coord: Option<Coord>,
     table: nethacked_data::generation::ObjectTable,
-    hero_level: u32,
+    ctx: nethacked_data::containers::ContainerContext,
     mut rn2: impl FnMut(u32) -> u32,
-) -> (Option<nethacked_arena::ItemRecord>, bool) {
+) -> (Option<nethacked_data::containers::GeneratedItem>, bool) {
     let kind = nethacked_data::generation::mkobj_kind(None, table, &mut rn2);
     let spot = coord.filter(|&c| level.is_passable(c));
     let item = kind.and_then(|kind| {
-        rules.create_random_item_supported_fields(
-            kind,
+        rules.create_random_item_tree(
+            &rules.item_by_id(kind)?.name,
             spot.map_or(ItemLocation::Limbo, ItemLocation::Floor),
-            hero_level,
+            ctx,
             &mut rn2,
         )
     });
@@ -817,11 +817,17 @@ impl SimulationWorld {
                                 &self.level,
                                 Coord::new(x, y),
                                 table,
-                                ctx.hero_level.max(1) as u32,
+                                nethacked_data::containers::ContainerContext {
+                                    hero_level: ctx.hero_level.max(1) as u32,
+                                    level_difficulty: ctx.level_difficulty.max(0) as u32,
+                                    moves: self.scheduler.turn,
+                                    in_mklev: true,
+                                },
                                 |n| self.rng.random_range(0..n),
                             );
                             if let Some(item) = item {
-                                self.arena.spawn_item(item);
+                                let location = item.item.location.clone();
+                                item.attach(&mut self.arena, location);
                             }
                             if !keep_generating {
                                 break;
@@ -1278,8 +1284,18 @@ mod room_item_tests {
                 expected_rng.next_u64();
             }
             let mut draws = trace.iter();
-            let (item, keep_generating) =
-                roll_room_object(&rules, &level, Some(coord), ObjectTable::Dungeon, 1, |n| {
+            let (item, keep_generating) = roll_room_object(
+                &rules,
+                &level,
+                Some(coord),
+                ObjectTable::Dungeon,
+                nethacked_data::containers::ContainerContext {
+                    hero_level: 1,
+                    level_difficulty: 1,
+                    moves: 1,
+                    in_mklev: true,
+                },
+                |n| {
                     let &(bound, value) = draws.next().expect("unexpected draw");
                     assert_eq!(
                         n, bound,
@@ -1287,12 +1303,13 @@ mod room_item_tests {
                     );
                     rng.next_u64();
                     value
-                });
+                },
+            );
             assert_eq!(draws.len(), 0);
             assert_eq!(rng.next_u64(), expected_rng.next_u64());
             assert!(!keep_generating);
             if passable {
-                let item = item.unwrap();
+                let item = item.unwrap().item;
                 assert_eq!(item.name, rules.item_by_id(ItemKindId::ARROW).unwrap().name);
                 assert_eq!(item.location, ItemLocation::Floor(coord));
                 assert_eq!(
@@ -1304,6 +1321,69 @@ mod room_item_tests {
                     item.is_none(),
                     "walled room rejects the fully initialized object"
                 );
+            }
+        }
+    }
+    #[test]
+    fn rejected_room_container_finishes_contents_before_continuation() {
+        let rules = nethacked_data::Ruleset::vanilla();
+        let tool_total: u32 = catalog
+            .iter()
+            .filter(|a| a.class == nethacked_types::ItemClass::Tool && !a.artifact)
+            .map(|a| a.prob)
+            .sum(); // static-ok: test oracle
+        let chest_roll: u32 = catalog
+            .iter()
+            .filter(|a| {
+                a.class == nethacked_types::ItemClass::Tool
+                    && !a.artifact
+                    && a.id < ItemKindId::CHEST
+            })
+            .map(|a| a.prob)
+            .sum(); // static-ok: test oracle
+        let trace = [
+            (100, 41),
+            (tool_total, chest_roll),
+            (5, 1),
+            (10, 0),
+            (100, 0),
+            (8, 1),
+            (100, 81),
+            (1000, 0),
+            (3, 2),
+            (75, 74),
+            (5, 1),
+        ];
+        for passable in [false, true] {
+            let level = nethacked_dungeon::DungeonLevel::new_solid(if passable {
+                Tile::Room
+            } else {
+                Tile::Stone
+            });
+            let mut draws = trace.iter();
+            let (tree, keep) = roll_room_object(
+                &rules,
+                &level,
+                Coord::new(3, 4),
+                ObjectTable::Dungeon,
+                nethacked_data::containers::ContainerContext {
+                    hero_level: 1,
+                    level_difficulty: 1,
+                    moves: 1,
+                    in_mklev: true,
+                },
+                |n| {
+                    let &(bound, value) = draws.next().expect("unexpected room-container draw");
+                    assert_eq!(n, bound);
+                    value
+                },
+            );
+            assert_eq!(draws.len(), 0);
+            assert!(!keep);
+            assert_eq!(tree.is_some(), passable);
+            if let Some(tree) = tree {
+                assert!(tree.item.locked && tree.item.trapped && tree.item.trap_known);
+                assert_eq!(tree.contents[0].item.quantity, 225);
             }
         }
     }

@@ -1,9 +1,9 @@
-//! Partial random initialization: represented BUC, spe, weapon quantity and poison.
-//! No species/fuel/erosion/container/artifact initialization or discarded draws.
+//! Partial random initialization: represented BUC, spe, weapon/gem quantity, poison and container lock/trap state.
+//! No species/fuel/erosion/artifact initialization or discarded draws. Contents live in containers.
 
 use nethacked_arena::{ItemLocation, ItemRecord};
 use nethacked_core::item_init::{blessorcurse_result, ring_zero_spe, rne_cap};
-pub use nethacked_core::item_init::{ItemInitProfile, ToolCharges, WandCharges};
+pub use nethacked_core::item_init::{ContainerInit, ItemInitProfile, ToolCharges, WandCharges};
 use nethacked_types::Buc;
 
 use crate::{ItemKindId, Ruleset, WandDir};
@@ -192,6 +192,23 @@ pub fn initialize_supported_fields(
             if let Some(chance) = chance {
                 bc(&mut item, chance, &mut rn2);
             }
+        }
+        ItemInitProfile::Container { container } => {
+            if matches!(container, ContainerInit::Chest | ContainerInit::LargeBox) {
+                item.locked = draw(&mut rn2, 5) != 0;
+                item.trapped = draw(&mut rn2, 10) == 0;
+                item.trap_known = item.trapped && draw(&mut rn2, 100) == 0;
+            }
+        }
+        ItemInitProfile::Gem { rock, luckstone } => {
+            item.quantity = if rock {
+                draw(&mut rn2, 6) + 6
+            } else if !luckstone && draw(&mut rn2, 6) == 0 {
+                2
+            } else {
+                1
+            };
+            item.weight = item.weight.saturating_mul(item.quantity);
         }
         ItemInitProfile::Loadstone => item.buc = Buc::Cursed,
         ItemInitProfile::Fixed => {}

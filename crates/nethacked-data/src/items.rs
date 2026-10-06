@@ -103,5 +103,8 @@ pub fn create_item_record(id: ItemKindId, location: ItemLocation, buc: Buc) -> I
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     }
 }

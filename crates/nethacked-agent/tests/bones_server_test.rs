@@ -59,6 +59,9 @@ async fn test_networked_bones_flow_and_ghost_reincarnation() {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     });
 
     // 4. Conan falls in battle to a hill orc -> sync bones to server

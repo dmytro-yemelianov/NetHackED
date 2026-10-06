@@ -33,6 +33,24 @@ pub enum ItemInitProfile {
         charges: ToolCharges,
     },
     Loadstone,
+    Gem {
+        rock: bool,
+        luckstone: bool,
+    },
+    Container {
+        container: ContainerInit,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum ContainerInit {
+    Chest,
+    LargeBox,
+    Sack,
+    OilskinSack,
+    HoldingBag,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -74,7 +92,8 @@ impl ItemInitProfile {
             Self::Scroll => class == ItemClass::Scroll,
             Self::Book => class == ItemClass::Spellbook,
             Self::Tool { .. } => class == ItemClass::Tool,
-            Self::Loadstone => class == ItemClass::Gem,
+            Self::Loadstone | Self::Gem { .. } => class == ItemClass::Gem,
+            Self::Container { .. } => class == ItemClass::Tool,
         }
     }
 }

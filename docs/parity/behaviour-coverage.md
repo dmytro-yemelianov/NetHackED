@@ -15,7 +15,7 @@ judged in the other parity tables.
 | Objects: spellbooks | 44 | 1 | 2% |
 | Objects: rings | 28 | 1 | 3% |
 | Objects: amulets | 13 | 4 | 30% |
-| Objects: tools | 50 | 7 | 14% |
+| Objects: tools | 50 | 8 | 16% |
 
 ## Attack types (AT_*)
 
@@ -285,7 +285,7 @@ judged in the other parity tables.
 | C id | Name | Engine references it |
 |---|---|---|
 | `LARGE_BOX` | large box | ❌ |
-| `CHEST` | chest | ❌ |
+| `CHEST` | chest | ✅ |
 | `ICE_BOX` | ice box | ❌ |
 | `SACK` | sack | ❌ |
 | `OILSKIN_SACK` | oilskin sack | ❌ |

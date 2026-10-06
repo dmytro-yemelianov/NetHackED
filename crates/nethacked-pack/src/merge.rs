@@ -233,6 +233,7 @@ pub fn resolve(pack: &PackDir, base: &Ruleset) -> Result<Ruleset, PackError> {
                 nutrition: req_i_field!(nutrition),
                 armor: patch.armor.clone().unwrap_or(None),
                 initialization: patch.initialization.unwrap_or_default(),
+                generation_weight: patch.generation_weight.unwrap_or_default(),
             };
             items.push(def);
         } else {
@@ -278,6 +279,9 @@ pub fn resolve(pack: &PackDir, base: &Ruleset) -> Result<Ruleset, PackError> {
             }
             if let Some(v) = patch.wand_dir {
                 target.wand_dir = v;
+            }
+            if let Some(v) = patch.generation_weight {
+                target.generation_weight = v;
             }
             if let Some(v) = patch.initialization {
                 target.initialization = v;

@@ -168,7 +168,7 @@ fn generated_profiles_use_c_facts_and_exclude_contextual_payloads() {
         K::STATUE,
         K::OIL_LAMP,
         K::WAX_CANDLE,
-        K::CHEST,
+        K::ICE_BOX,
     ] {
         assert!(Ruleset::vanilla()
             .item_by_id(kind)
@@ -176,6 +176,15 @@ fn generated_profiles_use_c_facts_and_exclude_contextual_payloads() {
             .initialization
             .is_fixed());
     }
+    assert_eq!(
+        Ruleset::vanilla()
+            .item_by_id(K::CHEST)
+            .unwrap()
+            .initialization,
+        ItemInitProfile::Container {
+            container: nethacked_data::item_init::ContainerInit::Chest
+        }
+    );
     for arch in ITEM_CATALOG {
         assert!(
             arch.initialization.matches_class(arch.class),

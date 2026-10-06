@@ -109,6 +109,9 @@ impl SimulationWorld {
                         recharged: 0,
                         quantity: 1,
                         poisoned: false,
+                        locked: false,
+                        trapped: false,
+                        trap_known: false,
                     };
                     self.arena.spawn_item(item_record);
                 }

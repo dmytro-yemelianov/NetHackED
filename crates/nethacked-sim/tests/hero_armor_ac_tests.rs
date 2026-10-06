@@ -152,6 +152,9 @@ fn test_small_shield_plus_two_with_leather_armor() {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     };
     sim.arena.spawn_item(shield_rec);
 
@@ -193,6 +196,9 @@ fn test_two_helmets_do_not_stack() {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     };
     sim.arena.spawn_item(helm1);
     sim.recompute_hero_ac();
@@ -216,6 +222,9 @@ fn test_two_helmets_do_not_stack() {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     };
     sim.arena.spawn_item(helm2);
     sim.recompute_hero_ac();

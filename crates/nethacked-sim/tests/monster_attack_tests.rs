@@ -321,6 +321,9 @@ fn quaff_healing(sim: &mut SimulationWorld) {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     });
     let idx = sim
         .arena

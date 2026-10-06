@@ -132,6 +132,8 @@ pub struct ItemPatch {
     pub armor: Option<Option<ArmorDef>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub initialization: Option<nethacked_data::item_init::ItemInitProfile>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub generation_weight: Option<u32>,
 }
 
 /// Container for `[[item]]` entries in `items.toml`.

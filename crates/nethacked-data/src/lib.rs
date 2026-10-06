@@ -4,6 +4,7 @@
 
 #[macro_use]
 mod c_id;
+pub mod containers;
 pub mod generation;
 pub mod item_init;
 pub mod items;

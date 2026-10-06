@@ -304,6 +304,9 @@ fn test_pickup_and_drop_lifecycle() {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     });
 
     let events_pickup = sim.step_player_action(ActionAst::PickUp);
@@ -347,6 +350,9 @@ fn test_wield_weapon() {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     });
 
     let carried = sim.arena.items_carried_by(sim.player_id);
@@ -1054,6 +1060,9 @@ fn test_nutrition_decay_and_eating() {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     });
     let carried2 = sim.arena.items_carried_by(sim.player_id);
     let corpse_idx = carried2.iter().position(|&id| id == corpse).unwrap();
@@ -1754,6 +1763,9 @@ fn test_altar_sacrifice_and_divine_crowning() {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     });
 
     let carried = sim.arena.items_carried_by(sim.player_id);
@@ -1805,6 +1817,9 @@ fn test_altar_holy_water_consecration() {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     });
 
     let events = sim.step_player_action(ActionAst::Pray);
@@ -1834,6 +1849,9 @@ fn test_wand_of_wishing_spawns_item() {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     });
 
     let events = sim.step_player_action(ActionAst::Wish(
@@ -1893,6 +1911,9 @@ fn test_wand_of_striking_destroys_drawbridge() {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     });
 
     let events = sim.step_player_action(ActionAst::ZapWand {
@@ -1936,6 +1957,9 @@ fn test_wand_of_cold_freezes_pool() {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     });
 
     let events = sim.step_player_action(ActionAst::ZapWand {
@@ -1969,6 +1993,9 @@ fn test_scroll_of_charging_and_explosion() {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     });
 
     let scroll = sim.arena.spawn_item(ItemRecord {
@@ -1988,6 +2015,9 @@ fn test_scroll_of_charging_and_explosion() {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     });
 
     let carried = sim.arena.items_carried_by(sim.player_id);
@@ -2025,6 +2055,9 @@ fn test_scroll_of_charging_and_explosion() {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     });
     let carried2 = sim.arena.items_carried_by(sim.player_id);
     let s2_idx = carried2.iter().position(|&id| id == scroll2).unwrap();
@@ -2066,6 +2099,9 @@ fn test_wand_recharge_explosion_damage_is_d_n_k() {
             recharged: 0,
             quantity: 1,
             poisoned: false,
+            locked: false,
+            trapped: false,
+            trap_known: false,
         });
         let idx = sim
             .arena
@@ -2132,6 +2168,9 @@ fn test_artifact_combat_bonus_and_vorpal_blade() {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     });
     sim.wielded_item = Some(excalibur);
 
@@ -2194,6 +2233,9 @@ fn test_ukrainian_i18n_simulation_logging() {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     });
 
     let wish_events = sim.step_player_action(ActionAst::Wish(
@@ -2309,6 +2351,9 @@ fn test_monster_lich_summon_and_curse() {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     });
 
     let mut lich = nethacked_data::create_monster_record(
@@ -2362,6 +2407,9 @@ fn test_bones_file_generation_and_ghost_encounter() {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     });
 
     // Save bones on death
@@ -3285,6 +3333,9 @@ fn test_hero_polymorph_potion_and_damage_reversion() {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     });
     let carried = sim.arena.items_carried_by(sim.player_id);
     let idx = carried.iter().position(|&id| id == potion).unwrap();
@@ -3386,6 +3437,9 @@ fn test_wand_of_polymorph_unique_monster_invariant() {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     });
     sim1.step_player_action(ActionAst::ZapWand {
         dir: nethacked_types::Direction::East,
@@ -3442,6 +3496,9 @@ fn test_wand_of_polymorph_unique_monster_invariant() {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     });
     sim2.step_player_action(ActionAst::ZapWand {
         dir: nethacked_types::Direction::East,
@@ -3501,6 +3558,9 @@ fn test_scroll_of_genocide_conduct_and_level_wipe() {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     });
 
     assert!(sim.conducts.genocideless);
@@ -3549,6 +3609,9 @@ fn test_cursed_scroll_of_genocide_summons() {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     });
 
     let before_count = sim.arena.actors.len();
@@ -3617,6 +3680,9 @@ fn test_petrification_countdown_and_lizard_cure() {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     });
 
     let carried = sim.arena.items_carried_by(sim.player_id);
@@ -3692,6 +3758,9 @@ fn test_weapon_skill_combat_bonus() {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     });
 
     // Wield it
@@ -3789,6 +3858,9 @@ fn test_ranged_fire_arrow_hits_monster() {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     });
 
     // Quiver the arrow
@@ -3977,6 +4049,9 @@ fn test_corpse_eating_and_conduct_invalidation() {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     };
 
     let corpse_id = sim.arena.items.insert(corpse);
@@ -4022,6 +4097,9 @@ fn test_cannibalism_detection() {
         recharged: 0,
         quantity: 1,
         poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     };
 
     let corpse_id = sim.arena.items.insert(human_corpse);

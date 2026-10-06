@@ -627,6 +627,7 @@ fn old_item_profiles_load_fixed_without_changing_hash() {
     let mut rules = (*Ruleset::vanilla()).clone();
     for item in &mut rules.items {
         item.initialization = ItemInitProfile::Fixed;
+        item.generation_weight = 0;
     }
     let bundle = nethacked_pack::NhPack {
         format: nethacked_pack::PACK_FORMAT_VERSION,
@@ -641,6 +642,10 @@ fn old_item_profiles_load_fixed_without_changing_hash() {
     let (loaded, reference, _) = nethacked_pack::load_nhpack_bytes(&bytes).unwrap();
     assert_eq!(reference.hash, bundle.hash);
     assert!(loaded.items.iter().all(|i| i.initialization.is_fixed()));
+    assert!(loaded.items.iter().all(|i| i.generation_weight == 0));
+    assert!(!std::str::from_utf8(&bytes)
+        .unwrap()
+        .contains("generation_weight"));
 }
 
 #[test]
@@ -706,4 +711,36 @@ nutrition = 0
     )
     .unwrap();
     assert!(build(&dir).is_err());
+}
+
+#[test]
+fn container_profiles_validate_flags_and_generation_weight() {
+    use nethacked_data::item_init::{ContainerInit, ItemInitProfile};
+    use nethacked_data::ItemKindId;
+    let mut rules = (*Ruleset::vanilla()).clone();
+    assert!(nethacked_pack::validate(&rules).errors.is_empty());
+    let index = rules
+        .items
+        .iter()
+        .position(|d| d.id == Some(ItemKindId::SACK))
+        .unwrap();
+    rules.items[index].is_container = false;
+    assert!(nethacked_pack::validate(&rules)
+        .errors
+        .iter()
+        .any(|d| d.message.contains("coherent container")));
+    rules.items[index].is_container = true;
+    rules.items[index].initialization = ItemInitProfile::Container {
+        container: ContainerInit::HoldingBag,
+    };
+    assert!(nethacked_pack::validate(&rules)
+        .errors
+        .iter()
+        .any(|d| d.message.contains("coherent container")));
+    rules.items[index].is_bag_of_holding = true;
+    rules.items[index].generation_weight = 10001;
+    assert!(nethacked_pack::validate(&rules)
+        .errors
+        .iter()
+        .any(|d| d.message.contains("generation_weight")));
 }

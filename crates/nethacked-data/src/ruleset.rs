@@ -184,6 +184,13 @@ pub struct ItemDef {
         skip_serializing_if = "crate::item_init::ItemInitProfile::is_fixed"
     )]
     pub initialization: crate::item_init::ItemInitProfile,
+    /// Owned C oc_prob; custom definitions opt into content selection explicitly.
+    #[serde(default, skip_serializing_if = "is_zero_weight")]
+    pub generation_weight: u32,
+}
+
+fn is_zero_weight(value: &u32) -> bool {
+    *value == 0
 }
 
 impl ItemDef {
@@ -592,6 +599,9 @@ impl Ruleset {
             recharged: 0,
             quantity: 1,
             poisoned: false,
+            locked: false,
+            trapped: false,
+            trap_known: false,
         })
     }
 
@@ -723,6 +733,7 @@ fn build_vanilla_ruleset() -> Ruleset {
                 nutrition: arch.nutrition,
                 armor,
                 initialization: arch.initialization,
+                generation_weight: arch.prob,
             }
         })
         .collect();
