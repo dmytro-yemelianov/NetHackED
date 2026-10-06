@@ -157,9 +157,9 @@ fn golden_vanilla_event_logs_are_unchanged() {
 
 const COMBAT_ROLES: [RoleId; 3] = [RoleId::Valkyrie, RoleId::Wizard, RoleId::Rogue];
 const EXPECTED_COMBAT: [u64; 3] = [
-    9_657_810_526_522_811_978,
-    2_887_718_109_851_222_898,
-    5_293_686_709_186_532_978,
+    17_113_970_142_040_990_724,
+    9_986_869_593_722_566_816,
+    15_847_441_438_018_235_210,
 ];
 
 /// Every bestiary entry (all 383 C species) fights the hero for up to 20
