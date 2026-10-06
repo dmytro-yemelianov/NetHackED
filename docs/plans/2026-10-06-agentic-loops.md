@@ -124,3 +124,7 @@ Full final gate passed: 700 workspace tests (all three goldens unchanged from th
 ## Item initialization follow-through — 2026-10-06
 
 The user authorized all item-init units in order and checked intentional item/RNG rebaselines. The [item-init contract and acceptance records](2026-10-06-item-initialization.md) cover I1, I2a, I2b and I3. Each used one Sol/medium writer, fresh Sol/high review and local full gates; coordinator owned ledgers, checked baselines and commits. No model escalation or remote agent-loop configuration changes. Final acceptance passed762tests/all3goldens/all12gates; same-source evidence is reused for final integration. Full C `mksobj` and artifact powers remain explicitly partial.
+
+## Owned item selection — 2026-10-06
+
+The next bounded [owned-generation unit](2026-10-06-owned-item-generation.md) passed sequential Sol/medium implementation, fresh Sol/high review without findings, and all12gates/770tests/all3unchangedgoldens. A public loaded-pack regression plus mutation proof covers production custom-item selection and save continuation. Coordinator reused complete same-source evidence for final integration and owned acceptance/commit records; no model escalation or parallel writer.

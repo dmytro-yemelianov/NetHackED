@@ -51,20 +51,29 @@ impl Ruleset {
         eligible: impl Fn(&ItemDef) -> bool,
         rn2: &mut impl FnMut(u32) -> u32,
     ) -> Option<&ItemDef> {
+        self.weighted_item_by(eligible, |d| d.generation_weight, rn2)
+    }
+
+    pub(crate) fn weighted_item_by(
+        &self,
+        eligible: impl Fn(&ItemDef) -> bool,
+        weight: impl Fn(&ItemDef) -> u32,
+        rn2: &mut impl FnMut(u32) -> u32,
+    ) -> Option<&ItemDef> {
         let mut defs: Vec<_> = self.items.iter().filter(|d| eligible(d)).collect();
         defs.sort_by_key(|d| d.id.map(|id| id.index()).unwrap_or(usize::MAX));
         let total = defs
             .iter()
-            .try_fold(0u32, |sum, d| sum.checked_add(d.generation_weight))?;
+            .try_fold(0u32, |sum, d| sum.checked_add(weight(d)))?;
         if total == 0 {
             return None;
         }
         let mut value = draw(rn2, total);
         for def in defs {
-            if value < def.generation_weight {
+            if value < weight(def) {
                 return Some(def);
             }
-            value -= def.generation_weight;
+            value -= weight(def);
         }
         None
     }

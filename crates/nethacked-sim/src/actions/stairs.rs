@@ -48,10 +48,11 @@ fn roll_room_object_with_artifacts(
     mut artifacts: Option<(&str, &mut std::collections::BTreeSet<String>)>,
     mut rn2: impl FnMut(u32) -> u32,
 ) -> (Option<nethacked_data::containers::GeneratedItem>, bool) {
-    let kind = nethacked_data::generation::mkobj_kind(None, table, &mut rn2);
+    let selected = rules.room_item_definition(None, table, &mut rn2);
+    let kind = selected.and_then(|d| d.id);
     let spot = coord.filter(|&c| level.is_passable(c));
-    let item = kind.and_then(|kind| {
-        let name = &rules.item_by_id(kind)?.name;
+    let item = selected.and_then(|def| {
+        let name = &def.name;
         let location = spot.map_or(ItemLocation::Limbo, ItemLocation::Floor);
         if let Some((monster_ctx, registry)) = monsters {
             rules.create_random_item_tree_with_monsters(

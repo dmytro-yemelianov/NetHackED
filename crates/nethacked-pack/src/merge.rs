@@ -243,6 +243,7 @@ pub fn resolve(pack: &PackDir, base: &Ruleset) -> Result<Ruleset, PackError> {
                 armor: patch.armor.clone().unwrap_or(None),
                 initialization: patch.initialization.unwrap_or_default(),
                 generation_weight: patch.generation_weight.unwrap_or_default(),
+                generation_weight_missing: false,
             };
             items.push(def);
         } else {
@@ -293,7 +294,7 @@ pub fn resolve(pack: &PackDir, base: &Ruleset) -> Result<Ruleset, PackError> {
                 target.unique = v;
             }
             if let Some(v) = patch.generation_weight {
-                target.generation_weight = v;
+                target.set_generation_weight(v);
             }
             if let Some(v) = patch.initialization {
                 target.initialization = v;

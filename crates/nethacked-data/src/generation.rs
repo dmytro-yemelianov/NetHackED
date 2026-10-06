@@ -206,6 +206,60 @@ pub fn mkobj_kind(
     None
 }
 
+impl Ruleset {
+    /// Room selection uses owned classes and weights, canonical C ID order,
+    /// followed by stable custom definition (pack Vec) order. Empty/overflowing
+    /// class pools consume no kind draw and never retry a different class.
+    /// Omitted legacy weights inherit extracted C probabilities by ID; custom
+    /// definitions have no fallback. Explicit zero always disables a definition.
+    pub fn room_item_definition(
+        &self,
+        class: Option<ItemClass>,
+        table: ObjectTable,
+        mut rn2: impl FnMut(u32) -> u32,
+    ) -> Option<&crate::ItemDef> {
+        let class = match class {
+            Some(class) => class,
+            None => {
+                let probs = match table {
+                    ObjectTable::Dungeon => MKOBJPROBS,
+                    ObjectTable::Hell => HELLPROBS,
+                    ObjectTable::Rogue => ROGUEPROBS,
+                    ObjectTable::Box => BOXIPROBS,
+                };
+                let mut value = rn2(100).min(99);
+                let mut class = probs.last()?.1;
+                for &(weight, candidate) in probs {
+                    if value < weight {
+                        class = candidate;
+                        break;
+                    }
+                    value -= weight;
+                }
+                class
+            }
+        };
+        self.weighted_item_by(
+            |d| {
+                d.class == class
+                    && !d.id.is_some_and(|id| {
+                        crate::artifacts::canonical_artifact_id(id).is_some()
+                            || self.artifacts.iter().any(|a| a.item == id)
+                    })
+            },
+            |d| {
+                if d.generation_weight_missing && d.generation_weight == 0 {
+                    d.id.map(|id| crate::items::get_item_archetype(id).prob)
+                        .unwrap_or(0)
+                } else {
+                    d.generation_weight
+                }
+            },
+            &mut rn2,
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -164,7 +164,7 @@ pub struct ArmorDef {
 /// Owned definition of an item archetype.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[serde(deny_unknown_fields)]
+#[serde(from = "ItemDefWire", into = "ItemDefWire")]
 pub struct ItemDef {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub unique: bool,
@@ -191,15 +191,109 @@ pub struct ItemDef {
     )]
     pub initialization: crate::item_init::ItemInitProfile,
     /// Owned C oc_prob; custom definitions opt into content selection explicitly.
-    #[serde(default, skip_serializing_if = "is_zero_weight")]
+    #[serde(default)]
     pub generation_weight: u32,
+    /// Serialization provenance: only omitted legacy weights use C-ID room fallback.
+    /// Direct definitions and newly authored packs keep explicit zero authoritative.
+    #[serde(skip)]
+    #[cfg_attr(feature = "schema", schemars(skip))]
+    pub generation_weight_missing: bool,
 }
 
 fn is_zero_weight(value: &u32) -> bool {
     *value == 0
 }
 
+// Wire representation retains omitted-versus-explicit-zero weights.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+struct ItemDefWire {
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub unique: bool,
+    #[serde(default)]
+    pub id: Option<ItemKindId>,
+    pub name: String,
+    pub class: ItemClass,
+    pub weight: u32,
+    pub cost: u32,
+    pub damage_small: (u32, u32),
+    pub damage_large: (u32, u32),
+    pub ac_bonus: i32,
+    pub is_container: bool,
+    pub is_bag_of_holding: bool,
+    pub oc_magic: bool,
+    pub wand_dir: Option<WandDir>,
+    pub nutrition: u32,
+    /// Armor slot and C base AC (from `nethacked_core::ac` table); `None` for non-armor.
+    pub armor: Option<ArmorDef>,
+    /// Missing metadata preserves the old fixed factory behavior and hash.
+    #[serde(
+        default,
+        skip_serializing_if = "crate::item_init::ItemInitProfile::is_fixed"
+    )]
+    pub initialization: crate::item_init::ItemInitProfile,
+    /// Owned C oc_prob; custom definitions opt into content selection explicitly.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub generation_weight: Option<u32>,
+}
+
+impl From<ItemDefWire> for ItemDef {
+    fn from(w: ItemDefWire) -> Self {
+        Self {
+            unique: w.unique,
+            id: w.id,
+            name: w.name,
+            class: w.class,
+            weight: w.weight,
+            cost: w.cost,
+            damage_small: w.damage_small,
+            damage_large: w.damage_large,
+            ac_bonus: w.ac_bonus,
+            is_container: w.is_container,
+            is_bag_of_holding: w.is_bag_of_holding,
+            oc_magic: w.oc_magic,
+            wand_dir: w.wand_dir,
+            nutrition: w.nutrition,
+            armor: w.armor,
+            initialization: w.initialization,
+            generation_weight: w.generation_weight.unwrap_or_default(),
+            generation_weight_missing: w.generation_weight.is_none(),
+        }
+    }
+}
+impl From<ItemDef> for ItemDefWire {
+    fn from(d: ItemDef) -> Self {
+        Self {
+            unique: d.unique,
+            id: d.id,
+            name: d.name,
+            class: d.class,
+            weight: d.weight,
+            cost: d.cost,
+            damage_small: d.damage_small,
+            damage_large: d.damage_large,
+            ac_bonus: d.ac_bonus,
+            is_container: d.is_container,
+            is_bag_of_holding: d.is_bag_of_holding,
+            oc_magic: d.oc_magic,
+            wand_dir: d.wand_dir,
+            nutrition: d.nutrition,
+            armor: d.armor,
+            initialization: d.initialization,
+            generation_weight: (!d.generation_weight_missing || d.generation_weight != 0)
+                .then_some(d.generation_weight),
+        }
+    }
+}
+
 impl ItemDef {
+    /// Authored weights override legacy omission, including explicit zero.
+    pub fn set_generation_weight(&mut self, weight: u32) {
+        self.generation_weight = weight;
+        self.generation_weight_missing = false;
+    }
+
     /// Canonical weapon skill associated with this item archetype.
     pub fn weapon_skill(&self) -> Option<SkillClass> {
         let n = self.name.to_lowercase();
@@ -756,6 +850,7 @@ fn build_vanilla_ruleset() -> Ruleset {
                 armor,
                 initialization: arch.initialization,
                 generation_weight: arch.prob,
+                generation_weight_missing: false,
             }
         })
         .collect();

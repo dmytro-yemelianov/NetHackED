@@ -628,6 +628,7 @@ fn old_item_profiles_load_fixed_without_changing_hash() {
     for item in &mut rules.items {
         item.initialization = ItemInitProfile::Fixed;
         item.generation_weight = 0;
+        item.generation_weight_missing = true;
     }
     let bundle = nethacked_pack::NhPack {
         format: nethacked_pack::PACK_FORMAT_VERSION,
@@ -832,4 +833,130 @@ fn old_compiled_artifact_metadata_defaults_load_with_verified_hash() {
         loaded.artifact_id_for_item("Excalibur"),
         Some("ART_EXCALIBUR")
     );
+}
+
+#[test]
+fn authored_owned_items_reach_public_levels_and_replay_full_saves() {
+    use nethacked_data::item_init::{ItemInitProfile, ToolCharges};
+    use nethacked_data::roles::CharacterConfig;
+    use nethacked_sim::SimulationWorld;
+    use nethacked_types::{BranchId, ItemClass};
+    let dir = temp_pack_dir("owned-room-items");
+    write_vanilla_manifest(&dir, "owned-room-items");
+    let mut items = String::new();
+    for d in &Ruleset::vanilla().items {
+        items.push_str(&format!(
+            "[[item]]\nname = {:?}\ngeneration_weight = 0\n",
+            d.name
+        ));
+    }
+    for (name, weight) in [("owned camera", 17), ("disabled camera", 0)] {
+        items.push_str(&format!(
+            r#"
+[[item]]
+name = "{name}"
+new = true
+class = "Tool"
+weight = 19
+cost = 73
+damage_small = [2, 7]
+damage_large = [3, 8]
+ac_bonus = 0
+is_container = false
+is_bag_of_holding = false
+oc_magic = false
+nutrition = 0
+generation_weight = {weight}
+initialization = {{ kind = "tool", charges = "camera" }}
+"#
+        ));
+    }
+    fs::write(dir.join("items.toml"), items).unwrap();
+    let (pack, report) = build(&dir).unwrap();
+    assert!(report.is_ok(), "{report:?}");
+    let path = dir.join("custom.nhpack");
+    write_nhpack(&pack, &path).unwrap();
+    let (rules, reference) = load_nhpack(&path).unwrap();
+    assert_eq!(rules.item("owned camera").unwrap().id, None);
+    assert_eq!(
+        rules.item("owned camera").unwrap().initialization,
+        ItemInitProfile::Tool {
+            charges: ToolCharges::Camera
+        }
+    );
+    assert!(
+        !rules
+            .item("disabled camera")
+            .unwrap()
+            .generation_weight_missing
+    );
+    assert_eq!(ruleset_hash(&rules), pack.hash);
+    let mut world = SimulationWorld::new_with_character_and_ruleset(
+        6,
+        CharacterConfig::default(),
+        rules.clone(),
+        reference.clone(),
+    );
+    // The public generator appends arena records; isolate the requested floor
+    // from the already initialized starting floor without consuming randomness.
+    let old_floor: Vec<_> = world
+        .arena
+        .items
+        .iter()
+        .filter_map(|(id, i)| {
+            serde_json::to_value(&i.location)
+                .unwrap()
+                .get("Floor")
+                .is_some()
+                .then_some(id)
+        })
+        .collect();
+    for id in old_floor {
+        world.arena.items.remove(id);
+    }
+    let save = world.to_save_json().unwrap();
+    let mut loaded = SimulationWorld::from_save_json(&save, rules, &reference).unwrap();
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&save).unwrap(),
+        serde_json::from_str::<serde_json::Value>(&loaded.to_save_json().unwrap()).unwrap()
+    );
+    world.unpack_or_generate_level(BranchId::DungeonsOfDoom, 4);
+    loaded.unpack_or_generate_level(BranchId::DungeonsOfDoom, 4);
+    let floor: Vec<_> = world
+        .arena
+        .items
+        .iter()
+        .filter_map(|(_, i)| {
+            serde_json::to_value(&i.location)
+                .unwrap()
+                .get("Floor")
+                .is_some()
+                .then_some(i)
+        })
+        .collect();
+    assert!(
+        !floor.is_empty(),
+        "pinned seed must select a positive custom item"
+    );
+    for item in floor {
+        assert_eq!(item.name, "owned camera");
+        assert_eq!((item.class, item.weight), (ItemClass::Tool, 19));
+        let def = world.ruleset.item(&item.name).unwrap();
+        assert_eq!(
+            (def.cost, def.damage_small, def.damage_large),
+            (73, (2, 7), (3, 8))
+        );
+        assert!((30..=99).contains(&item.enchantment));
+    }
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&world.to_save_json().unwrap()).unwrap(),
+        serde_json::from_str::<serde_json::Value>(&loaded.to_save_json().unwrap()).unwrap()
+    );
+    world.unpack_or_generate_level(BranchId::DungeonsOfDoom, 5);
+    loaded.unpack_or_generate_level(BranchId::DungeonsOfDoom, 5);
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&world.to_save_json().unwrap()).unwrap(),
+        serde_json::from_str::<serde_json::Value>(&loaded.to_save_json().unwrap()).unwrap()
+    );
+    fs::remove_dir_all(dir).unwrap();
 }
