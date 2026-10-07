@@ -2,6 +2,8 @@
 
 Planning baseline: `6248cc6`, 2026-10-06. This is a scope and dependency assessment, not a fresh audit of every feature or authorization to implement every milestone. Reuse the [roadmap](../roadmap.md) and [542-row inventory](../parity/README.md). No production code changed during this assessment.
 
+The [remaining-stream scope](2026-10-07-remaining-parity-scope.md) at `2f97135` now maps all 543 current inventory rows across seven streams, with 53 family cards, bounded reconciliation packets and catalog obligations. It carries forward accepted P04–P10 gaps and defines the next P11a audit. Family counts are planning structure; current-source audits establish concrete implementation tasks.
+
 ## Define the target
 
 The working target is gameplay, content and player-command semantics against the vendored `NetHack-5.0.0/` tree, tag `NetHack-5.0.0_Released`. Pin the C build configuration and supported gameplay options before declaring conformance; conditional branches and calendar inputs matter.

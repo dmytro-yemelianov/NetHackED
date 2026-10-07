@@ -8,6 +8,8 @@ These tables compare NetHackED with the NetHack 5.0 C source, one player-visible
 
 ## How to read the tables
 
+The [remaining-stream scope](../plans/2026-10-07-remaining-parity-scope.md) and [registry](obligations/2026-10-07-remaining-parity-scope.json) map every current row to a family and bounded audit packet, plus catalog coverage obligations. This planning pass preserves all historical statuses; source audits determine which concrete gaps remain.
+
 | Status | Meaning |
 |---|---|
 | ✅ PRESENT | Works for the player the way it does in C. Small, documented deviations are noted in the row. |

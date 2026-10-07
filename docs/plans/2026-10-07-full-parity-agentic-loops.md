@@ -2,6 +2,8 @@
 
 Planning baseline: `b39a7e3`, `feat/monster-hp-d8`, 2026-10-07. This specifies execution of the [full-parity map](2026-10-06-full-parity.md); The planning snapshot preceded implementation; execution records follow below. Keep the [existing loop constraints](2026-10-06-agentic-loops.md), P1 ledger and current user policies. Gameplay/content/command semantics remain the working target; exact C replay, original presentation and C binary files require separate scope decisions.
 
+The reviewed [remaining-stream scope](2026-10-07-remaining-parity-scope.md) supplies the seven-stream family/catalog queue and all 543 row mappings after P04–P10. Bind narrow accepted prerequisites before dispatch; aggregate family closure is separate from child readiness. All new cards begin audit-needed. This extends the queue without changing model routing or repair limits below.
+
 ## Model routing and authority
 
 Explicitly set model and reasoning effort on every delegated task. Official [OpenAI subagent guidance](https://learn.chatgpt.com/docs/agent-configuration/subagents) recommends Luna for narrow work and Sol for demanding agents, and explains inherited settings and effort tradeoffs. The assignments below are project recommendations using models available in this session, not benchmark results, prices or claims about API availability.
