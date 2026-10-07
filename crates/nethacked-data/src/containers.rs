@@ -1,5 +1,6 @@
 //! Represented ordinary-container contents (mkobj.c:304-393).
-//! Food variants, fuel, erosion, corpse timers and artifacts remain unsupported.
+//! Food variants, fuel, erosion and artifacts remain unsupported. Corpse
+//! deadlines are sampled here; simulation callbacks remain separate.
 use crate::item_init::{ContainerInit, ItemInitProfile};
 use crate::items::BOXIPROBS;
 use crate::{ItemDef, ItemKindId, Ruleset};
@@ -20,9 +21,17 @@ pub struct ContainerContext {
 pub struct GeneratedItem {
     pub item: ItemRecord,
     pub contents: Vec<GeneratedItem>,
+    /// Final sampled recipe, retained for inspection. A nonempty operation
+    /// stream below is the attachment authority, including cancelled samples.
+    pub corpse_timeout: Option<crate::corpses::CorpseTimeoutRecipe>,
+    /// Ordered construction instructions. For nonempty streams, the final
+    /// recipe above is observational only and must not be installed twice.
+    pub corpse_timer_operations: Vec<crate::corpses::CorpseTimerOperation>,
 }
 impl GeneratedItem {
-    /// Attach in generation order, with no additional random draws.
+    /// Attach records to an arena only, with no additional random draws.
+    /// Simulation callers must use `SimulationWorld::attach_generated_item`
+    /// instead so transient recipes reach the persisted timer owner.
     pub fn attach(mut self, arena: &mut EntityArena, location: ItemLocation) -> ItemId {
         self.item.location = location;
         let id = arena.spawn_item(self.item);
@@ -199,11 +208,24 @@ impl Ruleset {
         let mut tree = GeneratedItem {
             item,
             contents: Vec::new(),
+            corpse_timeout: None,
+            corpse_timer_operations: Vec::new(),
         };
         if def.id == Some(ItemKindId::CORPSE) {
-            if let Some(species) = self.random_corpse_definition(ctx.monsters, ctx.gone, &mut *rn2)
-            {
-                self.set_corpse_species(&mut tree.item, species);
+            if let Some((_, recipe)) = self.initialize_corpse(
+                &mut tree.item,
+                ctx.container,
+                ctx.monsters,
+                ctx.gone,
+                &mut *rn2,
+            ) {
+                // C mksobj/set_corpsenm starts the timeout before mkbox_cnts
+                // resets ice-box age and stops it, and before the next child.
+                tree.corpse_timeout = recipe;
+                if let Some(recipe) = recipe {
+                    tree.corpse_timer_operations
+                        .push(crate::corpses::CorpseTimerOperation::Start(recipe));
+                }
             }
         }
         let ItemInitProfile::Container { container } = def.initialization else {

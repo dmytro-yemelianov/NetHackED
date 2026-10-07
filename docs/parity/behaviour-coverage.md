@@ -9,9 +9,9 @@ judged in the other parity tables.
 |---|---|---|---|
 | Attack types (AT_*) | 17 | 12 | 70% |
 | Damage types (AD_*) | 47 | 47 | 100% |
-| Objects: wands | 25 | 7 | 28% |
+| Objects: wands | 25 | 8 | 32% |
 | Objects: potions | 26 | 3 | 11% |
-| Objects: scrolls | 23 | 2 | 8% |
+| Objects: scrolls | 23 | 3 | 13% |
 | Objects: spellbooks | 44 | 1 | 2% |
 | Objects: rings | 28 | 1 | 3% |
 | Objects: amulets | 13 | 4 | 30% |
@@ -98,7 +98,7 @@ judged in the other parity tables.
 | `WAN_LIGHT` | wand of light | ❌ |
 | `WAN_SECRET_DOOR_DETECTION` | wand of secret door detection | ❌ |
 | `WAN_ENLIGHTENMENT` | wand of enlightenment | ❌ |
-| `WAN_CREATE_MONSTER` | wand of create monster | ❌ |
+| `WAN_CREATE_MONSTER` | wand of create monster | ✅ |
 | `WAN_WISHING` | wand of wishing | ✅ |
 | `WAN_STASIS` | wand of stasis | ❌ |
 | `WAN_NOTHING` | wand of nothing | ✅ |
@@ -159,7 +159,7 @@ judged in the other parity tables.
 | `SCR_ENCHANT_ARMOR` | scroll of enchant armor | ✅ |
 | `SCR_DESTROY_ARMOR` | scroll of destroy armor | ❌ |
 | `SCR_CONFUSE_MONSTER` | scroll of confuse monster | ❌ |
-| `SCR_SCARE_MONSTER` | scroll of scare monster | ❌ |
+| `SCR_SCARE_MONSTER` | scroll of scare monster | ✅ |
 | `SCR_REMOVE_CURSE` | scroll of remove curse | ❌ |
 | `SCR_ENCHANT_WEAPON` | scroll of enchant weapon | ❌ |
 | `SCR_CREATE_MONSTER` | scroll of create monster | ❌ |

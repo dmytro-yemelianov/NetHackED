@@ -1,7 +1,9 @@
 //! Turn Scheduler & Energy System.
 //!
 //! Modelled in Lean 4 in `NetMechanics.Energy` (machine-checked model; not formally linked to this code).
-//! Implements the speed tick model from NetHack's `allmain.c:moveloop_core`.
+//! Movement gains implement selected released NetHack `allmain.c`/`mon.c` branches.
+//! The uniform scheduler helper remains a legacy abstract model; production
+//! simulation schedules monsters with their persisted per-actor movement credit.
 
 use serde::{Deserialize, Serialize};
 
@@ -12,7 +14,9 @@ pub struct SchedulerState {
     pub turn: u64,
     pub hero_energy: u32,
     pub hero_speed: u32,
+    /// Serialized legacy uniform-model budget; unused by production simulation.
     pub monster_energy: u32,
+    /// Serialized legacy uniform-model speed; never copied into live actors.
     pub monster_speed: u32,
 }
 
@@ -71,6 +75,39 @@ impl SchedulerState {
             StepAction::TurnTick
         }
     }
+}
+
+/// Released C mon.c:1126–1167, ordinary stored speed branch. The native
+/// bound-twelve draw is unconditional, including speed zero and exact multiples.
+pub fn monster_movement_gain(speed: u32, mut rn2: impl FnMut(u32) -> u32) -> u32 {
+    let remainder = speed % NORMAL_SPEED;
+    let draw = rn2(NORMAL_SPEED);
+    (speed - remainder).saturating_add(if draw < remainder { NORMAL_SPEED } else { 0 })
+}
+
+/// Released C allmain.c:123–155: speed properties precede live burden.
+pub fn hero_movement_gain(
+    base: u32,
+    fast: bool,
+    very_fast: bool,
+    burden: crate::inventory::EncumbranceTier,
+    mut rn2: impl FnMut(u32) -> u32,
+) -> u32 {
+    use crate::inventory::EncumbranceTier::*;
+    let bonus = if very_fast {
+        rn2(3) != 0
+    } else {
+        fast && rn2(3) == 0
+    };
+    let gain = base.saturating_add(if bonus { NORMAL_SPEED } else { 0 });
+    let reduction = match burden {
+        Burdened => gain / 4,
+        Stressed => gain / 2,
+        Strained => ((u64::from(gain) * 3) / 4) as u32,
+        Overtaxed => ((u64::from(gain) * 7) / 8) as u32,
+        Unencumbered | Overloaded => 0,
+    };
+    gain - reduction
 }
 
 #[cfg(test)]

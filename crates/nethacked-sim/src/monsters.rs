@@ -67,10 +67,62 @@ impl SimulationWorld {
                 .collect();
 
             for mon_id in mon_ids {
-                let Some(mon) = self.arena.actors.get(mon_id).cloned() else {
+                if self
+                    .arena
+                    .actors
+                    .get(self.player_id)
+                    .is_none_or(|hero| hero.is_dead || hero.hp == 0)
+                {
+                    break;
+                }
+                let Some(actor) = self.arena.actors.get_mut(mon_id) else {
+                    continue;
+                };
+                if actor.is_dead
+                    || actor.hp == 0
+                    || actor.movement < nethacked_core::energy::NORMAL_SPEED
+                {
+                    continue;
+                }
+                // Spend before every AI branch, including stationary/fleeing actors.
+                actor.movement -= nethacked_core::energy::NORMAL_SPEED;
+                let Some(mut mon) = self.arena.actors.get(mon_id).cloned() else {
                     continue;
                 };
                 if mon.is_dead {
+                    continue;
+                }
+
+                // C monmove.c:744-749: every fleeing monster draws rn2(40)
+                // before teleport eligibility/restrictions, even when injured.
+                if mon.is_fleeing
+                    && self.rng.random_range(0..40u32) == 0
+                    && self.ruleset.monster_for_actor(&mon).is_some_and(|def| {
+                        def.has_flag("tport") && def.id != Some(MonsterSpeciesId::WIZARD_OF_YENDOR)
+                    })
+                    && !self.level.no_teleport
+                {
+                    self.teleport_theft_attacker(mon_id, &mut events);
+                    continue; // teleportation consumes the monster's turn
+                }
+
+                // C monmove.c:757-760: untimed fleeing can regain courage at
+                // full HP; the new state otherwise drives the existing retreat AI.
+                if mon.is_fleeing && mon.hp == mon.max_hp && self.rng.random_range(0..25u32) == 0 {
+                    mon.is_fleeing = false;
+                    self.arena.actors.get_mut(mon_id).unwrap().is_fleeing = false;
+                }
+                if mon.is_fleeing {
+                    if let Some(to) = dijkstra.steepest_ascent(mon.coord) {
+                        if self.level.is_passable(to) && self.actor_at(to).is_none() {
+                            self.arena.actors.get_mut(mon_id).unwrap().coord = to;
+                            events.push(GameEvent::ActorMoved {
+                                actor: mon_id,
+                                from: mon.coord,
+                                to,
+                            });
+                        }
+                    }
                     continue;
                 }
 
@@ -346,7 +398,8 @@ impl SimulationWorld {
                         }
                     } else {
                         // Monster is adjacent to player -> Melee Attack
-                        let combat_events = self.resolve_combat(mon_id, self.player_id);
+                        let (combat_events, attacker_done) =
+                            self.resolve_monster_attacks(mon_id, self.player_id);
                         events.extend(combat_events);
                         // Then the AT_MAGC slot(s) of the same round (castmu).
                         let hero_alive = self
@@ -354,7 +407,7 @@ impl SimulationWorld {
                             .actors
                             .get(self.player_id)
                             .is_some_and(|p| !p.is_dead);
-                        if hero_alive {
+                        if hero_alive && !attacker_done {
                             for spell in melee_spells {
                                 if self.cast_monster_spell(&mon, spell, &mut events) {
                                     break;
@@ -617,8 +670,11 @@ impl SimulationWorld {
             .collect();
         let raw_damage =
             nethacked_core::combat::monster_attack_damage(&Attack { d: 6, ..*attack }, &rolls);
-        let (dmg, _) =
-            nethacked_core::resolve_breath_damage(raw_damage, breath, &player.intrinsics);
+        let (dmg, _) = nethacked_core::resolve_breath_damage(
+            raw_damage,
+            breath,
+            &self.effective_hero_intrinsics(),
+        );
         if dmg == 0 {
             events.push(GameEvent::LogMessage {
                 text: Messages::breath_absorbed(&format!("{breath:?}"), self.locale),

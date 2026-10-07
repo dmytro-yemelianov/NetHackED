@@ -258,6 +258,7 @@ impl SimulationWorld {
             }
         }
         let mut items = Vec::with_capacity(item_ids.len());
+        self.cache_object_timers(from_key.0, from_key.1, &item_ids);
         for iid in &item_ids {
             if let Some(item) = self.arena.destroy_item(*iid) {
                 items.push((*iid, item));
@@ -312,6 +313,20 @@ impl SimulationWorld {
             let (_, stored) = self.stored_levels.remove(pos);
             self.level = stored.level;
 
+            // slotmap 1.1.1 serializes slots/versions but rebuilds its private
+            // freelist on deserialize (basic.rs:1357-1397). Normalize both live
+            // allocators to that same order before reminting cached handles,
+            // so a mid-cache save cannot change subsequent IDs or events.
+            // Existing occupied handles, records and slot versions are intact.
+            self.arena.actors = serde_json::from_value(
+                serde_json::to_value(&self.arena.actors).expect("actor arena serializes"),
+            )
+            .expect("serialized actor arena restores");
+            self.arena.items = serde_json::from_value(
+                serde_json::to_value(&self.arena.items).expect("item arena serializes"),
+            )
+            .expect("serialized item arena restores");
+
             let mut actor_map = std::collections::HashMap::new();
             for (old, m) in stored.monsters {
                 actor_map.insert(old, self.arena.spawn_actor(m));
@@ -344,6 +359,7 @@ impl SimulationWorld {
                     self.unpaid_items.push((*new, cost));
                 }
             }
+            self.restore_object_timers(branch, depth, |old| item_map.get(&old).copied());
         } else {
             match (branch, depth) {
                 (BranchId::Sokoban, _) => {
@@ -789,22 +805,7 @@ impl SimulationWorld {
                     // random monster with probability 1/3 (always while carrying
                     // the Amulet), chosen by makemon.c rndmonst() from the data.
                     // The arrival room (first) and the last room stay empty here.
-                    let rs = std::sync::Arc::clone(&self.ruleset);
-                    let ctx = nethacked_data::generation::MonsterGenContext {
-                        level_difficulty: depth as i32,
-                        hero_level: self
-                            .arena
-                            .actors
-                            .get(self.player_id)
-                            .map_or(1, |p| p.level as i32),
-                        in_hell: branch == BranchId::Gehennom,
-                        align: if branch == BranchId::GnomishMines {
-                            nethacked_data::generation::DungeonAlign::Lawful
-                        } else {
-                            nethacked_data::generation::DungeonAlign::None
-                        },
-                        temperature: 0,
-                    };
+                    let (item_ctx, ctx) = self.item_birth_context(branch, depth, true);
                     let has_amulet = self.hero_has_amulet();
                     let centers: Vec<Coord> = self.level.rooms.iter().map(|r| r.center()).collect();
                     for (i, &center) in centers.iter().enumerate() {
@@ -814,18 +815,10 @@ impl SimulationWorld {
                         if !has_amulet && self.rng.random_range(0..3u32) != 0 {
                             continue;
                         }
-                        let registry = &self.genocide_registry;
-                        let rng = &mut self.rng;
-                        let picked = nethacked_data::generation::rndmonst(
-                            &rs,
-                            &ctx,
-                            |d| nethacked_core::genocide::is_genocided(registry, &d.name, d.glyph),
-                            |n| rng.random_range(0..n),
-                        );
-                        if let Some(def) = picked {
-                            // Pack-added definitions have names but no built-in species ID.
-                            self.spawn_monster_by_name(&def.name, center);
-                        }
+                        // Released C mklev.c:975 explicitly sets MM_NOGRP.
+                        // Selection and initialization share the public owned
+                        // fixed-coordinate owner; groups stay suppressed.
+                        self.spawn_random_monster_at_on_level(center, branch, depth);
                     }
 
                     // C mklev.c fill_ordinary_room (1157-1170): with probability
@@ -857,19 +850,15 @@ impl SimulationWorld {
                                 &self.level,
                                 Coord::new(x, y),
                                 table,
-                                nethacked_data::containers::ContainerContext {
-                                    hero_level: ctx.hero_level.max(1) as u32,
-                                    level_difficulty: ctx.level_difficulty.max(0) as u32,
-                                    moves: self.scheduler.turn,
-                                    in_mklev: true,
-                                },
+                                item_ctx,
                                 Some((&ctx, &self.genocide_registry)),
                                 Some((&self.role_name, &mut self.arena.artifact_history)),
                                 |n| self.rng.random_range(0..n),
                             );
                             if let Some(item) = item {
                                 let location = item.item.location.clone();
-                                item.attach(&mut self.arena, location);
+                                self.attach_generated_item(item, location)
+                                    .expect("generated item deadline fits the world clock");
                             }
                             if !keep_generating {
                                 break;
@@ -897,6 +886,8 @@ impl SimulationWorld {
             }
         }
 
+        // C do.c:1816-1823: catch up after delivery and reference restoration.
+        events.extend(self.run_object_timers());
         events
     }
 
@@ -1489,6 +1480,11 @@ mod room_item_tests {
                 (tool_total, ice_roll),
                 (21, 1),
                 selection,
+                (2, 0), // C mksobj corpse gender, before timeout sampling.
+                // mkobj.c start_corpse_timeout's rnz(25), before ice cancellation.
+                (1000, 0),
+                (4, 1),
+                (2, 1),
                 (5, 1),
             ];
             for passable in [false, true] {

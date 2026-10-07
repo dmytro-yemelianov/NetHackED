@@ -70,6 +70,7 @@ fn world(custom: bool) -> (SimulationWorld, nethacked_arena::ActorId) {
         )
         .unwrap();
     world.arena.actors.get_mut(id).unwrap().name = "red dragon".into();
+    world.arena.actors[id].movement = 12;
     (world, id)
 }
 
@@ -77,6 +78,11 @@ fn world(custom: bool) -> (SimulationWorld, nethacked_arena::ActorId) {
 fn renamed_owned_attacks_continue_identically_after_full_save_reload() {
     for custom in [false, true] {
         let (mut world, id) = world(custom);
+        // Isolate attack damage with a synthetic zero natural-healing threshold.
+        // Keep ordinary-form regeneration eligible so its RNG draws still cross
+        // the full-save boundary and participate in the continuation checks.
+        world.arena.actors.get_mut(world.player_id).unwrap().level = 0;
+        world.progress.attr_base[4] = 0;
         let actor = world.arena.actors.get(id).unwrap();
         assert_eq!((actor.hp, actor.max_hp), (51, 61));
         assert_eq!(

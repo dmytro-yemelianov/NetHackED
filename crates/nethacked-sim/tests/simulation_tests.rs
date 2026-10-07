@@ -131,6 +131,7 @@ fn test_melee_attack_action() {
     let mon_coord = Coord::new(p_coord.x + 1, p_coord.y).unwrap();
 
     let goblin = ActorRecord {
+        sex: None,
         species: None,
         name: "Orc".into(),
         coord: mon_coord,
@@ -140,6 +141,7 @@ fn test_melee_attack_action() {
         ac: 23,
         level: 1,
         speed: 10,
+        movement: 0,
         alignment: Alignment::Chaotic,
         intrinsics: Intrinsics::default(),
         is_player: false,
@@ -151,6 +153,8 @@ fn test_melee_attack_action() {
         is_peaceful: false,
         mspec_used: 0,
         malign: 0,
+        is_fleeing: false,
+        is_cancelled: false,
     };
     let mon_id = sim.arena.spawn_actor(goblin);
 
@@ -184,6 +188,7 @@ fn test_zap_wand_beam_propagation_and_damage() {
 
     let target_coord = Coord::new(p_coord.x + 2, p_coord.y).unwrap();
     let mon = ActorRecord {
+        sex: None,
         species: None,
         name: "Goblin Archer".into(),
         coord: target_coord,
@@ -192,6 +197,7 @@ fn test_zap_wand_beam_propagation_and_damage() {
         ac: 8,
         level: 1,
         speed: 10,
+        movement: 0,
         alignment: Alignment::Chaotic,
         intrinsics: Intrinsics::default(),
         is_player: false,
@@ -203,6 +209,8 @@ fn test_zap_wand_beam_propagation_and_damage() {
         is_peaceful: false,
         mspec_used: 0,
         malign: 0,
+        is_fleeing: false,
+        is_cancelled: false,
     };
     let mon_id = sim.arena.spawn_actor(mon);
     // Zapping now requires a carried wand.
@@ -240,6 +248,7 @@ fn test_wands_of_digging_and_teleportation_do_not_damage() {
 
         let target_coord = Coord::new(p_coord.x + 2, p_coord.y).unwrap();
         let mon = ActorRecord {
+            sex: None,
             species: None,
             name: "Goblin Archer".into(),
             coord: target_coord,
@@ -248,6 +257,7 @@ fn test_wands_of_digging_and_teleportation_do_not_damage() {
             ac: 8,
             level: 1,
             speed: 10,
+            movement: 0,
             alignment: Alignment::Chaotic,
             intrinsics: Intrinsics::default(),
             is_player: false,
@@ -259,6 +269,8 @@ fn test_wands_of_digging_and_teleportation_do_not_damage() {
             is_peaceful: false,
             mspec_used: 0,
             malign: 0,
+            is_fleeing: false,
+            is_cancelled: false,
         };
         let mon_id = sim.arena.spawn_actor(mon);
         // Zapping now requires a carried wand.
@@ -291,6 +303,7 @@ fn test_pickup_and_drop_lifecycle() {
     let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
 
     let gem_id = sim.arena.spawn_item(ItemRecord {
+        saved_monster_traits: None,
         artifact_id: None,
         name: "emerald".into(),
         class: ItemClass::Gem,
@@ -302,6 +315,7 @@ fn test_pickup_and_drop_lifecycle() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::Floor(p_coord),
+        corpse_no_revive: false,
         corpse_species: None,
         is_ice_box: false,
         corpse_race: None,
@@ -340,6 +354,7 @@ fn test_pickup_and_drop_lifecycle() {
 fn test_wield_weapon() {
     let mut sim = SimulationWorld::new_with_seed(103);
     let sword_id = sim.arena.spawn_item(ItemRecord {
+        saved_monster_traits: None,
         artifact_id: None,
         name: "long sword".into(),
         class: ItemClass::Weapon,
@@ -351,6 +366,7 @@ fn test_wield_weapon() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_no_revive: false,
         corpse_species: None,
         is_ice_box: false,
         corpse_race: None,
@@ -833,6 +849,7 @@ fn test_elbereth_repels_monsters() {
     ));
 
     let initial_player_hp = sim.arena.actors.get(sim.player_id).unwrap().hp;
+    sim.arena.actors[goblin_id].movement = 12;
     let events = sim.step_player_action(ActionAst::Wait);
 
     assert_eq!(
@@ -1053,6 +1070,7 @@ fn test_nutrition_decay_and_eating() {
     assert!(sim.player_nutrition > nut_before);
 
     let corpse = sim.arena.spawn_item(ItemRecord {
+        saved_monster_traits: None,
         artifact_id: None,
         name: "giant ant corpse".into(),
         class: ItemClass::Food,
@@ -1064,6 +1082,7 @@ fn test_nutrition_decay_and_eating() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_no_revive: false,
         corpse_species: None,
         is_ice_box: false,
         corpse_race: None,
@@ -1384,6 +1403,7 @@ fn test_companion_pet_attacks_hostile() {
     let goblin_initial_hp = sim.arena.actors.get(goblin_id).unwrap().hp;
 
     // Player waits, allowing monster turn to tick
+    sim.arena.actors[_pet_id].movement = 12;
     let _events = sim.step_player_action(ActionAst::Wait);
 
     // Goblin should have taken combat damage from little dog
@@ -1426,6 +1446,7 @@ fn test_companion_pet_buc_reluctance() {
     ));
 
     // Wait turn: pet desires to move towards player, but detects cursed item!
+    sim.arena.actors[pet_id].movement = 12;
     let events = sim.step_player_action(ActionAst::Wait);
     assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("whimpering") || text.contains("backs away"))));
     assert_eq!(
@@ -1759,6 +1780,7 @@ fn test_altar_sacrifice_and_divine_crowning() {
     sim.divine_state.favor = 14;
 
     let corpse = sim.arena.spawn_item(ItemRecord {
+        saved_monster_traits: None,
         artifact_id: None,
         name: "goblin corpse".into(),
         class: ItemClass::Food,
@@ -1770,6 +1792,7 @@ fn test_altar_sacrifice_and_divine_crowning() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_no_revive: false,
         corpse_species: None,
         is_ice_box: false,
         corpse_race: None,
@@ -1816,6 +1839,7 @@ fn test_altar_holy_water_consecration() {
     sim.divine_state.favor = 8;
 
     let water = sim.arena.spawn_item(ItemRecord {
+        saved_monster_traits: None,
         artifact_id: None,
         name: "potion of water".into(),
         class: ItemClass::Potion,
@@ -1827,6 +1851,7 @@ fn test_altar_holy_water_consecration() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_no_revive: false,
         corpse_species: None,
         is_ice_box: false,
         corpse_race: None,
@@ -1851,6 +1876,7 @@ fn test_wand_of_wishing_spawns_item() {
     let p_coord = sim.arena.actors.get(sim.player_id).unwrap().coord;
 
     let wand_id = sim.arena.spawn_item(ItemRecord {
+        saved_monster_traits: None,
         artifact_id: None,
         name: "wand of wishing".into(),
         class: ItemClass::Wand,
@@ -1862,6 +1888,7 @@ fn test_wand_of_wishing_spawns_item() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_no_revive: false,
         corpse_species: None,
         is_ice_box: false,
         corpse_race: None,
@@ -1916,6 +1943,7 @@ fn test_wand_of_striking_destroys_drawbridge() {
     }
 
     let _wand = sim.arena.spawn_item(ItemRecord {
+        saved_monster_traits: None,
         artifact_id: None,
         name: "wand of striking".into(),
         class: ItemClass::Wand,
@@ -1927,6 +1955,7 @@ fn test_wand_of_striking_destroys_drawbridge() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_no_revive: false,
         corpse_species: None,
         is_ice_box: false,
         corpse_race: None,
@@ -1965,6 +1994,7 @@ fn test_wand_of_cold_freezes_pool() {
     }
 
     let _wand = sim.arena.spawn_item(ItemRecord {
+        saved_monster_traits: None,
         artifact_id: None,
         name: "wand of cold".into(),
         class: ItemClass::Wand,
@@ -1976,6 +2006,7 @@ fn test_wand_of_cold_freezes_pool() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_no_revive: false,
         corpse_species: None,
         is_ice_box: false,
         corpse_race: None,
@@ -2004,6 +2035,7 @@ fn test_scroll_of_charging_and_explosion() {
     let mut sim = SimulationWorld::new_with_seed(42);
 
     let wand = sim.arena.spawn_item(ItemRecord {
+        saved_monster_traits: None,
         artifact_id: None,
         name: "wand of striking".into(),
         class: ItemClass::Wand,
@@ -2015,6 +2047,7 @@ fn test_scroll_of_charging_and_explosion() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_no_revive: false,
         corpse_species: None,
         is_ice_box: false,
         corpse_race: None,
@@ -2029,6 +2062,7 @@ fn test_scroll_of_charging_and_explosion() {
     });
 
     let scroll = sim.arena.spawn_item(ItemRecord {
+        saved_monster_traits: None,
         artifact_id: None,
         name: "scroll of charging".into(),
         class: ItemClass::Scroll,
@@ -2040,6 +2074,7 @@ fn test_scroll_of_charging_and_explosion() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_no_revive: false,
         corpse_species: None,
         is_ice_box: false,
         corpse_race: None,
@@ -2072,6 +2107,7 @@ fn test_scroll_of_charging_and_explosion() {
         w.recharged = 7;
     }
     let scroll2 = sim.arena.spawn_item(ItemRecord {
+        saved_monster_traits: None,
         artifact_id: None,
         name: "scroll of charging".into(),
         class: ItemClass::Scroll,
@@ -2083,6 +2119,7 @@ fn test_scroll_of_charging_and_explosion() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_no_revive: false,
         corpse_species: None,
         is_ice_box: false,
         corpse_race: None,
@@ -2119,6 +2156,7 @@ fn test_wand_recharge_explosion_damage_is_d_n_k() {
         wand.recharged = 7;
         let wid = sim.arena.spawn_item(wand);
         let scroll = sim.arena.spawn_item(ItemRecord {
+            saved_monster_traits: None,
             artifact_id: None,
             name: "scroll of charging".into(),
             class: ItemClass::Scroll,
@@ -2130,6 +2168,7 @@ fn test_wand_recharge_explosion_damage_is_d_n_k() {
             erosion: 0,
             proofed: false,
             location: ItemLocation::CarriedBy(sim.player_id),
+            corpse_no_revive: false,
             corpse_species: None,
             is_ice_box: false,
             corpse_race: None,
@@ -2169,6 +2208,7 @@ fn test_artifact_combat_bonus_and_vorpal_blade() {
     }
 
     let monster_id = sim.arena.spawn_actor(nethacked_arena::ActorRecord {
+        sex: None,
         species: None,
         name: "vampire".into(),
         coord: mon_coord,
@@ -2178,6 +2218,7 @@ fn test_artifact_combat_bonus_and_vorpal_blade() {
         ac: 14,
         level: 8,
         speed: 12,
+        movement: 0,
         alignment: Alignment::Chaotic,
         intrinsics: Intrinsics::default(),
         is_player: false,
@@ -2189,9 +2230,12 @@ fn test_artifact_combat_bonus_and_vorpal_blade() {
         is_peaceful: false,
         mspec_used: 0,
         malign: 0,
+        is_fleeing: false,
+        is_cancelled: false,
     });
 
     let excalibur = sim.arena.spawn_item(ItemRecord {
+        saved_monster_traits: None,
         artifact_id: None,
         name: "Excalibur".into(),
         class: ItemClass::Weapon,
@@ -2203,6 +2247,7 @@ fn test_artifact_combat_bonus_and_vorpal_blade() {
         erosion: 0,
         proofed: true,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_no_revive: false,
         corpse_species: None,
         is_ice_box: false,
         corpse_race: None,
@@ -2235,6 +2280,7 @@ fn test_ukrainian_i18n_simulation_logging() {
     }
 
     let _mon = sim.arena.spawn_actor(nethacked_arena::ActorRecord {
+        sex: None,
         species: None,
         name: "гоблін".into(),
         coord: mon_coord,
@@ -2243,6 +2289,7 @@ fn test_ukrainian_i18n_simulation_logging() {
         ac: 10,
         level: 1,
         speed: 12,
+        movement: 0,
         alignment: Alignment::Chaotic,
         intrinsics: Intrinsics::default(),
         is_player: false,
@@ -2254,6 +2301,8 @@ fn test_ukrainian_i18n_simulation_logging() {
         is_peaceful: false,
         mspec_used: 0,
         malign: 0,
+        is_fleeing: false,
+        is_cancelled: false,
     });
 
     let combat_events = sim.step_player_action(ActionAst::MeleeAttack(mon_coord));
@@ -2261,6 +2310,7 @@ fn test_ukrainian_i18n_simulation_logging() {
 
     // Test wishing in Ukrainian
     let _wand_id = sim.arena.spawn_item(ItemRecord {
+        saved_monster_traits: None,
         artifact_id: None,
         name: "wand of wishing".into(),
         class: ItemClass::Wand,
@@ -2272,6 +2322,7 @@ fn test_ukrainian_i18n_simulation_logging() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_no_revive: false,
         corpse_species: None,
         is_ice_box: false,
         corpse_race: None,
@@ -2360,6 +2411,7 @@ fn test_monster_medusa_petrification_gaze() {
     );
     let medusa_id = sim.arena.spawn_actor(medusa);
 
+    sim.arena.actors[medusa_id].movement = 12;
     let events = sim.step_player_action(ActionAst::Wait);
     assert!(events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("gaze is reflected") || text.contains("погляд"))));
 
@@ -2382,6 +2434,7 @@ fn test_monster_lich_summon_and_curse() {
     }
 
     let potion = sim.arena.spawn_item(ItemRecord {
+        saved_monster_traits: None,
         artifact_id: None,
         name: "potion of healing".into(),
         class: ItemClass::Potion,
@@ -2393,6 +2446,7 @@ fn test_monster_lich_summon_and_curse() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_no_revive: false,
         corpse_species: None,
         is_ice_box: false,
         corpse_race: None,
@@ -2417,6 +2471,7 @@ fn test_monster_lich_summon_and_curse() {
     }];
     let _lich_id = sim.arena.spawn_actor(lich);
 
+    sim.arena.actors[_lich_id].movement = 12;
     let events = sim.step_player_action(ActionAst::Wait);
     // Lich cast either summon minions or curse
     let cast_something = events.iter().any(|e| matches!(e, GameEvent::LogMessage { text } if text.contains("incantation") || text.contains("cursed") || text.contains("повстають") || text.contains("проклятий")));
@@ -2441,6 +2496,7 @@ fn test_bones_file_generation_and_ghost_encounter() {
     }
 
     let _sword = sim1.arena.spawn_item(ItemRecord {
+        saved_monster_traits: None,
         artifact_id: None,
         name: "long sword".into(),
         class: ItemClass::Weapon,
@@ -2452,6 +2508,7 @@ fn test_bones_file_generation_and_ghost_encounter() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim1.player_id),
+        corpse_no_revive: false,
         corpse_species: None,
         is_ice_box: false,
         corpse_race: None,
@@ -3370,6 +3427,7 @@ fn test_hero_polymorph_potion_and_damage_reversion() {
     }
 
     let potion = sim.arena.spawn_item(ItemRecord {
+        saved_monster_traits: None,
         artifact_id: None,
         name: "potion of polymorph".into(),
         class: ItemClass::Potion,
@@ -3381,6 +3439,7 @@ fn test_hero_polymorph_potion_and_damage_reversion() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_no_revive: false,
         corpse_species: None,
         is_ice_box: false,
         corpse_race: None,
@@ -3403,6 +3462,7 @@ fn test_hero_polymorph_potion_and_damage_reversion() {
 
     let mon_coord = nethacked_types::Coord::new_unchecked(p_coord.x + 1, p_coord.y);
     let mon = ActorRecord {
+        sex: None,
         species: None,
         name: "Orc".into(),
         coord: mon_coord,
@@ -3411,6 +3471,7 @@ fn test_hero_polymorph_potion_and_damage_reversion() {
         ac: 0,
         level: 30,
         speed: 20,
+        movement: 0,
         alignment: nethacked_types::Alignment::Chaotic,
         intrinsics: nethacked_types::Intrinsics::default(),
         is_player: false,
@@ -3422,6 +3483,8 @@ fn test_hero_polymorph_potion_and_damage_reversion() {
         is_peaceful: false,
         mspec_used: 0,
         malign: 0,
+        is_fleeing: false,
+        is_cancelled: false,
     };
     sim.arena.spawn_actor(mon);
 
@@ -3458,6 +3521,7 @@ fn test_wand_of_polymorph_unique_monster_invariant() {
         );
     }
     let vlad_id = sim1.arena.spawn_actor(ActorRecord {
+        sex: None,
         species: None,
         name: "Vlad the Impaler".into(),
         coord: nethacked_types::Coord::new_unchecked(p_coord1.x + 1, p_coord1.y),
@@ -3466,6 +3530,7 @@ fn test_wand_of_polymorph_unique_monster_invariant() {
         ac: -3,
         level: 14,
         speed: 12,
+        movement: 0,
         alignment: nethacked_types::Alignment::Chaotic,
         intrinsics: nethacked_types::Intrinsics::default(),
         is_player: false,
@@ -3477,8 +3542,11 @@ fn test_wand_of_polymorph_unique_monster_invariant() {
         is_peaceful: false,
         mspec_used: 0,
         malign: 0,
+        is_fleeing: false,
+        is_cancelled: false,
     });
     sim1.arena.spawn_item(ItemRecord {
+        saved_monster_traits: None,
         artifact_id: None,
         name: "wand of polymorph".into(),
         class: ItemClass::Wand,
@@ -3490,6 +3558,7 @@ fn test_wand_of_polymorph_unique_monster_invariant() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim1.player_id),
+        corpse_no_revive: false,
         corpse_species: None,
         is_ice_box: false,
         corpse_race: None,
@@ -3521,6 +3590,7 @@ fn test_wand_of_polymorph_unique_monster_invariant() {
         );
     }
     let orc_id = sim2.arena.spawn_actor(ActorRecord {
+        sex: None,
         species: None,
         name: "Orc".into(),
         coord: nethacked_types::Coord::new_unchecked(p_coord2.x + 1, p_coord2.y),
@@ -3529,6 +3599,7 @@ fn test_wand_of_polymorph_unique_monster_invariant() {
         ac: 10,
         level: 1,
         speed: 10,
+        movement: 0,
         alignment: nethacked_types::Alignment::Chaotic,
         intrinsics: nethacked_types::Intrinsics::default(),
         is_player: false,
@@ -3540,8 +3611,11 @@ fn test_wand_of_polymorph_unique_monster_invariant() {
         is_peaceful: false,
         mspec_used: 0,
         malign: 0,
+        is_fleeing: false,
+        is_cancelled: false,
     });
     sim2.arena.spawn_item(ItemRecord {
+        saved_monster_traits: None,
         artifact_id: None,
         name: "wand of polymorph".into(),
         class: ItemClass::Wand,
@@ -3553,6 +3627,7 @@ fn test_wand_of_polymorph_unique_monster_invariant() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim2.player_id),
+        corpse_no_revive: false,
         corpse_species: None,
         is_ice_box: false,
         corpse_race: None,
@@ -3586,6 +3661,7 @@ fn test_scroll_of_genocide_conduct_and_level_wipe() {
     let mon_c = nethacked_types::Coord::new_unchecked(player_c.x + 1, player_c.y);
     sim.level.set_tile(mon_c, nethacked_types::Tile::Room);
     let goblin_id = sim.arena.spawn_actor(ActorRecord {
+        sex: None,
         species: None,
         name: "goblin".into(),
         coord: mon_c,
@@ -3594,6 +3670,7 @@ fn test_scroll_of_genocide_conduct_and_level_wipe() {
         ac: 10,
         level: 1,
         speed: 10,
+        movement: 0,
         alignment: nethacked_types::Alignment::Chaotic,
         intrinsics: nethacked_types::Intrinsics::default(),
         is_player: false,
@@ -3605,9 +3682,12 @@ fn test_scroll_of_genocide_conduct_and_level_wipe() {
         is_peaceful: false,
         mspec_used: 0,
         malign: 0,
+        is_fleeing: false,
+        is_cancelled: false,
     });
 
     let scroll_id = sim.arena.spawn_item(ItemRecord {
+        saved_monster_traits: None,
         artifact_id: None,
         name: "scroll of genocide".into(),
         class: ItemClass::Scroll,
@@ -3619,6 +3699,7 @@ fn test_scroll_of_genocide_conduct_and_level_wipe() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_no_revive: false,
         corpse_species: None,
         is_ice_box: false,
         corpse_race: None,
@@ -3662,6 +3743,7 @@ fn test_cursed_scroll_of_genocide_summons() {
     }
 
     let scroll_id = sim.arena.spawn_item(ItemRecord {
+        saved_monster_traits: None,
         artifact_id: None,
         name: "scroll of genocide".into(),
         class: ItemClass::Scroll,
@@ -3673,6 +3755,7 @@ fn test_cursed_scroll_of_genocide_summons() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_no_revive: false,
         corpse_species: None,
         is_ice_box: false,
         corpse_race: None,
@@ -3736,6 +3819,7 @@ fn test_petrification_countdown_and_lizard_cure() {
 
     // Spawn and eat lizard corpse
     let lizard = sim.arena.spawn_item(ItemRecord {
+        saved_monster_traits: None,
         artifact_id: None,
         name: "lizard corpse".into(),
         class: ItemClass::Food,
@@ -3747,6 +3831,7 @@ fn test_petrification_countdown_and_lizard_cure() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_no_revive: false,
         corpse_species: None,
         is_ice_box: false,
         corpse_race: None,
@@ -3817,6 +3902,7 @@ fn test_weapon_skill_combat_bonus() {
 
     // Spawn long sword
     let sword = sim.arena.spawn_item(ItemRecord {
+        saved_monster_traits: None,
         artifact_id: None,
         name: "long sword".into(),
         class: ItemClass::Weapon,
@@ -3828,6 +3914,7 @@ fn test_weapon_skill_combat_bonus() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_no_revive: false,
         corpse_species: None,
         is_ice_box: false,
         corpse_race: None,
@@ -3852,6 +3939,7 @@ fn test_weapon_skill_combat_bonus() {
     sim.level.set_tile(mon_coord, Tile::Room);
 
     let mon_id = sim.arena.spawn_actor(ActorRecord {
+        sex: None,
         species: None,
         name: "Orc".into(),
         coord: mon_coord,
@@ -3860,6 +3948,7 @@ fn test_weapon_skill_combat_bonus() {
         ac: 10,
         level: 1,
         speed: 10,
+        movement: 0,
         alignment: Alignment::Chaotic,
         intrinsics: Intrinsics::default(),
         is_player: false,
@@ -3871,10 +3960,13 @@ fn test_weapon_skill_combat_bonus() {
         is_peaceful: false,
         mspec_used: 0,
         malign: 0,
+        is_fleeing: false,
+        is_cancelled: false,
     });
 
     let hp_before = sim.arena.actors.get(mon_id).unwrap().hp;
 
+    sim.rng = <rand_chacha::ChaCha8Rng as rand::SeedableRng>::seed_from_u64(37);
     sim.step_player_action(ActionAst::MeleeAttack(mon_coord));
 
     let hp_after = sim.arena.actors.get(mon_id).unwrap().hp;
@@ -3899,6 +3991,7 @@ fn test_ranged_fire_arrow_hits_monster() {
     sim.level.set_tile(mon_coord, Tile::Room);
 
     let mon_id = sim.arena.spawn_actor(ActorRecord {
+        sex: None,
         species: None,
         name: "Orc".into(),
         coord: mon_coord,
@@ -3907,6 +4000,7 @@ fn test_ranged_fire_arrow_hits_monster() {
         ac: 10,
         level: 1,
         speed: 10,
+        movement: 0,
         alignment: nethacked_types::Alignment::Chaotic,
         intrinsics: nethacked_types::Intrinsics::default(),
         is_player: false,
@@ -3918,10 +4012,13 @@ fn test_ranged_fire_arrow_hits_monster() {
         is_peaceful: false,
         mspec_used: 0,
         malign: 0,
+        is_fleeing: false,
+        is_cancelled: false,
     });
 
     // Put arrow in hero inventory
     let arrow_id = sim.arena.spawn_item(ItemRecord {
+        saved_monster_traits: None,
         artifact_id: None,
         name: "arrow".into(),
         class: ItemClass::Weapon,
@@ -3933,6 +4030,7 @@ fn test_ranged_fire_arrow_hits_monster() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_no_revive: false,
         corpse_species: None,
         is_ice_box: false,
         corpse_race: None,
@@ -3975,6 +4073,7 @@ fn test_steed_mounting_and_effective_movement() {
     sim.level.set_tile(mon_coord, Tile::Room);
 
     let horse_id = sim.arena.spawn_actor(ActorRecord {
+        sex: None,
         species: None,
         name: "horse".into(),
         coord: mon_coord,
@@ -3983,6 +4082,7 @@ fn test_steed_mounting_and_effective_movement() {
         ac: 10,
         level: 5,
         speed: 20,
+        movement: 0,
         alignment: nethacked_types::Alignment::Neutral,
         intrinsics: nethacked_types::Intrinsics::default(),
         is_player: false,
@@ -3994,6 +4094,8 @@ fn test_steed_mounting_and_effective_movement() {
         is_peaceful: false,
         mspec_used: 0,
         malign: 0,
+        is_fleeing: false,
+        is_cancelled: false,
     });
 
     // Mount the steed
@@ -4117,6 +4219,7 @@ fn test_corpse_eating_and_conduct_invalidation() {
     let mut sim = SimulationWorld::new_with_seed(42);
 
     let corpse = ItemRecord {
+        saved_monster_traits: None,
         artifact_id: None,
         name: "goblin corpse".into(),
         class: ItemClass::Food,
@@ -4128,6 +4231,7 @@ fn test_corpse_eating_and_conduct_invalidation() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_no_revive: false,
         corpse_species: None,
         is_ice_box: false,
         corpse_race: Some("goblin".into()),
@@ -4168,6 +4272,7 @@ fn test_cannibalism_detection() {
     let mut sim = SimulationWorld::new_with_seed(42);
 
     let human_corpse = ItemRecord {
+        saved_monster_traits: None,
         artifact_id: None,
         name: "human corpse".into(),
         class: ItemClass::Food,
@@ -4179,6 +4284,7 @@ fn test_cannibalism_detection() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_no_revive: false,
         corpse_species: None,
         is_ice_box: false,
         corpse_race: Some("human".into()),
@@ -4220,6 +4326,7 @@ fn test_pacifist_conduct_violation_on_kill() {
     let monster_pos = player.coord.step(Direction::East).unwrap();
 
     let monster = ActorRecord {
+        sex: None,
         species: None,
         name: "goblin".into(),
         coord: monster_pos,
@@ -4229,6 +4336,7 @@ fn test_pacifist_conduct_violation_on_kill() {
         ac: 23,
         level: 1,
         speed: 12,
+        movement: 0,
         alignment: Alignment::Chaotic,
         intrinsics: Intrinsics::empty(),
         is_player: false,
@@ -4240,6 +4348,8 @@ fn test_pacifist_conduct_violation_on_kill() {
         is_peaceful: false,
         mspec_used: 0,
         malign: 0,
+        is_fleeing: false,
+        is_cancelled: false,
     };
 
     sim.arena.actors.insert(monster);
@@ -4539,6 +4649,7 @@ fn valkyrie_first_swing_hits(ac: i32, seeds: u64) -> u64 {
         let p = sim.arena.actors.get(sim.player_id).unwrap().coord;
         let mc = Coord::new(p.x + 1, p.y).unwrap();
         let mon = ActorRecord {
+            sex: None,
             species: None,
             name: "Dummy".into(),
             coord: mc,
@@ -4547,6 +4658,7 @@ fn valkyrie_first_swing_hits(ac: i32, seeds: u64) -> u64 {
             ac,
             level: 1,
             speed: 0,
+            movement: 0,
             alignment: Alignment::Chaotic,
             intrinsics: Intrinsics::default(),
             is_player: false,
@@ -4558,6 +4670,8 @@ fn valkyrie_first_swing_hits(ac: i32, seeds: u64) -> u64 {
             is_peaceful: false,
             mspec_used: 0,
             malign: 0,
+            is_fleeing: false,
+            is_cancelled: false,
         };
         let mid = sim.arena.spawn_actor(mon);
         let events = sim.step_player_action(ActionAst::MeleeAttack(mc));
@@ -4791,6 +4905,7 @@ fn make_test_actor(
     is_tame: bool,
 ) -> ActorRecord {
     ActorRecord {
+        sex: None,
         species: None,
         name: name.into(),
         coord,
@@ -4799,6 +4914,7 @@ fn make_test_actor(
         ac: 0,
         level: 1,
         speed: 12,
+        movement: 0,
         alignment,
         intrinsics: Intrinsics::default(),
         is_player: false,
@@ -4810,6 +4926,8 @@ fn make_test_actor(
         is_peaceful,
         mspec_used: 0,
         malign,
+        is_fleeing: false,
+        is_cancelled: false,
     }
 }
 

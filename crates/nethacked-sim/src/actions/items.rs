@@ -984,6 +984,19 @@ impl SimulationWorld {
             });
             return events;
         };
+        // Select by owned canonical definition, never a display-name fragment.
+        let ordinary_creation = self.arena.items.get(wid).is_some_and(|wand| {
+            wand.buc == Buc::Uncursed
+                && wand.enchantment > 0
+                && self
+                    .ruleset
+                    .item(&wand.name)
+                    .is_some_and(|def| def.id == Some(ItemKindId::WAN_CREATE_MONSTER))
+        }) && self.hero.polymorph.is_none()
+            && !matches!(
+                self.level.get_tile(player.coord),
+                nethacked_types::Tile::Pool { frozen: false } | nethacked_types::Tile::Moat
+            );
         let Some(wand_item) = self.arena.items.get_mut(wid) else {
             return events;
         };
@@ -1002,6 +1015,16 @@ impl SimulationWorld {
                 self.scheduler.hero_act(NORMAL_SPEED);
                 return events;
             };
+
+        if ordinary_creation {
+            if let Err(message) = self.create_random_monsters_by_hero() {
+                events.push(GameEvent::LogMessage {
+                    text: message.into(),
+                });
+            }
+            self.scheduler.hero_act(NORMAL_SPEED);
+            return events;
+        }
 
         // If Wand of Secret Door Detection: reveals secret doors in 5x5 radius
         if wand_name.contains("secret door") {
@@ -1243,6 +1266,35 @@ impl SimulationWorld {
                             arch.name
                         ),
                     });
+                }
+                Some(arch) if arch.id == Some(ItemKindId::CORPSE) => {
+                    let rs = std::sync::Arc::clone(&self.ruleset);
+                    let (ctx, monster_ctx) =
+                        self.item_birth_context(self.current_branch, self.depth, false);
+                    let registry = &self.genocide_registry;
+                    let location = ItemLocation::Floor(player.coord);
+                    if let Some(mut tree) = rs.create_random_item_tree_with_monsters(
+                        &arch.name,
+                        location.clone(),
+                        ctx,
+                        &monster_ctx,
+                        |d| nethacked_core::genocide::is_genocided(registry, &d.name, d.glyph),
+                        |n| self.rng.random_range(0..n),
+                    ) {
+                        tree.item.buc = buc;
+                        // C objnam.c:5148–5169: generic corpse wishes consume
+                        // initialization gender, then overwrite spe with zero.
+                        tree.item.enchantment = 0;
+                        let id = self
+                            .attach_generated_item(tree, location)
+                            .expect("wished corpse deadline fits the world clock");
+                        events.push(GameEvent::LogMessage {
+                            text: nethacked_i18n::Messages::wish_granted(
+                                &self.arena.items[id].name,
+                                self.locale,
+                            ),
+                        });
+                    }
                 }
                 Some(arch) => {
                     if let Some(mut record) = self.ruleset.create_item_record(

@@ -22,6 +22,10 @@ pub enum ActionAst {
     PickUp,
     Drop(usize),
     Wield(usize),
+    /// Put on an owned suit of armor; subsequent actions wait while dressing.
+    Wear(usize),
+    /// Take off the selected worn suit of armor.
+    Remove(usize),
     Dip {
         item_index: usize,
         into_water: WaterType,

@@ -47,8 +47,9 @@ pub fn luck_to_hit_bonus(luck: i32) -> i32 {
 /// - `skill_hit`: `weapon_hit_bonus` (`weapon.c:1545`, bare-handed `weapon.c:1601`).
 /// - `target_ac`: defender AC (`find_mac`); higher AC is easier to hit.
 ///
-/// Omitted C terms (not tracked by NetHackED): `abon()` (Str/Dex, low-level
-/// +1; taken as 0), `u.uhitinc` (rings of increase accuracy), monster
+/// The caller adds [`ordinary_hero_attribute_hit_bonus`] for an ordinary hero.
+/// Omitted C terms: polymorphed `abon()` and form level, `u.uhitinc`
+/// (rings of increase accuracy), monster
 /// stunned/fleeing/sleeping/immobile bonuses, Monk armor/martial bonuses,
 /// elf-vs-orc, encumbrance (`near_capacity`) and trapped (`u.utrap`)
 /// penalties, `oc_hitbon` and blessed-vs-undead `hitval` extras, riding.
@@ -58,6 +59,52 @@ pub fn to_hit_value(level: i32, luck: i32, enchant: i32, skill_hit: i32, target_
         .saturating_add(luck_to_hit_bonus(luck))
         .saturating_add(enchant)
         .saturating_add(skill_hit)
+}
+
+/// Ordinary-form `abon()` from NetHack-5.0.0_Released `weapon.c:950-989`.
+/// Strength uses C encoding: 18/xx = 18 + xx, 19..25 = 119..125.
+/// Inputs are capped to the effective `acurr()` ranges (`attrib.c:1200-1238`).
+/// The level below 3 bonus is separate from the experience level already in
+/// [`to_hit_value`]. Equipment/temporary attribute adjustments and the
+/// polymorphed `adj_lev() - 3` branch are the caller's responsibility.
+pub fn ordinary_hero_attribute_hit_bonus(strength: i32, dexterity: i32, level: u32) -> i32 {
+    let strength = strength.clamp(3, 125);
+    let dexterity = dexterity.clamp(3, 25);
+    let strength_bonus = match strength {
+        3..=5 => -2,
+        6..=7 => -1,
+        8..=16 => 0,
+        17..=67 => 1,
+        68..=117 => 2,
+        _ => 3,
+    };
+    let dexterity_bonus = match dexterity {
+        3 => -3,
+        4..=5 => -2,
+        6..=7 => -1,
+        8..=13 => 0,
+        _ => dexterity - 14,
+    };
+    strength_bonus + dexterity_bonus + i32::from(level < 3)
+}
+
+/// Ordinary-form strength damage contribution from NetHack-5.0.0_Released
+/// `weapon.c:991-1017` (`dbon`). STR uses C encoding: 18/xx = 18 + xx,
+/// 19..25 = 119..125, capped to `acurr()`'s effective range (3..=125).
+/// The caller supplies stored strength and handles polymorph separately.
+/// Equipment/temporary attributes and two-handed/dual-attack scaling are
+/// outside this contribution; combine with skill/enchantment before the floor.
+pub fn ordinary_hero_strength_damage_bonus(strength: i32) -> i32 {
+    match strength.clamp(3, 125) {
+        3..=5 => -1,
+        6..=15 => 0,
+        16..=17 => 1,
+        18 => 2,
+        19..=93 => 3,
+        94..=108 => 4,
+        109..=117 => 5,
+        _ => 6,
+    }
 }
 
 /// Monster-vs-hero to-hit value (C `mattacku`, `mhitu.c:709`):

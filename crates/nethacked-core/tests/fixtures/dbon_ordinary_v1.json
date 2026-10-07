@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "source-derived",
+  "upstream": {
+    "tag": "NetHack-5.0.0_Released",
+    "execution": "Source inspected only; C not executed.",
+    "references": [
+      {"path": "src/weapon.c", "lines": "991-1017", "sha256": "75769f6a3113224ea20414f75fc8b1159b6712bc7154905443e4fc1a4912bc2d"},
+      {"path": "src/attrib.c", "lines": "1200-1238", "sha256": "4dfbf91f63855512406571d431e59ce1395a73bb5dc0050ca3710bf5c740ba79"},
+      {"path": "src/uhitm.c", "lines": "1435-1508", "sha256": "4cc2f8a0ffe0121801a777978a9a555a063db720e0fe972308fb6ab0e96feb12"}
+    ]
+  },
+  "configuration": "Ordinary stored base STR, no equipment/temporary modifiers. Effective C bounds STR3..125. No RNG/build-option dependency in ordinary dbon. Upolyd returns0 (caller guard); twohand/dual scaling and u.udaminc are outside this acceptance unit.",
+  "derivation": "Independent literal expectations on both sides of each dbon comparison. STR18(75)=93, STR18(90)=108, STR18(100)=118; STR19(19)=119. Includes C effective-range clamps.",
+  "cases": [
+    {"id":"lower-clamp", "strength":-2147483648, "expected":-1},
+    {"id":"below-effective-min", "strength":2, "expected":-1},
+    {"id":"minimum", "strength":3, "expected":-1},
+    {"id":"last-negative", "strength":5, "expected":-1},
+    {"id":"first-neutral", "strength":6, "expected":0},
+    {"id":"neutral-interior", "strength":10, "expected":0},
+    {"id":"last-neutral", "strength":15, "expected":0},
+    {"id":"first-plus-one", "strength":16, "expected":1},
+    {"id":"last-plus-one", "strength":17, "expected":1},
+    {"id":"ordinary-eighteen", "strength":18, "expected":2},
+    {"id":"18-01", "strength":19, "expected":3},
+    {"id":"18-75", "strength":93, "expected":3},
+    {"id":"18-76", "strength":94, "expected":4},
+    {"id":"18-90", "strength":108, "expected":4},
+    {"id":"18-91", "strength":109, "expected":5},
+    {"id":"18-99", "strength":117, "expected":5},
+    {"id":"18-100", "strength":118, "expected":6},
+    {"id":"nineteen", "strength":119, "expected":6},
+    {"id":"maximum", "strength":125, "expected":6},
+    {"id":"above-effective-max", "strength":126, "expected":6},
+    {"id":"upper-clamp", "strength":2147483647, "expected":6}
+  ]
+}

@@ -3,6 +3,7 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
+use nethacked_data::monsters::{CorpseThawPolicy, CorpseTimeoutPolicy};
 use nethacked_data::ruleset::{ArmorDef, QuestDef, StartingItem};
 use nethacked_data::{AiBehavior, MonsterSize, MonsterSound, RaceId, WandDir};
 use nethacked_types::{
@@ -37,6 +38,12 @@ pub struct MonsterPatch {
     pub remove: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub glyph: Option<char>,
+    /// Omission preserves an existing policy; explicit `ordinary` clears it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub corpse_timeout_policy: Option<CorpseTimeoutPolicy>,
+    /// Omission inherits; explicit ordinary clears the Ice Troll exception.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub corpse_thaw_policy: Option<CorpseThawPolicy>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub base_hp: Option<u32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -132,6 +139,14 @@ pub struct ItemPatch {
     pub wand_dir: Option<Option<WandDir>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nutrition: Option<u32>,
+    /// C `oc_delay` override; explicit zero disables a base definition's delay.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub oc_delay: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub worn_property: Option<nethacked_data::items::WornProperty>,
+    /// Explicitly clear inherited worn metadata; combining with a value is rejected.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub clear_worn_property: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub armor: Option<Option<ArmorDef>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

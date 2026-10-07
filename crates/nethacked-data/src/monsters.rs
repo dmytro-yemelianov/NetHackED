@@ -52,12 +52,51 @@ pub enum MonsterSize {
     Gigantic,
 }
 
+/// Source policy for `start_corpse_timeout`, independent of display names and IDs.
+/// Troll revival selection uses the owned C class (`glyph == 'T'`). Rider is a
+/// source distinction; it does not imply that Rider revival is implemented.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum CorpseTimeoutPolicy {
+    #[default]
+    Ordinary,
+    Never,
+    Rider,
+}
+
+impl CorpseTimeoutPolicy {
+    pub fn is_ordinary(&self) -> bool {
+        *self == Self::Ordinary
+    }
+}
+
+/// Source assignment in pickup.c:2792 when a corpse leaves an ice box.
+/// Ordinary sets norevive; Ice Troll clears it. Saved monster traits can
+/// override corpse species in C; this fact does not model that payload.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum CorpseThawPolicy {
+    #[default]
+    Ordinary,
+    IceTroll,
+}
+
+impl CorpseThawPolicy {
+    pub fn is_ordinary(&self) -> bool {
+        *self == Self::Ordinary
+    }
+}
+
 /// Declarative specification of a monster species.
 #[derive(Debug, Clone, Serialize)]
 pub struct MonsterArchetype {
     pub id: MonsterSpeciesId,
     pub name: &'static str,
     pub glyph: char,
+    pub corpse_timeout_policy: CorpseTimeoutPolicy,
+    pub corpse_thaw_policy: CorpseThawPolicy,
     pub base_hp: u32,
     pub max_hp: u32,
     pub ac: i32,
@@ -146,11 +185,34 @@ pub struct MonsterSpawnContext {
     pub endgame_plane: Option<nethacked_types::EndgamePlane>,
 }
 
+/// Ordinary C `adj_lev` (pinned makemon.c:2016–2045). Special monster
+/// counters are outside this adapter; revival supplies current owned context.
+pub fn ordinary_adjusted_level(base: u32, difficulty: u32, hero: u32) -> u32 {
+    let base = i64::from(base);
+    let mut level = if i64::from(difficulty) < base {
+        base - 1
+    } else {
+        base + (i64::from(difficulty) - base) / 5
+    };
+    level += (i64::from(hero) - base).max(0) / 4;
+    level.clamp(0, (3 * base / 2).min(49)) as u32
+}
+
 /// C `newmonhp()` (makemon.c:1012–1053), using the owned species definition.
 /// `level` is the definition's spawn level; dungeon/hero `adj_lev` is not modeled.
 /// This sampler is independent of the definition's fixed/sampled spawn policy.
 pub fn compute_monster_hp(
     def: &crate::ruleset::MonsterDef,
+    context: MonsterSpawnContext,
+    rng: &mut impl Rng,
+) -> u32 {
+    compute_monster_hp_at_level(def, def.level, context, rng)
+}
+
+/// Keep encoded base levels separate from adjusted dice levels (C newmonhp).
+pub(crate) fn compute_monster_hp_at_level(
+    def: &crate::ruleset::MonsterDef,
+    level: u32,
     context: MonsterSpawnContext,
     rng: &mut impl Rng,
 ) -> u32 {
@@ -180,13 +242,13 @@ pub fn compute_monster_hp(
     ) {
         (
             if context.endgame_plane.is_some() {
-                8 * def.level
+                8 * level
             } else {
-                4 * def.level + roll_hp_dice(rng, def.level, 4)
+                4 * level + roll_hp_dice(rng, level, 4)
             },
-            def.level,
+            level,
         )
-    } else if def.level == 0 {
+    } else if level == 0 {
         (rng.random_range(1..=4), 1)
     } else {
         let home = matches!(
@@ -206,8 +268,8 @@ pub fn compute_monster_hp(
             )
         );
         (
-            roll_hp_dice(rng, def.level, 8) * if home { 3 } else { 1 },
-            def.level,
+            roll_hp_dice(rng, level, 8) * if home { 3 } else { 1 },
+            level,
         )
     };
     if hp == minimum {
@@ -257,6 +319,26 @@ fn golem_hp(id: Option<MonsterSpeciesId>) -> Option<u32> {
         Some(MonsterSpeciesId::GLASS_GOLEM) => Some(80),
         Some(MonsterSpeciesId::IRON_GOLEM) => Some(120),
         _ => None,
+    }
+}
+
+/// Ordinary random initialization keeps adjusted level for golems/Riders,
+/// but encoded base levels assign HP/4 independently of adjusted level.
+pub(crate) fn random_monster_spawn_level(
+    def: &crate::ruleset::MonsterDef,
+    hp: u32,
+    adjusted: u32,
+) -> u32 {
+    if def.level > 49
+        && golem_hp(def.id).is_none()
+        && !matches!(
+            def.id,
+            Some(MonsterSpeciesId::DEATH | MonsterSpeciesId::FAMINE | MonsterSpeciesId::PESTILENCE)
+        )
+    {
+        hp / 4
+    } else {
+        adjusted
     }
 }
 

@@ -1,7 +1,8 @@
 //! Frozen fingerprints of vanilla play. Arena runs and bestiary combat were
 //! rebaselined on 2026-10-06 for the user-approved C-correct sampled-HP migration.
 //! Arena runs were rebaselined again for approved item initialization/RNG draws.
-//! Event logs and bestiary combat retain their HP-era values. Unintended changes fail.
+//! All three families were rebaselined on 2026-10-07 for user-approved P04-P10 gameplay.
+//! Unintended changes fail.
 use nethacked_agent::arena::run_seed_games;
 use nethacked_data::monsters::{MonsterArchetype, BESTIARY};
 use nethacked_data::roles::{get_role, Gender, RaceId, RoleId};
@@ -41,21 +42,21 @@ const DIRS: [Direction; 8] = [
 ];
 
 const EXPECTED_RUNS: [u64; 4] = [
-    10_590_427_399_958_928_342,
-    16_937_266_686_257_778_869,
-    15_901_842_928_133_995_731,
-    3_090_803_967_773_886_248,
+    2_228_682_572_056_874_257,
+    1_092_902_970_258_507_207,
+    13_826_362_149_808_501_255,
+    8_647_613_173_857_399_611,
 ];
 const EXPECTED_LOGS: [u64; 9] = [
-    6_084_688_683_205_385_671,
-    15_616_401_141_373_472_836,
-    4_899_398_478_763_589_659,
-    16_065_937_482_197_730_413,
-    2_131_477_169_023_326_163,
-    14_544_001_921_339_539_876,
-    14_894_273_454_409_416_984,
-    13_370_509_600_343_581_488,
-    9_102_617_103_894_820_477,
+    4_505_381_605_404_160_040,
+    16_404_326_233_539_671_115,
+    4_854_647_680_356_389_716,
+    5_243_846_113_459_432_278,
+    5_728_931_081_618_051_660,
+    15_473_132_434_245_572_347,
+    13_037_250_685_169_951_399,
+    10_846_450_416_020_385_359,
+    5_002_529_615_800_054_102,
 ];
 
 #[test]
@@ -159,9 +160,9 @@ fn golden_vanilla_event_logs_are_unchanged() {
 
 const COMBAT_ROLES: [RoleId; 3] = [RoleId::Valkyrie, RoleId::Wizard, RoleId::Rogue];
 const EXPECTED_COMBAT: [u64; 3] = [
-    17_879_615_147_181_408_734,
-    5_566_202_075_069_252_702,
-    1_012_340_265_263_046_192,
+    5_186_754_756_734_083_792,
+    10_326_893_795_974_258_077,
+    1_764_914_419_651_649_729,
 ];
 
 /// Every bestiary entry (all 383 C species) fights the hero for up to 20

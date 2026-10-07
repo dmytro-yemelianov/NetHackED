@@ -243,6 +243,7 @@ gen_flags = {flags}
                     }
                     _ => {}
                 }
+                world.arena.actors[world.player_id].alignment = nethacked_types::Alignment::Lawful;
                 world.unpack_or_generate_level(BranchId::DungeonsOfDoom, 4);
                 assert!(world.level.rooms.len() > 2);
                 let actors: Vec<_> = world
@@ -872,6 +873,22 @@ initialization = {{ kind = "tool", charges = "camera" }}
         ));
     }
     fs::write(dir.join("items.toml"), items).unwrap();
+    // Keep the pinned custom-item stream independent of variable monster sex.
+    // Author these owned flags into the bundle so its hash/reference and full
+    // save continuation still describe exactly the loaded ruleset.
+    let mut monsters = String::new();
+    for def in &Ruleset::vanilla().monsters {
+        if def.fixed_sex().is_none() {
+            let mut flags = def.flags.clone();
+            flags.push("male".into());
+            monsters.push_str(&format!(
+                "[[monster]]\nname = {:?}\nflags = {:?}\n",
+                def.name, flags
+            ));
+        }
+    }
+    fs::write(dir.join("monsters.toml"), monsters).unwrap();
+
     let (pack, report) = build(&dir).unwrap();
     assert!(report.is_ok(), "{report:?}");
     let path = dir.join("custom.nhpack");

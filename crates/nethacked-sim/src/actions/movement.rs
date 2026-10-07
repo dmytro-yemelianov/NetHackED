@@ -123,6 +123,16 @@ impl SimulationWorld {
             return events;
         };
 
+        // Released C hack.c:2616-2635 blocks before movement/displacement or
+        // bump combat. P09 owns burden slowdown and precise action scheduling.
+        if self.hero_encumbrance() == nethacked_core::inventory::EncumbranceTier::Overloaded {
+            events.push(GameEvent::LogMessage {
+                text: "You collapse under your load.".into(),
+            });
+            self.scheduler.hero_act(NORMAL_SPEED);
+            return events;
+        }
+
         let move_cost = if true {
             let pc = &self.hero;
             let mount_cost = pc.mount.as_ref().and_then(|m| {

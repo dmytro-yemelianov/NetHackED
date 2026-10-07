@@ -31,7 +31,7 @@ fn fixtures(
     );
     let def = rules.monster_by_id(M::HUMAN).unwrap();
     let mut corpse = rules
-        .create_corpse_record(&def.name, ItemLocation::InContainer(sack))
+        .create_corpse_record(&def.name, ItemLocation::InContainer(ice))
         .unwrap();
     corpse.corpse_age = 7;
     corpse.enchantment = 3;
@@ -81,13 +81,16 @@ fn nested_ice_ancestry_freezes_existing_age_and_removal_resumes_across_save() {
     for w in [&mut world, &mut loaded] {
         // Moving the intermediate sack out resumes the descendant's age.
         w.arena.items[sack].location = ItemLocation::Limbo;
+        w.arena.items[frozen].location = ItemLocation::InContainer(sack);
         w.step_player_action(ActionAst::Wait);
         assert_eq!(w.arena.items[frozen].corpse_age, 8);
         // Moving it back freezes again, preserving the newly accrued age.
         w.arena.items[sack].location = ItemLocation::InContainer(ice);
+        w.arena.items[frozen].location = ItemLocation::InContainer(ice);
         w.step_player_action(ActionAst::Wait);
         assert_eq!(w.arena.items[frozen].corpse_age, 8);
         // Direct corpse removal also resumes age, without clearing other state.
+        w.arena.items[frozen].weight = 0; // Isolate aging from live burden scheduling.
         w.arena.items[frozen].location = ItemLocation::CarriedBy(w.player_id);
         w.step_player_action(ActionAst::Wait);
         assert_eq!(w.arena.items[frozen].corpse_age, 9);
@@ -150,6 +153,12 @@ fn cached_level_original_handle_ancestry_ages_once_and_survives_reload() {
             .unwrap()
             .1
             .location = ItemLocation::Limbo;
+        records
+            .iter_mut()
+            .find(|(id, _)| *id == frozen)
+            .unwrap()
+            .1
+            .location = ItemLocation::InContainer(sack);
         w.step_player_action(ActionAst::Wait);
         let records = &w.stored_levels[0].1.items;
         assert_eq!(

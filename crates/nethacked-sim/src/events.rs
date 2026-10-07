@@ -41,12 +41,32 @@ pub enum GameEvent {
         actor: ActorId,
         item: ItemId,
     },
+    DressingStarted {
+        item: ItemId,
+        putting_on: bool,
+    },
+    DressingFinished {
+        item: ItemId,
+        putting_on: bool,
+    },
+    DressingInterrupted {
+        item: ItemId,
+        putting_on: bool,
+    },
+    ItemStolen {
+        actor: ActorId,
+        item: ItemId,
+    },
     LevelChanged {
         from_depth: usize,
         to_depth: usize,
     },
     TurnAdvanced {
         turn: u64,
+    },
+    /// Internal timeout dispatch; gameplay callbacks are supplied separately.
+    ObjectTimerExpired {
+        timer: crate::object_timers::ObjectTimer,
     },
     EngravingAdded {
         coord: Coord,

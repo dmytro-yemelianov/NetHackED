@@ -29,6 +29,9 @@ pub enum CorpseSpecies {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ItemRecord {
+    /// Detached supported monster state (C oextra->omonst), never a live actor.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub saved_monster_traits: Option<Box<SavedMonsterTraits>>,
     /// Canonical C ART_* symbol; independent of display name.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub artifact_id: Option<String>,
@@ -45,6 +48,9 @@ pub struct ItemRecord {
     /// Species identity is distinct from the race used for cannibalism.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub corpse_species: Option<CorpseSpecies>,
+    /// Persisted C obj->norevive; independent of corpse age and species.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub corpse_no_revive: bool,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub is_ice_box: bool,
     pub corpse_race: Option<String>,
@@ -66,28 +72,16 @@ pub struct ItemRecord {
     pub trap_known: bool,
 }
 
-/// Does any containing ancestor preserve corpse age? Repeated or dangling
-/// handles terminate traversal, so malformed saves cannot loop forever.
+/// C pickup.c:64,2644–2663 freezes only an object directly in an ice box.
+/// An enclosing ice box does not freeze a corpse inside an ordinary sack.
 pub fn frozen_in_ice_box<'a>(
     item: &ItemRecord,
     lookup: impl Fn(ItemId) -> Option<&'a ItemRecord>,
 ) -> bool {
-    let mut location = &item.location;
-    let mut seen = Vec::new();
-    while let ItemLocation::InContainer(id) = location {
-        if seen.contains(id) {
-            return false;
-        }
-        seen.push(*id);
-        let Some(parent) = lookup(*id) else {
-            return false;
-        };
-        if parent.is_ice_box {
-            return true;
-        }
-        location = &parent.location;
+    match item.location {
+        ItemLocation::InContainer(id) => lookup(id).is_some_and(|parent| parent.is_ice_box),
+        _ => false,
     }
-    false
 }
 
 impl ItemRecord {
@@ -113,8 +107,18 @@ pub enum ActorSpecies {
     Custom(String),
 }
 
+/// Actual persisted actor sex; absence records a legacy or unsupplied unknown.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ActorSex {
+    Male,
+    Female,
+    Neuter,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ActorRecord {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sex: Option<ActorSex>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub species: Option<ActorSpecies>,
     pub name: String,
@@ -124,6 +128,9 @@ pub struct ActorRecord {
     pub ac: i32,
     pub level: u32,
     pub speed: u32,
+    /// C per-monster movement credit; constructors and legacy loads start at zero.
+    #[serde(default)]
+    pub movement: u32,
     pub alignment: Alignment,
     pub intrinsics: Intrinsics,
     pub is_player: bool,
@@ -143,6 +150,34 @@ pub struct ActorRecord {
     /// C `malign` (`makemon.c:2320-2366`). Precalculated alignment adjustment upon death.
     #[serde(default)]
     pub malign: i32,
+    /// C `mflee`, including untimed flight after a successful theft.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub is_fleeing: bool,
+    /// C `mcan`: monster cancellation is independent of hero armor MC.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub is_cancelled: bool,
+}
+
+/// Owned saved traits for a corpse or statue. ActorRecord contains no arena
+/// handles: inventory, weapons and unsupported mextra are excluded. Per-actor
+/// movement credit is copied, matching the C full-struct traits copy.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SavedMonsterTraits {
+    pub actor: ActorRecord,
+}
+
+impl SavedMonsterTraits {
+    /// Copy supported state without attaching it to an object or active arena.
+    /// `base_level` must come from the actor's owned monster definition.
+    /// C mkobj.c:2157–2193 keeps zero HP and clamps a drained maximum/current HP.
+    pub fn from_actor(actor: &ActorRecord, base_level: u32) -> Self {
+        let mut actor = actor.clone();
+        if actor.max_hp <= base_level {
+            actor.max_hp = base_level.saturating_add(1);
+        }
+        actor.hp = actor.hp.min(actor.max_hp);
+        Self { actor }
+    }
 }
 
 /// The centralized entity arena replacing all ambient pointers.
@@ -281,8 +316,9 @@ impl EntityArena {
         let inner_weight: u32 = self
             .items_in_container(id)
             .into_iter()
-            .map(|child| self.calculate_total_weight(child))
-            .sum();
+            .fold(0u32, |weight, child| {
+                weight.saturating_add(self.calculate_total_weight(child))
+            });
 
         let effective_inner = if item.is_bag_of_holding {
             // NetHack 5.0 rounding up: (cwt + 1) / 2 for uncursed default
@@ -307,6 +343,7 @@ mod tests {
     fn item_record_without_recharged_deserializes_to_zero() {
         let mut arena = EntityArena::new();
         let id = arena.spawn_item(ItemRecord {
+            saved_monster_traits: None,
             artifact_id: None,
             name: "wand of striking".into(),
             class: ItemClass::Wand,
@@ -318,6 +355,7 @@ mod tests {
             erosion: 1,
             proofed: false,
             location: ItemLocation::Floor(Coord::new(1, 1).unwrap()),
+            corpse_no_revive: false,
             corpse_species: None,
             is_ice_box: false,
             corpse_race: None,
@@ -360,9 +398,33 @@ mod tests {
     }
 
     #[test]
+    fn corpse_no_revive_defaults_omits_false_and_persists_true() {
+        let legacy = serde_json::json!({
+            "name": "human corpse", "class": "Food", "weight": 1450,
+            "buc": "Uncursed", "is_container": false, "is_bag_of_holding": false,
+            "enchantment": 0, "erosion": 0, "proofed": false, "location": "Limbo",
+            "corpse_race": "human", "corpse_age": 0, "rot_threshold": 250
+        });
+        let mut loaded: ItemRecord = serde_json::from_value(legacy).unwrap();
+        assert!(!loaded.corpse_no_revive);
+        let value = serde_json::to_value(&loaded).unwrap();
+        assert!(value.get("corpse_no_revive").is_none());
+        loaded.corpse_no_revive = true;
+        let value = serde_json::to_value(&loaded).unwrap();
+        assert_eq!(value["corpse_no_revive"], true);
+        assert_eq!(serde_json::from_value::<ItemRecord>(value).unwrap(), loaded);
+        loaded.corpse_no_revive = false;
+        assert!(serde_json::to_value(&loaded)
+            .unwrap()
+            .get("corpse_no_revive")
+            .is_none());
+    }
+
+    #[test]
     fn test_spawn_and_retrieve_actor() {
         let mut arena = EntityArena::new();
         let actor = ActorRecord {
+            sex: None,
             species: None,
             name: "Agent".into(),
             coord: Coord::new(5, 5).unwrap(),
@@ -371,6 +433,7 @@ mod tests {
             ac: 10,
             level: 1,
             speed: 12,
+            movement: 0,
             alignment: Alignment::Neutral,
             intrinsics: Intrinsics::default(),
             is_player: true,
@@ -382,6 +445,8 @@ mod tests {
             is_peaceful: false,
             mspec_used: 0,
             malign: 0,
+            is_fleeing: false,
+            is_cancelled: false,
         };
         let id = arena.spawn_actor(actor);
         assert_eq!(arena.actors.get(id).unwrap().hp, 20);
@@ -394,6 +459,7 @@ mod tests {
     fn test_actor_record_serde_default_is_peaceful() {
         let mut arena = EntityArena::new();
         let actor = ActorRecord {
+            sex: None,
             species: None,
             name: "priest".into(),
             coord: Coord::new(5, 5).unwrap(),
@@ -402,6 +468,7 @@ mod tests {
             ac: 10,
             level: 12,
             speed: 12,
+            movement: 0,
             alignment: Alignment::Neutral,
             intrinsics: Intrinsics::default(),
             is_player: false,
@@ -413,6 +480,8 @@ mod tests {
             is_peaceful: true,
             mspec_used: 0,
             malign: 0,
+            is_fleeing: false,
+            is_cancelled: false,
         };
         let id = arena.spawn_actor(actor);
         let mut v = serde_json::to_value(arena.actors.get(id).unwrap()).unwrap();
@@ -427,6 +496,7 @@ mod tests {
     fn test_actor_record_serde_default_mspec_used() {
         let mut arena = EntityArena::new();
         let id = arena.spawn_actor(ActorRecord {
+            sex: None,
             species: None,
             name: "red dragon".into(),
             coord: Coord::new(5, 5).unwrap(),
@@ -435,6 +505,7 @@ mod tests {
             ac: -1,
             level: 15,
             speed: 9,
+            movement: 0,
             alignment: Alignment::Chaotic,
             intrinsics: Intrinsics::default(),
             is_player: false,
@@ -446,6 +517,8 @@ mod tests {
             is_peaceful: false,
             mspec_used: 12,
             malign: 5,
+            is_fleeing: false,
+            is_cancelled: false,
         });
         let mut v = serde_json::to_value(arena.actors.get(id).unwrap()).unwrap();
         assert_eq!(v["mspec_used"], 12);
@@ -460,6 +533,7 @@ mod tests {
     fn test_actor_record_serde_default_malign() {
         let mut arena = EntityArena::new();
         let id = arena.spawn_actor(ActorRecord {
+            sex: None,
             species: None,
             name: "goblin".into(),
             coord: Coord::new(5, 5).unwrap(),
@@ -468,6 +542,7 @@ mod tests {
             ac: 10,
             level: 0,
             speed: 6,
+            movement: 0,
             alignment: Alignment::Chaotic,
             intrinsics: Intrinsics::default(),
             is_player: false,
@@ -479,6 +554,8 @@ mod tests {
             is_peaceful: false,
             mspec_used: 0,
             malign: 3,
+            is_fleeing: false,
+            is_cancelled: false,
         });
         let mut v = serde_json::to_value(arena.actors.get(id).unwrap()).unwrap();
         assert_eq!(v["malign"], 3);
@@ -493,6 +570,7 @@ mod tests {
     fn test_container_hierarchy_and_weight() {
         let mut arena = EntityArena::new();
         let dagger = arena.spawn_item(ItemRecord {
+            saved_monster_traits: None,
             artifact_id: None,
             name: "dagger".into(),
             class: ItemClass::Weapon,
@@ -504,6 +582,7 @@ mod tests {
             erosion: 0,
             proofed: false,
             location: ItemLocation::Limbo,
+            corpse_no_revive: false,
             corpse_species: None,
             is_ice_box: false,
             corpse_race: None,
@@ -518,6 +597,7 @@ mod tests {
         });
 
         let boh = arena.spawn_item(ItemRecord {
+            saved_monster_traits: None,
             artifact_id: None,
             name: "bag of holding".into(),
             class: ItemClass::Tool,
@@ -529,6 +609,7 @@ mod tests {
             erosion: 0,
             proofed: false,
             location: ItemLocation::Floor(Coord::new(10, 10).unwrap()),
+            corpse_no_revive: false,
             corpse_species: None,
             is_ice_box: false,
             corpse_race: None,
@@ -556,6 +637,7 @@ mod tests {
     fn test_cycle_detection() {
         let mut arena = EntityArena::new();
         let box1 = arena.spawn_item(ItemRecord {
+            saved_monster_traits: None,
             artifact_id: None,
             name: "box 1".into(),
             class: ItemClass::Tool,
@@ -567,6 +649,7 @@ mod tests {
             erosion: 0,
             proofed: false,
             location: ItemLocation::Limbo,
+            corpse_no_revive: false,
             corpse_species: None,
             is_ice_box: false,
             corpse_race: None,
@@ -580,6 +663,7 @@ mod tests {
             trap_known: false,
         });
         let box2 = arena.spawn_item(ItemRecord {
+            saved_monster_traits: None,
             artifact_id: None,
             name: "box 2".into(),
             class: ItemClass::Tool,
@@ -591,6 +675,7 @@ mod tests {
             erosion: 0,
             proofed: false,
             location: ItemLocation::InContainer(box1),
+            corpse_no_revive: false,
             corpse_species: None,
             is_ice_box: false,
             corpse_race: None,
@@ -606,5 +691,64 @@ mod tests {
 
         assert!(arena.contains_transitive(box1, box2));
         assert!(!arena.contains_transitive(box2, box1));
+    }
+    #[test]
+    fn actor_sex_legacy_wire_omits_unknown_and_round_trips_known() {
+        let actor = ActorRecord {
+            sex: None,
+            species: None,
+            name: "priest".into(),
+            coord: Coord::new(5, 5).unwrap(),
+            hp: 60,
+            max_hp: 60,
+            ac: 10,
+            level: 12,
+            speed: 12,
+            movement: 0,
+            alignment: Alignment::Neutral,
+            intrinsics: Intrinsics::default(),
+            is_player: false,
+            is_dead: false,
+            is_tame: false,
+            tameness: 0,
+            is_unique: false,
+            abilities: Vec::new(),
+            is_peaceful: true,
+            mspec_used: 0,
+            malign: 0,
+            is_fleeing: false,
+            is_cancelled: false,
+        };
+        let old = serde_json::to_value(&actor).unwrap();
+        assert!(old.get("sex").is_none());
+        let loaded: ActorRecord = serde_json::from_value(old.clone()).unwrap();
+        assert_eq!(loaded.sex, None);
+        assert_eq!(serde_json::to_value(&loaded).unwrap(), old);
+        for sex in [ActorSex::Male, ActorSex::Female, ActorSex::Neuter] {
+            let mut known = loaded.clone();
+            known.sex = Some(sex);
+            let value = serde_json::to_value(&known).unwrap();
+            assert_eq!(value["sex"], format!("{sex:?}"));
+            assert_eq!(serde_json::from_value::<ActorRecord>(value).unwrap(), known);
+        }
+    }
+    #[test]
+    fn saved_monster_traits_absent_literal_wire_is_unchanged() {
+        // A complete literal item wire from before saved traits existed.
+        let old = serde_json::json!({
+            "name": "troll corpse", "class": "Food", "weight": 800,
+            "buc": "Uncursed", "is_container": false,
+            "is_bag_of_holding": false, "enchantment": 1, "erosion": 0,
+            "proofed": false, "location": "Limbo", "corpse_race": null,
+            "corpse_age": 23, "rot_threshold": 50, "recharged": 0
+        });
+        let encoded = serde_json::to_vec(&old).unwrap();
+        let item: ItemRecord = serde_json::from_slice(&encoded).unwrap();
+        assert!(item.saved_monster_traits.is_none());
+        assert_eq!(serde_json::to_value(&item).unwrap(), old);
+        assert_eq!(
+            serde_json::to_vec(&serde_json::to_value(&item).unwrap()).unwrap(),
+            encoded
+        );
     }
 }

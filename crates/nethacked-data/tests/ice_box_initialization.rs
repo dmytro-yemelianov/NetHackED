@@ -40,7 +40,11 @@ fn ice_box_count_and_direct_corpse_draws_owned_weight_and_zero_age() {
     rules.reindex();
     for count in [0, 1, 20] {
         let mut draws = vec![(21, count)];
-        draws.extend((0..count).map(|_| (1, 0)));
+        // Species selection, corpse gender, then C rnz(25).
+        // Every corpse samples before mkbox_cnts freezes/cancels it.
+        for _ in 0..count {
+            draws.extend([(1, 0), (2, 0), (1000, 0), (4, 1), (2, 1)]);
+        }
         let mut expected = draws.iter();
         let tree = rules
             .create_random_item_tree_with_monsters(

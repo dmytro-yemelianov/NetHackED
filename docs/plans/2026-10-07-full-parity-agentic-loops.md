@@ -87,6 +87,8 @@ Evidence directory + focused commands; return <=250 words and Cargo-exit status
 
 Repairs receive only the finding, changed hypothesis and incremental diff/evidence. Advisor receives the two failed hypotheses and one explicit question. A resume packet contains accepted IDs, current unit/state, digest, unresolved finding/counter and next command; do not replay full transcripts.
 
+Verification snapshots include the sorted union of tracked and untracked source/data/script/config inputs, excluding `docs/`, `.superpowers/`, `MEMORY.md`, `USER.md`, `README.md` and `CHANGELOG.md`. Their aggregate SHA-256 updates with each path's encoded bytes followed immediately by its file bytes, in the recorded input-list order, with no delimiter. Workers retain per-file hashes and before bytes, and reproduce the aggregate before edits. Afterward, reconstruct the prior aggregate from changed-before/current-unchanged inputs, excluding newly added paths; verify current names, hashes, HEAD and pristine golden source independently. Include the digest algorithm or available helper path in every packet.
+
 ## Verification and completion rules
 
 Use `uv` with local `.venv`, local NAT/domain tools and the full command coverage in the [existing verification loop](2026-10-06-agentic-loops.md#verification-loop): fmt, Clippy, workspace excluding nethacked-py, WASM, Python, static/extraction/generated/coverage/parity/docs, Lean. Workspace logs proving all three golden tests passed replace a duplicate standalone golden run.

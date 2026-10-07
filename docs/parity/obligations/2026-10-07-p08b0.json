@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "batch": "P08b0",
+  "checked_date": "2026-10-07",
+  "checked_head": "b912faf",
+  "source_tag": "NetHack-5.0.0_Released",
+  "source_commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+  "feature": "Owned source-derived corpse timeout policy facts",
+  "implemented_subsets": [
+    "Reproducibly extracted Ordinary/Never/Rider policy reaches generated archetypes and owned definitions",
+    "Typed full wire/export/schema and patch omission inheritance versus explicit ordinary clearing",
+    "Absent old fields retain ordinary defaults and captured old full bundle hash/bytes",
+    "Existing owned glyph retains the C monster class used by the later Troll branch"
+  ],
+  "tests": [
+    "crates/nethacked-data/tests/corpse_timeout_policy.rs",
+    "crates/nethacked-pack/tests/corpse_timeout_policy.rs"
+  ],
+  "remaining": [
+    "Sampled lifecycle recipe at the original generation RNG point",
+    "Actual corpse rot, transfer freeze/thaw and legacy scheduling migration",
+    "Ordinary Troll revival and placement/failure handling",
+    "Broader Rider, zombie, Ice Troll special and floor-ice behaviors"
+  ],
+  "review": "PASS fresh Sol/high, no defects; pinned class/policy membership for all 383 species and prior 319 inputs independently verified",
+  "acceptance": "868 workspace tests and 11 other gates pass; complete 321 inputs stable; no additional golden delta beyond P08a; final golden policy pending; metadata only",
+  "plan": "docs/plans/2026-10-07-corpse-lifecycle.md",
+  "final_integration": {
+    "record": "2026-10-07-p04-p10-final-acceptance.json",
+    "status": "Original bounded exit reviewed/audited and final green integration verified; prior checkpoint fields are historical",
+    "tests": 999,
+    "gates": 12,
+    "goldens": 3,
+    "input_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+    "commit": "Containing commit; see final acceptance record"
+  }
+}

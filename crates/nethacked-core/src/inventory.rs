@@ -129,6 +129,19 @@ pub enum EncumbranceTier {
     Overloaded,
 }
 
+/// C `acurrstr` (released 5.0 `attrib.c:1245-1265`): reduce encoded
+/// `ACURR(A_STR)` (18/01 = 19, 18/100 = 118, 19 = 119) for capacity.
+pub fn capacity_strength(strength: i32) -> i32 {
+    let strength = strength.clamp(3, 125);
+    if strength <= 18 {
+        strength
+    } else if strength <= 121 {
+        19 + strength / 50
+    } else {
+        strength - 100
+    }
+}
+
 /// Carrying capacity (C `hack.c:4295`, `weight_cap`).
 ///
 /// `str_` is the already-reduced `ACURRSTR` value (`attrib.c:1245`, 3..=25).

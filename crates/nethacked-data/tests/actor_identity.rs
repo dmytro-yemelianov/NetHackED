@@ -16,6 +16,7 @@ fn owned_factories_keep_canonical_and_exact_custom_identity_and_fixed_hp() {
         .unwrap();
     canonical.name = "Owned ant".into();
     canonical.sample_hp = false;
+    canonical.flags.push("male".into());
     canonical.base_hp = 71;
     canonical.max_hp = 83;
     let mut custom = canonical.clone();

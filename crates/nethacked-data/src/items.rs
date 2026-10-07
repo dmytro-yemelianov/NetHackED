@@ -15,6 +15,14 @@ pub enum WandDir {
     Ray,
 }
 
+/// Supported C `oc_oprop` worn source. Other property families are not modeled.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum WornProperty {
+    FireResistance,
+}
+
 /// Declarative specification of an item archetype (values from C `include/objects.h`).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ItemArchetype {
@@ -40,6 +48,11 @@ pub struct ItemArchetype {
     pub nutrition: u32,
     /// Generation weight within the class (C `oc_prob`); 0 for artifacts.
     pub prob: u32,
+    /// C `oc_delay`: class-specific use delay (including dressing armor).
+    #[serde(default)]
+    pub oc_delay: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub worn_property: Option<WornProperty>,
     /// C material (`objclass.h` `obj_material_types`), lowercase.
     pub material: &'static str,
     /// C `a_can` (armor `oc2`): magic cancellation 0..=3; 0 for non-armor.
@@ -88,6 +101,7 @@ pub fn initial_wand_charges(id: ItemKindId) -> i8 {
 pub fn create_item_record(id: ItemKindId, location: ItemLocation, buc: Buc) -> ItemRecord {
     let arch = get_item_archetype(id);
     ItemRecord {
+        saved_monster_traits: None,
         artifact_id: crate::artifacts::canonical_artifact_id(id).map(str::to_owned),
         name: arch.name.to_string(),
         class: arch.class,
@@ -99,6 +113,7 @@ pub fn create_item_record(id: ItemKindId, location: ItemLocation, buc: Buc) -> I
         erosion: 0,
         proofed: false,
         location,
+        corpse_no_revive: false,
         corpse_species: (id == ItemKindId::CORPSE)
             .then_some(nethacked_arena::CorpseSpecies::Unspecified),
         is_ice_box: id == ItemKindId::ICE_BOX,

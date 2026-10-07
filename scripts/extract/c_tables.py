@@ -307,7 +307,51 @@ MON_MACROS = """
 SIZES = {VALUES[k]: k for k in NAMES if k.startswith("MZ_") and k in VALUES and k not in ("MZ_HUMAN",)}
 
 
+def corpse_timeout_facts():
+    """Retain source identity tests, without running C or inferring display names.
+
+    Pinned 5.0 start_corpse_timeout: mkobj.c:1403-1406 exempts before RNG;
+    mondata.h:161-163 defines Rider identity. Troll's class already is glyph.
+    Refuse a changed predicate rather than silently creating incomplete facts.
+    """
+    text = (C / "src" / "mkobj.c").read_text()
+    match = re.search(r"if \(body->corpsenm == (PM_\w+) \|\| body->corpsenm == (PM_\w+)\)\s*return;", text)
+    if not match:
+        die("mkobj.c: unsupported nonrotting corpse predicate")
+    never = {symbol.removeprefix("PM_") for symbol in match.groups()}
+    text = (INC / "mondata.h").read_text()
+    match = re.search(r"#define is_rider\(ptr\)(.*?)(?=\n/\*)", text, re.S)
+    if not match:
+        die("mondata.h: missing is_rider predicate")
+    predicate = " ".join(match[1].replace("\\\n", "").split())
+    if not re.fullmatch(r"\(\(ptr\) == &mons\[PM_\w+\](?: \|\|\s*\(ptr\) == &mons\[PM_\w+\])*\)", predicate):
+        die("mondata.h: unsupported is_rider predicate")
+    riders = {symbol.removeprefix("PM_") for symbol in re.findall(r"PM_\w+", predicate)}
+    if never & riders:
+        die("overlapping corpse timeout source predicates")
+    return never, riders
+
+
+def corpse_thaw_facts():
+    """Pinned pickup.c:2779-2798; retain both mtraits and corpsenm branches.
+
+    The assignment clears norevive for the exception, and sets it otherwise.
+    Refuse changed predicates or assignments rather than inventing policy.
+    """
+    text = (C / "src" / "pickup.c").read_text()
+    match = re.search(r"void\s+removed_from_icebox\(struct obj \*obj\)\s*\{(.*?)\n\}", text, re.S)
+    if not match:
+        die("pickup.c: missing removed_from_icebox")
+    body = " ".join(re.sub(r"/\*.*?\*/", "", match[1], flags=re.S).split())
+    match = re.search(r"struct monst \*m = get_mtraits\(obj, FALSE\); boolean iceT = m \? \(m->data == &mons\[(PM_\w+)\]\) : \(obj->corpsenm == (PM_\w+)\); obj->norevive = iceT \? 0 : 1; start_corpse_timeout\(obj\);", body)
+    if not match or match[1] != match[2]:
+        die("pickup.c: unsupported corpse thaw predicate/assignment")
+    return match[1].removeprefix("PM_")
+
+
 def monsters():
+    never, riders = corpse_timeout_facts()
+    thaw_exception = corpse_thaw_facts()
     lines = source_lines(INC / "monsters.h")
     out = []
     for r in parse_records(cpp(MON_MACROS), "MON"):
@@ -336,6 +380,8 @@ def monsters():
             "name_female": female,
             "class": MONSYM[cls][0].lower(),
             "glyph": MONSYM[cls][1],
+            "corpse_timeout_policy": "never" if bn in never else "rider" if bn in riders else "ordinary",
+            "corpse_thaw_policy": "ice_troll" if bn == thaw_exception else "ordinary",
             "level": lv, "speed": mov, "ac": ac, "mr": mr, "alignment": aln,
             "gen": gflags, "frequency": freq,
             "attacks": attacks,
@@ -352,6 +398,11 @@ def monsters():
             "src": f"include/monsters.h:{lines.get(bn, 0)}",
         }
         out.append(rec)
+    ids = {m["id"] for m in out}
+    if thaw_exception not in ids:
+        die("corpse thaw predicate references unknown monster identity")
+    if (never | riders) - ids:
+        die("corpse timeout predicate references unknown monster identities")
     return out
 
 

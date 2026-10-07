@@ -1,0 +1,249 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "source-derived",
+  "upstream": {
+    "tag": "NetHack-5.0.0_Released",
+    "execution": "Source inspected only; C not executed.",
+    "references": [
+      {
+        "path": "src/weapon.c",
+        "lines": "950-989",
+        "sha256": "75769f6a3113224ea20414f75fc8b1159b6712bc7154905443e4fc1a4912bc2d"
+      },
+      {
+        "path": "src/attrib.c",
+        "lines": "1200-1238",
+        "sha256": "4dfbf91f63855512406571d431e59ce1395a73bb5dc0050ca3710bf5c740ba79"
+      },
+      {
+        "path": "src/uhitm.c",
+        "lines": "365-378",
+        "sha256": "4cc2f8a0ffe0121801a777978a9a555a063db720e0fe972308fb6ab0e96feb12"
+      }
+    ]
+  },
+  "configuration": "Ordinary form; stored base attributes without equipment/temporary modifiers; C effective bounds STR3..125 DX3..25. No RNG or build-option dependency in ordinary abon.",
+  "derivation": "Literal independent expectations for STR tier edges including encoded18/50=68 and18/100=118, DX tier edges and level<3. DX14 adds0.",
+  "cases": [
+    {"id": "strength-9", "strength": 9, "dexterity": 10, "level": 3, "expected": 0},
+    {"id": "dexterity-9", "strength": 10, "dexterity": 9, "level": 3, "expected": 0},
+    {"id": "level-4", "strength": 10, "dexterity": 10, "level": 4, "expected": 0},
+    {
+      "id": "strength-3",
+      "strength": 3,
+      "dexterity": 10,
+      "level": 3,
+      "expected": -2
+    },
+    {
+      "id": "strength-5",
+      "strength": 5,
+      "dexterity": 10,
+      "level": 3,
+      "expected": -2
+    },
+    {
+      "id": "strength-6",
+      "strength": 6,
+      "dexterity": 10,
+      "level": 3,
+      "expected": -1
+    },
+    {
+      "id": "strength-7",
+      "strength": 7,
+      "dexterity": 10,
+      "level": 3,
+      "expected": -1
+    },
+    {
+      "id": "strength-8",
+      "strength": 8,
+      "dexterity": 10,
+      "level": 3,
+      "expected": 0
+    },
+    {
+      "id": "strength-16",
+      "strength": 16,
+      "dexterity": 10,
+      "level": 3,
+      "expected": 0
+    },
+    {
+      "id": "strength-17",
+      "strength": 17,
+      "dexterity": 10,
+      "level": 3,
+      "expected": 1
+    },
+    {
+      "id": "strength-18",
+      "strength": 18,
+      "dexterity": 10,
+      "level": 3,
+      "expected": 1
+    },
+    {
+      "id": "strength-19",
+      "strength": 19,
+      "dexterity": 10,
+      "level": 3,
+      "expected": 1
+    },
+    {
+      "id": "strength-67",
+      "strength": 67,
+      "dexterity": 10,
+      "level": 3,
+      "expected": 1
+    },
+    {
+      "id": "strength-68",
+      "strength": 68,
+      "dexterity": 10,
+      "level": 3,
+      "expected": 2
+    },
+    {
+      "id": "strength-69",
+      "strength": 69,
+      "dexterity": 10,
+      "level": 3,
+      "expected": 2
+    },
+    {
+      "id": "strength-117",
+      "strength": 117,
+      "dexterity": 10,
+      "level": 3,
+      "expected": 2
+    },
+    {
+      "id": "strength-118",
+      "strength": 118,
+      "dexterity": 10,
+      "level": 3,
+      "expected": 3
+    },
+    {
+      "id": "strength-119",
+      "strength": 119,
+      "dexterity": 10,
+      "level": 3,
+      "expected": 3
+    },
+    {
+      "id": "strength-125",
+      "strength": 125,
+      "dexterity": 10,
+      "level": 3,
+      "expected": 3
+    },
+    {
+      "id": "dexterity-3",
+      "strength": 10,
+      "dexterity": 3,
+      "level": 3,
+      "expected": -3
+    },
+    {
+      "id": "dexterity-4",
+      "strength": 10,
+      "dexterity": 4,
+      "level": 3,
+      "expected": -2
+    },
+    {
+      "id": "dexterity-5",
+      "strength": 10,
+      "dexterity": 5,
+      "level": 3,
+      "expected": -2
+    },
+    {
+      "id": "dexterity-6",
+      "strength": 10,
+      "dexterity": 6,
+      "level": 3,
+      "expected": -1
+    },
+    {
+      "id": "dexterity-7",
+      "strength": 10,
+      "dexterity": 7,
+      "level": 3,
+      "expected": -1
+    },
+    {
+      "id": "dexterity-8",
+      "strength": 10,
+      "dexterity": 8,
+      "level": 3,
+      "expected": 0
+    },
+    {
+      "id": "dexterity-13",
+      "strength": 10,
+      "dexterity": 13,
+      "level": 3,
+      "expected": 0
+    },
+    {
+      "id": "dexterity-14",
+      "strength": 10,
+      "dexterity": 14,
+      "level": 3,
+      "expected": 0
+    },
+    {
+      "id": "dexterity-15",
+      "strength": 10,
+      "dexterity": 15,
+      "level": 3,
+      "expected": 1
+    },
+    {
+      "id": "dexterity-25",
+      "strength": 10,
+      "dexterity": 25,
+      "level": 3,
+      "expected": 11
+    },
+    {
+      "id": "level-1",
+      "strength": 10,
+      "dexterity": 10,
+      "level": 1,
+      "expected": 1
+    },
+    {
+      "id": "level-2",
+      "strength": 10,
+      "dexterity": 10,
+      "level": 2,
+      "expected": 1
+    },
+    {
+      "id": "level-3",
+      "strength": 10,
+      "dexterity": 10,
+      "level": 3,
+      "expected": 0
+    },
+    {
+      "id": "effective-low-cap",
+      "strength": -100,
+      "dexterity": 0,
+      "level": 3,
+      "expected": -5
+    },
+    {
+      "id": "effective-high-cap",
+      "strength": 2147483647,
+      "dexterity": 2147483647,
+      "level": 3,
+      "expected": 14
+    }
+  ]
+}

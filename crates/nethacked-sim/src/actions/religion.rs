@@ -164,6 +164,7 @@ impl SimulationWorld {
                         }
                         SacrificeResult::DivineGift(artifact_name) => {
                             let gift_record = ItemRecord {
+                                saved_monster_traits: None,
                                 artifact_id: self
                                     .ruleset
                                     .artifact_id_for_item(&artifact_name)
@@ -178,6 +179,7 @@ impl SimulationWorld {
                                 erosion: 0,
                                 proofed: true,
                                 location: ItemLocation::CarriedBy(self.player_id),
+                                corpse_no_revive: false,
                                 corpse_species: None,
                                 is_ice_box: false,
                                 corpse_race: None,

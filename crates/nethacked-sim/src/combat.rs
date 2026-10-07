@@ -4,7 +4,8 @@ use nethacked_arena::{ActorId, ActorRecord, ItemLocation};
 use nethacked_core::{
     combat::{
         attack_hits, dmgval, is_melee_attack, mattacku_die, mhitm_to_hit, monster_attack_damage,
-        monster_attack_hits, monster_hit_damage, monster_to_hit_value, resisted,
+        monster_attack_hits, monster_hit_damage, monster_to_hit_value,
+        ordinary_hero_attribute_hit_bonus, ordinary_hero_strength_damage_bonus, resisted,
         resolve_melee_attack, to_hit_value, weapon_damage_die,
     },
     mines::clamp_luck,
@@ -17,6 +18,7 @@ use nethacked_types::{Attack, AttackType, Buc, DamageType};
 use rand::{Rng, RngCore};
 
 use crate::events::GameEvent;
+use crate::progress::{A_DEX, A_STR};
 use crate::world::SimulationWorld;
 
 /// Attack used for an actor whose name resolves to no bestiary archetype
@@ -36,7 +38,7 @@ impl SimulationWorld {
         defender_id: ActorId,
     ) -> Vec<GameEvent> {
         if attacker_id != self.player_id {
-            return self.resolve_monster_attacks(attacker_id, defender_id);
+            return self.resolve_monster_attacks(attacker_id, defender_id).0;
         }
         let mut events = Vec::new();
         let Some(attacker) = self.arena.actors.get(attacker_id).cloned() else {
@@ -140,13 +142,26 @@ impl SimulationWorld {
 
         let target_ac = def_combat.ac;
         // Hero attacker: C find_roll_to_hit (uhitm.c:365) vs rnd(20) (uhitm.c:780).
+        // hero_attr currently supplies stored base attributes only. C's form
+        // branch needs adj_lev and a separate form-level term; leave that
+        // existing partial path unchanged rather than applying human bonuses.
+        let attribute_hit_bonus = if self.hero.polymorph.is_none() {
+            ordinary_hero_attribute_hit_bonus(
+                self.hero_attr(A_STR),
+                self.hero_attr(A_DEX),
+                attacker.level,
+            )
+        } else {
+            0
+        };
         let to_hit = to_hit_value(
             attacker.level as i32,
             self.player_luck,
             weapon_ench,
             skill_hit_bonus,
             target_ac,
-        );
+        )
+        .saturating_add(attribute_hit_bonus);
         let d20 = self.rng.random_range(1..=20u32);
         // C hmon_hitmon (uhitm.c:944 `dmgval`, uhitm.c:847 bare hands) runs
         // only after `tmp > dieroll` (uhitm.c:782): the damage die is drawn
@@ -163,13 +178,20 @@ impl SimulationWorld {
             0
         };
 
+        // C dbon returns zero while polymorphed. hero_attr supplies stored
+        // base STR only; effective equipment/temporary modifiers remain deferred.
+        let strength_damage_bonus = if self.hero.polymorph.is_none() {
+            ordinary_hero_strength_damage_bonus(self.hero_attr(A_STR))
+        } else {
+            0
+        };
         let result = resolve_melee_attack(
             to_hit,
             def_combat,
             d20,
             base_roll,
             weapon_ench,
-            skill_dmg_bonus,
+            skill_dmg_bonus.saturating_add(strength_damage_bonus),
             None,
         );
 
@@ -508,11 +530,20 @@ impl SimulationWorld {
                 });
             }
 
-            if let Some(corpse) = self
-                .ruleset
-                .create_corpse_record_for_actor(&defender, ItemLocation::Floor(defender.coord))
-            {
-                self.arena.spawn_item(corpse);
+            let rs = std::sync::Arc::clone(&self.ruleset);
+            let (ctx, monster_ctx) =
+                self.item_birth_context(self.current_branch, self.depth, false);
+            let registry = &self.genocide_registry;
+            if let Some(corpse) = rs.create_initialized_corpse_for_actor(
+                &defender,
+                ItemLocation::Floor(defender.coord),
+                ctx,
+                &monster_ctx,
+                |d| nethacked_core::genocide::is_genocided(registry, &d.name, d.glyph),
+                |n| self.rng.random_range(0..n),
+            ) {
+                self.attach_generated_item(corpse, ItemLocation::Floor(defender.coord))
+                    .expect("death corpse deadline fits the world clock");
             }
         }
     }
@@ -558,17 +589,17 @@ impl SimulationWorld {
     ///    (`mhitu.c:1208`).
     ///
     /// The round stops when the defender dies (C: hero death ends the game; `mhitm.c:380` skips attacks once `DEADMONSTER(mdef)`).
-    fn resolve_monster_attacks(
+    pub(crate) fn resolve_monster_attacks(
         &mut self,
         attacker_id: ActorId,
         defender_id: ActorId,
-    ) -> Vec<GameEvent> {
+    ) -> (Vec<GameEvent>, bool) {
         let mut events = Vec::new();
         let Some(attacker) = self.arena.actors.get(attacker_id).cloned() else {
-            return events;
+            return (events, false);
         };
         let Some(defender) = self.arena.actors.get(defender_id).cloned() else {
-            return events;
+            return (events, false);
         };
         let rs = std::sync::Arc::clone(&self.ruleset);
         let fallback_slice = [FALLBACK_ATTACK];
@@ -620,12 +651,15 @@ impl SimulationWorld {
                     .map(|_| self.rng.random_range(1..=u32::from(attack.d)))
                     .collect()
             };
-            let def_intrinsics = self
-                .arena
-                .actors
-                .get(defender_id)
-                .map(|d| d.intrinsics)
-                .unwrap_or(defender.intrinsics);
+            let def_intrinsics = if hero_defender {
+                self.effective_hero_intrinsics()
+            } else {
+                self.arena
+                    .actors
+                    .get(defender_id)
+                    .map(|d| d.intrinsics)
+                    .unwrap_or(defender.intrinsics)
+            };
             let is_resisted = resisted(attack.ad, &def_intrinsics);
             let hero = if hero_defender {
                 let raw = if is_resisted {
@@ -643,8 +677,11 @@ impl SimulationWorld {
                 None
             };
             let mut dmg = monster_hit_damage(attack, &rolls, is_resisted, hero);
+            let mut attacker_done = false;
             if hero_defender {
-                dmg = self.hero_ad_effect(&attacker, attacker_id, attack, dmg, &mut events);
+                let effect = self.hero_ad_effect(&attacker, attacker_id, attack, dmg, &mut events);
+                dmg = effect.damage;
+                attacker_done = effect.attacker_done;
             }
             if self.land_hit(
                 attacker_id,
@@ -657,8 +694,11 @@ impl SimulationWorld {
             ) {
                 break;
             }
+            if attacker_done {
+                return (events, true);
+            }
         }
-        events
+        (events, false)
     }
 
     fn push_miss(
@@ -701,6 +741,7 @@ mod tests {
         };
         // AC -60: find_roll_to_hit `tmp` is far below 1, so every rnd(20) misses.
         let dummy = sim.arena.spawn_actor(ActorRecord {
+            sex: None,
             species: None,
             name: "training dummy".into(),
             coord: at,
@@ -709,6 +750,7 @@ mod tests {
             ac: -60,
             level: 0,
             speed: 12,
+            movement: 0,
             alignment: Alignment::Neutral,
             intrinsics: Intrinsics::default(),
             is_player: false,
@@ -720,6 +762,8 @@ mod tests {
             is_peaceful: false,
             mspec_used: 0,
             malign: 0,
+            is_fleeing: false,
+            is_cancelled: false,
         });
         for _ in 0..20 {
             let mut expected = sim.rng.clone();

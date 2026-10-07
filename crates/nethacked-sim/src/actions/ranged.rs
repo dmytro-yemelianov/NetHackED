@@ -11,6 +11,12 @@ use crate::{events::GameEvent, world::SimulationWorld};
 impl SimulationWorld {
     pub fn handle_quiver(&mut self, idx: SlotId) -> Vec<GameEvent> {
         let mut events = Vec::new();
+        // C doquiver_core/wield.c:565-567 refuses worn armor with ECMD_OK.
+        if self.selected_suit_is_worn(idx) {
+            return vec![GameEvent::LogMessage {
+                text: "You cannot ready that!".into(),
+            }];
+        }
         self.scheduler.hero_act(NORMAL_SPEED);
 
         // Check if item exists in arena and is carried by player
@@ -32,6 +38,24 @@ impl SimulationWorld {
 
     pub fn handle_fire(&mut self, dir: Direction) -> Vec<GameEvent> {
         let mut events = Vec::new();
+        // Defend imported/stale quiver state too: canletgo before throwing
+        // returns ECMD_OK without damage, transfer, breakage RNG or time.
+        if self
+            .hero
+            .quivered_item
+            .is_some_and(|id| self.selected_suit_is_worn(id))
+        {
+            return vec![GameEvent::LogMessage {
+                text: "You cannot throw something you are wearing.".into(),
+            }];
+        }
+        // With no selected projectile, the AST cannot answer C's refill
+        // prompt; dofire/dothrow.c:544-585 cancels without spending time.
+        if self.hero.quivered_item.is_none() {
+            return vec![GameEvent::LogMessage {
+                text: nethacked_i18n::Messages::quiver_empty(self.locale).into(),
+            }];
+        }
         self.scheduler.hero_act(NORMAL_SPEED);
 
         let quivered_item_opt = self.hero.quivered_item;

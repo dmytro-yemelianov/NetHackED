@@ -71,6 +71,7 @@ fn fixed_special_cases_do_not_draw_rng() {
     }
     let mut encoded = rules.monster("jackal").unwrap().clone();
     encoded.level = 50;
+    encoded.flags.push("male".into());
     let mut rng = StdRng::seed_from_u64(9);
     let mut expected = rng.clone();
     let actor = rules.create_monster_record_from_def(
@@ -159,6 +160,7 @@ fn old_definition_loads_fixed_and_round_trips_policy() {
     value.as_object_mut().unwrap().remove("sample_hp");
     let mut def: nethacked_data::MonsterDef = serde_json::from_value(value).unwrap();
     assert!(!def.sample_hp);
+    def.flags.push("male".into());
     def.base_hp = 11;
     def.max_hp = 17;
     let mut rng = StdRng::seed_from_u64(4);

@@ -235,7 +235,20 @@ fn explicitly_mutated_and_imported_artifacts_register_without_rng() {
 fn public_room_generation_artifact_hook_and_save_continuation() {
     // Pinned vanilla seed: room generation creates Grimtooth on floor 4.
     // Requires the public world path to pass its role/history to the hook.
-    let mut world = SimulationWorld::new_with_seed(121);
+    // Keep the pinned item stream independent of variable monster sex.
+    let mut rules = (*nethacked_data::Ruleset::vanilla()).clone();
+    for def in &mut rules.monsters {
+        if def.fixed_sex().is_none() {
+            def.flags.push("male".into());
+        }
+    }
+    rules.reindex();
+    let mut world = SimulationWorld::new_with_character_and_ruleset(
+        121,
+        nethacked_data::CharacterConfig::default(),
+        std::sync::Arc::new(rules),
+        nethacked_data::ruleset::RulesetRef::vanilla(),
+    );
     assert!(world.arena.artifact_history.is_empty());
     let initial_ids: Vec<_> = world.arena.items.iter().map(|(id, _)| id).collect();
     world.unpack_or_generate_level(BranchId::DungeonsOfDoom, 4);

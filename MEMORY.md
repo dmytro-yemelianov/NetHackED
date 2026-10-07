@@ -1,7 +1,7 @@
 # MEMORY.md - Durable Facts and Decisions
 
 ## Architecture & System Context
-- **NetHackED Architecture**: Roguelike engine written in Rust with deterministic simulation, arena entity storage, NetHack 3.6.1 fidelity, TUI, WASM bindings, Python bindings (`nethacked-py`), and Lean 4 formal proofs.
+- **NetHackED Architecture**: Roguelike engine written in Rust with deterministic simulation, arena entity storage, NetHack 5.0 source parity (in progress), TUI, WASM bindings, Python bindings (`nethacked-py`), and Lean 4 formal proofs.
 - **Rule Packs P1**: Transitioning from hardcoded static tables (`BESTIARY`, `ITEM_CATALOG`, `ROLES`, `RACES`) to an owned `Arc<Ruleset>` loaded at world init, while preserving bit-for-bit vanilla determinism.
 - **Task 1 Baseline**: Completed in commits `7a785f6` and `055487c`. Golden determinism tests freeze arena runs (`EXPECTED_RUNS`), scripted event logs (`EXPECTED_LOGS`), and bestiary fights against all species for 3 roles.
 - **NeMo Agent Toolkit (`nat`)**: Installed at `.venv` (`nvidia-nat==1.9.0`) with custom extension package `nethacked-nat` (`nat/`) registering 4 tools: `nethacked_workspace_reader`, `nethacked_cargo_runner`, `nethacked_golden_verifier`, `nethacked_rulepacks_auditor`.
@@ -21,3 +21,8 @@
   Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
   Claude-Session: https://claude.ai/code/session_019cXhwXQqEEChd362EQ6RKp
   ```
+
+- **2026-10-07 source target correction**: full-parity P04–P10 compares `NetHack-5.0.0_Released` (`16ff59115315917b93185d026aeefea06db9b0f4`), source facts only. Older 3.6.1 references are historical and must not override this target. In particular, released 5.0 natural HP regeneration uses a probabilistic gate; a fixed-interval plan hypothesis is not authority to port older behavior.
+- **2026-10-07 P04–P10 otherwise verified checkpoint**: reviewed stored attribute hit/damage/capacity, selected natural HP, suit occupation, worn FIRE_RES provenance, actual corpse rot/ordinary Troll revival, per-actor movement allocation and owned SGROUP through public create-monster Zap. Final342-input integration digest64ea29d3bd5d2ce97d1d515501e07c424b5951e806cc7818d17f9690fcfffddc:996 tests and11 other gates pass; three frozen goldens fail with source unchanged. Exact proposed4RUNS/9LOGS/3COMBAT values are in docs/parity/obligations/2026-10-07-p04-p10-golden-proposal.json. Scoped golden decision, final green gates and commit remain required; this bounded queue does not close full NetHack parity.
+- **2026-10-07 P04–P10 scoped golden decision**: user explicitly approved “так онови” after the concrete16-value proposal and independent bounded audit. Only4EXPECTED_RUNS/9EXPECTED_LOGS/3EXPECTED_COMBAT values may be rebaselined to the reviewed proposal; test logic/assertions remain unchanged. This does not authorize unrelated future rebaselines. Full green gates and commit still required.
+- **2026-10-07 P04–P10 final green verification**: after explicit16-value approval,999 workspace tests, all3 goldens and all12 gates pass on342 inputs, digesta3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c. Independent bounded audit has no required feature findings; all1,217 original assertion macros and99 adjusted existing test names accounted. Final record docs/parity/obligations/2026-10-07-p04-p10-final-acceptance.json; containing commit delivers this queue. Broader full parity remains partial.

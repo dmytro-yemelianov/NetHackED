@@ -3,8 +3,8 @@ use std::sync::Arc;
 
 use nethacked_arena::{ActorId, EntityArena, ItemId, ItemLocation};
 use nethacked_core::{
-    armor_base_ac, armor_slot, energy::SchedulerState, find_ac, nutrition::hunger_of_nutrition,
-    HungerState, SpellKind,
+    armor_base_ac, energy::SchedulerState, find_ac, nutrition::hunger_of_nutrition, HungerState,
+    SpellKind,
 };
 use nethacked_data::ruleset::{Ruleset, RulesetRef};
 use nethacked_data::{CharacterConfig, ItemKindId, MonsterSpeciesId, RoleId};
@@ -78,7 +78,14 @@ pub struct SimulationWorld {
     pub arena: EntityArena,
     pub player_id: ActorId,
     pub wielded_item: Option<ItemId>,
+    /// Actual worn armor and single-item negative-multi dressing owner.
+    #[serde(default)]
+    pub equipment: crate::actions::equipment::EquipmentState,
     pub scheduler: SchedulerState,
+    /// Modern saves always emit the owner, including explicit empty/cancelled
+    /// queues. Absent legacy scheduling migration remains a separate step.
+    #[serde(default)]
+    pub object_timers: crate::object_timers::ObjectTimerQueue,
     /// Unpaid shop merchandise as `(item, base cost)`; see [`Self::get_unpaid_cost`].
     pub unpaid_items: Vec<(ItemId, u32)>,
     pub player_gold: u32,
@@ -115,6 +122,9 @@ pub struct SimulationWorld {
     pub mysterious_force_count: u32,
     #[serde(default)]
     pub role_name: String,
+    /// Config identity; old saves retain omission and decode their stored identifier.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub role_id: Option<RoleId>,
     #[serde(default = "default_rng")]
     pub rng: ChaCha8Rng,
     pub seed: u64,
@@ -142,6 +152,41 @@ pub fn default_rng() -> ChaCha8Rng {
 }
 
 impl SimulationWorld {
+    /// Owned geography/vitals context for initialized corpse births. Generation
+    /// and gameplay share selection facts; only in_mklev changes rot timing.
+    pub(crate) fn item_birth_context(
+        &self,
+        branch: nethacked_types::BranchId,
+        depth: usize,
+        in_mklev: bool,
+    ) -> (
+        nethacked_data::containers::ContainerContext,
+        nethacked_data::generation::MonsterGenContext,
+    ) {
+        use nethacked_data::generation::{DungeonAlign, MonsterGenContext};
+        use nethacked_types::BranchId;
+        let hero_level = self.arena.actors.get(self.player_id).map_or(1, |p| p.level);
+        (
+            nethacked_data::containers::ContainerContext {
+                hero_level,
+                level_difficulty: depth.min(u32::MAX as usize) as u32,
+                moves: self.scheduler.turn,
+                in_mklev,
+            },
+            MonsterGenContext {
+                hero_level: hero_level.min(i32::MAX as u32) as i32,
+                level_difficulty: depth.min(i32::MAX as usize) as i32,
+                in_hell: branch == BranchId::Gehennom,
+                align: if branch == BranchId::GnomishMines {
+                    DungeonAlign::Lawful
+                } else {
+                    DungeonAlign::None
+                },
+                temperature: 0,
+            },
+        )
+    }
+
     /// Current sim geography exposes Astral only; elemental planes can be
     /// supplied directly to the data factory when that geography is modeled.
     pub(crate) fn monster_spawn_context(&self) -> nethacked_data::monsters::MonsterSpawnContext {
@@ -334,7 +379,7 @@ impl SimulationWorld {
         }
 
         // Auto-wield first starting weapon if any
-        let wielded_item = starting_items.into_iter().find(|&id| {
+        let wielded_item = starting_items.iter().copied().find(|&id| {
             arena
                 .items
                 .get(id)
@@ -361,7 +406,9 @@ impl SimulationWorld {
             level,
             player_id,
             wielded_item,
-            scheduler: SchedulerState::new(12, 10),
+            equipment: crate::actions::equipment::EquipmentState::default(),
+            scheduler: SchedulerState::new(12, 0),
+            object_timers: crate::object_timers::ObjectTimerQueue::default(),
             unpaid_items,
             player_gold,
             player_nutrition,
@@ -396,6 +443,7 @@ impl SimulationWorld {
             hero_race: config.race,
             mysterious_force_count: 0,
             role_name: format!("{:?}", config.role),
+            role_id: Some(config.role),
             rng,
             seed,
             event_log: Vec::new(),
@@ -404,6 +452,20 @@ impl SimulationWorld {
             conducts: nethacked_types::ConductTracker::default(),
             progress: crate::progress::HeroProgress::default(),
         };
+        for id in starting_items {
+            let Some(item) = sim.arena.items.get(id) else {
+                continue;
+            };
+            if let Some(armor) = sim
+                .ruleset
+                .item(&item.name)
+                .and_then(|def| def.armor.as_ref())
+            {
+                if sim.equipment.worn(armor.slot).is_none() {
+                    sim.equipment.armor.push((armor.slot, id));
+                }
+            }
+        }
         sim.init_hero_attributes();
         sim.recompute_hero_ac();
         sim
@@ -423,6 +485,7 @@ impl SimulationWorld {
     pub fn to_save_json(&self) -> Result<String, serde_json::Error> {
         let mut snapshot = self.clone();
         snapshot.register_existing_artifacts();
+        snapshot.reconcile_object_timers();
         serde_json::to_string(&snapshot)
     }
 
@@ -432,8 +495,12 @@ impl SimulationWorld {
         rs: Arc<Ruleset>,
         rref: &RulesetRef,
     ) -> Result<Self, LoadError> {
-        let mut world: SimulationWorld =
+        let value: serde_json::Value =
             serde_json::from_str(json).map_err(|e| LoadError::Json(e.to_string()))?;
+        let legacy_equipment = value.get("equipment").is_none();
+        let legacy_object_timers = value.get("object_timers").is_none();
+        let mut world: SimulationWorld =
+            serde_json::from_value(value).map_err(|e| LoadError::Json(e.to_string()))?;
         if &world.ruleset_ref != rref {
             return Err(LoadError::RulesetMismatch {
                 expected: Box::new(rref.clone()),
@@ -467,6 +534,47 @@ impl SimulationWorld {
             }
         }
         world.register_existing_artifacts();
+        // Before actual worn state existed, old saves represented the first
+        // directly carried armor per slot as worn. Migrate only absent owners;
+        // an explicit empty owner means the hero really is not wearing armor.
+        if legacy_equipment {
+            for id in world.arena.items_carried_by(world.player_id) {
+                let Some(item) = world.arena.items.get(id) else {
+                    continue;
+                };
+                if item.class != ItemClass::Armor {
+                    continue;
+                }
+                let slot = world
+                    .ruleset
+                    .item(&item.name)
+                    .and_then(|def| def.armor.as_ref().map(|armor| armor.slot))
+                    .or_else(|| nethacked_core::armor_slot(&item.name));
+                if let Some(slot) = slot {
+                    if world.equipment.worn(slot).is_none() {
+                        world.equipment.armor.push((slot, id));
+                    }
+                }
+            }
+        }
+        world.reconcile_equipment();
+        world.recompute_hero_ac();
+        if !legacy_object_timers {
+            world.validate_object_timers().map_err(LoadError::Json)?;
+            world.restore_saved_object_timers();
+        } else {
+            world
+                .migrate_absent_corpse_timers()
+                .map_err(|error| LoadError::Json(format!("legacy corpse timer: {error:?}")))?;
+        }
+        // New absent-owner samples are already installed in source insertion
+        // order; saved-owner restoration must not reverse their ties again.
+        // C restore.c:930 catches up after object references are restored.
+        // No clock advance; off-level timers remain deferred.
+        let expired = world.run_object_timers();
+        if !expired.is_empty() {
+            world.record_events(&expired);
+        }
         Ok(world)
     }
 
@@ -504,41 +612,30 @@ impl SimulationWorld {
     /// Compute hero's current AC according to NetHack 5.0 C `find_ac(void)` (`do_wear.c:2473-2507`).
     ///
     /// Human hero has base AC 10 (`mons[u.umonnum].ac`, `do_wear.c:2475`).
-    /// Worn armor pieces are gathered from the hero's carried items: for each
-    /// [`nethacked_core::ArmorSlot`], at most one piece is counted as worn (the first carried item
-    /// matching that slot wins; additional carried items in the same slot do not stack).
-    /// Divine protection is subtracted as C `u.ublessed`.
+    /// Only explicitly worn, directly carried armor contributes. Divine
+    /// protection is subtracted as C `u.ublessed`.
     pub fn compute_hero_ac(&self) -> i32 {
-        let mut worn_slots = std::collections::HashSet::new();
         let mut worn_armor = Vec::new();
-
-        for item_id in self.arena.items_carried_by(self.player_id) {
-            if let Some(item) = self.arena.items.get(item_id) {
-                if item.class == ItemClass::Armor {
-                    let (slot, a_ac) = if let Some(def) = self.ruleset.item(&item.name) {
-                        let slot = def
-                            .armor
-                            .as_ref()
-                            .map(|a| a.slot)
-                            .or_else(|| armor_slot(&item.name));
-                        let base_ac = def
-                            .armor
-                            .as_ref()
-                            .map(|a| a.base_ac)
-                            .unwrap_or(def.ac_bonus);
-                        (slot, base_ac)
-                    } else {
-                        (armor_slot(&item.name), armor_base_ac(&item.name))
-                    };
-                    if let Some(slot) = slot {
-                        if worn_slots.insert(slot) {
-                            worn_armor.push((a_ac, item.enchantment as i32, item.erosion));
-                        }
-                    }
-                }
+        for &(slot, id) in &self.equipment.armor {
+            let Some(item) = self.arena.items.get(id) else {
+                continue;
+            };
+            if item.location != ItemLocation::CarriedBy(self.player_id) {
+                continue;
+            }
+            let base_ac = self
+                .ruleset
+                .item(&item.name)
+                .and_then(|def| def.armor.as_ref())
+                .filter(|armor| armor.slot == slot)
+                .map(|armor| armor.base_ac)
+                .or_else(|| {
+                    (slot != nethacked_core::ac::ArmorSlot::Suit).then(|| armor_base_ac(&item.name))
+                });
+            if let Some(base_ac) = base_ac {
+                worn_armor.push((base_ac, item.enchantment as i32, item.erosion));
             }
         }
-
         find_ac(10, &worn_armor, self.divine_protection as i32)
     }
 
@@ -584,6 +681,19 @@ impl SimulationWorld {
         self.unpaid_items.retain(|(i, _)| *i != id);
     }
 
+    /// Clear represented references after the rot callback removes an item.
+    /// Full shop bills/mextra and unowned C object references remain separate.
+    pub(crate) fn forget_rot_corpse_references(&mut self, id: ItemId) {
+        if self.wielded_item == Some(id) {
+            self.wielded_item = None;
+        }
+        if self.hero.quivered_item == Some(id) {
+            self.hero.quivered_item = None;
+        }
+        self.remove_unpaid(id);
+        self.remove_destroyed_item_equipment(id);
+    }
+
     /// Retrieve an EconomyLedger snapshot of current unpaid store items.
     pub fn economy_ledger(&self) -> crate::actions::economy::EconomyLedger {
         crate::actions::economy::EconomyLedger::with_items(self.unpaid_items.clone())
@@ -621,6 +731,17 @@ impl SimulationWorld {
                 None
             }
         })
+    }
+
+    /// Match SlotMap's restored freelist before revival inserts one actor.
+    /// Like cached-level restoration, this preserves every occupied key and
+    /// slot version while making a full-save boundary invisible to allocation.
+    /// Arena keys are not C global monster IDs or linked-list ordering.
+    pub(crate) fn normalize_revival_actor_allocator(&mut self) {
+        self.arena.actors = serde_json::from_value(
+            serde_json::to_value(&self.arena.actors).expect("actor arena serializes"),
+        )
+        .expect("serialized actor arena restores");
     }
 
     /// Return the current hunger state based on nutrition points.
@@ -765,17 +886,172 @@ impl SimulationWorld {
         }
     }
 
-    /// Steal an item from the hero (AD_SITM).
+    /// C steal.c:409-448 selection and substitutions. Returns true when steal
+    /// asks the attacker to flee (successful transfer or empty inventory).
     pub(crate) fn steal_hero_item(
         &mut self,
         attacker: &nethacked_arena::ActorRecord,
+        attacker_id: ActorId,
         events: &mut Vec<GameEvent>,
-    ) {
-        // Simplified - just report the theft
+    ) -> bool {
+        use nethacked_core::ac::ArmorSlot;
+        let suit = self.equipment.worn(ArmorSlot::Suit);
+        let cloak = self.equipment.worn(ArmorSlot::Cloak);
+        let carried: Vec<_> = self
+            .arena
+            .items_carried_by(self.player_id)
+            .into_iter()
+            .filter(|id| {
+                !(suit.is_some() && Some(*id) == cloak)
+                    && self
+                        .arena
+                        .items
+                        .get(*id)
+                        .is_some_and(|item| item.class != ItemClass::Coin)
+            })
+            .collect();
+        let weight = |id| {
+            if self.equipment.armor.iter().any(|(_, worn)| *worn == id) {
+                5u32
+            } else {
+                1
+            }
+        };
+        let total: u32 = carried.iter().map(|id| weight(*id)).sum();
+        if total == 0 {
+            return true;
+        }
+        let mut choice = self.rng.random_range(0..total);
+        let Some(mut id) = carried.into_iter().find(|id| {
+            let w = weight(*id);
+            if choice < w {
+                true
+            } else {
+                choice -= w;
+                false
+            }
+        }) else {
+            return false;
+        };
+        // steal.c:433-448: steal the outer blocking worn item instead.
+        if Some(id) == self.equipment.worn(ArmorSlot::Gloves) && self.wielded_item.is_some() {
+            id = self.wielded_item.unwrap();
+        } else if Some(id) == suit && cloak.is_some() {
+            id = cloak.unwrap();
+        } else if Some(id) == self.equipment.worn(ArmorSlot::Shirt) {
+            if let Some(outer) = cloak.or(suit) {
+                id = outer;
+            }
+        }
+        self.interrupt_dressing(events);
+        if self.equipment.armor.iter().any(|(_, worn)| *worn == id) {
+            // Forced delayed removal of selected worn armor remains unsupported;
+            // stop_donning is real, but no transfer/flee success is fabricated.
+            say(events, "The thief cannot finish removing your worn armor.");
+            return false;
+        }
+        let name = self.arena.items.get(id).unwrap().name.clone();
+        self.arena.items.get_mut(id).unwrap().location = ItemLocation::CarriedBy(attacker_id);
+        if self.wielded_item == Some(id) {
+            self.wielded_item = None;
+        }
+        if self.hero.quivered_item == Some(id) {
+            self.hero.quivered_item = None;
+        }
+        events.push(GameEvent::ItemStolen {
+            actor: attacker_id,
+            item: id,
+        });
         say(
             events,
-            &format!("{} steals an item!", capitalize(&attacker.name)),
+            &format!("{} steals your {}!", capitalize(&attacker.name), name),
         );
+        true
+    }
+
+    /// Ordinary-terrain C rloc (teleport.c:1848-1888): prescribed x/y
+    /// draws for 50 attempts, then incremental randomized candidate fallback.
+    /// Special monster habitat/teleport-region restrictions are separate gaps.
+    pub(crate) fn teleport_theft_attacker(&mut self, id: ActorId, events: &mut Vec<GameEvent>) {
+        use nethacked_types::{COLNO, ROWNO};
+        if self.level.no_teleport {
+            return;
+        }
+        let Some(actor) = self.arena.actors.get(id).cloned() else {
+            return;
+        };
+        let goodpos = |world: &Self, coord| {
+            world.level.is_passable(coord)
+                && world.actor_at(coord).is_none_or(|occupant| occupant == id)
+        };
+        let valid = |world: &Self, coord| {
+            goodpos(world, coord)
+                && !world.elbereth_scares(&actor, world.level.get_engraving(coord))
+        };
+        let mut destination = None;
+        for _ in 0..50 {
+            let x = self.rng.random_range(1..COLNO);
+            let y = self.rng.random_range(0..ROWNO);
+            let coord = Coord::new_unchecked(x, y);
+            if valid(self, coord) {
+                destination = Some(coord);
+                break;
+            }
+        }
+        if destination.is_none() {
+            let mut candidates = Vec::new();
+            // collect_coords(CC_INCL_CENTER | CC_UNSHUFFLED | CC_SKIP_MONS):
+            // expanding square edges, y before x, centered at <40,10>.
+            let cx = COLNO / 2;
+            let cy = ROWNO / 2;
+            for radius in 0..=cx.max(cy) {
+                let lox = cx as isize - radius as isize;
+                let hix = cx + radius;
+                let loy = cy as isize - radius as isize;
+                let hiy = cy + radius;
+                for y in loy.max(0) as usize..=hiy.min(ROWNO - 1) {
+                    for x in lox.max(1) as usize..=hix.min(COLNO - 1) {
+                        if x as isize != lox && x != hix && y as isize != loy && y != hiy {
+                            continue;
+                        }
+                        let coord = Coord::new_unchecked(x, y);
+                        // CC_SKIP_MONS uses m_at: the hero remains a candidate;
+                        // goodpos rejects that tile only after the shuffle draw.
+                        if self.level.is_passable(coord)
+                            && self
+                                .actor_at(coord)
+                                .is_none_or(|occupant| occupant == self.player_id)
+                        {
+                            candidates.push(coord);
+                        }
+                    }
+                }
+            }
+            let mut backup = None;
+            for i in 0..candidates.len() {
+                let j = self.rng.random_range(0..candidates.len() - i);
+                candidates.swap(i, i + j);
+                let coord = candidates[i];
+                if valid(self, coord) {
+                    destination = Some(coord);
+                    break;
+                }
+                if goodpos(self, coord) {
+                    backup.get_or_insert(coord);
+                }
+            }
+            destination = destination.or(backup);
+        }
+        if let Some(to) = destination {
+            self.arena.actors.get_mut(id).unwrap().coord = to;
+            if to != actor.coord {
+                events.push(GameEvent::ActorMoved {
+                    actor: id,
+                    from: actor.coord,
+                    to,
+                });
+            }
+        }
     }
 
     /// Steal gold from the hero (AD_SGLD).
@@ -797,12 +1073,13 @@ impl SimulationWorld {
     pub(crate) fn seduce_hero(
         &mut self,
         attacker: &nethacked_arena::ActorRecord,
+        attacker_id: ActorId,
         events: &mut Vec<GameEvent>,
     ) {
         if self.rng.random_range(0..2u32) == 0 {
             self.steal_hero_gold(attacker, events);
         } else {
-            self.steal_hero_item(attacker, events);
+            let _ = self.steal_hero_item(attacker, attacker_id, events);
         }
         // Foocubus teleports away after
         say(events, &format!("{} vanishes!", capitalize(&attacker.name)));

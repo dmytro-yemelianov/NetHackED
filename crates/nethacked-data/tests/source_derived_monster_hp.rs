@@ -68,6 +68,8 @@ fn public_named_factory_obeys_source_expected_state_and_draws() {
         assert_eq!(def.level, case.catalog_level, "{} catalog", case.id);
         assert!(def.sample_hp, "{} vanilla sampling policy", case.id);
         def.level = case.definition_level;
+        // HP-only fixture: fixed owned sex adds no draw after its prescribed HP.
+        def.flags.push("male".into());
         rules.reindex();
         let coord = Coord::new_unchecked(11, 7);
         let mut rng = PrescribedRng::new(&case.draws);

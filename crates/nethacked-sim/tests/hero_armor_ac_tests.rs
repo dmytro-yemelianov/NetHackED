@@ -108,6 +108,7 @@ fn test_leather_armor_plus_zero_reduces_ac_to_8() {
         ItemLocation::CarriedBy(sim.player_id),
         Buc::Uncursed,
     ));
+    wear_fixture_armor(&mut sim);
     sim.recompute_hero_ac();
 
     assert_eq!(
@@ -136,6 +137,7 @@ fn test_small_shield_plus_two_with_leather_armor() {
 
     // +2 Small shield (a_ac = 1, spe = 2): ARM_BONUS = 1 + 2 = 3
     let shield_rec = ItemRecord {
+        saved_monster_traits: None,
         artifact_id: None,
         name: "small shield".into(),
         class: ItemClass::Armor,
@@ -147,6 +149,7 @@ fn test_small_shield_plus_two_with_leather_armor() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_no_revive: false,
         corpse_species: None,
         is_ice_box: false,
         corpse_race: None,
@@ -161,6 +164,7 @@ fn test_small_shield_plus_two_with_leather_armor() {
     };
     sim.arena.spawn_item(shield_rec);
 
+    wear_fixture_armor(&mut sim);
     sim.recompute_hero_ac();
 
     // find_ac = 10 - 2 (suit) - 3 (shield) = 5
@@ -183,6 +187,7 @@ fn test_two_helmets_do_not_stack() {
 
     // First helmet (+0, a_ac = 1): ARM_BONUS = 1 -> AC becomes 9
     let helm1 = ItemRecord {
+        saved_monster_traits: None,
         artifact_id: None,
         name: "helmet".into(),
         class: ItemClass::Armor,
@@ -194,6 +199,7 @@ fn test_two_helmets_do_not_stack() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_no_revive: false,
         corpse_species: None,
         is_ice_box: false,
         corpse_race: None,
@@ -207,11 +213,13 @@ fn test_two_helmets_do_not_stack() {
         trap_known: false,
     };
     sim.arena.spawn_item(helm1);
+    wear_fixture_armor(&mut sim);
     sim.recompute_hero_ac();
     assert_eq!(sim.arena.actors.get(sim.player_id).unwrap().ac, 9);
 
     // Second helmet (+0, a_ac = 1) also in inventory: should NOT stack!
     let helm2 = ItemRecord {
+        saved_monster_traits: None,
         artifact_id: None,
         name: "helmet".into(),
         class: ItemClass::Armor,
@@ -223,6 +231,7 @@ fn test_two_helmets_do_not_stack() {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(sim.player_id),
+        corpse_no_revive: false,
         corpse_species: None,
         is_ice_box: false,
         corpse_race: None,
@@ -236,6 +245,7 @@ fn test_two_helmets_do_not_stack() {
         trap_known: false,
     };
     sim.arena.spawn_item(helm2);
+    wear_fixture_armor(&mut sim);
     sim.recompute_hero_ac();
 
     assert_eq!(
@@ -265,6 +275,7 @@ fn test_erosion_capping_in_arm_bonus() {
     // C MAX_ERODE = 3 (include/obj.h:129); erosion 2 on a_ac 2 hits the cap.
     armor.erosion = 2;
     sim.arena.spawn_item(armor);
+    wear_fixture_armor(&mut sim);
     sim.recompute_hero_ac();
 
     assert_eq!(
@@ -295,6 +306,7 @@ fn test_erosion_capping_in_arm_bonus() {
     enchanted_eroded_armor.enchantment = 1;
     enchanted_eroded_armor.erosion = 3; // C MAX_ERODE (include/obj.h:129)
     sim.arena.spawn_item(enchanted_eroded_armor);
+    wear_fixture_armor(&mut sim);
     sim.recompute_hero_ac();
 
     // Chain mail a_ac = 5, spe = 1, min(3, 5) = 3 -> bonus = 5 + 1 - 3 = 3 -> AC 10 - 3 = 7
@@ -345,6 +357,8 @@ fn test_dropping_armor_restores_ac() {
         .position(|&id| sim.arena.items.get(id).unwrap().class == ItemClass::Armor)
         .unwrap();
 
+    // Suit transfers require completing removal first.
+    remove_fixture_suit(&mut sim);
     // Drop the leather armor
     sim.step_player_action(ActionAst::Drop(armor_idx));
 
@@ -378,6 +392,7 @@ fn test_container_transfer_updates_ac() {
         .position(|&id| sim.arena.items.get(id).unwrap().class == ItemClass::Armor)
         .unwrap();
 
+    remove_fixture_suit(&mut sim);
     // Put leather armor into sack
     sim.step_player_action(ActionAst::PutInContainer {
         item_index: armor_idx,
@@ -402,6 +417,9 @@ fn test_container_transfer_updates_ac() {
         container_index: sack_idx_after,
         item_index: 0,
     });
+
+    wear_fixture_armor(&mut sim);
+    sim.recompute_hero_ac();
 
     // Armor is back in carried inventory -> AC 7
     assert_eq!(
@@ -468,6 +486,7 @@ fn test_firing_quivered_armor_updates_ac() {
         .find(|&id| sim.arena.items.get(id).unwrap().class == ItemClass::Armor)
         .unwrap();
 
+    remove_fixture_suit(&mut sim);
     sim.step_player_action(ActionAst::Quiver(armor_id));
     sim.step_player_action(ActionAst::Fire(Direction::East));
 
@@ -480,4 +499,42 @@ fn test_firing_quivered_armor_updates_ac() {
         10,
         "Fired armor leaves the inventory and stops counting toward AC"
     );
+}
+
+// Explicit equipment setup for AC arithmetic tests; carrying alone no longer
+// implies wearing. The suit command/timing path has separate public tests.
+fn wear_fixture_armor(sim: &mut SimulationWorld) {
+    sim.equipment.armor.clear();
+    for id in sim.arena.items_carried_by(sim.player_id) {
+        let item = sim.arena.items.get(id).unwrap();
+        if item.class != ItemClass::Armor {
+            continue;
+        }
+        let slot = sim
+            .ruleset
+            .item(&item.name)
+            .and_then(|def| def.armor.as_ref())
+            .map(|armor| armor.slot)
+            .or_else(|| nethacked_core::armor_slot(&item.name));
+        if let Some(slot) = slot {
+            if sim.equipment.worn(slot).is_none() {
+                sim.equipment.armor.push((slot, id));
+            }
+        }
+    }
+}
+
+fn remove_fixture_suit(sim: &mut SimulationWorld) {
+    if let Some(id) = sim.equipment.worn(nethacked_core::ac::ArmorSlot::Suit) {
+        let index = sim
+            .arena
+            .items_carried_by(sim.player_id)
+            .iter()
+            .position(|item| *item == id)
+            .unwrap();
+        sim.step_player_action(ActionAst::Remove(index));
+        while sim.equipment.dressing.is_some() {
+            sim.step_player_action(ActionAst::Wait);
+        }
+    }
 }

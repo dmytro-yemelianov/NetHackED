@@ -6,9 +6,54 @@ use nethacked_types::Coord;
 use rand::Rng;
 
 use crate::events::GameEvent;
+use crate::progress::{A_CON, A_STR};
 use crate::world::SimulationWorld;
 
 impl SimulationWorld {
+    /// Ordinary-form capacity from stored attributes and live levitation.
+    /// Equipment, polymorph, strong steeds, air plane and wounded legs require
+    /// effective-property contexts which are not represented here yet.
+    pub fn hero_weight_capacity(&self) -> u32 {
+        let levitating = self
+            .arena
+            .actors
+            .get(self.player_id)
+            .is_some_and(|hero| hero.intrinsics.levitation);
+        nethacked_core::inventory::weight_cap(
+            nethacked_core::inventory::capacity_strength(self.hero_attr(A_STR)),
+            self.hero_attr(A_CON).clamp(3, 25),
+            levitating,
+            0,
+        )
+    }
+
+    /// Owned arena roots include their recursively weighted contents exactly
+    /// once. Item weights already include stack quantities.
+    pub fn hero_carried_weight(&self) -> u32 {
+        self.arena
+            .items_carried_by(self.player_id)
+            .into_iter()
+            .fold(0u32, |weight, id| {
+                weight.saturating_add(self.arena.calculate_total_weight(id))
+            })
+    }
+
+    /// C `near_capacity` for the ordinary-form contexts above. Tier slowdown
+    /// remains dependent on P09's turn-energy scheduling implementation.
+    pub fn hero_encumbrance(&self) -> nethacked_core::inventory::EncumbranceTier {
+        nethacked_core::inventory::encumbrance_tier(
+            self.hero_carried_weight(),
+            self.hero_weight_capacity(),
+        )
+    }
+
+    /// C `carry_count` requires prospective `max_capacity() < 0`.
+    /// The sim transfers entire stacks; partial-stack lifting and C's burden
+    /// confirmation prompt are not represented by its inventory action AST.
+    fn can_lift_weight(&self, weight: u32) -> bool {
+        weight < self.hero_weight_capacity().saturating_mul(3)
+    }
+
     pub(crate) fn handle_pickup(&mut self) -> Vec<GameEvent> {
         let mut events = Vec::new();
         let Some(player) = self.arena.actors.get(self.player_id).cloned() else {
@@ -34,6 +79,16 @@ impl SimulationWorld {
         });
 
         if let Some(item_id) = chosen_item {
+            let weight = self
+                .hero_carried_weight()
+                .saturating_add(self.arena.calculate_total_weight(item_id));
+            if !self.can_lift_weight(weight) {
+                events.push(GameEvent::LogMessage {
+                    text: "You are carrying too much to pick that up.".into(),
+                });
+                self.scheduler.hero_act(NORMAL_SPEED);
+                return events;
+            }
             if let Some(item) = self.arena.items.get_mut(item_id) {
                 item.location = ItemLocation::CarriedBy(self.player_id);
                 let name = item.name.clone();
@@ -78,6 +133,12 @@ impl SimulationWorld {
         let carried = self.arena.items_carried_by(self.player_id);
         if idx < carried.len() {
             let item_id = carried[idx];
+            // C canletgo/do.c:665-670,718-719: no time and no transfer.
+            if self.selected_suit_is_worn(item_id) {
+                return vec![GameEvent::LogMessage {
+                    text: "You cannot drop something you are wearing.".into(),
+                }];
+            }
             if let Some(item) = self.arena.items.get_mut(item_id) {
                 item.location = ItemLocation::Floor(player.coord);
                 let name = item.name.clone();
@@ -196,6 +257,15 @@ impl SimulationWorld {
         if item_index < carried.len() && container_index < carried.len() {
             let item_id = carried[item_index];
             let container_id = carried[container_index];
+            // C in_container rejects worn armor before even checking magic bags.
+            // Indexed selection maps to menu_loot's n=1 attempt: even a rejected
+            // callback costs time (pickup.c:3365-3376,3391), without bag RNG.
+            if self.selected_suit_is_worn(item_id) {
+                self.scheduler.hero_act(NORMAL_SPEED);
+                return vec![GameEvent::LogMessage {
+                    text: "You cannot stash something you are wearing.".into(),
+                }];
+            }
             if item_id == container_id {
                 events.push(GameEvent::LogMessage {
                     text: "You cannot put something inside itself!".into(),
@@ -243,9 +313,11 @@ impl SimulationWorld {
                     }
                     self.scheduler.hero_act(NORMAL_SPEED);
                 } else {
+                    let frozen = self.corpse_freeze_snapshot(item_id);
                     if let Some(i) = self.arena.items.get_mut(item_id) {
                         i.location = ItemLocation::InContainer(container_id);
                     }
+                    self.apply_corpse_freeze_transitions(frozen);
                     if self.wielded_item == Some(item_id) {
                         self.wielded_item = None;
                     }
@@ -276,6 +348,21 @@ impl SimulationWorld {
             let in_container = self.arena.items_in_container(container_id);
             if item_index < in_container.len() {
                 let item_id = in_container[item_index];
+                let frozen = self.corpse_freeze_snapshot(item_id);
+                // Project the actual root total, including all enclosing bag
+                // rounding, rather than adding the child's weight twice.
+                self.arena.items.get_mut(item_id).unwrap().location =
+                    ItemLocation::CarriedBy(self.player_id);
+                let weight = self.hero_carried_weight();
+                if !self.can_lift_weight(weight) {
+                    self.arena.items.get_mut(item_id).unwrap().location =
+                        ItemLocation::InContainer(container_id);
+                    events.push(GameEvent::LogMessage {
+                        text: "You are carrying too much to remove that item.".into(),
+                    });
+                    self.scheduler.hero_act(NORMAL_SPEED);
+                    return events;
+                }
                 let item_name = self
                     .arena
                     .items
@@ -291,6 +378,7 @@ impl SimulationWorld {
                 if let Some(i) = self.arena.items.get_mut(item_id) {
                     i.location = ItemLocation::CarriedBy(self.player_id);
                 }
+                self.apply_corpse_freeze_transitions(frozen);
                 events.push(GameEvent::LogMessage {
                     text: format!("You take the {item_name} out of the {container_name}."),
                 });

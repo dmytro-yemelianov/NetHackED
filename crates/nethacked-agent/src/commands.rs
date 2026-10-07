@@ -114,6 +114,8 @@ pub fn parse_action(name: &str, args: &ActionArgs) -> Result<ActionAst, String> 
         "untrap" => Ok(ActionAst::Untrap(target_coord(args)?)),
         "drop" => Ok(ActionAst::Drop(idx)),
         "wield" => Ok(ActionAst::Wield(idx)),
+        "wear" => Ok(ActionAst::Wear(idx)),
+        "remove" | "takeoff" => Ok(ActionAst::Remove(idx)),
         "quaff" => Ok(ActionAst::Quaff(idx)),
         "read" => Ok(ActionAst::Read(idx)),
         "eat" => Ok(ActionAst::Eat(idx)),

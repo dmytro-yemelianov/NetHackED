@@ -190,6 +190,7 @@ fn test_elbereth_exemptions_and_repulsion() {
         c_east,
         &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
     ));
+    sim.arena.actors[goblin_id].movement = 12;
     let events = sim.step_player_action(ActionAst::Wait);
     assert!(
         events.iter().any(|e| matches!(
@@ -210,6 +211,7 @@ fn test_elbereth_exemptions_and_repulsion() {
     );
     shk_rec.is_peaceful = false; // Make hostile
     let shk_id = sim.arena.spawn_actor(shk_rec);
+    sim.arena.actors[shk_id].movement = 12;
 
     let shk_events = sim.step_player_action(ActionAst::Wait);
     assert!(

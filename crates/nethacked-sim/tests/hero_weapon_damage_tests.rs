@@ -15,6 +15,9 @@ use std::collections::BTreeSet;
 
 /// Set up an open floor tile adjacent to the player and return its coordinate.
 fn open_east(sim: &mut SimulationWorld) -> Coord {
+    // Isolate weapon/bare-hand dice with C-neutral strength (dbon == 0).
+    sim.progress.attr_base[0] = 10;
+    sim.progress.attr_max[0] = 10;
     let p = sim.arena.actors.get(sim.player_id).unwrap().coord;
     let east = Coord::new(p.x + 1, p.y).unwrap();
     sim.level.set_tile(east, nethacked_types::Tile::Room);

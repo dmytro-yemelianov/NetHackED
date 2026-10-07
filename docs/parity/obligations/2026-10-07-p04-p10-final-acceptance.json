@@ -1,0 +1,128 @@
+{
+  "schema_version": 1,
+  "batch": "P04\u2013P10",
+  "date": "2026-10-07",
+  "scope": "Original bounded P04\u2013P10 queue; broader NetHack parity remains partial",
+  "status": "GREEN_VERIFIED_FOR_CONTAINING_COMMIT",
+  "units": [
+    "P04a",
+    "P04b",
+    "P04c",
+    "P05",
+    "P06",
+    "P07",
+    "P08",
+    "P09",
+    "P10"
+  ],
+  "independent_semantic_audit": "2026-10-07-p04-p10-completion.json",
+  "inline_adjusted_test_inventory": "2026-10-07-p04-p10-inline-test-adjustments.json",
+  "required_feature_findings": [],
+  "reviewed_before_gold_digest": "64ea29d3bd5d2ce97d1d515501e07c424b5951e806cc7818d17f9690fcfffddc",
+  "verified_input_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+  "non_documentation_inputs": 342,
+  "verified_parent_HEAD": "b912fafe33c8cd6bff80522d5b7ca7ee1cae3d40",
+  "tests_passed": 999,
+  "golden_tests_passed": [
+    "golden_vanilla_event_logs_are_unchanged",
+    "golden_vanilla_bestiary_combat_is_unchanged",
+    "golden_vanilla_runs_are_unchanged"
+  ],
+  "gates": [
+    {
+      "check": "fmt",
+      "exit": 0,
+      "seconds": 0.47,
+      "log": "/tmp/netrust-p04-p10-green-gates/fmt.log"
+    },
+    {
+      "check": "clippy",
+      "exit": 0,
+      "seconds": 9.46,
+      "log": "/tmp/netrust-p04-p10-green-gates/clippy.log"
+    },
+    {
+      "check": "workspace",
+      "exit": 0,
+      "seconds": 194.36,
+      "log": "/tmp/netrust-p04-p10-green-gates/workspace.log"
+    },
+    {
+      "check": "wasm",
+      "exit": 0,
+      "seconds": 0.21,
+      "log": "/tmp/netrust-p04-p10-green-gates/wasm.log"
+    },
+    {
+      "check": "python",
+      "exit": 0,
+      "seconds": 0.13,
+      "log": "/tmp/netrust-p04-p10-green-gates/python.log"
+    },
+    {
+      "check": "static",
+      "exit": 0,
+      "seconds": 0.11,
+      "log": "/tmp/netrust-p04-p10-green-gates/static.log"
+    },
+    {
+      "check": "extract",
+      "exit": 0,
+      "seconds": 0.18,
+      "log": "/tmp/netrust-p04-p10-green-gates/extract.log"
+    },
+    {
+      "check": "generated",
+      "exit": 0,
+      "seconds": 0.07,
+      "log": "/tmp/netrust-p04-p10-green-gates/generated.log"
+    },
+    {
+      "check": "coverage",
+      "exit": 0,
+      "seconds": 1.13,
+      "log": "/tmp/netrust-p04-p10-green-gates/coverage.log"
+    },
+    {
+      "check": "parity",
+      "exit": 0,
+      "seconds": 0.02,
+      "log": "/tmp/netrust-p04-p10-green-gates/parity.log"
+    },
+    {
+      "check": "docs",
+      "exit": 0,
+      "seconds": 0.24,
+      "log": "/tmp/netrust-p04-p10-green-gates/docs.log"
+    },
+    {
+      "check": "lean",
+      "exit": 0,
+      "seconds": 0.34,
+      "log": "/tmp/netrust-p04-p10-green-gates/lean.log"
+    }
+  ],
+  "approval": "User: \u0442\u0430\u043a \u043e\u043d\u043e\u0432\u0438 (2026-10-07); scoped16 values in checked P04\u2013P10 proposal",
+  "golden_values_changed": {
+    "EXPECTED_RUNS": 4,
+    "EXPECTED_LOGS": 9,
+    "EXPECTED_COMBAT": 3
+  },
+  "golden_before_sha256": "304a507d2968948f3c62a41ef217bac01e310d70f4bc47f076ce6c10664fc7f0",
+  "golden_after_sha256": "dff651d536548ca372addf88fec0ad6fc15a5c5e4a088870f25e8fc19e5c160b",
+  "all_other_reviewed_inputs_unchanged": true,
+  "golden_test_logic_and_assertions_unchanged": true,
+  "original_assertion_macros_retained": 1217,
+  "adjusted_existing_test_names": 99,
+  "dependency_changes": false,
+  "source_reference": "16ff59115315917b93185d026aeefea06db9b0f4 (source facts only; no C execution)",
+  "models": "Sequential Sol/medium normal and Sol/high lifecycle/timing implementation; fresh Sol/high semantic review; local verification. No nested fleets or escalation.",
+  "token_cost": "Actual model costs unavailable; no savings claimed",
+  "commit": "The containing commit; resolve with git log -1 -- this file",
+  "broader_gaps": [
+    "Effective attributes/forms, unselected regeneration/equipment/property contexts",
+    "Rider/Ice/burial/mextra and broader lifecycle contexts",
+    "Transformed speed/gallop and C linked-list ordering",
+    "Other groups/wand contexts, revenge state, special inventory/habitats/quests/global identity wrap"
+  ]
+}

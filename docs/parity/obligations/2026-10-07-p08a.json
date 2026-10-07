@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "batch": "P08a",
+  "checked_date": "2026-10-07",
+  "checked_head": "b912faf",
+  "source_tag": "NetHack-5.0.0_Released",
+  "source_commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+  "feature": "Persisted object timer primitive and necessary deterministic cache remint",
+  "implemented_subsets": [
+    "One scheduler-clock queue with scoped object targets, duplicate rejection, cancellation and stale-reference pruning",
+    "Active due dispatch and cached absolute deadlines with remapped reference catch-up on return/load",
+    "Source-derived insertion and restoration tie ordering; no RNG or clock advancement during catch-up",
+    "Canonical allocator reconstruction before cached remint preserves original-versus-loaded object/actor associations"
+  ],
+  "tests": [
+    "crates/nethacked-sim/tests/object_timer_tests.rs"
+  ],
+  "remaining": [
+    "P08b actual corpse rot, source-derived scheduling and public freezing/thawing transfer integration",
+    "P08b legacy corpse scheduling migration",
+    "P08c one ordinary Troll revival family with owned class facts and actual placement/failure-to-rot",
+    "Broader timer callbacks, Rider, zombie conversion, Ice Troll special and floor-ice lifetime behavior"
+  ],
+  "review": "PASS fresh Sol/high narrow re-review; restoration-order defect closed on first targeted repair, allocator prerequisite preserved",
+  "acceptance": "860 workspace tests and 11 other gates pass; complete 319 inputs stable; no additional golden delta beyond P07; expiry is a neutral primitive event, actual rot/revival and final golden policy remain open",
+  "plan": "docs/plans/2026-10-07-corpse-lifecycle.md",
+  "subsequent_review_note": "P08b2a fresh review found historical ancestor-freeze semantics incorrect for sack-in-ice-box. Direct-containment correction now passed independent narrow re-review and current root gates:931 tests/11 other gates; gold policy pending. Historical counts are retained as historical evidence.",
+  "final_integration": {
+    "record": "2026-10-07-p04-p10-final-acceptance.json",
+    "status": "Original bounded exit reviewed/audited and final green integration verified; prior checkpoint fields are historical",
+    "tests": 999,
+    "gates": 12,
+    "goldens": 3,
+    "input_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+    "commit": "Containing commit; see final acceptance record"
+  }
+}

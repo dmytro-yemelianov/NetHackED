@@ -55,6 +55,8 @@ pub fn resolve(pack: &PackDir, base: &Ruleset) -> Result<Ruleset, PackError> {
                 id: None,
                 name: patch.name.clone(),
                 glyph: req_m_field!(glyph),
+                corpse_timeout_policy: patch.corpse_timeout_policy.unwrap_or_default(),
+                corpse_thaw_policy: patch.corpse_thaw_policy.unwrap_or_default(),
                 base_hp: req_m_field!(base_hp),
                 max_hp: req_m_field!(max_hp),
                 sample_hp: patch.sample_hp.unwrap_or(false),
@@ -103,6 +105,12 @@ pub fn resolve(pack: &PackDir, base: &Ruleset) -> Result<Ruleset, PackError> {
             }
             if let Some(v) = patch.sample_hp {
                 target.sample_hp = v;
+            }
+            if let Some(v) = patch.corpse_thaw_policy {
+                target.corpse_thaw_policy = v;
+            }
+            if let Some(v) = patch.corpse_timeout_policy {
+                target.corpse_timeout_policy = v;
             }
             if let Some(v) = patch.glyph {
                 target.glyph = v;
@@ -187,6 +195,14 @@ pub fn resolve(pack: &PackDir, base: &Ruleset) -> Result<Ruleset, PackError> {
 
     // 2. Process items
     for patch in &pack.items {
+        if patch.clear_worn_property && patch.worn_property.is_some() {
+            return Err(PackError::Resolve(Diagnostic {
+                file: "items.toml".into(),
+                entry: patch.name.clone(),
+                field: Some("worn_property".into()),
+                message: "cannot set and clear worn_property together".into(),
+            }));
+        }
         let name_lower = patch.name.to_ascii_lowercase();
         if patch.remove {
             let initial_len = items.len();
@@ -240,6 +256,10 @@ pub fn resolve(pack: &PackDir, base: &Ruleset) -> Result<Ruleset, PackError> {
                 oc_magic: req_i_field!(oc_magic),
                 wand_dir: patch.wand_dir.unwrap_or(None),
                 nutrition: req_i_field!(nutrition),
+                oc_delay: patch.oc_delay.unwrap_or_default(),
+                worn_property: (!patch.clear_worn_property)
+                    .then_some(patch.worn_property)
+                    .flatten(),
                 armor: patch.armor.clone().unwrap_or(None),
                 initialization: patch.initialization.unwrap_or_default(),
                 generation_weight: patch.generation_weight.unwrap_or_default(),
@@ -298,6 +318,14 @@ pub fn resolve(pack: &PackDir, base: &Ruleset) -> Result<Ruleset, PackError> {
             }
             if let Some(v) = patch.initialization {
                 target.initialization = v;
+            }
+            if patch.clear_worn_property {
+                target.worn_property = None;
+            } else if let Some(v) = patch.worn_property {
+                target.worn_property = Some(v);
+            }
+            if let Some(v) = patch.oc_delay {
+                target.oc_delay = v;
             }
             if let Some(v) = patch.nutrition {
                 target.nutrition = v;

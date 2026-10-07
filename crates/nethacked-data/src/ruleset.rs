@@ -5,7 +5,7 @@ use std::sync::{Arc, OnceLock};
 
 use crate::monsters::{compute_monster_hp, monster_spawn_level, MonsterSpawnContext};
 use nethacked_arena::{
-    ActorId, ActorRecord, ActorSpecies, EntityArena, ItemId, ItemLocation, ItemRecord,
+    ActorId, ActorRecord, ActorSex, ActorSpecies, EntityArena, ItemId, ItemLocation, ItemRecord,
 };
 use nethacked_core::ac::ArmorSlot;
 use nethacked_core::quest::get_role_quest_config;
@@ -16,7 +16,10 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::items::{get_item_archetype, ItemKindId, WandDir, ITEM_CATALOG};
-use crate::monsters::{AiBehavior, MonsterSize, MonsterSound, MonsterSpeciesId, BESTIARY};
+use crate::monsters::{
+    AiBehavior, CorpseThawPolicy, CorpseTimeoutPolicy, MonsterSize, MonsterSound, MonsterSpeciesId,
+    BESTIARY,
+};
 use crate::pantheons::get_pantheon_for_role;
 use crate::roles::{
     starting_item_spe, starting_skills, CharacterConfig, RaceId, RoleId, RACES, ROLES,
@@ -31,6 +34,13 @@ pub struct MonsterDef {
     pub id: Option<MonsterSpeciesId>,
     pub name: String,
     pub glyph: char,
+    /// Source timeout policy. Legacy definitions omit it and remain ordinary;
+    /// no canonical ID or display-name fallback overrides an owned definition.
+    #[serde(default, skip_serializing_if = "CorpseTimeoutPolicy::is_ordinary")]
+    pub corpse_timeout_policy: CorpseTimeoutPolicy,
+    /// Owned ice-box thaw assignment; absent legacy fields are ordinary.
+    #[serde(default, skip_serializing_if = "CorpseThawPolicy::is_ordinary")]
+    pub corpse_thaw_policy: CorpseThawPolicy,
     pub base_hp: u32,
     pub max_hp: u32,
     /// Sample C-style HP at spawn; absent in old definitions means fixed HP.
@@ -88,6 +98,7 @@ impl MonsterDef {
         level: u32,
     ) -> ActorRecord {
         ActorRecord {
+            sex: self.fixed_sex(),
             species: Some(self.actor_species()),
             name: self.name.clone(),
             coord,
@@ -96,6 +107,7 @@ impl MonsterDef {
             ac: self.ac,
             level,
             speed: self.speed,
+            movement: 0,
             alignment: self.alignment,
             intrinsics: self.intrinsics,
             is_player: false,
@@ -111,7 +123,33 @@ impl MonsterDef {
             is_peaceful: self.peaceful_by_default,
             mspec_used: 0,
             malign: 0,
+            is_fleeing: false,
+            is_cancelled: false,
         }
+    }
+
+    /// Fixed sex from the owned C M2_* flags, with makemon's female-first precedence.
+    pub fn fixed_sex(&self) -> Option<ActorSex> {
+        if self.has_flag("female") {
+            Some(ActorSex::Female)
+        } else if self.has_flag("male") {
+            Some(ActorSex::Male)
+        } else if self.has_flag("neuter") {
+            Some(ActorSex::Neuter)
+        } else {
+            None
+        }
+    }
+
+    /// C makemon.c:1258–1279, after HP; variable-sex species consume rn2(2).
+    pub fn sample_sex(&self, rng: &mut impl Rng) -> ActorSex {
+        self.fixed_sex().unwrap_or_else(|| {
+            if rng.random_range(0..2u32) == 0 {
+                ActorSex::Male
+            } else {
+                ActorSex::Female
+            }
+        })
     }
 
     /// Does the species carry the C monster flag `flag` (e.g. `"nasty"` for `M2_NASTY`)?
@@ -192,6 +230,13 @@ pub struct ItemDef {
     pub oc_magic: bool,
     pub wand_dir: Option<WandDir>,
     pub nutrition: u32,
+    /// Owned C `oc_delay`; absent legacy metadata means zero, without static fallback.
+    /// Zero is omitted to preserve legacy canonical JSON and hashes.
+    #[serde(default, skip_serializing_if = "is_zero_weight")]
+    pub oc_delay: u32,
+    /// Owned worn source; absent metadata never falls back to catalog identity.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub worn_property: Option<crate::items::WornProperty>,
     /// Armor slot and C base AC (from `nethacked_core::ac` table); `None` for non-armor.
     pub armor: Option<ArmorDef>,
     /// Missing metadata preserves the old fixed factory behavior and hash.
@@ -235,6 +280,13 @@ struct ItemDefWire {
     pub oc_magic: bool,
     pub wand_dir: Option<WandDir>,
     pub nutrition: u32,
+    /// Owned C `oc_delay`; absent legacy metadata means zero, without static fallback.
+    /// Zero is omitted to preserve legacy canonical JSON and hashes.
+    #[serde(default, skip_serializing_if = "is_zero_weight")]
+    pub oc_delay: u32,
+    /// Owned worn source; absent metadata never falls back to catalog identity.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub worn_property: Option<crate::items::WornProperty>,
     /// Armor slot and C base AC (from `nethacked_core::ac` table); `None` for non-armor.
     pub armor: Option<ArmorDef>,
     /// Missing metadata preserves the old fixed factory behavior and hash.
@@ -265,6 +317,8 @@ impl From<ItemDefWire> for ItemDef {
             oc_magic: w.oc_magic,
             wand_dir: w.wand_dir,
             nutrition: w.nutrition,
+            oc_delay: w.oc_delay,
+            worn_property: w.worn_property,
             armor: w.armor,
             initialization: w.initialization,
             generation_weight: w.generation_weight.unwrap_or_default(),
@@ -289,6 +343,8 @@ impl From<ItemDef> for ItemDefWire {
             oc_magic: d.oc_magic,
             wand_dir: d.wand_dir,
             nutrition: d.nutrition,
+            oc_delay: d.oc_delay,
+            worn_property: d.worn_property,
             armor: d.armor,
             initialization: d.initialization,
             generation_weight: (!d.generation_weight_missing || d.generation_weight != 0)
@@ -390,6 +446,10 @@ pub struct QuestDef {
 #[serde(deny_unknown_fields)]
 pub struct RoleDef {
     pub id: RoleId,
+    /// Source role.mnum for original, unpolymorphed byhero placement.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "schema", schemars(with = "Option<OriginalMonsterSchema>"))]
+    pub original_monster: Option<ActorSpecies>,
     pub name: String,
     pub base_hp: u32,
     pub ac: i32,
@@ -577,16 +637,29 @@ impl Ruleset {
     /// falls back to a mutable display name. Old saves retain decorated lookup.
     pub fn monster_for_actor(&self, actor: &ActorRecord) -> Option<&MonsterDef> {
         match &actor.species {
-            Some(ActorSpecies::Vanilla(key)) => {
-                self.monster_by_id(MonsterSpeciesId::from_c_name(key)?)
-            }
-            Some(ActorSpecies::Custom(key)) => self
+            Some(species) => self.monster_for_species(species),
+            None => self.monster(&actor.name),
+        }
+    }
+
+    /// Resolve an explicit owned species key without a display-name fallback.
+    pub fn monster_for_species(&self, species: &ActorSpecies) -> Option<&MonsterDef> {
+        match species {
+            ActorSpecies::Vanilla(key) => self.monster_by_id(MonsterSpeciesId::from_c_name(key)?),
+            ActorSpecies::Custom(key) => self
                 .index
                 .monsters_by_name
                 .get(key)
                 .and_then(|&i| self.monsters.get(i))
                 .filter(|def| def.id.is_none()),
-            None => self.monster(&actor.name),
+        }
+    }
+
+    /// Legacy absent role.mnum metadata uses only the canonical source role ID.
+    pub fn original_monster_for_role(&self, id: RoleId) -> Option<&MonsterDef> {
+        match &self.role(id)?.original_monster {
+            Some(species) => self.monster_for_species(species),
+            None => self.monster_by_id(original_role_monster(id)),
         }
     }
 
@@ -665,13 +738,73 @@ impl Ruleset {
         context: MonsterSpawnContext,
         rng: &mut impl Rng,
     ) -> ActorRecord {
-        if def.sample_hp {
+        let mut actor = if def.sample_hp {
             let hp = compute_monster_hp(def, context, rng);
             let level = monster_spawn_level(def, hp);
             def.create_record_with_hp(coord, hp, hp, level)
         } else {
             def.create_record_with_hp(coord, def.base_hp, def.max_hp, def.level)
-        }
+        };
+        actor.sex = Some(def.sample_sex(rng));
+        actor
+    }
+
+    /// Ordinary random-generation initialization, C makemon/newmonhp.
+    /// Explicit factories retain their original RNG contract. Fixed pack HP
+    /// retains its policy; sampled definitions use current difficulty/hero level.
+    pub fn create_random_monster_record_from_def(
+        &self,
+        def: &MonsterDef,
+        coord: Coord,
+        context: MonsterSpawnContext,
+        level_context: (u32, u32),
+        rng: &mut impl Rng,
+    ) -> ActorRecord {
+        let _identity_draw = rng.random_range(0..2u32);
+        let mut actor = if def.sample_hp {
+            let adjusted = if def.level > 49 {
+                50
+            } else {
+                crate::monsters::ordinary_adjusted_level(
+                    def.level,
+                    level_context.0,
+                    level_context.1,
+                )
+            };
+            let hp = crate::monsters::compute_monster_hp_at_level(def, adjusted, context, rng);
+            let level = crate::monsters::random_monster_spawn_level(def, hp, adjusted);
+            def.create_record_with_hp(coord, hp, hp, level)
+        } else {
+            def.create_record_with_hp(coord, def.base_hp, def.max_hp, def.level)
+        };
+        actor.sex = Some(def.sample_sex(rng));
+        actor
+    }
+
+    /// Detached ordinary revival initialization. Consume C's nonwrapping
+    /// next_ident draw before HP, even though arena keys are a different owner.
+    /// Saved-traits callers pass no forced sex and restore their payload later.
+    pub fn create_revival_record_from_def(
+        &self,
+        def: &MonsterDef,
+        coord: Coord,
+        context: MonsterSpawnContext,
+        level_context: (u32, u32),
+        forced_sex: Option<ActorSex>,
+        rng: &mut impl Rng,
+    ) -> ActorRecord {
+        let _identity_draw = rng.random_range(0..2u32);
+        let mut adjusted = def.clone();
+        adjusted.level =
+            crate::monsters::ordinary_adjusted_level(def.level, level_context.0, level_context.1);
+        let hp = compute_monster_hp(&adjusted, context, rng);
+        let mut actor = def.create_record_with_hp(coord, hp, hp, adjusted.level);
+        actor.sex = Some(
+            def.fixed_sex()
+                .or(forced_sex)
+                .unwrap_or_else(|| def.sample_sex(rng)),
+        );
+        actor
     }
 
     /// Spawn an ActorRecord by its canonical species ID.
@@ -714,6 +847,7 @@ impl Ruleset {
             }
         };
         Some(ItemRecord {
+            saved_monster_traits: None,
             artifact_id: self.artifact_id_for_item(&def.name).map(str::to_owned),
             name: def.name.clone(),
             class: def.class,
@@ -725,6 +859,7 @@ impl Ruleset {
             erosion: 0,
             proofed: false,
             location,
+            corpse_no_revive: false,
             corpse_species: (def.id == Some(ItemKindId::CORPSE))
                 .then_some(nethacked_arena::CorpseSpecies::Unspecified),
             is_ice_box: matches!(
@@ -767,6 +902,10 @@ impl Ruleset {
         let race = self.race(cfg.race).expect("Race must exist in ruleset");
 
         let actor = ActorRecord {
+            sex: Some(match cfg.gender {
+                crate::roles::Gender::Male => ActorSex::Male,
+                crate::roles::Gender::Female => ActorSex::Female,
+            }),
             species: None,
             name: cfg.name.clone(),
             coord,
@@ -775,6 +914,7 @@ impl Ruleset {
             ac: role.ac,
             level: 1,
             speed: role.speed,
+            movement: 0,
             alignment: cfg.alignment,
             intrinsics: race.intrinsics,
             is_player: true,
@@ -786,6 +926,8 @@ impl Ruleset {
             is_peaceful: false,
             mspec_used: 0,
             malign: 0,
+            is_fleeing: false,
+            is_cancelled: false,
         };
         let player_id = arena.spawn_actor(actor);
 
@@ -823,6 +965,8 @@ fn build_vanilla_ruleset() -> Ruleset {
             id: Some(arch.id),
             name: arch.name.to_string(),
             glyph: arch.glyph,
+            corpse_timeout_policy: arch.corpse_timeout_policy,
+            corpse_thaw_policy: arch.corpse_thaw_policy,
             base_hp: arch.base_hp,
             max_hp: arch.max_hp,
             sample_hp: true,
@@ -875,6 +1019,8 @@ fn build_vanilla_ruleset() -> Ruleset {
                 oc_magic: arch.oc_magic,
                 wand_dir: arch.wand_dir,
                 nutrition: arch.nutrition,
+                oc_delay: arch.oc_delay,
+                worn_property: arch.worn_property,
                 armor,
                 initialization: arch.initialization,
                 generation_weight: arch.prob,
@@ -910,6 +1056,9 @@ fn build_vanilla_ruleset() -> Ruleset {
 
             RoleDef {
                 id: role.id,
+                original_monster: Some(ActorSpecies::Vanilla(
+                    original_role_monster(role.id).c_name().to_owned(),
+                )),
                 name: role.name.to_string(),
                 base_hp: role.base_hp,
                 ac: role.ac,
@@ -1055,4 +1204,30 @@ mod tests {
             );
         }
     }
+}
+
+/// Released role.c mnum, u_init.c:991; these are canonical identifiers.
+fn original_role_monster(role: RoleId) -> MonsterSpeciesId {
+    use MonsterSpeciesId as M;
+    match role {
+        RoleId::Archaeologist => M::ARCHEOLOGIST,
+        RoleId::Barbarian => M::BARBARIAN,
+        RoleId::Healer => M::HEALER,
+        RoleId::Knight => M::KNIGHT,
+        RoleId::Monk => M::MONK,
+        RoleId::Rogue => M::ROGUE,
+        RoleId::Tourist => M::TOURIST,
+        RoleId::Valkyrie => M::VALKYRIE,
+        RoleId::Wizard => M::WIZARD,
+    }
+}
+
+// ActorSpecies belongs to arena, which has no schema feature. Preserve its exact
+// externally tagged wire shape without changing that runtime owner.
+#[cfg(feature = "schema")]
+#[derive(schemars::JsonSchema)]
+#[allow(dead_code)]
+enum OriginalMonsterSchema {
+    Vanilla(String),
+    Custom(String),
 }

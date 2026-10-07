@@ -95,6 +95,7 @@ impl SimulationWorld {
                 let target_coord = scatter_coords[i % scatter_coords.len()];
                 if self.level.is_passable(target_coord) {
                     let item_record = ItemRecord {
+                        saved_monster_traits: None,
                         artifact_id: b_item.artifact_id.or_else(|| {
                             self.ruleset
                                 .artifact_id_for_item(&b_item.name)
@@ -110,6 +111,7 @@ impl SimulationWorld {
                         erosion: 0,
                         proofed: false,
                         location: ItemLocation::Floor(target_coord),
+                        corpse_no_revive: false,
                         corpse_species: None,
                         is_ice_box: false,
                         corpse_race: None,

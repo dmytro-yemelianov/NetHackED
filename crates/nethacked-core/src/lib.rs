@@ -10,6 +10,7 @@ pub mod branch;
 pub mod buc;
 pub mod combat;
 pub mod conducts;
+pub mod corpse_timeout;
 pub mod dungeon_stack;
 pub mod enchantment;
 pub mod endgame;
