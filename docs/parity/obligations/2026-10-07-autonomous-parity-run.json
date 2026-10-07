@@ -1,0 +1,415 @@
+{
+  "schema": "netrust-autonomous-parity-run-v1",
+  "run_state": "prepared_not_started",
+  "goal_activation": "user_goal_required; do not infer activation from saved files",
+  "contract": "docs/plans/2026-10-07-autonomous-parity-run.md",
+  "scope_registry": "docs/parity/obligations/2026-10-07-remaining-parity-scope.json",
+  "scope_registry_sha256": "ef0c220796234250d4d8e532f66ffbd113503d8db78bc40c002368f90719a5e9",
+  "baseline": {
+    "head": "5edce533c58349aebbeb010a70da87e91ffd44e9",
+    "source_inputs": 342,
+    "source_input_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+    "c_commit": "16ff59115315917b93185d026aeefea06db9b0f4"
+  },
+  "configuration": {
+    "status": "audit_needed",
+    "record": null
+  },
+  "completion_policy": "contract_final_completion_audit_all_requirements_with_evidence",
+  "first_action": "Validate current workspace; pin configuration and prepare independently reviewed P11a source contract",
+  "active_unit": null,
+  "live_handles": [],
+  "families": [
+    {
+      "id": "EQ01",
+      "stream": "EQ",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "EQ02",
+      "stream": "EQ",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "EQ03",
+      "stream": "EQ",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "EQ04",
+      "stream": "EQ",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "EQ05",
+      "stream": "EQ",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "P11a",
+      "stream": "CB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "P11b",
+      "stream": "CB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "P11c",
+      "stream": "CB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "P11d",
+      "stream": "CB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "CB01",
+      "stream": "CB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "CB02",
+      "stream": "CB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "CB03",
+      "stream": "CB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "CB04",
+      "stream": "CB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "CB05",
+      "stream": "CB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "AI01",
+      "stream": "AI",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "AI02",
+      "stream": "AI",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "AI03",
+      "stream": "AI",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "AI04",
+      "stream": "AI",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "AI05",
+      "stream": "AI",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "OB01",
+      "stream": "OB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "OB02",
+      "stream": "OB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "OB03",
+      "stream": "OB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "OB04",
+      "stream": "OB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "OB05",
+      "stream": "OB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "OB06",
+      "stream": "OB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "OB07",
+      "stream": "OB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "OB08",
+      "stream": "OB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "OB09",
+      "stream": "OB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "OB10",
+      "stream": "OB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "OB11",
+      "stream": "OB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "HE01",
+      "stream": "HE",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "HE02",
+      "stream": "HE",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "HE03",
+      "stream": "HE",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "HE04",
+      "stream": "HE",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "HE05",
+      "stream": "HE",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "HE06",
+      "stream": "HE",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "HE07",
+      "stream": "HE",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "HE08",
+      "stream": "HE",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "HE09",
+      "stream": "HE",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "HE10",
+      "stream": "HE",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "DG01",
+      "stream": "DG",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "DG02",
+      "stream": "DG",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "DG03",
+      "stream": "DG",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "DG04",
+      "stream": "DG",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "DG05",
+      "stream": "DG",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "DG06",
+      "stream": "DG",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "DG07",
+      "stream": "DG",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "DG08",
+      "stream": "DG",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "UI01",
+      "stream": "UI",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "UI02",
+      "stream": "UI",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "UI03",
+      "stream": "UI",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "UI04",
+      "stream": "UI",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "UI05",
+      "stream": "UI",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    }
+  ],
+  "children": [],
+  "inventory_coverage": {
+    "baseline_rows": 543,
+    "record": null,
+    "status": "unreconciled_by_this_run"
+  },
+  "catalog_coverage": {
+    "enumeration_records": [],
+    "context_records": [],
+    "status": "audit_needed_including_declared_tags_flags_properties_levels"
+  },
+  "decisions": [],
+  "findings": [],
+  "accepted_checkpoints": [],
+  "integration_audit": null,
+  "final_gate_evidence": null,
+  "final_delivery": null,
+  "runtime_budget": "unspecified_by_user",
+  "token_usage": "unknown",
+  "golden_policy": "frozen_until_exact_task_specific_explicit_user_authorization; no_new_blanket_permission"
+}

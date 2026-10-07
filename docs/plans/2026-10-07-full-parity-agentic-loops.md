@@ -4,6 +4,8 @@ Planning baseline: `b39a7e3`, `feat/monster-hp-d8`, 2026-10-07. This specifies e
 
 The reviewed [remaining-stream scope](2026-10-07-remaining-parity-scope.md) supplies the seven-stream family/catalog queue and all 543 row mappings after P04–P10. Bind narrow accepted prerequisites before dispatch; aggregate family closure is separate from child readiness. All new cards begin audit-needed. This extends the queue without changing model routing or repair limits below.
 
+The [autonomous completion contract](2026-10-07-autonomous-parity-run.md) formalizes a persistent goal, compact run ledger, queue selection/resume policy and aggregate completion audit for this scope. Its ledger is initially prepared and unstarted; goal activation is separate from saving the contract. The [planning review](../parity/obligations/2026-10-07-autonomous-parity-contract-review.json) records validation; existing golden authorization boundaries remain unchanged.
+
 ## Model routing and authority
 
 Explicitly set model and reasoning effort on every delegated task. Official [OpenAI subagent guidance](https://learn.chatgpt.com/docs/agent-configuration/subagents) recommends Luna for narrow work and Sol for demanding agents, and explains inherited settings and effort tradeoffs. The assignments below are project recommendations using models available in this session, not benchmark results, prices or claims about API availability.
