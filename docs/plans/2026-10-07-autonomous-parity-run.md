@@ -1,5 +1,7 @@
 # Autonomous completion contract for remaining parity
 
+Current execution amendment: [process optimization](2026-10-07-parity-process-optimization.md) supersedes conflicting model defaults, token envelopes, output and reuse rules below; scope and acceptance requirements remain.
+
 Prepared at `5edce53`, 2026-10-07. This is a launch contract and initial ledger, not an activated parity run or an executable scheduler. Codex Goals supply thread continuation; the coordinator operates the queue using the existing tools. [Official Goals guidance](https://developers.openai.com/cookbook/examples/codex/using_goals_in_codex) describes persistent objectives with verifiable outcomes, constraints and stopping conditions.
 
 Authority remains [AGENTS.md](../../AGENTS.md), [USER.md](../../USER.md), [MEMORY.md](../../MEMORY.md), the [scoped parity plan](2026-10-07-remaining-parity-scope.md) and the [agentic execution rules](2026-10-07-full-parity-agentic-loops.md). The [scope registry](../parity/obligations/2026-10-07-remaining-parity-scope.json) defines 53 families across seven streams and all 543 historic rows. The [run ledger](../parity/obligations/2026-10-07-autonomous-parity-run.json) initially records an unstarted run; coverage instances are not implementation tasks. An active thread goal must name this outcome. The previously observed goal text `remove` does not identify the parity objective; clear or replace it through the user's goal controls before launch.
@@ -88,7 +90,7 @@ Each accepted checkpoint gets truthful obligation/parity/spec updates, the full 
 
 Use the existing session identifiers: normal worker `gpt-6.1-sol/medium`; difficult timing/lifecycle/ordering worker `gpt-6.1-sol/high`; fresh semantic reviewer `gpt-6.1-sol/high`; optional narrow facts `gpt-6-luna/high`. One active child plus coordinator, one source writer and one Cargo runner; no nested fleet. Use `fork_turns="none"` with explicit packets. Workers never commit, edit goldens or approve their own evidence.
 
-Retain the existing soft work envelopes (4–6k structural, 8–12k normal, ≤16k difficult), ≤1,000-token task packets and compact handoffs. Split at a natural semantic boundary when a unit grows; preserve checks and scope. Usage is `unknown` when tools do not expose it.
+Apply the current [process controls](2026-10-07-parity-process-optimization.md), including separate uncached-input/output thresholds, ≤1,000 estimated-token packets and compact handoffs. Split at a coherent boundary; preserve checks and scope. Usage is `unknown` when tools do not expose it.
 
 For a single underlying defect, keep at most two unsuccessful same-model repairs and three total repairs. After the second, permit one narrow `gpt-6-astra/low` advice event, optional second turn at medium, maximum two adviser turns. Do not reset counters on a model switch, resume or reworded finding. Infrastructure has one justified changed-hypothesis retry. On exhausted repairs, preserve a concrete decision packet and pursue independent work where possible.
 

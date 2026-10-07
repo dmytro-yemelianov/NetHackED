@@ -1,5 +1,7 @@
 # Agentic loops for full-parity work
 
+Current execution amendment: [process optimization](2026-10-07-parity-process-optimization.md) supersedes conflicting model defaults, token envelopes, output and reuse rules below; scope and acceptance requirements remain.
+
 Planning baseline: `b39a7e3`, `feat/monster-hp-d8`, 2026-10-07. This specifies execution of the [full-parity map](2026-10-06-full-parity.md); The planning snapshot preceded implementation; execution records follow below. Keep the [existing loop constraints](2026-10-06-agentic-loops.md), P1 ledger and current user policies. Gameplay/content/command semantics remain the working target; exact C replay, original presentation and C binary files require separate scope decisions.
 
 The reviewed [remaining-stream scope](2026-10-07-remaining-parity-scope.md) supplies the seven-stream family/catalog queue and all 543 row mappings after P04–P10. Bind narrow accepted prerequisites before dispatch; aggregate family closure is separate from child readiness. All new cards begin audit-needed. This extends the queue without changing model routing or repair limits below.
@@ -80,7 +82,7 @@ P01/P02 establish measurement before new breadth. P03 is the identity foundation
 
 Use existing parity/acceptance records rather than rediscovering completed subsets. Batch independent small tool reads; avoid generated-table dumps, full save assertion logs and repeated startup files. Source snippets should usually be 80–160 lines, graph results 5–10 nodes. Coordinator does not reread implementation when independent evidence is sufficient.
 
-Task packet target ≤1,000 tokens; handoff ≤250 words; reviewer findings ≤300 words. Soft model-work envelopes including coordinator and delegated input/output/reasoning: inventory/structural unit 4–6k tokens, normal semantic unit 8–12k, difficult lifecycle unit ≤16k before reassessment. These are operational targets, not hard caps or price estimates. If usage is not exposed, record `unknown`; never claim savings or compliance from word counts alone. Reassess at the natural checkpoint, narrow context or split coherent scope; never drop required checks to fit an envelope.
+Use the current [process controls](2026-10-07-parity-process-optimization.md) for packet limits, output bounds and separately metered uncached-input/output reassessment thresholds. Historical combined envelopes are superseded; unknown telemetry never demonstrates compliance.
 
 ```text
 UNIT / baseline HEAD + input digest / dependency IDs
