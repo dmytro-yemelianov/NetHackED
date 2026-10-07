@@ -1,0 +1,875 @@
+{
+  "schema": "netrust-p11a-source-contract-draft-v1",
+  "status": "contract_review; not implementation-ready until independent Sol/high review",
+  "baseline": {
+    "head": "2700ec46ec699481f6e8972fef1d866f172c3fbb",
+    "branch": "feat/monster-hp-d8",
+    "input_count": 342,
+    "input_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+    "snapshot": "/tmp/netrust-parity-bootstrap/baseline.json",
+    "durable_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap"
+  },
+  "family": "P11a",
+  "source": {
+    "commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+    "anchors": {
+      "include/hack.h": {
+        "sha256": "2840a9bd41fb0c09384839fafdbd427a5d8705ad8d3eb5e2a0308cccea36813b",
+        "git_blob": "acf93509b49ecfc3e1520bc3731fbd5e5e94162c"
+      },
+      "src/zap.c": {
+        "sha256": "8ee02bd7aa29b026d6b5a2e0017ddf402fcfc6fc81037e35ceda2d86467547cb",
+        "git_blob": "8aefcb1ea3c64cb4bac71f7149d5795ec106786c"
+      },
+      "src/invent.c": {
+        "sha256": "0b93d6ce1abb5b63ed7ea07c26a57e1016c6cef0fc2ef0e4016e6622054524b5",
+        "git_blob": "446859540299c0fd36ac5d0eff213a9478ffbab3"
+      },
+      "include/obj.h": {
+        "sha256": "a4d1b994c5acd6fe04d411485d84491553d6df02dfbd7480181a15a7a05456e2",
+        "git_blob": "8d95bb0072b11c04a130871da4f3347c96b09af2"
+      }
+    },
+    "symbols": {
+      "zappable": "zap.c:2514-2522",
+      "backfire": "zap.c:2605-2614",
+      "zap_ok": "zap.c:2618-2623",
+      "dozap": "zap.c:2627-2697",
+      "getobj": "invent.c:1752 onward; quit path1947-1954; callback exclusion2071"
+    }
+  },
+  "configuration_record": "configuration.json; local literal conditions resolved; global enumeration remains mandatory",
+  "source_branches": [
+    {
+      "id": "preflight",
+      "facts": "nohands or check_capacity -> ECMD_OK before selection; no RNG or wand change"
+    },
+    {
+      "id": "selection",
+      "facts": "getobj zap uses zap_ok WAND_CLASS only, GETOBJ_NOFLAGS; null/cancel -> ECMD_CANCEL before check_unpaid/zappable; selected object is not first arbitrary carried wand"
+    },
+    {
+      "id": "negative",
+      "facts": "spe<0 short circuits, no wrest/backfire draw, nothing_happens then dust/useupall and ECMD_TIME"
+    },
+    {
+      "id": "zero-failure",
+      "facts": "spe==0 draw rn2(121); nonzero returns false unchanged spe0, nothing_happens, no cursed draw/direction/effect, TIME"
+    },
+    {
+      "id": "zero-success",
+      "facts": "rn2(121)==0 -> wrest message, --spe => -1; then cursed gate/direction/effect; if still present cleanup dust removes whole object, TIME"
+    },
+    {
+      "id": "positive",
+      "facts": "spe>0 no wrest draw; --spe before curse or direction"
+    },
+    {
+      "id": "cursed",
+      "facts": "only after zappable success, cursed draws rn2(100); zero backfires; uncursed/blessed no draw. backfire d(post-decrement spe+2,6), Maybe_Half_Phys, losehp then useupall then STR exercise false, TIME; fatalities must retain source early ordering"
+    },
+    {
+      "id": "direction-cancel",
+      "facts": "need_dir=owned oc_dir != NODIR; successful zappable/backfire miss first; !getdir consumes charge, optional visible glows/fades, negative cleanup, TIME. Item-selection cancel costs zero; direction cancel costs time"
+    },
+    {
+      "id": "direction-effect",
+      "facts": "zero xyz -> zapyourself; other direction or NODIR -> weffects, current_wand may become null; obj survival checked before dust"
+    },
+    {
+      "id": "ordinary-create-monster",
+      "facts": "NODIR create_critters rn2(23) nonzero one else rn1(7,2); reuse accepted P10a2/b ordinary creation/group/public/save tests, preserve original role, selected species owned overrides and draw ordering"
+    }
+  ],
+  "rust_audit": {
+    "ast": "crates/nethacked-core/src/ast.rs:40 ZapWand{dir,energy}, no selection/cancel; old serialized form must remain loadable",
+    "sim": "actions/mod.rs:100 -> items.rs:962; first carried ItemClass::Wand; enchantment.max(0) converted unsigned -> core zap_wand positive-only; no wrest/backfire; empty costs NORMAL_SPEED. Positive uncursed ordinary canonical create path resolves Ruleset item by display name; subsequent effects use name fragments.",
+    "owner": "ItemRecord arena/lib.rs:31 name/class/buc/enchantment:i8/recharged:u8/location; no persisted item definition identity; create_item_record in data/ruleset.rs:832. Owned ItemDef id:Option<ItemKindId>, name, wand_dir; schema derive feature present. Canonical definition rename works through owned id but runtime display rename loses lookup; custom names must never masquerade by fragment.",
+    "frontends": "commands ActionArgs has index but zap ignores it/defaults East. MCP STEP_ACTIONS omits zap though parser handles it; JSON-RPC shared action_args_from_json; GraphQL passes index/direction; WASM action_args_for accepts one direction-only raw arg; TUI PromptZap direction cancel unwrap_or(last_dir); browser game.js numeric arg replaced lastDir, play.js direction-only; Python numeric action22 uses East. Need all public selection and cancel routes, schemas and generated declarations where actually generated."
+  },
+  "reused_prerequisites": {
+    "P10a2": "accepted via final integration, original-role placement and owned ordinary public creation; not historical otherwise-verified fields",
+    "P10b": "accepted ordinary SGROUP selected creation integration; retain full tests",
+    "binding": {
+      "docs/parity/obligations/2026-10-07-p10a2.json": "8df69d2e40d8bef6bd815bafb29fe657c452286c275db42d905a398115c57d0e",
+      "docs/parity/obligations/2026-10-07-p10b.json": "82fed84382fb86b11ee5c3f7d1d28d450092a80b31a691c28f41cafd506c32f0",
+      "docs/parity/obligations/2026-10-07-p04-p10-final-acceptance.json": "11150ff22af01783ed34fe34c0b20f13d08610a4a81574028f6442e38523ff61"
+    },
+    "final_input_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+    "test_file": "crates/nethacked-sim/tests/monster_creation_wand_tests.rs"
+  },
+  "first_child": {
+    "id": "P11a-S1",
+    "outcome": "Public explicit selected owned wand and item-selection cancel; positive-charge uncursed ordinary create-monster selection, identity/display rename and owned wand direction. A coherent selection prerequisite, not full charge acceptance.",
+    "prerequisites": [
+      "OB01-WAND-ID1 accepted interface",
+      "local configuration/P11 source contract independent review",
+      "P10a2 accepted interface",
+      "P10b accepted interface",
+      "Same complete reviewed global configuration pin before first source-conformance acceptance; no local-gate waiver"
+    ],
+    "interfaces": "Keep legacy ZapWand serialized form; add explicit selected action with inventory index/owned identity and cancellation distinguished from direction cancellation. Consume accepted OB01-WAND-ID1 item definition key; canonical id resolves owned override by id, custom exact normalized owned key, legacy fallback exact owned name. Never builtin-table fallback. Explicit unresolved identity uses the exact precharge refusal contract; legacy missing identity retains existing semantics. Selected item must be directly carried and Wand class; unrelated items/wands unchanged.",
+    "allowed_files": [
+      "crates/nethacked-core/src/ast.rs",
+      "crates/nethacked-arena/src/lib.rs",
+      "crates/nethacked-data/src/ruleset.rs",
+      "crates/nethacked-sim/src/actions/mod.rs",
+      "crates/nethacked-sim/src/actions/items.rs",
+      "crates/nethacked-agent/src/commands.rs",
+      "crates/nethacked-agent/src/mcp.rs",
+      "crates/nethacked-agent/src/jsonrpc.rs",
+      "crates/nethacked-agent/src/graphql.rs",
+      "crates/nethacked-wasm/src/lib.rs",
+      "crates/nethacked-tui/src/main.rs",
+      "crates/nethacked-py/src/lib.rs",
+      "web/js/game.js",
+      "web/play/play.js",
+      "crates/nethacked-sim/tests/monster_creation_wand_tests.rs",
+      "crates/nethacked-sim/tests/selected_wand_tests.rs",
+      "crates/nethacked-data/tests/actor_identity.rs"
+    ],
+    "bound": "Dispatch only after OB01-WAND-ID1 accepted. S1 does actual public selection/cancel/schema; does not reimplement identity or change charge draws. Legacy ZapWand positive create-monster/golden action semantics stay unchanged until explicit charge successor review. All frontend cancel/selection exits tested.",
+    "fixtures": [
+      "Inventory nonwand index0, fire wand index1, uncursed canonical create index2 charges2; selecting2 leaves1 unchanged,2=>1 and calls accepted create count draw first bound23; fixed prescribed count draws 1=>one,0 then0=>two,0 then6=>eight, native fixture continuation; no wrest/backfire draw in positive uncursed case.",
+      "Selection cancel -> identical item/RNG/scheduler state and no monster action; invalid/nonwand/container/stale index -> refusal no charge/time/RNG; specify invalid API semantics separately from C menu refusal.",
+      "Display-renamed canonical create retains canonical behavior; owned definition renamed/overridden matches id and preserves owned monster values/placement. Custom wand exact key retained through display rename; custom NoDir override uses owned wand_dir. No accidental create from display-name fragment.",
+      "Save before explicit selection and after charge/use; uninterrupted vs restored next action canonical save and native RNG byte equality; missing optional identity/legacy action decode/old packs preserve exact name fallback and canonical hashes.",
+      "Browser,TUI,MCP,JSONRPC,GraphQL,WASM,Agent,Python public index/cancel traces must select same wand; schema lists zap; no silent first-wand substitute. Retain existing legacy golden action behavior until exact charge successor review."
+    ],
+    "focused_commands": "coordinator/worker chooses exact tests after implement; cargo test -p nethacked-sim --test selected_wand_tests --test monster_creation_wand_tests --locked; cargo test -p nethacked-agent --locked; relevant arena/data/WASM/Python checks; no checks run during this read-only task",
+    "explicit_unknown_identity": {
+      "trigger": "Explicit Some identity fails canonical symbol parsing, valid canonical id absent in supplied Ruleset, or custom key absent",
+      "public_event": {
+        "variant": "GameEvent::LogMessage",
+        "text": "You cannot zap that wand: its definition is unavailable."
+      },
+      "source_owner": "crates/nethacked-sim/src/events.rs:80 existing LogMessage; no ActionError variant exists",
+      "ordering": "After carried wand/class validation, BEFORE current_charges read/mutation, ordinary_creation/effect/name fragment/beam dispatch and scheduler.hero_act or RNG",
+      "expected": "Exactly one refusal LogMessage. Selected/other items and charges unchanged; target witness HP/terrain unchanged; zero BeamPropagated/creation/effect events; scheduler energy/turn and native RNG save bytes unchanged. No static/name/generic beam fallback. Standard step_player_action no-energy/no-time early exit applies; isolation fixture avoids unrelated reconcile changes.",
+      "legacy_missing": "Only None keeps existing exact owned-name/legacy action semantics, including its currently partial generic effects; do not redefine legacy missing keys as explicit errors."
+    },
+    "exit": "Public selected-item/item-cancel/schema/frontend compatibility tests, accepted ID1 interface, fresh semantic review and coordinator full gates/all goldens required. Source-conformance acceptance remains blocked until complete reviewed global configuration valuations, UI04 supported inputs and conditional/content branch manifest pinned BEFORE FIRST source-conformance acceptance. No local engineering readiness or test pass waives hold. S1 alone does not accept charge pipeline or close P11a."
+  },
+  "mandatory_successors": [
+    {
+      "id": "P11a-C1",
+      "depends": [
+        "P11a-S1"
+      ],
+      "interface": "signed charge pipeline zappable, negative/zero/wrest/dust and turn/RNG ordering; public selected item tests; optional prescribed-draw pure primitive plus native World RNG integration"
+    },
+    {
+      "id": "P11a-B1",
+      "depends": [
+        "P11a-C1"
+      ],
+      "interface": "cursed backfire before direction; dice/damage/half-physical/fatal/removal/STR exercise; concrete EQ03-half-physical and HE02-exercise narrow prerequisite audit if state unavailable"
+    },
+    {
+      "id": "P11a-D1",
+      "depends": [
+        "P11a-C1",
+        "P11a-B1"
+      ],
+      "interface": "owned NODIR/IMMEDIATE/RAY; direction cancellation consumes charge/time; self/up/down/engulfed direction action/schema; P11b/OB07 effects explicit successors"
+    },
+    {
+      "id": "P11a-P1",
+      "depends": [
+        "P11a-S1"
+      ],
+      "interface": "nohands/capacity/check_unpaid preflight contexts. Narrow EQ04-zap-capacity, HE07-zap-form, DG06-zap-unpaid contracts require source audit; not family closure dependencies"
+    },
+    {
+      "id": "P11a-A1",
+      "depends": [
+        "P11a-C1",
+        "P11a-B1",
+        "P11a-D1",
+        "P11a-P1"
+      ],
+      "interface": "aggregate all P11a branch/frontend/save review; global unresolved configuration prevents false conformance acceptance"
+    }
+  ],
+  "charge_fixtures": [
+    "negative -1 cursed: zero charge RNG, no effect, removal, TIME",
+    "zero uncursed draw120: charge0 remains, one bound121 only, TIME",
+    "zero draw0: charge-1, dispatch then dust; subsequent native RNG equals prescribed consumption",
+    "positive2 uncursed/blessed: charge1, no charge RNG",
+    "positive2 cursed draw0 bound100 then three d6 faces [1,2,6]: raw damage9 (post-spe1+2 dice), whole-item deletion; Half_phys =>5 from (damage+1)/2 hack.h:1236-1237, as independently source-reviewed",
+    "zero cursed wrest0 then backfire0: one d6 (post-spe-1+2), bounds121,100,6; raw face6 damage6, deletion; no direction/effect",
+    "positive2 cursed draw99 and direction-cancel: charge1, bound100 only; no effect, TIME",
+    "positive1 direction-cancel: charge0 retained; positive1 NODIR ignore absent direction; zero wrest direction-cancel deletes -1 after visibility text",
+    "public action must exercise actual draw primitive bounds/order, then native deterministic save continuation; independent literal expected values cannot call production sampler for expectation"
+  ],
+  "assertion_policy": "No existing literal/assertion weakened. Existing setup changes exactly limited to preceding_child.constructor_inventory nine files/forty sites and listed functions. Initializer/helper extra files may add regressions, not weaken assertions. Existing legacy Zap constructors retained; selection fixtures use new tests. Empty-wand C1 changes require exact reviewed decision; goldens frozen.",
+  "inventory_packet": {
+    "rows": [
+      {
+        "key": "flow-ui:0082",
+        "path": "docs/parity/flow-ui.md",
+        "ordinal": 82,
+        "line": 100,
+        "row_sha256": "37ba0471faaeef7c19868e3efa2678135c21428fea9b351103316ea418426ac5",
+        "feature": "`z` zap",
+        "section": "A. Command table (cmd.c `extcmdlist[]`, cmd.c:1673)",
+        "c_reference": "zap.c dozap",
+        "historic_status": "PARTIAL",
+        "status_freshness": "historical_unrefreshened_by_this_plan",
+        "family": "UI01",
+        "unit_refs": [
+          "UI01",
+          "UI01-R05",
+          "P11a",
+          "P11b",
+          "P11c",
+          "CMD-0082"
+        ],
+        "action": "audit_before_gap_or_port_claim"
+      },
+      {
+        "key": "objects-dungeon:0033",
+        "path": "docs/parity/objects-dungeon.md",
+        "ordinal": 33,
+        "line": 71,
+        "row_sha256": "7bd9b027544e7b5844c278e9007b1b89b105dd05541e50c5760f2c17480a8b88",
+        "feature": "Wand of create monster",
+        "section": "Feature table",
+        "c_reference": "zap.c WAN_CREATE_MONSTER; makemon.c create_critters",
+        "historic_status": "PARTIAL",
+        "status_freshness": "historical_unrefreshened_by_this_plan",
+        "family": "OB07",
+        "unit_refs": [
+          "OB07",
+          "OB07-R01",
+          "P11a",
+          "P11b",
+          "P11c"
+        ],
+        "action": "audit_before_gap_or_port_claim"
+      },
+      {
+        "key": "objects-dungeon:0034",
+        "path": "docs/parity/objects-dungeon.md",
+        "ordinal": 34,
+        "line": 72,
+        "row_sha256": "80977ae8f2c0cba4c0e7acd73e5d3eb0a5b888c3f90bc15c976c87b0a16b1ac7",
+        "feature": "Wand selection when zapping",
+        "section": "Feature table",
+        "c_reference": "zap.c dozap getobj",
+        "historic_status": "PARTIAL",
+        "status_freshness": "historical_unrefreshened_by_this_plan",
+        "family": "OB07",
+        "unit_refs": [
+          "OB07",
+          "OB07-R01",
+          "P11a",
+          "P11b",
+          "P11c"
+        ],
+        "action": "audit_before_gap_or_port_claim"
+      },
+      {
+        "key": "objects-dungeon:0035",
+        "path": "docs/parity/objects-dungeon.md",
+        "ordinal": 35,
+        "line": 73,
+        "row_sha256": "fbb4f9d2c3c2e5568095adc3ed41d20320049e4b32400c5e27cb80f26033386c",
+        "feature": "Ray wands (buzz): path and wall bounce",
+        "section": "Feature table",
+        "c_reference": "zap.c buzz/bhit",
+        "historic_status": "PARTIAL",
+        "status_freshness": "historical_unrefreshened_by_this_plan",
+        "family": "OB07",
+        "unit_refs": [
+          "OB07",
+          "OB07-R01",
+          "P11a",
+          "P11b",
+          "P11c"
+        ],
+        "action": "audit_before_gap_or_port_claim"
+      },
+      {
+        "key": "objects-dungeon:0036",
+        "path": "docs/parity/objects-dungeon.md",
+        "ordinal": 36,
+        "line": 74,
+        "row_sha256": "62714787d101833b7c645e1638422cee95bb75079b26d46a57ace796594a9929",
+        "feature": "Ray damage, resistances and reflection vs monsters",
+        "section": "Feature table",
+        "c_reference": "zap.c zhitm",
+        "historic_status": "PARTIAL",
+        "status_freshness": "historical_unrefreshened_by_this_plan",
+        "family": "OB07",
+        "unit_refs": [
+          "OB07",
+          "OB07-R01",
+          "P11a",
+          "P11b",
+          "P11c"
+        ],
+        "action": "audit_before_gap_or_port_claim"
+      },
+      {
+        "key": "objects-dungeon:0037",
+        "path": "docs/parity/objects-dungeon.md",
+        "ordinal": 37,
+        "line": 75,
+        "row_sha256": "567a81bed42264f685558ea09eb038fe9b5147d3f9bce9e12fb29b572d4e2b89",
+        "feature": "IMMEDIATE wand effects (bhitm)",
+        "section": "Feature table",
+        "c_reference": "zap.c bhitm",
+        "historic_status": "PARTIAL",
+        "status_freshness": "historical_unrefreshened_by_this_plan",
+        "family": "OB07",
+        "unit_refs": [
+          "OB07",
+          "OB07-R01",
+          "P11a",
+          "P11b",
+          "P11c"
+        ],
+        "action": "audit_before_gap_or_port_claim"
+      },
+      {
+        "key": "objects-dungeon:0038",
+        "path": "docs/parity/objects-dungeon.md",
+        "ordinal": 38,
+        "line": 76,
+        "row_sha256": "b40754392175e456922a6d40bcb0e496f92b46863e3b7b28d44120f42de2c4c1",
+        "feature": "Wand of digging (dig through walls, dig down)",
+        "section": "Feature table",
+        "c_reference": "zap.c zap_dig",
+        "historic_status": "MISSING",
+        "status_freshness": "historical_unrefreshened_by_this_plan",
+        "family": "OB07",
+        "unit_refs": [
+          "OB07",
+          "OB07-R01",
+          "P11a",
+          "P11b",
+          "P11c"
+        ],
+        "action": "audit_before_gap_or_port_claim"
+      },
+      {
+        "key": "objects-dungeon:0040",
+        "path": "docs/parity/objects-dungeon.md",
+        "ordinal": 40,
+        "line": 78,
+        "row_sha256": "7346af731a696b09d308481544325674cdd855697a08afd3b4b6fcf32661b866",
+        "feature": "Zapping while engulfed",
+        "section": "Feature table",
+        "c_reference": "zap.c zap_over_floor / u.uswallow",
+        "historic_status": "MISSING",
+        "status_freshness": "historical_unrefreshened_by_this_plan",
+        "family": "OB07",
+        "unit_refs": [
+          "OB07",
+          "OB07-R01",
+          "P11a",
+          "P11b",
+          "P11c"
+        ],
+        "action": "audit_before_gap_or_port_claim"
+      },
+      {
+        "key": "objects-dungeon:0041",
+        "path": "docs/parity/objects-dungeon.md",
+        "ordinal": 41,
+        "line": 79,
+        "row_sha256": "bcff7f6e812083a8fde0e444d2ba6b22932d3bf2ff90a8c8dcd508f7c7b36d3c",
+        "feature": "Breaking wands (apply) / item destruction by rays",
+        "section": "Feature table",
+        "c_reference": "apply.c do_break_wand; zap.c destroy_items",
+        "historic_status": "MISSING",
+        "status_freshness": "historical_unrefreshened_by_this_plan",
+        "family": "OB07",
+        "unit_refs": [
+          "OB07",
+          "OB07-R01",
+          "P11a",
+          "P11b",
+          "P11c"
+        ],
+        "action": "audit_before_gap_or_port_claim"
+      }
+    ],
+    "count": 9,
+    "selection": "Parsed immutable scope registry. These nine directly affected/public downstream rows remain historical/partial; no promotion. Other P11a references belong later family packets, not discarded."
+  },
+  "validation": "fresh independent Sol/high contract review before ready; focused public tests then semantic review; coordinator full12 gates/all3goldens input-bound342+snapshot, docs/progress/ledger and commit; no worker commits/golden changes",
+  "remaining_global_audits": [
+    "complete attack/damage tags, flags/properties and levels unchanged mandatory",
+    "all seven streams/all53families/all543rows remain active; this audit closes none"
+  ],
+  "token_usage": "unknown",
+  "preceding_child": {
+    "id": "OB01-WAND-ID1",
+    "parent_family": "OB01",
+    "status": "contract_review; must receive fresh independent review before ready",
+    "source": "include/obj.h:45 otyp is persistent canonical object identity; src/zap.c:2644 owned direction and2655+effect dispatch use otyp. Same pinned commit/hash as configuration.json. No global conditional macro inference needed.",
+    "outcome": "Persist explicit owned item definition identity without changes to charges/draws/turns; consume it in existing ordinary positive uncursed public create-monster Zap. This closes only the identity prerequisite.",
+    "prerequisites": [
+      "reviewed local P11 conditions",
+      "accepted P10a2/P10b interfaces final342 digest",
+      "Source-conformance acceptance hold: complete reviewed run_configuration global pin, UI04 inputs and conditional/content branch manifest (local engineering readiness independent)"
+    ],
+    "representation": "Shared ItemDefinition in crates/nethacked-types/src/lib.rs, re-exported by arena: Vanilla(String canonical C symbol), Custom(String case-normalized exact owned key). ItemRecord AND BonesItem own #[serde(default, skip_serializing_if=\"Option::is_none\")] Option<ItemDefinition>. No types-to-arena/data dependency. Data resolves canonical string via ItemKindId::from_c_name then owned Ruleset::item_by_id; custom via exact Ruleset::item. artifact_id remains distinct. Missing optional identity retains existing legacy exact-name path and omitted bytes; explicit unresolved key refuses publicly before any charge/effect/RNG/time/beam work.",
+    "bindings": {
+      "arena": "ItemRecord definition optional, derive serde/default/skipNone; artifact_id remains distinct artifact identity, not wand archetype",
+      "factory_owned": "Ruleset::create_item_record:832 resolves ItemDef once, records def.id.c_name or normalized def.name; create_item_record_by_id:884 routes through same owner. item_by_id:684 resolves owned override after canonical definition rename.",
+      "factory_builtin": "data/items.rs:create_item_record:101 attaches canonical symbol; no runtime fallback to this table",
+      "initialization": "data/item_init.rs:initialize_supported_fields consumes/returns same ItemRecord; preserve identity while BUC/spe/artifact initialization changes; reuse artifact_id pattern but keep roles distinct",
+      "public_consumer": "sim/actions/items.rs:962 existing first carried Wand selection retained for ID1; resolve explicit definition before charge and refuse per explicit_unknown_identity. ordinary_creation:987 then uses resolved owned canonical id. Missing key keeps exact current name path. No charge RNG/turn changes on resolved old positive-create/golden actions. Explicit unresolved key NEVER falls through to display fragments or generic beam.",
+      "save_load": "world.rs:485 to_save_json,493 from_save_json; optional field loads through serde across active arena/stored_levels. Do not eagerly migrate legacy missing identity, preserve absent encoding/old canonical hash. Existing restore_tags:516 may remain unchanged except identity lookup only when needed.",
+      "schema": "ItemDefWire/pack metadata untouched; shared ItemDefinition/BonesItem/ItemRecord use serde compatibility. Bones JSON contract gets optional default/skipNone key; missing old bones roundtrip omits it. No current generated schema identified for these payloads; do not claim generated bindings verified. MCP action schema remains S1. Exact additional generated artifact paths need independent discovery/review before edits.",
+      "bones": "types/lib.rs:863 BonesItem payload; sim/bones.rs:42 save_bones clones definition,97 check_and_load_bones moves definition into restored ItemRecord. Legacy missing key remains None and omitted; never infer definition from display during bones copying. World bones_storage persisted at world.rs:104 and full-save serde. Agent bones/client.rs:46-65 typed serde JSON upload/fetch; server.rs typed BonesData roundtrip; mod.rs:28/45 calls public save/load. These transport owners need read/hash evidence only; payload extension uses serde automatically. No all-reachable-persistence fidelity claim until tests pass."
+    },
+    "allowed_files": [
+      "crates/nethacked-arena/src/lib.rs",
+      "crates/nethacked-data/src/ruleset.rs",
+      "crates/nethacked-data/src/items.rs",
+      "crates/nethacked-data/src/item_init.rs",
+      "crates/nethacked-sim/src/actions/items.rs",
+      "crates/nethacked-sim/src/world.rs",
+      "crates/nethacked-sim/src/bones.rs",
+      "crates/nethacked-sim/src/actions/religion.rs",
+      "crates/nethacked-sim/tests/hero_armor_ac_tests.rs",
+      "crates/nethacked-sim/tests/monster_attack_tests.rs",
+      "crates/nethacked-sim/tests/simulation_tests.rs",
+      "crates/nethacked-agent/tests/bones_server_test.rs",
+      "crates/nethacked-data/tests/item_initialization.rs",
+      "crates/nethacked-data/tests/artifact_initialization.rs",
+      "crates/nethacked-sim/tests/monster_creation_wand_tests.rs",
+      "crates/nethacked-data/tests/item_definition_identity.rs",
+      "crates/nethacked-types/src/lib.rs",
+      "crates/nethacked-sim/tests/item_definition_identity_tests.rs"
+    ],
+    "literal_update_policy": "Twelve rg textual-match files included return signatures; actual constructor inventory is nine files / forty literal sites pinned below. Add only definition:None or justified factory identity to existing literals as setup. Existing assertion text/values frozen. Three extra initializer/helper paths remain for meaningful regression support, not constructor-count proof.",
+    "fixtures": [
+      "Canonical create wand from owned factory, display renamed arbitrary string; public legacy Zap still creates through canonical symbol, decrements positive2=>1, reuses accepted draw bound23 and owned monster HP/group tests.",
+      "Owned def name renamed with same canonical id; factory by id + arbitrary runtime display rename resolves owned values; no catalog fallback.",
+      "Custom wand no id with neutral display; identity remains custom owned exact key through initialize_supported_fields and save/load; custom display containing create-monster does not acquire canonical creation.",
+      "Legacy missing identity from active and cached save/old pack remains absent after roundtrip; exact owned-name legacy public Zap continues. Explicit canonical key absent from supplied ruleset fails safely without built-in/static substitution.",
+      "Factory/static/initialized/artifact records keep separate artifact_id; old artifact creation history and golden actions unchanged; full native next-action save/RNG equality after both new/legacy restoration.",
+      "Bones public save_bones -> serde JSON -> check_and_load_bones with display-renamed canonical and custom records preserves explicit keys, same curse draw order and artifact_id. Old BonesItem JSON missing definition restores None and roundtrips omitted; bones_storage within full saves also tested. Rename/pick up restored canonical create wand then actual positive uncursed legacy Zap; custom restoration cannot masquerade through display fragment.",
+      "Existing test_networked_bones_flow_and_ghost_reincarnation remains with every assertion unchanged; add dedicated network upload/fetch/restoration identity test through existing transport with canonical/custom rename and old-bones omission. Compare uninterrupted/restored next native action/save/RNG. No remote/all-reachable load claim from arena-only tests.",
+      "Unknown canonical symbol, known symbol absent from owned Ruleset, missing custom key: each actual public Zap yields exactly specified LogMessage only, unchanged charge/turn/energy/native RNG and unaffected target witness; zero beam/effect/creation events."
+    ],
+    "exit": "Engineering implementation may begin only after repaired local independent review PASS. Bounded identity tests/public ordinary Zap/bones/legacy compatibility and fresh semantic review/full gates required; source-conformance acceptance additionally requires complete reviewed global pin before FIRST acceptance, as first_source_conformance_acceptance_hold. No family closure.",
+    "explicit_unknown_identity": {
+      "trigger": "Explicit Some identity fails canonical symbol parsing, valid canonical id absent in supplied Ruleset, or custom key absent",
+      "public_event": {
+        "variant": "GameEvent::LogMessage",
+        "text": "You cannot zap that wand: its definition is unavailable."
+      },
+      "source_owner": "crates/nethacked-sim/src/events.rs:80 existing LogMessage; no ActionError variant exists",
+      "ordering": "After carried wand/class validation, BEFORE current_charges read/mutation, ordinary_creation/effect/name fragment/beam dispatch and scheduler.hero_act or RNG",
+      "expected": "Exactly one refusal LogMessage. Selected/other items and charges unchanged; target witness HP/terrain unchanged; zero BeamPropagated/creation/effect events; scheduler energy/turn and native RNG save bytes unchanged. No static/name/generic beam fallback. Standard step_player_action no-energy/no-time early exit applies; isolation fixture avoids unrelated reconcile changes.",
+      "legacy_missing": "Only None keeps existing exact owned-name/legacy action semantics, including its currently partial generic effects; do not redefine legacy missing keys as explicit errors."
+    },
+    "constructor_inventory": [
+      {
+        "path": "crates/nethacked-agent/tests/bones_server_test.rs",
+        "line": 45,
+        "function": "test_networked_bones_flow_and_ghost_reincarnation"
+      },
+      {
+        "path": "crates/nethacked-arena/src/lib.rs",
+        "line": 345,
+        "function": "item_record_without_recharged_deserializes_to_zero"
+      },
+      {
+        "path": "crates/nethacked-arena/src/lib.rs",
+        "line": 572,
+        "function": "test_container_hierarchy_and_weight"
+      },
+      {
+        "path": "crates/nethacked-arena/src/lib.rs",
+        "line": 599,
+        "function": "test_container_hierarchy_and_weight"
+      },
+      {
+        "path": "crates/nethacked-arena/src/lib.rs",
+        "line": 639,
+        "function": "test_cycle_detection"
+      },
+      {
+        "path": "crates/nethacked-arena/src/lib.rs",
+        "line": 665,
+        "function": "test_cycle_detection"
+      },
+      {
+        "path": "crates/nethacked-data/src/items.rs",
+        "line": 103,
+        "function": "create_item_record"
+      },
+      {
+        "path": "crates/nethacked-data/src/ruleset.rs",
+        "line": 849,
+        "function": "create_item_record"
+      },
+      {
+        "path": "crates/nethacked-sim/src/actions/religion.rs",
+        "line": 166,
+        "function": "handle_sacrifice"
+      },
+      {
+        "path": "crates/nethacked-sim/src/bones.rs",
+        "line": 97,
+        "function": "check_and_load_bones"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/hero_armor_ac_tests.rs",
+        "line": 139,
+        "function": "test_small_shield_plus_two_with_leather_armor"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/hero_armor_ac_tests.rs",
+        "line": 189,
+        "function": "test_two_helmets_do_not_stack"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/hero_armor_ac_tests.rs",
+        "line": 221,
+        "function": "test_two_helmets_do_not_stack"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/monster_attack_tests.rs",
+        "line": 316,
+        "function": "quaff_healing"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "line": 305,
+        "function": "test_pickup_and_drop_lifecycle"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "line": 356,
+        "function": "test_wield_weapon"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "line": 1072,
+        "function": "test_nutrition_decay_and_eating"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "line": 1782,
+        "function": "test_altar_sacrifice_and_divine_crowning"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "line": 1841,
+        "function": "test_altar_holy_water_consecration"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "line": 1878,
+        "function": "test_wand_of_wishing_spawns_item"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "line": 1945,
+        "function": "test_wand_of_striking_destroys_drawbridge"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "line": 1996,
+        "function": "test_wand_of_cold_freezes_pool"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "line": 2037,
+        "function": "test_scroll_of_charging_and_explosion"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "line": 2064,
+        "function": "test_scroll_of_charging_and_explosion"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "line": 2109,
+        "function": "test_scroll_of_charging_and_explosion"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "line": 2158,
+        "function": "test_wand_recharge_explosion_damage_is_d_n_k"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "line": 2237,
+        "function": "test_artifact_combat_bonus_and_vorpal_blade"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "line": 2312,
+        "function": "test_ukrainian_i18n_simulation_logging"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "line": 2436,
+        "function": "test_monster_lich_summon_and_curse"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "line": 2498,
+        "function": "test_bones_file_generation_and_ghost_encounter"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "line": 3429,
+        "function": "test_hero_polymorph_potion_and_damage_reversion"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "line": 3548,
+        "function": "test_wand_of_polymorph_unique_monster_invariant"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "line": 3617,
+        "function": "test_wand_of_polymorph_unique_monster_invariant"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "line": 3689,
+        "function": "test_scroll_of_genocide_conduct_and_level_wipe"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "line": 3745,
+        "function": "test_cursed_scroll_of_genocide_summons"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "line": 3821,
+        "function": "test_petrification_countdown_and_lizard_cure"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "line": 3904,
+        "function": "test_weapon_skill_combat_bonus"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "line": 4020,
+        "function": "test_ranged_fire_arrow_hits_monster"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "line": 4221,
+        "function": "test_corpse_eating_and_conduct_invalidation"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "line": 4274,
+        "function": "test_cannibalism_detection"
+      }
+    ],
+    "constructor_file_count": 9,
+    "constructor_site_count": 40,
+    "existing_test_setup_inventory": [
+      {
+        "path": "crates/nethacked-agent/tests/bones_server_test.rs",
+        "functions": [
+          "test_networked_bones_flow_and_ghost_reincarnation"
+        ],
+        "proposal": "Only add optional definition field to listed literal sites; keep existing assertion text/values. Production factory functions receive identity propagation, not a test setup exemption."
+      },
+      {
+        "path": "crates/nethacked-arena/src/lib.rs",
+        "functions": [
+          "item_record_without_recharged_deserializes_to_zero",
+          "test_container_hierarchy_and_weight",
+          "test_cycle_detection"
+        ],
+        "proposal": "Only add optional definition field to listed literal sites; keep existing assertion text/values. Production factory functions receive identity propagation, not a test setup exemption."
+      },
+      {
+        "path": "crates/nethacked-data/src/items.rs",
+        "functions": [
+          "create_item_record"
+        ],
+        "proposal": "Only add optional definition field to listed literal sites; keep existing assertion text/values. Production factory functions receive identity propagation, not a test setup exemption."
+      },
+      {
+        "path": "crates/nethacked-data/src/ruleset.rs",
+        "functions": [
+          "create_item_record"
+        ],
+        "proposal": "Only add optional definition field to listed literal sites; keep existing assertion text/values. Production factory functions receive identity propagation, not a test setup exemption."
+      },
+      {
+        "path": "crates/nethacked-sim/src/actions/religion.rs",
+        "functions": [
+          "handle_sacrifice"
+        ],
+        "proposal": "Only add optional definition field to listed literal sites; keep existing assertion text/values. Production factory functions receive identity propagation, not a test setup exemption."
+      },
+      {
+        "path": "crates/nethacked-sim/src/bones.rs",
+        "functions": [
+          "check_and_load_bones"
+        ],
+        "proposal": "Only add optional definition field to listed literal sites; keep existing assertion text/values. Production factory functions receive identity propagation, not a test setup exemption."
+      },
+      {
+        "path": "crates/nethacked-sim/tests/hero_armor_ac_tests.rs",
+        "functions": [
+          "test_small_shield_plus_two_with_leather_armor",
+          "test_two_helmets_do_not_stack"
+        ],
+        "proposal": "Only add optional definition field to listed literal sites; keep existing assertion text/values. Production factory functions receive identity propagation, not a test setup exemption."
+      },
+      {
+        "path": "crates/nethacked-sim/tests/monster_attack_tests.rs",
+        "functions": [
+          "quaff_healing"
+        ],
+        "proposal": "Only add optional definition field to listed literal sites; keep existing assertion text/values. Production factory functions receive identity propagation, not a test setup exemption."
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "functions": [
+          "test_altar_holy_water_consecration",
+          "test_altar_sacrifice_and_divine_crowning",
+          "test_artifact_combat_bonus_and_vorpal_blade",
+          "test_bones_file_generation_and_ghost_encounter",
+          "test_cannibalism_detection",
+          "test_corpse_eating_and_conduct_invalidation",
+          "test_cursed_scroll_of_genocide_summons",
+          "test_hero_polymorph_potion_and_damage_reversion",
+          "test_monster_lich_summon_and_curse",
+          "test_nutrition_decay_and_eating",
+          "test_petrification_countdown_and_lizard_cure",
+          "test_pickup_and_drop_lifecycle",
+          "test_ranged_fire_arrow_hits_monster",
+          "test_scroll_of_charging_and_explosion",
+          "test_scroll_of_genocide_conduct_and_level_wipe",
+          "test_ukrainian_i18n_simulation_logging",
+          "test_wand_of_cold_freezes_pool",
+          "test_wand_of_polymorph_unique_monster_invariant",
+          "test_wand_of_striking_destroys_drawbridge",
+          "test_wand_of_wishing_spawns_item",
+          "test_wand_recharge_explosion_damage_is_d_n_k",
+          "test_weapon_skill_combat_bonus",
+          "test_wield_weapon"
+        ],
+        "proposal": "Only add optional definition field to listed literal sites; keep existing assertion text/values. Production factory functions receive identity propagation, not a test setup exemption."
+      }
+    ]
+  },
+  "implementation_order": [
+    "OB01-WAND-ID1",
+    "P11a-S1",
+    "P11a-C1",
+    "P11a-B1",
+    "P11a-D1",
+    "P11a-P1",
+    "P11a-A1"
+  ],
+  "rust_file_sha256": {
+    "crates/nethacked-core/src/ast.rs": "23c02da2da18a8097ac01543971e3cf2bd3a5c93a56c0f977172717965c155e3",
+    "crates/nethacked-arena/src/lib.rs": "98d5675d7e14901e6ca53363e0e77ffff322d537c56686562c34853edfde2af3",
+    "crates/nethacked-data/src/ruleset.rs": "2d4172186bd29289c6477d9a2a984551060d370c40a9dee22eb086e9a313f915",
+    "crates/nethacked-data/src/items.rs": "01792d02f93b94b053cb2328832016f277a76e3c7ff0c3ccd64096a3a20c0c02",
+    "crates/nethacked-data/src/c_id.rs": "78ef90455fba39b10053795d1f1db1dd34c8ffcc4cf8f1c1a6fe7c53900ba71d",
+    "crates/nethacked-data/src/item_init.rs": "17abe69b4fb1271b19b384f9a2728657eb8f0828a584dc7e8a825286a9d2ac2b",
+    "crates/nethacked-sim/src/actions/items.rs": "6366cc0fedf3a4b09b17e6deff37099903cd94f0cae90b72af89c94d8e87ec77",
+    "crates/nethacked-sim/src/actions/mod.rs": "ddca34ca797937c01641551891861111067a616e37cf060d513167a5169ce93a",
+    "crates/nethacked-sim/src/world.rs": "9e4cd1aedb4b455e5df5fb949dd908b2f9a9017a2fce067856a1d7d5e7caf7ad",
+    "crates/nethacked-agent/src/commands.rs": "49c8c44b02b06f91530125c3dd0cfeb6d40d778739b4c37e9770bb4d4ef9e242",
+    "crates/nethacked-agent/src/mcp.rs": "ef460cb202ebaa2c50af77e798e8394dfa94eb2da481578dc435834b96506296",
+    "crates/nethacked-agent/src/jsonrpc.rs": "330b7ca49944442a495cbb0576e0f72a8b1b62c88e5e63ce00edcfbae335ab54",
+    "crates/nethacked-agent/src/graphql.rs": "1712842f2cc175ce54a81f4d52d366d83a1a6bac8a28dec9cb2f4851b117d1e7",
+    "crates/nethacked-wasm/src/lib.rs": "c365ce43811f8dc690a2cc875300aa7ce62118e666172dd2d73fae95d5c38e5f",
+    "crates/nethacked-tui/src/main.rs": "0cc1a49be11c5580f83a133bffba91714c31066d65e2d4d07d2762300748695b",
+    "crates/nethacked-py/src/lib.rs": "b6a6c5b557893dd86a8c9e802cd5fd6af4c40f83ccaf700597c37905304c6a01",
+    "web/js/game.js": "a6cd190915544a122e2f557e28d915eb516f8108c9204bf890173db42a99f16d",
+    "web/play/play.js": "3cf11a180327b0c9fe6cfaa856020a078db27a01ddabfb5803be932b3a0fb3d0",
+    "crates/nethacked-sim/tests/monster_creation_wand_tests.rs": "e7ea56c0a4e5c5e5494445cf89c252578ccadacde2ff3c76e7d82ee6230e6dcc",
+    "crates/nethacked-types/src/lib.rs": "a09971c57b311192d2cd079b0c163da5d9bf5715d8bf53a42834e9ca36b228ae",
+    "crates/nethacked-sim/src/bones.rs": "b4137bd39d80eec444912b21a677f75f54f1ad34949c6ae489fd9a81231ef490",
+    "crates/nethacked-agent/src/bones/mod.rs": "8f44097ab5f8fe65ee951e15a872f2a604f5c3e39b37bb8b6dd94cc4fc226a48",
+    "crates/nethacked-agent/src/bones/client.rs": "9b7fa556bb2be6e93127a62afb9fd447aadb9dd07311b5d0ef7d95a8800c1112",
+    "crates/nethacked-agent/src/bones/server.rs": "07d2ce8846e553730355a0e7dc5d9896bbc448e171587509e62e8b78ffa5d300",
+    "crates/nethacked-agent/tests/bones_server_test.rs": "466988f66615166df346f808528faacdef3512431f47b8dc4a0b3e21fa47db5d",
+    "crates/nethacked-sim/src/events.rs": "3275e4531c1e179f0d30c0a219a0f8a3cc66fc9c655de766f73964f14caf8de4"
+  },
+  "graph_discovery": {
+    "project": "Users-dmytro-github-NetRust",
+    "query": "name_pattern .*(ActionAst|zap|Wand).* limit25",
+    "result": "matching AST/wand symbols but stale crates/netrust-* paths. Exact current crates/nethacked-* fallback read; no broad repeated graph/page audit."
+  },
+  "config_no_false_closure": "Local literally resolved P11a control flow can be reviewed independently; global bootstrap cannot be marked accepted/closed until mandatory enumeration is reviewed. Existing source-equivalent ordinary create evidence remains bounded to recorded ordinary contexts.",
+  "first_source_conformance_acceptance_hold": "Before FIRST source-conformance acceptance: complete reviewed global configuration valuations, supported options/calendar/environment contracts, intended frontend applicability and content/conditional branch manifest must be pinned. Current bootstrap unresolved. Local reviewed engineering implementation readiness is distinct; focused tests/full gates do not discharge this hold.",
+  "ready_policy": "After local repaired contract independent PASS, ID1 may be engineering_ready only; source_conformance_acceptance_hold remains until global pin. S1 requires consumed accepted ID1 interface and global hold discharged before source-conformance acceptance.",
+  "discovered_children": [
+    {
+      "id": "OB01-WAND-ID1",
+      "parent_family": "OB01",
+      "coverage_cross_refs": [
+        "UI05 bones payload"
+      ]
+    },
+    {
+      "id": "P11a-S1",
+      "parent_family": "P11a",
+      "coverage_cross_refs": [
+        "UI01 command/frontends"
+      ]
+    },
+    {
+      "id": "P11a-C1",
+      "parent_family": "P11a"
+    },
+    {
+      "id": "P11a-B1",
+      "parent_family": "P11a"
+    },
+    {
+      "id": "P11a-D1",
+      "parent_family": "P11a"
+    },
+    {
+      "id": "P11a-P1",
+      "parent_family": "P11a"
+    },
+    {
+      "id": "P11a-A1",
+      "parent_family": "P11a"
+    },
+    {
+      "id": "EQ03-half-physical",
+      "parent_family": "EQ03",
+      "status": "mandatory source audit if consumed interface unavailable; not broad family closure"
+    },
+    {
+      "id": "HE02-exercise",
+      "parent_family": "HE02",
+      "status": "mandatory source audit if consumed interface unavailable; not broad family closure"
+    },
+    {
+      "id": "EQ04-zap-capacity",
+      "parent_family": "EQ04",
+      "status": "mandatory source audit if consumed interface unavailable; not broad family closure"
+    },
+    {
+      "id": "HE07-zap-form",
+      "parent_family": "HE07",
+      "status": "mandatory source audit if consumed interface unavailable; not broad family closure"
+    },
+    {
+      "id": "DG06-zap-unpaid",
+      "parent_family": "DG06",
+      "status": "mandatory source audit if consumed interface unavailable; not broad family closure"
+    }
+  ],
+  "repair_source_note": "R4/R5 exact existing persistence/event owners read after stale graph proof; no additional C audit or source edit. Additional source hash anchors only, new test file is allowed but nonexistent."
+}

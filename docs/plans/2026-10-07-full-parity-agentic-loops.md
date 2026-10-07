@@ -6,6 +6,8 @@ The reviewed [remaining-stream scope](2026-10-07-remaining-parity-scope.md) supp
 
 The [autonomous completion contract](2026-10-07-autonomous-parity-run.md) formalizes a persistent goal, compact run ledger, queue selection/resume policy and aggregate completion audit for this scope. Its ledger is initially prepared and unstarted; goal activation is separate from saving the contract. The [planning review](../parity/obligations/2026-10-07-autonomous-parity-contract-review.json) records validation; existing golden authorization boundaries remain unchanged.
 
+The user subsequently activated the all-seven-stream goal. The [configuration/P11a audit checkpoint](../parity/obligations/2026-10-07-bootstrap-p11a/audit-checkpoint.json) records independently reviewed local control-flow facts and bounded identity/selection prerequisites. The [configuration audit](../parity/obligations/2026-10-07-bootstrap-p11a/configuration.md) remains globally unresolved; the [P11a contract](../parity/obligations/2026-10-07-bootstrap-p11a/p11a-contract.md) grants no family or source-conformance acceptance. Complete global configuration pinning precedes the first source-conformance acceptance; next audit is `BOOTSTRAP-C-CONDITIONALS`.
+
 ## Model routing and authority
 
 Explicitly set model and reasoning effort on every delegated task. Official [OpenAI subagent guidance](https://learn.chatgpt.com/docs/agent-configuration/subagents) recommends Luna for narrow work and Sol for demanding agents, and explains inherited settings and effort tradeoffs. The assignments below are project recommendations using models available in this session, not benchmark results, prices or claims about API availability.

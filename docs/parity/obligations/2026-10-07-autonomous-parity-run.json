@@ -1,7 +1,7 @@
 {
   "schema": "netrust-autonomous-parity-run-v1",
-  "run_state": "prepared_not_started",
-  "goal_activation": "user_goal_required; do not infer activation from saved files",
+  "run_state": "running",
+  "goal_activation": "explicit_user_goal_active",
   "contract": "docs/plans/2026-10-07-autonomous-parity-run.md",
   "scope_registry": "docs/parity/obligations/2026-10-07-remaining-parity-scope.json",
   "scope_registry_sha256": "ef0c220796234250d4d8e532f66ffbd113503d8db78bc40c002368f90719a5e9",
@@ -12,12 +12,13 @@
     "c_commit": "16ff59115315917b93185d026aeefea06db9b0f4"
   },
   "configuration": {
-    "status": "audit_needed",
-    "record": null
+    "status": "local_p11_contract_reviewed_global_pin_pending",
+    "record": "docs/parity/obligations/2026-10-07-bootstrap-p11a/configuration.json",
+    "acceptance_hold": "Complete reviewed global configuration must precede first source-conformance acceptance"
   },
   "completion_policy": "contract_final_completion_audit_all_requirements_with_evidence",
-  "first_action": "Validate current workspace; pin configuration and prepare independently reviewed P11a source contract",
-  "active_unit": null,
+  "first_action": "Read-only pinned configuration audit, then independently reviewed P11a contract",
+  "active_unit": "BOOTSTRAP-C-CONDITIONALS",
   "live_handles": [],
   "families": [
     {
@@ -58,8 +59,15 @@
     {
       "id": "P11a",
       "stream": "CB",
-      "state": "audit_needed",
-      "child_ids": [],
+      "state": "auditing",
+      "child_ids": [
+        "P11a-S1",
+        "P11a-C1",
+        "P11a-B1",
+        "P11a-D1",
+        "P11a-P1",
+        "P11a-A1"
+      ],
       "coverage_record": null
     },
     {
@@ -156,8 +164,10 @@
     {
       "id": "OB01",
       "stream": "OB",
-      "state": "audit_needed",
-      "child_ids": [],
+      "state": "auditing",
+      "child_ids": [
+        "OB01-WAND-ID1"
+      ],
       "coverage_record": null
     },
     {
@@ -381,18 +391,145 @@
       "id": "UI04",
       "stream": "UI",
       "state": "audit_needed",
-      "child_ids": [],
+      "child_ids": [
+        "UI04-CONFIG-INPUTS"
+      ],
       "coverage_record": null
     },
     {
       "id": "UI05",
       "stream": "UI",
       "state": "audit_needed",
-      "child_ids": [],
+      "child_ids": [
+        "UI05-BONES-INPUTS"
+      ],
       "coverage_record": null
     }
   ],
-  "children": [],
+  "children": [
+    {
+      "id": "BOOTSTRAP-C-CONFIG",
+      "parent": "run_configuration",
+      "state": "auditing_global_pin_pending",
+      "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/configuration.json",
+      "accepted_prerequisites": [],
+      "findings": [],
+      "repair_counters": {},
+      "evidence": "docs/parity/obligations/2026-10-07-bootstrap-p11a/review-final.json"
+    },
+    {
+      "id": "BOOTSTRAP-C-CONDITIONALS",
+      "parent": "run_configuration",
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/configuration.json",
+      "outcome": "Complete reviewed transitive headers/build-defined symbol valuations and enabled/disabled conditional gameplay branch manifest, source-only",
+      "accepted_prerequisites": [],
+      "evidence": null,
+      "repair_counters": {}
+    },
+    {
+      "id": "UI04-CONFIG-INPUTS",
+      "parent": "UI04",
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/configuration.json",
+      "outcome": "Complete supported options/calendar/environment deterministic-input/persistence contract; every variant remains in scope",
+      "accepted_prerequisites": [],
+      "evidence": null,
+      "repair_counters": {}
+    },
+    {
+      "id": "UI05-BONES-INPUTS",
+      "parent": "UI05",
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/configuration.json",
+      "outcome": "Bones/external persistence input and compatibility audit; ID1 supplies narrow item-definition identity payload evidence",
+      "accepted_prerequisites": [],
+      "evidence": null,
+      "repair_counters": {}
+    },
+    {
+      "id": "BOOTSTRAP-C-BRANCH-MANIFEST",
+      "parent": "run_configuration",
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/configuration.json",
+      "outcome": "Complete conditional content/level/catalog source branch manifest reconciled to all seven streams; local counts never prove completeness",
+      "accepted_prerequisites": [],
+      "evidence": null,
+      "repair_counters": {}
+    },
+    {
+      "id": "OB01-WAND-ID1",
+      "parent": "OB01",
+      "state": "ready",
+      "engineering_ready": true,
+      "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/p11a-contract.json",
+      "evidence": "docs/parity/obligations/2026-10-07-bootstrap-p11a/review-final.json",
+      "accepted_prerequisites": [
+        "P10a2",
+        "P10b"
+      ],
+      "acceptance_hold": "Complete reviewed global configuration pin; no source-conformance acceptance yet",
+      "implementation_started": false,
+      "repair_counters": {}
+    },
+    {
+      "id": "P11a-S1",
+      "parent": "P11a",
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/p11a-contract.json",
+      "accepted_prerequisites": [],
+      "dependencies": [
+        "OB01-WAND-ID1"
+      ],
+      "evidence": null,
+      "repair_counters": {}
+    },
+    {
+      "id": "P11a-C1",
+      "parent": "P11a",
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/p11a-contract.json",
+      "accepted_prerequisites": [],
+      "evidence": null,
+      "repair_counters": {}
+    },
+    {
+      "id": "P11a-B1",
+      "parent": "P11a",
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/p11a-contract.json",
+      "accepted_prerequisites": [],
+      "evidence": null,
+      "repair_counters": {}
+    },
+    {
+      "id": "P11a-D1",
+      "parent": "P11a",
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/p11a-contract.json",
+      "accepted_prerequisites": [],
+      "evidence": null,
+      "repair_counters": {}
+    },
+    {
+      "id": "P11a-P1",
+      "parent": "P11a",
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/p11a-contract.json",
+      "accepted_prerequisites": [],
+      "evidence": null,
+      "repair_counters": {}
+    },
+    {
+      "id": "P11a-A1",
+      "parent": "P11a",
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/p11a-contract.json",
+      "accepted_prerequisites": [],
+      "evidence": null,
+      "repair_counters": {}
+    }
+  ],
   "inventory_coverage": {
     "baseline_rows": 543,
     "record": null,
@@ -404,12 +541,90 @@
     "status": "audit_needed_including_declared_tags_flags_properties_levels"
   },
   "decisions": [],
-  "findings": [],
-  "accepted_checkpoints": [],
+  "findings": [
+    {
+      "id": "R1",
+      "unit": "BOOTSTRAP-C-CONFIG/P11a-contract",
+      "status": "resolved_in_local_contract_review",
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/review-initial/review.json",
+      "resolution": "docs/parity/obligations/2026-10-07-bootstrap-p11a/review-final.json"
+    },
+    {
+      "id": "R2",
+      "unit": "BOOTSTRAP-C-CONFIG/P11a-contract",
+      "status": "resolved_in_local_contract_review",
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/review-initial/review.json",
+      "resolution": "docs/parity/obligations/2026-10-07-bootstrap-p11a/review-final.json"
+    },
+    {
+      "id": "R3",
+      "unit": "BOOTSTRAP-C-CONFIG/P11a-contract",
+      "status": "resolved_in_local_contract_review",
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/review-initial/review.json",
+      "resolution": "docs/parity/obligations/2026-10-07-bootstrap-p11a/review-final.json"
+    },
+    {
+      "id": "R4",
+      "unit": "BOOTSTRAP-C-CONFIG/P11a-contract",
+      "status": "resolved_in_local_contract_review",
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/review-initial/review.json",
+      "resolution": "docs/parity/obligations/2026-10-07-bootstrap-p11a/review-final.json"
+    },
+    {
+      "id": "R5",
+      "unit": "BOOTSTRAP-C-CONFIG/P11a-contract",
+      "status": "resolved_in_local_contract_review",
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/review-initial/review.json",
+      "resolution": "docs/parity/obligations/2026-10-07-bootstrap-p11a/review-final.json"
+    },
+    {
+      "id": "R6",
+      "unit": "BOOTSTRAP-C-CONFIG/P11a-contract",
+      "status": "resolved_in_local_contract_review",
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/review-initial/review.json",
+      "resolution": "docs/parity/obligations/2026-10-07-bootstrap-p11a/review-final.json"
+    }
+  ],
+  "accepted_checkpoints": [
+    {
+      "kind": "audit_contract_checkpoint",
+      "unit": "BOOTSTRAP-C-CONFIG/P11a-contract",
+      "status": "local_contract_review_pass_global_pin_unresolved",
+      "source_conformance_accepted": false,
+      "record": "docs/parity/obligations/2026-10-07-bootstrap-p11a/audit-checkpoint.json",
+      "commit": "containing commit",
+      "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/contract-reviewed"
+    }
+  ],
   "integration_audit": null,
   "final_gate_evidence": null,
   "final_delivery": null,
   "runtime_budget": "unspecified_by_user",
   "token_usage": "unknown",
-  "golden_policy": "frozen_until_exact_task_specific_explicit_user_authorization; no_new_blanket_permission"
+  "golden_policy": "frozen_until_exact_task_specific_explicit_user_authorization; no_new_blanket_permission",
+  "launch_head": "2700ec46ec699481f6e8972fef1d866f172c3fbb",
+  "goal_objective": "Complete all seven remaining parity streams following docs/plans/2026-10-07-autonomous-parity-run.md. Continue across all 53 families until its completion audit passes. Start with configuration bootstrap and P11a.",
+  "evidence_root": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity",
+  "launch_source_evidence": {
+    "baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/baseline.json",
+    "before_archive": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/source-before.tar.gz",
+    "sha256": "e1939877f1318552e92033cd9b8ca504017f3232621b7292e13e7aa4275740d4",
+    "readback_full_342_verified": true,
+    "accepted_gate_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/baseline-accepted-gates"
+  },
+  "next_action": "Source-only complete configuration profile/conditional manifest audit, independent review, then clear first-conformance hold before production acceptance",
+  "external_accepted_interfaces": {
+    "P10a2": {
+      "record": "docs/parity/obligations/2026-10-07-p04-p10-final-acceptance.json",
+      "sha256": "11150ff22af01783ed34fe34c0b20f13d08610a4a81574028f6442e38523ff61",
+      "source_input_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+      "interface": "owned original-role by-hero placement and positive uncursed ordinary create-monster Zap/native save continuation"
+    },
+    "P10b": {
+      "record": "docs/parity/obligations/2026-10-07-p04-p10-final-acceptance.json",
+      "sha256": "11150ff22af01783ed34fe34c0b20f13d08610a4a81574028f6442e38523ff61",
+      "source_input_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+      "interface": "owned SGROUP insertion/order through ordinary public create-monster Zap/native continuation"
+    }
+  }
 }
