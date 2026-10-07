@@ -22,7 +22,7 @@
   },
   "completion_policy": "contract_final_completion_audit_all_requirements_with_evidence",
   "first_action": "Read-only pinned configuration audit, then independently reviewed P11a contract",
-  "active_unit": "P11a-P1-BILL-API1",
+  "active_unit": "P11a-P1-BILL-SAVE1",
   "live_handles": [],
   "families": [
     {
@@ -1281,7 +1281,7 @@
       "cross_refs": [
         "DG06"
       ],
-      "state": "verified_awaiting_delivery",
+      "state": "accepted",
       "contract": "docs/parity/obligations/2026-10-07-p11a-billing-contract/contract.json",
       "dependencies": [
         "P11a-P1-BILL",
@@ -1316,7 +1316,10 @@
       "unit_record": "docs/parity/obligations/2026-10-07-p11a-billing-api1/unit.json",
       "full_gate_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/full-gates/accepted.json",
       "full_gate_tests": 1035,
-      "family_closed": false
+      "family_closed": false,
+      "accepted_commit": "009930559c5b7375705151b8298e5a9f3d480f54",
+      "delivery_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/delivery.json",
+      "source_conformance_accepted": true
     },
     {
       "id": "P11a-P1-BILL-SAVE1",
@@ -1324,7 +1327,7 @@
       "cross_refs": [
         "DG06"
       ],
-      "state": "audit_needed",
+      "state": "verified_awaiting_delivery",
       "contract": "docs/parity/obligations/2026-10-07-p11a-billing-contract/contract.json",
       "dependencies": [
         "P11a-P1-BILL-API1"
@@ -1345,7 +1348,24 @@
         "F2 admitted/refused clearing/Pay active+cached save/load/disposal chains; F3 exact scratch manifest below with all outputs and failing exits."
       ],
       "contract_review": "docs/parity/obligations/2026-10-07-p11a-billing-contract/review-final.json",
-      "activation_requires": "Accepted implementation/source evidence; contract review alone closes no public wand feature."
+      "activation_requires": "Accepted implementation/source evidence; contract review alone closes no public wand feature.",
+      "accepted_prerequisite_delivery": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/delivery.json",
+      "baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/baseline.json",
+      "launch": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/launch-readback.json",
+      "graph_discovery": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/graph-discovery.json",
+      "implementation_handoff": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/implementation-initial/handoff.json",
+      "review_baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/review-baseline.json",
+      "source_input_count": 346,
+      "source_input_digest": "8bacdc8c97845110876c9226b847df68f4c08a5b38df45c9ea8920faba3be169",
+      "usage_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/implementation-initial/actual-usage.json",
+      "scratch_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/scratch-readback-verification.json",
+      "independent_review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/implementation-review/review-final.json",
+      "review_binding_proof": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/implementation-review/readback-verification.json",
+      "native_byte_evidence_limit": "New fixtures empty skill maps; general populated-skill native byte determinism remains NATIVE-SAVE-SKILL-ORDER",
+      "unit_record": "docs/parity/obligations/2026-10-07-p11a-billing-save1/unit.json",
+      "full_gate_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/full-gates/accepted.json",
+      "full_gate_tests": 1044,
+      "family_closed": false
     },
     {
       "id": "DG06-bill-merge-partial",
@@ -1427,6 +1447,22 @@
       "evidence": null,
       "repair_counters": {},
       "implementation_files": "none; source/API audit and independent minimal ownership review required"
+    },
+    {
+      "id": "NATIVE-SAVE-SKILL-ORDER",
+      "parent": "UI03",
+      "state": "audit_needed",
+      "dependencies": [],
+      "outcome": "Audit deterministic native serialization and populated-skill save/load/continuation for unchanged SkillTree HashMap. Preserve all fields/values and old assertions; independent narrow allowlist/contract before repair. Empty-skill SAVE1 bytes do not close this obligation.",
+      "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/implementation-review/review-final.json",
+      "trigger": "Equivalent populated Basic Dagger/LongSword worlds serialize different skill-key order after restoration.",
+      "source_owners": [
+        "crates/nethacked-types/src/lib.rs::SkillTree",
+        "crates/nethacked-sim/src/world.rs::SimulationWorld::to_save_json"
+      ],
+      "allowed_files": "none until independent contract",
+      "repair_counters": {},
+      "dispatch_hold": "PROCESS-OPTIMIZATION must complete first"
     }
   ],
   "inventory_coverage": {
@@ -1535,6 +1571,15 @@
       "status": "resolved_contract_scope_with_diagnosis_correction",
       "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/review-initial/review-initial.json",
       "resolution": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/review-final/review-final.json"
+    },
+    {
+      "id": "NATIVE-SAVE-SKILL-ORDER",
+      "unit": "P11a-P1-BILL-SAVE1",
+      "status": "open_existing_successor_not_SAVE1_blocker",
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/implementation-review/review-final.json",
+      "scope": "Full-goal native save output determinism; no general native byte closure",
+      "requires_registration": false,
+      "successor": "NATIVE-SAVE-SKILL-ORDER"
     }
   ],
   "accepted_checkpoints": [
@@ -1606,6 +1651,15 @@
       "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/contract-delivery.json",
       "source_conformance_accepted": false,
       "family_closed": false
+    },
+    {
+      "kind": "implementation_prerequisite_checkpoint",
+      "unit": "P11a-P1-BILL-API1",
+      "status": "accepted",
+      "commit": "009930559c5b7375705151b8298e5a9f3d480f54",
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/delivery.json",
+      "source_conformance_accepted": true,
+      "family_closed": false
     }
   ],
   "integration_audit": null,
@@ -1624,7 +1678,7 @@
     "readback_full_342_verified": true,
     "accepted_gate_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/baseline-accepted-gates"
   },
-  "next_action": "Fresh changed-doc checks and exactstage/verified commit/delivery for BILL-API1; then accepted-prerequisite SAVE1 implementation/compatibility.",
+  "next_action": "Fresh changed-doc checks and exact9path SAVE1 commit/delivery; then formalize and verify PROCESS-OPTIMIZATION first, no further parity worker dispatch.",
   "external_accepted_interfaces": {
     "P10a2": {
       "record": "docs/parity/obligations/2026-10-07-p04-p10-final-acceptance.json",
@@ -1663,5 +1717,26 @@
     "source": "actual get_goal on resumed goal continuation",
     "tokens_used": 1475214,
     "time_used_seconds": 6772
+  },
+  "controller_efficiency_adjustment": {
+    "trigger": "User asks why progress takes so long; optimize process without reducing full parity or mandatory checks.",
+    "effective_from": "next worker dispatch",
+    "rules": [
+      "Reuse accepted source/API/configuration audits through exact bindings; no repeat audit without changed inputs or new finding.",
+      "During implementation run the narrow changed-test target until final fixtures/source stabilize; execute the required focused compatibility/regression allocation once on final inputs.",
+      "After test-only repairs, rerun affected tests and retain unchanged production/schema/hash evidence with explicit byte equality rather than repeating all unrelated checks.",
+      "Root runs mandatory fresh full12/all3 after independent semantic PASS and before code commit.",
+      "Compact worker handoff and fixture index; root owns complete-input/archive/copy proofs. Avoid duplicate narrative evidence.",
+      "Retain all failures and exact per-defect repair counters; no waiver or scope shrink."
+    ],
+    "documentation_policy": "Publish only compact unit/evidence record and readable summary; reference full immutable external handoffs/reviews/logs by path/hash instead of duplicating their text in repo. Required truthful spec/parity/progress updates remain.",
+    "user_cost_concern": "User reports at least10%weekly allowance spent; exact weekly percentage unavailable locally. No invented savings or pricing. All53 scope retained.",
+    "worker_output_policy": "Compact handoff<=500words plus fixture index/actual logs. Root owns mechanical archive/copy/input binding proofs; avoid worker duplicate proof narratives. Retain existing soft envelopes and split larger semantic units before dispatch."
+  },
+  "user_execution_directive": {
+    "instruction": "Finish current SAVE1 through review, required fixes, full gates and commit. Then formalize and perform multi-level cycle optimization before launching further parity implementations.",
+    "next_coordination_task": "PROCESS-OPTIMIZATION",
+    "further_parity_dispatch_hold": "until reviewed process optimization is written and checked",
+    "scope": "Full seven-stream/53-family objective retained; sequencing change, no completion claim or automatic pause."
   }
 }

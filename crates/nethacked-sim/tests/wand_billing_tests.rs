@@ -640,3 +640,642 @@ fn receipt_consistency_stale_admission_and_global_duplicate_preflight() {
         vec![second, first]
     );
 }
+
+// SAVE1 fixtures are appended independently of the nine accepted API1 bodies.
+fn save1_world() -> SimulationWorld {
+    let mut w = world();
+    // Empty learned skills avoid unrelated HashMap serialization order in native save bytes.
+    w.hero.skills.skills.clear();
+    w
+}
+
+fn save1_same(a: &SimulationWorld, b: &SimulationWorld) {
+    assert_eq!(raw(a), raw(b));
+    assert_eq!(a.to_save_json().unwrap(), b.to_save_json().unwrap());
+    assert_eq!(a.rng.clone().next_u64(), b.rng.clone().next_u64());
+    assert_eq!(a.outstanding_bills(), b.outstanding_bills());
+}
+
+fn save1_wait(a: &mut SimulationWorld, b: &mut SimulationWorld) {
+    assert_eq!(
+        a.step_player_action(ActionAst::Wait),
+        b.step_player_action(ActionAst::Wait)
+    );
+    save1_same(a, b);
+}
+
+fn save1_refuse(w: &mut SimulationWorld, id: ItemId) {
+    assert_eq!(
+        atomic(w, |w| w.try_remove_unpaid(id)),
+        Err(BillError::SettlementDeferred)
+    );
+    atomic(w, |w| w.remove_unpaid(id));
+    assert!(atomic(w, |w| w.step_player_action(ActionAst::Pay)).is_empty());
+}
+
+fn save1_load_wire(
+    w: &SimulationWorld,
+    wire: &serde_json::Value,
+) -> Result<SimulationWorld, nethacked_sim::world::LoadError> {
+    SimulationWorld::from_save_json(&wire.to_string(), Arc::clone(&w.ruleset), &w.ruleset_ref)
+}
+
+#[test]
+fn save1_active_admitted_refused_loaded_disposed_repeat_and_allocation() {
+    // SAVE1-ACTIVE: 16 native chains, canonical/custom, explicit/absent identity, q1/q3, mixed/only.
+    for q in [1, 3] {
+        for custom in [false, true] {
+            for legacy in [false, true] {
+                for mixed in [false, true] {
+                    let mut control = save1_world();
+                    let id = wand(&mut control, q, custom, legacy);
+                    control.unpaid_items.push((id, 30));
+                    let receipt = terms(&control, q);
+                    control.record_bill_terms(id, receipt.clone()).unwrap();
+                    if mixed {
+                        let other = wand(&mut control, 1, false, true);
+                        control.unpaid_items.push((other, 5));
+                    }
+                    control.role_name = "Tourist".into();
+                    control.player_gold = 1000;
+                    save1_refuse(&mut control, id);
+                    let mut loaded = restored(&control);
+                    save1_same(&control, &loaded);
+                    save1_refuse(&mut loaded, id);
+                    save1_same(&control, &loaded);
+                    assert_eq!(
+                        control.dispose_whole_carried_item(id),
+                        Ok(WholeDisposal::RetainedBilled { origin: id })
+                    );
+                    assert_eq!(
+                        loaded.dispose_whole_carried_item(id),
+                        Ok(WholeDisposal::RetainedBilled { origin: id })
+                    );
+                    loaded = restored(&loaded);
+                    save1_same(&control, &loaded);
+                    assert_eq!(loaded.billing.consumed[0].terms, receipt);
+                    assert_eq!(loaded.billing.consumed[0].object.quantity, q);
+                    assert_eq!(
+                        loaded.outstanding_bills().last().unwrap().valuation,
+                        BillValuation::Known {
+                            total: 40 * u64::from(q)
+                        }
+                    );
+                    save1_refuse(&mut control, id);
+                    save1_refuse(&mut loaded, id);
+                    assert_eq!(
+                        atomic(&mut loaded, |w| w.dispose_whole_carried_item(id)),
+                        Err(BillError::AlreadyConsumed)
+                    );
+                    let a = wand(&mut control, q, custom, legacy);
+                    let b = wand(&mut loaded, q, custom, legacy);
+                    assert_eq!(a, b);
+                    assert_ne!(a, id);
+                    save1_same(&control, &loaded);
+                    save1_wait(&mut control, &mut loaded);
+                }
+            }
+        }
+    }
+}
+
+fn save1_depart(w: &mut SimulationWorld) -> Vec<nethacked_sim::GameEvent> {
+    // Real public drop and stairs, never constructing a StoredLevel fixture.
+    let down = Coord::new_unchecked(20, 10);
+    w.level.stairs_down = down;
+    w.level.set_tile(down, Tile::Stairs { up: false });
+    w.arena.actors[w.player_id].coord = down;
+    assert!(!w.step_player_action(ActionAst::Drop(0)).is_empty());
+    let events = w.step_player_action(ActionAst::Descend);
+    assert_eq!(w.depth, 2);
+    events
+}
+
+fn save1_return(w: &mut SimulationWorld) -> Vec<nethacked_sim::GameEvent> {
+    w.arena.actors[w.player_id].coord = w.level.stairs_up;
+    let events = w.step_player_action(ActionAst::Ascend);
+    assert_eq!(w.depth, 1);
+    events
+}
+
+#[test]
+fn save1_cached_admitted_refused_loaded_stairs_remap_disposed_and_consumed_trace() {
+    // SAVE1-CACHE: 16 chains, two quantities/definitions/identity encodings/consumed presence.
+    for q in [1, 3] {
+        for custom in [false, true] {
+            for legacy in [false, true] {
+                for consumed in [false, true] {
+                    let mut control = save1_world();
+                    if consumed {
+                        let old = wand(&mut control, q, custom, legacy);
+                        control.unpaid_items.push((old, 30));
+                        let receipt = terms(&control, q);
+                        control.record_bill_terms(old, receipt).unwrap();
+                        control.dispose_whole_carried_item(old).unwrap();
+                    }
+                    let id = wand(&mut control, q, custom, legacy);
+                    control.unpaid_items.push((id, 30));
+                    let receipt = terms(&control, q);
+                    control.record_bill_terms(id, receipt.clone()).unwrap();
+                    let history = control.billing.consumed.clone();
+                    save1_refuse(&mut control, id);
+                    save1_depart(&mut control);
+                    assert!(control.arena.items.get(id).is_none());
+                    assert!(control
+                        .stored_levels
+                        .iter()
+                        .any(|(_, level)| level.items.iter().any(|(i, _)| *i == id)));
+                    assert_eq!(control.billing.live_terms, vec![(id, receipt.clone())]);
+                    assert!(!control.unpaid_items.iter().any(|(i, _)| *i == id));
+                    save1_refuse(&mut control, id);
+                    let mut loaded = restored(&control);
+                    save1_same(&control, &loaded);
+                    save1_refuse(&mut loaded, id);
+                    save1_wait(&mut control, &mut loaded);
+                    assert_eq!(save1_return(&mut control), save1_return(&mut loaded));
+                    save1_same(&control, &loaded);
+                    let remapped = control.billing.live_terms[0].0;
+                    assert_ne!(remapped, id);
+                    assert_eq!(loaded.billing.live_terms[0].0, remapped);
+                    assert_eq!(control.billing.live_terms[0].1, receipt);
+                    assert_eq!(control.billing.consumed, history);
+                    assert_eq!(loaded.billing.consumed, history);
+                    assert_eq!(
+                        control.step_player_action(ActionAst::PickUp),
+                        loaded.step_player_action(ActionAst::PickUp)
+                    );
+                    assert_eq!(
+                        control.arena.items[remapped].location,
+                        ItemLocation::CarriedBy(control.player_id)
+                    );
+                    save1_refuse(&mut control, remapped);
+                    save1_refuse(&mut loaded, remapped);
+                    loaded = restored(&loaded);
+                    save1_same(&control, &loaded);
+                    assert_eq!(
+                        control.dispose_whole_carried_item(remapped),
+                        loaded.dispose_whole_carried_item(remapped)
+                    );
+                    loaded = restored(&loaded);
+                    save1_same(&control, &loaded);
+                    assert_eq!(loaded.billing.consumed.last().unwrap().terms, receipt);
+                    assert_eq!(loaded.billing.consumed[..history.len()], history);
+                    assert_eq!(
+                        atomic(&mut loaded, |w| w.dispose_whole_carried_item(remapped)),
+                        Err(BillError::AlreadyConsumed)
+                    );
+                    save1_refuse(&mut control, remapped);
+                    save1_refuse(&mut loaded, remapped);
+                    let a = wand(&mut control, q, custom, legacy);
+                    let b = wand(&mut loaded, q, custom, legacy);
+                    assert_eq!(a, b);
+                    save1_wait(&mut control, &mut loaded);
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn save1_absent_and_explicit_empty_owner_active_cached_unknown_conservation() {
+    // SAVE1-LEGACY: 32 chains; only billing is removed from legacy wire.
+    for q in [1, 3] {
+        for custom in [false, true] {
+            for legacy in [false, true] {
+                for absent in [false, true] {
+                    for cached in [false, true] {
+                        let mut control = save1_world();
+                        let id = wand(&mut control, q, custom, legacy);
+                        control.unpaid_items.push((id, 30));
+                        if cached {
+                            save1_depart(&mut control);
+                        }
+                        let mut wire = serde_json::to_value(&control).unwrap();
+                        assert_eq!(
+                            wire["billing"],
+                            serde_json::json!({"live_terms":[],"consumed":[]})
+                        );
+                        if absent {
+                            wire.as_object_mut().unwrap().remove("billing");
+                        }
+                        let mut loaded = save1_load_wire(&control, &wire).unwrap();
+                        save1_same(&control, &loaded);
+                        assert!(loaded.billing.live_terms.is_empty());
+                        let current = if cached {
+                            assert_eq!(save1_return(&mut control), save1_return(&mut loaded));
+                            assert_eq!(
+                                control.step_player_action(ActionAst::PickUp),
+                                loaded.step_player_action(ActionAst::PickUp)
+                            );
+                            control.unpaid_items[0].0
+                        } else {
+                            id
+                        };
+                        save1_same(&control, &loaded);
+                        assert_eq!(
+                            control.dispose_whole_carried_item(current),
+                            loaded.dispose_whole_carried_item(current)
+                        );
+                        loaded = restored(&loaded);
+                        save1_same(&control, &loaded);
+                        let view = loaded.outstanding_bills().last().unwrap().clone();
+                        assert_eq!(
+                            view.terms,
+                            BillTerms {
+                                billed_quantity: None,
+                                unit_price: None,
+                                creditor: None,
+                                legacy_base_cost: 30
+                            }
+                        );
+                        assert_eq!(
+                            view.valuation,
+                            BillValuation::UnresolvedTerms {
+                                base: 30,
+                                current_consumed_quantity: Some(q)
+                            }
+                        );
+                        save1_refuse(&mut control, current);
+                        save1_refuse(&mut loaded, current);
+                        assert_eq!(
+                            atomic(&mut loaded, |w| w.dispose_whole_carried_item(current)),
+                            Err(BillError::AlreadyConsumed)
+                        );
+                        save1_wait(&mut control, &mut loaded);
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn save1_malformed_billing_fails_before_catchup_and_ruleset_mismatch_wins() {
+    use nethacked_sim::world::LoadError;
+    // SAVE1-MALFORMED: active/cached/consumed corruption; no timer path may mask billing errors.
+    for cached in [false, true] {
+        for case in 0..12 {
+            let mut w = save1_world();
+            let id = wand(&mut w, 3, true, false);
+            w.unpaid_items.push((id, 30));
+            let receipt = terms(&w, 3);
+            w.record_bill_terms(id, receipt).unwrap();
+            if cached {
+                save1_depart(&mut w);
+            }
+            let mut wire = serde_json::to_value(&w).unwrap();
+            match case {
+                0 => {
+                    let t = wire["billing"]["live_terms"][0].clone();
+                    wire["billing"]["live_terms"]
+                        .as_array_mut()
+                        .unwrap()
+                        .push(t);
+                }
+                1 => {
+                    wire["billing"]["live_terms"][0][0] =
+                        serde_json::to_value(wand(&mut w, 1, false, false)).unwrap();
+                }
+                2 => {
+                    wire["billing"]["live_terms"][0][1]["legacy_base_cost"] = 31.into();
+                }
+                3 => {
+                    wire["billing"]["live_terms"][0][1]["unit_price"] = 0.into();
+                }
+                4 => {
+                    wire["billing"]["live_terms"][0][1]["billed_quantity"] = 1.into();
+                }
+                5 => {
+                    wire["billing"]["live_terms"][0][1]["unit_price"] = serde_json::Value::Null;
+                }
+                6 => {
+                    wire["billing"]["live_terms"][0][1]["billed_quantity"] = u32::MAX.into();
+                    wire["billing"]["live_terms"][0][1]["unit_price"] = u32::MAX.into();
+                }
+                7..=11 => {
+                    // Corrupt the unique object/ledger at its genuine owner.
+                    let owner = if cached {
+                        &mut wire["stored_levels"][0][1]
+                    } else {
+                        &mut wire
+                    };
+                    if case == 7 {
+                        owner["unpaid_items"] = serde_json::json!([]);
+                    }
+                    if case == 8 {
+                        let t = owner["unpaid_items"][0].clone();
+                        owner["unpaid_items"].as_array_mut().unwrap().push(t);
+                    }
+                    if case >= 9 {
+                        let object = if cached {
+                            &mut owner["items"][0][1]
+                        } else {
+                            // Slotmap JSON contains occupied records under value.
+                            owner["arena"]["items"]
+                                .as_array_mut()
+                                .unwrap()
+                                .iter_mut()
+                                .find_map(|slot| slot.get_mut("value").filter(|v| !v.is_null()))
+                                .unwrap()
+                        };
+                        match case {
+                            9 => {
+                                object["definition"] = serde_json::json!({"Custom":"missing"});
+                            }
+                            10 => {
+                                object["quantity"] = 0.into();
+                            }
+                            _ => {
+                                object["is_container"] = true.into();
+                            }
+                        }
+                    }
+                }
+                _ => unreachable!(),
+            }
+            // Invalid timer owner would itself fail; billing must win before validation/catchup.
+            wire["object_timers"] = serde_json::json!({"entries":[{"target":{"Active":id},"kind":"RotCorpse","due":0,"serial":0}],"next_serial":1});
+            let input = wire.to_string();
+            let before = raw(&w);
+            let next = w.rng.clone().next_u64();
+            assert!(
+                matches!(save1_load_wire(&w, &wire), Err(LoadError::Json(message)) if message.starts_with("billing:")),
+                "cached={cached} case={case}"
+            );
+            assert_eq!(wire.to_string(), input);
+            assert_eq!(raw(&w), before);
+            assert_eq!(w.rng.clone().next_u64(), next);
+            let mut wrong = w.ruleset_ref.clone();
+            wrong.hash = "wrong hash".into();
+            assert!(matches!(
+                SimulationWorld::from_save_json(&input, Arc::clone(&w.ruleset), &wrong),
+                Err(LoadError::RulesetMismatch { .. })
+            ));
+        }
+    }
+}
+
+#[test]
+fn save1_consumed_corruption_and_historical_origin_validation() {
+    use nethacked_sim::world::LoadError;
+    // SAVE1-CONSUMED: known and unknown detached records, malformed snapshots and terms.
+    for known in [false, true] {
+        let mut w = save1_world();
+        let mut source_actor = w.arena.actors[w.player_id].clone();
+        source_actor.is_player = false;
+        source_actor.name = "receipt source actor".into();
+        let source_id = w.arena.spawn_actor(source_actor);
+        let id = wand(&mut w, 3, true, false);
+        w.unpaid_items.push((id, 30));
+        if known {
+            let mut t = terms(&w, 3);
+            t.creditor.as_mut().unwrap().shopkeeper = source_id;
+            w.record_bill_terms(id, t).unwrap();
+        }
+        w.dispose_whole_carried_item(id).unwrap();
+        w.arena.destroy_actor(source_id).unwrap();
+        let replacement = wand(&mut w, 1, false, true);
+        assert_ne!(id, replacement);
+        // Historical shopkeeper need not be active. Origin stays the retired full generation.
+        let good = serde_json::to_value(&w).unwrap();
+        let loaded = save1_load_wire(&w, &good).unwrap();
+        assert_eq!(loaded.billing.consumed[0].origin, id);
+        assert!(loaded.arena.items.get(id).is_none());
+        if known {
+            assert_eq!(
+                loaded.billing.consumed[0]
+                    .terms
+                    .creditor
+                    .as_ref()
+                    .unwrap()
+                    .shopkeeper,
+                source_id
+            );
+            assert!(loaded.arena.actors.get(source_id).is_none());
+        }
+        for case in 0..9 {
+            let mut bad = good.clone();
+            match case {
+                0 => {
+                    let c = bad["billing"]["consumed"][0].clone();
+                    bad["billing"]["consumed"].as_array_mut().unwrap().push(c);
+                }
+                1 => {
+                    bad["billing"]["consumed"][0]["object"]["quantity"] = 0.into();
+                }
+                2 => {
+                    bad["billing"]["consumed"][0]["object"]["definition"] =
+                        serde_json::json!({"Custom":"missing"});
+                }
+                3 => {
+                    bad["billing"]["consumed"][0]["object"]["location"] =
+                        serde_json::to_value(ItemLocation::CarriedBy(w.player_id)).unwrap();
+                }
+                4 => {
+                    bad["billing"]["consumed"][0]["origin"] =
+                        serde_json::to_value(replacement).unwrap();
+                }
+                5 => {
+                    bad["billing"]["consumed"][0]["terms"]["billed_quantity"] = 2.into();
+                    bad["billing"]["consumed"][0]["terms"]["unit_price"] = 40.into();
+                }
+                6 => {
+                    bad["billing"]["consumed"][0]["terms"]["unit_price"] = 0.into();
+                }
+                7 => {
+                    bad["billing"]["consumed"][0]["object"]["is_container"] = true.into();
+                }
+                _ => {
+                    bad["billing"]["live_terms"] = serde_json::json!([[id, terms(&w, 3)]]);
+                }
+            }
+            bad["object_timers"] = serde_json::json!({"entries":[{"target":{"Active":id},"kind":"RotCorpse","due":0,"serial":0}],"next_serial":1});
+            assert!(
+                matches!(save1_load_wire(&w, &bad), Err(LoadError::Json(message)) if message.starts_with("billing:")),
+                "known={known} case={case}"
+            );
+        }
+    }
+}
+
+#[test]
+fn save1_duplicate_json_owners_rejected_and_legacy_pay_unchanged_after_load() {
+    use nethacked_sim::world::LoadError;
+    let w = save1_world();
+    let json = w.to_save_json().unwrap();
+    let duplicate = format!(
+        "{{\"billing\":{{\"live_terms\":[],\"consumed\":[]}},{}",
+        &json[1..]
+    );
+    assert!(
+        matches!(SimulationWorld::from_save_json(&duplicate, Arc::clone(&w.ruleset), &w.ruleset_ref), Err(LoadError::Json(message)) if message.contains("duplicate field"))
+    );
+    for absent in [false, true] {
+        let mut control = save1_world();
+        let id = wand(&mut control, 3, false, true);
+        control.unpaid_items.push((id, 30));
+        control.player_gold = 1000;
+        let mut wire = serde_json::to_value(&control).unwrap();
+        if absent {
+            wire.as_object_mut().unwrap().remove("billing");
+        }
+        let mut loaded = save1_load_wire(&control, &wire).unwrap();
+        let price = control.get_unpaid_cost(id).unwrap();
+        assert_eq!(
+            control.step_player_action(ActionAst::Pay),
+            loaded.step_player_action(ActionAst::Pay)
+        );
+        assert_eq!(loaded.player_gold, 1000 - price);
+        assert!(!loaded.is_unpaid(id));
+        save1_same(&control, &loaded);
+        control.unpaid_items.push((id, 30));
+        loaded.unpaid_items.push((id, 30));
+        assert_eq!(control.try_remove_unpaid(id), Ok(()));
+        assert_eq!(loaded.try_remove_unpaid(id), Ok(()));
+        save1_wait(&mut control, &mut loaded);
+    }
+}
+
+#[test]
+fn save1_global_receipt_order_remaps_only_restored_ids() {
+    // SAVE1-ORDER: three live receipts in admission order, two restored and one carried.
+    let mut control = save1_world();
+    let first = wand(&mut control, 1, false, false);
+    let second = wand(&mut control, 3, true, false);
+    let stay = wand(&mut control, 1, true, true);
+    control
+        .unpaid_items
+        .extend([(first, 30), (second, 30), (stay, 30)]);
+    for (id, q) in [(stay, 1), (second, 3), (first, 1)] {
+        let t = terms(&control, q);
+        control.record_bill_terms(id, t).unwrap();
+    }
+    let before_terms = control.billing.live_terms.clone();
+    let down = Coord::new_unchecked(20, 10);
+    control.level.stairs_down = down;
+    control.level.set_tile(down, Tile::Stairs { up: false });
+    control.arena.actors[control.player_id].coord = down;
+    for id in [first, second] {
+        let index = control
+            .arena
+            .items_carried_by(control.player_id)
+            .iter()
+            .position(|i| *i == id)
+            .unwrap();
+        assert!(!control
+            .step_player_action(ActionAst::Drop(index))
+            .is_empty());
+    }
+    assert!(!control.step_player_action(ActionAst::Descend).is_empty());
+    assert_eq!(control.depth, 2);
+    assert_eq!(control.billing.live_terms, before_terms);
+    let mut loaded = restored(&control);
+    save1_same(&control, &loaded);
+    assert_eq!(save1_return(&mut control), save1_return(&mut loaded));
+    save1_same(&control, &loaded);
+    assert_eq!(loaded.billing.live_terms[0], before_terms[0]);
+    for index in [1, 2] {
+        let (new, t) = &loaded.billing.live_terms[index];
+        assert_ne!(*new, before_terms[index].0);
+        assert_eq!(t, &before_terms[index].1);
+        assert!(loaded.is_unpaid(*new));
+        assert_eq!(
+            loaded.arena.items[*new].quantity,
+            t.billed_quantity.unwrap()
+        );
+    }
+    assert_eq!(
+        wand(&mut control, 1, false, false),
+        wand(&mut loaded, 1, false, false)
+    );
+    save1_wait(&mut control, &mut loaded);
+}
+
+#[test]
+fn save1_cross_owner_duplicate_dangling_and_contents_rejected() {
+    use nethacked_sim::world::LoadError;
+    // SAVE1-OWNERS: corrupt actual public-stair cache at the JSON input boundary.
+    let mut w = save1_world();
+    let id = wand(&mut w, 3, false, false);
+    w.unpaid_items.push((id, 30));
+    let t = terms(&w, 3);
+    w.record_bill_terms(id, t).unwrap();
+    save1_depart(&mut w);
+    let good = serde_json::to_value(&w).unwrap();
+    for case in 0..5 {
+        let mut bad = good.clone();
+        match case {
+            0 => {
+                let owner = bad["stored_levels"][0].clone();
+                bad["stored_levels"].as_array_mut().unwrap().push(owner);
+            }
+            1 => {
+                let object = bad["stored_levels"][0][1]["items"][0].clone();
+                bad["stored_levels"][0][1]["items"]
+                    .as_array_mut()
+                    .unwrap()
+                    .push(object);
+            }
+            2 => {
+                let tuple = bad["stored_levels"][0][1]["unpaid_items"][0].clone();
+                bad["unpaid_items"].as_array_mut().unwrap().push(tuple);
+            }
+            3 => {
+                let tuple = bad["stored_levels"][0][1]["unpaid_items"][0].clone();
+                bad["stored_levels"][0][1]["unpaid_items"] = serde_json::json!([]);
+                bad["unpaid_items"].as_array_mut().unwrap().push(tuple);
+            }
+            _ => {
+                let mut child = bad["stored_levels"][0][1]["items"][0].clone();
+                child[0] = serde_json::json!({"idx":999,"version":1});
+                child[1]["location"] = serde_json::to_value(ItemLocation::InContainer(id)).unwrap();
+                bad["stored_levels"][0][1]["items"]
+                    .as_array_mut()
+                    .unwrap()
+                    .push(child);
+            }
+        }
+        assert!(
+            matches!(save1_load_wire(&w, &bad), Err(LoadError::Json(message)) if message.starts_with("billing:")),
+            "case={case}"
+        );
+    }
+    save1_same(&w, &save1_load_wire(&w, &good).unwrap());
+}
+
+#[test]
+fn save1_consumed_only_public_stairs_load_repeat_preserves_history() {
+    // SAVE1-HISTORY: consumed-only liability never reinserted/remapped during public stairs.
+    for q in [1, 3] {
+        for custom in [false, true] {
+            let mut control = save1_world();
+            let id = wand(&mut control, q, custom, false);
+            control.unpaid_items.push((id, 30));
+            let t = terms(&control, q);
+            control.record_bill_terms(id, t).unwrap();
+            control.dispose_whole_carried_item(id).unwrap();
+            let history = control.billing.consumed.clone();
+            let down = Coord::new_unchecked(20, 10);
+            control.level.stairs_down = down;
+            control.level.set_tile(down, Tile::Stairs { up: false });
+            control.arena.actors[control.player_id].coord = down;
+            control.step_player_action(ActionAst::Descend);
+            assert_eq!(control.depth, 2);
+            let mut loaded = restored(&control);
+            save1_same(&control, &loaded);
+            save1_refuse(&mut loaded, id);
+            assert_eq!(save1_return(&mut control), save1_return(&mut loaded));
+            save1_same(&control, &loaded);
+            loaded = restored(&loaded);
+            assert_eq!(loaded.billing.consumed, history);
+            assert!(loaded.billing.live_terms.is_empty());
+            assert!(!loaded.is_unpaid(id));
+            assert!(loaded.arena.items.get(id).is_none());
+            assert_eq!(
+                atomic(&mut loaded, |w| w.dispose_whole_carried_item(id)),
+                Err(BillError::AlreadyConsumed)
+            );
+            save1_wait(&mut control, &mut loaded);
+        }
+    }
+}

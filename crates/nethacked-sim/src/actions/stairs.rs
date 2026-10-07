@@ -359,6 +359,13 @@ impl SimulationWorld {
                     self.unpaid_items.push((*new, cost));
                 }
             }
+            // Only restored live handles move. Detached origins and creditor
+            // identities remain immutable historical traces, in Vec order.
+            for (id, _) in &mut self.billing.live_terms {
+                if let Some(new) = item_map.get(id) {
+                    *id = *new;
+                }
+            }
             self.restore_object_timers(branch, depth, |old| item_map.get(&old).copied());
         } else {
             match (branch, depth) {

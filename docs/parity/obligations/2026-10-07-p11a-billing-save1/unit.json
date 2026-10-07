@@ -1,0 +1,91 @@
+{
+  "schema": "netrust-p11a-billing-save1-v1",
+  "id": "P11a-P1-BILL-SAVE1",
+  "parent": "P11a",
+  "cross_refs": [
+    "DG06"
+  ],
+  "state": "verified_awaiting_delivery",
+  "family_closed": false,
+  "source_conformance_scope": "Billing load validation before timers and cached live receipt remapping; native exact-byte evidence limited to empty-skill fixture contexts, general native byte determinism remains open",
+  "baseline_head": "009930559c5b7375705151b8298e5a9f3d480f54",
+  "contract": "../2026-10-07-p11a-billing-contract/contract.json",
+  "accepted_prerequisites": [
+    "P11a-P1-BILL-API1"
+  ],
+  "allowed_files": [
+    "crates/nethacked-sim/src/world.rs",
+    "crates/nethacked-sim/src/actions/stairs.rs",
+    "crates/nethacked-sim/tests/wand_billing_tests.rs"
+  ],
+  "reviewed_source_input_count": 346,
+  "reviewed_source_input_digest": "8bacdc8c97845110876c9226b847df68f4c08a5b38df45c9ea8920faba3be169",
+  "source_manifest": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/review-baseline.json",
+  "source_after": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/source-review.tar.gz",
+  "evidence": {
+    "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/implementation-review/review-final.json": "3e72a7ff2f99d95b29b0f89baeadd673215dcb37a06a02eb464e605f517e8d47",
+    "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/implementation-review/review-final.md": "22c6ed20ec6a7b308d0481cfb9ea885cb8d690fb2377f1b1179f9bf75d3ccd00",
+    "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/implementation-initial/handoff.json": "5320a5c2412573b9151f659587126324df850f6c0e00628f80963e001eebd7dc",
+    "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/implementation-initial/fixture-results.json": "f3675e30c4cc686bd41a61f3e5ece96749c2b620616e6a9573da8f4256ec3a04",
+    "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/implementation-initial/focused-attempt-5.json": "59bfd0077a800e6fc144787eba7e0dbfec58ae535c846ed112fafb828c4f3b83",
+    "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/implementation-initial/manifest-attempt-1.json": "9828bad06ca5007f149335a063efe1983cb3b0ec683c4b4826b791dc5da480b7",
+    "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/scratch-readback-verification.json": "4a77106d3200b4770f89e9997c06545e71755fc0d9b9d85c6aef01d523e5b39e",
+    "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/implementation-initial/body-preservation.json": "a1fa3c49985bca7f3277281627c54e0573c9364c42dcf0caadc8085ea620d2ca",
+    "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/implementation-initial/failed-attempt-analysis.json": "2feeee5eb272f12b8211f4fea5a928fa5eb953ede2dfefaf4cb8017de268ad5d",
+    "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/execution-quality.json": "3bc888aa4e9db325256b652a21987f08d7290f74f32d4d054747223e27a4183d",
+    "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/implementation-initial/actual-usage.json": "4ec0969ed57fb855183d58b99c3eb47cae5e224d0f15f1d4697b3f9e1f7f98cc",
+    "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/implementation-review/actual-usage.json": "475f9fa63d4ac66b64e24103e28658deec3a8e45016eadff95ac1ecc805f090f"
+  },
+  "independent_review": {
+    "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/implementation-review/review-final.json",
+    "verdict": "PASS",
+    "nonblocking_existing_successor": "NATIVE-SAVE-SKILL-ORDER"
+  },
+  "validation": {
+    "fresh_full_execution": true,
+    "full_gates_status": "PASS",
+    "full_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/full-gates/accepted.json",
+    "full_record_sha256": "7508281a93a43be52733b9953f0b6dd1fb4026b0f4f93a86b4615cc9569d0a06",
+    "results_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/full-gates/results.json",
+    "results_sha256": "381aa8331b3c424fb9ccc822e0ad76f75da5b5db5acf79e4d6c31ab46c3cb1cc",
+    "tests": 1044,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "gates": 12,
+    "focused_test_executions": 240,
+    "billing_tests": 18,
+    "compatibility_steps": 19,
+    "durable_scratch_files": 66,
+    "changed_documentation_checks": {
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/doc-gates/results.json",
+      "sha256": "0316f6f218c979b3c8ea46279006548dcd6458c3987fd82dcb2ab796724ca675",
+      "parity": 0,
+      "docs": 0,
+      "fresh_execution": true
+    }
+  },
+  "adjusted_existing_setups": [],
+  "old_assertions_helpers_and_nine_API1_test_prefix_unchanged": true,
+  "native_evidence_limitation": "New SAVE1 fixtures start with empty learned-skill map. Full raw state is compared; populated maps expose unchanged SkillTree HashMap native serialization order. Registered UI03 NATIVE-SAVE-SKILL-ORDER audit remains open.",
+  "mandatory_successors": [
+    "NATIVE-SAVE-SKILL-ORDER",
+    "P11a-C1-LIFE",
+    "P11a-C1-IN1",
+    "P11a-P1-PRE",
+    "P11a-D1",
+    "DG06-bill-history",
+    "DG06-bill-account",
+    "DG06-bill-merge-partial",
+    "DG06-bill-settlement",
+    "DG06-bill-nonwand",
+    "OB04-object-retirement",
+    "P11a-S1-MC",
+    "P11a-S1-F"
+  ],
+  "delivery_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/delivery.json",
+  "acceptance_requires": "Verified coordinator commit and delivery.json; full53families/543historical rows remain open",
+  "next_coordination_task": "PROCESS-OPTIMIZATION before any further parity dispatch"
+}
