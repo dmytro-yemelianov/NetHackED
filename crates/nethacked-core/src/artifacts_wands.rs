@@ -63,6 +63,54 @@ pub fn zap_wand(w: WandCharges) -> Option<WandCharges> {
     }
 }
 
+/// The signed charge state after a prescribed charge attempt.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WandChargeAttempt {
+    Unzappable { spe: i8 },
+    Ready { spe: i8, wrested: bool },
+}
+
+/// A draw that does not match the signed charge branch.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WandChargeInputError {
+    MissingWrestDraw,
+    UnexpectedWrestDraw,
+    WrestDrawOutOfRange,
+}
+
+/// Resolves C `zappable` with a caller-prescribed `rn2(121)` draw.
+///
+/// Only zero charges require a draw, in `0..121`. Positive charges decrement
+/// once; negative charges remain unzappable. This pure operation does not draw
+/// RNG, emit messages, remove the wand, or spend action time.
+pub fn wand_charge_attempt(
+    spe: i8,
+    wrest_draw: Option<u32>,
+) -> Result<WandChargeAttempt, WandChargeInputError> {
+    if spe != 0 {
+        if wrest_draw.is_some() {
+            return Err(WandChargeInputError::UnexpectedWrestDraw);
+        }
+        return Ok(if spe > 0 {
+            WandChargeAttempt::Ready {
+                spe: spe - 1,
+                wrested: false,
+            }
+        } else {
+            WandChargeAttempt::Unzappable { spe }
+        });
+    }
+    match wrest_draw {
+        None => Err(WandChargeInputError::MissingWrestDraw),
+        Some(0) => Ok(WandChargeAttempt::Ready {
+            spe: -1,
+            wrested: true,
+        }),
+        Some(1..=120) => Ok(WandChargeAttempt::Unzappable { spe: 0 }),
+        Some(_) => Err(WandChargeInputError::WrestDrawOutOfRange),
+    }
+}
+
 /// Recharges a wand with a Scroll of Charging.
 ///
 /// C `read.c:729` `recharge`, wands at `read.c:737-794`. With `n` prior
@@ -201,6 +249,73 @@ pub fn parse_wish(wish_str: &str) -> Option<(String, i8, Buc)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn signed_wand_charge_attempt_preserves_every_nonzero_byte_without_draws() {
+        for spe in i8::MIN..=-1 {
+            assert_eq!(
+                wand_charge_attempt(spe, None),
+                Ok(WandChargeAttempt::Unzappable { spe })
+            );
+        }
+        for (spe, expected) in [(1, 0), (2, 1), (99, 98), (127, 126)] {
+            assert_eq!(
+                wand_charge_attempt(spe, None),
+                Ok(WandChargeAttempt::Ready {
+                    spe: expected,
+                    wrested: false
+                })
+            );
+        }
+        for spe in 1..=i8::MAX {
+            assert_eq!(
+                wand_charge_attempt(spe, None),
+                Ok(WandChargeAttempt::Ready {
+                    spe: spe - 1,
+                    wrested: false
+                })
+            );
+        }
+    }
+
+    #[test]
+    fn signed_wand_charge_attempt_zero_uses_prescribed_wrest_literals() {
+        assert_eq!(
+            wand_charge_attempt(0, Some(0)),
+            Ok(WandChargeAttempt::Ready {
+                spe: -1,
+                wrested: true
+            })
+        );
+        for draw in 1..=120 {
+            assert_eq!(
+                wand_charge_attempt(0, Some(draw)),
+                Ok(WandChargeAttempt::Unzappable { spe: 0 })
+            );
+        }
+    }
+
+    #[test]
+    fn signed_wand_charge_attempt_rejects_missing_unexpected_and_invalid_draws() {
+        assert_eq!(
+            wand_charge_attempt(0, None),
+            Err(WandChargeInputError::MissingWrestDraw)
+        );
+        for draw in [121, 122, u32::MAX] {
+            assert_eq!(
+                wand_charge_attempt(0, Some(draw)),
+                Err(WandChargeInputError::WrestDrawOutOfRange)
+            );
+        }
+        for spe in [i8::MIN, -1, 1, 99, i8::MAX] {
+            for draw in [0, 1, 120, 121, u32::MAX] {
+                assert_eq!(
+                    wand_charge_attempt(spe, Some(draw)),
+                    Err(WandChargeInputError::UnexpectedWrestDraw)
+                );
+            }
+        }
+    }
 
     #[test]
     fn test_excalibur_damage_bonus() {

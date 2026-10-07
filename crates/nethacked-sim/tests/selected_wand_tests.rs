@@ -9,6 +9,188 @@ use std::{collections::HashSet, sync::Arc};
 
 const HERO: Coord = Coord::new_unchecked(20, 10);
 
+fn api1_canonical_save(w: &SimulationWorld) -> Vec<u8> {
+    let value: serde_json::Value = serde_json::from_str(&w.to_save_json().unwrap()).unwrap();
+    serde_json::to_vec(&value).unwrap()
+}
+
+#[test]
+fn api1_positive_boundaries_preserve_selected_generation_recharges_and_no_charge_draw() {
+    // F14: source literals, including old-save values above SPE_LIM99.
+    for custom in [false, true] {
+        for (charge, post) in [(1, 0), (99, 98), (127, 126)] {
+            let mut w = identity_world(identity_rules());
+            let first = spawn(&mut w, I::WAN_FIRE, 7, Buc::Uncursed);
+            let chosen = spawn(&mut w, I::WAN_FIRE, charge, Buc::Uncursed);
+            if custom {
+                w.arena.items[chosen].definition = Some(ItemDefinition::Custom("pack rod".into()));
+                w.arena.items[chosen].name = "Pack ROD".into();
+            }
+            w.arena.items[chosen].recharged = 3;
+            ready(&mut w);
+            let first_record = w.arena.items[first].clone();
+            let mut expected_record = w.arena.items[chosen].clone();
+            expected_record.enchantment = post;
+            let rng = w.rng.clone(); // Empty beam and healthy hero ticks have no draws.
+            let mut action = selected(&w, chosen, true);
+            if let ActionAst::ZapSelectedWand { energy, .. } = &mut action {
+                *energy = 6;
+            }
+            let mut restored = SimulationWorld::from_save_json(
+                &w.to_save_json().unwrap(),
+                w.ruleset.clone(),
+                &w.ruleset_ref,
+            )
+            .unwrap();
+            let events = w.step_player_action(action.clone());
+            assert_eq!(events, restored.step_player_action(action));
+            let expected_path: Vec<_> =
+                (4..10).rev().map(|y| Coord::new_unchecked(20, y)).collect();
+            assert_eq!(
+                events,
+                vec![
+                    GameEvent::BeamPropagated {
+                        path: expected_path
+                    },
+                    GameEvent::TurnAdvanced { turn: 1 }
+                ]
+            );
+            assert_eq!(w.rng, rng);
+            assert_eq!(w.scheduler.turn, 1);
+            assert_eq!(w.scheduler.hero_energy, 12);
+            assert_eq!(w.arena.items[first], first_record);
+            assert_eq!(w.arena.items[chosen], expected_record);
+            assert_eq!(api1_canonical_save(&w), api1_canonical_save(&restored));
+            assert_eq!(w.rng, restored.rng);
+        }
+    }
+}
+
+#[test]
+fn api1_active_cached_signed_oldsave_roundtrip_and_public_continuation() {
+    let mut original = identity_world(identity_rules());
+    let mut active = Vec::new();
+    let mut cached = Vec::new();
+    // Negative boundary and over-normal positive boundary must not be clamped.
+    for charge in [-128, -1, 0, 1, 99, 127] {
+        let id = spawn(&mut original, I::WAN_FIRE, charge, Buc::Uncursed);
+        original.arena.items[id].recharged = 3;
+        active.push((id, charge));
+        let cached_id = spawn(&mut original, I::WAN_FIRE, charge, Buc::Uncursed);
+        let mut record = original.arena.items.remove(cached_id).unwrap();
+        record.location = ItemLocation::Floor(HERO);
+        record.recharged = 3;
+        cached.push((cached_id, record));
+    }
+    original.stored_levels.push((
+        (BranchId::DungeonsOfDoom, 8),
+        nethacked_sim::world::StoredLevel {
+            level: original.level.clone(),
+            monsters: vec![],
+            items: cached,
+            unpaid_items: vec![],
+        },
+    ));
+    ready(&mut original);
+    for oldsave in [false, true] {
+        let mut wire: serde_json::Value =
+            serde_json::from_str(&original.to_save_json().unwrap()).unwrap();
+        if oldsave {
+            // Strip only optional identity keys from the native save.
+            // Existing S1 setup and assertions remain untouched.
+            fn strip(value: &mut serde_json::Value) {
+                match value {
+                    serde_json::Value::Object(map) => {
+                        map.remove("definition");
+                        for child in map.values_mut() {
+                            strip(child);
+                        }
+                    }
+                    serde_json::Value::Array(array) => {
+                        for child in array {
+                            strip(child);
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            strip(&mut wire);
+        }
+        let mut direct = SimulationWorld::from_save_json(
+            &wire.to_string(),
+            original.ruleset.clone(),
+            &original.ruleset_ref,
+        )
+        .unwrap();
+        let roundtrip: serde_json::Value =
+            serde_json::from_str(&direct.to_save_json().unwrap()).unwrap();
+        assert_eq!(roundtrip, wire);
+        assert_eq!(direct.rng, original.rng);
+        for ((id, charge), (_, record)) in active.iter().zip(&direct.stored_levels[0].1.items) {
+            assert_eq!(direct.arena.items[*id].enchantment, *charge);
+            assert_eq!(record.enchantment, *charge);
+            assert_eq!(record.recharged, 3);
+            assert_eq!(direct.arena.items[*id].recharged, 3);
+            assert_eq!(direct.arena.items[*id].definition.is_none(), oldsave);
+            assert_eq!(record.definition.is_none(), oldsave);
+        }
+        let cached_before = serde_json::to_value(&direct.stored_levels).unwrap();
+        let mut restored = SimulationWorld::from_save_json(
+            &direct.to_save_json().unwrap(),
+            direct.ruleset.clone(),
+            &direct.ruleset_ref,
+        )
+        .unwrap();
+        // Cached objects are absent from the carried snapshot and cannot be selected.
+        assert_eq!(direct.arena.items_carried_by(direct.player_id).len(), 6);
+        for (index, expected) in [(3, 0), (4, 98), (5, 126)] {
+            let id = active[index].0;
+            let rng = direct.rng.clone();
+            let turn = direct.scheduler.turn;
+            let mut action = selected(&direct, id, true);
+            if let ActionAst::ZapSelectedWand { energy, .. } = &mut action {
+                *energy = 6;
+            }
+            assert_eq!(
+                direct.step_player_action(action.clone()),
+                restored.step_player_action(action)
+            );
+            assert_eq!(direct.arena.items[id].enchantment, expected);
+            assert_eq!(direct.arena.items[id].recharged, 3);
+            assert_eq!(direct.rng, rng);
+            assert_eq!(direct.rng, restored.rng);
+            assert_eq!(direct.scheduler.turn, turn + 1);
+            assert_eq!(direct.scheduler.hero_energy, 12);
+            assert_eq!(api1_canonical_save(&direct), api1_canonical_save(&restored));
+            assert_eq!(
+                serde_json::to_value(&direct.stored_levels).unwrap(),
+                cached_before
+            );
+            restored = SimulationWorld::from_save_json(
+                &restored.to_save_json().unwrap(),
+                restored.ruleset.clone(),
+                &restored.ruleset_ref,
+            )
+            .unwrap();
+        }
+        for (id, charge) in &active[..3] {
+            assert_eq!(direct.arena.items[*id].enchantment, *charge);
+        }
+        let rng = direct.rng.clone();
+        assert_eq!(
+            direct.step_player_action(ActionAst::Wait),
+            restored.step_player_action(ActionAst::Wait)
+        );
+        assert_eq!(direct.rng, rng);
+        assert_eq!(direct.rng, restored.rng);
+        assert_eq!(api1_canonical_save(&direct), api1_canonical_save(&restored));
+        assert_eq!(
+            serde_json::to_value(&direct.stored_levels).unwrap(),
+            cached_before
+        );
+    }
+}
+
 fn rules() -> Ruleset {
     let mut rs = (*Ruleset::vanilla()).clone();
     for d in &mut rs.monsters {

@@ -1,0 +1,84 @@
+{
+  "schema": "netrust-p11a-charge-api1-v1",
+  "id": "P11a-C1-API1",
+  "parent": "P11a",
+  "state": "verified_awaiting_delivery",
+  "family_closed": false,
+  "source_conformance_scope": "Pure signed prescribed-draw primitive; positive-only existing native wand integration",
+  "baseline_head": "aed5b78dc8ec0f9b2f0c82d38eec3f6208651762",
+  "contract": "../2026-10-07-p11a-charge-contract/contract.json",
+  "accepted_prerequisites": [
+    "P11a-S1"
+  ],
+  "allowed_files": [
+    "crates/nethacked-core/src/artifacts_wands.rs",
+    "crates/nethacked-sim/src/actions/items.rs",
+    "crates/nethacked-sim/tests/selected_wand_tests.rs"
+  ],
+  "reviewed_source_input_count": 345,
+  "reviewed_source_input_digest": "b7aebd3bc3c198fa6866d06a61a5e899bcf21ef61587bf7a09d72f4f9d5f40f3",
+  "source_manifest": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/review-baseline.json",
+  "source_before": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/baseline.json",
+  "source_after": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/source-review.tar.gz",
+  "published_hashes": {
+    "handoff.md": "3df0773f026da92dda319ba55da91a920a0af1b10129f34c643aea137e29dc66",
+    "handoff.json": "657c635badb69d8004d2000d0e07ea2e004e720021ec9fa25d9b07bddd56a40d",
+    "review-final.md": "64136cd51fde95a781f7100ccfe8a56ef52ea675a475175947dba2d75f39f923",
+    "review-final.json": "7da30864646922a61f2ffe1d0a9cce595afe890fe4975f85f48376bf8814865f"
+  },
+  "independent_review": {
+    "record": "review-final.json",
+    "verdict": "PASS",
+    "findings": 0
+  },
+  "validation": {
+    "full_gates_status": "PASS",
+    "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/full-gates/results.json",
+    "focused_record": "handoff.json",
+    "fresh_full_execution": true,
+    "full_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/full-gates/accepted.json",
+    "full_record_sha256": "b9925b0ccfec6fdef3db4102997ed72a133c8ecb2d9fecc1c6b40470651697c6",
+    "results_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/full-gates/results.json",
+    "results_sha256": "ebb19e883ab1c0f2233a4b757de1e5968d17dda20eb11ef4979ec24bc2f632eb",
+    "tests": 1026,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "gates": 12,
+    "source_binding": "b7aebd3bc3c198fa6866d06a61a5e899bcf21ef61587bf7a09d72f4f9d5f40f3",
+    "changed_documentation_checks": {
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/doc-gates/results.json",
+      "sha256": "379c367e5649d19b18416fed0fd635f214818c0b64752c3263ed8a93fe6391b3",
+      "parity": 0,
+      "docs": 0,
+      "fresh_execution": true
+    }
+  },
+  "adjusted_existing_setups": [],
+  "old_assertions_and_helpers_unchanged": true,
+  "coverage_limits": [
+    "Nonpositive native charge behavior remains unchanged until IN1; core prescribed-draw branch evidence is not native activation",
+    "No new billing/retirement/backfire/preflight/direction/frontend acceptance",
+    "Public canonical/custom positive boundaries and active/cached modern/old saves are API1-only evidence"
+  ],
+  "mandatory_successors": [
+    "P11a-P1-BILL",
+    "P11a-P1-PRE",
+    "P11a-C1-LIFE",
+    "HE02-zap-exercise",
+    "EQ03-zap-halfphys",
+    "P11a-B1-PRE",
+    "P11a-C1-IN1",
+    "P11a-D1",
+    "P11a-S1-M",
+    "P11a-S1-MC",
+    "P11a-S1-F",
+    "P11a-A1"
+  ],
+  "durable_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1",
+  "delivery_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/delivery.json",
+  "broader_scope": "All53 families/543 historic rows retained; no family closure.",
+  "acceptance_requires": "verified commit and delivery.json; snapshot remains immutable after delivery"
+}

@@ -1060,21 +1060,23 @@ impl SimulationWorld {
         let Some(wand_item) = self.arena.items.get_mut(wid) else {
             return events;
         };
-        let current_charges = nethacked_types::WandCharges {
-            charges: wand_item.enchantment.max(0) as u32,
-            recharges: wand_item.recharged as u32,
-        };
-        let wand_name =
-            if let Some(new_charges) = nethacked_core::artifacts_wands::zap_wand(current_charges) {
-                wand_item.enchantment = new_charges.charges.min(i8::MAX as u32) as i8;
-                effect_name.unwrap_or_else(|| wand_item.name.clone())
-            } else {
-                events.push(GameEvent::LogMessage {
-                    text: nethacked_i18n::Messages::wand_empty(self.locale).into(),
-                });
-                self.scheduler.hero_act(NORMAL_SPEED);
-                return events;
+        // API1 activates only the existing positive branch. Nonpositive runtime
+        // wrest/dust behavior requires the separately accepted IN1 prerequisites.
+        let wand_name = if wand_item.enchantment > 0 {
+            let Ok(nethacked_core::artifacts_wands::WandChargeAttempt::Ready { spe, .. }) =
+                nethacked_core::artifacts_wands::wand_charge_attempt(wand_item.enchantment, None)
+            else {
+                unreachable!("positive charges with no draw are ready");
             };
+            wand_item.enchantment = spe;
+            effect_name.unwrap_or_else(|| wand_item.name.clone())
+        } else {
+            events.push(GameEvent::LogMessage {
+                text: nethacked_i18n::Messages::wand_empty(self.locale).into(),
+            });
+            self.scheduler.hero_act(NORMAL_SPEED);
+            return events;
+        };
 
         if ordinary_creation {
             if let Err(message) = self.create_random_monsters_by_hero() {

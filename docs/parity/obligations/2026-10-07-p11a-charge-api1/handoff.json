@@ -1,0 +1,90 @@
+{
+  "unit": "P11a-C1-API1",
+  "status": "Implementation handoff; independent review/full gates/root acceptance pending",
+  "head": "aed5b78dc8ec0f9b2f0c82d38eec3f6208651762",
+  "branch": "feat/monster-hp-d8",
+  "files": {
+    "crates/nethacked-core/src/artifacts_wands.rs": "9d60b22a360334915dba2511cb4a78316c7f217e5937deb08397b0d6908fb324",
+    "crates/nethacked-sim/src/actions/items.rs": "1b2b9a4f585154c0361854fd6ab101122edee6020425cc81b1ebe52990be92ea",
+    "crates/nethacked-sim/tests/selected_wand_tests.rs": "23a6edad28e183d4fc31d6a30f9b9abf28946eb2a95ccfa4e9b967694129ef04"
+  },
+  "validation": [
+    {
+      "command": "cargo test -p nethacked-core --locked",
+      "exit": 0,
+      "tests": 287,
+      "log": "focused-core-attempt1.log"
+    },
+    {
+      "command": "cargo test -p nethacked-sim --test selected_wand_tests --test monster_creation_wand_tests --locked",
+      "exit": 0,
+      "tests": 26,
+      "log": "focused-sim-attempt3.log",
+      "failed_logs": [
+        "focused-sim-attempt1.log",
+        "focused-sim-attempt2.log"
+      ],
+      "failed_exits": [
+        101,
+        101
+      ]
+    },
+    {
+      "command": "cargo test -p nethacked-agent --test golden_determinism --locked",
+      "exit": 0,
+      "tests": 3,
+      "log": "focused-golden-attempt1.log",
+      "goldens": "All three unchanged"
+    },
+    {
+      "command": "cargo clippy -p nethacked-core -p nethacked-sim --all-targets --locked -- -D warnings",
+      "exit": 0,
+      "log": "clippy-attempt1.log"
+    },
+    {
+      "command": "rustfmt --edition 2021 --check crates/nethacked-core/src/artifacts_wands.rs crates/nethacked-sim/src/actions/items.rs crates/nethacked-sim/tests/selected_wand_tests.rs",
+      "exit": 0
+    },
+    {
+      "command": "git diff --check",
+      "exit": 0
+    }
+  ],
+  "proof": {
+    "F01_existing": "selected_create_count_one_two_eight_preserves_native_draw_and_scheduler_order: nonwand/first/chosen2->1, cloned handwritten RNG, creation/state/time/save continuation unchanged",
+    "F02_existing": [
+      "range_token_class_and_identity_refusals_are_ordered_and_no_time",
+      "indirect_floor_moved_deleted_recycled_and_reordered_tokens_never_choose_first_wand"
+    ],
+    "F03_F04_new": "signed_wand_charge_attempt_*: zero0->Ready(-1,true), draws1..120->Unzappable0, missing/121/u32MAX/unexpected rejected; negative entire byte range unchanged; positive literal boundaries and complete range",
+    "F14_new": [
+      "api1_positive_boundaries_preserve_selected_generation_recharges_and_no_charge_draw",
+      "api1_active_cached_signed_oldsave_roundtrip_and_public_continuation"
+    ],
+    "native": "Seed33; public selected canonical/custom1,99,127->0,98,126; recharge3 unchanged; exact beam energy6+TurnAdvanced; zero action draws verified against cloned RNG; active/cached -128,-1,0,1,99,127 modern/omitted-definition saves; canonical whole-save bytes/RNG and Wait continuation equality; cached records unchanged",
+    "old_tests": "All original core source/tests and selected test/helpers identical (unchanged-existing-proof.log); shared handler only positive decrement substitution; unsigned APIs unchanged",
+    "expected_oracle": "C branch literals and handwritten beam coordinates, never production charge helper"
+  },
+  "failed_attempt_counters": {
+    "unexpected_fixture_event": 2,
+    "cached_recharge_setup": 1,
+    "raw_save_order": 1,
+    "production_defects": 0,
+    "total_failed_cargo_runs": 2,
+    "total_sim_attempts": 3
+  },
+  "retained_failed_source_hashes": [
+    "failed-sim-attempt1-source-hashes.txt",
+    "failed-sim-attempt2-source-hashes.txt"
+  ],
+  "mandatory_remaining": [
+    "Root independent semantic review and fresh12 gates",
+    "IN1 activation after P1-BILL/P1-PRE/P1, LIFE, HE02 exercise, EQ03 halfphys, B1-PRE acceptance",
+    "Nonpositive runtime wrest/dust, billing/retirement/current-wand survivor finalizer, backfire/preflight/direction",
+    "D1/MC/F/A1, pack/schema/hash/WASM per-surface proofs; no aggregate/family closure"
+  ],
+  "ownership": "Only three permitted repository files edited; root ledger preexisting dirty; no docs/progress/deps/golds/commits/agents",
+  "live_processes": [],
+  "cargo_overlap": false,
+  "golden_mismatches": []
+}

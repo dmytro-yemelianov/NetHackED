@@ -22,7 +22,7 @@
   },
   "completion_policy": "contract_final_completion_audit_all_requirements_with_evidence",
   "first_action": "Read-only pinned configuration audit, then independently reviewed P11a contract",
-  "active_unit": "P11a-C1",
+  "active_unit": "P11a-C1-API1",
   "live_handles": [],
   "families": [
     {
@@ -819,7 +819,9 @@
         "final": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/review-final/review-final.json",
         "verdict": "PASS",
         "implementation_accepted": false
-      }
+      },
+      "contract_checkpoint_commit": "aed5b78dc8ec0f9b2f0c82d38eec3f6208651762",
+      "contract_delivery": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/contract-delivery.json"
     },
     {
       "id": "P11a-B1",
@@ -982,19 +984,36 @@
       "id": "P11a-C1-API1",
       "parent": "P11a",
       "cross_refs": [],
-      "state": "ready",
+      "state": "verified_awaiting_delivery",
       "contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
       "dependencies": [
         "P11a-S1"
       ],
       "outcome": "Signed prescribed-draw charge prerequisite and positive native selected path; no newly reachable zero/negative runtime branch",
-      "evidence": null,
-      "repair_counters": {},
+      "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/implementation-initial/handoff.json",
+      "repair_counters": {
+        "unexpected_fixture_event": 2,
+        "cached_recharge_setup": 1,
+        "raw_save_order": 1,
+        "production_defects": 0,
+        "total_failed_cargo_runs": 2,
+        "total_sim_attempts": 3
+      },
       "allowed_files": [
         "crates/nethacked-core/src/artifacts_wands.rs",
         "crates/nethacked-sim/src/actions/items.rs",
         "crates/nethacked-sim/tests/selected_wand_tests.rs"
-      ]
+      ],
+      "baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/baseline.json",
+      "contract_checkpoint_commit": "aed5b78dc8ec0f9b2f0c82d38eec3f6208651762",
+      "accepted_prerequisites": [
+        "P11a-S1"
+      ],
+      "review_baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/review-baseline.json",
+      "independent_review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/implementation-review/review-final.json",
+      "unit_record": "docs/parity/obligations/2026-10-07-p11a-charge-api1/unit.json",
+      "full_gate_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/full-gates/accepted.json",
+      "delivery_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/delivery.json"
     },
     {
       "id": "P11a-C1-LIFE",
@@ -1320,6 +1339,13 @@
       "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/delivery.json",
       "source_digest": "7b691c6e14d0449c37776f29b851ff7866bb2e41551b1c883458e5d0de416e79",
       "family_closed": false
+    },
+    {
+      "id": "P11a-C1-CONTRACT",
+      "commit": "aed5b78dc8ec0f9b2f0c82d38eec3f6208651762",
+      "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/contract-delivery.json",
+      "source_digest": "7b691c6e14d0449c37776f29b851ff7866bb2e41551b1c883458e5d0de416e79",
+      "implementation_accepted": false
     }
   ],
   "integration_audit": null,
@@ -1338,7 +1364,7 @@
     "readback_full_342_verified": true,
     "accepted_gate_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/baseline-accepted-gates"
   },
-  "next_action": "Publish reviewed C1 contract checkpoint with same-source full-gate reuse/fresh docs checks, then API1 exact-three-file implementation",
+  "next_action": "Finalize changed docs checks and verified API1 prerequisite commit, then commission P11a-P1-BILL bounded source/API contract audit; LIFE/backfire/IN1 await named seams, all53 scope remains.",
   "external_accepted_interfaces": {
     "P10a2": {
       "record": "docs/parity/obligations/2026-10-07-p04-p10-final-acceptance.json",
