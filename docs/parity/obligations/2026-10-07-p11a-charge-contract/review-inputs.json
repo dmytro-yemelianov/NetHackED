@@ -1,0 +1,12 @@
+{
+  "files": {
+    "contract.md": "48bceb10fe82cee4c88e89b83354a8568fd3a61001d2f8ec5d9fe62e7fe31fe1",
+    "contract.json": "0ae28364d9017ca8d71b753d64d58b4f18cd21c023dca202434376725a8341dc",
+    "ready-packet.md": "898091484183332acb319fd04123f33f6f09a61964065cc33624983dc0a4f9e7",
+    "evidence.json": "74a6ffdd09f9e2ea34f6dede481542019b7d0a3cbd4cfca1b45031b6389e14ef",
+    "baseline.json": "5ae4bd47a42a44755d6c913a26ff0c989a33f849b21060232c4aafcf8b815ebe",
+    "graph-discovery.json": "55fde161f1d9f96f1db041a0639310f8a718d931265595c7d80dd33b95ea0cd1",
+    "repair-summary.json": "c864c05bd5cb7914339b279f824a31f54be372fd57c9bb4f76a771a8e3aef6f5"
+  },
+  "status": "repair1 after C1-R1/R2/R3; independent narrow rereview pending"
+}

@@ -1,0 +1,83 @@
+{
+  "schema": "netrust-p11a-charge-contract-checkpoint-v1",
+  "id": "P11a-C1-CONTRACT",
+  "parent": "P11a",
+  "state": "reviewed_contract_pending_delivery",
+  "implementation_accepted": false,
+  "source_conformance_accepted": false,
+  "family_closed": false,
+  "baseline_head": "aadce228c9d00b573ae8ab4773352798418a6d4b",
+  "source_input_count": 345,
+  "source_input_digest": "7b691c6e14d0449c37776f29b851ff7866bb2e41551b1c883458e5d0de416e79",
+  "first_ready_child": "P11a-C1-API1",
+  "contract": "contract.json",
+  "allowed_API1_files": [
+    "crates/nethacked-core/src/artifacts_wands.rs",
+    "crates/nethacked-sim/src/actions/items.rs",
+    "crates/nethacked-sim/tests/selected_wand_tests.rs"
+  ],
+  "review": {
+    "initial": "review-initial.json",
+    "final": "review-final.json",
+    "resolved_findings": [
+      "C1-R1",
+      "C1-R2",
+      "C1-R3"
+    ],
+    "repair_attempts": 1,
+    "scope": "initial full contract review plus narrow repair rereview; no implementation validation"
+  },
+  "published_hashes": {
+    "evidence.json": "74a6ffdd09f9e2ea34f6dede481542019b7d0a3cbd4cfca1b45031b6389e14ef",
+    "contract.md": "48bceb10fe82cee4c88e89b83354a8568fd3a61001d2f8ec5d9fe62e7fe31fe1",
+    "baseline.json": "5ae4bd47a42a44755d6c913a26ff0c989a33f849b21060232c4aafcf8b815ebe",
+    "repair-summary.json": "c864c05bd5cb7914339b279f824a31f54be372fd57c9bb4f76a771a8e3aef6f5",
+    "ready-packet.md": "898091484183332acb319fd04123f33f6f09a61964065cc33624983dc0a4f9e7",
+    "graph-discovery.json": "55fde161f1d9f96f1db041a0639310f8a718d931265595c7d80dd33b95ea0cd1",
+    "review-inputs.json": "7b555eedbfdbeff220deeb78320dd098b4c7b9748c906611dd941fec2728855c",
+    "contract.json": "0ae28364d9017ca8d71b753d64d58b4f18cd21c023dca202434376725a8341dc",
+    "review-initial.md": "e38627319cc650761c49ae93b15b2a64f0dcb3acb263c0f2d96d943f5555393e",
+    "review-initial.json": "5dc19f8c1f8bc2b1d85d062f6a3b7e5d332a64b8ebca59b38d707694c861dd7b",
+    "review-final.md": "f719f3b45042c22045ca82d50dc1aafa1cb7529a33a6228ad3f93c9ee549dd00",
+    "review-final.json": "06157125e20ac4593f6aad7c527deb43a95036ab0ec5d90ba429cc3d2df4100d"
+  },
+  "durable_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1",
+  "validation": {
+    "mode": "pure documentation checkpoint; complete same-source full validation reused",
+    "reused_from_commit": "aadce228c9d00b573ae8ab4773352798418a6d4b",
+    "full_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/full-gates/accepted.json",
+    "full_record_sha256": "9913577b1eb284d42faa81707dc91cfdbf147a58a77ea23146ef4c7f27301905",
+    "results_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/full-gates/results.json",
+    "results_sha256": "41a87c34bf43dd2acc79606f9f942bb6e7983ddff00690e15301da91f6218c17",
+    "tests": 1021,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "gates": 12,
+    "fresh_full_execution": false,
+    "source_binding": "7b691c6e14d0449c37776f29b851ff7866bb2e41551b1c883458e5d0de416e79",
+    "changed_documentation_checks": {
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/contract-doc-gates/results.json",
+      "sha256": "02208ffaa8ec4148231217e601b650a46b8f945f79daa3ba240fb3baee6b6d26",
+      "parity": 0,
+      "docs": 0,
+      "fresh_execution": true
+    }
+  },
+  "registered_children": [
+    "P11a-C1-API1",
+    "P11a-C1-LIFE",
+    "P11a-B1-PRE",
+    "P11a-C1-IN1",
+    "P11a-P1-BILL",
+    "P11a-P1-PRE",
+    "HE02-zap-exercise",
+    "EQ03-zap-halfphys"
+  ],
+  "registry_family_count": 53,
+  "run_child_count": 28,
+  "dependency_graph_acyclic": true,
+  "broader_scope": "All53 families and full C1 activation remain; API1 positive-only readiness is not signed-charge/wrest/dust completion."
+}

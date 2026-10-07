@@ -22,7 +22,7 @@
   },
   "completion_policy": "contract_final_completion_audit_all_requirements_with_evidence",
   "first_action": "Read-only pinned configuration audit, then independently reviewed P11a contract",
-  "active_unit": "P11a-S1",
+  "active_unit": "P11a-C1",
   "live_handles": [],
   "families": [
     {
@@ -43,14 +43,18 @@
       "id": "EQ03",
       "stream": "EQ",
       "state": "audit_needed",
-      "child_ids": [],
+      "child_ids": [
+        "EQ03-zap-halfphys"
+      ],
       "coverage_record": null
     },
     {
       "id": "EQ04",
       "stream": "EQ",
       "state": "audit_needed",
-      "child_ids": [],
+      "child_ids": [
+        "P11a-P1-PRE"
+      ],
       "coverage_record": null
     },
     {
@@ -73,7 +77,13 @@
         "P11a-A1",
         "P11a-S1-M",
         "P11a-S1-F",
-        "P11a-S1-MC"
+        "P11a-S1-MC",
+        "P11a-C1-API1",
+        "P11a-C1-LIFE",
+        "P11a-B1-PRE",
+        "P11a-C1-IN1",
+        "P11a-P1-BILL",
+        "P11a-P1-PRE"
       ],
       "coverage_record": null
     },
@@ -81,7 +91,11 @@
       "id": "P11b",
       "stream": "CB",
       "state": "audit_needed",
-      "child_ids": [],
+      "child_ids": [
+        "P11b",
+        "OB07-zap-context",
+        "OB07-zap-objects"
+      ],
       "coverage_record": null
     },
     {
@@ -216,7 +230,11 @@
       "id": "OB07",
       "stream": "OB",
       "state": "audit_needed",
-      "child_ids": [],
+      "child_ids": [
+        "P11b",
+        "OB07-zap-context",
+        "OB07-zap-objects"
+      ],
       "coverage_record": null
     },
     {
@@ -258,7 +276,9 @@
       "id": "HE02",
       "stream": "HE",
       "state": "audit_needed",
-      "child_ids": [],
+      "child_ids": [
+        "HE02-zap-exercise"
+      ],
       "coverage_record": null
     },
     {
@@ -293,7 +313,9 @@
       "id": "HE07",
       "stream": "HE",
       "state": "audit_needed",
-      "child_ids": [],
+      "child_ids": [
+        "P11a-P1-PRE"
+      ],
       "coverage_record": null
     },
     {
@@ -356,7 +378,10 @@
       "id": "DG06",
       "stream": "DG",
       "state": "audit_needed",
-      "child_ids": [],
+      "child_ids": [
+        "P11a-P1-BILL",
+        "P11a-P1-PRE"
+      ],
       "coverage_record": null
     },
     {
@@ -380,7 +405,8 @@
       "child_ids": [
         "P11a-S1-M",
         "P11a-S1-F",
-        "P11a-S1-MC"
+        "P11a-S1-MC",
+        "UI01-CONFIG-COMMANDS"
       ],
       "coverage_record": null
     },
@@ -404,7 +430,8 @@
       "state": "audit_needed",
       "child_ids": [
         "UI04-CONFIG-INPUTS",
-        "P11a-S1-F"
+        "P11a-S1-F",
+        "UI04-zap-messages"
       ],
       "coverage_record": null
     },
@@ -574,7 +601,7 @@
     {
       "id": "P11a-S1",
       "parent": "P11a",
-      "state": "verifying",
+      "state": "accepted",
       "contract": "docs/parity/obligations/2026-10-07-p11a-selection-contract/contract.json",
       "accepted_prerequisites": [
         "OB01-WAND-ID1"
@@ -691,19 +718,108 @@
         "scope": "exactone-line import deletion; preceding full semantic review reused"
       },
       "final_full_gates": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/full-gates/accepted.json",
-      "final_source_input_digest": "7b691c6e14d0449c37776f29b851ff7866bb2e41551b1c883458e5d0de416e79"
+      "final_source_input_digest": "7b691c6e14d0449c37776f29b851ff7866bb2e41551b1c883458e5d0de416e79",
+      "accepted_commit": "aadce228c9d00b573ae8ab4773352798418a6d4b",
+      "delivery": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/delivery.json",
+      "source_conformance_scope": "backend/native/shared-parser selection/cancel only"
     },
     {
       "id": "P11a-C1",
       "parent": "P11a",
       "state": "audit_needed",
-      "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/p11a-contract.json",
-      "accepted_prerequisites": [],
-      "evidence": null,
-      "repair_counters": {},
-      "dependencies": [
+      "contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "accepted_prerequisites": [
         "P11a-S1"
-      ]
+      ],
+      "evidence": null,
+      "repair_counters": {
+        "C1-R1": {
+          "attempts_started": 1,
+          "unsuccessful_attempts": 0,
+          "model": "gpt-6.1-sol",
+          "resolved": true
+        },
+        "C1-R2": {
+          "attempts_started": 1,
+          "unsuccessful_attempts": 0,
+          "model": "gpt-6.1-sol",
+          "resolved": true
+        },
+        "C1-R3": {
+          "attempts_started": 1,
+          "unsuccessful_attempts": 0,
+          "model": "gpt-6.1-sol",
+          "resolved": true
+        }
+      },
+      "dependencies": [
+        "P11a-C1-API1",
+        "P11a-C1-LIFE",
+        "P11a-C1-IN1"
+      ],
+      "prerequisite_binding": {
+        "id": "P11a-S1",
+        "commit": "aadce228c9d00b573ae8ab4773352798418a6d4b",
+        "source_input_digest": "7b691c6e14d0449c37776f29b851ff7866bb2e41551b1c883458e5d0de416e79",
+        "delivery": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/delivery.json"
+      },
+      "baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/baseline.json",
+      "draft_evidence": {
+        "directory": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/contract-initial",
+        "review_inputs": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/contract-initial/draft/review-inputs.json",
+        "manifest_sha256": "383374c958523c37664fb81f0fbbf0bb738b3410eb46cb2a1a1c0d147738b4f1",
+        "status": "review pending"
+      },
+      "contract_audit_cli_usage": {
+        "input_tokens": 1442332,
+        "cached_input_tokens": 1341952,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 21019,
+        "reasoning_output_tokens": 4655
+      },
+      "interrupted_review": {
+        "directory": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/review-interrupted-runtime-paused",
+        "reason": "native goal reports paused",
+        "verdict": null,
+        "repair_attempt_counted": false
+      },
+      "independent_review": {
+        "verdict": "NEEDS_CHANGES",
+        "report": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/review-initial/review-initial.json",
+        "findings": [
+          "C1-R1",
+          "C1-R2",
+          "C1-R3"
+        ]
+      },
+      "repair1": {
+        "directory": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/repair1",
+        "review_input_manifest": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/repair1/draft/review-inputs.json",
+        "manifest_sha256": "7b555eedbfdbeff220deeb78320dd098b4c7b9748c906611dd941fec2728855c",
+        "scope": "fourartifact contract repair only"
+      },
+      "contract_review_cli_usage": {
+        "input_tokens": 1232794,
+        "cached_input_tokens": 1146624,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 12999,
+        "reasoning_output_tokens": 4232,
+        "source": "actual turn.completed; cumulative processed context not unique prompt or price"
+      },
+      "repair1_cli_usage": {
+        "input_tokens": 487987,
+        "cached_input_tokens": 402944,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 13037,
+        "reasoning_output_tokens": 1687,
+        "source": "actual turn.completed; cumulative processed context not unique prompt or price"
+      },
+      "reviewed_contract": {
+        "initial": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/review-initial/review-initial.json",
+        "final": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/review-final/review-final.json",
+        "verdict": "PASS",
+        "implementation_accepted": false
+      }
     },
     {
       "id": "P11a-B1",
@@ -714,7 +830,8 @@
       "evidence": null,
       "repair_counters": {},
       "dependencies": [
-        "P11a-C1"
+        "P11a-B1-PRE",
+        "P11a-C1-IN1"
       ]
     },
     {
@@ -739,7 +856,9 @@
       "evidence": null,
       "repair_counters": {},
       "dependencies": [
-        "P11a-S1"
+        "P11a-S1",
+        "P11a-P1-BILL",
+        "P11a-P1-PRE"
       ]
     },
     {
@@ -810,12 +929,11 @@
       "state": "audit_needed",
       "contract": "docs/parity/obligations/2026-10-07-p11a-selection-contract/contract.json",
       "dependencies": [
-        "P11a-S1-M",
+        "P11a-S1-MC",
         "P11a-C1",
         "P11a-B1",
         "P11a-D1",
-        "P11a-P1",
-        "P11a-S1-MC"
+        "P11a-P1"
       ],
       "allowed_files": [
         "crates/nethacked-tui/src/main.rs",
@@ -859,6 +977,216 @@
       ],
       "evidence": null,
       "repair_counters": {}
+    },
+    {
+      "id": "P11a-C1-API1",
+      "parent": "P11a",
+      "cross_refs": [],
+      "state": "ready",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "dependencies": [
+        "P11a-S1"
+      ],
+      "outcome": "Signed prescribed-draw charge prerequisite and positive native selected path; no newly reachable zero/negative runtime branch",
+      "evidence": null,
+      "repair_counters": {},
+      "allowed_files": [
+        "crates/nethacked-core/src/artifacts_wands.rs",
+        "crates/nethacked-sim/src/actions/items.rs",
+        "crates/nethacked-sim/tests/selected_wand_tests.rs"
+      ]
+    },
+    {
+      "id": "P11a-C1-LIFE",
+      "parent": "P11a",
+      "cross_refs": [],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "dependencies": [
+        "P11a-S1",
+        "P11a-P1-BILL"
+      ],
+      "outcome": "Review represented whole-item retirement, wield/quiver/equipment/timers and absent-generation finalization; consume P1 bill retention contract rather than erase unpaid ledger; explicitly cleared current-wand after partial stack destruction must suppress dust, not just arena-missing checks; naming/article/plural and attached timer/reference retirement stay bounded within LIFE, with explicit represented limits",
+      "evidence": null,
+      "repair_counters": {},
+      "audit_paths": [
+        "crates/nethacked-sim/src/world.rs",
+        "crates/nethacked-sim/src/actions/equipment.rs",
+        "crates/nethacked-sim/src/object_timers.rs",
+        "crates/nethacked-arena/src/lib.rs"
+      ],
+      "implementation_files": "none authorized by this packet; child review must fix exact minimal allowlist if needed"
+    },
+    {
+      "id": "P11a-B1-PRE",
+      "parent": "P11a",
+      "cross_refs": [],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "dependencies": [
+        "P11a-C1-API1",
+        "P11a-C1-LIFE",
+        "HE02-zap-exercise",
+        "EQ03-zap-halfphys"
+      ],
+      "outcome": "Cursed bound100 after charge; explosion -> d(post-spe+2,6) -> reviewed halfphys/damage/death -> accepted LIFE whole retirement -> conditional HE02 exercise -> TIME. Public positive cursed/backfire proof; zero-success composition in IN1. Requires accepted implementations/evidence for API1/LIFE/exercise/halfphys before activation; no direction or dust. Current message-only exercise helper is not an accepted seam.",
+      "evidence": null,
+      "repair_counters": {},
+      "implementation_files": "determined only by independent B1 contract; this C1 audit authorizes none"
+    },
+    {
+      "id": "P11a-C1-IN1",
+      "parent": "P11a",
+      "cross_refs": [],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "dependencies": [
+        "P11a-C1-API1",
+        "P11a-C1-LIFE",
+        "P11a-B1-PRE",
+        "P11a-P1"
+      ],
+      "outcome": "Activate signed gate for all valid selected and legacy wands, failed attempt messages/time, zero wrest and surviving negative terminal dust; consume B1 seam before effects. No complete zap-effects port.",
+      "evidence": null,
+      "repair_counters": {},
+      "allowed_files": [
+        "crates/nethacked-sim/src/actions/items.rs",
+        "crates/nethacked-sim/tests/selected_wand_tests.rs"
+      ]
+    },
+    {
+      "id": "P11a-P1-BILL",
+      "parent": "P11a",
+      "cross_refs": [
+        "DG06"
+      ],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "dependencies": [
+        "P11a-S1"
+      ],
+      "outcome": "Narrow accepted P1 billing contract for selected-wand whole retirement: C obfree used-up bill-object retention versus unbilled deallocation; preserve unpaid liability/identity without corpse remove_unpaid erasure. Specify represented ledger seam and public billed/unbilled quantity1/3, save and stale-generation obligations. This is the concrete contract gate for LIFE, independent of C1/B1/IN1; implementation belongs to its reviewed child if required.",
+      "evidence": null,
+      "repair_counters": {},
+      "audit_paths": [
+        "crates/nethacked-sim/src/world.rs",
+        "crates/nethacked-arena/src/lib.rs"
+      ],
+      "implementation_files": "none authorized here; separate independent child review must fix a minimal allowlist, exact seam, evidence and acceptance before use"
+    },
+    {
+      "id": "P11a-P1-PRE",
+      "parent": "P11a",
+      "cross_refs": [
+        "HE07",
+        "EQ04",
+        "DG06"
+      ],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "dependencies": [
+        "P11a-S1",
+        "P11a-P1-BILL"
+      ],
+      "outcome": "Review bounded HE07 zap-form/nohands, EQ04 zap-capacity and DG06 zap-unpaid/check_unpaid-before-charge seams; prescribe public guard order, no charge/RNG/time on preselection refusal and exact billing effects on valid selection. Consume P1-BILL; no requirement on C1/IN1/B1. Own preflight only; naming/timer retirement remains LIFE.",
+      "evidence": null,
+      "repair_counters": {},
+      "audit_paths": [
+        "crates/nethacked-sim/src/actions/items.rs",
+        "crates/nethacked-sim/src/world.rs"
+      ],
+      "implementation_files": "none authorized here; separate independent child review must fix a minimal allowlist, exact seam, evidence and acceptance before use"
+    },
+    {
+      "id": "HE02-zap-exercise",
+      "parent": "HE02",
+      "cross_refs": [],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "dependencies": [
+        "P11a-S1"
+      ],
+      "outcome": "Narrow STR exercise(FALSE) state/RNG/event seam exactly as rng_contract.exercise, including representable persisted AEXE, polymorph/no-draw, saturation/moves encumbrance and post-backfire ordering. Bind pinned attrib.c and current message-only world mismatch. Accepted minimal implementation/public state+next-RNG evidence mandatory before B1-PRE; no all-attribute/Famine rewrite or HE02 closure.",
+      "evidence": null,
+      "repair_counters": {},
+      "audit_paths": [
+        "crates/nethacked-sim/src/world.rs",
+        "crates/nethacked-types/src/lib.rs"
+      ],
+      "implementation_files": "none authorized here; separate independent child review must fix a minimal allowlist, exact seam, evidence and acceptance before use"
+    },
+    {
+      "id": "EQ03-zap-halfphys",
+      "parent": "EQ03",
+      "cross_refs": [],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "dependencies": [
+        "P11a-S1"
+      ],
+      "outcome": "Narrow reviewed backfire Maybe_Half_Phys damage seam, active half-physical applicability, rounding, HP/death and returning lifesave order. Bind exact source/native seam in its later packet and require accepted public evidence before B1-PRE; no accepted seam is inferred here and no EQ03 equipment family closure.",
+      "evidence": null,
+      "repair_counters": {},
+      "audit_paths": [
+        "crates/nethacked-sim/src/world.rs",
+        "crates/nethacked-sim/src/actions/equipment.rs"
+      ],
+      "implementation_files": "none authorized here; separate independent child review must fix a minimal allowlist, exact seam, evidence and acceptance before use"
+    },
+    {
+      "id": "P11b",
+      "parent": "P11b",
+      "cross_refs": [
+        "OB07"
+      ],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "outcome": "remaining wand effect dispatch and ray/object destruction; source C current_wand survivor tracking; custom effect metadata applicability reviewed, not inferred from name",
+      "evidence": null,
+      "repair_counters": {},
+      "dependencies": [
+        "P11a-D1"
+      ]
+    },
+    {
+      "id": "OB07-zap-context",
+      "parent": "OB07",
+      "cross_refs": [
+        "P11b"
+      ],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "outcome": "create-monster BUC/blind/discovery/XP/polymorph/underwater/stasis/wishing and other NoDir effects outside accepted ordinary P10; audit exact children before implementation",
+      "evidence": null,
+      "repair_counters": {},
+      "dependencies": [
+        "P11a-D1"
+      ]
+    },
+    {
+      "id": "UI04-zap-messages",
+      "parent": "UI04",
+      "cross_refs": [],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "outcome": "option/locale/known-object article/plural dust rendering and verbose direction-cancel; C1 English literal fixtures do not close localization",
+      "evidence": null,
+      "repair_counters": {}
+    },
+    {
+      "id": "OB07-zap-objects",
+      "parent": "OB07",
+      "cross_refs": [
+        "P11b"
+      ],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "outcome": "Separate OB07 object obligations: remaining zap ray/object destruction and wand breaking outside C1 retirement; bind current-wand clear/survivor behavior and bounded exact children before implementation. No OB07 or P11b closure inferred from cross-reference.",
+      "evidence": null,
+      "repair_counters": {},
+      "dependencies": [
+        "P11a-D1"
+      ]
     }
   ],
   "inventory_coverage": {
@@ -985,6 +1313,13 @@
       "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/contract-delivery.json",
       "source_digest": "567aed72fc97273ac4209afe92decbd5175e8e576ec7b5933bdb14c871e4e707",
       "implementation_accepted": false
+    },
+    {
+      "id": "P11a-S1",
+      "commit": "aadce228c9d00b573ae8ab4773352798418a6d4b",
+      "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/delivery.json",
+      "source_digest": "7b691c6e14d0449c37776f29b851ff7866bb2e41551b1c883458e5d0de416e79",
+      "family_closed": false
     }
   ],
   "integration_audit": null,
@@ -1003,7 +1338,7 @@
     "readback_full_342_verified": true,
     "accepted_gate_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/baseline-accepted-gates"
   },
-  "next_action": "Explicit stage backend-only verified docs/source, fresh changed docs/parity checks, authorizedcommit+deliveryverification then P11a-C1 contract audit",
+  "next_action": "Publish reviewed C1 contract checkpoint with same-source full-gate reuse/fresh docs checks, then API1 exact-three-file implementation",
   "external_accepted_interfaces": {
     "P10a2": {
       "record": "docs/parity/obligations/2026-10-07-p04-p10-final-acceptance.json",
@@ -1036,5 +1371,11 @@
       "reasoning_output_tokens": 3305,
       "source": "actual turn.completed CLI event; cumulative processed context, not unique prompt size or billed cost"
     }
+  },
+  "goal_runtime_observation": {
+    "status": "active",
+    "source": "actual get_goal on resumed goal continuation",
+    "tokens_used": 1475214,
+    "time_used_seconds": 6772
   }
 }

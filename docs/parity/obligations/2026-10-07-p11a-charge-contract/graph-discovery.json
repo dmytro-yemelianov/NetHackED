@@ -1,0 +1,11 @@
+{
+  "tool": "search_graph",
+  "project": "Users-dmytro-github-NetRust",
+  "name_pattern": ".*(zappable|handle_zap|ZapSelectedWand).*",
+  "limit": 20,
+  "total": 1,
+  "qualified_name": "Users-dmytro-github-NetRust.crates.netrust-sim.src.actions.items.SimulationWorld.handle_zap_wand",
+  "returned_file_path": "crates/netrust-sim/src/actions/items.rs",
+  "returned_path_exists": false,
+  "gap": "stale old netrust path, no new selected-wand symbol; bounded known nethacked owners fallback needed"
+}

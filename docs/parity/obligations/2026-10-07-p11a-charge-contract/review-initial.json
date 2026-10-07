@@ -1,0 +1,89 @@
+{
+  "verdict": "NEEDS_CHANGES",
+  "review_markdown": "API1 is a useful, coherent three-file prerequisite: the prescribed-draw API, unchanged unsigned API, public positive/rejection tests, and deferred nonpositive activation are sound. The complete packet needs the three corrections below. Aggregate C1 remains held; no implementation or family closure is accepted.",
+  "findings": [
+    {
+      "id": "C1-R1",
+      "trigger": "A nonfatal cursed backfire with an unpolymorphed hero and abs(AEXE(STR)) < 50.",
+      "evidence": "Pinned zap.c calls exercise(A_STR,FALSE) after backfire. attrib.c:489\u2013517 consumes rn2(2) and updates AEXE under those conditions. contract.md and F09/F10 list only charge/gate/damage bounds. Rust world.rs:1204 exercise_attr only emits a message.",
+      "consequence": "The stated streams are incomplete as terminal RNG expectations; reusing the current exercise helper would also produce incorrect state/events.",
+      "repair": "Label existing lists as draw prefixes, specify conditional exercise state/RNG/order and no-draw cases, and require a concrete narrow HE02 exercise prerequisite for B1-PRE. Bind the EQ03 half-physical seam or its narrow prerequisite before B1 acceptance."
+    },
+    {
+      "id": "C1-R2",
+      "trigger": "Scheduling LIFE or positive backfire retirement from the declared DAG.",
+      "evidence": "LIFE consumes P1 bill retention but depends only on S1; B1-PRE depends only on API1 despite requiring whole-item retirement. api.native also requires P1 preflight, while ready API1 depends only on S1. C obfree retains used-up billed objects; Rust corpse cleanup erases unpaid state.",
+      "consequence": "The listed dependencies do not enforce the billing/retirement seams, and API1's ready interface ambiguously relies on an unresolved successor.",
+      "repair": "Explicitly limit API1 to existing S1 guards/positive behavior. Gate LIFE on an accepted narrow P1 billing contract, and gate backfire retirement on LIFE or an explicitly reviewed equivalent shared seam. Encode the resulting acyclic dependencies and file ownership; keep naming/timer work within LIFE's bounded audit."
+    },
+    {
+      "id": "C1-R3",
+      "trigger": "Registering the proposed P11b successor.",
+      "evidence": "contract.json mandatory_successors assigns id P11b to family OB07. The small run ledger lists P11b and OB07 as separate existing families.",
+      "consequence": "The proposal conflates two family obligations during registration.",
+      "repair": "Assign P11b to existing family P11b and cross-reference OB07; retain separately named OB07 context/object obligations without closing either family."
+    }
+  ],
+  "bindings": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/contract-initial/draft/ready-packet.md",
+      "sha256": "1b6e2fe646cfb0f085093c2bbba1c85ebb7d87daeced342f647c35040a1f5369"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/contract-initial/draft/contract.md",
+      "sha256": "b5b007da8b991a4777a2b178729b7f7a94707fbabaf641fff03588b9e361dcb2"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/contract-initial/draft/contract.json",
+      "sha256": "9253258089d462361b9d36fe9f17aa52c516bad8c59ed165cc5bbfa3a45f4658"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/contract-initial/draft/evidence.json",
+      "sha256": "d2bc2a8fbc267881742c63a70259fa713511cff99add5f3db26a71480d612eb7"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/contract-initial/draft/review-inputs.json",
+      "sha256": "383374c958523c37664fb81f0fbbf0bb738b3410eb46cb2a1a1c0d147738b4f1"
+    },
+    {
+      "path": "/Users/dmytro/github/NetHack::16ff59115315917b93185d026aeefea06db9b0f4:src/attrib.c",
+      "sha256": "4dfbf91f63855512406571d431e59ce1395a73bb5dc0050ca3710bf5c740ba79"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-types/src/lib.rs",
+      "sha256": "93c63df3e963993cde2029e5cf8e3e1daca047878cc5e87d07c4d03141d6f1c5"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-sim/src/object_timers.rs",
+      "sha256": "385e9d3a79af9a56e155838854c528d43c0c627c092b971c50f112d06167a717"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-07-autonomous-parity-run.json",
+      "sha256": "b8df35adce1f4a49a35e71e9d7cecf19dfcf440dcb3383796478dc9702a62fb5"
+    }
+  ],
+  "checks": [
+    {
+      "name": "Programmatic bindings",
+      "assessment": "PASS",
+      "evidence": "All six manifest artifacts, nine prerequisite hashes, eight Rust owner hashes/snippets, nine pinned C hashes/blobs/snippets, and 345 current baseline file hashes match. HEAD is aadce228c9d00b573ae8ab4773352798418a6d4b. Recorded digest matches accepted S1; its aggregation encoding was not independently reproduced. Verified evidence.json binds the transitive source/prerequisite entries."
+    },
+    {
+      "name": "Charge and lifetime law",
+      "assessment": "PASS with dependency findings",
+      "evidence": "Verified sign branches, bound121, decrement/wrest/message/dust/time flags, bound100 after decrement, whole-stack useupall, bill retention, timer/reference deletion, and explicit current_wand clearing despite surviving stack. Arena existence alone is correctly rejected."
+    },
+    {
+      "name": "Fixture and compatibility obligations",
+      "assessment": "Appropriate proposed coverage; runtime unproven",
+      "evidence": "F01\u2013F15 cover public selection/refusal, boundaries, creation arithmetic, first-wand preservation, naming/plural, survivor/cleared/recycled identity, active/cached saves, oldsave/pack/schema/hash/WASM and ten surfaces. Backfire draw completeness needs C1-R1. Concrete seeds, next-RNG bytes and exact accepted12 invocation remain required."
+    },
+    {
+      "name": "Scope protection",
+      "assessment": "PASS",
+      "evidence": "Named helpers are reuse-unchanged only. Shared legacy/selected empty correction has no exemption; old assertions and all goldens remain frozen. S1/config/identity/P10 were consumed without re-audit. Graph unavailable; supplied stale discovery justified bounded owner fallback."
+    }
+  ],
+  "handoff": "Root should repair the contract only, rebind changed artifacts, and obtain independent rereview before API1 readiness. Root retains ledger/publication/registry ownership; later narrow seam packets remain mandatory.",
+  "usage_note": "Fresh independent source/API review. No edits, project tests, Cargo/compiler/C execution, Lua, commits, or agents. Hash verification used read-only Perl after uv cache initialization was denied."
+}

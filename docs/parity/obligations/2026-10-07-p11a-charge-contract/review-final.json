@@ -1,0 +1,93 @@
+{
+  "verdict": "PASS",
+  "review_markdown": "C1-R1/R2/R3 repairs pass this independent narrow contract rereview. No open findings. Prior passed charge/lifetime/fixture/legacy/source coverage is explicitly reused. C1 remains open; implementation, seeds and runtime parity remain unproven. Relative artifact paths below use C1 root `/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1`.",
+  "findings": [],
+  "bindings": [
+    {
+      "path": "repair1/draft/contract.json",
+      "sha256": "0ae28364d9017ca8d71b753d64d58b4f18cd21c023dca202434376725a8341dc"
+    },
+    {
+      "path": "repair1/draft/contract.md",
+      "sha256": "48bceb10fe82cee4c88e89b83354a8568fd3a61001d2f8ec5d9fe62e7fe31fe1"
+    },
+    {
+      "path": "repair1/draft/ready-packet.md",
+      "sha256": "898091484183332acb319fd04123f33f6f09a61964065cc33624983dc0a4f9e7"
+    },
+    {
+      "path": "repair1/draft/evidence.json",
+      "sha256": "74a6ffdd09f9e2ea34f6dede481542019b7d0a3cbd4cfca1b45031b6389e14ef"
+    },
+    {
+      "path": "repair1/draft/repair-summary.json",
+      "sha256": "c864c05bd5cb7914339b279f824a31f54be372fd57c9bb4f76a771a8e3aef6f5"
+    },
+    {
+      "path": "repair1/draft/review-inputs.json",
+      "sha256": "7b555eedbfdbeff220deeb78320dd098b4c7b9748c906611dd941fec2728855c"
+    },
+    {
+      "path": "repair1/draft/baseline.json",
+      "sha256": "5ae4bd47a42a44755d6c913a26ff0c989a33f849b21060232c4aafcf8b815ebe"
+    },
+    {
+      "path": "repair1/draft/graph-discovery.json",
+      "sha256": "55fde161f1d9f96f1db041a0639310f8a718d931265595c7d80dd33b95ea0cd1"
+    },
+    {
+      "path": "review-initial/review-initial.json",
+      "sha256": "5dc19f8c1f8bc2b1d85d062f6a3b7e5d332a64b8ebca59b38d707694c861dd7b"
+    },
+    {
+      "path": "/Users/dmytro/github/NetHack::16ff59115315917b93185d026aeefea06db9b0f4:src/attrib.c",
+      "sha256": "4dfbf91f63855512406571d431e59ce1395a73bb5dc0050ca3710bf5c740ba79"
+    },
+    {
+      "path": "/Users/dmytro/github/NetHack::16ff59115315917b93185d026aeefea06db9b0f4:src/zap.c",
+      "sha256": "8ee02bd7aa29b026d6b5a2e0017ddf402fcfc6fc81037e35ceda2d86467547cb"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-sim/src/world.rs",
+      "sha256": "9e4cd1aedb4b455e5df5fb949dd908b2f9a9017a2fce067856a1d7d5e7caf7ad"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-07-autonomous-parity-run.json",
+      "sha256": "af99805c6b9d650fe0883eabfd161e50a6c31afd85a339049ec14b9bc21f0206"
+    }
+  ],
+  "checks": [
+    {
+      "name": "C1-R1",
+      "assessment": "PASS",
+      "evidence": "F09/F10 are prefixes. Post-damage STR exercise correctly specifies conditional bound2, old-minus-roll AEXE, polymorph/saturation/fatal no-draw cases and moves-gated encumbrance. Message-only helper reuse is forbidden. Accepted HE02/EQ03 seams gate B1-PRE; complete RNG/state fixture evidence remains required."
+    },
+    {
+      "name": "C1-R2",
+      "assessment": "PASS",
+      "evidence": "API1 retains exactly three files, positive-only staging and S1-only guards. Accepted P1-BILL gates LIFE; LIFE/API1/HE02/EQ03 gate B1-PRE. BILL/PRE/P1 ownership and IN1 acceptance dependencies are explicit. Later implementation requires concrete audits and reviewed minimal allowlists."
+    },
+    {
+      "name": "C1-R3",
+      "assessment": "PASS",
+      "evidence": "P11b belongs to family P11b with OB07 cross-reference. OB07 context/object obligations remain separate. Family-ID-only ledger read confirms all 53 families and distinct IDs; M/MC/F/A1 retain all-ten-surface exits."
+    },
+    {
+      "name": "Source bindings",
+      "assessment": "PASS",
+      "evidence": "Independently matched attrib/zap blobs aaad2dbd0f333bf258dd0d43aed96863ee2db21f and 8aefcb1ea3c64cb4bac71f7149d5795ec106786c, full hashes and added bounded snippet hashes/text; world exercise snippet matches. Mutable ledger hash advanced from the packet snapshot; referenced family IDs match."
+    },
+    {
+      "name": "DAG",
+      "assessment": "PASS",
+      "evidence": "Independently resolved every dependency with unique IDs and a topological ordering. No C1/B1/P1 cycle or whole-family prerequisite. Audit-only unknown later interfaces do not underpin API1."
+    },
+    {
+      "name": "Unchanged boundaries and documents",
+      "assessment": "PASS",
+      "evidence": "Recorded JSON pointer deltas exactly match original drafts; four original artifact before/after hashes and all seven new manifest hashes match. Protected sections and API1/IN1 allowlists remain identical. MD/evidence mirror repairs; all15 fixtures, frozen assertions/helpers/golds and shared legacy correction remain mandatory."
+    }
+  ],
+  "handoff": "Root owns registration, progress and evidence. This PASS supports the repaired contract/API1 staging only; accepted downstream contracts, implementations and runtime evidence remain outstanding.",
+  "usage_note": "Read-only; no edits, tests, Cargo, compilers, evaluators, commits or agents. Graph tools unavailable; bounded known-path fallback used. uv cache initialization was sandbox-blocked; checks completed with jq/hash tools. Reused root's unchanged345 HEAD/digest assertion; no independent aggregate-digest computation claimed."
+}

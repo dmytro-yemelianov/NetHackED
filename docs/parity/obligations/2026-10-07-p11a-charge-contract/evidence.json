@@ -1,0 +1,574 @@
+{
+  "schema": "netrust.p11a-c1.audit-evidence.v1",
+  "binding": {
+    "rust_head": "aadce228c9d00b573ae8ab4773352798418a6d4b",
+    "branch": "feat/monster-hp-d8",
+    "source_input_count": 345,
+    "source_input_digest": "7b691c6e14d0449c37776f29b851ff7866bb2e41551b1c883458e5d0de416e79",
+    "baseline_sha256": "5ae4bd47a42a44755d6c913a26ff0c989a33f849b21060232c4aafcf8b815ebe",
+    "c_authority": "16ff59115315917b93185d026aeefea06db9b0f4",
+    "s1_delivery_sha256": "2a1482a25b808ff1bd4986b097ed139961d6ee705ba3d96abb4b1e83ccfa980e",
+    "selection_contract_sha256": "7facd2e6522cc0b3f0b1dfda181a660f02921ad3f107841beb5debc80f59998a",
+    "bootstrap_sha256": "515f264382ae29e878a353969715480d19b488e2f8283a68768828b56d2b212e",
+    "profile_sha256": "9771384704ac2e5473ceeac87718a569658125f529bd9205beaf947d8b93fa82",
+    "pin_sha256": "8cd4931d03972cef4a5a1ae8c7fa7344ac41612fb3cc29b971cf17e213ac3db9"
+  },
+  "audit": "source/API contract only; no project execution or source changes",
+  "graph": {
+    "supplied_discovery": {
+      "tool": "search_graph",
+      "project": "Users-dmytro-github-NetRust",
+      "name_pattern": ".*(zappable|handle_zap|ZapSelectedWand).*",
+      "limit": 20,
+      "total": 1,
+      "qualified_name": "Users-dmytro-github-NetRust.crates.netrust-sim.src.actions.items.SimulationWorld.handle_zap_wand",
+      "returned_file_path": "crates/netrust-sim/src/actions/items.rs",
+      "returned_path_exists": false,
+      "gap": "stale old netrust path, no new selected-wand symbol; bounded known nethacked owners fallback needed"
+    },
+    "current_tools": "No callable graph MCP tools in active tool metadata; consume root graph-first obsolete-path result; bounded known current paths fallback."
+  },
+  "prerequisites": [
+    {
+      "path": "/tmp/netrust-p11a-c1-contract-cli/draft/baseline.json",
+      "sha256": "5ae4bd47a42a44755d6c913a26ff0c989a33f849b21060232c4aafcf8b815ebe"
+    },
+    {
+      "path": "/tmp/netrust-p11a-c1-contract-cli/draft/graph-discovery.json",
+      "sha256": "55fde161f1d9f96f1db041a0639310f8a718d931265595c7d80dd33b95ea0cd1"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-07-p11a-selection-contract/contract.json",
+      "sha256": "7facd2e6522cc0b3f0b1dfda181a660f02921ad3f107841beb5debc80f59998a"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-07-bootstrap-p11a/p11a-contract.json",
+      "sha256": "515f264382ae29e878a353969715480d19b488e2f8283a68768828b56d2b212e"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-07-configuration-profile/pin.json",
+      "sha256": "8cd4931d03972cef4a5a1ae8c7fa7344ac41612fb3cc29b971cf17e213ac3db9"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-07-configuration-profile/configuration-profile.json",
+      "sha256": "9771384704ac2e5473ceeac87718a569658125f529bd9205beaf947d8b93fa82"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/delivery.json",
+      "sha256": "2a1482a25b808ff1bd4986b097ed139961d6ee705ba3d96abb4b1e83ccfa980e"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/full-gates/accepted.json",
+      "sha256": "9913577b1eb284d42faa81707dc91cfdbf147a58a77ea23146ef4c7f27301905"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/full-gates/results.json",
+      "sha256": "41a87c34bf43dd2acc79606f9f942bb6e7983ddff00690e15301da91f6218c17"
+    }
+  ],
+  "accepted_s1": {
+    "id": "P11a-S1",
+    "commit": "aadce228c9d00b573ae8ab4773352798418a6d4b",
+    "source_conformance_scope": "backend/native/shared-parser selection/cancel only",
+    "source_conformance_accepted": true,
+    "source_input_count": 345,
+    "source_input_digest": "7b691c6e14d0449c37776f29b851ff7866bb2e41551b1c883458e5d0de416e79",
+    "tests": 1021,
+    "gates": 12,
+    "goldens": 3,
+    "fresh_full_execution": true
+  },
+  "c_sources": [
+    {
+      "path": "src/zap.c",
+      "commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+      "git_blob": "8aefcb1ea3c64cb4bac71f7149d5795ec106786c",
+      "sha256": "8ee02bd7aa29b026d6b5a2e0017ddf402fcfc6fc81037e35ceda2d86467547cb",
+      "snippets": [
+        {
+          "start": 2509,
+          "end": 2522,
+          "sha256": "a495ac67ebf801300e5deffad98cbf17262fa40841fdf3761ce689b14f67f710",
+          "text": " * zappable - returns 1 if zap is available, 0 otherwise.\n *            it removes a charge from the wand if zappable.\n * added by GAN 11/03/86\n */\nint\nzappable(struct obj *wand)\n{\n    if (wand->spe < 0 || (wand->spe == 0 && rn2(WAND_WREST_CHANCE)))\n        return 0;\n    if (wand->spe == 0)\n        You(\"wrest one last charge from the worn-out wand.\");\n    wand->spe--;\n    return 1;\n}\n"
+        },
+        {
+          "start": 2605,
+          "end": 2684,
+          "sha256": "f95236affe2e5adade176233798136b69207738154c59ceb749ce5752efac92f",
+          "text": "backfire(struct obj *otmp)\n{\n    int dmg;\n\n    otmp->in_use = TRUE; /* in case losehp() is fatal */\n    pline(\"%s suddenly explodes!\", The(xname(otmp)));\n    dmg = d(otmp->spe + 2, 6);\n    losehp(Maybe_Half_Phys(dmg), \"exploding wand\", KILLED_BY_AN);\n    useupall(otmp);\n}\n\n/* getobj callback for object to zap */\nstaticfn int\nzap_ok(struct obj *obj)\n{\n    if (obj && obj->oclass == WAND_CLASS)\n        return GETOBJ_SUGGEST;\n    return GETOBJ_EXCLUDE;\n}\n\n/* #zap command, 'z' (or 'y' if numbed_pad==-1) */\nint\ndozap(void)\n{\n    struct obj *obj;\n    int damage, need_dir;\n\n    if (nohands(gy.youmonst.data)) {\n        You(\"aren't able to zap anything in your current form.\");\n        return ECMD_OK;\n    }\n    if (check_capacity((char *) 0))\n        return ECMD_OK;\n    obj = getobj(\"zap\", zap_ok, GETOBJ_NOFLAGS);\n    if (!obj)\n        return ECMD_CANCEL;\n\n    check_unpaid(obj);\n\n    need_dir = objects[obj->otyp].oc_dir != NODIR;\n    if (!zappable(obj)) {\n        pline1(nothing_happens);\n    } else if (obj->cursed && !rn2(WAND_BACKFIRE_CHANCE)) {\n        backfire(obj); /* the wand blows up in your face! */\n        exercise(A_STR, FALSE);\n        /* 'obj' is gone; skip update_inventory() because\n           backfire() -> useupall() -> freeinv() did it */\n        return ECMD_TIME;\n    } else if (need_dir && !getdir((char *) 0)) {\n        if (!Blind)\n            pline(\"%s glows and fades.\", The(xname(obj)));\n        /* make him pay for knowing !NODIR */\n    } else if (need_dir && !u.dx && !u.dy && !u.dz) {\n        if ((damage = zapyourself(obj, TRUE)) != 0) {\n            char buf[BUFSZ];\n\n            Sprintf(buf, \"zapped %sself with %s\",\n                    uhim(), killer_xname(obj));\n            losehp(Maybe_Half_Phys(damage), buf, NO_KILLER_PREFIX);\n        }\n    } else {\n        /*      Are we having fun yet?\n         * weffects -> buzz(obj->otyp) -> zhitm (temple priest) ->\n         * attack -> hitum -> known_hitum -> ghod_hitsu ->\n         * buzz(AD_ELEC) -> destroy_items(AD_ELEC) ->\n         * useup -> obfree -> dealloc_obj -> free(obj)\n         */\n        gc.current_wand = obj;\n        weffects(obj);\n        obj = gc.current_wand;\n        gc.current_wand = 0;\n    }\n    if (obj && obj->spe < 0) {\n        pline(\"%s to dust.\", Tobjnam(obj, \"turn\"));\n        useupall(obj); /* calls freeinv() -> update_inventory() */\n    } else\n        update_inventory(); /* maybe used a charge */\n    return ECMD_TIME;\n}\n\n"
+        },
+        {
+          "start": 5913,
+          "end": 5937,
+          "sha256": "f0faf393e694a13a9d76ff4c27fbb0e7a9d04379e0d93be678a680696398ea4e",
+          "text": "        if (u_carry) { /* effects that happen only to the player */\n            if (osym == POTION_CLASS && dmgtyp != AD_COLD\n                && (!breathless(gy.youmonst.data)\n                    || haseyes(gy.youmonst.data))) {\n                potionbreathe(obj);\n            }\n            if (obj->owornmask) { /* m_useup handles these for monster */\n                if (obj->owornmask & W_RING) /* ring being worn */\n                    Ring_gone(obj);\n                else\n                    setnotworn(obj);\n            }\n            if (obj == gc.current_wand) {\n                gc.current_wand = 0; /* destroyed */\n            }\n        }\n        for (i = 0; i < cnt; i++) {\n            if (u_carry)\n                useup(obj);\n            else\n                m_useup(carrier, obj);\n        }\n        if (dmg) {\n            if (!u_carry) {\n                return xresist ? 0 : dmg;\n"
+        },
+        {
+          "start": 2605,
+          "end": 2615,
+          "text": "backfire(struct obj *otmp)\n{\n    int dmg;\n\n    otmp->in_use = TRUE; /* in case losehp() is fatal */\n    pline(\"%s suddenly explodes!\", The(xname(otmp)));\n    dmg = d(otmp->spe + 2, 6);\n    losehp(Maybe_Half_Phys(dmg), \"exploding wand\", KILLED_BY_AN);\n    useupall(otmp);\n}\n\n"
+        },
+        {
+          "start": 2649,
+          "end": 2656,
+          "text": "        exercise(A_STR, FALSE);\n        /* 'obj' is gone; skip update_inventory() because\n           backfire() -> useupall() -> freeinv() did it */\n        return ECMD_TIME;\n    } else if (need_dir && !getdir((char *) 0)) {\n        if (!Blind)\n            pline(\"%s glows and fades.\", The(xname(obj)));\n        /* make him pay for knowing !NODIR */\n"
+        }
+      ]
+    },
+    {
+      "path": "include/obj.h",
+      "commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+      "git_blob": "8d95bb0072b11c04a130871da4f3347c96b09af2",
+      "sha256": "a4d1b994c5acd6fe04d411485d84491553d6df02dfbd7480181a15a7a05456e2",
+      "snippets": [
+        {
+          "start": 49,
+          "end": 58,
+          "sha256": "634905ab88c83ff088e7156bb283232c8e491b7f506f13f11335512925894991",
+          "text": "#define SPE_LIM 99 /* abs(obj->spe) <= 99, cap for enchanted and charged\n                    * objects (and others; named fruit index excepted) */\n    schar spe; /* quality of weapon, weptool, armor, or some rings (+ or -);\n                * number of charges for wand or charged tool ( >= -1 );\n                * number of candles attached to candelabrum (0..7);\n                * magic lamp (1 iff djinni inside => lamp is lightable);\n                * oil lamp, tallow/wax candle (1 for no apparent reason?);\n                * marks spinach tins (1 iff corpsenm==NON_PM);\n                * marks tin variety (various: homemade, stir fried, &c);\n                * eggs laid by you (1), eggs upgraded with royal jelly (2);\n"
+        }
+      ]
+    },
+    {
+      "path": "include/hack.h",
+      "commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+      "git_blob": "acf93509b49ecfc3e1520bc3731fbd5e5e94162c",
+      "sha256": "2840a9bd41fb0c09384839fafdbd427a5d8705ad8d3eb5e2a0308cccea36813b",
+      "snippets": [
+        {
+          "start": 1410,
+          "end": 1411,
+          "sha256": "8bcffa3187ba25ef52cacf679f04856103c2d7f4cbb63621d0121c2376734be4",
+          "text": "#define WAND_BACKFIRE_CHANCE 100\n#define WAND_WREST_CHANCE 121\n"
+        },
+        {
+          "start": 1456,
+          "end": 1458,
+          "sha256": "460c5040467d8cd2a195fdbf602210a899b68547b0b1d9cbe0651658fabd1a55",
+          "text": "#define ECMD_OK     0x00 /* cmd done successfully */\n#define ECMD_TIME   0x01 /* cmd took time, uses up a turn */\n#define ECMD_CANCEL 0x02 /* cmd canceled by user */\n"
+        }
+      ]
+    },
+    {
+      "path": "src/invent.c",
+      "commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+      "git_blob": "446859540299c0fd36ac5d0eff213a9478ffbab3",
+      "sha256": "0b93d6ce1abb5b63ed7ea07c26a57e1016c6cef0fc2ef0e4016e6622054524b5",
+      "snippets": [
+        {
+          "start": 1309,
+          "end": 1334,
+          "sha256": "f5c59fe2803c553cbaff62d8451cb5bb6988c1a307efbb2c179b5c8e6e85710b",
+          "text": "\n/* useup() all of an item regardless of its quantity */\nvoid\nuseupall(struct obj *obj)\n{\n    setnotworn(obj);\n    freeinv(obj);\n    obfree(obj, (struct obj *) 0); /* deletes contents also */\n}\n\n/* an item in inventory is going away after being used */\nvoid\nuseup(struct obj *obj)\n{\n    /* Note:  This works correctly for containers because they (containers)\n       don't merge. */\n    if (obj->quan > 1L) {\n        obj->in_use = FALSE; /* no longer in use */\n        obj->quan--;\n        obj->owt = weight(obj);\n        update_inventory();\n    } else {\n        useupall(obj);\n    }\n}\n\n"
+        },
+        {
+          "start": 1401,
+          "end": 1410,
+          "sha256": "57bcb3e8d2d6bd0a41e846c8ab846332ae5018ca47f221e96155436d30fe5426",
+          "text": "/* remove an object from the hero's inventory */\nvoid\nfreeinv(struct obj *obj)\n{\n    extract_nobj(obj, &gi.invent);\n    obj->pickup_prev = 0;\n    freeinv_core(obj);\n    update_inventory();\n}\n\n"
+        },
+        {
+          "start": 2780,
+          "end": 2794,
+          "sha256": "3015a7745919a85951a77f37a29673b56dab56d7f26001f959ecf57b190871e2",
+          "text": "   screen updates was getting out of hand; this is now a central call point */\nvoid\nupdate_inventory(void)\n{\n    int save_suppress_price;\n\n    if (!program_state.in_moveloop) /* not covered by suppress_map_output */\n        return;\n    if (suppress_map_output()) /* despite name, used for perm_invent too */\n        return;\n\n    /*\n     * Ought to check (windowprocs.wincap & WC_PERM_INVENT) here....\n     *\n     * We currently don't skip this call when iflags.perm_invent is False\n"
+        }
+      ]
+    },
+    {
+      "path": "src/shk.c",
+      "commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+      "git_blob": "bd87b884910116ad48a393df14609bb275bb3e1d",
+      "sha256": "b2b5b82934b15c1a4a3c9474a650ff5800a83f0b9634696fdf080d0458f16e1b",
+      "snippets": [
+        {
+          "start": 1200,
+          "end": 1214,
+          "sha256": "746f4fab0766f046f82dcd6ec945ec6f48cea7dcf7bc1c573782b11826a443c4",
+          "text": "        delete_contents(obj);\n    if (Is_container(obj))\n        maybe_reset_pick(obj);\n    if (obj->otyp == BOULDER)\n        obj->next_boulder = 0;\n\n    shkp = 0;\n    if (obj->unpaid) {\n        /* look for a shopkeeper who owns this object */\n        for (shkp = next_shkp(fmon, TRUE); shkp;\n             shkp = next_shkp(shkp->nmon, TRUE))\n            if (onbill(obj, shkp, TRUE))\n                break;\n    }\n    /* sanity check, in case obj is on bill but not marked 'unpaid' */\n"
+        },
+        {
+          "start": 1220,
+          "end": 1246,
+          "sha256": "1018983bfe419e3373e1563a4ccc68f8f56ed44ccedc501e319681aa29867612",
+          "text": "     *    the place, so making its behavior be dependent\n     *    upon player location doesn't make much sense.\n     */\n\n    if ((bp = onbill(obj, shkp, FALSE)) != 0) {\n        if (!merge) {\n            bp->useup = TRUE;\n            obj->unpaid = 0; /* only for doinvbill */\n            /* for used up glob, put back original weight in case it gets\n               formatted ('I x' or itemized billing) with 'wizweight' On */\n            if (obj->globby && !obj->owt && has_omid(obj))\n                obj->owt = OMID(obj);\n            add_to_billobjs(obj);\n            return;\n        }\n        bpm = onbill(merge, shkp, FALSE);\n        if (!bpm) {\n            /* this used to be a rename */\n            /* !merge already returned */\n            impossible(\n                   \"obfree: not on bill, %s = (%d,%d,%ld,%d) (%d,%d,%ld,%d)?\",\n                       \"otyp,where,quan,unpaid\",\n                       obj->otyp, obj->where, obj->quan, obj->unpaid ? 1 : 0,\n                       merge->otyp, merge->where, merge->quan,\n                       merge->unpaid ? 1 : 0);\n            return;\n        } else {\n"
+        },
+        {
+          "start": 1266,
+          "end": 1276,
+          "sha256": "f1449691759ae9a0f3df9978183b5920766850c42e6ce0d922aa77f69129b325",
+          "text": "    if (obj->owornmask) {\n        impossible(\"obfree: deleting worn obj (%d: %ld)\", obj->otyp,\n                   obj->owornmask);\n        /* unfortunately at this point we don't know whether worn mask\n           applied to hero or a monster or perhaps something bogus, so\n           can't call remove_worn_item() to get <X>_off() side-effects */\n        setnotworn(obj);\n    }\n    dealloc_obj(obj);\n}\n\n"
+        }
+      ]
+    },
+    {
+      "path": "src/mkobj.c",
+      "commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+      "git_blob": "93f047d142880cdd688bfbd70a2b2c1f4a46a712",
+      "sha256": "49c2de3bcf1125be55f11c17ffc4f614956f5288a5edfb56b2248b7fcaa3b488",
+      "snippets": [
+        {
+          "start": 2745,
+          "end": 2810,
+          "sha256": "9c5999f8f53e1a9f4c803c83da1d08aa803e663d79560bce4364062f96735b7b",
+          "text": "dealloc_obj(struct obj *obj)\n{\n    if (obj->otyp == BOULDER)\n        obj->next_boulder = 0;\n    if (obj->where == OBJ_DELETED) {\n        impossible(\"dealloc_obj: obj already deleted (type=%d)\", obj->otyp);\n        return;\n    } else if (obj->where != OBJ_FREE && obj->where != OBJ_LUAFREE) {\n        panic(\"dealloc_obj: obj not free (type=%d, where=%d)\",\n              obj->otyp, obj->where);\n    }\n    if (obj->nobj)\n        panic(\"dealloc_obj with nobj\");\n    if (obj->cobj)\n        panic(\"dealloc_obj with cobj\");\n    if (obj == &hands_obj) {\n        impossible(\"dealloc_obj with hands_obj\");\n        return;\n    }\n\n    /* free up any timers attached to the object */\n    if (obj->timed)\n        obj_stop_timers(obj);\n\n    /*\n     * Free up any light sources attached to the object.\n     *\n     * We may want to just call del_light_source() without any\n     * checks (requires a code change there).  Otherwise this\n     * list must track all objects that can have a light source\n     * attached to it (and also requires lamplit to be set).\n     */\n    if (obj_sheds_light(obj)) {\n        del_light_source(LS_OBJECT, obj_to_any(obj));\n        obj->lamplit = 0;\n    }\n\n    if (obj == gt.thrownobj)\n        gt.thrownobj = 0;\n    if (obj == gk.kickedobj)\n        gk.kickedobj = 0;\n    if (obj == svc.context.tin.tin) {\n        svc.context.tin.tin = (struct obj *) 0;\n        svc.context.tin.o_id = 0;\n    }\n\n    /* if obj came from the most recent splitobj(), it's no longer eligible\n       for unsplitobj(); perform inline clear_splitobjs() */\n    if (obj->o_id == svc.context.objsplit.parent_oid\n        || obj->o_id == svc.context.objsplit.child_oid)\n        svc.context.objsplit.parent_oid = svc.context.objsplit.child_oid = 0;\n\n    if (obj->lua_ref_cnt) {\n        /* obj is referenced from a lua script, let lua gc free it */\n        obj->where = OBJ_LUAFREE;\n        return;\n    }\n    if (!program_state.freeingdata) {\n        /* mark object as deleted, put it into queue to be freed */\n        obj->where = OBJ_DELETED;\n        obj->nobj = go.objs_deleted;\n        go.objs_deleted = obj;\n    } else {\n        /* when saving, there's no need to stage deletions on objs_deleted */\n        dealloc_obj_real(obj);\n    }\n"
+        }
+      ]
+    },
+    {
+      "path": "src/worn.c",
+      "commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+      "git_blob": "14bb8fdbc390c5b1fb1f462ec2f9418b20def347",
+      "sha256": "0414baea25644ea52cc7b628dff4ab1a533eada1523405eaabe7d7555bc3d4cf",
+      "snippets": [
+        {
+          "start": 149,
+          "end": 179,
+          "sha256": "c2a0948830bad9d46925352cf0a70a1e9a1518b8967f18aae6878a8ac85e1afd",
+          "text": "void\nsetnotworn(struct obj *obj)\n{\n    const struct worn *wp;\n    int p;\n    long unworn = 0L;\n\n    if (!obj)\n        return;\n    if (u.twoweap && (obj == uwep || obj == uswapwep))\n        set_twoweap(FALSE); /* u.twoweap = FALSE */\n    for (wp = worn; wp->w_mask; wp++)\n        if (obj == *(wp->w_obj)) {\n            /* in case wearing or removal is in progress or removal\n               is pending (via 'A' command for multiple items) */\n            cancel_doff(obj, wp->w_mask);\n\n            *(wp->w_obj) = (struct obj *) 0;\n            unworn |= wp->w_mask;\n            p = objects[obj->otyp].oc_oprop;\n            u.uprops[p].extrinsic = u.uprops[p].extrinsic & ~wp->w_mask;\n            monstunseesu_prop(p); /* remove this extrinsic from seenres */\n            obj->owornmask &= ~wp->w_mask;\n            if (obj->oartifact)\n                set_artifact_intrinsic(obj, 0, wp->w_mask);\n            if ((p = w_blocks(obj, wp->w_mask)) != 0)\n                u.uprops[p].blocked &= ~wp->w_mask;\n        }\n    if (!uarm)\n        iflags.tux_penalty = FALSE;\n    if ((flags.weaponstatus && (unworn & W_WEP) != 0L)\n"
+        }
+      ]
+    },
+    {
+      "path": "src/objnam.c",
+      "commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+      "git_blob": "f9bc1749ff9b2916b28160c522f4fb13f42d71f1",
+      "sha256": "445d0b8697ceeb93f1249599b16caffb101a832ee425d76f9eb3fd65088f1dd3",
+      "snippets": [
+        {
+          "start": 2287,
+          "end": 2301,
+          "sha256": "a64605c6c08414a31e0274bcae30d10eb23b08c4664f9f42f7dc016d6a95a9ae",
+          "text": "\n/* like aobjnam, but prepend \"The\", not count, and use xname */\nchar *\nTobjnam(struct obj *otmp, const char *verb)\n{\n    char *bp = The(xname(otmp));\n\n    if (verb) {\n        Strcat(bp, \" \");\n        Strcat(bp, otense(otmp, verb));\n    }\n    return bp;\n}\n\n/* capitalized variant of doname() */\n"
+        }
+      ]
+    },
+    {
+      "path": "src/decl.c",
+      "commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+      "git_blob": "4fe4585f0af6730f5e0aeb7d93d5470fb4bda3a4",
+      "sha256": "4855daf7884706b74e694aff3e8373418706793265084727bd78abe44693d96e",
+      "snippets": [
+        {
+          "start": 37,
+          "end": 43,
+          "sha256": "8c822a4d476b56e8d9dc5cfa42d38f8dbe88e77b8137bb9fddd5f28b8e5c37df",
+          "text": "};\n\nconst struct c_common_strings c_common_strings =\n    { \"Nothing happens.\",\n      \"Nothing seems to happen.\",\n      \"That's enough tries!\",\n      \"That is a silly thing to %s.\",\n"
+        }
+      ]
+    },
+    {
+      "path": "src/attrib.c",
+      "commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+      "git_blob": "aaad2dbd0f333bf258dd0d43aed96863ee2db21f",
+      "sha256": "4dfbf91f63855512406571d431e59ce1395a73bb5dc0050ca3710bf5c740ba79",
+      "snippets": [
+        {
+          "start": 486,
+          "end": 517,
+          "text": "#define AVAL 50 /* tune value for exercise gains */\n\nvoid\nexercise(int i, boolean inc_or_dec)\n{\n    debugpline0(\"Exercise:\");\n    if (i == A_INT || i == A_CHA)\n        return; /* can't exercise these */\n\n    /* no physical exercise while polymorphed; the body's temporary */\n    if (Upolyd && i != A_WIS)\n        return;\n\n    if (abs(AEXE(i)) < AVAL) {\n        /*\n         *      Law of diminishing returns (Part I):\n         *\n         *      Gain is harder at higher attribute values.\n         *      79% at \"3\" --> 0% at \"18\"\n         *      Loss is even at all levels (50%).\n         *\n         *      Note: *YES* ACURR is the right one to use.\n         */\n        AEXE(i) += (inc_or_dec) ? (rn2(19) > ACURR(i)) : -rn2(2);\n        debugpline3(\"%s, %s AEXE = %d\",\n                    (i == A_STR) ? \"Str\" : (i == A_WIS) ? \"Wis\" : (i == A_DEX)\n                                                                      ? \"Dex\"\n                                                                      : \"Con\",\n                    (inc_or_dec) ? \"inc\" : \"dec\", AEXE(i));\n    }\n    if (svm.moves > 0 && (i == A_STR || i == A_CON))\n        encumber_msg();\n"
+        }
+      ]
+    }
+  ],
+  "rust_sources": [
+    {
+      "path": "crates/nethacked-sim/src/actions/items.rs",
+      "sha256": "247f7f2363f17023668612ab971351adf7530137880abc4a9f80bc7e8cc8c19a",
+      "baseline_sha256": "247f7f2363f17023668612ab971351adf7530137880abc4a9f80bc7e8cc8c19a",
+      "snippets": [
+        {
+          "start": 962,
+          "end": 1096,
+          "text": "    pub(crate) fn handle_zap_wand(&mut self, dir: Direction, energy: u32) -> Vec<GameEvent> {\n        let mut events = Vec::new();\n        if self.arena.actors.get(self.player_id).is_none() {\n            return events;\n        }\n\n        // Find carried wand (or default)\n        let wand_id = self\n            .arena\n            .items_carried_by(self.player_id)\n            .into_iter()\n            .find(|&id| {\n                self.arena\n                    .items\n                    .get(id)\n                    .map(|it| it.class == ItemClass::Wand)\n                    .unwrap_or(false)\n            });\n\n        let Some(wid) = wand_id else {\n            events.push(GameEvent::LogMessage {\n                text: \"You have no wand to zap.\".into(),\n            });\n            return events;\n        };\n        self.handle_zap_item(wid, dir, energy)\n    }\n\n    pub(crate) fn handle_zap_selected_wand(\n        &mut self,\n        item_index: u32,\n        expected_item: Option<ItemId>,\n        dir: Direction,\n        energy: u32,\n    ) -> Vec<GameEvent> {\n        let carried = self.arena.items_carried_by(self.player_id);\n        let selected = usize::try_from(item_index)\n            .ok()\n            .and_then(|index| carried.get(index))\n            .copied();\n        let Some(wid) = selected else {\n            return vec![GameEvent::LogMessage {\n                text: \"You don't have that object.\".into(),\n            }];\n        };\n        if expected_item.is_some_and(|expected| expected != wid) {\n            return vec![GameEvent::LogMessage {\n                text: \"You don't have that object.\".into(),\n            }];\n        }\n        let Some(wand) = self.arena.items.get(wid) else {\n            return vec![GameEvent::LogMessage {\n                text: \"You don't have that object.\".into(),\n            }];\n        };\n        if wand.class != ItemClass::Wand {\n            return vec![GameEvent::LogMessage {\n                text: \"That is a silly thing to zap.\".into(),\n            }];\n        }\n        self.handle_zap_item(wid, dir, energy)\n    }\n\n    fn handle_zap_item(&mut self, wid: ItemId, dir: Direction, energy: u32) -> Vec<GameEvent> {\n        let mut events = Vec::new();\n        let Some(player) = self.arena.actors.get(self.player_id).cloned() else {\n            return events;\n        };\n        // Explicit identities never fall back to display names or static tables.\n        let wand = &self.arena.items[wid];\n        let definition = match &wand.definition {\n            Some(identity) => {\n                let Some(definition) = self.ruleset.item_for_definition(identity) else {\n                    events.push(GameEvent::LogMessage {\n                        text: \"You cannot zap that wand: its definition is unavailable.\".into(),\n                    });\n                    return events;\n                };\n                Some(definition)\n            }\n            None => self.ruleset.item(&wand.name),\n        };\n        let resolved_id = definition.and_then(|def| def.id);\n        let effect_name = if wand.definition.is_some() {\n            definition.map(|def| def.name.clone())\n        } else {\n            None\n        };\n        // Select by owned canonical definition, never a display-name fragment.\n        let ordinary_creation = self.arena.items.get(wid).is_some_and(|wand| {\n            wand.buc == Buc::Uncursed\n                && wand.enchantment > 0\n                && resolved_id == Some(ItemKindId::WAN_CREATE_MONSTER)\n        }) && self.hero.polymorph.is_none()\n            && !matches!(\n                self.level.get_tile(player.coord),\n                nethacked_types::Tile::Pool { frozen: false } | nethacked_types::Tile::Moat\n            );\n        let Some(wand_item) = self.arena.items.get_mut(wid) else {\n            return events;\n        };\n        let current_charges = nethacked_types::WandCharges {\n            charges: wand_item.enchantment.max(0) as u32,\n            recharges: wand_item.recharged as u32,\n        };\n        let wand_name =\n            if let Some(new_charges) = nethacked_core::artifacts_wands::zap_wand(current_charges) {\n                wand_item.enchantment = new_charges.charges.min(i8::MAX as u32) as i8;\n                effect_name.unwrap_or_else(|| wand_item.name.clone())\n            } else {\n                events.push(GameEvent::LogMessage {\n                    text: nethacked_i18n::Messages::wand_empty(self.locale).into(),\n                });\n                self.scheduler.hero_act(NORMAL_SPEED);\n                return events;\n            };\n\n        if ordinary_creation {\n            if let Err(message) = self.create_random_monsters_by_hero() {\n                events.push(GameEvent::LogMessage {\n                    text: message.into(),\n                });\n            }\n            self.scheduler.hero_act(NORMAL_SPEED);\n            return events;\n        }\n\n        // If Wand of Secret Door Detection: reveals secret doors in 5x5 radius\n        if wand_name.contains(\"secret door\") {\n            let mut revealed = 0;\n            for dy in -3..=3 {\n                for dx in -3..=3 {\n                    let nx = player.coord.x as i32 + dx;\n                    let ny = player.coord.y as i32 + dy;\n                    if nx >= 0\n"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-sim/src/actions/mod.rs",
+      "sha256": "84bca7417cef8124fe6f9c5311412133c0d9dac873fdfd2593659f769c880a16",
+      "baseline_sha256": "84bca7417cef8124fe6f9c5311412133c0d9dac873fdfd2593659f769c880a16",
+      "snippets": [
+        {
+          "start": 100,
+          "end": 112,
+          "text": "            ActionAst::ZapWand { dir, energy } => events.extend(self.handle_zap_wand(dir, energy)),\n            ActionAst::ZapSelectedWand {\n                item_index,\n                expected_item,\n                dir,\n                energy,\n            } => {\n                events.extend(self.handle_zap_selected_wand(item_index, expected_item, dir, energy))\n            }\n            ActionAst::CancelZapSelection => events.push(GameEvent::LogMessage {\n                text: \"Never mind.\".into(),\n            }),\n            ActionAst::Wish(wish_str) => events.extend(self.handle_wish(wish_str)),\n"
+        },
+        {
+          "start": 178,
+          "end": 194,
+          "text": "        let spent_time = self.scheduler.hero_energy != energy_before;\n\n        // Hero AC is derived state (C `find_ac`, `do_wear.c:2473-2507`): refresh it\n        // once after any action so monster attacks this turn see the current worn\n        // armor, enchantment and divine protection.\n        self.reconcile_equipment();\n        self.recompute_hero_ac();\n\n        // Process monster actions and turn scheduler ticks\n        // C u.umoved reflects actual walking, including a peaceful swap, rather\n        // than a refused move, melee bump, teleport, or stair traversal.\n        let moved = movement_action\n            && events.iter().any(|event| {\n                matches!(event, GameEvent::ActorMoved { actor, from, to }\n                    if *actor == self.player_id && from != to)\n            });\n        let sim_events = self.process_turn_ticks(spent_time, moved);\n"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-arena/src/lib.rs",
+      "sha256": "099cf75465706208f388a83acebdb30b15321e2ae1755fd9206cc54e6669dc9e",
+      "baseline_sha256": "099cf75465706208f388a83acebdb30b15321e2ae1755fd9206cc54e6669dc9e",
+      "snippets": [
+        {
+          "start": 31,
+          "end": 57,
+          "text": "pub struct ItemRecord {\n    /// Owned archetype identity; absence retains legacy exact-name lookup.\n    #[serde(default, skip_serializing_if = \"Option::is_none\")]\n    pub definition: Option<ItemDefinition>,\n    /// Detached supported monster state (C oextra->omonst), never a live actor.\n    #[serde(default, skip_serializing_if = \"Option::is_none\")]\n    pub saved_monster_traits: Option<Box<SavedMonsterTraits>>,\n    /// Canonical C ART_* symbol; independent of display name.\n    #[serde(default, skip_serializing_if = \"Option::is_none\")]\n    pub artifact_id: Option<String>,\n    pub name: String,\n    pub class: ItemClass,\n    pub weight: u32,\n    pub buc: Buc,\n    pub is_container: bool,\n    pub is_bag_of_holding: bool,\n    pub enchantment: i8,\n    pub erosion: u8,\n    pub proofed: bool,\n    pub location: ItemLocation,\n    /// Species identity is distinct from the race used for cannibalism.\n    #[serde(default, skip_serializing_if = \"Option::is_none\")]\n    pub corpse_species: Option<CorpseSpecies>,\n    /// Persisted C obj->norevive; independent of corpse age and species.\n    #[serde(default, skip_serializing_if = \"std::ops::Not::not\")]\n    pub corpse_no_revive: bool,\n    #[serde(default, skip_serializing_if = \"std::ops::Not::not\")]\n"
+        },
+        {
+          "start": 219,
+          "end": 223,
+          "text": "    pub fn destroy_item(&mut self, id: ItemId) -> Option<ItemRecord> {\n        let item = self.items.remove(id)?;\n        self.register_artifact(&item);\n        Some(item)\n    }\n"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-core/src/artifacts_wands.rs",
+      "sha256": "763901780013cf21221f42ecf1a966156f660024f1e864d733e1606702c29756",
+      "baseline_sha256": "763901780013cf21221f42ecf1a966156f660024f1e864d733e1606702c29756",
+      "snippets": [
+        {
+          "start": 49,
+          "end": 65,
+          "text": "}\n\n/// Zapping a wand decrements charges by 1 if available.\n///\n/// Returns `None` if the wand is depleted (`charges == 0`).\n/// Matches Lean theorem `wand_charge_depletes`.\npub fn zap_wand(w: WandCharges) -> Option<WandCharges> {\n    if w.charges == 0 {\n        None\n    } else {\n        Some(WandCharges {\n            charges: w.charges - 1,\n            recharges: w.recharges,\n        })\n    }\n}\n\n"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-sim/src/world.rs",
+      "sha256": "9e4cd1aedb4b455e5df5fb949dd908b2f9a9017a2fce067856a1d7d5e7caf7ad",
+      "baseline_sha256": "9e4cd1aedb4b455e5df5fb949dd908b2f9a9017a2fce067856a1d7d5e7caf7ad",
+      "snippets": [
+        {
+          "start": 684,
+          "end": 696,
+          "text": "    /// Clear represented references after the rot callback removes an item.\n    /// Full shop bills/mextra and unowned C object references remain separate.\n    pub(crate) fn forget_rot_corpse_references(&mut self, id: ItemId) {\n        if self.wielded_item == Some(id) {\n            self.wielded_item = None;\n        }\n        if self.hero.quivered_item == Some(id) {\n            self.hero.quivered_item = None;\n        }\n        self.remove_unpaid(id);\n        self.remove_destroyed_item_equipment(id);\n    }\n\n"
+        },
+        {
+          "start": 1203,
+          "end": 1233,
+          "text": "    /// Exercise an attribute (for Famine)\n    pub(crate) fn exercise_attr(&mut self, attr: usize, gain: bool, events: &mut Vec<GameEvent>) {\n        if gain {\n            say(\n                events,\n                &format!(\n                    \"You feel {}!\",\n                    match attr {\n                        0 => \"stronger\",\n                        3 => \"more agile\",\n                        4 => \"healthier\",\n                        _ => \"better\",\n                    }\n                ),\n            );\n        } else {\n            say(\n                events,\n                &format!(\n                    \"You feel {}!\",\n                    match attr {\n                        0 => \"weaker\",\n                        3 => \"less agile\",\n                        4 => \"sicker\",\n                        _ => \"worse\",\n                    }\n                ),\n            );\n        }\n    }\n\n"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-sim/src/actions/equipment.rs",
+      "sha256": "188da56d460196b95037d6c5d16453f0b60497ca2514902c74c1bfb4170be700",
+      "baseline_sha256": "188da56d460196b95037d6c5d16453f0b60497ca2514902c74c1bfb4170be700",
+      "snippets": [
+        {
+          "start": 190,
+          "end": 209,
+          "text": "    /// C cancel_doff/cancel_don: vanished/relocated items cannot be callback targets.\n    pub(crate) fn reconcile_equipment(&mut self) {\n        let arena = &self.arena;\n        let player = self.player_id;\n        let rules = &self.ruleset;\n        let mut seen = Vec::new();\n        self.equipment.armor.retain(|(slot, id)| {\n            let valid = arena.items.get(*id).is_some_and(|item| {\n                item.location == ItemLocation::CarriedBy(player)\n                    && item.class == ItemClass::Armor\n                    && rules\n                        .item(&item.name)\n                        .and_then(|def| def.armor.as_ref())\n                        .is_none_or(|armor| armor.slot == *slot)\n            }) && !seen.contains(slot);\n            if valid {\n                seen.push(*slot);\n            }\n            valid\n        });\n"
+        },
+        {
+          "start": 225,
+          "end": 239,
+          "text": "    /// A vanished item must not remain a pending dressing callback target.\n    pub(crate) fn remove_destroyed_item_equipment(&mut self, id: ItemId) {\n        self.equipment.armor.retain(|(_, item)| *item != id);\n        if self\n            .equipment\n            .dressing\n            .as_ref()\n            .is_some_and(|d| d.item == id)\n        {\n            self.equipment.dressing = None;\n        }\n        self.reconcile_equipment();\n        self.recompute_hero_ac();\n    }\n}\n"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-sim/tests/selected_wand_tests.rs",
+      "sha256": "3c4b0f3ff9e5905f6f0b3ff1cec36afda322b5cf436b28d22a26d2ed45560122",
+      "baseline_sha256": "3c4b0f3ff9e5905f6f0b3ff1cec36afda322b5cf436b28d22a26d2ed45560122",
+      "snippets": [
+        {
+          "start": 327,
+          "end": 371,
+          "text": "fn identity_wand(w: &mut SimulationWorld, custom: bool, display: &str) -> ItemId {\n    let mut item = if custom {\n        w.ruleset\n            .create_item_record(\n                \"pack rod\",\n                ItemLocation::CarriedBy(w.player_id),\n                Buc::Uncursed,\n            )\n            .unwrap()\n    } else {\n        w.ruleset\n            .create_item_record_by_id(\n                I::WAN_CREATE_MONSTER,\n                ItemLocation::CarriedBy(w.player_id),\n                Buc::Uncursed,\n            )\n            .unwrap()\n    };\n    item.name = display.into();\n    item.enchantment = 2;\n    w.arena.spawn_item(item)\n}\n\nfn spawn(w: &mut SimulationWorld, kind: I, charge: i8, buc: Buc) -> ItemId {\n    let mut item = w\n        .ruleset\n        .create_item_record_by_id(kind, ItemLocation::CarriedBy(w.player_id), buc)\n        .unwrap();\n    item.enchantment = charge;\n    w.arena.spawn_item(item)\n}\nfn selected(w: &SimulationWorld, id: ItemId, token: bool) -> ActionAst {\n    ActionAst::ZapSelectedWand {\n        item_index: w\n            .arena\n            .items_carried_by(w.player_id)\n            .iter()\n            .position(|&current| current == id)\n            .unwrap()\n            .try_into()\n            .unwrap(),\n        expected_item: token.then_some(id),\n        dir: Direction::North,\n        energy: 999,\n    }\n"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-i18n/src/lib.rs",
+      "sha256": "27ee379a4465fc9f31a6920c8f890d858c0b0804c4710c2a13e09e4f45fadbae",
+      "baseline_sha256": "27ee379a4465fc9f31a6920c8f890d858c0b0804c4710c2a13e09e4f45fadbae",
+      "snippets": [
+        {
+          "start": 759,
+          "end": 764,
+          "text": "    pub fn wand_empty(locale: Locale) -> &'static str {\n        match locale {\n            Locale::En => \"Nothing happens. The wand is empty!\",\n            Locale::Uk => \"Нічого не відбувається. Жезл порожній!\",\n        }\n    }\n"
+        }
+      ]
+    }
+  ],
+  "historical_rows": [
+    {
+      "key": "flow-ui:0082",
+      "path": "docs/parity/flow-ui.md",
+      "ordinal": 82,
+      "line": 100,
+      "row_sha256": "37ba0471faaeef7c19868e3efa2678135c21428fea9b351103316ea418426ac5",
+      "feature": "`z` zap",
+      "section": "A. Command table (cmd.c `extcmdlist[]`, cmd.c:1673)",
+      "c_reference": "zap.c dozap",
+      "historic_status": "PARTIAL",
+      "status_freshness": "historical_unrefreshened_by_this_plan",
+      "family": "UI01",
+      "unit_refs": [
+        "UI01",
+        "UI01-R05",
+        "P11a",
+        "P11b",
+        "P11c",
+        "CMD-0082"
+      ],
+      "action": "audit_before_gap_or_port_claim"
+    },
+    {
+      "key": "objects-dungeon:0033",
+      "path": "docs/parity/objects-dungeon.md",
+      "ordinal": 33,
+      "line": 71,
+      "row_sha256": "7bd9b027544e7b5844c278e9007b1b89b105dd05541e50c5760f2c17480a8b88",
+      "feature": "Wand of create monster",
+      "section": "Feature table",
+      "c_reference": "zap.c WAN_CREATE_MONSTER; makemon.c create_critters",
+      "historic_status": "PARTIAL",
+      "status_freshness": "historical_unrefreshened_by_this_plan",
+      "family": "OB07",
+      "unit_refs": [
+        "OB07",
+        "OB07-R01",
+        "P11a",
+        "P11b",
+        "P11c"
+      ],
+      "action": "audit_before_gap_or_port_claim"
+    },
+    {
+      "key": "objects-dungeon:0034",
+      "path": "docs/parity/objects-dungeon.md",
+      "ordinal": 34,
+      "line": 72,
+      "row_sha256": "80977ae8f2c0cba4c0e7acd73e5d3eb0a5b888c3f90bc15c976c87b0a16b1ac7",
+      "feature": "Wand selection when zapping",
+      "section": "Feature table",
+      "c_reference": "zap.c dozap getobj",
+      "historic_status": "PARTIAL",
+      "status_freshness": "historical_unrefreshened_by_this_plan",
+      "family": "OB07",
+      "unit_refs": [
+        "OB07",
+        "OB07-R01",
+        "P11a",
+        "P11b",
+        "P11c"
+      ],
+      "action": "audit_before_gap_or_port_claim"
+    },
+    {
+      "key": "objects-dungeon:0041",
+      "path": "docs/parity/objects-dungeon.md",
+      "ordinal": 41,
+      "line": 79,
+      "row_sha256": "bcff7f6e812083a8fde0e444d2ba6b22932d3bf2ff90a8c8dcd508f7c7b36d3c",
+      "feature": "Breaking wands (apply) / item destruction by rays",
+      "section": "Feature table",
+      "c_reference": "apply.c do_break_wand; zap.c destroy_items",
+      "historic_status": "MISSING",
+      "status_freshness": "historical_unrefreshened_by_this_plan",
+      "family": "OB07",
+      "unit_refs": [
+        "OB07",
+        "OB07-R01",
+        "P11a",
+        "P11b",
+        "P11c"
+      ],
+      "action": "audit_before_gap_or_port_claim"
+    }
+  ],
+  "packet_bounds": {
+    "historical_rows": 4,
+    "max_rows": 20,
+    "code_anchor_entries": 18,
+    "max_code_matches_per_packet": 25,
+    "counts_are_not_proof": true
+  },
+  "discovery_limitations": [
+    "No C preprocessing/compiler/runtime or custom evaluator/Lua; no exact C RNG output claimed.",
+    "Two early JSON projections were overbroad and truncated; only relevant prerequisite/branch declarations were used, no full dumps retained in artifacts. Subsequent projections were selective.",
+    "Native fixture seeds, runtime/future golden results and precise accepted12 executable harness have not been executed or proven here.",
+    "Profile pin contains historical hold text; accepted S1 delivery and explicit coordinator instructions are consumed for authority, profile not re-audited."
+  ],
+  "verification": {
+    "current_rust_head": "aadce228c9d00b573ae8ab4773352798418a6d4b",
+    "baseline_source_hashes_match": true,
+    "new_tests_or_gates_run": false,
+    "json_roundtrip_valid": true,
+    "named_existing_core_test": "artifacts_wands::tests::test_wand_charge_depletion",
+    "repair_document_checks": "JSON structure, acyclic exact-ID dependencies, three/two-file allowlists, preserved 15 fixture IDs/compatibility/assertion protections, family IDs, added source hashes/snippets and artifact hash links only; no runtime acceptance"
+  },
+  "artifact_hashes": {
+    "contract.md": "48bceb10fe82cee4c88e89b83354a8568fd3a61001d2f8ec5d9fe62e7fe31fe1",
+    "contract.json": "0ae28364d9017ca8d71b753d64d58b4f18cd21c023dca202434376725a8341dc",
+    "ready-packet.md": "898091484183332acb319fd04123f33f6f09a61964065cc33624983dc0a4f9e7"
+  },
+  "repair_source_proof": [
+    {
+      "path": "/Users/dmytro/github/NetHack::16ff59115315917b93185d026aeefea06db9b0f4:src/attrib.c",
+      "git_blob": "aaad2dbd0f333bf258dd0d43aed96863ee2db21f",
+      "sha256": "4dfbf91f63855512406571d431e59ce1395a73bb5dc0050ca3710bf5c740ba79",
+      "added_ranges": [
+        [
+          486,
+          517
+        ]
+      ]
+    },
+    {
+      "path": "/Users/dmytro/github/NetHack::16ff59115315917b93185d026aeefea06db9b0f4:src/zap.c",
+      "git_blob": "8aefcb1ea3c64cb4bac71f7149d5795ec106786c",
+      "sha256": "8ee02bd7aa29b026d6b5a2e0017ddf402fcfc6fc81037e35ceda2d86467547cb",
+      "added_ranges": [
+        [
+          2605,
+          2615
+        ],
+        [
+          2649,
+          2656
+        ]
+      ]
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-sim/src/world.rs",
+      "sha256": "9e4cd1aedb4b455e5df5fb949dd908b2f9a9017a2fce067856a1d7d5e7caf7ad",
+      "added_ranges": [
+        [
+          1203,
+          1233
+        ]
+      ],
+      "conclusion": "exercise_attr only logs; no AEXE state/RNG mutation"
+    }
+  ],
+  "family_id_verification": {
+    "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-07-autonomous-parity-run.json",
+    "sha256": "b2dbd694363a90e94926ba8dbb0ca2f653db349d5bc15abdbd9ee37ed3d5d55b",
+    "read_scope": "families IDs only; no scope closure/status/history audit",
+    "existing_family_count": 53,
+    "verified_existing_ids": [
+      "DG06",
+      "EQ03",
+      "EQ04",
+      "HE02",
+      "HE07",
+      "OB07",
+      "P11a",
+      "P11b",
+      "UI01",
+      "UI04"
+    ],
+    "distinct_ids": [
+      "P11b",
+      "OB07"
+    ]
+  },
+  "repair_review_binding": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/review-initial/review-initial.json",
+    "sha256": "5dc19f8c1f8bc2b1d85d062f6a3b7e5d332a64b8ebca59b38d707694c861dd7b",
+    "repair_basis": "C1-R1/R2/R3 findings and checks only; no other reviews/profile/baseline content used for repair",
+    "verdict_consumed": "NEEDS_CHANGES",
+    "acceptance_claim": false
+  },
+  "repair_scope": "Contract-only proposal; four packet artifacts edited and requested repair-summary.json created locally. Durable drafts/reviews immutable; root owns progress/manifests/registry/publication. No project sources/docs/gold/tests/compiler/C/Lua/evaluator/commits/agents or gates."
+}
