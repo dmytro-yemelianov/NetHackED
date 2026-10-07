@@ -22,7 +22,7 @@
   },
   "completion_policy": "contract_final_completion_audit_all_requirements_with_evidence",
   "first_action": "Read-only pinned configuration audit, then independently reviewed P11a contract",
-  "active_unit": "PROCESS-GUARDS",
+  "active_unit": "P11a-C1-LIFE",
   "live_handles": [],
   "families": [
     {
@@ -1029,15 +1029,41 @@
       "id": "P11a-C1-LIFE",
       "parent": "P11a",
       "cross_refs": [],
-      "state": "audit_needed",
-      "contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "state": "accepted_contract_only",
+      "contract": "docs/parity/obligations/2026-10-08-p11a-lifetime-contract/unit.json",
       "dependencies": [
         "P11a-S1",
         "P11a-P1-BILL"
       ],
       "outcome": "Review represented whole-item retirement, wield/quiver/equipment/timers and absent-generation finalization; consume P1 bill retention contract rather than erase unpaid ledger; explicitly cleared current-wand after partial stack destruction must suppress dust, not just arena-missing checks; naming/article/plural and attached timer/reference retirement stay bounded within LIFE, with explicit represented limits",
-      "evidence": null,
-      "repair_counters": {},
+      "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/audit/answer.txt",
+      "repair_counters": {
+        "F1": {
+          "attempts": 1,
+          "unsuccessful": 0,
+          "state": "resolved_contract_scope"
+        },
+        "F2": {
+          "attempts": 1,
+          "unsuccessful": 0,
+          "state": "resolved_contract_scope"
+        },
+        "F3": {
+          "attempts": 2,
+          "unsuccessful": 1,
+          "state": "resolved_contract_scope"
+        },
+        "F4": {
+          "attempts": 1,
+          "unsuccessful": 0,
+          "state": "resolved_contract_scope"
+        },
+        "F5": {
+          "attempts": 2,
+          "unsuccessful": 1,
+          "state": "resolved_contract_scope"
+        }
+      },
       "audit_paths": [
         "crates/nethacked-sim/src/world.rs",
         "crates/nethacked-sim/src/actions/equipment.rs",
@@ -1053,7 +1079,28 @@
         "P11a-P1-BILL-API1",
         "P11a-P1-BILL-SAVE1"
       ],
-      "billing_acceptance_contract": "docs/parity/obligations/2026-10-07-p11a-billing-contract/contract.json"
+      "billing_acceptance_contract": "docs/parity/obligations/2026-10-07-p11a-billing-contract/contract.json",
+      "audit_status": "reviewed_contract_only",
+      "baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/baseline.json",
+      "guard_packet": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/audit-packet/packet.json",
+      "model": "gpt-6-luna/medium",
+      "audit_usage": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/audit/usage.json",
+      "source_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/review-packet/source-bindings.json",
+      "review_guard_packet": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/review-packet/packet.json",
+      "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/review/answer.txt",
+      "findings": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/findings.json",
+      "repair_guard_packet": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/repair-packet/packet.json",
+      "repaired_proposal": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/repair/answer.txt",
+      "rereview_guard_packet": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/rereview-packet/packet.json",
+      "contract_candidate": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/final-review-packet/contract-candidate.json",
+      "final_review_guard_packet": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/final-review-packet/packet.json",
+      "previous_contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "final_contract": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/final-review-packet/contract-candidate.json",
+      "final_review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/final-review/answer.txt",
+      "source_conformance_accepted": false,
+      "implementation_children": [
+        "P11a-C1-LIFE-API1"
+      ]
     },
     {
       "id": "P11a-B1-PRE",
@@ -1070,7 +1117,10 @@
       "outcome": "Cursed bound100 after charge; explosion -> d(post-spe+2,6) -> reviewed halfphys/damage/death -> accepted LIFE whole retirement -> conditional HE02 exercise -> TIME. Public positive cursed/backfire proof; zero-success composition in IN1. Requires accepted implementations/evidence for API1/LIFE/exercise/halfphys before activation; no direction or dust. Current message-only exercise helper is not an accepted seam.",
       "evidence": null,
       "repair_counters": {},
-      "implementation_files": "determined only by independent B1 contract; this C1 audit authorizes none"
+      "implementation_files": "determined only by independent B1 contract; this C1 audit authorizes none",
+      "activation_dependencies": [
+        "P11a-C1-LIFE-API1"
+      ]
     },
     {
       "id": "P11a-C1-IN1",
@@ -1090,6 +1140,9 @@
       "allowed_files": [
         "crates/nethacked-sim/src/actions/items.rs",
         "crates/nethacked-sim/tests/selected_wand_tests.rs"
+      ],
+      "activation_dependencies": [
+        "P11a-C1-LIFE-API1"
       ]
     },
     {
@@ -1466,6 +1519,33 @@
       "allowed_files": "none until independent contract",
       "repair_counters": {},
       "dispatch_hold": "PROCESS-OPTIMIZATION must complete first"
+    },
+    {
+      "id": "P11a-C1-LIFE-API1",
+      "parent": "P11a",
+      "state": "ready",
+      "contract": "docs/parity/obligations/2026-10-08-p11a-lifetime-contract/unit.json",
+      "dependencies": [
+        "P11a-C1-LIFE",
+        "P11a-S1",
+        "P11a-P1-BILL-API1",
+        "P11a-P1-BILL-SAVE1"
+      ],
+      "allowed_files": [
+        "crates/nethacked-sim/src/world.rs",
+        "crates/nethacked-sim/tests/wand_lifetime_tests.rs"
+      ],
+      "outcome": "Production-compiled World finalizer callable by later IN1/D1 integration, with public fixtures exercising that implementation taking Option<ItemId> and an event buffer, returning Result<Option<WholeDisposal>, BillError>. None, absent/reused generation or already-retired identity returns Ok(None), with no dust or mutation. A valid surviving nonnegative-charge wand also returns Ok(None), unchanged. Only an explicitly surviving same-generation, negative-charge, hero-carried, non-container wand is eligible for whole disposal. Ineligible live objects or invalid ownership/billing fail atomically using the reviewed validation contract. Ordering: (1) immutable generation/object/definition/quantity/ledger/terms preflight; (2) immutable validation of every represented reference and exact matching cleanup plan, rejecting cached ambiguity; (3) stage exact bounded dust text and private ticket; (4) append dust; (5) clear matching wield/quiver/armor/dressing, recompute affected AC and cancel Active(id) timers; (6) immediately commit the ticket, when billed retaining exactly one consumed billing object with original quantity and terms and unchanged liability; remove the arena generation, then remove matching live unpaid_items and live_terms. When unbilled, retain no bill. No callbacks, RNG or turn spending; all recoverable errors precede dust and cleanup.",
+      "required_successors": [
+        "P11a-C1-IN1",
+        "P11a-D1",
+        "UI04-zap-messages",
+        "OB04-object-retirement",
+        "DG06-bill-merge-partial",
+        "DG06-bill-settlement"
+      ],
+      "evidence": null,
+      "repair_counters": {}
     }
   ],
   "inventory_coverage": {
@@ -1690,7 +1770,7 @@
     "readback_full_342_verified": true,
     "accepted_gate_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/baseline-accepted-gates"
   },
-  "next_action": "Commit verified PROCESS-GUARDS exact4paths, verify delivery, then dependency-ready paritypilot through guard with bounded contract and explicit cumulativeusage adjustment.",
+  "next_action": "Commit reviewed LIFE contract, verifydelivery, then guarded LIFE-API1 exact2-file implementation with prior usage narrowing decision; no new factsexplorer or broad contract audit.",
   "external_accepted_interfaces": {
     "P10a2": {
       "record": "docs/parity/obligations/2026-10-07-p04-p10-final-acceptance.json",
@@ -1745,8 +1825,8 @@
     "user_cost_concern": "User reports at least10%weekly allowance spent; exact weekly percentage unavailable locally. No invented savings or pricing. All53 scope retained.",
     "worker_output_policy": "Handoff<=250words; findings<=300words; per-response2000token ceiling; rawlogs external; amendment authoritative.",
     "process": "docs/plans/2026-10-07-parity-process-optimization.md",
-    "status": "local_guard_verified_pending_commit",
-    "dispatch_hold": "Release after verified guard commit; next paritypilot must use actual preflight/launch/usage and recorded narrowing adjustment.",
+    "status": "local_guard_accepted",
+    "dispatch_hold": "Released only for bounded guarded paritypilot; each launch requires actualpreflight/reportbindings and cumulativeusage adjustment.",
     "guard": "scripts/parity-agent-guard.py"
   },
   "user_execution_directive": {
@@ -1770,7 +1850,7 @@
     "commit": "9f33ddcdd3399ca844fc0361a5ffaa01f95145ca"
   },
   "active_process_guard_task": {
-    "state": "accepted_pending_commit",
+    "state": "accepted",
     "contract": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-GUARDS/contract.txt",
     "contract_sha256": "aaa8c5fd0b5c56ae878ddc8ad0cc3b5150667f029b780e7c0132ab987b5bcfed",
     "allowlist": [
@@ -1794,6 +1874,18 @@
     "usage_status": "exceeded; source and review accepted semantically, no new model call before narrowed next-phase decision",
     "gate_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-GUARDS/full-gates/accepted.json",
     "gate_sha256": "3315ab128f88590bd947d4ed1a7b43dc8293a448775071af11196a63319e6351",
-    "source_copy_proof": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-GUARDS/source-copy-proof.json"
+    "source_copy_proof": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-GUARDS/source-copy-proof.json",
+    "commit": "77adc90c190b5f6c70dda83f8471e19f82745052",
+    "delivery": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-GUARDS/delivery.json"
+  },
+  "pilot_process": {
+    "unit": "P11a-C1-LIFE",
+    "phase": "facts_inventory",
+    "prior_adjustment": "Narrow to one represented wand-lifetime inventory with knownowners; reduce context/output, reuse accepted billing/config/save/source gates; no whole repo/catalog audit.",
+    "comparison_baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-OPTIMIZATION/metrics.json",
+    "savings_claim": false,
+    "state": "contract_accepted_pending_commit",
+    "observation": "Allphases exceededsoftthreshold; source unchanged. Known symbol futureunit should skip redundant facts explorer, use reviewedcontract directly; no savingsclaim.",
+    "unit_evidence": "docs/parity/obligations/2026-10-08-p11a-lifetime-contract/unit.json"
   }
 }
