@@ -1,0 +1,1 @@
+Byte comparison confirms exactly deletion of `use nethacked_core::engraving::{Engraving, EngravingMedium};` plus its newline (61 bytes), with no other bytes changed. No assertion, effect, parser, or test changes. Actual before/current hashes match the proof, which records all other 344 inputs unchanged (345 total). Prior semantic review PASS reused; no source/contract re-audit.

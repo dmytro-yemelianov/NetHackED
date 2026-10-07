@@ -1,0 +1,28 @@
+{
+  "verdict": "PASS",
+  "review_markdown": "Byte comparison confirms exactly deletion of `use nethacked_core::engraving::{Engraving, EngravingMedium};` plus its newline (61 bytes), with no other bytes changed. No assertion, effect, parser, or test changes. Actual before/current hashes match the proof, which records all other 344 inputs unchanged (345 total). Prior semantic review PASS reused; no source/contract re-audit.",
+  "findings": [],
+  "bindings": [
+    {
+      "path": "/tmp/netrust-p11a-s1-lint-rereview1-cli/selected_wand_tests-before.rs",
+      "sha256": "0391429f28e7b56e1cefdea7d5821de79660deb15ef0238bdcba4b7b736329e1"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-sim/tests/selected_wand_tests.rs",
+      "sha256": "3c4b0f3ff9e5905f6f0b3ff1cec36afda322b5cf436b28d22a26d2ed45560122"
+    },
+    {
+      "path": "/tmp/netrust-p11a-s1-lint-repair1-cli/coordinator-delta-proof.json",
+      "sha256": "d664181919f30c19182c757faec4906c85d2795f4e516604300fd921587dcbd1"
+    }
+  ],
+  "checks": [
+    {
+      "name": "Exact deletion",
+      "assessment": "PASS",
+      "evidence": "Removing only the specified import line from before produces byte-identical current content; cmp exit 0."
+    }
+  ],
+  "handoff": "Root fresh full gates pending. Coordinator owns progress and artifacts.",
+  "usage_note": "Read-only narrow review; no edits, Cargo, tests, commits, or nested agents."
+}

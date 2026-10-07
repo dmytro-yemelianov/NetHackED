@@ -574,7 +574,7 @@
     {
       "id": "P11a-S1",
       "parent": "P11a",
-      "state": "ready",
+      "state": "verifying",
       "contract": "docs/parity/obligations/2026-10-07-p11a-selection-contract/contract.json",
       "accepted_prerequisites": [
         "OB01-WAND-ID1"
@@ -582,7 +582,7 @@
       "dependencies": [
         "OB01-WAND-ID1"
       ],
-      "evidence": null,
+      "evidence": "docs/parity/obligations/2026-10-07-p11a-selected-wand/unit.json",
       "repair_counters": {
         "P11S1-R1": {
           "attempts_started": 1,
@@ -597,6 +597,18 @@
           "resolved": true
         },
         "P11S1-R3": {
+          "attempts_started": 1,
+          "unsuccessful_attempts": 0,
+          "model": "gpt-6.1-sol",
+          "resolved": true
+        },
+        "S1-new-fixture-inventory-order": {
+          "attempts_started": 2,
+          "unsuccessful_attempts": 1,
+          "final_focused_pass": true,
+          "model": "gpt-6.1-sol"
+        },
+        "S1-unused-engraving-import": {
           "attempts_started": 1,
           "unsuccessful_attempts": 0,
           "model": "gpt-6.1-sol",
@@ -636,7 +648,50 @@
           "reasoning_output_tokens": 3317
         }
       },
-      "ready_evidence": "docs/parity/obligations/2026-10-07-p11a-selection-contract/unit.json"
+      "ready_evidence": "docs/parity/obligations/2026-10-07-p11a-selection-contract/unit.json",
+      "contract_checkpoint_commit": "60b6075870bc9b7ca3a38027a97637156ccf7be7",
+      "implementation_baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/implementation-baseline.json",
+      "implementation_initial": {
+        "directory": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/implementation-initial",
+        "source_baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/implementation-initial/review-baseline.json",
+        "source_input_digest": "393e9faa1987cf0047f18b48df27ff5d61ddc426aa95cc6f2acc113ca364bf36",
+        "fixture_repairs": "two actual repair attempts for new fixture inventory-order assumptions; final focused pass; preserve original failures",
+        "cargo_overlap": "worker admitted; both affected checks rerun sequentially; no conformance/compliance waiver"
+      },
+      "implementation_cli_usage": {
+        "input_tokens": 2875009,
+        "cached_input_tokens": 2767616,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 19643,
+        "reasoning_output_tokens": 2524,
+        "source": "actual CLI turn.completed; cumulative context processed not unique prompt or price"
+      },
+      "coordinator_focused_agent_result": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/coordinator-agent-rerun/result.json",
+      "implementation_review": {
+        "verdict": "PASS",
+        "report": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/implementation-review/review-initial.json",
+        "usage": {
+          "input_tokens": 743178,
+          "cached_input_tokens": 577152,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 11945,
+          "reasoning_output_tokens": 3674
+        },
+        "scope": "backend/native/shared parser S1 only; no full family or frontend closure"
+      },
+      "initial_full_gate_failure": {
+        "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/full-gates-initial-failed/results.json",
+        "check": "clippy",
+        "exit": 101,
+        "reason": "unused Engraving/EngravingMedium test imports; no full-suite execution yet"
+      },
+      "lint_review": {
+        "verdict": "PASS",
+        "report": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/lint-review/review-final.json",
+        "scope": "exactone-line import deletion; preceding full semantic review reused"
+      },
+      "final_full_gates": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/full-gates/accepted.json",
+      "final_source_input_digest": "7b691c6e14d0449c37776f29b851ff7866bb2e41551b1c883458e5d0de416e79"
     },
     {
       "id": "P11a-C1",
@@ -922,6 +977,14 @@
       "commit": "6fb4aeee7441ffc0fd64e5c015697c4cdd656491",
       "delivery_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1/delivery.json",
       "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1"
+    },
+    {
+      "id": "P11a-S1-CONTRACT",
+      "commit": "60b6075870bc9b7ca3a38027a97637156ccf7be7",
+      "kind": "reviewed contract only",
+      "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/contract-delivery.json",
+      "source_digest": "567aed72fc97273ac4209afe92decbd5175e8e576ec7b5933bdb14c871e4e707",
+      "implementation_accepted": false
     }
   ],
   "integration_audit": null,
@@ -940,7 +1003,7 @@
     "readback_full_342_verified": true,
     "accepted_gate_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/baseline-accepted-gates"
   },
-  "next_action": "Publish reviewed P11a-S1 contract checkpoint with same-source full-gate reuse and fresh documentation checks, then sole six-file backend implementation",
+  "next_action": "Explicit stage backend-only verified docs/source, fresh changed docs/parity checks, authorizedcommit+deliveryverification then P11a-C1 contract audit",
   "external_accepted_interfaces": {
     "P10a2": {
       "record": "docs/parity/obligations/2026-10-07-p04-p10-final-acceptance.json",

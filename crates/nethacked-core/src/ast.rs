@@ -48,6 +48,15 @@ pub enum ActionAst {
         dir: Direction,
         energy: u32,
     },
+    /// Select an index in the complete directly carried inventory snapshot.
+    ZapSelectedWand {
+        item_index: u32,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        expected_item: Option<SlotId>,
+        dir: Direction,
+        energy: u32,
+    },
+    CancelZapSelection,
     Wait,
     Pray,
     Pay,

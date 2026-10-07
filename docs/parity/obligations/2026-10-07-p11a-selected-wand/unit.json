@@ -1,0 +1,93 @@
+{
+  "schema": "netrust-p11a-selected-wand-unit-v1",
+  "id": "P11a-S1",
+  "parent": "P11a",
+  "state": "verified_awaiting_delivery",
+  "acceptance_requires": "verified commit and delivery.json; snapshot remains immutable after delivery",
+  "source_conformance_scope": "backend/native/shared-parser selected item and explicit selection cancellation only",
+  "family_closed": false,
+  "baseline_head": "60b6075870bc9b7ca3a38027a97637156ccf7be7",
+  "contract": "../2026-10-07-p11a-selection-contract/contract.json",
+  "contract_checkpoint": "60b6075870bc9b7ca3a38027a97637156ccf7be7",
+  "allowed_files": [
+    "crates/nethacked-agent/src/commands.rs",
+    "crates/nethacked-agent/src/graphql.rs",
+    "crates/nethacked-core/src/ast.rs",
+    "crates/nethacked-sim/src/actions/items.rs",
+    "crates/nethacked-sim/src/actions/mod.rs",
+    "crates/nethacked-sim/tests/selected_wand_tests.rs"
+  ],
+  "reviewed_source_input_count": 345,
+  "reviewed_source_input_digest": "7b691c6e14d0449c37776f29b851ff7866bb2e41551b1c883458e5d0de416e79",
+  "current_source_manifest": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/lint-repair1/review-baseline.json",
+  "source_before": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/implementation-source-before.tar.gz",
+  "source_after": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/source-final.tar.gz",
+  "source_after_proof": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/source-final-proof.json",
+  "published_hashes": {
+    "handoff.md": "9687a4900656f3a19ef8fb72c256a57171e41d7af83a42a2a41ed731433bad67",
+    "handoff.json": "3a5a8aeb65c6812c82f50e31c58559daf56c8fb7733e5af16df44d18961ec245",
+    "review-initial.md": "54553effe28026196814d0275665fadafdf736993e4fe6026caa4a565cb902e4",
+    "review-initial.json": "abc10a6ebe90b88a7d3c0fa134ab6dcf0b3fe2869122434cb9e5ecfa3662d069",
+    "review-final.md": "9273624b6f1e1192737423ed967f41aa74506d5e7e594537222fd08e08c3c6e7",
+    "review-final.json": "a7c6a7f68b41a0e602fbe7fae9e1b3d584c65e8381c04480f0d124a4436051e9",
+    "lint-delta-proof.json": "d664181919f30c19182c757faec4906c85d2795f4e516604300fd921587dcbd1"
+  },
+  "independent_review": {
+    "semantic": "review-initial.json",
+    "verdict": "PASS",
+    "post_review_delta": "review-final.json",
+    "delta_verdict": "PASS",
+    "scope": "one unused import line removed only; full semantic review reused"
+  },
+  "adjusted_existing_setups": [
+    "commands.rs::action_args_from_json",
+    "commands.rs::tests::every_mcp_step_action_parses",
+    "graphql.rs::step"
+  ],
+  "old_assertions_unchanged": true,
+  "enum_test_and_STEP_ACTIONS_changes": false,
+  "validation": {
+    "full_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/full-gates/accepted.json",
+    "full_record_sha256": "9913577b1eb284d42faa81707dc91cfdbf147a58a77ea23146ef4c7f27301905",
+    "results_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/full-gates/results.json",
+    "results_sha256": "41a87c34bf43dd2acc79606f9f942bb6e7983ddff00690e15301da91f6218c17",
+    "tests": 1021,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "gates": 12,
+    "fresh_full_execution": true,
+    "source_binding": "7b691c6e14d0449c37776f29b851ff7866bb2e41551b1c883458e5d0de416e79",
+    "initial_failed_gates": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/full-gates-initial-failed/results.json",
+    "focused_worker_history": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/implementation-initial/handoff.json",
+    "socket_retry": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/coordinator-agent-rerun/result.json",
+    "changed_documentation_checks": {
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/doc-gates/results.json",
+      "sha256": "8273976d15a1395c601ef5e01b0dfe38bfeb78a35175c89991724648c0683df5",
+      "parity": 0,
+      "docs": 0,
+      "fresh_execution": true
+    }
+  },
+  "coverage_limits": [
+    "New selected count1/2/8 witness disables groups; group behavior inherits unchanged accepted P10 shared handler evidence",
+    "S04 transport adapters and S08 all-ten frontend evidence remain M/MC/F-owned",
+    "Signed/wrest/backfire test comparisons preserve compatibility only, no new C parity acceptance",
+    "No pending charged direction/save state added; D1/MC remain mandatory"
+  ],
+  "mandatory_successors": [
+    "P11a-C1",
+    "P11a-B1",
+    "P11a-D1",
+    "P11a-P1",
+    "P11a-S1-M",
+    "P11a-S1-MC",
+    "P11a-S1-F",
+    "P11a-A1"
+  ],
+  "delivery_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/delivery.json",
+  "durable_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1",
+  "broader_scope": "All53 families/543 historic rows remain; this child closes no family."
+}

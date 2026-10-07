@@ -235,6 +235,7 @@ impl MutationRoot {
         let player = session.player_coord();
         let args = ActionArgs {
             index,
+            expected_item: None,
             direction,
             target: target_x.zip(target_y),
             text,

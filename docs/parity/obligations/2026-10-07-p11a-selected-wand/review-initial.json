@@ -1,0 +1,105 @@
+{
+  "verdict": "PASS",
+  "review_markdown": "Independent read-only review found no required S1 implementation changes at HEAD 60b6075870bc9b7ca3a38027a97637156ccf7be7 on feat/monster-hp-d8. Graph tools were unavailable; discovery used bounded known-path reads.\n\nExactly six source changes match the snapshot. All 345 current inputs and archive members verify. Independently recomputed digest: 393e9faa1987cf0047f18b48df27ff5d61ddc426aa95cc6f2acc113ca364bf36. All 24 copied artifact hashes verify.\n\nThe two initial fixture failures, remaining repair failure, five socket-restricted failures, and accidental Cargo overlap remain disclosed. Passing repaired/sequential logs support the handoff. The coordinator\u2019s same-source package retry records 68 passing tests, including all three goldens.\n\nThis PASS covers backend/native/shared-parser S1. Full coordinator gates remain required. Group behavior is inherited through the unchanged shared handler and accepted P10 evidence; the new selected fixture explicitly disables groups. Pending direction and all-ten frontend completion remain successor obligations.\n\nBinding paths beginning implementation-initial/ or coordinator-agent-rerun/ resolve under /Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/. Other paths resolve under /Users/dmytro/github/NetRust/.",
+  "findings": [],
+  "bindings": [
+    {
+      "path": "crates/nethacked-core/src/ast.rs",
+      "sha256": "6c33f84711ec83cbac41b2f16c5ed6de61c59a7c73a44d913531675707d6ab3f"
+    },
+    {
+      "path": "crates/nethacked-sim/src/actions/mod.rs",
+      "sha256": "84bca7417cef8124fe6f9c5311412133c0d9dac873fdfd2593659f769c880a16"
+    },
+    {
+      "path": "crates/nethacked-sim/src/actions/items.rs",
+      "sha256": "247f7f2363f17023668612ab971351adf7530137880abc4a9f80bc7e8cc8c19a"
+    },
+    {
+      "path": "crates/nethacked-agent/src/commands.rs",
+      "sha256": "2dadbb2116c6809fb81cfa5de8c3f5db91b4b9af75c19ca7afbf657762bd123f"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/selected_wand_tests.rs",
+      "sha256": "0391429f28e7b56e1cefdea7d5821de79660deb15ef0238bdcba4b7b736329e1"
+    },
+    {
+      "path": "crates/nethacked-agent/src/graphql.rs",
+      "sha256": "ca673a53c40817f68562cd6f26730a2987b562ffd2b8145fc1110ce9626feabb"
+    },
+    {
+      "path": "docs/parity/obligations/2026-10-07-p11a-selection-contract/ready-packet.md",
+      "sha256": "e977ebcc3f0d59d891534c60ac1728c020c2d54503a1a4e362adabf87d37e352"
+    },
+    {
+      "path": "docs/parity/obligations/2026-10-07-p11a-selection-contract/contract.json",
+      "sha256": "7facd2e6522cc0b3f0b1dfda181a660f02921ad3f107841beb5debc80f59998a"
+    },
+    {
+      "path": "implementation-initial/handoff.md",
+      "sha256": "9687a4900656f3a19ef8fb72c256a57171e41d7af83a42a2a41ed731433bad67"
+    },
+    {
+      "path": "implementation-initial/handoff.json",
+      "sha256": "3a5a8aeb65c6812c82f50e31c58559daf56c8fb7733e5af16df44d18961ec245"
+    },
+    {
+      "path": "implementation-initial/review-baseline.json",
+      "sha256": "decdcd1c329baafb510fecad35558f4f1b4135b7311bb03c7708ed15ce2ad106"
+    },
+    {
+      "path": "implementation-initial/coordinator-source-proof.json",
+      "sha256": "5eeba16fd4d930bf292bb77c43d0646ddd71513d10ec2b42f4d499ca5d0a493b"
+    },
+    {
+      "path": "implementation-initial/copy-proof.json",
+      "sha256": "50891a50d166d6b2bbc3bf46a9011ea495d06e41ef4a14862aacedc0a2b58c30"
+    },
+    {
+      "path": "implementation-initial/source-reviewed.tar.gz",
+      "sha256": "5e11e7e6546f3e74fae47a80d8f41d3ca239d1193dd45bc195afde22473e460f"
+    },
+    {
+      "path": "coordinator-agent-rerun/result.json",
+      "sha256": "2f1d1cd918e83d2420c3732298a3a8aca0fb9f14abe6fa0329596873b1a197ff"
+    },
+    {
+      "path": "coordinator-agent-rerun/agent.log",
+      "sha256": "3c6fb9215358b8cc00af645e5cdc20723e43c77f72265a94f00df51d5c10d75f"
+    }
+  ],
+  "checks": [
+    {
+      "name": "source",
+      "assessment": "PASS",
+      "evidence": "HEAD diff preserves old assertions, ZapWand inputs, STEP_ACTIONS and enum loops. GraphQL changes only expected_item: None."
+    },
+    {
+      "name": "order-fixtures",
+      "assessment": "PASS",
+      "evidence": "Full carried index \u2192 optional generational token \u2192 class \u2192 owned definition precedes charge/effects. Reconciled cancellation/refusals compare whole saves allowing only event_log. Selected create2\u21921 leaves fire7 untouched; independent 23/7, placement, HP and scheduler oracle covers counts1/2/8. Helpless/dressing still become Wait."
+    },
+    {
+      "name": "parser",
+      "assessment": "PASS",
+      "evidence": "Required selected index and token components validate before narrowing; canonical token comparison rejects normalization. Missing/null index errors explicitly. Cancel rejects every declared nonnull argument while retaining player context. East6 and legacy index-ignore remain. Transport regression exits belong M."
+    },
+    {
+      "name": "oldload-legacy",
+      "assessment": "PASS",
+      "evidence": "Default/omitted token, old Zap canonical bytes, typed selected/cancel transcripts, omitted-definition oldload and native continuation are asserted. Canonical/custom display renames and unknown identity refusals retain owned semantics. Signed/zero/cursed/blessed comparisons establish compatibility only."
+    },
+    {
+      "name": "schema-constraints",
+      "assessment": "PASS within S1",
+      "evidence": "No pack/schema/hash/dependency edits; preserved pack40 and native WASM22 logs pass. Selected conversion is checked for wasm32. Target-WASM build and full gates remain coordinator-owned; new adapter schemas/declarations remain M/MC obligations."
+    },
+    {
+      "name": "scope-evidence",
+      "assessment": "PASS",
+      "evidence": "Required native S01\u2013S07 portions are covered; S04 transport and S08 exits remain M/MC/F-owned. No global-profile, identity/P10 or registry re-audit. All53 families and M/MC/F/C1/B1/D1/P1/A1 successors remain open."
+    }
+  ],
+  "handoff": "Coordinator retains progress, ledger, full gates and acceptance. Exactly three existing full ActionArgs setups changed: commands.rs::action_args_from_json, commands.rs::tests::every_mcp_step_action_parses, graphql.rs::step. No repairs, edits, tests/builds, Cargo/C/compiler/CPP/Lua/evaluator execution, commits or nested agents occurred during review.",
+  "usage_note": "Token accounting unavailable. Python/uv attempts were blocked before execution by read-only cache restrictions; programmatic verification used read-only Perl."
+}

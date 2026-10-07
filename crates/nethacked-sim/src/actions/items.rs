@@ -1,6 +1,6 @@
 //! Item usage: Quaff potions, Read scrolls/spellbooks, Eat food, Cast spells, Zap wands, Dip in water.
 
-use nethacked_arena::ItemLocation;
+use nethacked_arena::{ItemId, ItemLocation};
 use nethacked_core::{buc::WaterType, energy::NORMAL_SPEED, SpellKind};
 use nethacked_data::ItemKindId;
 use nethacked_dungeon::trace_beam_path;
@@ -961,9 +961,9 @@ impl SimulationWorld {
 
     pub(crate) fn handle_zap_wand(&mut self, dir: Direction, energy: u32) -> Vec<GameEvent> {
         let mut events = Vec::new();
-        let Some(player) = self.arena.actors.get(self.player_id).cloned() else {
+        if self.arena.actors.get(self.player_id).is_none() {
             return events;
-        };
+        }
 
         // Find carried wand (or default)
         let wand_id = self
@@ -982,6 +982,49 @@ impl SimulationWorld {
             events.push(GameEvent::LogMessage {
                 text: "You have no wand to zap.".into(),
             });
+            return events;
+        };
+        self.handle_zap_item(wid, dir, energy)
+    }
+
+    pub(crate) fn handle_zap_selected_wand(
+        &mut self,
+        item_index: u32,
+        expected_item: Option<ItemId>,
+        dir: Direction,
+        energy: u32,
+    ) -> Vec<GameEvent> {
+        let carried = self.arena.items_carried_by(self.player_id);
+        let selected = usize::try_from(item_index)
+            .ok()
+            .and_then(|index| carried.get(index))
+            .copied();
+        let Some(wid) = selected else {
+            return vec![GameEvent::LogMessage {
+                text: "You don't have that object.".into(),
+            }];
+        };
+        if expected_item.is_some_and(|expected| expected != wid) {
+            return vec![GameEvent::LogMessage {
+                text: "You don't have that object.".into(),
+            }];
+        }
+        let Some(wand) = self.arena.items.get(wid) else {
+            return vec![GameEvent::LogMessage {
+                text: "You don't have that object.".into(),
+            }];
+        };
+        if wand.class != ItemClass::Wand {
+            return vec![GameEvent::LogMessage {
+                text: "That is a silly thing to zap.".into(),
+            }];
+        }
+        self.handle_zap_item(wid, dir, energy)
+    }
+
+    fn handle_zap_item(&mut self, wid: ItemId, dir: Direction, energy: u32) -> Vec<GameEvent> {
+        let mut events = Vec::new();
+        let Some(player) = self.arena.actors.get(self.player_id).cloned() else {
             return events;
         };
         // Explicit identities never fall back to display names or static tables.

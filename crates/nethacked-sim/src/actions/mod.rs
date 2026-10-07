@@ -98,6 +98,17 @@ impl SimulationWorld {
                 events.extend(self.handle_cast(spell_index, dir))
             }
             ActionAst::ZapWand { dir, energy } => events.extend(self.handle_zap_wand(dir, energy)),
+            ActionAst::ZapSelectedWand {
+                item_index,
+                expected_item,
+                dir,
+                energy,
+            } => {
+                events.extend(self.handle_zap_selected_wand(item_index, expected_item, dir, energy))
+            }
+            ActionAst::CancelZapSelection => events.push(GameEvent::LogMessage {
+                text: "Never mind.".into(),
+            }),
             ActionAst::Wish(wish_str) => events.extend(self.handle_wish(wish_str)),
             ActionAst::Pray => events.extend(self.handle_pray()),
             ActionAst::Sacrifice(idx) => events.extend(self.handle_sacrifice(idx)),
