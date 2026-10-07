@@ -22,7 +22,7 @@
   },
   "completion_policy": "contract_final_completion_audit_all_requirements_with_evidence",
   "first_action": "Read-only pinned configuration audit, then independently reviewed P11a contract",
-  "active_unit": "OB01-WAND-ID1",
+  "active_unit": "P11a-S1",
   "live_handles": [],
   "families": [
     {
@@ -70,7 +70,10 @@
         "P11a-B1",
         "P11a-D1",
         "P11a-P1",
-        "P11a-A1"
+        "P11a-A1",
+        "P11a-S1-M",
+        "P11a-S1-F",
+        "P11a-S1-MC"
       ],
       "coverage_record": null
     },
@@ -374,7 +377,11 @@
       "id": "UI01",
       "stream": "UI",
       "state": "audit_needed",
-      "child_ids": [],
+      "child_ids": [
+        "P11a-S1-M",
+        "P11a-S1-F",
+        "P11a-S1-MC"
+      ],
       "coverage_record": null
     },
     {
@@ -396,7 +403,8 @@
       "stream": "UI",
       "state": "audit_needed",
       "child_ids": [
-        "UI04-CONFIG-INPUTS"
+        "UI04-CONFIG-INPUTS",
+        "P11a-S1-F"
       ],
       "coverage_record": null
     },
@@ -517,7 +525,7 @@
     {
       "id": "OB01-WAND-ID1",
       "parent": "OB01",
-      "state": "verifying",
+      "state": "accepted",
       "engineering_ready": true,
       "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/p11a-contract.json",
       "evidence": "docs/parity/obligations/2026-10-07-ob01-wand-id1/unit.json",
@@ -556,19 +564,79 @@
         "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1/full-gates/accepted.json",
         "sha256": "fbad8f39409283db9d02e9c462d8042ce54a278386d0222506af009d54f48ad7",
         "status": "PASS1009/all3gold/all12 final344inputs"
-      }
+      },
+      "accepted_commit": "6fb4aeee7441ffc0fd64e5c015697c4cdd656491",
+      "accepted_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1/delivery.json",
+      "source_conformance_accepted": true,
+      "acceptance_scope": "reviewed identity prerequisite only; no parent-family closure",
+      "consumed_P10_interface_regressions": "all14 existing public creation fixtures unchanged assertions plus complete current344 full1009/3gold/12 acceptance"
     },
     {
       "id": "P11a-S1",
       "parent": "P11a",
-      "state": "audit_needed",
-      "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/p11a-contract.json",
-      "accepted_prerequisites": [],
+      "state": "ready",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-selection-contract/contract.json",
+      "accepted_prerequisites": [
+        "OB01-WAND-ID1"
+      ],
       "dependencies": [
         "OB01-WAND-ID1"
       ],
       "evidence": null,
-      "repair_counters": {}
+      "repair_counters": {
+        "P11S1-R1": {
+          "attempts_started": 1,
+          "unsuccessful_attempts": 0,
+          "model": "gpt-6.1-sol",
+          "resolved": true
+        },
+        "P11S1-R2": {
+          "attempts_started": 1,
+          "unsuccessful_attempts": 0,
+          "model": "gpt-6.1-sol",
+          "resolved": true
+        },
+        "P11S1-R3": {
+          "attempts_started": 1,
+          "unsuccessful_attempts": 0,
+          "model": "gpt-6.1-sol",
+          "resolved": true
+        }
+      },
+      "prerequisite_binding": {
+        "id": "OB01-WAND-ID1",
+        "commit": "6fb4aeee7441ffc0fd64e5c015697c4cdd656491",
+        "source_input_digest": "567aed72fc97273ac4209afe92decbd5175e8e576ec7b5933bdb14c871e4e707",
+        "delivery": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1/delivery.json"
+      },
+      "draft_evidence": {
+        "directory": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/contract-initial",
+        "review_input_manifest": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/contract-initial/review-inputs.json",
+        "sha256": "8af5b26743d320a1376291d8c3e1517f3aa014af1a28d9c3f9e7337f550de236"
+      },
+      "independent_review": {
+        "verdict": "PASS",
+        "initial": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/review-initial/review-initial.json",
+        "final": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/review-final/review-final.json",
+        "resolved_findings": [
+          "P11S1-R1",
+          "P11S1-R2",
+          "P11S1-R3"
+        ],
+        "scope": "contract only; initial source checks reused after repair-only PASS"
+      },
+      "repair1": {
+        "draft": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/repair1/draft",
+        "proof": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/repair1/runner/coordinator-repair-proof.json",
+        "cli_usage": {
+          "input_tokens": 370826,
+          "cached_input_tokens": 308352,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 15485,
+          "reasoning_output_tokens": 3317
+        }
+      },
+      "ready_evidence": "docs/parity/obligations/2026-10-07-p11a-selection-contract/unit.json"
     },
     {
       "id": "P11a-C1",
@@ -577,7 +645,10 @@
       "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/p11a-contract.json",
       "accepted_prerequisites": [],
       "evidence": null,
-      "repair_counters": {}
+      "repair_counters": {},
+      "dependencies": [
+        "P11a-S1"
+      ]
     },
     {
       "id": "P11a-B1",
@@ -586,7 +657,10 @@
       "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/p11a-contract.json",
       "accepted_prerequisites": [],
       "evidence": null,
-      "repair_counters": {}
+      "repair_counters": {},
+      "dependencies": [
+        "P11a-C1"
+      ]
     },
     {
       "id": "P11a-D1",
@@ -595,7 +669,11 @@
       "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/p11a-contract.json",
       "accepted_prerequisites": [],
       "evidence": null,
-      "repair_counters": {}
+      "repair_counters": {},
+      "dependencies": [
+        "P11a-C1",
+        "P11a-B1"
+      ]
     },
     {
       "id": "P11a-P1",
@@ -604,7 +682,10 @@
       "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/p11a-contract.json",
       "accepted_prerequisites": [],
       "evidence": null,
-      "repair_counters": {}
+      "repair_counters": {},
+      "dependencies": [
+        "P11a-S1"
+      ]
     },
     {
       "id": "P11a-A1",
@@ -613,7 +694,16 @@
       "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/p11a-contract.json",
       "accepted_prerequisites": [],
       "evidence": null,
-      "repair_counters": {}
+      "repair_counters": {},
+      "dependencies": [
+        "P11a-C1",
+        "P11a-B1",
+        "P11a-D1",
+        "P11a-P1",
+        "P11a-S1-M",
+        "P11a-S1-MC",
+        "P11a-S1-F"
+      ]
     },
     {
       "id": "UI01-CONFIG-COMMANDS",
@@ -622,6 +712,96 @@
       "contract": "docs/parity/obligations/2026-10-07-configuration-profile/pin.json",
       "outcome": "DEBUG/explore/shell/suspend public input/repeat/cancel/turn contracts under pinned configuration",
       "accepted_prerequisites": [],
+      "evidence": null,
+      "repair_counters": {}
+    },
+    {
+      "id": "P11a-S1-M",
+      "parent": "P11a",
+      "cross_refs": [
+        "UI01"
+      ],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-selection-contract/contract.json",
+      "dependencies": [
+        "P11a-S1"
+      ],
+      "allowed_files": [
+        "crates/nethacked-agent/src/commands.rs",
+        "crates/nethacked-agent/src/session.rs",
+        "crates/nethacked-agent/src/observation.rs",
+        "crates/nethacked-agent/src/mcp.rs",
+        "crates/nethacked-agent/src/jsonrpc.rs",
+        "crates/nethacked-agent/src/bin/jsonrpc.rs",
+        "crates/nethacked-agent/src/graphql.rs",
+        "crates/nethacked-wasm/src/lib.rs",
+        "crates/nethacked-py/src/lib.rs",
+        "crates/nethacked-agent/tests/protocol_tests.rs",
+        "crates/nethacked-agent/tests/graphql_http_test.rs",
+        "crates/nethacked-agent/tests/selected_wand_actions.rs",
+        "python/nethacked_gym/env.py",
+        "python/tests/test_rl.py"
+      ],
+      "evidence": null,
+      "repair_counters": {}
+    },
+    {
+      "id": "P11a-S1-F",
+      "parent": "P11a",
+      "cross_refs": [
+        "UI01",
+        "UI04"
+      ],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-selection-contract/contract.json",
+      "dependencies": [
+        "P11a-S1-M",
+        "P11a-C1",
+        "P11a-B1",
+        "P11a-D1",
+        "P11a-P1",
+        "P11a-S1-MC"
+      ],
+      "allowed_files": [
+        "crates/nethacked-tui/src/main.rs",
+        "crates/nethacked-tui/src/keys.rs",
+        "web/js/game.js",
+        "web/play/play.js",
+        "web/index.html",
+        "web/css/app.css"
+      ],
+      "evidence": null,
+      "repair_counters": {}
+    },
+    {
+      "id": "P11a-S1-MC",
+      "parent": "P11a",
+      "cross_refs": [
+        "UI01"
+      ],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-selection-contract/contract.json",
+      "dependencies": [
+        "P11a-S1-M",
+        "P11a-D1",
+        "P11a-P1"
+      ],
+      "allowed_files": [
+        "crates/nethacked-agent/src/commands.rs",
+        "crates/nethacked-agent/src/session.rs",
+        "crates/nethacked-agent/src/observation.rs",
+        "crates/nethacked-agent/src/mcp.rs",
+        "crates/nethacked-agent/src/jsonrpc.rs",
+        "crates/nethacked-agent/src/bin/jsonrpc.rs",
+        "crates/nethacked-agent/src/graphql.rs",
+        "crates/nethacked-wasm/src/lib.rs",
+        "crates/nethacked-py/src/lib.rs",
+        "crates/nethacked-agent/tests/protocol_tests.rs",
+        "crates/nethacked-agent/tests/graphql_http_test.rs",
+        "crates/nethacked-agent/tests/selected_wand_actions.rs",
+        "python/nethacked_gym/env.py",
+        "python/tests/test_rl.py"
+      ],
       "evidence": null,
       "repair_counters": {}
     }
@@ -736,10 +916,10 @@
     {
       "kind": "implementation_checkpoint",
       "unit": "OB01-WAND-ID1",
-      "status": "independent_review_full_gates_and_changed_docs_pass_commit_pending",
-      "source_conformance_accepted": false,
+      "status": "accepted_reviewed_implementation_child",
+      "source_conformance_accepted": true,
       "record": "docs/parity/obligations/2026-10-07-ob01-wand-id1/unit.json",
-      "commit": null,
+      "commit": "6fb4aeee7441ffc0fd64e5c015697c4cdd656491",
       "delivery_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1/delivery.json",
       "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1"
     }
@@ -760,7 +940,7 @@
     "readback_full_342_verified": true,
     "accepted_gate_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/baseline-accepted-gates"
   },
-  "next_action": "Commit and verify accepted OB01-WAND-ID1 27-path checkpoint; then P11a-S1 source/contract audit",
+  "next_action": "Publish reviewed P11a-S1 contract checkpoint with same-source full-gate reuse and fresh documentation checks, then sole six-file backend implementation",
   "external_accepted_interfaces": {
     "P10a2": {
       "record": "docs/parity/obligations/2026-10-07-p04-p10-final-acceptance.json",
@@ -773,6 +953,25 @@
       "sha256": "11150ff22af01783ed34fe34c0b20f13d08610a4a81574028f6442e38523ff61",
       "source_input_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
       "interface": "owned SGROUP insertion/order through ordinary public create-monster Zap/native continuation"
+    }
+  },
+  "runtime_recovery": {
+    "native_review_launch": "agent thread limit reached",
+    "changed_hypothesis_followup": "agent thread limit reached",
+    "fallback": "one independent local Codex CLI reviewer",
+    "prompt": "/tmp/netrust-p11a-s1-review-cli/prompt.txt",
+    "model": "gpt-6.1-sol",
+    "reasoning_effort": "high",
+    "persistent_configuration_changed": false,
+    "review_result": "NEEDS_CHANGES",
+    "review_thread_id": "01a11634-68d8-7841-84e4-3c3ad64cfc49",
+    "cli_usage": {
+      "input_tokens": 1079779,
+      "cached_input_tokens": 958720,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 15068,
+      "reasoning_output_tokens": 3305,
+      "source": "actual turn.completed CLI event; cumulative processed context, not unique prompt size or billed cost"
     }
   }
 }

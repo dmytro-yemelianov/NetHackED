@@ -1,0 +1,11 @@
+{
+  "files": {
+    "contract.md": "c6e4a5a4f0e7ebf984b3d1b59ae2e52a6b44bafccfc81a3f60f4820186d2f9fa",
+    "contract.json": "7facd2e6522cc0b3f0b1dfda181a660f02921ad3f107841beb5debc80f59998a",
+    "ready-packet.md": "e977ebcc3f0d59d891534c60ac1728c020c2d54503a1a4e362adabf87d37e352",
+    "evidence.json": "136b526c8c74211b236efa85024504cb9a9b56dc2ebc6ff8d580ce6fad58b122",
+    "baseline.json": "399c546adc12d3337c3934f2be0b101c7fb4da009f3dd32b9ff60c1f18e6d8c2",
+    "repair-summary.json": "cfcdc49313c4da3474a4d63d2234cea787195ab350244a48ac715646d10e74f9"
+  },
+  "status": "repair1 draft after P11S1-R1/R2/R3; independent rereview pending"
+}
