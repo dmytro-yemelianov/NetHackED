@@ -1,0 +1,719 @@
+{
+  "schema": "netrust-p11a-p1-bill-source-api-contract-v1",
+  "unit": "P11a-P1-BILL",
+  "parent": "P11a",
+  "cross_refs": [
+    "DG06"
+  ],
+  "status": "authored draft; fresh independent semantic review required",
+  "implementation_authorized": false,
+  "source_conformance_accepted": false,
+  "families_closed": 0,
+  "binding": {
+    "rust_repository": "/Users/dmytro/github/NetRust",
+    "rust_head": "8f44a7a9f7a1536e2c5a21ec47596777ac705fc0",
+    "source_input_count": 345,
+    "source_input_digest": "b7aebd3bc3c198fa6866d06a61a5e899bcf21ef61587bf7a09d72f4f9d5f40f3",
+    "c_repository": "/Users/dmytro/github/NetHack",
+    "c_authority": "16ff59115315917b93185d026aeefea06db9b0f4",
+    "c_read_policy": "git show pinned commit only; checkout HEAD not authority",
+    "comparator": {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-07-configuration-profile/pin.json",
+      "sha256": "8cd4931d03972cef4a5a1ae8c7fa7344ac41612fb3cc29b971cf17e213ac3db9"
+    },
+    "profile_name": "released-5.0-linux-gcc-c99-header-defaults-lua548-v1"
+  },
+  "scope": "Whole consumed selected-wand billing retention versus unbilled disposal, quantity1/3; public billing API prerequisite separate from LIFE/IN1 wand activation. No full shop parity, charge or exercise reaudit.",
+  "accepted_prerequisites": [
+    {
+      "id": "P11a-S1",
+      "delivery": {
+        "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/delivery.json",
+        "sha256": "2a1482a25b808ff1bd4986b097ed139961d6ee705ba3d96abb4b1e83ccfa980e"
+      },
+      "scope": "selected generational owned identity and refusal semantics only"
+    },
+    {
+      "id": "P11a-C1-API1",
+      "delivery": {
+        "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/delivery.json",
+        "sha256": "7c68531dd23e407e1e5bb8d3b63e56a62089eadb99983ce2e8e476efad39e00b"
+      },
+      "scope": "accepted pure signed primitive and positive-only native integration; not BILL prerequisite or billing acceptance"
+    }
+  ],
+  "source_rules": [
+    "C useupall consumes all obj->quan. setnotworn -> freeinv -> obfree(NULL). useup decrement-one is a separate branch.",
+    "onbill matches bo_id==o_id in a creditor bill. For a matching bill/no merge, obfree sets useup=TRUE, clears object unpaid only for presentation, retains same object/id/quantity on billobjs and returns before dealloc_obj.",
+    "add_to_billobjs requires OBJ_FREE, stops attached timers, marks OBJ_ONBILL and clears in_use/bypass. Bill record price and bquan are unchanged. bp_to_obj resolves useup via billobjs; find_oid excludes billobjs.",
+    "No matching bill/no merge reaches dealloc_obj; its timed/light/reference/Lua/staging branches are LIFE/OB04 obligations. Rust consumed bill storage models liability retention, not a C allocator.",
+    "doinvbill uses stored price*bquan for useup; object quantity is retained description state, not a reason to erase bill or reduce liability. Charge-use debit is separate and must not be converted to/remitted by disposal."
+  ],
+  "native_gaps": [
+    "SimulationWorld/StoredLevel unpaid_items is Vec<(ItemId,u32)> base cost only. get_unpaid_cost recalculates current hero price; there is no useup/bquan/frozen-price/creditor/consumed owner.",
+    "Arena.destroy_item removes generation and registers artifact; it cannot retain billing responsibility. Limbo is still an arena record and is not consumed bill storage.",
+    "forget_rot_corpse_references clears wield/quiver and remove_unpaid. It must not be reused for billed wand retirement.",
+    "handle_pay visits carried items only and ignores consumed debts; economy_ledger clones only live tuples. These remain known DG06 gaps; new outstanding_bills must expose retained liabilities independently.",
+    "pack_current_level removes live arena records into StoredLevel and restore remints IDs. Global live receipt terms must retain cached full ItemId then remap only at cached restoration; consumed historical identity never enters remap. No StoredLevel field needed."
+  ],
+  "representation": {
+    "owner": "Add #[serde(default)] billing: BillingState to SimulationWorld only. Types live in world.rs. No new StoredLevel, ItemRecord, action, Ruleset or arena fields. Global live_terms resolves against either active arena or exactly one StoredLevel.items record by full current generation.",
+    "BillingState": "{ live_terms: Vec<(ItemId,BillTerms)>, consumed: Vec<ConsumedBillRecord> }; no counter or new identity allocator. Existing unpaid_items remains the compatibility live ledger.",
+    "BillTerms": "{ billed_quantity: Option<u32>, unit_price: Option<u32>, creditor: Option<BillCreditor>, legacy_base_cost: u32 }; None is explicit unavailable historical fact, never zero/paid. BillCreditor is a source receipt identity (branch,depth,shopkeeper original full ActorId); it is a historical trace, not an active arena lookup. Full account mapping belongs DG06.",
+    "ConsumedBillRecord": "{ origin: ItemId (full generation), object: ItemRecord (owned clone moved out of arena, location normalized Limbo solely inside detached record), terms: BillTerms }; membership means useup. Snapshot preserves explicit ItemDefinition, name, artifact, BUC, spe, recharged, weight and whole quantity. No ItemLocation enum extension.",
+    "identity": "Borrow the owned Arc<Ruleset>; explicit ItemDefinition uses item_for_definition, never display-name/static fallback. Legacy None uses existing exact owned lookup. Unknown/changed explicit identity is a failure before mutation. Canonical/custom and renamed display fixtures required. Existing item_for_definition owner is crates/nethacked-data/src/ruleset.rs:693, ItemDefinition owner crates/nethacked-types/src/lib.rs:863; reuse accepted S1/API1 identity contract, no new definition implementation.",
+    "liability": "Known receipt price and billed_quantity are frozen at admission and unchanged at consumption; total checked in u64 within selected LP64 long supported domain. If missing, return UnresolvedTerms{base,current_consumed_quantity,...}; never approximate price*bquan or invent source o_id/account. Current object quantity is exact consumed amount, distinct from unknown historical bquan.",
+    "outputs": "Vec insertion order matches API admission/consumption order and survives serde; use BTree ordering for keyed views when needed. No HashMap iteration into observable state, no float or static definition tables.",
+    "invariants": [
+      "Exactly one live tuple for a billed item; at most one matching live receipt; any duplicate/inconsistent input rejected before disposal.",
+      "Retained origin is historical, never a selectable/live carried handle. A replacement generation cannot inherit a consumed receipt.",
+      "Billed consume moves live obligation into exactly one consumed record before compatibility tuple removal becomes observable; unit price/bquan unchanged.",
+      "Unbilled consume creates no liability and removes entire arena stack.",
+      "Consumed record never cleared by remove_unpaid, rot cleanup, stair packing, timer reconciliation or failed/duplicate request; settlement needs separate explicit accepted source route.",
+      "Existing legacy ledger without receipt may consume into UnknownLegacy terms, preserving tuple base and snapshot exactly; this proves conservation/compatibility, not exact C historical amount.",
+      "Source-known whole-only fixtures require bquan==current q; known partial/merge/contents branches reject UnsupportedBillingScope until named successor accepted.",
+      "Repeated admission never replaces frozen terms, even for identical terms; receipt existence returns ReceiptAlreadyRecorded atomically.",
+      "Public ledger clearing cannot orphan an admitted receipt. Pay cannot charge projected prices or settle any obligation while live/consumed billing state exists; refusal preserves active and cached ownership."
+    ]
+  },
+  "api": {
+    "public": "record_bill_terms(&mut self,id:ItemId,terms:BillTerms)->Result<(),BillError>; dispose_whole_carried_item(&mut self,id:ItemId)->Result<WholeDisposal,BillError>; outstanding_bills(&self)->Vec<BillView>",
+    "admission": "record_bill_terms requires existing exactly-one unpaid tuple, same full live carried generation, validated owned wand definition, q>0, supported known receipt quantity/price. It records source-provided receipt; does not implement get_cost or create shop merchandise. Legacy absence stays absent. Receipts are prescribed authoritative fixture inputs, not a claim that record_bill_terms implements C get_cost. Full source receipt creation is DG06-bill-history/PRE; pure transfer acceptance must say so. Repeated admission: after full-generation/unique-ledger/owned-definition validation, an existing receipt returns Err(BillError::ReceiptAlreadyRecorded) for both byte/equality-identical and changed BillTerms, before validating proposed replacement terms. No upsert, replacement, reconciliation or second admission succeeds. Duplicate existing receipts remain DuplicateLedger. All receipt fields including creditor and legacy_base_cost are frozen; terms changes require a separately accepted DG06 route.",
+    "success": "WholeDisposal::{Unbilled{origin},RetainedBilled{origin}}. BillView includes object identity, consumed q, known terms or UnresolvedTerms, outstanding/useup, and checked known total; it must not require arena existence. outstanding_bills includes live tuples (with known receipt or explicit unavailable terms) and detached consumed records; live is_unpaid false after retained consumption does not mean settled. Ordered live views then consumed views use stable Vec order. No payment handler delegation.",
+    "errors": "AlreadyConsumed (exact retained origin), StaleItem (including old generation), NotCarried, InvalidDefinition, ZeroQuantity, DuplicateLedger, InvalidReceipt, UnsupportedBillingScope, LifecycleReferencesPresent; all no mutation/no draws/events/time. Do not relax prior S1 selection checks. ReceiptAlreadyRecorded (identical or changed repeated admission); SettlementDeferred (new typed clearing preflight); identical atomic failure guarantees apply.",
+    "preflight": "Public disposal is a native API fixture route for carried wand with no equipment/timer/current-operation references; reject referenced items. Validate item/identity/ledger/terms and supported domain before any mutation; allocate/move snapshot then commit without callbacks or fallible operations. Ordinary allocation failure is not recoverable transactional gameplay.",
+    "LIFE_composition": "Private prepare_whole_disposal validates immutable generation+record+ledger/terms. LIFE validates all represented references and borrows/cleans them without callbacks or RNG; private commit_whole_disposal consumes prepared same-state ticket once in same &mut-world operation. Ticket cannot be serialized or externally constructed; revalidate if intervening mutation. LIFE owns exact timer/equipment cleanup allowlist; this packet grants none.",
+    "failure_boundaries": "No charge, RNG, time, UI message, payment or equipment mutation in billing API. Do not erase liability on invalid identity, stale ticket, duplicate ledger, retained origin, unknown receipt, cache/load error. Unknown receipt is retained successful liability, not an error that downgrades to unbilled. Invalid input loads return LoadError::Json before catchup timers. Ruleset mismatch preserves existing LoadError and must precede billing reconciliation.",
+    "clearing_policy": {
+      "typed_api": "Add try_remove_unpaid(&mut self,id:ItemId)->Result<(),BillError>. Return SettlementDeferred if this exact full-generation ID has live terms or is a consumed origin; otherwise retain existing tuple removal and return Ok(()). No new terms are settled here.",
+      "existing_remove_unpaid": "Preserve public remove_unpaid(&mut self,id:ItemId)->() signature. Delegate to try_remove_unpaid; SettlementDeferred deliberately produces a complete no-op, observable as unchanged tuple/receipt/views. No logging, event or ignored successful removal. New callers needing a result use the typed API. Frozen receipt is never dropped or rewritten. Consumed records never removed.",
+      "Pay": "If billing.live_terms or billing.consumed is nonempty anywhere active/cached/global, refuse the entire Pay request with an empty returned event Vec and complete world unchanged. Add guard at the very start of step_player_action for requested ActionAst::Pay BEFORE player clone, reconcile_equipment, forced Wait, scheduler/ticks/RNG and record_events; add same guard at start of handle_pay for direct crate-local callers. No partial payment, player_gold debit, pricing computation, settlement message, time, event or fee. Empty Vec is the defined existing Vec-returning refusal result. New private predicate billing_settlement_deferred is read-only.",
+      "legacy": "When BillingState is completely empty, remove_unpaid/try_remove_unpaid and Pay take the original tuple-based path unchanged, including existing events, scheduler and pricing. This is a field-state predicate for every world, never a vanilla, golden or test exemption. Legacy tuples alone still have unknown historical terms. A newly retained UnknownLegacy consumed record is outstanding liability and blocks Pay.",
+      "views": "get_unpaid_cost stays the existing current-price projection, not a frozen receipt valuation or settlement authorization. is_unpaid/economy_ledger retain every refused live tuple; detached consumed liabilities are exposed by outstanding_bills, not represented as inventory tuples. No price getter/EconomyLedger/price-check body edit proposed.",
+      "disposal": "Private prepared disposal commit moves admitted terms to consumed and removes its live tuple/terms in one commit; it must not call the refusal wrapper as a settlement route. After direct clearing/Pay refusal, subsequent public disposal retains the original full terms and total. After consumption Pay still refuses; direct remove_unpaid(origin) changes nothing. No public lifecycle activation follows.",
+      "scope": "A bounded native guard pending DG06-bill-settlement, not C Pay conformance or accepted deferred settlement. Rot caller forget_rot_corpse_references remains unchanged: supported admissions are wand-only; no admitted corpse route authorized."
+    }
+  },
+  "ordering": {
+    "API": "Validate -> move detached consumed snapshot/retain liability or unbilled removal -> remove live tuple/receipt -> expose result; no externally observable half-state. Double consumption has zero effects.",
+    "wand": "Reuse reviewed C1 order only: PRE check_unpaid before signed charge; B1 returning backfire whole retirement before exercise/time; normal surviving negative dust before LIFE retirement; exactly one native time exit outside billing. Failure before selection no draws/time; selected fee speech draws are PRE, never billing disposal. Explicitly cleared current_wand suppresses dust even if arena item remains.",
+    "save": "Native API supports pre-disposal and post-disposal stable saves, admission-to-disposal save and load-failed no partial state; no suspension inside private commit. D1 owns actual pending wand saves/continue/cancel, effect-clear and no replay. Do not pretend an API snapshot is a mid-zap continuation."
+  },
+  "fixtures": [
+    {
+      "id": "whole-unbilled-q1",
+      "input": {
+        "quantity": 1,
+        "carried": true,
+        "lifecycle_references": false,
+        "base_cost": null,
+        "bill_terms": null
+      },
+      "expected": {
+        "live_generation_removed": true,
+        "inventory_excludes_origin": true,
+        "consumed_records": 0,
+        "retained_object_quantity": null,
+        "usedup_total": 0,
+        "live_unpaid_entry_removed": true,
+        "rng_draws": 0,
+        "events": [],
+        "time_delta": 0,
+        "repeat": "StaleItem; no mutation"
+      }
+    },
+    {
+      "id": "whole-unbilled-q3",
+      "input": {
+        "quantity": 3,
+        "carried": true,
+        "lifecycle_references": false,
+        "base_cost": null,
+        "bill_terms": null
+      },
+      "expected": {
+        "live_generation_removed": true,
+        "inventory_excludes_origin": true,
+        "consumed_records": 0,
+        "retained_object_quantity": null,
+        "usedup_total": 0,
+        "live_unpaid_entry_removed": true,
+        "rng_draws": 0,
+        "events": [],
+        "time_delta": 0,
+        "repeat": "StaleItem; no mutation"
+      }
+    },
+    {
+      "id": "whole-billed-q1",
+      "input": {
+        "quantity": 1,
+        "carried": true,
+        "lifecycle_references": false,
+        "base_cost": 30,
+        "bill_terms": {
+          "billed_quantity": 1,
+          "unit_price": 40
+        }
+      },
+      "expected": {
+        "live_generation_removed": true,
+        "inventory_excludes_origin": true,
+        "consumed_records": 1,
+        "retained_object_quantity": 1,
+        "usedup_total": 40,
+        "live_unpaid_entry_removed": true,
+        "rng_draws": 0,
+        "events": [],
+        "time_delta": 0,
+        "repeat": "AlreadyConsumed"
+      }
+    },
+    {
+      "id": "whole-billed-q3",
+      "input": {
+        "quantity": 3,
+        "carried": true,
+        "lifecycle_references": false,
+        "base_cost": 30,
+        "bill_terms": {
+          "billed_quantity": 3,
+          "unit_price": 40
+        }
+      },
+      "expected": {
+        "live_generation_removed": true,
+        "inventory_excludes_origin": true,
+        "consumed_records": 1,
+        "retained_object_quantity": 3,
+        "usedup_total": 120,
+        "live_unpaid_entry_removed": true,
+        "rng_draws": 0,
+        "events": [],
+        "time_delta": 0,
+        "repeat": "AlreadyConsumed"
+      }
+    }
+  ],
+  "extra_oracles": [
+    "Run four disposal cases for canonical/custom owned definitions (renamed display included), both modern explicit identity and old absent identity. Fixed known receipts 40/q1 and40/q3 give totals40/120; base30 illustrates receipt differs from current projection. Change hero role/pricing after admission: retained total unchanged.",
+    "Known receipt admission survives later spe/BUC/recharge changes; retained object snapshot reflects consumption state, receipt does not. No fee debit introduced or removed.",
+    "Repeat retained origin, stale unbilled ID and replacement generation; compare complete serialized world/RNG/events/scheduler before/after error. New replacement billed item remains intact.",
+    "Invalid explicit definition, not-carried, zero q, duplicate tuple/receipt, inconsistent receipt, unsupported nonwand/contents/partial and represented lifecycle refs: unchanged state; no cleanup side effects.",
+    "Modern active save before and after q1/q3 disposal plus post-load Wait and next RNG; compare uninterrupted native run state/events/IDs. Cached global live_terms keep old full generation and remap with live unpaid only; consumed survives descend/ascend globally, not reinserted as live.",
+    "Oldsave remove only the billing field from pre-disposal active/cached fixture; preserve existing tuple/items/quantity. On load no historical price/q fabricated; disposal retains UnknownLegacy with exact base/snapshot; Wait+next RNG equality. Modern explicit empty billing owner must not be treated as legacy omission.",
+    "Save after receipt registration before disposal; deserialize/revalidate then consume once. After retained disposal, save/load/repeat and replacement allocation must preserve liability and full generation.",
+    "Malformed consumed entries with same origin/zero quantity or unresolved owned identity and dangling live receipts fail load before timer catchup. Historical consumed origin need not resolve as live; do not reject it as dangling arena reference.",
+    "Unsupported supplied ruleset_ref rejects existing RulesetMismatch; custom owned record and receipt roundtrip using supplied Arc; old pack definitions use accepted item identity defaults with no new pack-schema fields.",
+    "F1: q1/q3 admit once then same-generation repeated identical terms and changed terms (price, bquan, creditor, base independently, including invalid replacement q). Each returns ReceiptAlreadyRecorded and preserves original terms. Duplicate-corrupt owner still DuplicateLedger. Compare raw complete serde world (not only to_save_json, which reconciles a clone), save bytes, all arena/cache/ledger/billing/equipment/timers/artifact state, gold, event log and returned [], scheduler/time and RNG state plus next draw from clones. No timer progress or receipt replacement.",
+    "F2 API1: admit known q1/q3 at40/base30; change hero pricing after admission; call try_remove_unpaid => SettlementDeferred and existing remove_unpaid => (); both complete atomic no-op. Dispatch Pay with enough and insufficient gold, mixed unreceipted tuple plus admitted receipt, and pending equipment/helpless state; returned [] and raw full state/events/RNG/time identical even where dispatcher normally reconciles or forces Wait. outstanding_bills remains40/120; tuple views remain present. Then dispose: unchanged price/bquan/creditor transferred once; direct clearing and Pay after consumption preserve liability. Repeat with UnknownLegacy consumption and canonical/custom renamed identity. Separate empty-BillingState controls use original Pay/removal behavior with no special fixture exemptions.",
+    "F2 SAVE1: admission -> direct clearing refusal/Pay refusal -> view -> save/load -> view -> disposal -> save/load -> clearing/Pay refusal. Exercise active and cached receipts (a cached-only receipt must block global Pay), consumed-only and mixed states; compare uninterrupted control state, events, next RNG and Wait continuation. No dangling live receipt or omitted consumed liability permitted."
+  ],
+  "compatibility": {
+    "serde": "The new world billing owner defaults empty; modern serializers emit billing even empty. Preserve every existing field/constructor signature/action variant. Absent legacy owner detected from raw JSON, no RNG/time/event migration. Legacy receipts remain unknown, never guessed; validate active+cached+consumed owned identities using supplied Arc after ruleset_ref check.",
+    "cache": "Global BillingState.live_terms may resolve against active arena or exactly one cached StoredLevel.items record. pack_current_level keeps that owner untouched; unpack_or_generate_level remaps only terms whose IDs appear in restored item_map. Preserve Vec order; no HashMap iteration into output. Consumed origin/creditor traces are historical and never remap/reinsert. No StoredLevel field/literal edits. Duplicate/dangling live receipts fail validation across active+cached owners.",
+    "native": "Exact save bytes need only match interrupted/uninterrupted new-format equivalent paths; old serialized bytes may gain default owner. Do not claim old-format byte equality or C binary interchange.",
+    "pack_schema_hash": "No Ruleset/ItemDef/pack config change. SAVE1 must run the exact scratch manifest below: pinned native HEAD baseline versus candidate, same locked dependencies/features/toolchain and identical snapshot fixture bytes. Compare four schemas, rebuilt vanilla/custom .nhpack canonical hash+bytes, and baseline-generated old-item profile fixture verified by both CLIs. RulesetRef field is hash (not content_hash); vanilla runtime sentinel vanilla is not a computed canonical hash. All production schemas/generated definitions/pack sources and existing assertions/setups stay frozen. A failed command/comparison is a failed exit, never a waiver. New public agent/WASM/schema exposure stops this allowlist for S1-M/MC review.",
+    "WASM": "Pure serde/Vec/BTree/Arc native seam only. No fs/network/clock/C/Lua/pyo3/rayon/reqwest/tokio dependencies or new dependencies. Required root wasm target check and nethacked-wasm tests; browser whole-wand flow remains S1-F.",
+    "goldens": "All present/future EXPECTED_RUNS/LOGS/COMBAT frozen. Prior HP/items/P04-P10 exceptions remain exact only; this packet provides no future permission. Root must identify exact new differing assertion/source/RNG if a later shared change fails; no rebaseline or constructor weakening.",
+    "SAVE1_exact_manifest": {
+      "cwd": "/Users/dmytro/github/NetRust",
+      "env": {
+        "UV_CACHE_DIR": "/tmp/netrust-p11a-p1-bill-save1/uv-cache"
+      },
+      "execution": "Future reviewed SAVE1 only, never in this contract repair. argv arrays are literal, sequential; capture every command stdout/stderr and numeric exit in scratch. Open specified stdout_file, otherwise scratch/logs/<id>.stdout; scratch/logs/<id>.stderr for stderr. Abort on first nonzero exit; no masking. mkdir scratch/logs only after scratch-init; create before/after dirs via schema before build. No outputs in production. Scratch-init requires fresh nonexistent root and fails rather than overwrites. For scratch-init capture stdout/stderr in memory until success, then mkdir scratch/logs and write its logs; if init fails retain numeric exit and diagnostic externally, no success packet. Frozen-source comparison checks pinned pack/data/types/data/packs/extraction scripts, Cargo lock/manifest, any tracked schema and every preexisting integration test/setup byte; new wand_billing_tests.rs is allowed separately. No baseline test fixture or assertion changes.",
+      "baseline": "8f44a7a9f7a1536e2c5a21ec47596777ac705fc0",
+      "fixtures": [
+        {
+          "id": "SAVE1-PACK-VANILLA",
+          "input": "/tmp/netrust-p11a-p1-bill-save1/inputs/vanilla",
+          "source": "Pinned baseline CLI export-vanilla; manifest id vanilla-export; compare rebuilt canonical hash, not RulesetRef::vanilla sentinel. Existing test pack_files::vanilla_pack_files_rebuild_to_vanilla_hash."
+        },
+        {
+          "id": "SAVE1-PACK-CUSTOM-HARD-MODE",
+          "input": "/tmp/netrust-p11a-p1-bill-save1/inputs/hard-mode",
+          "source": "Pinned baseline packs/examples/hard-mode, id hard-mode version0.1.0; copy all five source files including i18n/uk.toml. Existing example_pack::test_hard_mode_example_pack."
+        },
+        {
+          "id": "SAVE1-OLDPACK-ITEM-PROFILES",
+          "input": "/tmp/netrust-p11a-p1-bill-save1/inputs/old-item-profiles.nhpack",
+          "source": "Snapshot-only omission of initialization and generation_weight from every exported-baseline item; compact sorted UTF8 JSON hash (integer/no-float domain), field semantics bound to unchanged pack_lib::old_item_profiles_load_fixed_without_changing_hash and ItemDefWire defaults. Native load_nhpack verifies hash after typed defaults in both CLIs. No historical billing price/quantity/creditor is invented."
+        }
+      ],
+      "steps": [
+        {
+          "id": "scratch-init",
+          "argv": [
+            "/Users/dmytro/github/NetRust/.venv/bin/python",
+            "-c",
+            "import pathlib,subprocess,sys\ns=pathlib.Path(sys.argv[1]); s.mkdir(exist_ok=False)\n(s/'baseline-src').mkdir(); (s/'inputs').mkdir()\nsubprocess.run(['git','-C',sys.argv[2],'archive','--format=tar','--output',str(s/'baseline.tar'),sys.argv[3]],check=True)\nsubprocess.run(['tar','-xf',str(s/'baseline.tar'),'-C',str(s/'baseline-src')],check=True)\n",
+            "/tmp/netrust-p11a-p1-bill-save1",
+            "/Users/dmytro/github/NetRust",
+            "8f44a7a9f7a1536e2c5a21ec47596777ac705fc0"
+          ]
+        },
+        {
+          "id": "before-cli-build",
+          "argv": [
+            "cargo",
+            "build",
+            "--manifest-path",
+            "/tmp/netrust-p11a-p1-bill-save1/baseline-src/Cargo.toml",
+            "-p",
+            "nethacked-pack",
+            "--bin",
+            "nethacked-pack",
+            "--features",
+            "cli,schema",
+            "--locked",
+            "--target-dir",
+            "/tmp/netrust-p11a-p1-bill-save1/target-before"
+          ]
+        },
+        {
+          "id": "after-cli-build",
+          "argv": [
+            "cargo",
+            "build",
+            "--manifest-path",
+            "/Users/dmytro/github/NetRust/Cargo.toml",
+            "-p",
+            "nethacked-pack",
+            "--bin",
+            "nethacked-pack",
+            "--features",
+            "cli,schema",
+            "--locked",
+            "--target-dir",
+            "/tmp/netrust-p11a-p1-bill-save1/target-after"
+          ]
+        },
+        {
+          "id": "vanilla-fixture",
+          "argv": [
+            "/tmp/netrust-p11a-p1-bill-save1/target-before/debug/nethacked-pack",
+            "export-vanilla",
+            "/tmp/netrust-p11a-p1-bill-save1/inputs/vanilla"
+          ]
+        },
+        {
+          "id": "custom-fixture-copy",
+          "argv": [
+            "/Users/dmytro/github/NetRust/.venv/bin/python",
+            "-c",
+            "import shutil,sys; shutil.copytree(sys.argv[1],sys.argv[2])",
+            "/tmp/netrust-p11a-p1-bill-save1/baseline-src/packs/examples/hard-mode",
+            "/tmp/netrust-p11a-p1-bill-save1/inputs/hard-mode"
+          ]
+        },
+        {
+          "id": "before-schema",
+          "argv": [
+            "/tmp/netrust-p11a-p1-bill-save1/target-before/debug/nethacked-pack",
+            "schema",
+            "--out",
+            "/tmp/netrust-p11a-p1-bill-save1/before/schemas"
+          ]
+        },
+        {
+          "id": "before-vanilla-build",
+          "argv": [
+            "/tmp/netrust-p11a-p1-bill-save1/target-before/debug/nethacked-pack",
+            "build",
+            "/tmp/netrust-p11a-p1-bill-save1/inputs/vanilla",
+            "--out",
+            "/tmp/netrust-p11a-p1-bill-save1/before/vanilla.nhpack"
+          ],
+          "stdout_file": "/tmp/netrust-p11a-p1-bill-save1/before/vanilla-build.stdout"
+        },
+        {
+          "id": "before-hard-mode-build",
+          "argv": [
+            "/tmp/netrust-p11a-p1-bill-save1/target-before/debug/nethacked-pack",
+            "build",
+            "/tmp/netrust-p11a-p1-bill-save1/inputs/hard-mode",
+            "--out",
+            "/tmp/netrust-p11a-p1-bill-save1/before/hard-mode.nhpack"
+          ],
+          "stdout_file": "/tmp/netrust-p11a-p1-bill-save1/before/hard-mode-build.stdout"
+        },
+        {
+          "id": "after-schema",
+          "argv": [
+            "/tmp/netrust-p11a-p1-bill-save1/target-after/debug/nethacked-pack",
+            "schema",
+            "--out",
+            "/tmp/netrust-p11a-p1-bill-save1/after/schemas"
+          ]
+        },
+        {
+          "id": "after-vanilla-build",
+          "argv": [
+            "/tmp/netrust-p11a-p1-bill-save1/target-after/debug/nethacked-pack",
+            "build",
+            "/tmp/netrust-p11a-p1-bill-save1/inputs/vanilla",
+            "--out",
+            "/tmp/netrust-p11a-p1-bill-save1/after/vanilla.nhpack"
+          ],
+          "stdout_file": "/tmp/netrust-p11a-p1-bill-save1/after/vanilla-build.stdout"
+        },
+        {
+          "id": "after-hard-mode-build",
+          "argv": [
+            "/tmp/netrust-p11a-p1-bill-save1/target-after/debug/nethacked-pack",
+            "build",
+            "/tmp/netrust-p11a-p1-bill-save1/inputs/hard-mode",
+            "--out",
+            "/tmp/netrust-p11a-p1-bill-save1/after/hard-mode.nhpack"
+          ],
+          "stdout_file": "/tmp/netrust-p11a-p1-bill-save1/after/hard-mode-build.stdout"
+        },
+        {
+          "id": "oldpack-fixture",
+          "argv": [
+            "/Users/dmytro/github/NetRust/.venv/bin/python",
+            "-c",
+            "import pathlib,json,hashlib,sys\np=json.loads(pathlib.Path(sys.argv[1]).read_bytes())\nfor item in p['ruleset']['items']:\n item.pop('initialization',None); item.pop('generation_weight',None)\ndef reject_float(v):\n if isinstance(v,float): raise ValueError('float definition unsupported')\n if isinstance(v,dict):\n  for x in v.values(): reject_float(x)\n if isinstance(v,list):\n  for x in v: reject_float(x)\nreject_float(p['ruleset'])\nb=json.dumps(p['ruleset'],sort_keys=True,ensure_ascii=False,separators=(',',':'),allow_nan=False).encode()\np['hash']='sha256:'+hashlib.sha256(b).hexdigest()\npathlib.Path(sys.argv[2]).write_bytes(json.dumps(p,sort_keys=True,ensure_ascii=False,separators=(',',':'),allow_nan=False).encode())\n",
+            "/tmp/netrust-p11a-p1-bill-save1/before/vanilla.nhpack",
+            "/tmp/netrust-p11a-p1-bill-save1/inputs/old-item-profiles.nhpack"
+          ]
+        },
+        {
+          "id": "before-vanilla-validate",
+          "argv": [
+            "/tmp/netrust-p11a-p1-bill-save1/target-before/debug/nethacked-pack",
+            "validate",
+            "/tmp/netrust-p11a-p1-bill-save1/before/vanilla.nhpack"
+          ],
+          "stdout_file": "/tmp/netrust-p11a-p1-bill-save1/before/vanilla-validate.stdout"
+        },
+        {
+          "id": "before-hard-mode-validate",
+          "argv": [
+            "/tmp/netrust-p11a-p1-bill-save1/target-before/debug/nethacked-pack",
+            "validate",
+            "/tmp/netrust-p11a-p1-bill-save1/before/hard-mode.nhpack"
+          ],
+          "stdout_file": "/tmp/netrust-p11a-p1-bill-save1/before/hard-mode-validate.stdout"
+        },
+        {
+          "id": "before-old-item-profiles-validate",
+          "argv": [
+            "/tmp/netrust-p11a-p1-bill-save1/target-before/debug/nethacked-pack",
+            "validate",
+            "/tmp/netrust-p11a-p1-bill-save1/inputs/old-item-profiles.nhpack"
+          ],
+          "stdout_file": "/tmp/netrust-p11a-p1-bill-save1/before/old-item-profiles-validate.stdout"
+        },
+        {
+          "id": "after-vanilla-validate",
+          "argv": [
+            "/tmp/netrust-p11a-p1-bill-save1/target-after/debug/nethacked-pack",
+            "validate",
+            "/tmp/netrust-p11a-p1-bill-save1/after/vanilla.nhpack"
+          ],
+          "stdout_file": "/tmp/netrust-p11a-p1-bill-save1/after/vanilla-validate.stdout"
+        },
+        {
+          "id": "after-hard-mode-validate",
+          "argv": [
+            "/tmp/netrust-p11a-p1-bill-save1/target-after/debug/nethacked-pack",
+            "validate",
+            "/tmp/netrust-p11a-p1-bill-save1/after/hard-mode.nhpack"
+          ],
+          "stdout_file": "/tmp/netrust-p11a-p1-bill-save1/after/hard-mode-validate.stdout"
+        },
+        {
+          "id": "after-old-item-profiles-validate",
+          "argv": [
+            "/tmp/netrust-p11a-p1-bill-save1/target-after/debug/nethacked-pack",
+            "validate",
+            "/tmp/netrust-p11a-p1-bill-save1/inputs/old-item-profiles.nhpack"
+          ],
+          "stdout_file": "/tmp/netrust-p11a-p1-bill-save1/after/old-item-profiles-validate.stdout"
+        },
+        {
+          "id": "scratch-compare",
+          "argv": [
+            "/Users/dmytro/github/NetRust/.venv/bin/python",
+            "-c",
+            "import pathlib,json,hashlib,re,sys\ns=pathlib.Path(sys.argv[1]); results={}\nfor n in ['pack','monsters','items','roles']:\n a=(s/'before/schemas'/f'{n}.schema.json').read_bytes(); b=(s/'after/schemas'/f'{n}.schema.json').read_bytes()\n assert a==b, 'schema mismatch '+n\n results['schema/'+n]=hashlib.sha256(a).hexdigest()\nfor n in ['vanilla','hard-mode']:\n a=(s/'before'/f'{n}.nhpack').read_bytes(); b=(s/'after'/f'{n}.nhpack').read_bytes()\n assert a==b, 'pack bytes mismatch '+n\n p=json.loads(a); h=p['hash']; assert re.fullmatch(r'sha256:[0-9a-f]{64}',h)\n for phase in ['before','after']:\n  assert (s/phase/f'{n}-build.stdout').read_text().strip()==h, 'build hash mismatch'\n results[n]={'canonical_hash':h,'bytes_sha256':hashlib.sha256(a).hexdigest()}\np=json.loads((s/'inputs/old-item-profiles.nhpack').read_bytes()); h=p['hash']\nfor phase in ['before','after']:\n for n in ['vanilla','hard-mode','old-item-profiles']:\n  expected=h if n=='old-item-profiles' else results[n]['canonical_hash']\n  text=(s/phase/f'{n}-validate.stdout').read_text()\n  assert '(hash: '+expected+')' in text, 'native verified hash mismatch '+phase+'/'+n\nresults['old-item-profiles']={'canonical_hash':h,'bytes_sha256':hashlib.sha256((s/'inputs/old-item-profiles.nhpack').read_bytes()).hexdigest()}\n# Compare frozen production inputs and every preexisting integration test/setup to pinned baseline.\nr=pathlib.Path(sys.argv[2]); baseline=s/'baseline-src'; frozen=[]\nfor p in sorted(baseline.rglob('*')):\n if not p.is_file(): continue\n rel=p.relative_to(baseline); name=rel.as_posix()\n if name.startswith(('crates/nethacked-pack/','crates/nethacked-data/','crates/nethacked-types/','data/','packs/','scripts/extract/')) or '/tests/' in name or '.schema.' in name or name in ['Cargo.toml','Cargo.lock']:\n  assert (r/rel).is_file() and (r/rel).read_bytes()==p.read_bytes(), 'frozen source/setup changed '+name\n  frozen.append(name)\nresults['frozen_production_and_existing_tests']={'count':len(frozen),'result':'byte-identical'}\n(s/'comparison.json').write_text(json.dumps(results,indent=2))\njson.loads((s/'comparison.json').read_text())\n",
+            "/tmp/netrust-p11a-p1-bill-save1",
+            "/Users/dmytro/github/NetRust"
+          ]
+        }
+      ],
+      "expected_unchanged": [
+        "four schema files byte-for-byte",
+        "vanilla/hard-mode .nhpack bytes and native canonical hashes before==after",
+        "identical old-item fixture bytes fed to both; typed load validation reports exactly embedded hash",
+        "all production pack/schema/generated/defs and existing test/assertion/setup bytes; all current/future goldens frozen"
+      ],
+      "failures": "Any build/CLI/Python nonzero exit fails SAVE1. Missing/malformed schema/hash/fixture/output, wrong hash, byte mismatch, float, unexpected changed input or any production write is failure. Schema without schema feature fails1; invalid/hash mismatch validate fails1; Python assertion/error fails1. Cargo failures retain actual exit (usually101); never substitute a success/count. No later root-selectable fixture IDs/commands."
+    }
+  },
+  "proposed_children": [
+    {
+      "id": "P11a-P1-BILL-API1",
+      "parent": "P11a",
+      "cross_refs": [
+        "DG06"
+      ],
+      "depends": [
+        "P11a-P1-BILL",
+        "P11a-S1"
+      ],
+      "status": "proposed; not registered or approved",
+      "outcome": "Public billing receipt admission, atomic whole-carried disposal and deterministic outstanding-bill views; quantity1/3 known-receipt and legacy-unknown conservation; no wand activation",
+      "allowlist": [
+        "crates/nethacked-sim/src/world.rs",
+        "crates/nethacked-sim/src/actions/economy.rs",
+        "crates/nethacked-sim/src/actions/mod.rs",
+        "crates/nethacked-sim/tests/wand_billing_tests.rs"
+      ],
+      "acceptance_exits": [
+        "Literal source-derived 4-case known receipt transfer plus canonical/custom renamed identities, generational repeat/replacement and no mutation/error/draw/time evidence through public API.",
+        "Legacy absent receipt retention demonstrates base/object liability conservation only; unknown source terms explicit in output/save.",
+        "Lifecycle references rejected; no public wand runtime body activated. Independently reviewed minimal implementation allowlist and tests required.",
+        "F1 identical/changed admission ReceiptAlreadyRecorded, complete-state/events/RNG/time atomicity; F2 typed/direct clearing and public Pay refusal, views and disposal conservation, empty-owner original behavior."
+      ]
+    },
+    {
+      "id": "P11a-P1-BILL-SAVE1",
+      "parent": "P11a",
+      "cross_refs": [
+        "DG06"
+      ],
+      "depends": [
+        "P11a-P1-BILL-API1"
+      ],
+      "status": "proposed; not registered or approved",
+      "outcome": "Modern/absent-owner oldsave active/cached continuation; global live receipt handle remap at cached restoration; native/pack/hash/WASM compatibility evidence",
+      "allowlist": [
+        "crates/nethacked-sim/src/world.rs",
+        "crates/nethacked-sim/src/actions/stairs.rs",
+        "crates/nethacked-sim/tests/wand_billing_tests.rs"
+      ],
+      "acceptance_exits": [
+        "Active/cached live global receipt remap and globally retained q1/3 liability, modern/absent/explicit-empty owners; complete state/events/next RNG/allocation+Wait continuation equivalence.",
+        "API admission->save->load->disposal and consumed->save->load->repeat; malformed modern/legacy input fails before timer catchup.",
+        "Oldpack/schema/canonical hash unchanged scratch equality, WASM target no forbidden dependency and native package tests; all missing outputs/errors recorded.",
+        "Legacy exact historical amount/account not accepted: preserve explicit unknown; source reconstruction remains DG06-bill-history.",
+        "F2 admitted/refused clearing/Pay active+cached save/load/disposal chains; F3 exact scratch manifest below with all outputs and failing exits."
+      ]
+    }
+  ],
+  "activation_edges": {
+    "P11a-C1-LIFE audit": [
+      "P11a-P1-BILL accepted contract",
+      "P11a-S1"
+    ],
+    "P11a-C1-LIFE activation": [
+      "P11a-P1-BILL-API1 accepted implementation",
+      "P11a-P1-BILL-SAVE1 accepted implementation",
+      "independent LIFE contract+implementation acceptance"
+    ],
+    "P11a-C1-IN1": [
+      "accepted API1",
+      "accepted LIFE",
+      "accepted B1-PRE",
+      "accepted P1 (BILL+PRE)"
+    ],
+    "policy": "Edges are prerequisite IDs, not full DG06 completion. Root registers proposed IDs and crossDG06 in existing families after independent review; no registry edit here. API1 is accepted background, not a new dependency cycle for BILL. SAVE1 depends API1 child, LIFE depends SAVE1, neither child depends LIFE/IN1."
+  },
+  "deferred": [
+    {
+      "branches": "obfree merge!=NULL: billed quantity aggregation, absent merge bill, unbilled oid price adjustment; useup partial-stack liability",
+      "successor": "DG06-bill-merge-partial",
+      "family": "DG06",
+      "exit": "Bound exact merge/split/partial bill identities and quantities; public/save evidence; no reuse of whole-only seam"
+    },
+    {
+      "branches": "obfree unpaid/no owner or paid-on-bill sanity; next_shkp/shop_keeper location fallback; creditor identity and source administration",
+      "successor": "DG06-bill-account",
+      "family": "DG06",
+      "exit": "Persistent creditor/account lookup across active/cached shops, missing-owner diagnostics and no silent settlement; exact source bill administration"
+    },
+    {
+      "branches": "get_cost historic price, identification/oid/charisma/artifact/angry-shop rules; legacy missing bquan/price; billing admission/BILLSZ/full/free/dummy",
+      "successor": "DG06-bill-history",
+      "family": "DG06",
+      "exit": "Source receipt formation and historical pricing/quantity/account uncertainty reconciliation; accepted reconstruction only from sufficient source-backed inputs"
+    },
+    {
+      "branches": "check_unpaid/check_unpaid_usage/cost_per_charge guards, precharge fee, debit, speech draws/Deaf/mute/WIS exercise",
+      "successor": "P11a-P1-PRE",
+      "family": "P11a",
+      "cross_refs": [
+        "DG06",
+        "HE07",
+        "EQ04"
+      ],
+      "exit": "Accepted exact source preflight and fee state/events/RNG before charge; no fee invented by disposal"
+    },
+    {
+      "branches": "doinvbill presentation, pay/credit/debit/settlement/robbery/shop death; retained bill clearing",
+      "successor": "DG06-bill-settlement",
+      "family": "DG06",
+      "exit": "Payment and account exits find consumed records without live inventory and settle once; legacy unresolved terms never priced as zero"
+    },
+    {
+      "branches": "delete_contents/container pick; leash/food/book/boulder/globby weight restoration",
+      "successor": "DG06-bill-nonwand",
+      "family": "DG06",
+      "cross_refs": [
+        "OB02",
+        "OB04"
+      ],
+      "exit": "Source class/contents cleanup and glob valuation; rejected by whole-wand billing seam until reviewed"
+    },
+    {
+      "branches": "setnotworn/freeinv/update_inventory, timers/light and wield/quiver/dressing; naming and current_wand survivor",
+      "successor": "P11a-C1-LIFE",
+      "family": "P11a",
+      "exit": "Accepted exact represented cleanup in both billed/unbilled paths; absent/cleared generation no dust/removal; physical arena presence alone insufficient"
+    },
+    {
+      "branches": "dealloc_obj Lua refs -> OBJ_LUAFREE, staged OBJ_DELETED vs freeingdata immediate; thrown/kicked/tin/split refs",
+      "successor": "OB04-object-retirement",
+      "family": "OB04",
+      "exit": "Audit nonrepresented reference/storage branches under pinned Lua548 comparator; no Lua execution or equivalence of immediate Rust freeing inferred"
+    },
+    {
+      "branches": "zero/negative charge, failed attempt/time, cursed backfire and whole retirement activation",
+      "successor": "P11a-C1-IN1",
+      "family": "P11a",
+      "cross_refs": [
+        "P11a-B1-PRE"
+      ],
+      "exit": "Consume accepted billing API+SAVE/LIFE/P1/B1 prerequisites; public selected+legacy native evidence"
+    },
+    {
+      "branches": "pending direction and effect destruction, midoperation resume/current_wand clear, cancel/refusal",
+      "successor": "P11a-D1",
+      "family": "P11a",
+      "cross_refs": [
+        "P11b",
+        "OB07-zap-objects"
+      ],
+      "exit": "Persist actual pending owner/continuation; same-generation and single consumption, no replay or implied whole-stack survivor"
+    },
+    {
+      "branches": "machine schemas/public prompt/UI/locale and packed/browser surfaces",
+      "successor": "P11a-S1-MC",
+      "family": "P11a",
+      "cross_refs": [
+        "P11a-S1-M",
+        "P11a-S1-F",
+        "UI04-zap-messages"
+      ],
+      "exit": "Each adapter schema and pending transcript, all ten surfaces; frontend acceptance follows native D1/P1"
+    },
+    {
+      "branches": "all other shop parity/catalog/config contexts",
+      "successor": "DG06",
+      "family": "DG06",
+      "exit": "Existing family audit with bounded child inventories; full53/543 obligation remains, no prerequisite full-family closure"
+    }
+  ],
+  "existing_body_setup_proposal": {
+    "BILL-API1": [
+      "world.rs::SimulationWorld new serde(default) BillingState and new_with_character_and_ruleset empty initialization; new typed billing methods/types/private predicate/prepared commit; remove_unpaid existing body replaced only with bounded typed refusal delegation preserving () signature. get_unpaid_cost/is_unpaid/economy_ledger/forget_rot_corpse_references unchanged.",
+      "actions/economy.rs::SimulationWorld::handle_pay: insert global billing refusal at entry before local events/carried/pricing/debit/removal; otherwise existing body byte/semantics preserved. EconomyLedger methods and shop pricing unchanged.",
+      "actions/mod.rs::SimulationWorld::step_player_action: insert requested-Pay global billing refusal as first executable statement before any reconciliation, forced Wait or mutation; leave all other dispatch and tick bodies unchanged. No event type/action variant/i18n change."
+    ],
+    "BILL-SAVE1": [
+      "world.rs::from_save_json detects absent/explicit billing owner and validates active+cached live terms and detached consumed records after ruleset binding, before timer catchup; legacy tuples keep unavailable historical terms.",
+      "world.rs::to_save_json validates cloned billing snapshot if needed, without RNG, identity rewrite or extra lifecycle reconciliation.",
+      "stairs.rs::unpack_or_generate_level cached restore: remap only global billing.live_terms IDs present in existing item_map; preserve ordering. No pack_current_level/StoredLevel literal change."
+    ],
+    "tests": "New wand_billing_tests.rs separate fixtures only. No existing test/setup/assertion/helper/constructor literal edit. Constructor check found StoredLevel literals in six existing test files; avoiding its field addition preserves all those bodies exactly. Additional new fixtures/assertions only in wand_billing_tests.rs for F1/F2 and SAVE1 chains; no existing fixture/test/helper/assertion/setup modification. No repo helper file required for F3: exact inline snapshot-only Python commands are specified below.",
+    "approval": "Exact names above verified at bound HEAD; these are proposals for separate implementation review, not author permission. Any extra existing literal/body/file must be enumerated and justified before implementation approval; no automatic widening."
+  },
+  "validation": {
+    "executed_here": false,
+    "focused_future_commands": {
+      "P11a-P1-BILL-API1": [
+        "cargo test -p nethacked-sim --test wand_billing_tests --locked",
+        "cargo test -p nethacked-sim --test selected_wand_tests --test monster_creation_wand_tests --test save_load_tests --test level_persistence_tests --test item_definition_identity_tests --locked",
+        "cargo test -p nethacked-arena -p nethacked-data --locked"
+      ],
+      "P11a-P1-BILL-SAVE1": [
+        "cargo test -p nethacked-sim --test wand_billing_tests --locked",
+        "cargo test -p nethacked-sim --test selected_wand_tests --test monster_creation_wand_tests --test save_load_tests --test level_persistence_tests --test item_definition_identity_tests --locked",
+        "cargo test -p nethacked-arena -p nethacked-data --locked",
+        "cargo test -p nethacked-pack --test pack_lib --test pack_files --test cli --locked",
+        "cargo test -p nethacked-pack --test example_pack --locked",
+        "cargo test -p nethacked-wasm --locked",
+        "cargo test -p nethacked-agent --test golden_determinism --locked",
+        "cargo check -p nethacked-wasm --target wasm32-unknown-unknown --locked",
+        "cargo test -p nethacked-pack --test pack_lib old_item_profiles_load_fixed_without_changing_hash --locked -- --exact",
+        "cargo test -p nethacked-pack --test pack_files vanilla_pack_files_rebuild_to_vanilla_hash --locked -- --exact",
+        "cargo test -p nethacked-pack --test cli test_cli_schema --features cli,schema --locked -- --exact"
+      ],
+      "SAVE1_generation_hash_compare": "Execute compatibility.SAVE1_exact_manifest.steps in order; all exact argv/stdout destinations specified there. No new helper/repo file or test setup edits."
+    },
+    "root_full12": [
+      "fmt",
+      "clippy",
+      "workspace",
+      "wasm",
+      "python",
+      "static",
+      "extract",
+      "generated",
+      "coverage",
+      "parity",
+      "docs",
+      "lean"
+    ],
+    "all3": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "root_requirements": "Use coordinator-review-inputs.json bound exact gate-harness.py/all12 argv (U3 resolved); retain external scratch extract/generated comparison requirements, record all12 fresh logs/exits/actual test count and345+current inputs digest. Future source changes require fresh changed-input independent review;1026/12/3 records are historical baseline only. Schema/hash/oldpack missing exits above mandatory. No commands from this list run by audit author.",
+    "atomic_comparison": "For F1/F2 compare complete raw serialized state and clone-next RNG, returned events and event log, scheduler/turn/timers and gold before/after; to_save_json equality alone is insufficient because it reconciles a clone. Successful later view/save/disposal conservation is separate from refusal atomicity."
+  },
+  "unresolved": [
+    {
+      "id": "U1",
+      "fact": "Existing tuple ledger has no creditor, historical unit price or original billed quantity. Old saves cannot recover these exactly from current base cost/quantity. Unknown legacy terms must survive disposal; exact C valuation/account equality remains open.",
+      "owner": "DG06-bill-history / DG06-bill-account"
+    },
+    {
+      "id": "U2",
+      "fact": "Proposed BILL API/SAVE children and LIFE seam have no implementation or independent acceptance. No public whole-wand retirement conformance exists at this HEAD.",
+      "owner": "P11a-P1-BILL-API1 / P11a-P1-BILL-SAVE1 / P11a-C1-LIFE / P11a-C1-IN1"
+    },
+    {
+      "id": "U3",
+      "fact": "Coordinator manifest supplies exact accepted gate-harness.py SHA and all12 argv; historical1026/12/3 remains baseline only. No harness executed here.",
+      "owner": "root validation",
+      "status": "resolved"
+    },
+    {
+      "id": "U4",
+      "fact": "Current source has no persisted zap pending owner; genuine midoperation direction continuation is D1. API boundary save tests cannot claim that acceptance.",
+      "owner": "P11a-D1"
+    },
+    {
+      "id": "U5",
+      "fact": "Concrete semantics for native payment of consumed/unresolved bills, full C creditor/state and nonrepresented Lua/storage references remain unaudited here.",
+      "owner": "DG06-bill-settlement / OB04-object-retirement"
+    }
+  ],
+  "scope_preservation": "All53 families/543 historical rows and future P11b/OB07/HE02/EQ03/HE07/EQ04/DG06/UI fronts retained. Every named deferred child is proposed under an existing family, not falsely accepted or a new family. Historical present/status/test counts are not C conformance.",
+  "deferred_registration_policy": "DG06-bill-merge-partial/account/history/settlement/nonwand and OB04-object-retirement are proposed stable successor IDs under existing DG06/OB04 families, not present/accepted claims. Root must register acyclic exact dependencies after their own audits. This author does not modify the ledger.",
+  "repair": {
+    "attempt": 1,
+    "unsuccessful_attempts": 0,
+    "finding_ids": [
+      "F1",
+      "F2",
+      "F3"
+    ],
+    "status": "authored repair; fresh independent rereview required; no author approval/registration",
+    "reused": "All initial PASS semantic/config/source findings unchanged; only bounded F1/F2/F3 plus U3 coordinator correction."
+  }
+}

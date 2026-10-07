@@ -1,0 +1,43 @@
+{
+  "head": "8f44a7a9f7a1536e2c5a21ec47596777ac705fc0",
+  "branch": "feat/monster-hp-d8",
+  "source_inputs": 345,
+  "source_digest": "b7aebd3bc3c198fa6866d06a61a5e899bcf21ef61587bf7a09d72f4f9d5f40f3",
+  "complete_hash_manifest": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/baseline.json",
+  "source_before_archive": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/source-review.tar.gz",
+  "same_source_gate_reuse": {
+    "accepted": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/full-gates/accepted.json",
+    "sha256": "b9925b0ccfec6fdef3db4102997ed72a133c8ecb2d9fecc1c6b40470651697c6",
+    "results": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/full-gates/results.json",
+    "results_sha256": "ebb19e883ab1c0f2233a4b757de1e5968d17dda20eb11ef4979ec24bc2f632eb",
+    "tests": 1026,
+    "checks": 12,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "fresh_full_execution": false,
+    "reason": "Complete production input set and every byte match the accepted API1 fresh full run; only docs/MEMORY/ledger change."
+  },
+  "scope_registry_sha256": "ef0c220796234250d4d8e532f66ffbd113503d8db78bc40c002368f90719a5e9",
+  "families": 53,
+  "registered_children": 36,
+  "new_implementation_children": [
+    "P11a-P1-BILL-API1",
+    "P11a-P1-BILL-SAVE1"
+  ],
+  "new_deferred_children": [
+    "DG06-bill-merge-partial",
+    "DG06-bill-account",
+    "DG06-bill-history",
+    "DG06-bill-settlement",
+    "DG06-bill-nonwand",
+    "OB04-object-retirement"
+  ],
+  "DAG": "acyclic; every dependency resolves",
+  "lifecycle": "Contract readiness only; no billing runtime or family acceptance",
+  "source_profile": "released16ff59115315917b93185d026aeefea06db9b0f4 under selected reviewed profile",
+  "artifact_claims": "Author/review artifacts preserved as phase snapshots; unit+verified delivery are authoritative readiness",
+  "historical_review_correction": "rereview1 newline diagnosis disproved by original AST codepoint10 and final independent review; original verdict/counter retained"
+}

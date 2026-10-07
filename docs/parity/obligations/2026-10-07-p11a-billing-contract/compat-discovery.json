@@ -1,0 +1,10 @@
+{
+  "query": "Function names schema/canonical_hash/manifest under pack",
+  "result": {
+    "total": 0,
+    "results": [],
+    "has_more": false,
+    "hint": "No results. Try removing the label filter or broadening the name_pattern regex."
+  },
+  "assessment": "Graph returned zero nodes. Bounded fallback allowed for current nethacked-pack CLI/schema/canonical-hash source, tests and non-code script/config command discovery; no broad repo audit."
+}

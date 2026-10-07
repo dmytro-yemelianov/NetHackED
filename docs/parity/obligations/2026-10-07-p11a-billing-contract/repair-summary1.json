@@ -1,0 +1,385 @@
+{
+  "schema": "netrust-p11a-p1-bill-repair-summary-v1",
+  "unit": "P11a-P1-BILL",
+  "attempt": 1,
+  "unsuccessful_attempts": 0,
+  "status": "authored contract repair; fresh independent rereview next",
+  "implementation_authorized": false,
+  "findings": [
+    {
+      "id": "F1",
+      "attempt": 1,
+      "unsuccessful_attempts": 0,
+      "changed_sections": [
+        "api.admission/errors",
+        "representation.invariants",
+        "extra_oracles",
+        "validation.atomic_comparison",
+        "proposed_children.API1.acceptance_exits"
+      ],
+      "artifact_hash_refs": [
+        "contract.json",
+        "contract.md",
+        "evidence.json",
+        "ready-packet.md"
+      ],
+      "new_owner_refs": []
+    },
+    {
+      "id": "F2",
+      "attempt": 1,
+      "unsuccessful_attempts": 0,
+      "changed_sections": [
+        "api.clearing_policy/errors",
+        "representation.invariants",
+        "extra_oracles",
+        "existing_body_setup_proposal",
+        "proposed_children.API1.allowlist/acceptance_exits",
+        "proposed_children.SAVE1.acceptance_exits",
+        "validation.atomic_comparison"
+      ],
+      "artifact_hash_refs": [
+        "contract.json",
+        "contract.md",
+        "evidence.json",
+        "ready-packet.md"
+      ],
+      "new_owner_refs": [
+        "crates/nethacked-sim/src/actions/mod.rs (new inbound dispatcher owner; world/economy rebound narrowly)"
+      ]
+    },
+    {
+      "id": "F3",
+      "attempt": 1,
+      "unsuccessful_attempts": 0,
+      "changed_sections": [
+        "compatibility.pack_schema_hash/SAVE1_exact_manifest",
+        "validation.focused_future_commands",
+        "proposed_children.SAVE1.acceptance_exits"
+      ],
+      "artifact_hash_refs": [
+        "contract.json",
+        "contract.md",
+        "evidence.json",
+        "ready-packet.md"
+      ],
+      "new_owner_refs": [
+        "crates/nethacked-pack/src/main.rs",
+        "crates/nethacked-pack/src/nhpack.rs",
+        "crates/nethacked-pack/src/files.rs",
+        "crates/nethacked-pack/tests/pack_lib.rs",
+        "crates/nethacked-pack/tests/pack_files.rs",
+        "crates/nethacked-pack/tests/cli.rs",
+        "crates/nethacked-pack/tests/example_pack.rs",
+        "crates/nethacked-pack/Cargo.toml",
+        "packs/examples/hard-mode/*",
+        "crates/nethacked-data/src/ruleset.rs (wire defaults only)",
+        "scripts/extract/gen_rust.py",
+        "scripts/extract/c_tables.py"
+      ]
+    }
+  ],
+  "artifact_hashes": {
+    "contract.json": {
+      "before": "838af79760f931ecdaa1a118396e3744fc8c34cfa51c91244e81ac0545455e80",
+      "after": "667e6043cd1bd0a2173dd447e8cd80773a8980fe02c6cc61d0e3e3901c1a6232",
+      "changed": true
+    },
+    "contract.md": {
+      "before": "bc16c912d2337d9e2f3457a1a1d0a7ce86aafc5afc88720701025f3f8cbc5564",
+      "after": "1b04f35c7fb333740e87f0281ea380bff0b68ae016e6c3809781d251371de19c",
+      "changed": true
+    },
+    "evidence.json": {
+      "before": "e5fec4599a02d5c898ff7296f04f0a21906f82998ac12a55cb34c1eced63a473",
+      "after": "803e59f6c1a3409624f85361f06780a57865d8babd471bb5def98ffbf56bb1d7",
+      "changed": true
+    },
+    "ready-packet.md": {
+      "before": "f5286853616eea8ed31596c987ed29b4fd1d23c8ab746dd1e7ee39189440e909",
+      "after": "680442a6d1c3d8348adba6dbb8a0d64da947f6e3e20d25aad98cd96896ed733e",
+      "changed": true
+    },
+    "baseline.json": {
+      "before": "738e5d04a68b962d4655941c2def10a7a87bee719ab314e353b0e2cac3db042b",
+      "after": "738e5d04a68b962d4655941c2def10a7a87bee719ab314e353b0e2cac3db042b",
+      "changed": false
+    },
+    "graph-discovery.json": {
+      "before": "86ddec116f5acd30328736fb4180cb7afba7b18a6cabaf23898740012ca0147d",
+      "after": "86ddec116f5acd30328736fb4180cb7afba7b18a6cabaf23898740012ca0147d",
+      "changed": false
+    }
+  },
+  "newly_bound_owners": [
+    {
+      "path": "crates/nethacked-sim/src/world.rs",
+      "sha256": "9e4cd1aedb4b455e5df5fb949dd908b2f9a9017a2fce067856a1d7d5e7caf7ad",
+      "git_blob_at_head": "5740eae98063a992ad1ba0d5ebe5f913f96aecdd",
+      "ranges": [
+        {
+          "start": 666,
+          "end": 700,
+          "symbol": "clearing and rot inbound",
+          "sha256": "2c11916cbf4197defdeba0030f07522cf5f8033d1173908246fd8ba66363b637"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-sim/src/actions/economy.rs",
+      "sha256": "28478f5c9a6960c5d5936f81c338f6a9b1feb7306f6c42d82cad2a32003f8b41",
+      "git_blob_at_head": "4ba04df33f2a9a00c8e6deb26c1d54ac0c76b456",
+      "ranges": [
+        {
+          "start": 117,
+          "end": 153,
+          "symbol": "Pay owner",
+          "sha256": "17309047f7947544ffd0eec4096b53b6b032485a0d493274587611520a973344"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-sim/src/actions/mod.rs",
+      "sha256": "84bca7417cef8124fe6f9c5311412133c0d9dac873fdfd2593659f769c880a16",
+      "git_blob_at_head": "425ad1683d61beebc38794b12bba7b20078b1c9d",
+      "ranges": [
+        {
+          "start": 20,
+          "end": 47,
+          "symbol": "public Pay pre-mutation entry",
+          "sha256": "f7eafc917e28f271335051388e91d989f706a5a20d166aad816f4b3ed041df24"
+        },
+        {
+          "start": 108,
+          "end": 116,
+          "symbol": "Pay dispatch",
+          "sha256": "9d2c75c7e721871845fb521b918735d47d168842635ea9da12858a5f4be8c075"
+        },
+        {
+          "start": 178,
+          "end": 215,
+          "symbol": "post-dispatch mutations",
+          "sha256": "118d6e4e1e39e1e8165db64a29021ebf8f0c3c5de6635c508e94b3d867dd23a3"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-pack/src/main.rs",
+      "sha256": "2f400c6f7965be187b19883515f3e9a6dc8583f6531865c64dc181fcdf4cea25",
+      "git_blob_at_head": "3bf979ca622b6e9ce30b4330eef65d019c3b7f95",
+      "ranges": [
+        {
+          "start": 32,
+          "end": 55,
+          "symbol": "CLI generation options",
+          "sha256": "7b1cfeff7a6d703d57fe28ba6d89be7874c14557c7a62eef806e3e73dfd20bff"
+        },
+        {
+          "start": 340,
+          "end": 373,
+          "symbol": "build hash output",
+          "sha256": "038ea36d7ae11149e4181cc66abb953eb258e9ed1bf2662a63b92c03bc88be13"
+        },
+        {
+          "start": 519,
+          "end": 562,
+          "symbol": "schema generation/exits",
+          "sha256": "96c5a51cd443c67507d2a629513a28726041efa9a570af551bfd613306a674d8"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-pack/src/nhpack.rs",
+      "sha256": "283aed0596cf0fb5a4699511e51072a0eceda141a05796fa45c07f23ad93f79c",
+      "git_blob_at_head": "318145bebf7392cec6e4737076cde3d4a60a564c",
+      "ranges": [
+        {
+          "start": 31,
+          "end": 39,
+          "symbol": "canonical hash",
+          "sha256": "5aef952549fc74a9842e4ca23e933df112f0449d7ab65103e65136b8ea52bab4"
+        },
+        {
+          "start": 118,
+          "end": 154,
+          "symbol": "native typed/hash validation",
+          "sha256": "e7610a30822a7fb1d8fff8f186dacf406a6a86b0b6e0562db6873c263bf4ac1b"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-pack/src/files.rs",
+      "sha256": "2d5d157b9175bcba4bae1fc1f5bd96b24c49b56205a7398a0a6db256e260846d",
+      "git_blob_at_head": "d95ba48134ab2e616b0b471f417ddc5582d211a9",
+      "ranges": [
+        {
+          "start": 202,
+          "end": 215,
+          "symbol": "vanilla export fixture manifest",
+          "sha256": "4f23dc00f694e98aa043bbd8e72c328b413fc74939b5bbcfc8cf3a245747a612"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-pack/tests/pack_lib.rs",
+      "sha256": "a5e1279661904cf386d41c1df56dfd14158caa2eddd0939fde007b53900b466f",
+      "git_blob_at_head": "d4eb9c8f760feaaeb626db96db6050e29b4e5378",
+      "ranges": [
+        {
+          "start": 626,
+          "end": 651,
+          "symbol": "old item profile fixture",
+          "sha256": "cddccaec609a54b5ef6c491a032244d80cd579f7e2b70ee8d9e4858ea7a118c4"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-pack/tests/pack_files.rs",
+      "sha256": "b637161469312a5b91d2945ee236572c74c631a407cd3e2e04304d963404cc47",
+      "git_blob_at_head": "824ffb340077d14e6cf93baf381a2e2baf896595",
+      "ranges": [
+        {
+          "start": 105,
+          "end": 112,
+          "symbol": "vanilla hash test",
+          "sha256": "aacba771bd6c746eb993efaec95fe9f3a13e9e29a3f8f1423a65de7c25629e70"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-pack/tests/cli.rs",
+      "sha256": "1c7af57dee952b92a6d947707ad81600c90c76b5778c7fc805362b267db97c67",
+      "git_blob_at_head": "15aa2b48b0fa97707b18e9c1b9c6b60772295922",
+      "ranges": [
+        {
+          "start": 255,
+          "end": 282,
+          "symbol": "schema test/options",
+          "sha256": "3c615cf39145740fd9d4ccc873cbbd74ead4e179375e88456917561b883db969"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-pack/tests/example_pack.rs",
+      "sha256": "e9885423a0042a86683f8d771ffc1fc638267db63ea7741d4be956a8d1e0e78c",
+      "git_blob_at_head": "dc0823dcf8a08ad40ffc023ee5da645d34188ac6",
+      "ranges": [
+        {
+          "start": 7,
+          "end": 20,
+          "symbol": "custom example fixture",
+          "sha256": "ceabb8bac78f4d668680571ec4870bbcd2b36f1b129a1e811e28544eb46cb263"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-data/src/ruleset.rs",
+      "sha256": "fc3cad8e54a047a3ec35a6b8ecf8bcbee6ddeeeba93a21af3f4b5e115fdd0a6f",
+      "git_blob_at_head": "187f86373ddf709f233fd51fba07ea33883dc559",
+      "ranges": [
+        {
+          "start": 291,
+          "end": 308,
+          "symbol": "old item wire defaults",
+          "sha256": "2aac7a7a9e5273211078a30b004993dedc86da15fcd3851a3fa65bd4e0138eb2"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-pack/Cargo.toml",
+      "sha256": "ed631fbb7cb5ab565f3e1e2792397771e944ce705c1f25ee724a4ebad80024c3",
+      "git_blob_at_head": "6b5c2307a82a24a225fff4a8b28a8ff4158d5d6a",
+      "ranges": [
+        {
+          "start": 1,
+          "end": 39,
+          "symbol": "existing cli/schema features",
+          "sha256": "ed631fbb7cb5ab565f3e1e2792397771e944ce705c1f25ee724a4ebad80024c3"
+        }
+      ]
+    },
+    {
+      "path": "packs/examples/hard-mode/i18n/uk.toml",
+      "sha256": "d25a9caaf2930d4c3f71961d62f067b4590424c01f6db1b4ff2e604f96ae3ffb"
+    },
+    {
+      "path": "packs/examples/hard-mode/items.toml",
+      "sha256": "b946a7fca43a65ebac8adad81148df075b041f72949b68aebcc74ad1447cbf4e"
+    },
+    {
+      "path": "packs/examples/hard-mode/monsters.toml",
+      "sha256": "61a56834b28a8d2853880549a185128d06dd77f6be21d728edcd594bf93017ef"
+    },
+    {
+      "path": "packs/examples/hard-mode/pack.toml",
+      "sha256": "b7ef816514ad00e68dc1c9798cfa423107de33c07b80f86bdd2fbd426637f55c"
+    },
+    {
+      "path": "packs/examples/hard-mode/roles.toml",
+      "sha256": "f90adcea6e0b3395bd194e5a860ac724a849d93f35cbc2598200a229fb1a02ec"
+    },
+    {
+      "path": "scripts/extract/gen_rust.py",
+      "sha256": "c95f73103f4658d815afc21b215ab5a91bd3f5fad39d802b4140f4d67c90b124",
+      "purpose": "non-code command/output-path discovery only; no execution",
+      "ranges": [
+        {
+          "start": 19,
+          "end": 19,
+          "sha256": "928fd07ea2c173fcb87bc94dc045fc40f947048f7919a7bd7dc8f95198890374"
+        },
+        {
+          "start": 20,
+          "end": 20,
+          "sha256": "afe91ccc7b7067a43142e9e4a857b7bcfcad875f4683578d77ae6ac080039917"
+        }
+      ]
+    },
+    {
+      "path": "scripts/extract/c_tables.py",
+      "sha256": "2da726e9ecb2598dc6899e1be3d0af7634c7c961e41417ec9952e1801931e439",
+      "purpose": "non-code command/output-path discovery only; no execution",
+      "ranges": [
+        {
+          "start": 20,
+          "end": 20,
+          "sha256": "d472ed1bba95ac6bfdc533b8720aee9561258f2720c2859d8e89c52639a06b07"
+        }
+      ]
+    }
+  ],
+  "exact_existing_body_setup_proposal": {
+    "BILL-API1": [
+      "world.rs::SimulationWorld new serde(default) BillingState and new_with_character_and_ruleset empty initialization; new typed billing methods/types/private predicate/prepared commit; remove_unpaid existing body replaced only with bounded typed refusal delegation preserving () signature. get_unpaid_cost/is_unpaid/economy_ledger/forget_rot_corpse_references unchanged.",
+      "actions/economy.rs::SimulationWorld::handle_pay: insert global billing refusal at entry before local events/carried/pricing/debit/removal; otherwise existing body byte/semantics preserved. EconomyLedger methods and shop pricing unchanged.",
+      "actions/mod.rs::SimulationWorld::step_player_action: insert requested-Pay global billing refusal as first executable statement before any reconciliation, forced Wait or mutation; leave all other dispatch and tick bodies unchanged. No event type/action variant/i18n change."
+    ],
+    "BILL-SAVE1": [
+      "world.rs::from_save_json detects absent/explicit billing owner and validates active+cached live terms and detached consumed records after ruleset binding, before timer catchup; legacy tuples keep unavailable historical terms.",
+      "world.rs::to_save_json validates cloned billing snapshot if needed, without RNG, identity rewrite or extra lifecycle reconciliation.",
+      "stairs.rs::unpack_or_generate_level cached restore: remap only global billing.live_terms IDs present in existing item_map; preserve ordering. No pack_current_level/StoredLevel literal change."
+    ],
+    "tests": "New wand_billing_tests.rs separate fixtures only. No existing test/setup/assertion/helper/constructor literal edit. Constructor check found StoredLevel literals in six existing test files; avoiding its field addition preserves all those bodies exactly. Additional new fixtures/assertions only in wand_billing_tests.rs for F1/F2 and SAVE1 chains; no existing fixture/test/helper/assertion/setup modification. No repo helper file required for F3: exact inline snapshot-only Python commands are specified below.",
+    "approval": "Exact names above verified at bound HEAD; these are proposals for separate implementation review, not author permission. Any extra existing literal/body/file must be enumerated and justified before implementation approval; no automatic widening."
+  },
+  "still_missing_exits": [
+    "Fresh independent contract rereview",
+    "API1 implementation+review: F1/F2 atomicity, typed APIs, whole disposal/views, identity/legacy conservation",
+    "SAVE1 implementation+review: active/cached remap, admission/refusal/disposal continuation, malformed failure-before-catchup, exact pack/schema/hash scratch manifest outputs",
+    "LIFE separate timer/equipment/reference cleanup acceptance before activation; IN1/D1/PRE and adapters/frontend exits remain mandatory",
+    "Fresh focused tests, WASM/no-forbidden-dependencies and exact root all12/all3 changed-input evidence; all53/543 remain open scope",
+    "Exact legacy historical amount/quantity/creditor and settlement/account/partial/nonrepresented references remain named DG06/OB04 successors"
+  ],
+  "coordinator_resolution": "U3 exact harness resolved; no new gate execution",
+  "preservation": "Original immutable packet/review unchanged; draft baseline/graph unchanged; passed semantic/config/C source findings reused. No repo/Cargo/build/C/Lua/generation/agents/commit/golden change. No future golden permission.",
+  "verification": {
+    "status": "PASS mechanical only",
+    "json": "all seven artifacts parse where JSON; future inline Python syntax compiled only, not executed",
+    "bindings": "new source full-file/range hashes and pinned native bytes; reused native snippets; review/coordinator/compat-discovery/harness hashes match",
+    "copy_equality": "baseline.json/graph-discovery.json identical to root and immutable contract-initial copies",
+    "artifact_hashes": "evidence refreshed; summary before equals immutable packet, after equals current draft",
+    "no_gates": true,
+    "C": "unchanged pinned-C PASS bindings reused; no reread or C execution",
+    "repository_status": "Only preexisting external dirty docs/parity/obligations/2026-10-07-autonomous-parity-run.json; no author repo writes"
+  }
+}

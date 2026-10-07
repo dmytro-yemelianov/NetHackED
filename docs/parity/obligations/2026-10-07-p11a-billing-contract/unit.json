@@ -1,0 +1,104 @@
+{
+  "schema": "netrust-p11a-billing-contract-unit-v1",
+  "id": "P11a-P1-BILL",
+  "parent": "P11a",
+  "state": "verified_contract_awaiting_delivery",
+  "source_conformance_accepted": false,
+  "family_closed": false,
+  "baseline_head": "8f44a7a9f7a1536e2c5a21ec47596777ac705fc0",
+  "source_count": 345,
+  "source_digest": "b7aebd3bc3c198fa6866d06a61a5e899bcf21ef61587bf7a09d72f4f9d5f40f3",
+  "contract": "contract.json",
+  "final_review": "review-final.json",
+  "verdict": "PASS",
+  "semantic_reuse": [
+    "review-initial.json passed source/configuration/cache/identity/DAG semantics",
+    "rereview1.json resolvesF1F2; finalreview verifiesF3 and corrects newline diagnosis"
+  ],
+  "published_hashes": {
+    "contract.md": "1b04f35c7fb333740e87f0281ea380bff0b68ae016e6c3809781d251371de19c",
+    "contract.json": "0bf62292df757442402698a4f19559ba1f05f0913d6507bd7655026e7a1ba5ef",
+    "evidence.json": "e076234524f49601f1fc09c2db75efb2f5da199a994145899a7d9ee855626300",
+    "ready-packet.md": "680442a6d1c3d8348adba6dbb8a0d64da947f6e3e20d25aad98cd96896ed733e",
+    "baseline.json": "738e5d04a68b962d4655941c2def10a7a87bee719ab314e353b0e2cac3db042b",
+    "graph-discovery.json": "86ddec116f5acd30328736fb4180cb7afba7b18a6cabaf23898740012ca0147d",
+    "repair-summary1.json": "f2786b5e2a49702ad851f5345fb8d03e58bff4324cd05b67b2bd3c130d6c301d",
+    "repair-summary2.json": "6a3ee7312e298e79441a85ff18d4c549a6cb3a419ece2ed097efc9f1559c5f6e",
+    "review-initial.json": "aa24a1d7d66df740f3b87dc2cce82893aece8358a440306c7058636416ba55e3",
+    "review-initial.md": "f3394df77fb9e824a2909b4603cb3e510fe8afd41d1cb706e026b414a686296e",
+    "rereview1.json": "6ec1b2ef724fe7f9cd9c0594649f21d604e2c91f9249d35722a1ba143b0e4293",
+    "rereview1.md": "fc1670cc420c7064a9c4d9eddd9d745a65ed7280cbd635989419b61c08bd1fb1",
+    "review-final.json": "0aed1813842e266387c269f757f2da8003d04a8ea04d96d370ef40e6f6238bb3",
+    "review-final.md": "6636fc055c6d11171947066679d351241b1b98a5d50809a7c0f8209c289fcb4f",
+    "coordinator-review-inputs.json": "36b214047e7e48dc6320a500f9b555c425a9accdc933586ddcd85e27ae95046d",
+    "compat-discovery.json": "8a46e8ef818e635dd100ac04b3e05ea6803490011855039550d4f7bc1975561d",
+    "readback-verification.json": "947b1fe00cd56ab7e72e34dd6c0c08d29b795fc8766f80cf11604806cf525ab7"
+  },
+  "registered_children": [
+    "P11a-P1-BILL-API1",
+    "P11a-P1-BILL-SAVE1",
+    "DG06-bill-merge-partial",
+    "DG06-bill-account",
+    "DG06-bill-history",
+    "DG06-bill-settlement",
+    "DG06-bill-nonwand",
+    "OB04-object-retirement"
+  ],
+  "repair_counters": {
+    "F1": {
+      "attempts": 1,
+      "unsuccessful": 0,
+      "status": "resolved_at_contract_scope",
+      "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/rereview1/review.json"
+    },
+    "F2": {
+      "attempts": 1,
+      "unsuccessful": 0,
+      "status": "resolved_at_contract_scope",
+      "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/rereview1/review.json"
+    },
+    "F3": {
+      "attempts": 2,
+      "unsuccessful": 1,
+      "status": "resolved_contract_scope",
+      "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/review-final/review-final.json",
+      "historical_diagnosis_correction": "Originalsuffix realnewline; historicalnonPASS kept, explicitJSONreadback accepted"
+    }
+  },
+  "root_resolved": [
+    "U3 exact12harness/argv"
+  ],
+  "remaining": [
+    "U1 legacy historicalamount/quantity/creditor",
+    "U2 API1/SAVE1/LIFE/IN1 implementation acceptance",
+    "U4 D1 persistedpendingowner",
+    "U5 settlement/nonrepresented references"
+  ],
+  "validation": {
+    "accepted": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/full-gates/accepted.json",
+    "sha256": "b9925b0ccfec6fdef3db4102997ed72a133c8ecb2d9fecc1c6b40470651697c6",
+    "results": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/full-gates/results.json",
+    "results_sha256": "ebb19e883ab1c0f2233a4b757de1e5968d17dda20eb11ef4979ec24bc2f632eb",
+    "tests": 1026,
+    "checks": 12,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "fresh_full_execution": false,
+    "reason": "Complete production input set and every byte match the accepted API1 fresh full run; only docs/MEMORY/ledger change.",
+    "fresh_changed_docs": {
+      "results": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/doc-gates/results.json",
+      "sha256": "89ba490b0969e606d585ee251df71db7f7c820770b42667960056911e00fb748",
+      "checks": [
+        "parity",
+        "docs"
+      ],
+      "all_passed": true
+    }
+  },
+  "durable_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL",
+  "delivery_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/contract-delivery.json",
+  "scope": "All53 families/543historic rows intact;36registered children are not a remainingtask count."
+}

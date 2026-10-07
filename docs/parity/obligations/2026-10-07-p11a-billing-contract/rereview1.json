@@ -1,0 +1,164 @@
+{
+  "verdict": "NEEDS_CHANGES",
+  "review_markdown": "F1 and F2 are resolved at contract scope. F3 remains open because its exact comparison command can succeed while writing invalid JSON.\n\nThis was a direct delta rereview of repair1. Initial passed C/configuration/identity/save semantics were reused; unchanged baseline, graph, source-set and coordinator harness proofs were not replayed. No implementation or conformance acceptance is implied.",
+  "findings": [
+    {
+      "id": "F3",
+      "trigger": "Execute SAVE1_exact_manifest.steps[scratch-compare] and consume its comparison.json output.",
+      "evidence": "The decoded Python command ends with write_text(json.dumps(results,indent=2)+'\\\\n'). That Python literal appends the two characters backslash+n, rather than JSON whitespace. The command neither parses its written artifact nor fails for this defect.",
+      "consequence": "The mandatory comparison step can exit zero while producing an invalid comparison.json acceptance artifact. The exact SAVE1 output protocol is therefore not ready.",
+      "repair": "In this inline command only, append an actual newline or omit the suffix, and parse the written comparison.json before successful exit. Preserve all fixture inputs, baseline provenance, comparisons, production outputs and existing assertions/setups. Refresh affected artifact bindings and rereview F3."
+    }
+  ],
+  "bindings": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/repair1/draft/contract.json",
+      "sha256": "667e6043cd1bd0a2173dd447e8cd80773a8980fe02c6cc61d0e3e3901c1a6232"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/repair1/draft/contract.md",
+      "sha256": "1b04f35c7fb333740e87f0281ea380bff0b68ae016e6c3809781d251371de19c"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/repair1/draft/evidence.json",
+      "sha256": "803e59f6c1a3409624f85361f06780a57865d8babd471bb5def98ffbf56bb1d7"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/repair1/draft/ready-packet.md",
+      "sha256": "680442a6d1c3d8348adba6dbb8a0d64da947f6e3e20d25aad98cd96896ed733e"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/repair1/draft/repair-summary.json",
+      "sha256": "f2786b5e2a49702ad851f5345fb8d03e58bff4324cd05b67b2bd3c130d6c301d"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/repair1/contract.delta",
+      "sha256": "e7bdcf1b61bb0bb0a6826df85ca4996d8854e382eba559db46790f87ee2ce0c3"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/repair1/verification.json",
+      "sha256": "d6641ab62d5d46ff90dd0d1c9456f3f17ab266dd79e815573f3a37a0954d6e3c"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/review-initial/review-initial.json",
+      "sha256": "aa24a1d7d66df740f3b87dc2cce82893aece8358a440306c7058636416ba55e3"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/coordinator-review-inputs.json",
+      "sha256": "36b214047e7e48dc6320a500f9b555c425a9accdc933586ddcd85e27ae95046d"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/compat-discovery.json",
+      "sha256": "8a46e8ef818e635dd100ac04b3e05ea6803490011855039550d4f7bc1975561d"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/gate-harness.py",
+      "sha256": "a4dced7d1da1d806febff96354ebc9bd15a35e9078ebc86cae163c9ee8a8b117"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-sim/src/world.rs",
+      "sha256": "9e4cd1aedb4b455e5df5fb949dd908b2f9a9017a2fce067856a1d7d5e7caf7ad"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-sim/src/actions/economy.rs",
+      "sha256": "28478f5c9a6960c5d5936f81c338f6a9b1feb7306f6c42d82cad2a32003f8b41"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-sim/src/actions/mod.rs",
+      "sha256": "84bca7417cef8124fe6f9c5311412133c0d9dac873fdfd2593659f769c880a16"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-pack/src/main.rs",
+      "sha256": "2f400c6f7965be187b19883515f3e9a6dc8583f6531865c64dc181fcdf4cea25"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-pack/src/nhpack.rs",
+      "sha256": "283aed0596cf0fb5a4699511e51072a0eceda141a05796fa45c07f23ad93f79c"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-pack/src/files.rs",
+      "sha256": "2d5d157b9175bcba4bae1fc1f5bd96b24c49b56205a7398a0a6db256e260846d"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-pack/tests/pack_lib.rs",
+      "sha256": "a5e1279661904cf386d41c1df56dfd14158caa2eddd0939fde007b53900b466f"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-pack/tests/pack_files.rs",
+      "sha256": "b637161469312a5b91d2945ee236572c74c631a407cd3e2e04304d963404cc47"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-pack/tests/cli.rs",
+      "sha256": "1c7af57dee952b92a6d947707ad81600c90c76b5778c7fc805362b267db97c67"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-pack/tests/example_pack.rs",
+      "sha256": "e9885423a0042a86683f8d771ffc1fc638267db63ea7741d4be956a8d1e0e78c"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-data/src/ruleset.rs",
+      "sha256": "fc3cad8e54a047a3ec35a6b8ecf8bcbee6ddeeeba93a21af3f4b5e115fdd0a6f"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-pack/Cargo.toml",
+      "sha256": "ed631fbb7cb5ab565f3e1e2792397771e944ce705c1f25ee724a4ebad80024c3"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/packs/examples/hard-mode/i18n/uk.toml",
+      "sha256": "d25a9caaf2930d4c3f71961d62f067b4590424c01f6db1b4ff2e604f96ae3ffb"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/packs/examples/hard-mode/items.toml",
+      "sha256": "b946a7fca43a65ebac8adad81148df075b041f72949b68aebcc74ad1447cbf4e"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/packs/examples/hard-mode/monsters.toml",
+      "sha256": "61a56834b28a8d2853880549a185128d06dd77f6be21d728edcd594bf93017ef"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/packs/examples/hard-mode/pack.toml",
+      "sha256": "b7ef816514ad00e68dc1c9798cfa423107de33c07b80f86bdd2fbd426637f55c"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/packs/examples/hard-mode/roles.toml",
+      "sha256": "f90adcea6e0b3395bd194e5a860ac724a849d93f35cbc2598200a229fb1a02ec"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/scripts/extract/gen_rust.py",
+      "sha256": "c95f73103f4658d815afc21b215ab5a91bd3f5fad39d802b4140f4d67c90b124"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/scripts/extract/c_tables.py",
+      "sha256": "2da726e9ecb2598dc6899e1be3d0af7634c7c961e41417ec9952e1801931e439"
+    }
+  ],
+  "checks": [
+    {
+      "name": "Authority and bindings",
+      "assessment": "PASS",
+      "evidence": "HEAD is 8f44a7a9f7a1536e2c5a21ec47596777ac705fc0. Consumed artifact and 19 owner file SHAs match. Root's range, unchanged 345-source/digest, copied-input and archive proofs reused."
+    },
+    {
+      "name": "F1 repeated admission",
+      "assessment": "RESOLVED",
+      "evidence": "Both variants return ReceiptAlreadyRecorded before replacement-term validation; duplicate owners remain DuplicateLedger. Price, quantity, creditor and base stay frozen. Independent raw-state/events/RNG/time fixtures are required."
+    },
+    {
+      "name": "F2 clearing and Pay",
+      "assessment": "RESOLVED",
+      "evidence": "Exact world removal, handle_pay and dispatcher bodies are enumerated. Requested-Pay refusal precedes reconciliation/forced Wait and returns []; typed clearing returns SettlementDeferred. Empty billing retains existing behavior. Global cached/consumed guards, views/save/disposal chains and deferred settlement are explicit."
+    },
+    {
+      "name": "F3 compatibility protocol",
+      "assessment": "NEEDS_CHANGES",
+      "evidence": "Fixture IDs, CLI options/features, scratch paths, schema names, hash/validate outputs and exits match owners. Baseline export and oldpack construction avoid a candidate-generated oracle. comparison.json serialization remains defective."
+    },
+    {
+      "name": "Preserved scope and prerequisites",
+      "assessment": "PASS by unchanged-semantic reuse",
+      "evidence": "Minimal allowlists remain acyclic; load validation before catchup, full-generation cached remap, immutable consumed traces and explicit legacy unknowns remain. Existing assertions/setups, named successors, all53/543/frontends and future goldens remain frozen. LIFE/public activation remains held; U3 stays resolved."
+    }
+  ],
+  "handoff": "F1/F2 repair1 resolved; F3 repair1 unsuccessful count becomes 1 under the same finding ID. Obtain bounded F3 repair and fresh rereview before contract PASS. Registry/docs, implementation authorization, full gates and commit remain root-owned.",
+  "usage_note": "Read-only review; no edits, agents, Cargo/build/generation, C/Lua or future embedded-command execution. Python command syntax was inspected statically; the uv-only interpreter probe was blocked before Python execution by cache permissions."
+}

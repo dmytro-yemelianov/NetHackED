@@ -1,0 +1,185 @@
+{
+  "unit": "P11a-P1-BILL",
+  "coordinator_resolutions": {
+    "U3": "Exact accepted gate harness and all12 argv retrieved; original author artifacts preserved unchanged."
+  },
+  "metadata_verification_retry": {
+    "initial": "KeyError:text on four range/hash-only C snippets; no source or artifact mutation",
+    "changed_hypothesis": "Validate all ranges by exact pinned bytes/hash; compare embedded text when present",
+    "result": "PASS on first changed-hypothesis retry"
+  },
+  "cwd": "/Users/dmytro/github/NetRust",
+  "python_policy": "uv run --no-sync .venv/bin/python; local existing virtualenv",
+  "full_harness": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/gate-harness.py",
+  "harness_sha256": "a4dced7d1da1d806febff96354ebc9bd15a35e9078ebc86cae163c9ee8a8b117",
+  "invocation": [
+    "uv",
+    "run",
+    "--no-sync",
+    ".venv/bin/python",
+    "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/gate-harness.py",
+    "UNIT_FULL_GATE_LOGDIR"
+  ],
+  "checks": [
+    {
+      "check": "fmt",
+      "argv": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--check"
+      ]
+    },
+    {
+      "check": "clippy",
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ]
+    },
+    {
+      "check": "workspace",
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--exclude",
+        "nethacked-py",
+        "--locked",
+        "--no-fail-fast"
+      ]
+    },
+    {
+      "check": "wasm",
+      "argv": [
+        "cargo",
+        "build",
+        "-p",
+        "nethacked-wasm",
+        "--target",
+        "wasm32-unknown-unknown",
+        "--locked"
+      ]
+    },
+    {
+      "check": "python",
+      "argv": [
+        "cargo",
+        "check",
+        "-p",
+        "nethacked-py",
+        "--locked"
+      ]
+    },
+    {
+      "check": "static",
+      "argv": [
+        "bash",
+        "scripts/check-no-static-tables.sh"
+      ]
+    },
+    {
+      "check": "extract",
+      "argv": [
+        ".venv/bin/python",
+        "scripts/extract/c_tables.py",
+        "--check"
+      ]
+    },
+    {
+      "check": "generated",
+      "argv": [
+        ".venv/bin/python",
+        "scripts/extract/gen_rust.py",
+        "--check"
+      ]
+    },
+    {
+      "check": "coverage",
+      "argv": [
+        ".venv/bin/python",
+        "scripts/behaviour-coverage.py",
+        "--check"
+      ]
+    },
+    {
+      "check": "parity",
+      "argv": [
+        ".venv/bin/python",
+        "scripts/parity-summary.py",
+        "--check"
+      ]
+    },
+    {
+      "check": "docs",
+      "argv": [
+        "bash",
+        "scripts/check-doc-links.sh"
+      ]
+    },
+    {
+      "check": "lean",
+      "argv": [
+        "lake",
+        "build"
+      ]
+    }
+  ],
+  "verified_prior_execution": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/full-gates/accepted.json",
+  "source_count": 345,
+  "source_digest": "b7aebd3bc3c198fa6866d06a61a5e899bcf21ef61587bf7a09d72f4f9d5f40f3",
+  "digest_algorithm": "Sorted relative paths: SHA256 accumulates path UTF-8 bytes then complete file bytes; no separator. Per-file hashes and345-member archive independently verified.",
+  "contract_verification": [
+    {
+      "path": "16ff59115315917b93185d026aeefea06db9b0f4:src/shk.c",
+      "snippets": 8
+    },
+    {
+      "path": "16ff59115315917b93185d026aeefea06db9b0f4:include/mextra.h",
+      "snippets": 1
+    },
+    {
+      "path": "16ff59115315917b93185d026aeefea06db9b0f4:include/obj.h",
+      "snippets": 2
+    },
+    {
+      "path": "16ff59115315917b93185d026aeefea06db9b0f4:src/invent.c",
+      "snippets": 1
+    },
+    {
+      "path": "16ff59115315917b93185d026aeefea06db9b0f4:src/mkobj.c",
+      "snippets": 3
+    },
+    {
+      "path": "crates/nethacked-sim/src/world.rs",
+      "snippets": 6
+    },
+    {
+      "path": "crates/nethacked-arena/src/lib.rs",
+      "snippets": 3
+    },
+    {
+      "path": "crates/nethacked-sim/src/actions/stairs.rs",
+      "snippets": 3
+    },
+    {
+      "path": "crates/nethacked-sim/src/actions/economy.rs",
+      "snippets": 2
+    }
+  ],
+  "legacy_temp_artifact_aliases": {
+    "/tmp/netrust-p11a-p1-bill-contract-cli/draft/contract.md": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/contract-initial/draft/contract.md",
+    "/tmp/netrust-p11a-p1-bill-contract-cli/draft/contract.json": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/contract-initial/draft/contract.json",
+    "/tmp/netrust-p11a-p1-bill-contract-cli/draft/evidence.json": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/contract-initial/draft/evidence.json",
+    "/tmp/netrust-p11a-p1-bill-contract-cli/draft/ready-packet.md": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/contract-initial/draft/ready-packet.md",
+    "/tmp/netrust-p11a-p1-bill-contract-cli/draft/baseline.json": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/contract-initial/draft/baseline.json",
+    "/tmp/netrust-p11a-p1-bill-contract-cli/draft/graph-discovery.json": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/contract-initial/draft/graph-discovery.json"
+  },
+  "root_status": "Contract ready for fresh independent review only; no billing source acceptance."
+}

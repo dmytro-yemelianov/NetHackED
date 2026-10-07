@@ -22,7 +22,7 @@
   },
   "completion_policy": "contract_final_completion_audit_all_requirements_with_evidence",
   "first_action": "Read-only pinned configuration audit, then independently reviewed P11a contract",
-  "active_unit": "P11a-C1-API1",
+  "active_unit": "P11a-P1-BILL",
   "live_handles": [],
   "families": [
     {
@@ -83,7 +83,9 @@
         "P11a-B1-PRE",
         "P11a-C1-IN1",
         "P11a-P1-BILL",
-        "P11a-P1-PRE"
+        "P11a-P1-PRE",
+        "P11a-P1-BILL-API1",
+        "P11a-P1-BILL-SAVE1"
       ],
       "coverage_record": null
     },
@@ -209,7 +211,9 @@
       "id": "OB04",
       "stream": "OB",
       "state": "audit_needed",
-      "child_ids": [],
+      "child_ids": [
+        "OB04-object-retirement"
+      ],
       "coverage_record": null
     },
     {
@@ -380,7 +384,12 @@
       "state": "audit_needed",
       "child_ids": [
         "P11a-P1-BILL",
-        "P11a-P1-PRE"
+        "P11a-P1-PRE",
+        "DG06-bill-merge-partial",
+        "DG06-bill-account",
+        "DG06-bill-history",
+        "DG06-bill-settlement",
+        "DG06-bill-nonwand"
       ],
       "coverage_record": null
     },
@@ -984,7 +993,7 @@
       "id": "P11a-C1-API1",
       "parent": "P11a",
       "cross_refs": [],
-      "state": "verified_awaiting_delivery",
+      "state": "accepted",
       "contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
       "dependencies": [
         "P11a-S1"
@@ -1013,7 +1022,8 @@
       "independent_review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/implementation-review/review-final.json",
       "unit_record": "docs/parity/obligations/2026-10-07-p11a-charge-api1/unit.json",
       "full_gate_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/full-gates/accepted.json",
-      "delivery_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/delivery.json"
+      "delivery_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/delivery.json",
+      "accepted_commit": "8f44a7a9f7a1536e2c5a21ec47596777ac705fc0"
     },
     {
       "id": "P11a-C1-LIFE",
@@ -1034,7 +1044,16 @@
         "crates/nethacked-sim/src/object_timers.rs",
         "crates/nethacked-arena/src/lib.rs"
       ],
-      "implementation_files": "none authorized by this packet; child review must fix exact minimal allowlist if needed"
+      "implementation_files": "none authorized by this packet; child review must fix exact minimal allowlist if needed",
+      "audit_dependencies": [
+        "P11a-S1",
+        "P11a-P1-BILL"
+      ],
+      "activation_dependencies": [
+        "P11a-P1-BILL-API1",
+        "P11a-P1-BILL-SAVE1"
+      ],
+      "billing_acceptance_contract": "docs/parity/obligations/2026-10-07-p11a-billing-contract/contract.json"
     },
     {
       "id": "P11a-B1-PRE",
@@ -1079,19 +1098,66 @@
       "cross_refs": [
         "DG06"
       ],
-      "state": "audit_needed",
-      "contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "state": "contract_verified_awaiting_delivery",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-billing-contract/contract.json",
       "dependencies": [
         "P11a-S1"
       ],
       "outcome": "Narrow accepted P1 billing contract for selected-wand whole retirement: C obfree used-up bill-object retention versus unbilled deallocation; preserve unpaid liability/identity without corpse remove_unpaid erasure. Specify represented ledger seam and public billed/unbilled quantity1/3, save and stale-generation obligations. This is the concrete contract gate for LIFE, independent of C1/B1/IN1; implementation belongs to its reviewed child if required.",
-      "evidence": null,
-      "repair_counters": {},
+      "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/contract-initial/draft/evidence.json",
+      "repair_counters": {
+        "F1": {
+          "attempts": 1,
+          "unsuccessful": 0,
+          "status": "resolved_at_contract_scope",
+          "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/rereview1/review.json"
+        },
+        "F2": {
+          "attempts": 1,
+          "unsuccessful": 0,
+          "status": "resolved_at_contract_scope",
+          "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/rereview1/review.json"
+        },
+        "F3": {
+          "attempts": 2,
+          "unsuccessful": 1,
+          "status": "resolved_contract_scope",
+          "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/review-final/review-final.json",
+          "historical_diagnosis_correction": "Originalsuffix realnewline; historicalnonPASS kept, explicitJSONreadback accepted"
+        }
+      },
       "audit_paths": [
         "crates/nethacked-sim/src/world.rs",
         "crates/nethacked-arena/src/lib.rs"
       ],
-      "implementation_files": "none authorized here; separate independent child review must fix a minimal allowlist, exact seam, evidence and acceptance before use"
+      "implementation_files": "none authorized here; separate independent child review must fix a minimal allowlist, exact seam, evidence and acceptance before use",
+      "baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/baseline.json",
+      "audit_status": "terminal_packet_verified",
+      "contract_draft": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/contract-initial/draft/contract.json",
+      "coordinator_review_inputs": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/coordinator-review-inputs.json",
+      "usage_records": [
+        "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/contract-initial/actual-usage.json",
+        "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/review-initial/actual-usage.json",
+        "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/repair1/actual-usage.json",
+        "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/rereview1/actual-usage.json",
+        "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/repair2/actual-usage.json",
+        "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/review-final/actual-usage.json"
+      ],
+      "execution_quality": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/execution-quality.json",
+      "independent_review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/review-initial/review-initial.json",
+      "repair_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/repair1/draft/repair-summary.json",
+      "repaired_contract": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/repair2/draft/contract.json",
+      "rereview1": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/rereview1/review.json",
+      "repair2_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/repair2/draft/repair-summary.json",
+      "repair2_verification": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/repair2/verification.json",
+      "final_review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/review-final/review-final.json",
+      "final_contract": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/repair2/draft/contract.json",
+      "unit_record": "docs/parity/obligations/2026-10-07-p11a-billing-contract/unit.json",
+      "source_conformance_accepted": false,
+      "implementation_children": [
+        "P11a-P1-BILL-API1",
+        "P11a-P1-BILL-SAVE1"
+      ]
     },
     {
       "id": "P11a-P1-PRE",
@@ -1206,6 +1272,146 @@
       "dependencies": [
         "P11a-D1"
       ]
+    },
+    {
+      "id": "P11a-P1-BILL-API1",
+      "parent": "P11a",
+      "cross_refs": [
+        "DG06"
+      ],
+      "state": "ready_awaiting_contract_delivery",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-billing-contract/contract.json",
+      "dependencies": [
+        "P11a-P1-BILL",
+        "P11a-S1"
+      ],
+      "outcome": "Public billing receipt admission, atomic whole-carried disposal and deterministic outstanding-bill views; quantity1/3 known-receipt and legacy-unknown conservation; no wand activation",
+      "evidence": null,
+      "repair_counters": {},
+      "allowed_files": [
+        "crates/nethacked-sim/src/world.rs",
+        "crates/nethacked-sim/src/actions/economy.rs",
+        "crates/nethacked-sim/src/actions/mod.rs",
+        "crates/nethacked-sim/tests/wand_billing_tests.rs"
+      ],
+      "acceptance_exits": [
+        "Literal source-derived 4-case known receipt transfer plus canonical/custom renamed identities, generational repeat/replacement and no mutation/error/draw/time evidence through public API.",
+        "Legacy absent receipt retention demonstrates base/object liability conservation only; unknown source terms explicit in output/save.",
+        "Lifecycle references rejected; no public wand runtime body activated. Independently reviewed minimal implementation allowlist and tests required.",
+        "F1 identical/changed admission ReceiptAlreadyRecorded, complete-state/events/RNG/time atomicity; F2 typed/direct clearing and public Pay refusal, views and disposal conservation, empty-owner original behavior."
+      ],
+      "contract_review": "docs/parity/obligations/2026-10-07-p11a-billing-contract/review-final.json",
+      "activation_requires": "Accepted implementation/source evidence; contract review alone closes no public wand feature."
+    },
+    {
+      "id": "P11a-P1-BILL-SAVE1",
+      "parent": "P11a",
+      "cross_refs": [
+        "DG06"
+      ],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-billing-contract/contract.json",
+      "dependencies": [
+        "P11a-P1-BILL-API1"
+      ],
+      "outcome": "Modern/absent-owner oldsave active/cached continuation; global live receipt handle remap at cached restoration; native/pack/hash/WASM compatibility evidence",
+      "evidence": null,
+      "repair_counters": {},
+      "allowed_files": [
+        "crates/nethacked-sim/src/world.rs",
+        "crates/nethacked-sim/src/actions/stairs.rs",
+        "crates/nethacked-sim/tests/wand_billing_tests.rs"
+      ],
+      "acceptance_exits": [
+        "Active/cached live global receipt remap and globally retained q1/3 liability, modern/absent/explicit-empty owners; complete state/events/next RNG/allocation+Wait continuation equivalence.",
+        "API admission->save->load->disposal and consumed->save->load->repeat; malformed modern/legacy input fails before timer catchup.",
+        "Oldpack/schema/canonical hash unchanged scratch equality, WASM target no forbidden dependency and native package tests; all missing outputs/errors recorded.",
+        "Legacy exact historical amount/account not accepted: preserve explicit unknown; source reconstruction remains DG06-bill-history.",
+        "F2 admitted/refused clearing/Pay active+cached save/load/disposal chains; F3 exact scratch manifest below with all outputs and failing exits."
+      ],
+      "contract_review": "docs/parity/obligations/2026-10-07-p11a-billing-contract/review-final.json",
+      "activation_requires": "Accepted implementation/source evidence; contract review alone closes no public wand feature."
+    },
+    {
+      "id": "DG06-bill-merge-partial",
+      "parent": "DG06",
+      "cross_refs": [],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-billing-contract/contract.json",
+      "dependencies": [],
+      "outcome": "obfree merge!=NULL: billed quantity aggregation, absent merge bill, unbilled oid price adjustment; useup partial-stack liability",
+      "required_exit": "Bound exact merge/split/partial bill identities and quantities; public/save evidence; no reuse of whole-only seam",
+      "evidence": null,
+      "repair_counters": {},
+      "implementation_files": "none; source/API audit and independent minimal ownership review required"
+    },
+    {
+      "id": "DG06-bill-account",
+      "parent": "DG06",
+      "cross_refs": [],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-billing-contract/contract.json",
+      "dependencies": [],
+      "outcome": "obfree unpaid/no owner or paid-on-bill sanity; next_shkp/shop_keeper location fallback; creditor identity and source administration",
+      "required_exit": "Persistent creditor/account lookup across active/cached shops, missing-owner diagnostics and no silent settlement; exact source bill administration",
+      "evidence": null,
+      "repair_counters": {},
+      "implementation_files": "none; source/API audit and independent minimal ownership review required"
+    },
+    {
+      "id": "DG06-bill-history",
+      "parent": "DG06",
+      "cross_refs": [],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-billing-contract/contract.json",
+      "dependencies": [],
+      "outcome": "get_cost historic price, identification/oid/charisma/artifact/angry-shop rules; legacy missing bquan/price; billing admission/BILLSZ/full/free/dummy",
+      "required_exit": "Source receipt formation and historical pricing/quantity/account uncertainty reconciliation; accepted reconstruction only from sufficient source-backed inputs",
+      "evidence": null,
+      "repair_counters": {},
+      "implementation_files": "none; source/API audit and independent minimal ownership review required"
+    },
+    {
+      "id": "DG06-bill-settlement",
+      "parent": "DG06",
+      "cross_refs": [],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-billing-contract/contract.json",
+      "dependencies": [],
+      "outcome": "doinvbill presentation, pay/credit/debit/settlement/robbery/shop death; retained bill clearing",
+      "required_exit": "Payment and account exits find consumed records without live inventory and settle once; legacy unresolved terms never priced as zero",
+      "evidence": null,
+      "repair_counters": {},
+      "implementation_files": "none; source/API audit and independent minimal ownership review required"
+    },
+    {
+      "id": "DG06-bill-nonwand",
+      "parent": "DG06",
+      "cross_refs": [
+        "OB02",
+        "OB04"
+      ],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-billing-contract/contract.json",
+      "dependencies": [],
+      "outcome": "delete_contents/container pick; leash/food/book/boulder/globby weight restoration",
+      "required_exit": "Source class/contents cleanup and glob valuation; rejected by whole-wand billing seam until reviewed",
+      "evidence": null,
+      "repair_counters": {},
+      "implementation_files": "none; source/API audit and independent minimal ownership review required"
+    },
+    {
+      "id": "OB04-object-retirement",
+      "parent": "OB04",
+      "cross_refs": [],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-billing-contract/contract.json",
+      "dependencies": [],
+      "outcome": "dealloc_obj Lua refs -> OBJ_LUAFREE, staged OBJ_DELETED vs freeingdata immediate; thrown/kicked/tin/split refs",
+      "required_exit": "Audit nonrepresented reference/storage branches under pinned Lua548 comparator; no Lua execution or equivalence of immediate Rust freeing inferred",
+      "evidence": null,
+      "repair_counters": {},
+      "implementation_files": "none; source/API audit and independent minimal ownership review required"
     }
   ],
   "inventory_coverage": {
@@ -1293,6 +1499,27 @@
       "title": "Historical failed focused passing-test count3=>8",
       "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1/review-initial/review-initial.json",
       "resolution_review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1/reviewed/review-final.json"
+    },
+    {
+      "id": "BILL-F1",
+      "unit": "P11a-P1-BILL",
+      "status": "resolved_contract_scope",
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/review-initial/review-initial.json",
+      "resolution": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/rereview1/review.json"
+    },
+    {
+      "id": "BILL-F2",
+      "unit": "P11a-P1-BILL",
+      "status": "resolved_contract_scope",
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/review-initial/review-initial.json",
+      "resolution": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/rereview1/review.json"
+    },
+    {
+      "id": "BILL-F3",
+      "unit": "P11a-P1-BILL",
+      "status": "resolved_contract_scope_with_diagnosis_correction",
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/review-initial/review-initial.json",
+      "resolution": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/review-final/review-final.json"
     }
   ],
   "accepted_checkpoints": [
@@ -1346,6 +1573,15 @@
       "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/contract-delivery.json",
       "source_digest": "7b691c6e14d0449c37776f29b851ff7866bb2e41551b1c883458e5d0de416e79",
       "implementation_accepted": false
+    },
+    {
+      "kind": "implementation_prerequisite_checkpoint",
+      "unit": "P11a-C1-API1",
+      "status": "accepted_positive_only_signed_api",
+      "commit": "8f44a7a9f7a1536e2c5a21ec47596777ac705fc0",
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/delivery.json",
+      "source_conformance_accepted": true,
+      "family_closed": false
     }
   ],
   "integration_audit": null,
@@ -1364,7 +1600,7 @@
     "readback_full_342_verified": true,
     "accepted_gate_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/baseline-accepted-gates"
   },
-  "next_action": "Finalize changed docs checks and verified API1 prerequisite commit, then commission P11a-P1-BILL bounded source/API contract audit; LIFE/backfire/IN1 await named seams, all53 scope remains.",
+  "next_action": "Verify fresh changed docs and commit reviewed BILL contract, then dispatch exact4-file BILL-API1; SAVE1/LIFE/IN1 wait for accepted implementation. All53/36 registeredchildren scope retained.",
   "external_accepted_interfaces": {
     "P10a2": {
       "record": "docs/parity/obligations/2026-10-07-p04-p10-final-acceptance.json",

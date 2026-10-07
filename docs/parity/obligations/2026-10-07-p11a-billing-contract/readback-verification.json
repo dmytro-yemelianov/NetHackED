@@ -1,0 +1,17 @@
+{
+  "source_count": 345,
+  "source_digest": "b7aebd3bc3c198fa6866d06a61a5e899bcf21ef61587bf7a09d72f4f9d5f40f3",
+  "exact_one_command_semantic_delta": true,
+  "preceding_AST_identical": true,
+  "original_suffix_codepoints": [
+    10
+  ],
+  "original_suffix_is_real_newline": true,
+  "original_rereview_diagnosis": "AST contradicts original claimed literal-backslash+n; independent confirmation pending. Original verdict preserved, counters not silently reset.",
+  "new_output_sha256": "e7f48bfd6dbcb12d0802043cb587a742bcc43f95616985f6756d2f659450fbf7",
+  "dummy_roundtrip_equal": true,
+  "invalid_literal_suffix_rejected": true,
+  "execution_scope": "Only final two serialization/readback nodes with dummyresults; no fullscratch/generation/Cargo/source-C",
+  "unchanged_native_and_C_bindings": true,
+  "independent_acceptance": "pending"
+}
