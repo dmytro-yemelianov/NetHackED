@@ -12,9 +12,11 @@
     "c_commit": "16ff59115315917b93185d026aeefea06db9b0f4"
   },
   "configuration": {
-    "status": "local_p11_contract_reviewed_global_pin_pending",
-    "record": "docs/parity/obligations/2026-10-07-bootstrap-p11a/configuration.json",
-    "acceptance_hold": "Complete reviewed global configuration must precede first source-conformance acceptance"
+    "status": "reviewed_selected_inputs_pinned_checkpoint_commit_pending",
+    "record": "docs/parity/obligations/2026-10-07-configuration-profile/pin.json",
+    "profile": "docs/parity/obligations/2026-10-07-configuration-profile/configuration-profile.json",
+    "review": "docs/parity/obligations/2026-10-07-configuration-profile/review-final.json",
+    "acceptance_hold": "Operational hold remains until exact documentation checkpoint commit verification; independent complete-profile requirement satisfied without waiver"
   },
   "completion_policy": "contract_final_completion_audit_all_requirements_with_evidence",
   "first_action": "Read-only pinned configuration audit, then independently reviewed P11a contract",
@@ -410,22 +412,69 @@
     {
       "id": "BOOTSTRAP-C-CONFIG",
       "parent": "run_configuration",
-      "state": "auditing_global_pin_pending",
+      "state": "global_pin_checkpoint_verifying",
       "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/configuration.json",
       "accepted_prerequisites": [],
       "findings": [],
       "repair_counters": {},
-      "evidence": "docs/parity/obligations/2026-10-07-bootstrap-p11a/review-final.json"
+      "evidence": "docs/parity/obligations/2026-10-07-bootstrap-p11a/review-final.json",
+      "selected_profile_successor": "BOOTSTRAP-C-CONDITIONALS"
     },
     {
       "id": "BOOTSTRAP-C-CONDITIONALS",
       "parent": "run_configuration",
-      "state": "audit_needed",
-      "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/configuration.json",
+      "state": "verifying",
+      "contract": "docs/parity/obligations/2026-10-07-configuration-profile/configuration-profile.json",
       "outcome": "Complete reviewed transitive headers/build-defined symbol valuations and enabled/disabled conditional gameplay branch manifest, source-only",
       "accepted_prerequisites": [],
-      "evidence": null,
-      "repair_counters": {}
+      "evidence": "docs/parity/obligations/2026-10-07-configuration-profile/pin.json",
+      "repair_counters": {
+        "CFG-R1": {
+          "attempts_started": 1,
+          "unsuccessful_same_model": 0,
+          "unsuccessful_total": 0,
+          "model": "gpt-6.1-sol/high",
+          "outcome": "resolved_first_attempt"
+        },
+        "CFG-R2": {
+          "attempts_started": 1,
+          "unsuccessful_same_model": 0,
+          "unsuccessful_total": 0,
+          "model": "gpt-6.1-sol/high",
+          "outcome": "resolved_first_attempt"
+        },
+        "CFG-R3": {
+          "attempts_started": 1,
+          "unsuccessful_same_model": 0,
+          "unsuccessful_total": 0,
+          "model": "gpt-6.1-sol/high",
+          "outcome": "resolved_first_attempt"
+        }
+      },
+      "draft_evidence": {
+        "path": "/tmp/netrust-configuration-profile",
+        "manifest": "/tmp/netrust-configuration-profile/review-inputs.json",
+        "durable_initial_copy": {
+          "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/configuration-profile/initial-copy-proof.json",
+          "sha256": "ff0e71bff058b80287fa482d6c7236a90e86e8bf2b216c18b1a56dcec5e4f102",
+          "status": "474 file copy/readback PASS; draft only"
+        },
+        "gate_reuse_candidate": {
+          "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/configuration-profile/gate-reuse-candidate.json",
+          "sha256": "2e79fcbbb70022e5a55c9a9a3e0d8d946ea4df565c863b5299cb1d699bc4eea3",
+          "status": "stored999/3gold/12 logs verified; docs-only reuse conditional on reviewed pin and fresh doc/parity gates"
+        },
+        "repair_proof": {
+          "path": "/tmp/netrust-configuration-profile/repair-proof.json",
+          "sha256": "d541c708cf63079bba8b021d340301032ef992e8c72419e7ab3fa6f928f3c1bc",
+          "attempt": 1
+        }
+      },
+      "review": {
+        "decision": "PASS_SELECTED_CONFIGURATION_PIN",
+        "path": "docs/parity/obligations/2026-10-07-configuration-profile/review-final.json",
+        "sha256": "f3397076b21a31019a0804e718ae28b3ed69c7ddb38dc57aa6bea89261d5396d"
+      }
     },
     {
       "id": "UI04-CONFIG-INPUTS",
@@ -528,6 +577,16 @@
       "accepted_prerequisites": [],
       "evidence": null,
       "repair_counters": {}
+    },
+    {
+      "id": "UI01-CONFIG-COMMANDS",
+      "parent": "UI01",
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-configuration-profile/pin.json",
+      "outcome": "DEBUG/explore/shell/suspend public input/repeat/cancel/turn contracts under pinned configuration",
+      "accepted_prerequisites": [],
+      "evidence": null,
+      "repair_counters": {}
     }
   ],
   "inventory_coverage": {
@@ -583,6 +642,30 @@
       "status": "resolved_in_local_contract_review",
       "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/review-initial/review.json",
       "resolution": "docs/parity/obligations/2026-10-07-bootstrap-p11a/review-final.json"
+    },
+    {
+      "id": "CFG-R1",
+      "unit": "BOOTSTRAP-C-CONDITIONALS",
+      "title": "Linux CRASHREPORT enables DUMPLOG_CORE",
+      "state": "resolved",
+      "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/configuration-profile/review-initial/review-initial.json",
+      "resolution_review": "docs/parity/obligations/2026-10-07-configuration-profile/review-final.json"
+    },
+    {
+      "id": "CFG-R2",
+      "unit": "BOOTSTRAP-C-CONDITIONALS",
+      "title": "Mail input recipe must distinguish turn polling from mailbox timestamps",
+      "state": "resolved",
+      "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/configuration-profile/review-initial/review-initial.json",
+      "resolution_review": "docs/parity/obligations/2026-10-07-configuration-profile/review-final.json"
+    },
+    {
+      "id": "CFG-R3",
+      "unit": "BOOTSTRAP-C-CONDITIONALS",
+      "title": "Initial absence does not resolve imported external-header conditions",
+      "state": "resolved",
+      "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/configuration-profile/review-initial/review-initial.json",
+      "resolution_review": "docs/parity/obligations/2026-10-07-configuration-profile/review-final.json"
     }
   ],
   "accepted_checkpoints": [
@@ -594,6 +677,16 @@
       "record": "docs/parity/obligations/2026-10-07-bootstrap-p11a/audit-checkpoint.json",
       "commit": "containing commit",
       "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/contract-reviewed"
+    },
+    {
+      "kind": "selected_configuration_pin",
+      "unit": "BOOTSTRAP-C-CONDITIONALS",
+      "status": "review_pass_documentation_verified_commit_pending",
+      "source_conformance_accepted": false,
+      "record": "docs/parity/obligations/2026-10-07-configuration-profile/pin.json",
+      "commit": null,
+      "delivery_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/configuration-profile/delivery.json",
+      "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/configuration-profile/reviewed"
     }
   ],
   "integration_audit": null,
@@ -612,7 +705,7 @@
     "readback_full_342_verified": true,
     "accepted_gate_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/baseline-accepted-gates"
   },
-  "next_action": "Source-only complete configuration profile/conditional manifest audit, independent review, then clear first-conformance hold before production acceptance",
+  "next_action": "Commit and verify exact reviewed selected configuration checkpoint; then implement OB01-WAND-ID1",
   "external_accepted_interfaces": {
     "P10a2": {
       "record": "docs/parity/obligations/2026-10-07-p04-p10-final-acceptance.json",

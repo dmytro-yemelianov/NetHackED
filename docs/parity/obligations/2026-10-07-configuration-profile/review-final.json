@@ -1,0 +1,127 @@
+{
+  "baseline": {
+    "branch": "feat/monster-hp-d8",
+    "head": "c0e92125f393db01ee385d81cc2dbe5135299c09",
+    "input_count": 342,
+    "input_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c"
+  },
+  "binding_checks": {
+    "all12_original_and_current_artifact_bindings": "pass; immutable initial snapshots match original submitted/reviewer hashes; exactly five declared artifacts changed",
+    "all342_production_files": "individual hashes and complete membership match; SHA256 sorted path bytes then raw file bytes, no separators, reproduces a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+    "all460_source_snapshots": "unchanged and match evidence.json; original independent Git-byte/blob verification retained",
+    "evidence_artifact_hashes": "all pass",
+    "head_and_branch": "unchanged c0e92125f393db01ee385d81cc2dbe5135299c09 / feat/monster-hp-d8",
+    "scope_preservation": "options/frontends/scope/successors/content_manifest/conditional_manifest unchanged from original profile; all53 families/543 rows retained"
+  },
+  "decision": "PASS_SELECTED_CONFIGURATION_PIN",
+  "hold_decision": {
+    "ID1_and_P11a": "ID1 remains engineering-ready only; P11a-S1 still needs accepted ID1. No implementation/source-conformance/family acceptance here.",
+    "after_coordinator_pin": "No remaining CFG-R1/R2/R3 configuration audit blocks unrelated dependency-ready first-child conformance. Child prerequisites, independent semantic review, final-input full gates/goldens and coordinator commit remain mandatory.",
+    "current_operational_hold": "First source-conformance acceptance still remains held until coordinator durably pins these exact reviewed artifacts and completes the normal checkpoint process. This review neither pins repository state itself nor accepts an implementation.",
+    "evidence_boundary": "Counts and stored Rust test/golden results were not used as C semantic proof; no external build/header/Lua measurement claimed.",
+    "prior_strict_complete_global_profile_hold": "The previously unresolved selected-configuration/input/applicability requirement is now satisfied at independent-review level by this corrected profile. It is complete enough for coordinator pinning before FIRST source-conformance acceptance; this expressly resolves the prior terminal review requirement without waiver or weaker scope.",
+    "separate_final_completion_conditions": "UI04-CONFIG-INPUTS, UI05-BONES-INPUTS, UI01-CONFIG-COMMANDS and BOOTSTRAP-C-BRANCH-MANIFEST remain open implementation/semantic-inventory successors; all53 families/543 rows/member/context/frontends require final closure. Pinning does not require implementing them all first."
+  },
+  "initial_review_bindings": {
+    "review-initial.json": "7a036f070b55aca8bc5f5cc0cb3f9e56caf9eb46c1d1522b63a1b6a5d45361a4",
+    "review-initial.md": "9fadb810c856460d0531873e44db85cab806e131514ed2fbb1c168a8e06a456a"
+  },
+  "methods": [
+    "manual reading only of the repaired source contracts and previously pinned anchors",
+    "read-only JSON diff, SHA256, source-snapshot, production-list/digest and Git HEAD/branch metadata via uv/local Python"
+  ],
+  "not_run": [
+    "C",
+    "compiler",
+    "preprocessor",
+    "custom C evaluator",
+    "Lua",
+    "Cargo",
+    "goldens",
+    "source edits",
+    "repository document edits",
+    "commits",
+    "nested agents"
+  ],
+  "per_finding_outcomes": [
+    {
+      "decision": "Enabled core history is now separated correctly from disabled end-of-game DUMPLOG; no consumer exclusion or implementation acceptance.",
+      "evidence": [
+        "manually_derived_symbol_values.DUMPLOG_CORE=true; DUMPLOG_MSG_COUNT=50; DUMPLOG=false",
+        "include/config.h:247-252,268-270,735-738 and already pinned pline/cmd/pager/report consumers",
+        "pline.c:48-50 confirms core history is not saved/restored; UI01/UI02/UI03/UI04 consumer contracts retain source lifecycle"
+      ],
+      "id": "CFG-R1",
+      "outcome": "RESOLVED",
+      "repair_attempt": 1
+    },
+    {
+      "decision": "Turn cadence, external mailbox timestamps, query ordering and source ephemeral process state are pinned; implementation/lifecycle variants remain UI04.",
+      "evidence": [
+        "runtime_inputs.external_io.mail now binds startup/poll/refresh stat responses by call ordinal/reason and svm.moves, independent of calendar timestamps",
+        "mail.c:69-71,96-141,550-584 confirms file-static0 baseline, guards, last-before-stat, strictly newer size/delivery and refresh ordering",
+        "allmain.c:532-536; unixmain.c:188-190; u_init.c:645; optlist.h:419-421 confirm ordinary-command placement, startup before restore/new decision, moves1 and biffOn",
+        "49/50/51/100-turn and fixed-turn/advancing-clock recipes are correct; suppressions do not advance last; stat failures do; fresh-process versus continuing-process resume inputs are explicit"
+      ],
+      "id": "CFG-R2",
+      "outcome": "RESOLVED",
+      "repair_attempt": 1
+    },
+    {
+      "decision": "Initial undefined no longer suppresses imported consumer branches. No external compiler/header-byte certification is claimed or required for these selected declarations.",
+      "evidence": [
+        "compile_input_declarations now distinguishes compiler-entry namespace from six explicit post-import external-header contracts",
+        "Signal, termios/ioctl and Lua consumer-definedness/values/text are explicit chosen target inputs; __GLIBC__ was moved from compiler predefines to library import contract",
+        "ioctl.c:72-75,98-114,125-149,163-199; unixtty.c:22-96,269-300; unixmain.c:591-611 and the initial Lua anchors agree with declared consumer arms",
+        "USE_WIN_IOCTL=true, USG=true, EXTABS=TAB3(6144) derive from selected inputs; absent VDSUSP/VSWTCH and present VSUSP select declared control branches",
+        "SA_RESTART presence selects sigaction registration but source zeroes the flags; canonical suspend previous-handler and terminal/window responses are declared fixtures, not observed process execution"
+      ],
+      "id": "CFG-R3",
+      "outcome": "RESOLVED",
+      "repair_attempt": 1
+    }
+  ],
+  "profile_complete_enough_to_pin_before_first_source_conformance": true,
+  "repair_counter_policy": "Original findings/evidence preserved; each finding resolved on its first targeted repair attempt. No reset or reclassification of initial failure.",
+  "repair_proof_sha256": "d541c708cf63079bba8b021d340301032ef992e8c72419e7ab3fa6f928f3c1bc",
+  "required_findings": [],
+  "review": "first-repair-narrow-rereview",
+  "reviewed_artifact_hashes": {
+    "configuration-profile.json": "9771384704ac2e5473ceeac87718a569658125f529bd9205beaf947d8b93fa82",
+    "configuration-profile.md": "7d451b81ce76b010944b0874f694eaf09ebcae880e3a2e4fc60ec0b0a99a47f8",
+    "evidence.json": "376a0f063b770c0743c4b3d77ac30bb7a1bc125858b2c2b129361db159c39d64",
+    "inventory.json": "44a783ca96dd57a98bb4200a43e62ffa7700425e6761e6101f842f2ea256f347",
+    "inventory.py": "a059f2e86b21c343dc01146f48d239497062497fbf7312b54174d4c1cadff165",
+    "nethackrc.fixture": "248df4874e2fafbdf7485be1e928fb872bec7ae78613a19fd154213b7624afc2",
+    "package.py": "ff17b009b098812de3ea44386299b8038a07780cc739ac143550fafeacc636ae",
+    "ready-packet.md": "fa3775568949d1f5c2aa42e8310a3de54809bef81e3053a6a6783839ff70face",
+    "review-initial.json": "7a036f070b55aca8bc5f5cc0cb3f9e56caf9eb46c1d1522b63a1b6a5d45361a4",
+    "review-initial.md": "9fadb810c856460d0531873e44db85cab806e131514ed2fbb1c168a8e06a456a",
+    "review-inputs.json": "1e1ac3535734a40cd6256d824291bfeb95559f15c1e3f6028fed8ed297503e73",
+    "sysconf.fixture": "597c4d31465ba48eeac298536e085a9b4410fa7bfdf077f39a0ea335d0e4ca44"
+  },
+  "reviewed_current_authority_hashes": {
+    ".superpowers/sdd/2026-10-04-rule-packs-p1/global-constraints.md": "2f145ed0e69a7079d23b60682a6533bcaf3f885cae31d6c9595ce60eb026254e",
+    "AGENTS.md": "cbaec9617cc45a100da770734f39df0f565286fadc9c496d9ef34861ac893310",
+    "MEMORY.md": "08ea6808cec3528de6125f3770ea7d45be1d91b8d81d123f5fb60ff89bbe40aa",
+    "USER.md": "f2d7b217ebccad923b03b5193ce7c6ca5b2397ca3c7b62e79d8c85982db65557",
+    "docs/parity/obligations/2026-10-07-bootstrap-p11a/configuration.json": "09bf86737e2fac5be2abae54a7a5ff896ca3b50c07093923e93cd5dfd975c48f",
+    "docs/parity/obligations/2026-10-07-bootstrap-p11a/configuration.md": "0d52a97079f89b651b8bd325fe68bd8d2789e60f9a030940f4a2060cee608570",
+    "docs/parity/obligations/2026-10-07-bootstrap-p11a/review-final.json": "f63799f0821294995faa52132370ee7f9fb82604a47328e5c1cbbf7ac4846f4a",
+    "docs/parity/obligations/2026-10-07-bootstrap-p11a/review-final.md": "61da02b3435e9cddaca1ef2eacc256ac9e00098d36716e57eb1bf40e08318f27",
+    "docs/parity/obligations/2026-10-07-remaining-parity-scope.json": "ef0c220796234250d4d8e532f66ffbd113503d8db78bc40c002368f90719a5e9",
+    "docs/plans/2026-10-07-autonomous-parity-run.md": "dd43548c52ee85ff42344e77463765a90716eb938a49e62c4e93debf520167ae",
+    "docs/plans/2026-10-07-full-parity-agentic-loops.md": "7d9f2263796fb1e33cb028f5810a6b58289410cdfe63faa5aca771ac7d1031b6",
+    "scripts/extract/c_tables.py": "2da726e9ecb2598dc6899e1be3d0af7634c7c961e41417ec9952e1801931e439"
+  },
+  "schema": "netrust-configuration-profile-independent-review-v1",
+  "source_identity": {
+    "commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+    "repository": "/Users/dmytro/github/NetHack",
+    "source_only": true,
+    "tree": "ba5925b4e59b9c88c31fa74cbd21446d06dcdb84"
+  },
+  "traceability_outcome": "RESOLVED: sys_early_init name/source range, allopt_array_init/do_init recipe, DEBUG/_GNU_SOURCE/MAIL_STRUCTURES/option-phase line references corrected.",
+  "unit": "BOOTSTRAP-C-CONDITIONALS",
+  "usage": "unknown"
+}

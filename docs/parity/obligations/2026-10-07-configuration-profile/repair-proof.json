@@ -1,0 +1,181 @@
+{
+  "all_342_production_hashes_match": true,
+  "all_460_pinned_source_snapshots_unchanged": true,
+  "baseline": {
+    "branch": "feat/monster-hp-d8",
+    "head": "c0e92125f393db01ee385d81cc2dbe5135299c09",
+    "input_count": 342,
+    "input_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c"
+  },
+  "before_after": {
+    "configuration-profile.json": {
+      "after_sha256": "9771384704ac2e5473ceeac87718a569658125f529bd9205beaf947d8b93fa82",
+      "before_sha256": "8efbacb690e15bbe538ca3d49300b07bddd7358d30d4e688092133a954f046a1",
+      "changed": true,
+      "original_snapshot": "/tmp/netrust-configuration-profile/initial/configuration-profile.json"
+    },
+    "configuration-profile.md": {
+      "after_sha256": "7d451b81ce76b010944b0874f694eaf09ebcae880e3a2e4fc60ec0b0a99a47f8",
+      "before_sha256": "64be9ff360d936f64caa7bf299173f13f11a015f1700a20ea50ed363d1562bcf",
+      "changed": true,
+      "original_snapshot": "/tmp/netrust-configuration-profile/initial/configuration-profile.md"
+    },
+    "evidence.json": {
+      "after_sha256": "376a0f063b770c0743c4b3d77ac30bb7a1bc125858b2c2b129361db159c39d64",
+      "before_sha256": "edc0bbfa817d02d7b2f9f02ddeb7a62af4a06f94f85fa148d4febf93832f5439",
+      "changed": true,
+      "original_snapshot": "/tmp/netrust-configuration-profile/initial/evidence.json"
+    },
+    "inventory.json": {
+      "after_sha256": "44a783ca96dd57a98bb4200a43e62ffa7700425e6761e6101f842f2ea256f347",
+      "before_sha256": "44a783ca96dd57a98bb4200a43e62ffa7700425e6761e6101f842f2ea256f347",
+      "changed": false,
+      "original_snapshot": "/tmp/netrust-configuration-profile/initial/inventory.json"
+    },
+    "inventory.py": {
+      "after_sha256": "a059f2e86b21c343dc01146f48d239497062497fbf7312b54174d4c1cadff165",
+      "before_sha256": "a059f2e86b21c343dc01146f48d239497062497fbf7312b54174d4c1cadff165",
+      "changed": false,
+      "original_snapshot": "/tmp/netrust-configuration-profile/initial/inventory.py"
+    },
+    "nethackrc.fixture": {
+      "after_sha256": "248df4874e2fafbdf7485be1e928fb872bec7ae78613a19fd154213b7624afc2",
+      "before_sha256": "248df4874e2fafbdf7485be1e928fb872bec7ae78613a19fd154213b7624afc2",
+      "changed": false,
+      "original_snapshot": "/tmp/netrust-configuration-profile/initial/nethackrc.fixture"
+    },
+    "package.py": {
+      "after_sha256": "ff17b009b098812de3ea44386299b8038a07780cc739ac143550fafeacc636ae",
+      "before_sha256": "19027d158ef9f8843dbf15c9b6309516244531bea5f1c9aea2091e8d87e31666",
+      "changed": true,
+      "original_snapshot": "/tmp/netrust-configuration-profile/initial/package.py"
+    },
+    "ready-packet.md": {
+      "after_sha256": "fa3775568949d1f5c2aa42e8310a3de54809bef81e3053a6a6783839ff70face",
+      "before_sha256": "8e3c05b71bd9b771ef6dd75ac00a63744fcec1ec90e00700ee85ad589e5e2528",
+      "changed": true,
+      "original_snapshot": "/tmp/netrust-configuration-profile/initial/ready-packet.md"
+    },
+    "review-initial.json": {
+      "after_sha256": "7a036f070b55aca8bc5f5cc0cb3f9e56caf9eb46c1d1522b63a1b6a5d45361a4",
+      "before_sha256": "7a036f070b55aca8bc5f5cc0cb3f9e56caf9eb46c1d1522b63a1b6a5d45361a4",
+      "changed": false,
+      "original_snapshot": "/tmp/netrust-configuration-profile/initial/review-initial.json"
+    },
+    "review-initial.md": {
+      "after_sha256": "9fadb810c856460d0531873e44db85cab806e131514ed2fbb1c168a8e06a456a",
+      "before_sha256": "9fadb810c856460d0531873e44db85cab806e131514ed2fbb1c168a8e06a456a",
+      "changed": false,
+      "original_snapshot": "/tmp/netrust-configuration-profile/initial/review-initial.md"
+    },
+    "review-inputs.json": {
+      "after_sha256": "1e1ac3535734a40cd6256d824291bfeb95559f15c1e3f6028fed8ed297503e73",
+      "before_sha256": "1e1ac3535734a40cd6256d824291bfeb95559f15c1e3f6028fed8ed297503e73",
+      "changed": false,
+      "original_snapshot": "/tmp/netrust-configuration-profile/initial/review-inputs.json"
+    },
+    "sysconf.fixture": {
+      "after_sha256": "597c4d31465ba48eeac298536e085a9b4410fa7bfdf077f39a0ea335d0e4ca44",
+      "before_sha256": "597c4d31465ba48eeac298536e085a9b4410fa7bfdf077f39a0ea335d0e4ca44",
+      "changed": false,
+      "original_snapshot": "/tmp/netrust-configuration-profile/initial/sysconf.fixture"
+    }
+  },
+  "changed_artifacts": [
+    "configuration-profile.json",
+    "configuration-profile.md",
+    "evidence.json",
+    "package.py",
+    "ready-packet.md"
+  ],
+  "findings": {
+    "CFG-R1": {
+      "attempt": 1,
+      "change": "DUMPLOG_CORE nowtrue, DUMPLOG_MSG_COUNT50; DUMPLOG remainsundefined; exact consumer contracts include source unsaved ring behavior.",
+      "json_fields": [
+        "manually_derived_symbol_values.DUMPLOG_CORE",
+        "manually_derived_symbol_values.DUMPLOG_MSG_COUNT",
+        "manually_derived_symbol_values.DUMPLOG"
+      ],
+      "source": [
+        "include/config.h:247-252,268-270,735-738",
+        "src/pline.c:18-48,228-235",
+        "src/cmd.c:5479-5483,5545-5553",
+        "src/pager.c:1924-1938",
+        "src/report.c:380,562,573"
+      ],
+      "status": "writer repair complete; pending independent rereview"
+    },
+    "CFG-R2": {
+      "attempt": 1,
+      "change": "Exact world-move eligibility and last/stat/delivery/refresh order, initial and process-resume state, mailoption/biff guards; statmtime separate clock input;49/50/100 and failure/suppression/resume variants remain UI04.",
+      "json_fields": [
+        "runtime_inputs.external_io.mail"
+      ],
+      "source": [
+        "src/mail.c:69-71,96-143,550-582",
+        "src/allmain.c:532-536",
+        "sys/unix/unixmain.c:188-190",
+        "src/u_init.c:645",
+        "include/optlist.h:419-421",
+        "include/unixconf.h:202-205"
+      ],
+      "status": "writer repair complete; pending independent rereview"
+    },
+    "CFG-R3": {
+      "attempt": 1,
+      "change": "Pinned eventual imported signal/termios/ioctl/Lua definedness, numbers/text and absent controls; compiler-entry namespace distinctly initial; USE_WIN_IOCTL/USG/EXTABS derived. All external values are declarations, never measured headers/toolchain. Command/save/state/runtime result variants remain source-contract children.",
+      "json_fields": [
+        "compile_input_declarations.post_include_external_header_contracts",
+        "compile_input_declarations.project_conditional_namespace_initial",
+        "compile_input_declarations.system_and_lua_inputs",
+        "manually_derived_symbol_values.USE_WIN_IOCTL",
+        "manually_derived_symbol_values.USG",
+        "manually_derived_symbol_values.EXTABS",
+        "runtime_inputs.external_io.terminal_and_signal_import_consumers"
+      ],
+      "source": [
+        "include/cstd.h:54-63",
+        "sys/share/ioctl.c:41-49,63-75,98-114,125-149,163-198",
+        "sys/share/unixtty.c:22-96,269-300",
+        "sys/unix/unixmain.c:12-16,591-611",
+        "include/extern.h:3667",
+        "src/nhlua.c:8-14,2298-2313,2435-2460"
+      ],
+      "status": "writer repair complete; pending independent rereview"
+    }
+  },
+  "hold": "Strict global first-source-conformance HOLD remains until fresh narrow independent PASS and coordinator pin; all53families/543rows and UI04/UI05/UI01 implementation successors open.",
+  "immutable_originals_and_initial_review_verified": true,
+  "inventory_and_fixtures_unchanged": true,
+  "json_metadata_consistency_checked": "R1 true/50/DUMPLOGundefined; USE_WIN_IOCTLtrue; critical importsinitialundefined; all evidence artifacts hashes match; these are metadata checks, not C execution or implementation tests.",
+  "no_changes": [
+    "source",
+    "repository docs",
+    "compiler/preprocessor/C/Lua execution",
+    "custom C evaluator",
+    "Cargo",
+    "goldens",
+    "commits",
+    "nested agents"
+  ],
+  "production_input_digest_reproduced": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+  "ready_packet_words": 159,
+  "repair_attempt": 1,
+  "schema": "netrust-configuration-profile-repair-proof-v1",
+  "source_identity": {
+    "commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+    "repository": "/Users/dmytro/github/NetHack",
+    "source_only": true,
+    "tree": "ba5925b4e59b9c88c31fa74cbd21446d06dcdb84"
+  },
+  "traceability_corrections": [
+    "sys_early_init(src/sys.c:20-112)",
+    "allopt_array_init optfn do_init(options.c:7405-7429)",
+    "DEBUG patchlevel35-37",
+    "_GNU_SOURCE config1:147-150",
+    "MAIL_STRUCTURES global430",
+    "option phases global592-600"
+  ],
+  "usage": "unknown"
+}
