@@ -1,0 +1,662 @@
+{
+  "unit": "OB01-WAND-ID1",
+  "status": "implementation_complete_pending_independent_review_and_coordinator_full_gates",
+  "baseline_head": "8f4902eed5c2710e838faf172e45b047eb7520c8",
+  "baseline_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+  "changed_files": [
+    {
+      "path": "crates/nethacked-agent/tests/bones_server_test.rs",
+      "sha256": "49c3625e59aebfeda83cb2e5d4d6fe6c6adebb20129a61ca1377eba0e9aa278e"
+    },
+    {
+      "path": "crates/nethacked-arena/src/lib.rs",
+      "sha256": "099cf75465706208f388a83acebdb30b15321e2ae1755fd9206cc54e6669dc9e"
+    },
+    {
+      "path": "crates/nethacked-data/src/items.rs",
+      "sha256": "ba425b5cea5b8f714899435001b42221ed4555e21fb0ac5b429ff5b280016661"
+    },
+    {
+      "path": "crates/nethacked-data/src/ruleset.rs",
+      "sha256": "fc3cad8e54a047a3ec35a6b8ecf8bcbee6ddeeeba93a21af3f4b5e115fdd0a6f"
+    },
+    {
+      "path": "crates/nethacked-sim/src/actions/items.rs",
+      "sha256": "0c4594903f69e81287a3cc326322009d5c162492569d67ce9aea14fb4ae77806"
+    },
+    {
+      "path": "crates/nethacked-sim/src/actions/religion.rs",
+      "sha256": "d9e48e3dfa9b810ef46b0de5f05895df36aeb8ddb49ceaad05916bd5fc1e93ee"
+    },
+    {
+      "path": "crates/nethacked-sim/src/bones.rs",
+      "sha256": "fcd0460517922333dad07b31718125784d210aebf66681dadb56e44f333329ce"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/hero_armor_ac_tests.rs",
+      "sha256": "c6e3aad4288f8035bf05c16148a6fb893b4602443a4a81a7bacb93581b299fc8"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/monster_attack_tests.rs",
+      "sha256": "da7edca74bde3b21a0a3b13408060e5b7dd738c8b9348b49949ba52b09bf25c8"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "sha256": "b75e30a0ddd553af063d00cb0e04540a956018da52ea9987b6128fe7fbe2dd0a"
+    },
+    {
+      "path": "crates/nethacked-types/src/lib.rs",
+      "sha256": "93c63df3e963993cde2029e5cf8e3e1daca047878cc5e87d07c4d03141d6f1c5"
+    },
+    {
+      "path": "crates/nethacked-data/tests/item_definition_identity.rs",
+      "sha256": "165f495555c373d1c7e335dbf7135fe9cd747af357d7c7c64784ebda36b319b9"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/item_definition_identity_tests.rs",
+      "sha256": "be7d1cf64de37cd5e27bdb883d61a7ca809f83d264c0572e72c7966c6f424842"
+    }
+  ],
+  "allowed_file_extension": null,
+  "constructor_inventory": [
+    {
+      "path": "crates/nethacked-agent/tests/bones_server_test.rs",
+      "line": 45,
+      "function": "test_networked_bones_flow_and_ghost_reincarnation"
+    },
+    {
+      "path": "crates/nethacked-arena/src/lib.rs",
+      "line": 345,
+      "function": "item_record_without_recharged_deserializes_to_zero"
+    },
+    {
+      "path": "crates/nethacked-arena/src/lib.rs",
+      "line": 572,
+      "function": "test_container_hierarchy_and_weight"
+    },
+    {
+      "path": "crates/nethacked-arena/src/lib.rs",
+      "line": 599,
+      "function": "test_container_hierarchy_and_weight"
+    },
+    {
+      "path": "crates/nethacked-arena/src/lib.rs",
+      "line": 639,
+      "function": "test_cycle_detection"
+    },
+    {
+      "path": "crates/nethacked-arena/src/lib.rs",
+      "line": 665,
+      "function": "test_cycle_detection"
+    },
+    {
+      "path": "crates/nethacked-data/src/items.rs",
+      "line": 103,
+      "function": "create_item_record"
+    },
+    {
+      "path": "crates/nethacked-data/src/ruleset.rs",
+      "line": 849,
+      "function": "create_item_record"
+    },
+    {
+      "path": "crates/nethacked-sim/src/actions/religion.rs",
+      "line": 166,
+      "function": "handle_sacrifice"
+    },
+    {
+      "path": "crates/nethacked-sim/src/bones.rs",
+      "line": 97,
+      "function": "check_and_load_bones"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/hero_armor_ac_tests.rs",
+      "line": 139,
+      "function": "test_small_shield_plus_two_with_leather_armor"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/hero_armor_ac_tests.rs",
+      "line": 189,
+      "function": "test_two_helmets_do_not_stack"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/hero_armor_ac_tests.rs",
+      "line": 221,
+      "function": "test_two_helmets_do_not_stack"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/monster_attack_tests.rs",
+      "line": 316,
+      "function": "quaff_healing"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 305,
+      "function": "test_pickup_and_drop_lifecycle"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 356,
+      "function": "test_wield_weapon"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 1072,
+      "function": "test_nutrition_decay_and_eating"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 1782,
+      "function": "test_altar_sacrifice_and_divine_crowning"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 1841,
+      "function": "test_altar_holy_water_consecration"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 1878,
+      "function": "test_wand_of_wishing_spawns_item"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 1945,
+      "function": "test_wand_of_striking_destroys_drawbridge"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 1996,
+      "function": "test_wand_of_cold_freezes_pool"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 2037,
+      "function": "test_scroll_of_charging_and_explosion"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 2064,
+      "function": "test_scroll_of_charging_and_explosion"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 2109,
+      "function": "test_scroll_of_charging_and_explosion"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 2158,
+      "function": "test_wand_recharge_explosion_damage_is_d_n_k"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 2237,
+      "function": "test_artifact_combat_bonus_and_vorpal_blade"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 2312,
+      "function": "test_ukrainian_i18n_simulation_logging"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 2436,
+      "function": "test_monster_lich_summon_and_curse"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 2498,
+      "function": "test_bones_file_generation_and_ghost_encounter"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 3429,
+      "function": "test_hero_polymorph_potion_and_damage_reversion"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 3548,
+      "function": "test_wand_of_polymorph_unique_monster_invariant"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 3617,
+      "function": "test_wand_of_polymorph_unique_monster_invariant"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 3689,
+      "function": "test_scroll_of_genocide_conduct_and_level_wipe"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 3745,
+      "function": "test_cursed_scroll_of_genocide_summons"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 3821,
+      "function": "test_petrification_countdown_and_lizard_cure"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 3904,
+      "function": "test_weapon_skill_combat_bonus"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 4020,
+      "function": "test_ranged_fire_arrow_hits_monster"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 4221,
+      "function": "test_corpse_eating_and_conduct_invalidation"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 4274,
+      "function": "test_cannibalism_detection"
+    }
+  ],
+  "constructor_sites": 40,
+  "constructor_files": 9,
+  "existing_adjusted_functions": [
+    {
+      "path": "crates/nethacked-agent/tests/bones_server_test.rs",
+      "function": "test_networked_bones_flow_and_ghost_reincarnation",
+      "setup_definition_none_sites": 1,
+      "prior_body_restored_exactly_after_removing_setup": true
+    },
+    {
+      "path": "crates/nethacked-arena/src/lib.rs",
+      "function": "item_record_without_recharged_deserializes_to_zero",
+      "setup_definition_none_sites": 1,
+      "prior_body_restored_exactly_after_removing_setup": true
+    },
+    {
+      "path": "crates/nethacked-arena/src/lib.rs",
+      "function": "test_container_hierarchy_and_weight",
+      "setup_definition_none_sites": 2,
+      "prior_body_restored_exactly_after_removing_setup": true
+    },
+    {
+      "path": "crates/nethacked-arena/src/lib.rs",
+      "function": "test_cycle_detection",
+      "setup_definition_none_sites": 2,
+      "prior_body_restored_exactly_after_removing_setup": true
+    },
+    {
+      "path": "crates/nethacked-sim/tests/hero_armor_ac_tests.rs",
+      "function": "test_small_shield_plus_two_with_leather_armor",
+      "setup_definition_none_sites": 1,
+      "prior_body_restored_exactly_after_removing_setup": true
+    },
+    {
+      "path": "crates/nethacked-sim/tests/hero_armor_ac_tests.rs",
+      "function": "test_two_helmets_do_not_stack",
+      "setup_definition_none_sites": 2,
+      "prior_body_restored_exactly_after_removing_setup": true
+    },
+    {
+      "path": "crates/nethacked-sim/tests/monster_attack_tests.rs",
+      "function": "quaff_healing",
+      "setup_definition_none_sites": 1,
+      "prior_body_restored_exactly_after_removing_setup": true
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "function": "test_altar_holy_water_consecration",
+      "setup_definition_none_sites": 1,
+      "prior_body_restored_exactly_after_removing_setup": true
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "function": "test_altar_sacrifice_and_divine_crowning",
+      "setup_definition_none_sites": 1,
+      "prior_body_restored_exactly_after_removing_setup": true
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "function": "test_artifact_combat_bonus_and_vorpal_blade",
+      "setup_definition_none_sites": 1,
+      "prior_body_restored_exactly_after_removing_setup": true
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "function": "test_bones_file_generation_and_ghost_encounter",
+      "setup_definition_none_sites": 1,
+      "prior_body_restored_exactly_after_removing_setup": true
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "function": "test_cannibalism_detection",
+      "setup_definition_none_sites": 1,
+      "prior_body_restored_exactly_after_removing_setup": true
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "function": "test_corpse_eating_and_conduct_invalidation",
+      "setup_definition_none_sites": 1,
+      "prior_body_restored_exactly_after_removing_setup": true
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "function": "test_cursed_scroll_of_genocide_summons",
+      "setup_definition_none_sites": 1,
+      "prior_body_restored_exactly_after_removing_setup": true
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "function": "test_hero_polymorph_potion_and_damage_reversion",
+      "setup_definition_none_sites": 1,
+      "prior_body_restored_exactly_after_removing_setup": true
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "function": "test_monster_lich_summon_and_curse",
+      "setup_definition_none_sites": 1,
+      "prior_body_restored_exactly_after_removing_setup": true
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "function": "test_nutrition_decay_and_eating",
+      "setup_definition_none_sites": 1,
+      "prior_body_restored_exactly_after_removing_setup": true
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "function": "test_petrification_countdown_and_lizard_cure",
+      "setup_definition_none_sites": 1,
+      "prior_body_restored_exactly_after_removing_setup": true
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "function": "test_pickup_and_drop_lifecycle",
+      "setup_definition_none_sites": 1,
+      "prior_body_restored_exactly_after_removing_setup": true
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "function": "test_ranged_fire_arrow_hits_monster",
+      "setup_definition_none_sites": 1,
+      "prior_body_restored_exactly_after_removing_setup": true
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "function": "test_scroll_of_charging_and_explosion",
+      "setup_definition_none_sites": 3,
+      "prior_body_restored_exactly_after_removing_setup": true
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "function": "test_scroll_of_genocide_conduct_and_level_wipe",
+      "setup_definition_none_sites": 1,
+      "prior_body_restored_exactly_after_removing_setup": true
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "function": "test_ukrainian_i18n_simulation_logging",
+      "setup_definition_none_sites": 1,
+      "prior_body_restored_exactly_after_removing_setup": true
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "function": "test_wand_of_cold_freezes_pool",
+      "setup_definition_none_sites": 1,
+      "prior_body_restored_exactly_after_removing_setup": true
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "function": "test_wand_of_polymorph_unique_monster_invariant",
+      "setup_definition_none_sites": 2,
+      "prior_body_restored_exactly_after_removing_setup": true
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "function": "test_wand_of_striking_destroys_drawbridge",
+      "setup_definition_none_sites": 1,
+      "prior_body_restored_exactly_after_removing_setup": true
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "function": "test_wand_of_wishing_spawns_item",
+      "setup_definition_none_sites": 1,
+      "prior_body_restored_exactly_after_removing_setup": true
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "function": "test_wand_recharge_explosion_damage_is_d_n_k",
+      "setup_definition_none_sites": 1,
+      "prior_body_restored_exactly_after_removing_setup": true
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "function": "test_weapon_skill_combat_bonus",
+      "setup_definition_none_sites": 1,
+      "prior_body_restored_exactly_after_removing_setup": true
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "function": "test_wield_weapon",
+      "setup_definition_none_sites": 1,
+      "prior_body_restored_exactly_after_removing_setup": true
+    }
+  ],
+  "prior_assertions_unchanged": true,
+  "tests": [
+    {
+      "command": "cargo test -p nethacked-data --test item_definition_identity --locked",
+      "log": "/tmp/netrust-ob01-wand-id1/data-first.log",
+      "log_sha256": "71407565fada754f56ab77a58fba157db949850ab075da597945c663606417bd",
+      "exit_code": 101,
+      "passed_test_count": 0,
+      "notes": "New fixture compile typo WandCharges::Normal; corrected to existing Standard."
+    },
+    {
+      "command": "cargo test -p nethacked-sim --test item_definition_identity_tests --test monster_creation_wand_tests -p nethacked-data --test item_definition_identity --locked",
+      "log": "/tmp/netrust-ob01-wand-id1/focused-first.log",
+      "log_sha256": "88388e7c1e5487d8f4c211592db1e8f463bd6780200f8d34194c9b825dab4ec9",
+      "exit_code": 101,
+      "passed_test_count": 8,
+      "notes": "New local bones test assumed slotmap insertion order; replaced with captured actual carried order and keyed payload checks. Existing assertions untouched."
+    },
+    {
+      "command": "cargo test -p nethacked-sim --test item_definition_identity_tests --test monster_creation_wand_tests -p nethacked-data --test item_definition_identity --locked",
+      "log": "/tmp/netrust-ob01-wand-id1/focused-second.log",
+      "log_sha256": "10a08ed10c5fb26ac779fe1f979a905d4f7a21a413aedae4f445146d0859eaa6",
+      "exit_code": 0,
+      "passed_test_count": 23,
+      "notes": "23 tests"
+    },
+    {
+      "command": "cargo test -p nethacked-agent --test bones_server_test --locked",
+      "log": "/tmp/netrust-ob01-wand-id1/network.log",
+      "log_sha256": "2b06300a5e7779e64127d7439cbe3daf5e22a1eb223b74b866967e0443c76b13",
+      "exit_code": 0,
+      "passed_test_count": 3,
+      "notes": "3 tests including unchanged old network flow and new dedicated identity transport fixture"
+    },
+    {
+      "command": "cargo test -p nethacked-arena -p nethacked-data --locked",
+      "log": "/tmp/netrust-ob01-wand-id1/arena-data.log",
+      "log_sha256": "18a9fad63c860152c36b8620e90d4eb0fb0cba5fc05d2d8c89c2c2196b6bd6c4",
+      "exit_code": 0,
+      "passed_test_count": 111,
+      "notes": "Owned initializer/artifact/legacy/regression suites"
+    },
+    {
+      "command": "cargo test -p nethacked-pack --test pack_lib --test pack_files --test corpse_timeout_policy --test equipment_delay --locked",
+      "log": "/tmp/netrust-ob01-wand-id1/pack-compat.log",
+      "log_sha256": "aec9eb26d3489e543377fa19beb9aa9ca6f4e68f254efe892ca0410a31404a5a",
+      "exit_code": 0,
+      "passed_test_count": 41,
+      "notes": "41 tests including literal captured old hashes/bytes, absent metadata, authored owned items, schema"
+    },
+    {
+      "command": "cargo test -p nethacked-pack --test cli test_cli_schema --locked",
+      "log": "/tmp/netrust-ob01-wand-id1/schema.log",
+      "log_sha256": "6f0ec0418a9372e6ef26a9bc5cbd9511b58a4f73c072e27910a81db3c7f8f693",
+      "exit_code": 0,
+      "passed_test_count": 1,
+      "notes": "Existing four generated schemas CLI fixture"
+    },
+    {
+      "command": "cargo test -p nethacked-sim --test item_definition_identity_tests --test monster_creation_wand_tests -p nethacked-data --test item_definition_identity --locked",
+      "log": "/tmp/netrust-ob01-wand-id1/focused-final.log",
+      "log_sha256": "d74d73962fd22bbea77d731af3f44aa8dd2724c874b622e94f3e0be4f0b31846",
+      "exit_code": 0,
+      "passed_test_count": 23,
+      "notes": "23 tests on final source; added unrelated charged witness wand and initialized custom serde equality"
+    },
+    {
+      "command": "cargo test -p nethacked-agent --test bones_server_test --locked",
+      "log": "/tmp/netrust-ob01-wand-id1/network-final.log",
+      "log_sha256": "a56f5ca727717796596df5904b3888114ed5c8e8a900e8cb783be87137e5cf71",
+      "exit_code": 0,
+      "passed_test_count": 3,
+      "notes": "Final network fixture additionally executes public pickup+Zap/native save/RNG continuation for remotely restored legacy None identity, alongside canonical/custom."
+    },
+    {
+      "command": "cargo fmt --all --check",
+      "log": "/tmp/netrust-ob01-wand-id1/format-check.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exit_code": 0,
+      "passed_test_count": 0,
+      "notes": "final source"
+    },
+    {
+      "command": "git diff --check",
+      "log": "/tmp/netrust-ob01-wand-id1/diff-check.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exit_code": 0,
+      "passed_test_count": 0,
+      "notes": "final source"
+    }
+  ],
+  "source_anchors": {
+    "representation": [
+      "crates/nethacked-types/src/lib.rs:863",
+      "crates/nethacked-types/src/lib.rs:872",
+      "crates/nethacked-arena/src/lib.rs:9",
+      "crates/nethacked-arena/src/lib.rs:31"
+    ],
+    "factory_resolution": [
+      "crates/nethacked-data/src/ruleset.rs:693",
+      "crates/nethacked-data/src/ruleset.rs:864",
+      "crates/nethacked-data/src/items.rs:104"
+    ],
+    "public_consumer": [
+      "crates/nethacked-sim/src/actions/items.rs:962",
+      "crates/nethacked-sim/src/actions/items.rs:987",
+      "crates/nethacked-sim/src/actions/items.rs:1027"
+    ],
+    "bones": [
+      "crates/nethacked-sim/src/bones.rs:43",
+      "crates/nethacked-sim/src/bones.rs:99"
+    ],
+    "unchanged_initialization_save_transport": [
+      "crates/nethacked-data/src/item_init.rs:89",
+      "crates/nethacked-sim/src/world.rs:485",
+      "crates/nethacked-sim/src/world.rs:493",
+      "crates/nethacked-agent/src/bones/client.rs:46",
+      "crates/nethacked-agent/src/bones/client.rs:60",
+      "crates/nethacked-agent/src/bones/server.rs:118",
+      "crates/nethacked-agent/src/bones/mod.rs:28",
+      "crates/nethacked-agent/src/bones/mod.rs:45"
+    ],
+    "reviewed_source_facts": [
+      "include/obj.h:45 otyp",
+      "src/zap.c:2644 owned oc_dir",
+      "src/zap.c:2655 onward effect dispatch; pinned commit16ff59115315917b93185d026aeefea06db9b0f4"
+    ]
+  },
+  "fixture_groups": [
+    {
+      "group": 1,
+      "tests": [
+        "public_runtime_rename_and_owned_override_preserve_create_charge_turn_and_rng",
+        "actual_zap_count_one_two_eight_renamed_owned_values_and_native_turn_order"
+      ],
+      "owner": "sim"
+    },
+    {
+      "group": 2,
+      "tests": [
+        "owned_and_static_factories_use_canonical_or_exact_normalized_custom_keys",
+        "custom_identity_ignores_runtime_create_and_effect_fragments"
+      ],
+      "owner": "data/sim"
+    },
+    {
+      "group": 3,
+      "tests": [
+        "active_cached_and_legacy_saves_keep_identity_omission_and_native_continuation"
+      ],
+      "owner": "sim"
+    },
+    {
+      "group": 4,
+      "tests": [
+        "missing_legacy_item_and_bones_identity_keeps_canonical_bytes_omitted",
+        "artifact_identity_and_creation_history_remain_separate_from_base_definition"
+      ],
+      "owner": "data"
+    },
+    {
+      "group": 5,
+      "tests": [
+        "public_local_bones_json_storage_restoration_and_pickup_keep_definition",
+        "old_bones_json_omits_identity_through_full_save_and_actual_restoration"
+      ],
+      "owner": "sim"
+    },
+    {
+      "group": 6,
+      "tests": [
+        "networked_definition_identity_legacy_omission_and_native_restoration",
+        "test_networked_bones_flow_and_ghost_reincarnation"
+      ],
+      "owner": "agent"
+    },
+    {
+      "group": 7,
+      "tests": [
+        "explicit_unknown_identity_refuses_before_charge_rng_scheduler_beam_or_target"
+      ],
+      "owner": "sim"
+    },
+    {
+      "group": 8,
+      "tests": [
+        "old_item_profiles_load_fixed_without_changing_hash",
+        "old_compiled_ruleset_preserves_canonical_hash_when_new_metadata_is_absent",
+        "old_compiled_artifact_metadata_defaults_load_with_verified_hash",
+        "captured_preedit_full_bundle_hash_and_bytes_still_load_without_new_facts",
+        "absent_delay_preserves_pre_p06_canonical_hash_and_loads_old_bundle",
+        "test_cli_schema"
+      ],
+      "owner": "unchanged pack tests"
+    }
+  ],
+  "unchanged_transport_hashes": {
+    "crates/nethacked-agent/src/bones/client.rs": "9b7fa556bb2be6e93127a62afb9fd447aadb9dd07311b5d0ef7d95a8800c1112",
+    "crates/nethacked-agent/src/bones/server.rs": "07d2ce8846e553730355a0e7dc5d9896bbc448e171587509e62e8b78ffa5d300",
+    "crates/nethacked-agent/src/bones/mod.rs": "8f44097ab5f8fe65ee951e15a872f2a604f5c3e39b37bb8b6dd94cc4fc226a48"
+  },
+  "process_status": {
+    "live_cargo": false,
+    "live_shell_sessions": false,
+    "remaining": "fresh review and coordinator full12gates/all3goldens; no commit by worker",
+    "polling_note": "Arena/data yielded handle was unclosed briefly on pack launch; ps showed only pack live, terminal arena/data exit0 collected. No remaining processes."
+  },
+  "scope_notes": [
+    "ItemDefinition is types-owned and arena-reexported; canonical Csymbol and exact normalized customkey lookup, no static fallback.",
+    "Only None retains legacy exact owned-name lookup and omitted bytes; no eager identity migration.",
+    "Resolved explicit partial effects use owned def name; mutable display fragments ignored; ordinary creation dispatch uses owned canonical id. Full effect semantics remain later P11 successors.",
+    "Unknown identity yields exact single refusal before current charge read/RNG/scheduler/beam/target/effect.",
+    "ItemDefWire/packmetadata/dependencies/Cargo.lock/goldens/docs untouched by worker. Runledger dirty edit is coordinator-owned.",
+    "No compiler/preprocessor/custom C/Lua evaluation; source-only facts from reviewed pinned contract. Actual token usage unknown."
+  ]
+}

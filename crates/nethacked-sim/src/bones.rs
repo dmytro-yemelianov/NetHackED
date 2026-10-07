@@ -40,6 +40,7 @@ impl SimulationWorld {
             let roll = self.rng.random_range(0..5u32);
             if let Some(item) = self.arena.items.get(id) {
                 bones_items.push(BonesItem {
+                    definition: item.definition.clone(),
                     artifact_id: item.artifact_id.clone(),
                     name: item.name.clone(),
                     class: item.class,
@@ -95,6 +96,7 @@ impl SimulationWorld {
                 let target_coord = scatter_coords[i % scatter_coords.len()];
                 if self.level.is_passable(target_coord) {
                     let item_record = ItemRecord {
+                        definition: b_item.definition,
                         saved_monster_traits: None,
                         artifact_id: b_item.artifact_id.or_else(|| {
                             self.ruleset

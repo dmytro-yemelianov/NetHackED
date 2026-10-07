@@ -1,0 +1,30 @@
+{
+  "finding": "OB01-ID1-E1",
+  "attempt": 1,
+  "repair_actor": "coordinator, metadata only",
+  "change": "Historical failed focused-first passing-count3=>8 only; failure101 and fixture explanation unchanged",
+  "before_after": {
+    "handoff.md": {
+      "before_sha256": "b1bf4a03542b1dfe0d8d241fe62d115cf3e3941a9b6021cb6fea07f03546f13a",
+      "after_sha256": "61af64150decca0850f6462b379a130f2049c4c2f3a59653ac8615eddc850390"
+    },
+    "handoff.json": {
+      "before_sha256": "0f0910d8173723fbc90141ea01bd944dd4d2d75f54362e9e732de0e1b77e83d3",
+      "after_sha256": "377c3876adbe589b445a8077e5b40238804b3ff66ca651451a60b0b2c91354d9"
+    },
+    "review-inputs.json": {
+      "before_sha256": "20babc15a166edf964d61f19ea28ff126274a50d7bbe113a0d553390d4440e72",
+      "after_sha256": "bed5a6b9d304679af1a7c9804fcfabbcf61a88fa0bc77da86c9f3efc314c5d60"
+    }
+  },
+  "immutable_initial_review": {
+    "review-initial.md": "579db1da4e8034c81ac781745a39d2112631bfe937cad2e55bab3409fe8d2a21",
+    "review-initial.json": "4903754700ccfcc462da7c2f80f93d18a31146964f6a565b6f15d3cc36504c72"
+  },
+  "source_inputs_unchanged": true,
+  "input_count": 344,
+  "input_digest": "567aed72fc97273ac4209afe92decbd5175e8e576ec7b5933bdb14c871e4e707",
+  "new_test_execution": false,
+  "log_unchanged_sha256": "88388e7c1e5487d8f4c211592db1e8f463bd6780200f8d34194c9b825dab4ec9",
+  "status": "metadata repaired; original fresh reviewer narrow recheck pending"
+}

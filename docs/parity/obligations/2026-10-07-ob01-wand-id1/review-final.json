@@ -1,0 +1,53 @@
+{
+  "schema": "netrust-ob01-wand-id1-independent-final-review-v1",
+  "status": "PASS",
+  "unit": "OB01-WAND-ID1",
+  "scope": "Narrow metadata-only rereview of OB01-ID1-E1; initial fresh complete semantic review carried unchanged",
+  "resolved_findings": [
+    "OB01-ID1-E1"
+  ],
+  "required_findings": [],
+  "checks": {
+    "handoff_json_exact_single_count_3_to_8": true,
+    "handoff_md_exact_single_count_3_to_8": true,
+    "review_inputs_only_refreshed_handoff_binding": true,
+    "failed_log_immutable_and_actual_pass_counts": [
+      3,
+      5
+    ],
+    "failed_exit101_fixture_explanation_unchanged": true,
+    "all344_live_source_hashes_equal_initial": true,
+    "initial_reports_preserved_locally_and_durably": true,
+    "original_handoffs_and_review_inputs_preserved_locally_and_durably": true
+  },
+  "reviewed_source_input_count": 344,
+  "reviewed_source_input_digest": "567aed72fc97273ac4209afe92decbd5175e8e576ec7b5933bdb14c871e4e707",
+  "head": "8f4902eed5c2710e838faf172e45b047eb7520c8",
+  "initial_full_review": {
+    "md": "/tmp/netrust-ob01-wand-id1/review-initial.md",
+    "json": "/tmp/netrust-ob01-wand-id1/review-initial.json",
+    "sha256": {
+      "review-initial.md": "579db1da4e8034c81ac781745a39d2112631bfe937cad2e55bab3409fe8d2a21",
+      "review-initial.json": "4903754700ccfcc462da7c2f80f93d18a31146964f6a565b6f15d3cc36504c72"
+    },
+    "all8_fixture_groups": "PASS carried from immutable initial source review",
+    "all344_source_hashes_and_full_semantic_proofs": "exact hashes and coverage/body/archive/input bindings in immutable initial JSON"
+  },
+  "new_bindings": {
+    "handoff.md": "61af64150decca0850f6462b379a130f2049c4c2f3a59653ac8615eddc850390",
+    "handoff.json": "377c3876adbe589b445a8077e5b40238804b3ff66ca651451a60b0b2c91354d9",
+    "review-inputs.json": "bed5a6b9d304679af1a7c9804fcfabbcf61a88fa0bc77da86c9f3efc314c5d60",
+    "evidence-repair-proof.json": "b124f2675bd19b43c8763154f92beb287ff49d89d1b7cabd6fd99f4125074425"
+  },
+  "failed_log_sha256": "88388e7c1e5487d8f4c211592db1e8f463bd6780200f8d34194c9b825dab4ec9",
+  "source_and_tests_changed": false,
+  "new_test_execution": false,
+  "remaining": [
+    "Coordinator fresh all12 full gates and all3 frozen goldens, then delivery commit",
+    "P11a-S1 selection/cancel public context; C1 charges/empty; B1/D1/P1/A1 break/dig/effect/property contexts remain mandatory",
+    "UI05 broader native bones identity/order/content/error/RNG/save fidelity remains open",
+    "All53 families/543 historical rows/catalog members/context packets remain open; no family closure"
+  ],
+  "execution": "uv Python metadata/byte/hash verification only; no Cargo/source/docs/golden/commit/C/CPP/Lua changes",
+  "token_usage": "unknown"
+}

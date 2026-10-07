@@ -984,14 +984,31 @@ impl SimulationWorld {
             });
             return events;
         };
+        // Explicit identities never fall back to display names or static tables.
+        let wand = &self.arena.items[wid];
+        let definition = match &wand.definition {
+            Some(identity) => {
+                let Some(definition) = self.ruleset.item_for_definition(identity) else {
+                    events.push(GameEvent::LogMessage {
+                        text: "You cannot zap that wand: its definition is unavailable.".into(),
+                    });
+                    return events;
+                };
+                Some(definition)
+            }
+            None => self.ruleset.item(&wand.name),
+        };
+        let resolved_id = definition.and_then(|def| def.id);
+        let effect_name = if wand.definition.is_some() {
+            definition.map(|def| def.name.clone())
+        } else {
+            None
+        };
         // Select by owned canonical definition, never a display-name fragment.
         let ordinary_creation = self.arena.items.get(wid).is_some_and(|wand| {
             wand.buc == Buc::Uncursed
                 && wand.enchantment > 0
-                && self
-                    .ruleset
-                    .item(&wand.name)
-                    .is_some_and(|def| def.id == Some(ItemKindId::WAN_CREATE_MONSTER))
+                && resolved_id == Some(ItemKindId::WAN_CREATE_MONSTER)
         }) && self.hero.polymorph.is_none()
             && !matches!(
                 self.level.get_tile(player.coord),
@@ -1007,7 +1024,7 @@ impl SimulationWorld {
         let wand_name =
             if let Some(new_charges) = nethacked_core::artifacts_wands::zap_wand(current_charges) {
                 wand_item.enchantment = new_charges.charges.min(i8::MAX as u32) as i8;
-                wand_item.name.clone()
+                effect_name.unwrap_or_else(|| wand_item.name.clone())
             } else {
                 events.push(GameEvent::LogMessage {
                     text: nethacked_i18n::Messages::wand_empty(self.locale).into(),

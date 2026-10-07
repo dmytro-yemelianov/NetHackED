@@ -137,6 +137,7 @@ fn test_small_shield_plus_two_with_leather_armor() {
 
     // +2 Small shield (a_ac = 1, spe = 2): ARM_BONUS = 1 + 2 = 3
     let shield_rec = ItemRecord {
+        definition: None,
         saved_monster_traits: None,
         artifact_id: None,
         name: "small shield".into(),
@@ -187,6 +188,7 @@ fn test_two_helmets_do_not_stack() {
 
     // First helmet (+0, a_ac = 1): ARM_BONUS = 1 -> AC becomes 9
     let helm1 = ItemRecord {
+        definition: None,
         saved_monster_traits: None,
         artifact_id: None,
         name: "helmet".into(),
@@ -219,6 +221,7 @@ fn test_two_helmets_do_not_stack() {
 
     // Second helmet (+0, a_ac = 1) also in inventory: should NOT stack!
     let helm2 = ItemRecord {
+        definition: None,
         saved_monster_traits: None,
         artifact_id: None,
         name: "helmet".into(),

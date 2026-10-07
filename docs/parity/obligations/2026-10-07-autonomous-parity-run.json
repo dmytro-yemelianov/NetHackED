@@ -12,15 +12,17 @@
     "c_commit": "16ff59115315917b93185d026aeefea06db9b0f4"
   },
   "configuration": {
-    "status": "reviewed_selected_inputs_pinned_checkpoint_commit_pending",
+    "status": "reviewed_selected_configuration_pinned",
     "record": "docs/parity/obligations/2026-10-07-configuration-profile/pin.json",
     "profile": "docs/parity/obligations/2026-10-07-configuration-profile/configuration-profile.json",
     "review": "docs/parity/obligations/2026-10-07-configuration-profile/review-final.json",
-    "acceptance_hold": "Operational hold remains until exact documentation checkpoint commit verification; independent complete-profile requirement satisfied without waiver"
+    "acceptance_hold": null,
+    "accepted_commit": "8f4902eed5c2710e838faf172e45b047eb7520c8",
+    "delivery_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/configuration-profile/delivery.json"
   },
   "completion_policy": "contract_final_completion_audit_all_requirements_with_evidence",
   "first_action": "Read-only pinned configuration audit, then independently reviewed P11a contract",
-  "active_unit": "BOOTSTRAP-C-CONDITIONALS",
+  "active_unit": "OB01-WAND-ID1",
   "live_handles": [],
   "families": [
     {
@@ -412,18 +414,21 @@
     {
       "id": "BOOTSTRAP-C-CONFIG",
       "parent": "run_configuration",
-      "state": "global_pin_checkpoint_verifying",
+      "state": "accepted",
       "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/configuration.json",
       "accepted_prerequisites": [],
       "findings": [],
       "repair_counters": {},
       "evidence": "docs/parity/obligations/2026-10-07-bootstrap-p11a/review-final.json",
-      "selected_profile_successor": "BOOTSTRAP-C-CONDITIONALS"
+      "selected_profile_successor": "BOOTSTRAP-C-CONDITIONALS",
+      "accepted_commit": "8f4902eed5c2710e838faf172e45b047eb7520c8",
+      "acceptance_kind": "reviewed_selected_configuration_input_pin_not_behavior",
+      "accepted_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/configuration-profile/delivery.json"
     },
     {
       "id": "BOOTSTRAP-C-CONDITIONALS",
       "parent": "run_configuration",
-      "state": "verifying",
+      "state": "accepted",
       "contract": "docs/parity/obligations/2026-10-07-configuration-profile/configuration-profile.json",
       "outcome": "Complete reviewed transitive headers/build-defined symbol valuations and enabled/disabled conditional gameplay branch manifest, source-only",
       "accepted_prerequisites": [],
@@ -474,7 +479,10 @@
         "decision": "PASS_SELECTED_CONFIGURATION_PIN",
         "path": "docs/parity/obligations/2026-10-07-configuration-profile/review-final.json",
         "sha256": "f3397076b21a31019a0804e718ae28b3ed69c7ddb38dc57aa6bea89261d5396d"
-      }
+      },
+      "accepted_commit": "8f4902eed5c2710e838faf172e45b047eb7520c8",
+      "acceptance_kind": "reviewed_selected_configuration_input_pin_not_behavior",
+      "accepted_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/configuration-profile/delivery.json"
     },
     {
       "id": "UI04-CONFIG-INPUTS",
@@ -509,17 +517,46 @@
     {
       "id": "OB01-WAND-ID1",
       "parent": "OB01",
-      "state": "ready",
+      "state": "verifying",
       "engineering_ready": true,
       "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/p11a-contract.json",
-      "evidence": "docs/parity/obligations/2026-10-07-bootstrap-p11a/review-final.json",
+      "evidence": "docs/parity/obligations/2026-10-07-ob01-wand-id1/unit.json",
       "accepted_prerequisites": [
         "P10a2",
         "P10b"
       ],
-      "acceptance_hold": "Complete reviewed global configuration pin; no source-conformance acceptance yet",
-      "implementation_started": false,
-      "repair_counters": {}
+      "acceptance_hold": null,
+      "implementation_started": true,
+      "repair_counters": {
+        "OB01-ID1-E1": {
+          "attempts_started": 1,
+          "unsuccessful_same_model": 0,
+          "unsuccessful_total": 0,
+          "repair_actor": "coordinator metadata only",
+          "state": "resolved_first_attempt"
+        }
+      },
+      "configuration_prerequisite": {
+        "id": "BOOTSTRAP-C-CONDITIONALS",
+        "accepted_commit": "8f4902eed5c2710e838faf172e45b047eb7520c8",
+        "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/configuration-profile/delivery.json"
+      },
+      "draft_evidence": {
+        "handoff": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1/implementation-initial/handoff.json",
+        "review_input_binding": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1/implementation-initial/review-inputs.json",
+        "source_reviewed_archive": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1/implementation-initial/source-reviewed.tar.gz",
+        "source_reviewed_archive_sha256": "c680060b3140d97b20946716286aa993a3dac3d4943e6a7b1575a9783457e2b5"
+      },
+      "review": {
+        "status": "PASS",
+        "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1/reviewed/review-final.json",
+        "sha256": "57da53a468e949aeefd99d25ef4732165a71cde8ad22f2e2d47f0be7c6e9fd06"
+      },
+      "full_gates": {
+        "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1/full-gates/accepted.json",
+        "sha256": "fbad8f39409283db9d02e9c462d8042ce54a278386d0222506af009d54f48ad7",
+        "status": "PASS1009/all3gold/all12 final344inputs"
+      }
     },
     {
       "id": "P11a-S1",
@@ -666,6 +703,14 @@
       "state": "resolved",
       "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/configuration-profile/review-initial/review-initial.json",
       "resolution_review": "docs/parity/obligations/2026-10-07-configuration-profile/review-final.json"
+    },
+    {
+      "id": "OB01-ID1-E1",
+      "unit": "OB01-WAND-ID1",
+      "state": "resolved",
+      "title": "Historical failed focused passing-test count3=>8",
+      "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1/review-initial/review-initial.json",
+      "resolution_review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1/reviewed/review-final.json"
     }
   ],
   "accepted_checkpoints": [
@@ -675,18 +720,28 @@
       "status": "local_contract_review_pass_global_pin_unresolved",
       "source_conformance_accepted": false,
       "record": "docs/parity/obligations/2026-10-07-bootstrap-p11a/audit-checkpoint.json",
-      "commit": "containing commit",
+      "commit": "c0e92125f393db01ee385d81cc2dbe5135299c09",
       "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/contract-reviewed"
     },
     {
       "kind": "selected_configuration_pin",
       "unit": "BOOTSTRAP-C-CONDITIONALS",
-      "status": "review_pass_documentation_verified_commit_pending",
+      "status": "accepted_selected_configuration_pin",
       "source_conformance_accepted": false,
       "record": "docs/parity/obligations/2026-10-07-configuration-profile/pin.json",
-      "commit": null,
+      "commit": "8f4902eed5c2710e838faf172e45b047eb7520c8",
       "delivery_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/configuration-profile/delivery.json",
       "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/configuration-profile/reviewed"
+    },
+    {
+      "kind": "implementation_checkpoint",
+      "unit": "OB01-WAND-ID1",
+      "status": "independent_review_full_gates_and_changed_docs_pass_commit_pending",
+      "source_conformance_accepted": false,
+      "record": "docs/parity/obligations/2026-10-07-ob01-wand-id1/unit.json",
+      "commit": null,
+      "delivery_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1/delivery.json",
+      "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1"
     }
   ],
   "integration_audit": null,
@@ -705,7 +760,7 @@
     "readback_full_342_verified": true,
     "accepted_gate_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/baseline-accepted-gates"
   },
-  "next_action": "Commit and verify exact reviewed selected configuration checkpoint; then implement OB01-WAND-ID1",
+  "next_action": "Commit and verify accepted OB01-WAND-ID1 27-path checkpoint; then P11a-S1 source/contract audit",
   "external_accepted_interfaces": {
     "P10a2": {
       "record": "docs/parity/obligations/2026-10-07-p04-p10-final-acceptance.json",

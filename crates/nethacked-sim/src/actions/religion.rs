@@ -164,6 +164,7 @@ impl SimulationWorld {
                         }
                         SacrificeResult::DivineGift(artifact_name) => {
                             let gift_record = ItemRecord {
+                                definition: None,
                                 saved_monster_traits: None,
                                 artifact_id: self
                                     .ruleset

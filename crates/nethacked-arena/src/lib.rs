@@ -6,7 +6,7 @@ use nethacked_types::{Alignment, Buc, Coord, Intrinsics, ItemClass, MonsterAbili
 use serde::{Deserialize, Serialize};
 use slotmap::SlotMap;
 
-pub use nethacked_types::{ActorId, ItemId, LevelId};
+pub use nethacked_types::{ActorId, ItemDefinition, ItemId, LevelId};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ItemLocation {
@@ -29,6 +29,9 @@ pub enum CorpseSpecies {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ItemRecord {
+    /// Owned archetype identity; absence retains legacy exact-name lookup.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub definition: Option<ItemDefinition>,
     /// Detached supported monster state (C oextra->omonst), never a live actor.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub saved_monster_traits: Option<Box<SavedMonsterTraits>>,
@@ -343,6 +346,7 @@ mod tests {
     fn item_record_without_recharged_deserializes_to_zero() {
         let mut arena = EntityArena::new();
         let id = arena.spawn_item(ItemRecord {
+            definition: None,
             saved_monster_traits: None,
             artifact_id: None,
             name: "wand of striking".into(),
@@ -570,6 +574,7 @@ mod tests {
     fn test_container_hierarchy_and_weight() {
         let mut arena = EntityArena::new();
         let dagger = arena.spawn_item(ItemRecord {
+            definition: None,
             saved_monster_traits: None,
             artifact_id: None,
             name: "dagger".into(),
@@ -597,6 +602,7 @@ mod tests {
         });
 
         let boh = arena.spawn_item(ItemRecord {
+            definition: None,
             saved_monster_traits: None,
             artifact_id: None,
             name: "bag of holding".into(),
@@ -637,6 +643,7 @@ mod tests {
     fn test_cycle_detection() {
         let mut arena = EntityArena::new();
         let box1 = arena.spawn_item(ItemRecord {
+            definition: None,
             saved_monster_traits: None,
             artifact_id: None,
             name: "box 1".into(),
@@ -663,6 +670,7 @@ mod tests {
             trap_known: false,
         });
         let box2 = arena.spawn_item(ItemRecord {
+            definition: None,
             saved_monster_traits: None,
             artifact_id: None,
             name: "box 2".into(),

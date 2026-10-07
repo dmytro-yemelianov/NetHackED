@@ -10,7 +10,8 @@ use nethacked_arena::{
 use nethacked_core::ac::ArmorSlot;
 use nethacked_core::quest::get_role_quest_config;
 use nethacked_types::{
-    Alignment, Attack, Buc, Coord, Intrinsics, ItemClass, MonsterAbility, SkillClass, SkillLevel,
+    Alignment, Attack, Buc, Coord, Intrinsics, ItemClass, ItemDefinition, MonsterAbility,
+    SkillClass, SkillLevel,
 };
 use rand::Rng;
 use serde::{Deserialize, Serialize};
@@ -688,6 +689,19 @@ impl Ruleset {
             .and_then(|&i| self.items.get(i))
     }
 
+    /// Resolve persisted identity only within this owned ruleset.
+    pub fn item_for_definition(&self, definition: &ItemDefinition) -> Option<&ItemDef> {
+        match definition {
+            ItemDefinition::Vanilla(symbol) => self.item_by_id(ItemKindId::from_c_name(symbol)?),
+            ItemDefinition::Custom(key) => self
+                .index
+                .items_by_name
+                .get(key)
+                .and_then(|&i| self.items.get(i))
+                .filter(|def| def.id.is_none()),
+        }
+    }
+
     /// Look up a player role by role ID.
     pub fn role(&self, id: RoleId) -> Option<&RoleDef> {
         self.index
@@ -847,6 +861,10 @@ impl Ruleset {
             }
         };
         Some(ItemRecord {
+            definition: Some(match def.id {
+                Some(id) => ItemDefinition::Vanilla(id.c_name().to_owned()),
+                None => ItemDefinition::Custom(def.name.to_ascii_lowercase()),
+            }),
             saved_monster_traits: None,
             artifact_id: self.artifact_id_for_item(&def.name).map(str::to_owned),
             name: def.name.clone(),

@@ -73,7 +73,7 @@ pub fn get_item_archetype(id: ItemKindId) -> &'static ItemArchetype {
     &ITEM_CATALOG[id.index()]
 }
 
-/// Look up an archetype by its catalog name (`ItemRecord::name` stores no kind id).
+/// Look up a static archetype by its catalog name.
 pub fn item_archetype_by_name(name: &str) -> Option<&'static ItemArchetype> {
     ITEM_CATALOG
         .iter()
@@ -101,6 +101,9 @@ pub fn initial_wand_charges(id: ItemKindId) -> i8 {
 pub fn create_item_record(id: ItemKindId, location: ItemLocation, buc: Buc) -> ItemRecord {
     let arch = get_item_archetype(id);
     ItemRecord {
+        definition: Some(nethacked_types::ItemDefinition::Vanilla(
+            id.c_name().to_owned(),
+        )),
         saved_monster_traits: None,
         artifact_id: crate::artifacts::canonical_artifact_id(id).map(str::to_owned),
         name: arch.name.to_string(),

@@ -97,7 +97,7 @@ TUI keys: `crates/nethacked-tui/src/keys.rs:127-180`. Web keys: `web/play/play.j
 | `&` whatdoes / `/` whatis | pager.c:2659 / 2322 | ❌ MISSING | no keys | Cannot ask what a key or symbol means |
 | `w` wield | wield.c dowield | 🟡 PARTIAL | TUI `Wield(0)` no prompt (keys.rs:168); web prompt | TUI wields first item |
 | `#wipe` (M-w) | do_wear.c dowipe | ❌ MISSING | no match | Minor |
-| `z` zap | zap.c dozap | 🟡 PARTIAL | direction only; sim picks first carried wand (actions/items.rs:954-970) | Cannot choose which wand |
+| `z` zap | zap.c dozap | 🟡 PARTIAL | direction only; legacy/default action picks first carried wand; [OB01-WAND-ID1](obligations/2026-10-07-ob01-wand-id1/README.md) fixes owned definition identity, while public selection/cancellation remains P11a-S1 | Cannot choose which wand |
 | Movement hjklyubn + arrows | cmd.c move cmds | ✅ PRESENT | keys.rs:131-138; play.js:111-112 | - |
 | Wizard-mode commands (`^W`,`^E`,`^F`,`^G`,`^I`,`^V`, #wiz*) | cmd.c:1673+ | ❌ MISSING | no match for grep `wizmode\|wizwish` | Debug only; agent API has `wish` (agent/commands.rs:134) |
 | `!` shell / `^Z` suspend / #saveoptions / #bugreport | cmd.c:5697/5717 | ❌ MISSING | no match | Low (port-level) |
