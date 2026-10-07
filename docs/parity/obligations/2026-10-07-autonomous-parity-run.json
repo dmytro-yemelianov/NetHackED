@@ -22,7 +22,7 @@
   },
   "completion_policy": "contract_final_completion_audit_all_requirements_with_evidence",
   "first_action": "Read-only pinned configuration audit, then independently reviewed P11a contract",
-  "active_unit": "P11a-P1-BILL",
+  "active_unit": "P11a-P1-BILL-API1",
   "live_handles": [],
   "families": [
     {
@@ -1098,7 +1098,7 @@
       "cross_refs": [
         "DG06"
       ],
-      "state": "contract_verified_awaiting_delivery",
+      "state": "accepted_contract_only",
       "contract": "docs/parity/obligations/2026-10-07-p11a-billing-contract/contract.json",
       "dependencies": [
         "P11a-S1"
@@ -1157,7 +1157,9 @@
       "implementation_children": [
         "P11a-P1-BILL-API1",
         "P11a-P1-BILL-SAVE1"
-      ]
+      ],
+      "accepted_commit": "76b2fa266387e012d9aa21b4c90133932ea2ac33",
+      "delivery_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/contract-delivery.json"
     },
     {
       "id": "P11a-P1-PRE",
@@ -1279,7 +1281,7 @@
       "cross_refs": [
         "DG06"
       ],
-      "state": "ready_awaiting_contract_delivery",
+      "state": "verified_awaiting_delivery",
       "contract": "docs/parity/obligations/2026-10-07-p11a-billing-contract/contract.json",
       "dependencies": [
         "P11a-P1-BILL",
@@ -1301,7 +1303,20 @@
         "F1 identical/changed admission ReceiptAlreadyRecorded, complete-state/events/RNG/time atomicity; F2 typed/direct clearing and public Pay refusal, views and disposal conservation, empty-owner original behavior."
       ],
       "contract_review": "docs/parity/obligations/2026-10-07-p11a-billing-contract/review-final.json",
-      "activation_requires": "Accepted implementation/source evidence; contract review alone closes no public wand feature."
+      "activation_requires": "Accepted implementation/source evidence; contract review alone closes no public wand feature.",
+      "baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/baseline.json",
+      "launch": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/launch-readback.json",
+      "implementation_handoff": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-initial/handoff.json",
+      "review_baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/review-baseline.json",
+      "source_input_digest": "195391958ea6e35e80482b9dbe76995a6f4801b769f534a2d8d66ada715849cc",
+      "source_input_count": 346,
+      "usage_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-initial/actual-usage.json",
+      "independent_review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-review/review-final.json",
+      "review_binding_proof": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-review/readback-verification.json",
+      "unit_record": "docs/parity/obligations/2026-10-07-p11a-billing-api1/unit.json",
+      "full_gate_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/full-gates/accepted.json",
+      "full_gate_tests": 1035,
+      "family_closed": false
     },
     {
       "id": "P11a-P1-BILL-SAVE1",
@@ -1582,6 +1597,15 @@
       "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/delivery.json",
       "source_conformance_accepted": true,
       "family_closed": false
+    },
+    {
+      "kind": "source_api_contract_checkpoint",
+      "unit": "P11a-P1-BILL",
+      "status": "accepted_contract_only",
+      "commit": "76b2fa266387e012d9aa21b4c90133932ea2ac33",
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/contract-delivery.json",
+      "source_conformance_accepted": false,
+      "family_closed": false
     }
   ],
   "integration_audit": null,
@@ -1600,7 +1624,7 @@
     "readback_full_342_verified": true,
     "accepted_gate_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/baseline-accepted-gates"
   },
-  "next_action": "Verify fresh changed docs and commit reviewed BILL contract, then dispatch exact4-file BILL-API1; SAVE1/LIFE/IN1 wait for accepted implementation. All53/36 registeredchildren scope retained.",
+  "next_action": "Fresh changed-doc checks and exactstage/verified commit/delivery for BILL-API1; then accepted-prerequisite SAVE1 implementation/compatibility.",
   "external_accepted_interfaces": {
     "P10a2": {
       "record": "docs/parity/obligations/2026-10-07-p04-p10-final-acceptance.json",

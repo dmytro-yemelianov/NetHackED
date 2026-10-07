@@ -1,0 +1,12 @@
+{
+  "world_reconstructed_original_identical": true,
+  "crates/nethacked-sim/src/actions/economy.rs_only_entry_guard": true,
+  "crates/nethacked-sim/src/actions/mod.rs_only_entry_guard": true,
+  "existing_tests_changed": [],
+  "source_hashes": {
+    "crates/nethacked-sim/src/world.rs": "8b72fa1b383c5c823ee5acb831ce838b7b44d47c81a839ade7ac682716880f03",
+    "crates/nethacked-sim/src/actions/economy.rs": "0c4e54ccf34a87f68bd68a60d1f37086243b50ad7ac37bf3460f60d9f0cbc377",
+    "crates/nethacked-sim/src/actions/mod.rs": "b113139cdfcfa25e734163106b93b21c515f9491e0f1883067b72c44a69882df",
+    "crates/nethacked-sim/tests/wand_billing_tests.rs": "59eaff955d2713c25564e7f0c3d58f8436338176cf1285392cdfe47b0d7a0d39"
+  }
+}

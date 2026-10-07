@@ -29,6 +29,87 @@ pub struct StoredLevel {
     pub unpaid_items: Vec<(ItemId, u32)>,
 }
 
+/// Historical source receipt identity; never an active shopkeeper lookup.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BillCreditor {
+    pub branch: nethacked_types::BranchId,
+    pub depth: usize,
+    pub shopkeeper: ActorId,
+}
+
+/// Source-provided historical facts. None means unavailable, never paid or zero.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BillTerms {
+    pub billed_quantity: Option<u32>,
+    pub unit_price: Option<u32>,
+    pub creditor: Option<BillCreditor>,
+    pub legacy_base_cost: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ConsumedBillRecord {
+    pub origin: ItemId,
+    pub object: nethacked_arena::ItemRecord,
+    pub terms: BillTerms,
+}
+
+#[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BillingState {
+    pub live_terms: Vec<(ItemId, BillTerms)>,
+    pub consumed: Vec<ConsumedBillRecord>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BillError {
+    AlreadyConsumed,
+    StaleItem,
+    NotCarried,
+    InvalidDefinition,
+    ZeroQuantity,
+    DuplicateLedger,
+    InvalidReceipt,
+    UnsupportedBillingScope,
+    LifecycleReferencesPresent,
+    ReceiptAlreadyRecorded,
+    SettlementDeferred,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum WholeDisposal {
+    Unbilled { origin: ItemId },
+    RetainedBilled { origin: ItemId },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BillValuation {
+    Known {
+        total: u64,
+    },
+    UnresolvedTerms {
+        base: u32,
+        current_consumed_quantity: Option<u32>,
+    },
+}
+
+/// Live ledger order followed by detached consumption order. Missing live
+/// objects remain visible as unresolved obligations rather than disappearing.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BillView {
+    pub origin: ItemId,
+    pub object: Option<nethacked_arena::ItemRecord>,
+    pub terms: BillTerms,
+    pub outstanding: bool,
+    pub useup: bool,
+    pub valuation: BillValuation,
+}
+
+// Immutable preflight ticket; consumed immediately by the same exclusive call.
+struct PreparedWholeDisposal {
+    origin: ItemId,
+    object: nethacked_arena::ItemRecord,
+    terms: Option<BillTerms>,
+}
+
 fn default_ruleset() -> Arc<Ruleset> {
     Ruleset::vanilla()
 }
@@ -88,6 +169,8 @@ pub struct SimulationWorld {
     pub object_timers: crate::object_timers::ObjectTimerQueue,
     /// Unpaid shop merchandise as `(item, base cost)`; see [`Self::get_unpaid_cost`].
     pub unpaid_items: Vec<(ItemId, u32)>,
+    #[serde(default)]
+    pub billing: BillingState,
     pub player_gold: u32,
     pub player_nutrition: i32,
     pub player_pw: u32,
@@ -410,6 +493,7 @@ impl SimulationWorld {
             scheduler: SchedulerState::new(12, 0),
             object_timers: crate::object_timers::ObjectTimerQueue::default(),
             unpaid_items,
+            billing: BillingState::default(),
             player_gold,
             player_nutrition,
             player_pw,
@@ -678,7 +762,257 @@ impl SimulationWorld {
 
     /// Clear unpaid status after purchase.
     pub fn remove_unpaid(&mut self, id: ItemId) {
+        let _ = self.try_remove_unpaid(id);
+    }
+
+    /// Clearing a frozen or consumed obligation requires the future settlement route.
+    pub fn try_remove_unpaid(&mut self, id: ItemId) -> Result<(), BillError> {
+        if self.billing.live_terms.iter().any(|(i, _)| *i == id)
+            || self.billing.consumed.iter().any(|bill| bill.origin == id)
+        {
+            return Err(BillError::SettlementDeferred);
+        }
         self.unpaid_items.retain(|(i, _)| *i != id);
+        Ok(())
+    }
+
+    pub(crate) fn billing_settlement_deferred(&self) -> bool {
+        !self.billing.live_terms.is_empty() || !self.billing.consumed.is_empty()
+    }
+
+    fn unknown_bill_terms(base: u32) -> BillTerms {
+        BillTerms {
+            billed_quantity: None,
+            unit_price: None,
+            creditor: None,
+            legacy_base_cost: base,
+        }
+    }
+
+    fn validate_bill_object(&self, id: ItemId) -> Result<&nethacked_arena::ItemRecord, BillError> {
+        if self.billing.consumed.iter().any(|bill| bill.origin == id) {
+            return Err(BillError::AlreadyConsumed);
+        }
+        let object = self.arena.items.get(id).ok_or(BillError::StaleItem)?;
+        if object.location != ItemLocation::CarriedBy(self.player_id) {
+            return Err(BillError::NotCarried);
+        }
+        let rs = Arc::clone(&self.ruleset);
+        let def = match &object.definition {
+            Some(identity) => rs.item_for_definition(identity),
+            None => rs.item(&object.name),
+        }
+        .ok_or(BillError::InvalidDefinition)?;
+        if def.class != object.class {
+            return Err(BillError::InvalidDefinition);
+        }
+        if object.class != ItemClass::Wand
+            || object.is_container
+            || !self.arena.items_in_container(id).is_empty()
+        {
+            return Err(BillError::UnsupportedBillingScope);
+        }
+        if object.quantity == 0 {
+            return Err(BillError::ZeroQuantity);
+        }
+        Ok(object)
+    }
+
+    fn bill_ledger(&self, id: ItemId) -> Result<(Option<u32>, Option<&BillTerms>), BillError> {
+        let tuples: Vec<_> = self
+            .unpaid_items
+            .iter()
+            .chain(
+                self.stored_levels
+                    .iter()
+                    .flat_map(|(_, level)| level.unpaid_items.iter()),
+            )
+            .filter(|(i, _)| *i == id)
+            .collect();
+        let receipts: Vec<_> = self
+            .billing
+            .live_terms
+            .iter()
+            .filter(|(i, _)| *i == id)
+            .collect();
+        if tuples.len() > 1
+            || receipts.len() > 1
+            || self
+                .stored_levels
+                .iter()
+                .any(|(_, level)| level.items.iter().any(|(i, _)| *i == id))
+        {
+            return Err(BillError::DuplicateLedger);
+        }
+        if !receipts.is_empty() && tuples.is_empty() {
+            return Err(BillError::InvalidReceipt);
+        }
+        // A carried item must belong to the active compatibility ledger.
+        if !tuples.is_empty() && !self.unpaid_items.iter().any(|(i, _)| *i == id) {
+            return Err(BillError::InvalidReceipt);
+        }
+        Ok((
+            tuples.first().map(|(_, base)| *base),
+            receipts.first().map(|(_, terms)| terms),
+        ))
+    }
+
+    fn validate_bill_terms(terms: &BillTerms, quantity: u32, base: u32) -> Result<(), BillError> {
+        if terms.legacy_base_cost != base {
+            return Err(BillError::InvalidReceipt);
+        }
+        let (Some(q), Some(price)) = (terms.billed_quantity, terms.unit_price) else {
+            return Err(BillError::InvalidReceipt);
+        };
+        if q == 0 || price == 0 || u64::from(q) * u64::from(price) > i64::MAX as u64 {
+            return Err(BillError::InvalidReceipt);
+        }
+        if q != quantity {
+            return Err(BillError::UnsupportedBillingScope);
+        }
+        Ok(())
+    }
+
+    /// Admit prescribed source terms once. This does not calculate historical prices.
+    pub fn record_bill_terms(&mut self, id: ItemId, terms: BillTerms) -> Result<(), BillError> {
+        let object = self.validate_bill_object(id)?;
+        let (base, existing) = self.bill_ledger(id)?;
+        let base = base.ok_or(BillError::InvalidReceipt)?;
+        if existing.is_some() {
+            return Err(BillError::ReceiptAlreadyRecorded);
+        }
+        Self::validate_bill_terms(&terms, object.quantity, base)?;
+        self.billing.live_terms.push((id, terms));
+        Ok(())
+    }
+
+    fn prepare_whole_disposal(&self, id: ItemId) -> Result<PreparedWholeDisposal, BillError> {
+        let object = self.validate_bill_object(id)?;
+        let (base, receipt) = self.bill_ledger(id)?;
+        if let Some(terms) = receipt {
+            Self::validate_bill_terms(
+                terms,
+                object.quantity,
+                base.ok_or(BillError::InvalidReceipt)?,
+            )?;
+        }
+        if self.wielded_item == Some(id)
+            || self.hero.quivered_item == Some(id)
+            || self.equipment.armor.iter().any(|(_, i)| *i == id)
+            || self
+                .equipment
+                .dressing
+                .as_ref()
+                .is_some_and(|d| d.item == id)
+            || self
+                .object_timers
+                .entries()
+                .iter()
+                .any(|timer| match timer.target {
+                    crate::object_timers::ObjectTimerTarget::Active(i) => i == id,
+                    crate::object_timers::ObjectTimerTarget::Cached { item, .. } => item == id,
+                })
+        {
+            return Err(BillError::LifecycleReferencesPresent);
+        }
+        Ok(PreparedWholeDisposal {
+            origin: id,
+            object: object.clone(),
+            terms: receipt
+                .cloned()
+                .or_else(|| base.map(Self::unknown_bill_terms)),
+        })
+    }
+
+    fn commit_whole_disposal(&mut self, mut prepared: PreparedWholeDisposal) -> WholeDisposal {
+        let origin = prepared.origin;
+        let result = if let Some(terms) = prepared.terms {
+            prepared.object.location = ItemLocation::Limbo;
+            self.billing.consumed.push(ConsumedBillRecord {
+                origin,
+                object: prepared.object,
+                terms,
+            });
+            WholeDisposal::RetainedBilled { origin }
+        } else {
+            WholeDisposal::Unbilled { origin }
+        };
+        self.arena.items.remove(origin);
+        self.unpaid_items.retain(|(i, _)| *i != origin);
+        self.billing.live_terms.retain(|(i, _)| *i != origin);
+        result
+    }
+
+    /// Native whole-carried wand fixture route; no lifecycle cleanup or activation.
+    pub fn dispose_whole_carried_item(&mut self, id: ItemId) -> Result<WholeDisposal, BillError> {
+        let prepared = self.prepare_whole_disposal(id)?;
+        Ok(self.commit_whole_disposal(prepared))
+    }
+
+    pub fn outstanding_bills(&self) -> Vec<BillView> {
+        let view = |origin,
+                    object: Option<nethacked_arena::ItemRecord>,
+                    terms: BillTerms,
+                    useup| {
+            let valuation = match (terms.billed_quantity, terms.unit_price) {
+                (Some(q), Some(price))
+                    if q > 0 && price > 0 && u64::from(q) * u64::from(price) <= i64::MAX as u64 =>
+                {
+                    BillValuation::Known {
+                        total: u64::from(q) * u64::from(price),
+                    }
+                }
+                _ => BillValuation::UnresolvedTerms {
+                    base: terms.legacy_base_cost,
+                    current_consumed_quantity: object.as_ref().map(|o| o.quantity),
+                },
+            };
+            BillView {
+                origin,
+                object,
+                terms,
+                outstanding: true,
+                useup,
+                valuation,
+            }
+        };
+        let mut views = Vec::new();
+        for &(id, base) in self.unpaid_items.iter().chain(
+            self.stored_levels
+                .iter()
+                .flat_map(|(_, level)| level.unpaid_items.iter()),
+        ) {
+            let mut objects = self.arena.items.get(id).into_iter().chain(
+                self.stored_levels
+                    .iter()
+                    .flat_map(|(_, level)| level.items.iter())
+                    .filter(|(i, _)| *i == id)
+                    .map(|(_, object)| object),
+            );
+            let first = objects.next();
+            let object = if objects.next().is_none() {
+                first.cloned()
+            } else {
+                None
+            };
+            let terms = self
+                .billing
+                .live_terms
+                .iter()
+                .find(|(i, _)| *i == id)
+                .map(|(_, terms)| terms.clone())
+                .unwrap_or_else(|| Self::unknown_bill_terms(base));
+            views.push(view(id, object, terms, false));
+        }
+        for bill in &self.billing.consumed {
+            views.push(view(
+                bill.origin,
+                Some(bill.object.clone()),
+                bill.terms.clone(),
+                true,
+            ));
+        }
+        views
     }
 
     /// Clear represented references after the rot callback removes an item.

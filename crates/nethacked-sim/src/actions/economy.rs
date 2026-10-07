@@ -111,6 +111,9 @@ impl SimulationWorld {
     }
 
     pub(crate) fn handle_pay(&mut self) -> Vec<GameEvent> {
+        if self.billing_settlement_deferred() {
+            return Vec::new();
+        }
         let mut events = Vec::new();
         let carried = self.arena.items_carried_by(self.player_id);
         let mut total_due = 0u32;

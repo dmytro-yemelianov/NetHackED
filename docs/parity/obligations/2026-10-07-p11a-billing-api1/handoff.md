@@ -1,0 +1,11 @@
+P11a-P1-BILL-API1 is implemented for root review; no acceptance or delivery claim.
+
+Exactly four source paths changed: world.rs, actions/economy.rs, actions/mod.rs and NEW tests/wand_billing_tests.rs under crates/nethacked-sim. world.rs adds the serde(default) empty BillingState owner, frozen source receipt types, admission, deterministic outstanding views, immutable whole-disposal preflight and immediate exclusive commit, typed clearing refusal and compatibility () wrapper. Dispatcher requested-Pay refusal is its first executable statement; handle_pay has the same entry guard. See handoff.json for exact owners/lines and source.diff for production changes.
+
+Old-test/assertion/helper/constructor-literal changes: NONE. Goldens: NONE. Baseline hashes and subtraction of authorized additions prove all other old production bodies unchanged in body-preservation.json. The preexisting dirty root ledger was untouched.
+
+Final focused validation: 9 new billing tests, 42 existing sim regressions and 111 arena/data tests passed; scoped Clippy with -D warnings and scoped rustfmt check passed. Each command's full argv, cwd, exit and log are in focused-results.json and its named JSON/log pair. fixture-results.json gives per-fixture executed counts and expectations, including the 16-case transfer matrix and q1/q3 atomic refusal conservation.
+
+Preserved failures: uv launcher exit2 before Cargo (cache permission); initial billing run exit101 with 6pass/2fail due to raw serialized key ordering after load (structural JSON identical); scoped Clippy exit101 with two needless new-fixture scheduler borrows. Only new fixture code was adjusted; the successful reruns and all failed logs/counters remain. See failed-attempt-analysis.json.
+
+No concrete API1 blocker remains. Root must independently review and run full12/all3 before acceptance. SAVE1 malformed owner/dangling/duplicate validation before catchup and cache/stair live receipt remapping remain unimplemented. Stable active snapshots and absent-owner regression are API fixtures only. LIFE cleanup, runtime activation, real pending mid-zap continuation, historical receipt reconstruction/account mapping and settlement remain separate; referenced objects are refused and unknown facts retained explicitly. No commit/push, agents, dependencies, C/compiler/Lua, full workspace gates or acceptance claim.

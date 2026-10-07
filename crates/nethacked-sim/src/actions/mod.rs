@@ -20,6 +20,9 @@ use crate::world::SimulationWorld;
 impl SimulationWorld {
     /// Step the simulation with a player action, processing subsequent monster turns.
     pub fn step_player_action(&mut self, action: ActionAst) -> Vec<GameEvent> {
+        if matches!(action, ActionAst::Pay) && self.billing_settlement_deferred() {
+            return Vec::new();
+        }
         let mut events = Vec::new();
 
         let Some(player) = self.arena.actors.get(self.player_id).cloned() else {

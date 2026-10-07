@@ -39,6 +39,8 @@ The Lean models and the Rust engine are simplified abstractions of NetHack mecha
 * **Name-based item kind detection**: some sim code (e.g. weapon skill selection in `nethacked-sim/src/combat.rs`) infers an item's kind from substrings of its name rather than from its object class/type.
 * **Rule packs and mechanics data**: The Lean 4 models, formal theorems, and legacy C citations in this document describe the **canonical vanilla ruleset**. When running NetHackED with a rule pack (`--pack`), game data values (such as monster attack dice, monster AC/HP/speed, item weight/cost, or role starting inventories) may be customized by the pack while preserving deterministic engine execution. See [docs/rule-packs.md](rule-packs.md) for details.
 
+* **Retained unpaid-wand debt prerequisite**: [P11a-P1-BILL-API1](parity/obligations/2026-10-07-p11a-billing-api1/README.md) adds public frozen-receipt admission, whole carried ordinary-wand disposal and deterministic outstanding-bill views. Retirement preserves admitted quantity, unit price, creditor and the detached object; missing legacy receipts retain liability with explicitly unknown historical terms. Receipt repeats, protected clearing and requested Pay refuse before mutation. Quantity1/3, canonical/custom renamed identities, stale generations, lifecycle-reference refusal and scoped absent-owner loads pass independent review. SAVE1 malformed-load validation/cache remapping, settlement and wand activation remain mandatory successors; this closes no full family.
+
 These divergences are planned to be corrected in a later fidelity pass. Until then, do not treat the formulas in this document as authoritative descriptions of NetHack C behavior.
 
 ---

@@ -1,0 +1,393 @@
+[
+  {
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "nethacked-sim",
+      "--test",
+      "wand_billing_tests",
+      "--locked"
+    ],
+    "cwd": "/Users/dmytro/github/NetRust",
+    "exit": 101,
+    "elapsed_seconds": 4.410027980804443,
+    "log": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-initial/billing-attempt-1.log",
+    "result_counters": [
+      {
+        "passed": 6,
+        "failed": 2,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      }
+    ]
+  },
+  {
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "nethacked-sim",
+      "--test",
+      "wand_billing_tests",
+      "--locked"
+    ],
+    "cwd": "/Users/dmytro/github/NetRust",
+    "exit": 0,
+    "elapsed_seconds": 1.9626061916351318,
+    "log": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-initial/billing-attempt-2.log",
+    "result_counters": [
+      {
+        "passed": 8,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      }
+    ]
+  },
+  {
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "nethacked-sim",
+      "--test",
+      "wand_billing_tests",
+      "--locked"
+    ],
+    "cwd": "/Users/dmytro/github/NetRust",
+    "exit": 0,
+    "elapsed_seconds": 2.0849061012268066,
+    "log": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-initial/billing-final.log",
+    "result_counters": [
+      {
+        "passed": 9,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      }
+    ]
+  },
+  {
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "nethacked-sim",
+      "--test",
+      "wand_billing_tests",
+      "--locked"
+    ],
+    "cwd": "/Users/dmytro/github/NetRust",
+    "exit": 0,
+    "elapsed_seconds": 2.0783300399780273,
+    "log": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-initial/billing-final-2.log",
+    "result_counters": [
+      {
+        "passed": 9,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      }
+    ]
+  },
+  {
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "nethacked-sim",
+      "--test",
+      "selected_wand_tests",
+      "--test",
+      "monster_creation_wand_tests",
+      "--test",
+      "save_load_tests",
+      "--test",
+      "level_persistence_tests",
+      "--test",
+      "item_definition_identity_tests",
+      "--locked"
+    ],
+    "cwd": "/Users/dmytro/github/NetRust",
+    "exit": 0,
+    "elapsed_seconds": 5.931988954544067,
+    "log": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-initial/sim-regressions.log",
+    "result_counters": [
+      {
+        "passed": 6,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      {
+        "passed": 9,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      {
+        "passed": 14,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      {
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      {
+        "passed": 12,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      }
+    ]
+  },
+  {
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "nethacked-arena",
+      "-p",
+      "nethacked-data",
+      "--locked"
+    ],
+    "cwd": "/Users/dmytro/github/NetRust",
+    "exit": 0,
+    "elapsed_seconds": 25.092978954315186,
+    "log": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-initial/arena-data.log",
+    "result_counters": [
+      {
+        "passed": 10,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      {
+        "passed": 14,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      {
+        "passed": 2,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      {
+        "passed": 4,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      {
+        "passed": 6,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      {
+        "passed": 10,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      {
+        "passed": 4,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      {
+        "passed": 2,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      {
+        "passed": 3,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      {
+        "passed": 6,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      {
+        "passed": 2,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      {
+        "passed": 2,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      {
+        "passed": 7,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      {
+        "passed": 3,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      {
+        "passed": 8,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      {
+        "passed": 6,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      {
+        "passed": 3,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      {
+        "passed": 6,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      {
+        "passed": 8,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      {
+        "passed": 3,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      {
+        "passed": 2,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      }
+    ]
+  },
+  {
+    "argv": [
+      "cargo",
+      "clippy",
+      "-p",
+      "nethacked-sim",
+      "--lib",
+      "--test",
+      "wand_billing_tests",
+      "--locked",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "cwd": "/Users/dmytro/github/NetRust",
+    "exit": 101,
+    "elapsed_seconds": 1.5085711479187012,
+    "log": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-initial/scoped-clippy.log",
+    "result_counters": []
+  },
+  {
+    "argv": [
+      "cargo",
+      "clippy",
+      "-p",
+      "nethacked-sim",
+      "--lib",
+      "--test",
+      "wand_billing_tests",
+      "--locked",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "cwd": "/Users/dmytro/github/NetRust",
+    "exit": 0,
+    "elapsed_seconds": 0.5357918739318848,
+    "log": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-initial/scoped-clippy-2.log",
+    "result_counters": []
+  },
+  {
+    "argv": [
+      "rustfmt",
+      "--edition",
+      "2021",
+      "--check",
+      "crates/nethacked-sim/src/world.rs",
+      "crates/nethacked-sim/src/actions/economy.rs",
+      "crates/nethacked-sim/src/actions/mod.rs",
+      "crates/nethacked-sim/tests/wand_billing_tests.rs"
+    ],
+    "cwd": "/Users/dmytro/github/NetRust",
+    "exit": 0,
+    "elapsed_seconds": 0.10262179374694824,
+    "log": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-initial/scoped-fmt.log",
+    "result_counters": []
+  }
+]
