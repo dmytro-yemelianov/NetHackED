@@ -22,7 +22,7 @@
   },
   "completion_policy": "contract_final_completion_audit_all_requirements_with_evidence",
   "first_action": "Read-only pinned configuration audit, then independently reviewed P11a contract",
-  "active_unit": "PROCESS-OPTIMIZATION",
+  "active_unit": "PROCESS-GUARDS",
   "live_handles": [],
   "families": [
     {
@@ -1690,7 +1690,7 @@
     "readback_full_342_verified": true,
     "accepted_gate_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/baseline-accepted-gates"
   },
-  "next_action": "Commit reviewed process, then implement minimal local packet/output/phase-usage guards as one bounded process task before parity pilot. No new broad audit or model fleet; retain full53scope and mandatory gates.",
+  "next_action": "Commit verified PROCESS-GUARDS exact4paths, verify delivery, then dependency-ready paritypilot through guard with bounded contract and explicit cumulativeusage adjustment.",
   "external_accepted_interfaces": {
     "P10a2": {
       "record": "docs/parity/obligations/2026-10-07-p04-p10-final-acceptance.json",
@@ -1745,8 +1745,9 @@
     "user_cost_concern": "User reports at least10%weekly allowance spent; exact weekly percentage unavailable locally. No invented savings or pricing. All53 scope retained.",
     "worker_output_policy": "Handoff<=250words; findings<=300words; per-response2000token ceiling; rawlogs external; amendment authoritative.",
     "process": "docs/plans/2026-10-07-parity-process-optimization.md",
-    "status": "reviewed_pending_commit",
-    "dispatch_hold": "Parity writers held until process guards/checklist are concrete; user requested process first, then optimization."
+    "status": "local_guard_verified_pending_commit",
+    "dispatch_hold": "Release after verified guard commit; next paritypilot must use actual preflight/launch/usage and recorded narrowing adjustment.",
+    "guard": "scripts/parity-agent-guard.py"
   },
   "user_execution_directive": {
     "instruction": "Finish current SAVE1 through review, required fixes, full gates and commit. Then formalize and perform multi-level cycle optimization before launching further parity implementations.",
@@ -1756,7 +1757,7 @@
   },
   "active_coordination_task": {
     "id": "PROCESS-OPTIMIZATION",
-    "state": "reviewed_pending_commit",
+    "state": "accepted",
     "scope": "Formalize and check multi-level optimization of scope decomposition, model routing, context/tool outputs, validation/reuse, documentation and usage controls. Preserve all53 parity families and mandatory gates.",
     "user_directive": "Finish current unit first; process must be written properly before further parity work.",
     "plan": "docs/plans/2026-10-07-parity-process-optimization.md",
@@ -1765,6 +1766,34 @@
     "source_reuse": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-OPTIMIZATION/source-reuse.json",
     "metrics": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-OPTIMIZATION/metrics.json",
     "usage_adjustment": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-OPTIMIZATION/review-adjustment.json",
-    "terminal_usage_decision": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-OPTIMIZATION/terminal-usage-decision.json"
+    "terminal_usage_decision": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-OPTIMIZATION/terminal-usage-decision.json",
+    "commit": "9f33ddcdd3399ca844fc0361a5ffaa01f95145ca"
+  },
+  "active_process_guard_task": {
+    "state": "accepted_pending_commit",
+    "contract": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-GUARDS/contract.txt",
+    "contract_sha256": "aaa8c5fd0b5c56ae878ddc8ad0cc3b5150667f029b780e7c0132ab987b5bcfed",
+    "allowlist": [
+      "scripts/parity-agent-guard.py",
+      "scripts/tests/test_parity_agent_guard.py"
+    ],
+    "parent": "9f33ddcdd3399ca844fc0361a5ffaa01f95145ca",
+    "prior_usage_adjustment": "One coherent two-file helper; no broad process/source re-audit; bounded prompt/test/output.",
+    "source_baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-GUARDS/review-baseline.json",
+    "focused_tests": 20,
+    "phase_usage_decision": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-GUARDS/phase-adjustment.json",
+    "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-GUARDS/acceptance-review/answer.txt",
+    "findings": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-GUARDS/findings.json",
+    "repair_attempt": 2,
+    "unsuccessful_repairs": 1,
+    "final_source_baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-GUARDS/acceptance-review-baseline.json",
+    "guard_packet": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-GUARDS/acceptance-review-packet/packet.json",
+    "review_sha256": "e15a91adf61adf60dafe1bb665aa19ee3f118957a056ce7be01b597151a3a9c5",
+    "independent_negative_probes": 155,
+    "usage": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-GUARDS/acceptance-review/usage.json",
+    "usage_status": "exceeded; source and review accepted semantically, no new model call before narrowed next-phase decision",
+    "gate_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-GUARDS/full-gates/accepted.json",
+    "gate_sha256": "3315ab128f88590bd947d4ed1a7b43dc8293a448775071af11196a63319e6351",
+    "source_copy_proof": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-GUARDS/source-copy-proof.json"
   }
 }
