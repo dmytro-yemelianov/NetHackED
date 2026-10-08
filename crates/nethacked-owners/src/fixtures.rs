@@ -4,6 +4,8 @@ use nethacked_kernel::{
     NativePort, Scope,
 };
 
+mod publication_tests;
+
 type Action = Box<dyn FnMut(&CallerView<'_>) -> nethacked_kernel::Result<Vec<u8>>>;
 struct Harness {
     kernel: Kernel,
@@ -158,7 +160,15 @@ impl Harness {
         };
         let lease = kernel.capture_pipeline(root, "run", ceiling).unwrap();
         let id = kernel.issue_operation().unwrap();
-        let operation = kernel.operation_binding(id, lease, 1, "prepare").unwrap();
+        let operation = kernel
+            .operation_binding_with_cleanup(
+                id,
+                lease,
+                1,
+                "prepare",
+                &[host.cleanup_identity().unwrap()],
+            )
+            .unwrap();
         Self {
             kernel,
             module,
@@ -240,7 +250,13 @@ impl Harness {
         let op = self.kernel.issue_operation().unwrap();
         self.operation = self
             .kernel
-            .operation_binding(op, self.lease, 1, "prepare")
+            .operation_binding_with_cleanup(
+                op,
+                self.lease,
+                1,
+                "prepare",
+                &[self.host.cleanup_identity().unwrap()],
+            )
             .unwrap();
     }
     fn run(
@@ -433,7 +449,7 @@ fn dep<T: 'static>(owner: &Owner<T>) -> Dependency {
     Dependency {
         owner: owner.id(),
         query: "query".into(),
-        schema: owner.stamp().schema,
+        schema: owner.stamp().unwrap().schema,
     }
 }
 fn observe(h: &Harness, owner: Rc<Owner<Inventory>>) -> Observation {
@@ -481,23 +497,29 @@ fn heterogeneous_storage_native_and_actual_wasm_candidates_are_independent() {
         ledger.inspect().unwrap(),
         blob.inspect().unwrap(),
     ];
-    assert!(!std::ptr::eq(&inv.slot.state, &inv2.slot.state));
+    assert!(!std::ptr::eq(
+        &inv.slot.borrow().state,
+        &inv2.slot.borrow().state
+    ));
     let source = inv.clone();
     h.run(1, move |v| {
         let candidate = source.prepare("prepare", &[2], vec![], v).unwrap();
         assert_eq!(
-            candidate.next,
+            candidate.stage.prepared.borrow().as_ref().unwrap().next,
             Inventory {
                 amount: 6,
                 capacity: 20
             }
         );
-        assert_eq!(candidate.events, vec![vec![b'i', 2]]);
+        assert_eq!(
+            candidate.stage.prepared.borrow().as_ref().unwrap().events,
+            vec![vec![b'i', 2]]
+        );
         candidate.validate(v).unwrap();
-        assert_eq!(candidate.receipt.operation, *v.operation().unwrap());
+        assert_eq!(candidate.receipt().operation, *v.operation().unwrap());
         assert_eq!(source.host.retire(source.id()), Err(Error::Referenced));
         candidate.discard();
-        assert_eq!(source.host.pending(), 0);
+        assert_eq!(source.host.pending().unwrap(), 0);
         Ok(vec![])
     });
     let obs = Rc::new(RefCell::new(Some(observe(&h, inv.clone()))));
@@ -506,7 +528,7 @@ fn heterogeneous_storage_native_and_actual_wasm_candidates_are_independent() {
         let c = target
             .prepare("prepare", &[2], vec![obs.borrow_mut().take().unwrap()], v)
             .unwrap();
-        assert_eq!(c.next.debt, 11);
+        assert_eq!(c.stage.prepared.borrow().as_ref().unwrap().next.debt, 11);
         c.validate(v).unwrap();
         Ok(vec![])
     });
@@ -516,10 +538,19 @@ fn heterogeneous_storage_native_and_actual_wasm_candidates_are_independent() {
         let c = target
             .prepare("prepare", &[2], vec![obs.borrow_mut().take().unwrap()], v)
             .unwrap();
-        assert_eq!(c.next, 18u32.to_le_bytes());
-        assert_eq!(c.events, vec![b"blob-increment".to_vec()]);
-        assert_eq!(c.reply, 18u32.to_le_bytes());
-        assert_eq!(c.code.len(), 3);
+        assert_eq!(
+            c.stage.prepared.borrow().as_ref().unwrap().next,
+            18u32.to_le_bytes()
+        );
+        assert_eq!(
+            c.stage.prepared.borrow().as_ref().unwrap().events,
+            vec![b"blob-increment".to_vec()]
+        );
+        assert_eq!(
+            c.stage.prepared.borrow().as_ref().unwrap().reply,
+            18u32.to_le_bytes()
+        );
+        assert_eq!(c.stage.prepared.borrow().as_ref().unwrap().code.len(), 3);
         c.validate(v).unwrap();
         Ok(vec![])
     });
@@ -533,7 +564,7 @@ fn heterogeneous_storage_native_and_actual_wasm_candidates_are_independent() {
     );
     assert_eq!(inv2.inspect().unwrap(), initial[0]);
     assert_eq!(h.host.registry().unwrap().len(), 4);
-    assert_eq!(h.host.pending(), 0);
+    assert_eq!(h.host.pending().unwrap(), 0);
 }
 #[test]
 fn query_owner_grant_is_required_even_when_owner_is_absent_from_dependencies() {
@@ -713,7 +744,7 @@ fn stale_foreign_recreated_and_detached_captures_refuse() {
         Ok(vec![])
     });
     assert_eq!(ledger.inspect().unwrap(), 3u64.to_le_bytes());
-    assert_eq!(h.host.pending(), 0);
+    assert_eq!(h.host.pending().unwrap(), 0);
 }
 #[test]
 fn invariant_malformed_oversized_trapped_and_fuel_refused_guest_candidates_preserve_state() {
@@ -777,8 +808,8 @@ fn invariant_malformed_oversized_trapped_and_fuel_refused_guest_candidates_prese
         );
         assert!(result.is_ok() || (exhausted_fuel && result == Err(nethacked_kernel::Error::Trap)));
         assert_eq!(blob.inspect().unwrap(), 5u32.to_le_bytes());
-        assert_eq!(inv.slot.state.amount, 4);
-        assert_eq!(h.host.pending(), 0);
+        assert_eq!(inv.slot.borrow().state.amount, 4);
+        assert_eq!(h.host.pending().unwrap(), 0);
         assert_eq!(h.host.0.registry.borrow().next_candidate, serial);
     }
 }
@@ -812,7 +843,7 @@ fn bounded_candidates_identity_counters_and_code_lifetimes() {
         *sink.borrow_mut() = Some(c);
         Ok(vec![])
     });
-    assert_eq!(h.host.pending(), 1);
+    assert_eq!(h.host.pending().unwrap(), 1);
     assert_eq!(h.host.retire(inv.id()), Err(Error::Referenced));
     h.kernel.release_pipeline(h.lease).unwrap();
     assert_eq!(
@@ -828,7 +859,7 @@ fn bounded_candidates_identity_counters_and_code_lifetimes() {
     assert!(h.host.route(id).is_ok());
     holder.borrow_mut().take().unwrap().discard();
     assert!(h.host.route(id).is_err());
-    assert_eq!(h.host.pending(), 0);
+    assert_eq!(h.host.pending().unwrap(), 0);
     h.kernel.unregister(h.root).unwrap();
     h.kernel.unregister(h.module).unwrap();
     h.kernel.unregister(h.helper).unwrap();
@@ -958,8 +989,8 @@ fn native_refusal_all_staging_bounds_and_counter_exhaustion_preserve_slots() {
             Ok(vec![])
         });
         assert_eq!(calls.get(), 1);
-        assert_eq!(inv.slot.state.amount, 4);
-        assert_eq!(h.host.pending(), 0);
+        assert_eq!(inv.slot.borrow().state.amount, 4);
+        assert_eq!(h.host.pending().unwrap(), 0);
         assert_eq!(h.host.0.registry.borrow().next_candidate, serial);
     }
     let mut h = Harness::new(Limits::default(), KernelLimits::default(), ADD_OBSERVATION);
@@ -986,8 +1017,8 @@ fn native_refusal_all_staging_bounds_and_counter_exhaustion_preserve_slots() {
         ));
         Ok(vec![])
     });
-    assert_eq!(h.host.pending(), 0);
-    assert_eq!(inv.slot.state.amount, 4);
+    assert_eq!(h.host.pending().unwrap(), 0);
+    assert_eq!(inv.slot.borrow().state.amount, 4);
     let h = Harness::new(Limits::default(), KernelLimits::default(), ADD_OBSERVATION);
     h.host.0.registry.borrow_mut().next_owner = u64::MAX;
     assert!(matches!(
@@ -1054,7 +1085,7 @@ fn observation_closure_bounds_and_transitive_dependency_revocation_are_checked()
         let c = target
             .prepare("prepare", &[2], vec![input.clone()], v)
             .unwrap();
-        assert_eq!(c.next.debt, 15);
+        assert_eq!(c.stage.prepared.borrow().as_ref().unwrap().next.debt, 15);
         Ok(vec![])
     });
     h.kernel.revoke_grant(h.root, 0).unwrap();
@@ -1125,6 +1156,6 @@ fn candidate_revalidation_binds_operation_phase_lease_and_live_grants() {
         Ok(vec![])
     });
     holder.borrow_mut().take().unwrap().discard();
-    assert_eq!(h.host.pending(), 0);
-    assert_eq!(inv.slot.state.amount, 4);
+    assert_eq!(h.host.pending().unwrap(), 0);
+    assert_eq!(inv.slot.borrow().state.amount, 4);
 }

@@ -1,0 +1,106 @@
+{
+  "schema": 1,
+  "status": "verified_for_containing_commit",
+  "baseline_head": "a464bac521d4b6b7e6fdabd5931805c66ea1dd6c",
+  "milestone": "M4-O3",
+  "scope": "Sealed heterogeneous owner publication, whole-window exclusion, fresh authority and typed workflow cleanup",
+  "review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-PUBLICATION/review/answer.txt",
+    "sha256": "1d5c8e20ec0fd730248f9b45064956531a58ba3c6fcd68733bf594514e8d020f"
+  },
+  "readback": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-PUBLICATION/readback/answer.txt",
+    "sha256": "9e47709130985018565c90d3f175fd04f08346f0707ed19b270223916f24fed2"
+  },
+  "review_inputs": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-PUBLICATION/readback-source.json",
+    "sha256": "f4da0b01d9e1f74728200cf4cfb1d5044f93eb8035c96fd65eb29b2886ba26be"
+  },
+  "writer_evidence": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-PUBLICATION/writer-evidence/manifest.json",
+    "sha256": "33ee7a3ef32431f5a220766fff0f9c1132097d2630041a39ea9eecc85f09ea02"
+  },
+  "root_verification": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-PUBLICATION/writer-evidence/root-verification.json",
+    "sha256": "d62c12110826acac190034d3407b76322f18b4fda3b1ceabdf5bd36c09d06a85"
+  },
+  "repair": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-PUBLICATION/repair1/result.json",
+    "sha256": "5de9ed34dc7413694895c9d491a2af69d462ecc5692c7fd47cd58897273a3ced"
+  },
+  "focused_checks": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-PUBLICATION/repair1/checks.json",
+    "sha256": "5b12ff531a24197e2d85c3d572c3351cbf6710832e769be82b3739a3ec01856a"
+  },
+  "focused_tests": 22,
+  "default_owner_tests": 20,
+  "new_default_tests": 12,
+  "new_workflow_feature_tests": 2,
+  "actual_wasm32": [
+    "nethacked-owners --features workflows"
+  ],
+  "actual_wasm_evidence": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-PUBLICATION/writer-evidence/root-verification.json",
+    "sha256": "d62c12110826acac190034d3407b76322f18b4fda3b1ceabdf5bd36c09d06a85"
+  },
+  "old_tests_adjusted_only_for": [
+    "Shared cleanup-enrollment setup",
+    "Gated detached stamp and pending accessors",
+    "Private slot/staging borrows and readonly receipt accessor"
+  ],
+  "old_assertions_expected_values_predicates_order_and_fuel_marker_unchanged": true,
+  "goldens_changed": false,
+  "production_behavior_unchanged_after_review": true,
+  "review_repair": "F1 metering ended before final typed-guard release/gate opening; test-only endpoint moved after gate opening. Old suffix-allocation mutant passes; fixed mutant fails; restored22tests pass.",
+  "usage": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-PUBLICATION/implementation/usage.json",
+      "sha256": "178f70d36ba515c5264134d1d085995bd28568745cecaf41b4a8a17f5f36af11"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-PUBLICATION/review/usage.json",
+      "sha256": "98ddd9135fa8ce8206f490ea695628b4329b4f0f82a186e8628ccf2e2f4db86a"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-PUBLICATION/readback/usage.json",
+      "sha256": "7a49351ed092a8b862384fa2371cc60e7633eccb2ac5ed452f45b4f2a1dc97a4"
+    }
+  ],
+  "meter_note": "Writer160794/79739, review93553/8422 and medium readback30922/1816 uncached input/output exceed their respective soft input ceilings. Guard also compares total input; reports retained. Root usage unknown; no savings claim.",
+  "historical_failures": {
+    "failed_test_executions": 4,
+    "details": {
+      "multi_provider_grant_fixture": 2,
+      "foreign_gate_retained_scope_fixture": 1,
+      "retention_boundary_fixture": 1
+    },
+    "repair_history": "Each recorded fixture defect repaired once; compiler/Clippy/bootstrap diagnostics retained in writer manifest and raw logs. Root F1 repair1 and intentional mutant failures separately retained."
+  },
+  "acceptance": "O3 publication only; full review plus F1 instrumentation repair and independent PASS readback. Atomicity is in-process with a serialized executor and common visibility gate, not crash recovery.",
+  "native_goal_status": "active; next M4-O4",
+  "parity_families_closed": 0,
+  "residuals": [
+    "O4 executable live owner extensions, derived caches and retained service/lifecycle composition",
+    "M4d owner codecs/restoration and legacy compatibility",
+    "M5 selected-wand/populated NetHack live extension witness",
+    "M6 all existing NetHack domain migration and M7 final integration audit",
+    "Native adapter purity, faithful representation bounds, alias exclusion and complete profile accounting remain trusted obligations",
+    "Separate 53-family behavior-parity backlog"
+  ],
+  "full_gates": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-PUBLICATION/full-gates/accepted.json",
+    "sha256": "71279d399ce22792d5755deef060b4dfeba283ba3e36d843cbdffe6c68c37ac5"
+  },
+  "gate_result": {
+    "head": "a464bac521d4b6b7e6fdabd5931805c66ea1dd6c",
+    "tests": 1163,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "digest": "02ebbd30a6da5150252f686eedb1e4bfaac9e3ee10d502e3dea045de05d972a4",
+    "checks": 12
+  },
+  "source_input_count": 412
+}

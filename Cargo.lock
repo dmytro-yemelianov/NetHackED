@@ -1069,6 +1069,7 @@ name = "nethacked-owners"
 version = "0.1.0"
 dependencies = [
  "nethacked-kernel",
+ "nethacked-workflows",
  "sha2",
  "wat",
 ]

@@ -1,9 +1,9 @@
-//! Independent owner-local slots. O2 deliberately exposes no publication primitive.
-#![forbid(unsafe_code)]
+//! Independent owner-local slots and sealed heterogeneous publication.
+#![cfg_attr(not(test), forbid(unsafe_code))]
 
 use nethacked_kernel::{
-    Access, CallerView, Capability, CapabilityPermit, Kernel, ModuleHandle, ModulePin,
-    OperationBinding, ProviderBinding, Resource,
+    Access, CallerView, Capability, CapabilityPermit, CleanupIdentity, Kernel, ModuleHandle,
+    ModulePin, OperationBinding, ProviderBinding, Resource,
 };
 use sha2::{Digest, Sha256};
 use std::{
@@ -25,6 +25,7 @@ pub enum Error {
     Invariant,
     Unsupported,
     Referenced,
+    Quarantined,
 }
 pub type Result<T> = std::result::Result<T, Error>;
 impl From<nethacked_kernel::Error> for Error {
@@ -166,6 +167,7 @@ struct StateSlot<T> {
 }
 struct Metadata {
     stamp: Stamp,
+    revision: Cell<u64>,
     provider_name: String,
     ports: BTreeMap<String, Port>,
     live: Cell<bool>,
@@ -173,6 +175,13 @@ struct Metadata {
 }
 trait Route {
     fn metadata(&self) -> &Metadata;
+}
+impl Metadata {
+    fn current_stamp(&self) -> Stamp {
+        let mut stamp = self.stamp.clone();
+        stamp.revision = self.revision.get();
+        stamp
+    }
 }
 struct Entry {
     stamp: Stamp,
@@ -183,19 +192,25 @@ struct Registry {
     next_candidate: u64,
     pending: usize,
     entries: BTreeMap<OwnerId, Entry>,
+    staging: BTreeMap<u64, Weak<dyn Staged>>,
+    tickets: BTreeMap<u64, Weak<publication::TicketState>>,
+    staging_bytes: usize,
 }
 struct HostInner {
     id: u64,
     limits: Limits,
     gate: Cell<bool>,
     registry: RefCell<Registry>,
+    cleanup: CleanupIdentity,
+    publication: RefCell<Publication>,
+    quarantine: Cell<bool>,
 }
 #[derive(Clone)]
 pub struct Host(Rc<HostInner>);
 pub struct Owner<T> {
     host: Host,
     metadata: Metadata,
-    slot: StateSlot<T>,
+    slot: RefCell<StateSlot<T>>,
     backend: Backend<T>,
     pin: ModulePin,
 }
@@ -239,7 +254,7 @@ impl Observation {
         &self.name
     }
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Receipt {
     pub serial: u64,
     pub stamp: Stamp,
@@ -256,67 +271,50 @@ pub struct Receipt {
 /// Opaque staged ownership. No apply/commit, field setter, next-state borrow or
 /// wire constructor is public. Drop discards only staged state and releases bounds.
 pub struct Candidate<T> {
+    stage: Rc<Stage<T>>,
+}
+struct Prepared<T> {
     owner: Rc<Owner<T>>,
     next: T,
     events: Vec<Vec<u8>>,
     reply: Vec<u8>,
     dependencies: Vec<Observation>,
-    receipt: Receipt,
     code: Vec<ModulePin>,
+}
+struct Stage<T> {
+    host: Host,
+    owner: Weak<Owner<T>>,
+    receipt: Receipt,
+    prepared: RefCell<Option<Prepared<T>>>,
+    active: Cell<bool>,
+    retained_bytes: usize,
 }
 impl<T> Candidate<T> {
     pub fn receipt(&self) -> &Receipt {
-        &self.receipt
+        &self.stage.receipt
     }
     pub fn discard(self) {
         drop(self);
     }
 }
 impl<T: 'static> Candidate<T> {
-    /// O2 staging validation only. Publication remains unavailable until O3.
+    /// Owner-provider validation. Coordinator validation is a separate path.
     pub fn validate(&self, view: &CallerView<'_>) -> Result<()> {
-        let owner = &self.owner;
+        let prepared = self.stage.prepared.try_borrow().map_err(|_| Error::Busy)?;
+        let prepared = prepared.as_ref().ok_or(Error::Stale)?;
+        let owner = &prepared.owner;
         let _gate = owner.host.close_visibility()?;
         let _invocation_pin = view.pin_invocation()?;
-        let permit = authorize(&owner.metadata, &self.receipt.command, view, Access::Write)?;
-        if owner.metadata.stamp != self.receipt.stamp
-            || owner.slot.revision != self.receipt.stamp.revision
-        {
-            return Err(Error::Stale);
-        }
-        if permit != self.receipt.capability
-            || view.caller() != Some(self.receipt.caller)
-            || view.caller_artifact() != Some(self.receipt.caller_artifact)
-            || view.operation() != Some(&self.receipt.operation)
-        {
-            return Err(Error::Authority);
-        }
-        owner.observations(&self.receipt.command, &self.dependencies, view)?;
-        let limits = &owner.host.0.limits;
-        let encoded = owner.backend.schema()?.encode(&self.next)?;
-        bound(encoded.len(), limits.payload_bytes)?;
-        if <[u8; 32]>::from(Sha256::digest(encoded)) != self.receipt.next_digest {
-            return Err(Error::Invariant);
-        }
-        bound(self.events.len(), limits.events)?;
-        bound(
-            self.reply.len(),
-            limits.reply_bytes.min(view.max_reply() as usize),
+        authorize(
+            &owner.metadata,
+            &self.stage.receipt.command,
+            view,
+            Access::Write,
         )?;
-        if self.code.iter().any(|p| p.module_count() == 0) {
-            return Err(Error::Stale);
-        }
-        Ok(())
+        self.stage.preflight(prepared, view).map(|_| ())
     }
-}
-impl<T> Drop for Candidate<T> {
-    fn drop(&mut self) {
-        let mut registry = self.owner.host.0.registry.borrow_mut();
-        registry.pending -= 1;
-        self.owner
-            .metadata
-            .pending
-            .set(self.owner.metadata.pending.get() - 1);
+    pub fn erase(self) -> ErasedCandidate {
+        ErasedCandidate { stage: self.stage }
     }
 }
 
@@ -345,15 +343,24 @@ impl Host {
             id,
             limits,
             gate: Cell::new(false),
+            cleanup: CleanupIdentity::issue()?,
+            publication: RefCell::new(Publication::default()),
+            quarantine: Cell::new(false),
             registry: RefCell::new(Registry {
                 next_owner: 1,
                 next_candidate: 1,
                 pending: 0,
                 entries: BTreeMap::new(),
+                staging: BTreeMap::new(),
+                tickets: BTreeMap::new(),
+                staging_bytes: 0,
             }),
         })))
     }
     pub fn close_visibility(&self) -> Result<Gate> {
+        if self.0.quarantine.get() {
+            return Err(Error::Quarantined);
+        }
         if self.0.gate.replace(true) {
             return Err(Error::Busy);
         }
@@ -368,11 +375,16 @@ impl Host {
             .borrow()
             .entries
             .values()
-            .map(|e| e.stamp.clone())
+            .map(|e| {
+                e.route
+                    .upgrade()
+                    .map_or_else(|| e.stamp.clone(), |r| r.metadata().current_stamp())
+            })
             .collect())
     }
-    pub fn pending(&self) -> usize {
-        self.0.registry.borrow().pending
+    pub fn pending(&self) -> Result<usize> {
+        let _gate = self.close_visibility()?;
+        Ok(self.0.registry.borrow().pending)
     }
     /// Privileged validated initialization; does not provide a restoration API.
     pub fn enroll<T: 'static>(
@@ -453,15 +465,16 @@ impl Host {
             host: self.clone(),
             metadata: Metadata {
                 stamp: stamp.clone(),
+                revision: Cell::new(0),
                 provider_name: manifest.id.clone(),
                 ports: spec.ports,
                 live: Cell::new(true),
                 pending: Cell::new(0),
             },
-            slot: StateSlot {
+            slot: RefCell::new(StateSlot {
                 state: initial,
                 revision: 0,
-            },
+            }),
             backend,
             pin,
         });
@@ -569,7 +582,7 @@ fn validate_observation(
     bound(*bytes, host.0.limits.observation_bytes)?;
     let route = host.route(o.stamp.owner)?;
     let m = route.metadata();
-    if o.stamp != m.stamp || !Rc::ptr_eq(&route, &o.route) {
+    if o.stamp != m.current_stamp() || !Rc::ptr_eq(&route, &o.route) {
         return Err(Error::Stale);
     }
     if view.caller() != Some(o.caller) || view.caller_artifact() != Some(o.caller_artifact) {
@@ -594,8 +607,10 @@ impl<T: 'static> Owner<T> {
     pub fn id(&self) -> OwnerId {
         self.metadata.stamp.owner
     }
-    pub fn stamp(&self) -> &Stamp {
-        &self.metadata.stamp
+    pub fn stamp(&self) -> Result<Stamp> {
+        let _gate = self.host.close_visibility()?;
+        self.host.route(self.id())?;
+        Ok(self.metadata.current_stamp())
     }
     pub fn resource(&self, name: &str) -> Result<Resource> {
         capability(&self.metadata, name)?;
@@ -625,7 +640,7 @@ impl<T: 'static> Owner<T> {
             {
                 return Err(Error::Schema);
             }
-            if observation.stamp != m.stamp || !Rc::ptr_eq(&route, &observation.route) {
+            if observation.stamp != m.current_stamp() || !Rc::ptr_eq(&route, &observation.route) {
                 return Err(Error::Stale);
             }
             validate_observation(&self.host, observation, view, &mut count, &mut total)?;
@@ -647,10 +662,10 @@ impl<T: 'static> Owner<T> {
         bound(request.len(), self.host.0.limits.payload_bytes)?;
         self.observations(name, observations, view)?;
         let code = view.pin_invocation()?;
-        let data = self
-            .backend
-            .schema()?
-            .query(&self.slot.state, name, request, observations)?;
+        let data =
+            self.backend
+                .schema()?
+                .query(&self.slot.borrow().state, name, request, observations)?;
         bound(
             data.len(),
             self.host
@@ -667,7 +682,7 @@ impl<T: 'static> Owner<T> {
         bound(count, self.host.0.limits.observations)?;
         bound(bytes, self.host.0.limits.observation_bytes)?;
         Ok(Observation {
-            stamp: self.metadata.stamp.clone(),
+            stamp: self.metadata.current_stamp(),
             name: name.to_owned(),
             data,
             caller: view.caller().ok_or(Error::Authority)?,
@@ -682,7 +697,7 @@ impl<T: 'static> Owner<T> {
     pub fn inspect(&self) -> Result<Vec<u8>> {
         let _gate = self.host.close_visibility()?;
         self.host.route(self.id())?;
-        let data = self.backend.schema()?.encode(&self.slot.state)?;
+        let data = self.backend.schema()?.encode(&self.slot.borrow().state)?;
         bound(data.len(), self.host.0.limits.payload_bytes)?;
         Ok(data)
     }
@@ -699,6 +714,9 @@ impl<T: 'static> Owner<T> {
             return Err(Error::Invalid);
         }
         let operation = view.operation().ok_or(Error::Authority)?.clone();
+        if !operation.admits_cleanup(self.host.0.cleanup) {
+            return Err(Error::Authority);
+        }
         let limits = &self.host.0.limits;
         bound(request.len(), limits.payload_bytes)?;
         self.observations(name, &observations, view)?;
@@ -709,7 +727,11 @@ impl<T: 'static> Owner<T> {
                 return Err(Error::Limit);
             }
             r.next_candidate.checked_add(1).ok_or(Error::Limit)?;
-            self.slot.revision.checked_add(1).ok_or(Error::Limit)?;
+            self.slot
+                .borrow()
+                .revision
+                .checked_add(1)
+                .ok_or(Error::Limit)?;
             self.metadata
                 .pending
                 .get()
@@ -719,7 +741,7 @@ impl<T: 'static> Owner<T> {
         let invocation_pin = view.pin_invocation()?;
         let (proposal, behavior, mut code) = match &self.backend {
             Backend::Native(domain) => (
-                domain.prepare(&self.slot.state, name, request, &observations)?,
+                domain.prepare(&self.slot.borrow().state, name, request, &observations)?,
                 permit.resolution.clone(),
                 vec![self.pin.clone()],
             ),
@@ -728,7 +750,7 @@ impl<T: 'static> Owner<T> {
                 slot,
                 binding,
             } => {
-                let input = codec.input(&self.slot.state, name, request, &observations)?;
+                let input = codec.input(&self.slot.borrow().state, name, request, &observations)?;
                 bound(input.len(), limits.payload_bytes)?;
                 let output = view.call_pure(*slot, &input)?;
                 if &output.binding != binding {
@@ -757,14 +779,33 @@ impl<T: 'static> Owner<T> {
             proposal.reply.len(),
             limits.reply_bytes.min(view.max_reply() as usize),
         )?;
+        let retained_bytes = encoded
+            .len()
+            .checked_add(bytes)
+            .and_then(|n| n.checked_add(proposal.reply.len()))
+            .and_then(|n| n.checked_add(limits.observation_bytes))
+            .ok_or(Error::Limit)?;
+        let staging_bytes = self
+            .host
+            .0
+            .registry
+            .borrow()
+            .staging_bytes
+            .checked_add(retained_bytes)
+            .ok_or(Error::Limit)?;
+        bound(
+            staging_bytes,
+            self.host.0.publication.borrow().limits.retained_bytes,
+        )?;
         let mut registry = self.host.0.registry.borrow_mut();
         let serial = registry.next_candidate;
         registry.next_candidate = serial.checked_add(1).ok_or(Error::Limit)?;
         registry.pending += 1;
+        registry.staging_bytes = staging_bytes;
         self.metadata.pending.set(self.metadata.pending.get() + 1);
         let receipt = Receipt {
             serial,
-            stamp: self.metadata.stamp.clone(),
+            stamp: self.metadata.current_stamp(),
             caller: view.caller().ok_or(Error::Authority)?,
             caller_artifact: view.caller_artifact().ok_or(Error::Authority)?,
             operation,
@@ -775,17 +816,48 @@ impl<T: 'static> Owner<T> {
             event_count: proposal.events.len(),
             request_digest: Sha256::digest(request).into(),
         };
-        Ok(Candidate {
-            owner: self.clone(),
-            next: proposal.next,
-            events: proposal.events,
-            reply: proposal.reply,
-            dependencies: observations,
+        let stage = Rc::new(Stage {
+            host: self.host.clone(),
+            owner: Rc::downgrade(self),
             receipt,
-            code,
-        })
+            prepared: RefCell::new(Some(Prepared {
+                owner: self.clone(),
+                next: proposal.next,
+                events: proposal.events,
+                reply: proposal.reply,
+                dependencies: observations,
+                code,
+            })),
+            active: Cell::new(true),
+            retained_bytes,
+        });
+        let erased: Rc<dyn Staged> = stage.clone();
+        registry.staging.insert(serial, Rc::downgrade(&erased));
+        Ok(Candidate { stage })
     }
 }
 
 #[cfg(test)]
 mod fixtures;
+#[cfg(test)]
+mod probes;
+
+mod publication;
+pub use publication::{
+    Accounting, Batch, CommitReceipt, ErasedCandidate, ObservationReceipt, ProposalView,
+    PublicationLimits,
+};
+use publication::{Publication, Staged};
+
+#[cfg(feature = "workflows")]
+impl nethacked_workflows::CleanupParticipant for Host {
+    fn identity(&self) -> nethacked_kernel::Result<Option<CleanupIdentity>> {
+        self.cleanup_identity()
+            .map(Some)
+            .map_err(|_| nethacked_kernel::Error::NativeRefusal)
+    }
+    fn discard(&self, binding: &OperationBinding) -> nethacked_kernel::Result<()> {
+        self.discard_operation(binding)
+            .map_err(|_| nethacked_kernel::Error::NativeRefusal)
+    }
+}

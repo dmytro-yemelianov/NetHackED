@@ -1,9 +1,10 @@
-# nethacked-owners — M4-O2
+# nethacked-owners — M4-O2 / M4-O3
 
-Optional, entity-free owner storage and domain preparation. It depends only on
+Optional, entity-free owner storage, preparation and publication. The default build depends only on
 `nethacked-kernel` and SHA-256, with no NetHack, World, resource service, or entity
 imports. Each `Rc<Owner<T>>` physically owns one private `StateSlot<T>`; unrelated
-Rust types and schema-bound blobs coexist. `Host` stores IDs, generations, schemas,
+Rust types and schema-bound blobs coexist. Private `RefCell` guards let the sealed
+runtime move values; no slot borrow escapes a port. `Host` stores IDs, generations, schemas,
 module metadata and weak opaque routes, including permanent tombstones. It has
 no authoritative payload map. One module/domain implementation serves many instances.
 
@@ -33,8 +34,8 @@ Queries return immutable detached bounded `Observation` bytes, a stamp and priva
 code/route/dependency captures. `Owner::inspect` is privileged bounded detached
 encoding under the same gate; no state reference escapes. The host uses a serialized
 single-thread executor (`Rc`, `Cell`), with fallible gate entry. Reads, preparation,
-registry inspection, enrollment and retirement share that gate. It is preparatory
-exclusion infrastructure, not O3 atomic publication or a threaded memory-order claim.
+registry inspection, current stamps, pending counts, history, enrollment and retirement
+share that gate. O3 publishes under this exclusion; no threaded memory-order claim is made.
 
 Native domain behavior computes `Proposal<T>` from its own immutable state, request
 and exactly declared detached observations. Wasm codecs supply this same bounded
@@ -48,10 +49,13 @@ No fresh kernel invocation or live host reads occur during guest preparation.
 and staged reply; it retains the owner, dependencies, invocation code and actual
 helper chain. Its receipt binds stamp/schema, named command/capability, behavior,
 caller/artifact, full operation/checkpoint/phase/lease and request/next-state digests.
-`Candidate::validate` provides staging checks with a fresh authenticated view.
-`discard`/drop frees the pending reservation and references. There is **no public
-apply/commit** and no slot mutation API. Live state/revision never changes in O2;
-events remain staged, and there is no live event history yet.
+`Candidate::validate` still requires a fresh view at its own provider.
+`Candidate::erase` supplies sealed heterogeneous proposals to `Host::batch`.
+There is no replacement-state setter, implementable publication trait or native
+commit callback. Owner-produced proposals remain the sole command mutation path.
+`discard`/drop frees staging; typed cleanup also clears staging held by external
+candidate handles. Preparation requires the host cleanup identity in the authentic
+operation binding. Missing enrollment refuses before behavior.
 
 Default limits: 128 owner identities including tombstones, 64 pending candidates,
 16 ports per owner, 32 transitive observations, 16 KiB each for encoded payload,
@@ -62,6 +66,69 @@ refuse before overflow. No identity reuse, eviction or implicit counter reset.
 Host-issued code pins protect owner schemas, observations and pending work against
 both unload APIs; last drop releases pins. Pending candidates prevent retirement.
 Retiring and enrolling creates a fresh identity and leaves the tombstone behind.
+
+## O3 publication and cleanup
+
+The trusted host declares a required write set, profile event order, readonly
+observations and a policy identity plus pure `Accounting` validator. Validation
+sees bounded detached before/proposed encodings, receipts, events and replies;
+it cannot write slots. Domain/profile wiring must declare the complete accounting
+set and implement its conservation laws faithfully. An arbitrary permissive
+validator does not establish a domain conservation theorem. Native validators,
+codecs, adapter/code correspondence, encoded representation bounds and absence of
+mutable aliases remain explicit trust assumptions. The runtime cannot prove them.
+
+`Host::batch` captures a fresh coordinator Write capability and invocation code;
+it issues an opaque monotonic ticket. `Batch::commit` closes one common host gate
+and checks fresh coordinator authority, every participant's current named Write
+permit/resolution, caller/artifact, exact operation/checkpoint/phase/lease, live
+owner/schema/revision, readonly and transitive grants/stamps, proposal digest and
+retained code. This separate coordinator path does **not** relax owner-provider
+checks on query, prepare or `Candidate::validate`. Foreign gates, duplicates and
+inexact declarations refuse. Compatible future dispatch changes retain valid
+captured chains; changing the pending command's captured chain is unsupported.
+
+All invariant/accounting callbacks, encoding, aggregate resource/counter checks,
+complete receipt/reply/history construction and history reservation finish before
+publication. Canonical OwnerId order acquires **every** typed slot/staging guard.
+A sealed linked guard stack then moves payloads into existing retention cells,
+updates revisions, the complete profile-ordered event prefix, pending counters,
+ticket consumption and epoch. It invokes no native/guest adapter, codec or owner
+finalizer, and allocates/deallocates/drops no payload/token. Registry metadata
+also advances before the gate opens. All public authoritative reads and reentry
+refuse while gated; detached old observations never become live authority.
+
+Refused commit preserves slots, history, pending reservations and ticket validity
+for retry. Discarded/consumed tickets cannot publish again. Old payloads, staging
+observations and code tokens survive until opening, then release. An old native
+destructor panic resumes unwinding **after** setting permanent host quarantine;
+it is never a clean refusal, replay, rollback or implicit reset. Live ports refuse
+in quarantine; `quarantine_history` supplies only diagnostic committed receipts.
+A second destructor panic during unwinding can abort the process. Allocator abort,
+runtime bugs and process crash are outside this in-memory atomicity guarantee.
+A host may contain a prepublication panic only under established native purity
+and unwind safety; arbitrary native preparation panic retains the fail-stop rule.
+
+Default publication limits: 128 lifetime tickets/commits, 64 participants, 4,096
+history events, 1 MiB history storage, 1 MiB aggregate retained staging/old-state
+encodings, and 1 MiB cumulative replies. Per-commit event/reply/observation limits
+also apply in aggregate. `configure_publication` is allowed only before staging
+or ticket issuance. No eviction, ticket/owner ID reuse or counter reset exists.
+Staging reservations conservatively include each candidate's maximum observation
+bytes; faithful encoded size/alias assumptions bound native retained representation.
+History has fully constructed typed records and a bounded version-tagged Debug
+diagnostic encoding; replies are ticket+epoch then length-prefixed participant
+bytes in profile order. These are not owner restoration or durable journal codecs.
+
+Enable `workflows` for `CleanupParticipant for Host`; enroll `Rc::new(host.clone())`
+in the actual `Workflows::start` participant list. This optional dependency may
+transitively link the existing service crates, but requires no resource-service
+instance, entity, World or NetHack integration. Phase exit, rejection/cancel and
+trap call `discard_operation` on the exact binding. Cleanup prechecks all staging
+borrows, preserves staging when busy, invalidates held external candidates and
+releases their code/owner/dependency references after opening. Retry is idempotent
+cleanup only, preserving previous commits. A foreign checkpoint cannot adopt
+staged work; foreign-host staging remains the foreign cleanup participant's job.
 
 ## O1 correspondence and fixtures
 
@@ -74,9 +141,43 @@ Retiring and enrolling creates a fresh identity and leaves the tombstone behind.
 | `prepare_pins_chain`, `pending_chain_unload_refused` | Owner/candidate/observation RAII pins; retirement refusal while pending; code unload refusal until last reference drops. Kernel retained-route fixture preserves captured helper chain while future dispatch changes. |
 | Immutable guest preparation premise | New kernel `pure_preparation` fixtures: actual computation, native Read-import exclusion, guest nesting, shared fuel/calls/depth, detached bridge refusal, current/retained grants and executable routes. |
 
-O3 must supply the sole sealed publication protocol: complete participant preflight,
-visibility across swaps, reserved history/receipt bookkeeping, callback/allocation/
-drop-free publication, replay/prefix and cleanup integration. O4 must accept dynamic
-owner extensions, derived caches and live service/lifecycle integration. M4d must
-accept codecs/restoration. Transfer/retirement publication, NetHack migration,
-crash recovery and full ownership runtime acceptance remain unfinished.
+O3 implements the publication protocol below. O4 still must accept dynamic owner
+extensions, derived caches and live service/lifecycle integration. M4d must accept
+codecs/restoration. NetHack migration, crash recovery, independent semantic review
+and aggregate ownership-runtime acceptance remain unfinished.
+
+## O3 evidence against the retained O1 map
+
+The [ownership proof map](../../docs/ownership-proof-map.md) and
+[contract](../../docs/plans/2026-10-08-autonomous-ownership-contract.md) remain the
+obligation sources. These fixtures provide runtime evidence, not a complete Rust
+memory refinement, native-purity proof, crash recovery or O4/M4d acceptance.
+
+| O1 obligation | O3 fixture / evidence |
+| --- | --- |
+| `PublicationStep`, `no_partial_observation`, `opening_requires_completed_metadata`, `publication_authority_commit` | `heterogeneous_transfer_excludes_every_read_between_swaps_and_publishes_profile_prefix`: independent Stock/Item types/providers, recorded intermediate revision vectors `[1,0,0]`, `[1,1,0]`, `[1,1,1]`; every authoritative read/reentry refuses; profile event order differs from canonical guards. Test-only allocator/codec/callback/drop probes measure zero in publication. |
+| `Witness.Transfer`, `Witness.Retirement`, `accounting_rejection`, `refused_retirement_keeps_charge_prefix` | Transfer plus `debt_retirement_requires_accounting_owner_and_preserves_terms_and_prior_transfer`: omitted debt refuses, quantity becomes consumed quantity, terms/creditor/liability persist, earlier accepted prefix is exact. These are host examples, not the complete selected-wand/equipment/timer slice. |
+| Authority/refusal/replay / finite bounds | `refusal_matrix_preserves_slots_prefix_pending_and_retryable_tickets`, stale readonly/cleanup, duplicate/omitted, foreign-gate/missing-enrollment and foreign-caller fixtures: authenticated failure markers, exact snapshots/counters/history, two retries and zero swap-probe invocations on refusal. |
+| `prepare_pins_chain`, `compatible_future_current`, entity-free storage | `actual_wasm_proposals_commit_heterogeneous_state_and_retain_old_dispatch`: real guest proposal bytes and imported commit, changed live helper dispatch demonstrated by a fresh guest call, retained old-chain batch publication; independent inventory/blob slots, no entities. |
+| Failure boundary / committed prefix / native destructor premise | `contained_pure_preflight_panic_preserves_retryable_proposals_and_no_swap_occurs`, `old_payload_drops_after_opening_and_panic_quarantines_committed_receipts`, `committed_wasm_call_then_reply_error_or_trap_keeps_exactly_one_prefix`: contained pure preflight panic, post-open destructor marker/quarantine, committed-prefix diagnostic receipt and refusal of replay. |
+| `workflow_prefix_composition`, `workflow_reject_prefix` | With `workflows`, actual workflow phase advance/trap/busy cleanup/retry/revocation and cancellation fixtures; held candidates lose staging, prior commits persist, terminal cleanup cannot replay. Root code unload succeeds while cleaned opaque candidates remain held. |
+
+### Exact O2 fixture setup/accessor deltas
+
+`Harness::new` and `Harness::refresh` enroll the host cleanup identity using
+`operation_binding_with_cleanup`. `dep` unwraps the gated detached stamp.
+All existing `pending` assertions unwrap the gated count without changing their
+expected numbers. Private slot assertions/pointer comparisons acquire immutable
+`RefCell` borrows; private next/event/reply/code assertions read the shared staging
+cell; the receipt assertion uses its readonly accessor. Existing domain algorithms,
+expected values, predicates, assertion order and fuel-marker control are unchanged.
+
+Affected existing tests: `heterogeneous_storage_native_and_actual_wasm_candidates_are_independent`,
+`stale_foreign_recreated_and_detached_captures_refuse`,
+`invariant_malformed_oversized_trapped_and_fuel_refused_guest_candidates_preserve_state`,
+`bounded_candidates_identity_counters_and_code_lifetimes`,
+`native_refusal_all_staging_bounds_and_counter_exhaustion_preserve_slots`,
+`observation_closure_bounds_and_transitive_dependency_revocation_are_checked`,
+`candidate_revalidation_binds_operation_phase_lease_and_live_grants`.
+`query_owner_grant_is_required_even_when_owner_is_absent_from_dependencies` has
+no assertion/body delta; it receives the shared cleanup-enrollment helper change.
