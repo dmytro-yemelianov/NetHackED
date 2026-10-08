@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "crates/nethacked-kernel",
     "crates/nethacked-types",
     "crates/nethacked-arena",
     "crates/nethacked-dungeon",

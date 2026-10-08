@@ -1,0 +1,16 @@
+[package]
+name = "nethacked-kernel"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.88"
+license = "NGPL"
+description = "Bounded byte-oriented native and Wasm module runtime"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10"
+wasmi = { version = "=2.0.0", default-features = false, features = ["std", "stable", "validate", "portable-dispatch", "prefer-btree-collections"] }
+
+[dev-dependencies]
+wat = "=1.228.0"

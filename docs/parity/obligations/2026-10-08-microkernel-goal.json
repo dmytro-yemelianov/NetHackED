@@ -5,7 +5,7 @@
   "plan_sha256": "480c70bd0abfcff5a229e3e1612dee00b54c0af3da43c0b5ac441557f0e86d6c",
   "native_goal": "Complete NetRust microkernel architecture program; formal contracts, executable extensions, existing NetHack migration, integration audit",
   "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
-  "active_unit": "M3",
+  "active_unit": "ARCHITECTURE-ASTRA-AUDIT",
   "live_handles": [],
   "acceptance": {
     "A1": "pending",
@@ -72,9 +72,33 @@
     },
     {
       "id": "M3",
-      "status": "ready",
+      "status": "in_progress",
       "depends_on": [
         "M2"
+      ],
+      "implementation": {
+        "phase": "M3a complete; M3b awaits requested Astra interlude",
+        "scope": "A1/A2/A3 only; M4 persistence/workflows and M5 NetHack follow",
+        "prerequisite_commit": "66c65b750b3864f2f101b3f9871825e25ede188c"
+      },
+      "units": [
+        {
+          "id": "M3a",
+          "status": "complete",
+          "scope": "Generic kernel/ABI/native+guest providers/live extension/grant budgets; no resource coordinator",
+          "depends_on": [
+            "M2"
+          ],
+          "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-runtime-checkpoint.json"
+        },
+        {
+          "id": "M3b",
+          "status": "planned",
+          "scope": "Optional resource coordinator and fullA3 atomicity through accepted ports",
+          "depends_on": [
+            "M3a"
+          ]
+        }
       ]
     },
     {
@@ -128,7 +152,7 @@
       26945,
       30480
     ],
-    "next_adjustment": "M2 root implementation of compact service contracts; reuse reviewed interfaces and retained facts, avoid another large implementation packet. One fresh review at a coherent checkpoint; local mechanical checks.",
+    "next_adjustment": "Dispatch one bounded writer forM3a only, no resource coordinator or NetHack migration. Root waits mechanically; one fresh semantic review after stable package checks.",
     "authority_implementation": {
       "uncached_input": 59709,
       "output": 18592,
@@ -150,6 +174,29 @@
       "routing_threshold": "child uncached28484 below difficult50000; whole-unit compliance unknown because root telemetry unavailable",
       "adjustment": "Finish with local full gates/hash/doc checks. M3 bounded generic kernel/backend and A1-A3; no NetHack migration, no repeated formal/source-fact audit.",
       "guard_meter_discrepancy": "scripts/parity-agent-guard.py report compares total input at line307, whereas process table defines uncached soft threshold; no unrelated helper changes in this architecture unit."
+    },
+    "runtime_implementation": {
+      "uncached_input": 74863,
+      "output": 32302,
+      "status": "exceeded",
+      "adjustment": "Narrow follow-up to actual compiler diagnostics after root resolves dependency access; do not redispatch architecture or re-read prior contracts."
+    },
+    "runtime_review": {
+      "uncached_input": 59827,
+      "output": 5448,
+      "status": "exceeded",
+      "adjustment": "Reduce repair review to two changed test ranges; preserve all production bindings."
+    },
+    "runtime_repair_review": {
+      "uncached_input": 26326,
+      "output": 1253,
+      "guard_status": "exceeded from total input; uncached below difficult threshold; root unknown",
+      "adjustment": "Requested Astra audit focuses cross-layer boundaries and reuses accepted fixture/proof results, no repeated test execution."
     }
+  },
+  "requested_interlude": {
+    "after": "accepted M3a checkpoint",
+    "action": "pause native goal; fresh gpt-6-astra review of completed architecture; then resume",
+    "status": "M3a verified; pause/audit follows containing commit"
   }
 }
