@@ -93,7 +93,110 @@ struct Inner {
 }
 #[derive(Clone)]
 pub struct Service(Rc<RefCell<Inner>>);
+/// Immutable host-issued observation of an accepted record. Neither wire IDs
+/// nor Reply.value are credentials. This owns code and service lifetime only.
+#[derive(Clone)]
+pub struct Observation {
+    service: Service,
+    identity: ObservationIdentity,
+    record: Record,
+    _code: nethacked_kernel::ModulePin,
+}
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ObservationIdentity {
+    pub policy: String,
+    pub version: u32,
+    pub record: RecordId,
+    pub provider: nethacked_kernel::ProviderBinding,
+    pub request: Vec<u8>,
+    pub operation: OperationBinding,
+    pub caller: ModuleHandle,
+    pub caller_artifact: [u8; 32],
+    pub permit: CapabilityPermit,
+}
+impl Observation {
+    pub fn identity(&self) -> &ObservationIdentity {
+        &self.identity
+    }
+    pub fn bytes(&self) -> &[u8] {
+        &self.record.value
+    }
+    /// Fresh authority and exact legacy replay scope, without sampling or policy
+    /// callbacks. Called before pure computation and at publication preflight.
+    pub fn validate(&self, view: &CallerView<'_>) -> Result<()> {
+        let inner = self
+            .service
+            .0
+            .try_borrow()
+            .map_err(|_| Error::NativeRefusal)?;
+        validate_record(&inner, &self.record, view)?;
+        Ok(())
+    }
+}
+fn validate_record(inner: &Inner, r: &Record, view: &CallerView<'_>) -> Result<()> {
+    let operation = view.operation().ok_or(Error::Authority)?;
+    let (provider, artifact, capability, resource) =
+        inner.binding.as_ref().ok_or(Error::Authority)?;
+    let permit = view
+        .permit(capability, resource, Access::Write)
+        .ok_or(Error::Authority)?;
+    if view.caller() != Some(r.caller)
+        || view.caller_artifact() != Some(r.caller_artifact)
+        || r.provider != *provider
+        || r.provider_artifact != *artifact
+        || r.permit != permit
+        || r.operation.operation() != operation.operation()
+        || r.operation.pipeline() != operation.pipeline()
+        || operation.checkpoint() < r.operation.checkpoint()
+        || (operation.checkpoint() == r.operation.checkpoint()
+            && operation.phase() != r.operation.phase())
+        || !inner.state.records.iter().any(|stored| stored == r)
+    {
+        return Err(Error::Authority);
+    }
+    // Detached metadata clones cannot issue or validate usable observations.
+    view.pin_invocation()?;
+    Ok(())
+}
 impl Service {
+    /// An ID is only a lookup key. Authenticated caller/operation/permit and exact
+    /// request select the accepted record; no guest value is used here.
+    pub fn observation(
+        &self,
+        id: RecordId,
+        request: &[u8],
+        view: &CallerView<'_>,
+    ) -> Result<Observation> {
+        let inner = self.0.try_borrow().map_err(|_| Error::NativeRefusal)?;
+        let record = inner
+            .state
+            .records
+            .iter()
+            .find(|r| r.id == id && r.request == request)
+            .ok_or(Error::Authority)?;
+        validate_record(&inner, record, view)?;
+        let identity = ObservationIdentity {
+            policy: inner.policy.identity.clone(),
+            version: inner.policy.version,
+            record: record.id,
+            provider: nethacked_kernel::ProviderBinding {
+                handle: record.provider,
+                artifact: record.provider_artifact,
+                endpoint: ENDPOINT.into(),
+            },
+            request: record.request.clone(),
+            operation: record.operation.clone(),
+            caller: record.caller,
+            caller_artifact: record.caller_artifact,
+            permit: record.permit.clone(),
+        };
+        Ok(Observation {
+            service: self.clone(),
+            identity,
+            record: record.clone(),
+            _code: view.pin_invocation()?,
+        })
+    }
     pub fn new(limits: Limits, policy: Policy, source: Vec<u8>) -> Result<Self> {
         if source.len() > limits.source
             || policy.identity.is_empty()

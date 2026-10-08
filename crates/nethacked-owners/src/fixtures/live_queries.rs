@@ -1266,3 +1266,6 @@ fn unload_waits_for_candidate_and_cache_observation_last_reference() {
 
 #[path = "live_queries/repair.rs"]
 mod repair;
+
+#[path = "live_queries/composition.rs"]
+mod composition;

@@ -138,6 +138,7 @@ pub struct CallerView<'a> {
     pub(crate) permits: Vec<(CapabilityPermit, Authority)>,
     pub(crate) max_reply: u32,
     pub(crate) operation: Option<OperationBinding>,
+    pub(crate) callback_origin: Option<CallbackProvenance>,
     pub(crate) callback_capture: Option<&'a dyn CallbackCapture>,
     pub(crate) pure_call: Option<&'a dyn PureCall>,
 }
@@ -293,6 +294,7 @@ impl CallerView<'_> {
             permits: self.permits.clone(),
             max_reply: self.max_reply,
             operation: self.operation.clone(),
+            callback_origin: None,
             callback_capture: None,
             pure_call: None,
         }
@@ -454,5 +456,10 @@ impl CleanupIdentity {
 impl CallerView<'_> {
     pub fn operation(&self) -> Option<&OperationBinding> {
         self.operation.as_ref()
+    }
+    /// Authenticated origin of this adopted callback execution. Metadata only;
+    /// detached snapshots carry neither this provenance nor execution bridges.
+    pub fn callback_origin(&self) -> Option<&CallbackProvenance> {
+        self.callback_origin.as_ref()
     }
 }

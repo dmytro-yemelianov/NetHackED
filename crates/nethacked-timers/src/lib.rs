@@ -79,6 +79,23 @@ pub trait Profile {
 pub trait TargetValidator {
     fn validate(&self, targets: &[Stamp]) -> Result<()>;
 }
+/// Optional trusted host ownership of codec/behavior references paired with the
+/// captured callback. No resource payload is read or mirrored by the queue.
+pub trait CallbackRetention {
+    /// Nonexecuting bounded admission before kernel capture allocates identities.
+    /// Implementations must not perform effects or consume reservations here.
+    fn preflight(&self, _view: &CallerView<'_>, _targets: &[Stamp]) -> Result<()> {
+        Ok(())
+    }
+    fn retain(
+        &self,
+        callback: &RetainedCallback,
+        targets: &[Stamp],
+    ) -> Result<Rc<dyn CallbackReference>>;
+}
+/// Ownership only. The callback must independently authenticate every use.
+pub trait CallbackReference {}
+impl<T> CallbackReference for T {}
 /// Optional adapter over the existing bounded resource owner, with no copied authority.
 impl TargetValidator for nethacked_resources::Service {
     fn validate(&self, targets: &[Stamp]) -> Result<()> {
@@ -140,6 +157,7 @@ struct Owned {
     task: Task,
     callback: Option<RetainedCallback>,
     lease: Option<PipelineLease>,
+    reference: Option<Rc<dyn CallbackReference>>,
 }
 struct Inner {
     limits: Limits,
@@ -154,6 +172,7 @@ struct Inner {
     identities: Vec<CleanupIdentity>,
     tasks: BTreeMap<TaskId, Owned>,
     active: Option<TaskId>,
+    retention: Option<Rc<dyn CallbackRetention>>,
 }
 /// Shared queue: Running is published and its borrow released before guest execution.
 #[derive(Clone)]
@@ -195,6 +214,7 @@ impl Service {
             identities,
             tasks: BTreeMap::new(),
             active: None,
+            retention: None,
         }))))
     }
     pub fn install(&self, kernel: &mut Kernel, id: &str) -> Result<ModuleHandle> {
@@ -242,6 +262,15 @@ impl Service {
             },
         ));
         Ok(handle)
+    }
+    /// Configure before install/first task; failed configuration preserves state.
+    pub fn retain_callbacks(&self, retention: Rc<dyn CallbackRetention>) -> Result<()> {
+        let mut i = self.0.try_borrow_mut().map_err(|_| Error::NativeRefusal)?;
+        if i.binding.is_some() || !i.tasks.is_empty() || i.retention.is_some() {
+            return Err(Error::NativeRefusal);
+        }
+        i.retention = Some(retention);
+        Ok(())
     }
     pub fn state(&self) -> Result<State> {
         let i = self.0.try_borrow().map_err(|_| Error::NativeRefusal)?;
@@ -300,8 +329,17 @@ impl Service {
                     serial: i.next_serial,
                 };
                 let reply = bounded_reply(&i.limits, &id, view)?;
-                // Last fallible logical operation before publication.
+                if let Some(retention) = &i.retention {
+                    retention.preflight(view, &targets)?;
+                }
+                // Both opaque code capture and paired host retention complete
+                // before any queue record/serial is published.
                 let captured = view.capture_callback(&callback, ceiling.clone())?;
+                let reference = i
+                    .retention
+                    .as_ref()
+                    .map(|r| r.retain(&captured, &targets))
+                    .transpose()?;
                 let task = Task {
                     id,
                     provenance: captured.provenance().clone(),
@@ -320,6 +358,7 @@ impl Service {
                         task,
                         callback: Some(captured),
                         lease: None,
+                        reference,
                     },
                 );
                 i.next_serial = next;
@@ -339,6 +378,7 @@ impl Service {
                 let reply = bounded_reply(&i.limits, &task, view)?;
                 let owned = i.tasks.get_mut(&task).expect("checked task");
                 owned.callback = None;
+                owned.reference = None;
                 owned.task.status = Status::Cancelled;
                 Ok(reply)
             }
@@ -426,6 +466,9 @@ impl Service {
         let cleaned = clean(&i, &binding);
         let owned = i.tasks.get_mut(&id).expect("active task cannot be removed");
         owned.task.cleanup_pending = cleaned.is_err();
+        if cleaned.is_ok() {
+            owned.reference = None;
+        }
         owned.task.status = match (decoded, cleaned) {
             (Err(fault), _) => Status::Faulted(fault),
             (_, Err(_)) => Status::Faulted(Fault::Cleanup),
@@ -450,11 +493,9 @@ impl Service {
             &i,
             owned.task.invocation.as_ref().ok_or(Error::InvalidHandle)?,
         )?;
-        i.tasks
-            .get_mut(&id)
-            .expect("checked task")
-            .task
-            .cleanup_pending = false;
+        let owned = i.tasks.get_mut(&id).expect("checked task");
+        owned.task.cleanup_pending = false;
+        owned.reference = None;
         Ok(())
     }
     /// Terminal records occupy finite capacity until the host disposes them.

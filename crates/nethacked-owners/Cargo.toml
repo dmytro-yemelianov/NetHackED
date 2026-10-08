@@ -8,11 +8,13 @@ description = "Independent sealed owner storage and authenticated pure domain pr
 
 [features]
 workflows = ["dep:nethacked-workflows"]
+recorded-inputs = ["dep:nethacked-inputs"]
 
 [dependencies]
 nethacked-kernel = { path = "../nethacked-kernel" }
 sha2 = "0.10"
 nethacked-workflows = { path = "../nethacked-workflows", optional = true }
+nethacked-inputs = { path = "../nethacked-inputs", optional = true }
 
 [dev-dependencies]
 wat = "=1.228.0"

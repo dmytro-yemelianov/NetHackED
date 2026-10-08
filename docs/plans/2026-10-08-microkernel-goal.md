@@ -61,6 +61,8 @@ The reviewed [autonomous ownership contract](2026-10-08-autonomous-ownership-con
 
 O4 executes in two dependent implementation slices to keep source and review packets bounded. O4a adds compatible live Wasm behavior admission and authenticated, versioned derived queries/caches over independent owners. O4b composes those APIs with actual recorded inputs, retained timers and workflows, including scalar/device/field and equipment/lifecycle witnesses. O4 is accepted only after both slices and a fresh integration review; M4d still depends on that aggregate acceptance. Existing O2/O3 semantics and fixtures remain prerequisites, not substitutes for the new witnesses.
 
+O4b and the aggregate generic owner runtime are now accepted in the [service integration checkpoint](../parity/obligations/2026-10-08-microkernel-owner-services-checkpoint.json). Real retained workflows and timer callbacks first query/prepare after future behavior admission, recorded inputs are authenticated before pure preparation, and metadata-only routes compose independent scalar/device/field and equipment owners. Independent review, refusal/mutation controls and full gates cover this boundary. M4d concrete codecs/restoration is next; NetHack integration and complete domain migration remain M5–M7.
+
 Each milestone is split only at testable ownership boundaries. Dependency edges are enforced before dispatch. A data-only patch system or an extension compiled into the original engine does not satisfy A2. Forwarding `&mut SimulationWorld` through a new module does not satisfy A7.
 
 ## Execution loop and cost controls

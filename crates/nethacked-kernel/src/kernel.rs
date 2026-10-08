@@ -727,6 +727,12 @@ impl Kernel {
             permits: self.inspect_permits(caller, &authority, routing.as_deref())?,
             max_reply: ep.max_reply,
             operation: operation.clone(),
+            callback_origin: operation
+                .as_ref()
+                .map(|op| self.callback_provenance(op.pipeline()))
+                .transpose()?
+                .flatten()
+                .cloned(),
             callback_capture: Some(&factory),
             pure_call: Some(&bridge),
         };

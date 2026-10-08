@@ -1,0 +1,20 @@
+[package]
+name = "nethacked-owner-services"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.88"
+license = "NGPL"
+description = "Optional metadata and weak-route composition of independent owners and services"
+
+[dependencies]
+nethacked-kernel = { path = "../nethacked-kernel" }
+nethacked-owners = { path = "../nethacked-owners", features = ["workflows", "recorded-inputs"] }
+nethacked-inputs = { path = "../nethacked-inputs" }
+nethacked-timers = { path = "../nethacked-timers" }
+nethacked-resources = { path = "../nethacked-resources" }
+nethacked-workflows = { path = "../nethacked-workflows" }
+
+[dev-dependencies]
+wat = "=1.228.0"
+serde_json = "1.0"
+serde = "1.0"

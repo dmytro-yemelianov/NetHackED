@@ -1065,9 +1065,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "nethacked-owner-services"
+version = "0.1.0"
+dependencies = [
+ "nethacked-inputs",
+ "nethacked-kernel",
+ "nethacked-owners",
+ "nethacked-resources",
+ "nethacked-timers",
+ "nethacked-workflows",
+ "serde",
+ "serde_json",
+ "wat",
+]
+
+[[package]]
 name = "nethacked-owners"
 version = "0.1.0"
 dependencies = [
+ "nethacked-inputs",
  "nethacked-kernel",
  "nethacked-workflows",
  "sha2",

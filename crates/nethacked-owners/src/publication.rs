@@ -111,6 +111,8 @@ pub struct ObservationReceipt {
     pub capability: CapabilityPermit,
     pub data_digest: [u8; 32],
     pub dependencies: Vec<ObservationReceipt>,
+    #[cfg(feature = "recorded-inputs")]
+    pub recorded_inputs: Vec<nethacked_inputs::ObservationIdentity>,
 }
 impl From<&Observation> for ObservationReceipt {
     fn from(o: &Observation) -> Self {
@@ -122,6 +124,8 @@ impl From<&Observation> for ObservationReceipt {
             capability: o.permit.clone(),
             data_digest: Sha256::digest(&o.data).into(),
             dependencies: o.dependencies.iter().map(Self::from).collect(),
+            #[cfg(feature = "recorded-inputs")]
+            recorded_inputs: o.recorded.iter().map(|r| r.identity().clone()).collect(),
         }
     }
 }
@@ -216,6 +220,16 @@ impl<T: 'static> Staged for Stage<T> {
         bytes: &mut usize,
     ) -> Result<()> {
         let prepared = self.prepared.try_borrow().map_err(|_| Error::Busy)?;
+        #[cfg(feature = "recorded-inputs")]
+        for input in &prepared.as_ref().ok_or(Error::Stale)?.recorded {
+            input.validate(view)?;
+            *count = count.checked_add(1).ok_or(Error::Limit)?;
+            *bytes = bytes
+                .checked_add(recorded_size(input)?)
+                .ok_or(Error::Limit)?;
+            bound(*count, self.host.0.limits.observations)?;
+            bound(*bytes, self.host.0.limits.observation_bytes)?;
+        }
         for o in &prepared.as_ref().ok_or(Error::Stale)?.dependencies {
             validate_observation(
                 &self.host,
@@ -335,7 +349,7 @@ impl Host {
         // Seal current behavior, preserving the existing deferred refusal timing
         // for state/schema/authority. Commit still revalidates every dependency.
         for observation in &readonly {
-            admit_observation_behavior(self, observation)?;
+            admit_observation_behavior(self, observation, view)?;
         }
         let ticket = p.next_ticket.checked_add(1).ok_or(Error::Limit)?;
         bound(
@@ -817,7 +831,9 @@ impl<T: 'static> Stage<T> {
             view,
             ObservationMode::Retained(&r.operation),
         )?;
-        let code_count = match owner.backend {
+        #[cfg(feature = "recorded-inputs")]
+        owner.validate_recorded_inputs(&r.command, &p.dependencies, &p.recorded, view)?;
+        let code_count = match &*owner.backend.borrow() {
             Backend::Native(_) => 2,
             Backend::Wasm { .. } => 3,
             Backend::CommitCallback => return Err(Error::Unsupported),
@@ -828,11 +844,12 @@ impl<T: 'static> Stage<T> {
         if let Some(helper) = &p.helper {
             view.validate_pure(helper)?;
         }
+        let backend = owner.backend.borrow();
         let schema = p
             .codec
             .as_ref()
             .map(|c| c.as_ref() as &dyn Schema<T>)
-            .unwrap_or(owner.backend.schema()?);
+            .unwrap_or(backend.schema()?);
         schema.validate(&p.next)?;
         let proposed = schema.encode(&p.next)?;
         let before = schema.encode(&owner.slot.try_borrow().map_err(|_| Error::Busy)?.state)?;

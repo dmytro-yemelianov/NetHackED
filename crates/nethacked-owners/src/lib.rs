@@ -115,6 +115,20 @@ pub trait Schema<T> {
     ) -> Result<Vec<u8>>;
 }
 pub trait NativeBehavior<T>: Schema<T> {
+    #[cfg(feature = "recorded-inputs")]
+    fn prepare_recorded(
+        &self,
+        state: &T,
+        name: &str,
+        request: &[u8],
+        observations: &[Observation],
+        recorded: &[nethacked_inputs::Observation],
+    ) -> Result<Proposal<T>> {
+        if !recorded.is_empty() {
+            return Err(Error::Unsupported);
+        }
+        self.prepare(state, name, request, observations)
+    }
     fn prepare(
         &self,
         state: &T,
@@ -126,6 +140,20 @@ pub trait NativeBehavior<T>: Schema<T> {
 /// Host codec encodes own state + exact declared detached observations + command.
 /// The returned guest bytes must decode a fully constructed typed proposal.
 pub trait WasmCodec<T>: Schema<T> {
+    #[cfg(feature = "recorded-inputs")]
+    fn input_recorded(
+        &self,
+        state: &T,
+        name: &str,
+        request: &[u8],
+        observations: &[Observation],
+        recorded: &[nethacked_inputs::Observation],
+    ) -> Result<Vec<u8>> {
+        if !recorded.is_empty() {
+            return Err(Error::Unsupported);
+        }
+        self.input(state, name, request, observations)
+    }
     fn input(
         &self,
         state: &T,
@@ -177,6 +205,7 @@ struct Metadata {
     live: Cell<bool>,
     pending: Cell<usize>,
     behavior_revision: Cell<u64>,
+    retained_behaviors: Cell<usize>,
 }
 trait Route {
     fn metadata(&self) -> &Metadata;
@@ -209,6 +238,7 @@ struct HostInner {
     cleanup: CleanupIdentity,
     publication: RefCell<Publication>,
     quarantine: Cell<bool>,
+    behaviors: Cell<usize>,
 }
 #[derive(Clone)]
 pub struct Host(Rc<HostInner>);
@@ -216,12 +246,14 @@ pub struct Owner<T> {
     host: Host,
     metadata: Metadata,
     slot: RefCell<StateSlot<T>>,
-    backend: Backend<T>,
+    backend: RefCell<Backend<T>>,
     pin: ModulePin,
     enrollment_code: RefCell<Option<ModulePin>>,
     compatible: RefCell<Option<Compatible<T>>>,
     query_policy: RefCell<QueryPolicy>,
     cache: RefCell<Weak<QueryCache>>,
+    #[cfg(feature = "recorded-inputs")]
+    recorded: RefCell<BTreeMap<String, Vec<RecordedDeclaration>>>,
 }
 struct Compatible<T> {
     codec: Rc<dyn WasmCodec<T>>,
@@ -230,7 +262,7 @@ struct Compatible<T> {
     _pin: ModulePin,
 }
 /// Trusted host configuration. Deterministic excludes external/time-varying
-/// inputs; recorded context composition is intentionally unsupported here.
+/// inputs. Declared variable recorded inputs require Noncacheable queries.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum QueryPolicy {
     Noncacheable,
@@ -283,6 +315,9 @@ pub struct Observation {
     code: ModulePin,
     behavior_revision: u64,
     helper: Option<PureCapture>,
+    execution: Option<OperationBinding>,
+    #[cfg(feature = "recorded-inputs")]
+    recorded: Vec<nethacked_inputs::Observation>,
 }
 impl Observation {
     pub fn stamp(&self) -> &Stamp {
@@ -308,6 +343,8 @@ pub struct Receipt {
     pub next_digest: [u8; 32],
     pub event_count: usize,
     pub request_digest: [u8; 32],
+    #[cfg(feature = "recorded-inputs")]
+    pub recorded_inputs: Vec<nethacked_inputs::ObservationIdentity>,
 }
 /// Opaque staged ownership. No apply/commit, field setter, next-state borrow or
 /// wire constructor is public. Drop discards only staged state and releases bounds.
@@ -323,6 +360,8 @@ struct Prepared<T> {
     code: Vec<ModulePin>,
     codec: Option<Rc<dyn WasmCodec<T>>>,
     helper: Option<PureCapture>,
+    #[cfg(feature = "recorded-inputs")]
+    recorded: Vec<nethacked_inputs::Observation>,
 }
 struct Stage<T> {
     host: Host,
@@ -389,6 +428,7 @@ impl Host {
             cleanup: CleanupIdentity::issue()?,
             publication: RefCell::new(Publication::default()),
             quarantine: Cell::new(false),
+            behaviors: Cell::new(0),
             registry: RefCell::new(Registry {
                 next_owner: 1,
                 next_candidate: 1,
@@ -519,17 +559,20 @@ impl Host {
                 live: Cell::new(true),
                 pending: Cell::new(0),
                 behavior_revision: Cell::new(0),
+                retained_behaviors: Cell::new(0),
             },
             slot: RefCell::new(StateSlot {
                 state: initial,
                 revision: 0,
             }),
-            backend,
+            backend: RefCell::new(backend),
             pin,
             enrollment_code: RefCell::new(enrollment_code),
             compatible: RefCell::new(None),
             query_policy: RefCell::new(QueryPolicy::Noncacheable),
             cache: RefCell::new(Weak::new()),
+            #[cfg(feature = "recorded-inputs")]
+            recorded: RefCell::new(BTreeMap::new()),
         });
         let route: Rc<dyn Route> = owner.clone();
         registry.entries.insert(
@@ -633,13 +676,21 @@ enum ObservationMode<'a> {
 // Batch creation historically defers state/schema/authority refusals to commit.
 // Seal only current behavior identities here; full retained validation remains
 // mandatory at commit, including every recursive stamp, permit and helper capture.
-fn admit_observation_behavior(host: &Host, observation: &Observation) -> Result<()> {
+fn admit_observation_behavior(
+    host: &Host,
+    observation: &Observation,
+    view: &CallerView<'_>,
+) -> Result<()> {
     let route = host.route(observation.stamp.owner)?;
     if observation.behavior_revision != route.metadata().behavior_revision.get() {
-        return Err(Error::Stale);
+        let execution = observation.execution.as_ref().ok_or(Error::Stale)?;
+        if view.operation() != Some(execution) || !execution.admits_cleanup(host.0.cleanup) {
+            return Err(Error::Authority);
+        }
+        view.validate_pure(observation.helper.as_ref().ok_or(Error::Stale)?)?;
     }
     for dependency in &observation.dependencies {
-        admit_observation_behavior(host, dependency)?;
+        admit_observation_behavior(host, dependency, view)?;
     }
     Ok(())
 }
@@ -682,6 +733,16 @@ fn validate_observation(
     if permit != o.permit || o.code.module_count() == 0 {
         return Err(Error::Stale);
     }
+    #[cfg(feature = "recorded-inputs")]
+    for input in &o.recorded {
+        input.validate(view)?;
+        *count = count.checked_add(1).ok_or(Error::Limit)?;
+        *bytes = bytes
+            .checked_add(recorded_size(input)?)
+            .ok_or(Error::Limit)?;
+        bound(*count, host.0.limits.observations)?;
+        bound(*bytes, host.0.limits.observation_bytes)?;
+    }
     if let Some(helper) = &o.helper {
         view.validate_pure(helper)?;
     }
@@ -704,11 +765,12 @@ impl<T: 'static> Owner<T> {
     ) -> Result<()> {
         let _gate = self.host.close_visibility()?;
         self.host.route(self.id())?;
+        let backend = self.backend.borrow();
         let Backend::Wasm {
             slot: old_slot,
             binding: old_binding,
             ..
-        } = &self.backend
+        } = &*backend
         else {
             return Err(Error::Unsupported);
         };
@@ -728,10 +790,16 @@ impl<T: 'static> Owner<T> {
         codec.validate(state)?;
         let encoded = codec.encode(state)?;
         bound(encoded.len(), self.host.0.limits.payload_bytes)?;
-        if encoded != self.backend.schema()?.encode(state)? {
+        if encoded != backend.schema()?.encode(state)? {
             return Err(Error::Schema);
         }
         let pin = kernel.pin_pure_binding(self.metadata.stamp.module.handle, slot, &binding)?;
+        drop(backend);
+        *self.backend.borrow_mut() = Backend::Wasm {
+            codec: codec.clone(),
+            slot,
+            binding: binding.clone(),
+        };
         *self.compatible.borrow_mut() = Some(Compatible {
             codec,
             slot,
@@ -751,6 +819,19 @@ impl<T: 'static> Owner<T> {
     pub fn set_query_policy(&self, policy: QueryPolicy) -> Result<()> {
         let _gate = self.host.close_visibility()?;
         self.host.route(self.id())?;
+        #[cfg(feature = "recorded-inputs")]
+        if policy != QueryPolicy::Noncacheable
+            && self.recorded.borrow().iter().any(|(name, inputs)| {
+                !inputs.is_empty()
+                    && self
+                        .metadata
+                        .ports
+                        .get(name)
+                        .is_some_and(|p| p.access == Access::Read)
+            })
+        {
+            return Err(Error::Unsupported);
+        }
         *self.query_policy.borrow_mut() = policy;
         self.clear_cache_gated();
         Ok(())
@@ -785,6 +866,15 @@ impl<T: 'static> Owner<T> {
         authorize(&self.metadata, name, view, Access::Read)?;
         bound(request.len(), self.host.0.limits.payload_bytes)?;
         self.observations(name, observations, view)?;
+        #[cfg(feature = "recorded-inputs")]
+        if self
+            .recorded
+            .borrow()
+            .get(name)
+            .is_some_and(|inputs| !inputs.is_empty())
+        {
+            return Err(Error::Unsupported);
+        }
         let policy = self.query_policy.borrow().clone();
         if policy == QueryPolicy::Noncacheable {
             return Err(Error::Unsupported);
@@ -827,7 +917,15 @@ impl<T: 'static> Owner<T> {
         }
         // Failure cannot leave an apparently valid stale cache behind.
         entry.take();
-        let observation = self.query_gated(name, request, observations, view)?;
+        let observation = self.query_with_behavior_gated(
+            name,
+            request,
+            observations,
+            view,
+            None,
+            #[cfg(feature = "recorded-inputs")]
+            &[],
+        )?;
         *entry = Some(CachedEntry {
             request: request.to_vec(),
             policy,
@@ -898,31 +996,65 @@ impl<T: 'static> Owner<T> {
         view: &CallerView<'_>,
     ) -> Result<Observation> {
         let _gate = self.host.close_visibility()?;
-        self.query_gated(name, request, observations, view)
+        self.query_with_behavior_gated(
+            name,
+            request,
+            observations,
+            view,
+            None,
+            #[cfg(feature = "recorded-inputs")]
+            &[],
+        )
     }
-    fn query_gated(
+    fn query_with_behavior_gated(
         self: &Rc<Self>,
         name: &str,
         request: &[u8],
         observations: &[Observation],
         view: &CallerView<'_>,
+        retained: Option<&RetainedBehavior<T>>,
+        #[cfg(feature = "recorded-inputs")] recorded: &[nethacked_inputs::Observation],
     ) -> Result<Observation> {
         let permit = authorize(&self.metadata, name, view, Access::Read)?;
         if self.metadata.ports.get(name).map(|p| p.access) != Some(Access::Read) {
             return Err(Error::Invalid);
         }
         bound(request.len(), self.host.0.limits.payload_bytes)?;
-        self.observations(name, observations, view)?;
+        let mode = if let Some(retained) = retained {
+            retained.validate(self, view)?;
+            ObservationMode::Retained(view.operation().ok_or(Error::Authority)?)
+        } else {
+            ObservationMode::Current
+        };
+        self.observations_with_mode(name, observations, view, mode)?;
+        #[cfg(feature = "recorded-inputs")]
+        self.validate_recorded_inputs(name, observations, recorded, view)?;
         let code = view.pin_invocation()?;
-        let live = self.compatible.borrow();
-        let (data, helper) = if let Some(live) = live.as_ref() {
+        let current = self.compatible.borrow();
+        let selected = retained.map(|b| Compatible {
+            codec: b.inner.codec.clone(),
+            slot: b.inner.slot,
+            binding: b.inner.capture.binding().clone(),
+            _pin: self.pin.clone(),
+        });
+        let live = selected.as_ref().or(current.as_ref());
+        let (data, helper) = if let Some(live) = live {
             let capture = view.capture_pure(live.slot)?;
             if capture.binding() != &live.binding {
                 return Err(Error::Stale);
             }
+            #[cfg(not(feature = "recorded-inputs"))]
             let input = live
                 .codec
                 .input(&self.slot.borrow().state, name, request, observations)?;
+            #[cfg(feature = "recorded-inputs")]
+            let input = live.codec.input_recorded(
+                &self.slot.borrow().state,
+                name,
+                request,
+                observations,
+                recorded,
+            )?;
             bound(input.len(), self.host.0.limits.payload_bytes)?;
             let output = view.call_pure(live.slot, &input)?;
             if output.binding != live.binding {
@@ -932,7 +1064,7 @@ impl<T: 'static> Owner<T> {
             (live.codec.decode_query(&output.bytes)?, Some(capture))
         } else {
             (
-                self.backend.schema()?.query(
+                self.backend.borrow().schema()?.query(
                     &self.slot.borrow().state,
                     name,
                     request,
@@ -951,15 +1083,15 @@ impl<T: 'static> Owner<T> {
         )?;
         let mut count = 1usize;
         let mut bytes = data.len();
+        #[cfg(feature = "recorded-inputs")]
+        for input in recorded {
+            count = count.checked_add(1).ok_or(Error::Limit)?;
+            bytes = bytes
+                .checked_add(recorded_size(input)?)
+                .ok_or(Error::Limit)?;
+        }
         for observation in observations {
-            validate_observation(
-                &self.host,
-                observation,
-                view,
-                &mut count,
-                &mut bytes,
-                ObservationMode::Current,
-            )?;
+            validate_observation(&self.host, observation, view, &mut count, &mut bytes, mode)?;
         }
         bound(count, self.host.0.limits.observations)?;
         bound(bytes, self.host.0.limits.observation_bytes)?;
@@ -973,15 +1105,23 @@ impl<T: 'static> Owner<T> {
             route: self.clone(),
             dependencies: observations.to_vec(),
             code,
-            behavior_revision: self.metadata.behavior_revision.get(),
+            behavior_revision: retained
+                .map_or(self.metadata.behavior_revision.get(), |b| b.inner.revision),
+            execution: retained.map(|_| view.operation().unwrap().clone()),
             helper,
+            #[cfg(feature = "recorded-inputs")]
+            recorded: recorded.to_vec(),
         })
     }
     /// Bounded detached host inspection, under the same visibility gate.
     pub fn inspect(&self) -> Result<Vec<u8>> {
         let _gate = self.host.close_visibility()?;
         self.host.route(self.id())?;
-        let data = self.backend.schema()?.encode(&self.slot.borrow().state)?;
+        let data = self
+            .backend
+            .borrow()
+            .schema()?
+            .encode(&self.slot.borrow().state)?;
         bound(data.len(), self.host.0.limits.payload_bytes)?;
         Ok(data)
     }
@@ -991,6 +1131,25 @@ impl<T: 'static> Owner<T> {
         request: &[u8],
         observations: Vec<Observation>,
         view: &CallerView<'_>,
+    ) -> Result<Candidate<T>> {
+        self.prepare_with_behavior(
+            name,
+            request,
+            observations,
+            view,
+            None,
+            #[cfg(feature = "recorded-inputs")]
+            &[],
+        )
+    }
+    fn prepare_with_behavior(
+        self: &Rc<Self>,
+        name: &str,
+        request: &[u8],
+        observations: Vec<Observation>,
+        view: &CallerView<'_>,
+        retained: Option<&RetainedBehavior<T>>,
+        #[cfg(feature = "recorded-inputs")] recorded: &[nethacked_inputs::Observation],
     ) -> Result<Candidate<T>> {
         let _gate = self.host.close_visibility()?;
         let permit = authorize(&self.metadata, name, view, Access::Write)?;
@@ -1003,7 +1162,13 @@ impl<T: 'static> Owner<T> {
         }
         let limits = &self.host.0.limits;
         bound(request.len(), limits.payload_bytes)?;
-        self.observations(name, &observations, view)?;
+        let mode = if let Some(retained) = retained {
+            retained.validate(self, view)?;
+            ObservationMode::Retained(&operation)
+        } else {
+            ObservationMode::Current
+        };
+        self.observations_with_mode(name, &observations, view, mode)?;
         // Refuse exhausted counters/reservations before domain callbacks.
         {
             let r = self.host.0.registry.borrow();
@@ -1022,16 +1187,35 @@ impl<T: 'static> Owner<T> {
                 .checked_add(1)
                 .ok_or(Error::Limit)?;
         }
+        #[cfg(feature = "recorded-inputs")]
+        self.validate_recorded_inputs(name, &observations, recorded, view)?;
         let invocation_pin = view.pin_invocation()?;
-        let live = self.compatible.borrow();
-        let (proposal, behavior, mut code, codec, helper) = if let Some(live) = live.as_ref() {
+        let backend = self.backend.borrow();
+        let current = self.compatible.borrow();
+        let selected = retained.map(|b| Compatible {
+            codec: b.inner.codec.clone(),
+            slot: b.inner.slot,
+            binding: b.inner.capture.binding().clone(),
+            _pin: self.pin.clone(),
+        });
+        let live = selected.as_ref().or(current.as_ref());
+        let (proposal, behavior, mut code, codec, helper) = if let Some(live) = live {
             let capture = view.capture_pure(live.slot)?;
             if capture.binding() != &live.binding {
                 return Err(Error::Stale);
             }
+            #[cfg(not(feature = "recorded-inputs"))]
             let input =
                 live.codec
                     .input(&self.slot.borrow().state, name, request, &observations)?;
+            #[cfg(feature = "recorded-inputs")]
+            let input = live.codec.input_recorded(
+                &self.slot.borrow().state,
+                name,
+                request,
+                &observations,
+                recorded,
+            )?;
             bound(input.len(), limits.payload_bytes)?;
             let output = view.call_pure(live.slot, &input)?;
             if output.binding != live.binding {
@@ -1046,9 +1230,29 @@ impl<T: 'static> Owner<T> {
                 Some(capture),
             )
         } else {
-            match &self.backend {
+            match &*backend {
                 Backend::Native(domain) => (
-                    domain.prepare(&self.slot.borrow().state, name, request, &observations)?,
+                    {
+                        #[cfg(not(feature = "recorded-inputs"))]
+                        {
+                            domain.prepare(
+                                &self.slot.borrow().state,
+                                name,
+                                request,
+                                &observations,
+                            )?
+                        }
+                        #[cfg(feature = "recorded-inputs")]
+                        {
+                            domain.prepare_recorded(
+                                &self.slot.borrow().state,
+                                name,
+                                request,
+                                &observations,
+                                recorded,
+                            )?
+                        }
+                    },
                     permit.resolution.clone(),
                     vec![self.pin.clone()],
                     None,
@@ -1059,8 +1263,17 @@ impl<T: 'static> Owner<T> {
                     slot,
                     binding,
                 } => {
+                    #[cfg(not(feature = "recorded-inputs"))]
                     let input =
                         codec.input(&self.slot.borrow().state, name, request, &observations)?;
+                    #[cfg(feature = "recorded-inputs")]
+                    let input = codec.input_recorded(
+                        &self.slot.borrow().state,
+                        name,
+                        request,
+                        &observations,
+                        recorded,
+                    )?;
                     bound(input.len(), limits.payload_bytes)?;
                     let output = view.call_pure(*slot, &input)?;
                     if &output.binding != binding {
@@ -1082,7 +1295,7 @@ impl<T: 'static> Owner<T> {
         let schema = codec
             .as_ref()
             .map(|c| c.as_ref() as &dyn Schema<T>)
-            .unwrap_or(self.backend.schema()?);
+            .unwrap_or(backend.schema()?);
         schema.validate(&proposal.next)?;
         let encoded = schema.encode(&proposal.next)?;
         bound(encoded.len(), limits.payload_bytes)?;
@@ -1132,6 +1345,8 @@ impl<T: 'static> Owner<T> {
             next_digest: Sha256::digest(encoded).into(),
             event_count: proposal.events.len(),
             request_digest: Sha256::digest(request).into(),
+            #[cfg(feature = "recorded-inputs")]
+            recorded_inputs: recorded.iter().map(|r| r.identity().clone()).collect(),
         };
         let stage = Rc::new(Stage {
             host: self.host.clone(),
@@ -1146,6 +1361,8 @@ impl<T: 'static> Owner<T> {
                 code,
                 codec,
                 helper,
+                #[cfg(feature = "recorded-inputs")]
+                recorded: recorded.to_vec(),
             })),
             active: Cell::new(true),
             retained_bytes,
@@ -1167,6 +1384,7 @@ fn same_observations(a: &[Observation], b: &[Observation]) -> bool {
                 && a.caller_artifact == b.caller_artifact
                 && a.behavior_revision == b.behavior_revision
                 && Rc::ptr_eq(&a.route, &b.route)
+                && same_recorded(a, b)
                 && same_observations(&a.dependencies, &b.dependencies)
         })
 }
@@ -1179,7 +1397,9 @@ mod live_queries;
 #[cfg(test)]
 mod probes;
 
+mod behavior;
 mod publication;
+pub use behavior::RetainedBehavior;
 pub use publication::{
     Accounting, Batch, CommitReceipt, ErasedCandidate, ObservationReceipt, ProposalView,
     PublicationLimits,
@@ -1198,3 +1418,22 @@ impl nethacked_workflows::CleanupParticipant for Host {
             .map_err(|_| nethacked_kernel::Error::NativeRefusal)
     }
 }
+
+#[cfg(not(feature = "recorded-inputs"))]
+fn same_recorded(_: &Observation, _: &Observation) -> bool {
+    true
+}
+#[cfg(feature = "recorded-inputs")]
+fn same_recorded(a: &Observation, b: &Observation) -> bool {
+    a.recorded.len() == b.recorded.len()
+        && a.recorded
+            .iter()
+            .zip(&b.recorded)
+            .all(|(a, b)| a.identity() == b.identity() && a.bytes() == b.bytes())
+}
+#[cfg(feature = "recorded-inputs")]
+mod recorded;
+#[cfg(feature = "recorded-inputs")]
+use recorded::recorded_size;
+#[cfg(feature = "recorded-inputs")]
+pub use recorded::RecordedDeclaration;

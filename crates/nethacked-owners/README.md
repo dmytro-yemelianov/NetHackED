@@ -141,8 +141,9 @@ staged work; foreign-host staging remains the foreign cleanup participant's job.
 | `prepare_pins_chain`, `pending_chain_unload_refused` | Owner/candidate/observation RAII pins; retirement refusal while pending; code unload refusal until last reference drops. Kernel retained-route fixture preserves captured helper chain while future dispatch changes. |
 | Immutable guest preparation premise | New kernel `pure_preparation` fixtures: actual computation, native Read-import exclusion, guest nesting, shared fuel/calls/depth, detached bridge refusal, current/retained grants and executable routes. |
 
-O3 implements the publication protocol below. O4 still must accept dynamic owner
-extensions, derived caches and live service/lifecycle integration. M4d must accept
+O3 implements the publication protocol below. O4 now has dynamic owner,
+derived-cache and optional [service composition fixtures](../nethacked-owner-services/README.md),
+pending independent integration acceptance. M4d must accept
 codecs/restoration. NetHack migration, crash recovery, independent semantic review
 and aggregate ownership-runtime acceptance remain unfinished.
 
