@@ -1,0 +1,18 @@
+{
+  "revision": "repair1",
+  "seed_origin": "writer independent graph, archived snapshot-before",
+  "sha256": {
+    "generate.py": "6262bbee7f26c47bf24b74ac14ef14c9a604a8312dcc0a48ca27f5fa304efc54",
+    "seed-graph.json": "6f9aae04366d1891c41cf528de60829d7e5006c681f0bf84cc3aa2959144892e",
+    "empty.json": "c6d6cc74a198df535812d884be74d6b622405dfe86d5f5e933df36c39389af0b",
+    "empty.wire": "524874ded6eb2b06dcfb51879b5c408cff75f13f5070c7f38983edc387d27a5b",
+    "graph.json": "bee7e5764c1733fb5f705fd3f17381414b502dd7a8618904abddea0d345b1b10",
+    "graph.wire": "773a934805e9a3727b1215700600a4882a0620a7b2377b0d84007b5330279fa2",
+    "host-ticket.json": "4b0f5bd767641b86d4443ac759a12f7ab966b75ed6f103d75467eee32af4de22",
+    "host-ticket.wire": "c5b2e71e2df12f0e1aa3762e5c003fc09c6ce2e6d734201f0d7569f16349bc7e",
+    "initial.json": "200291ed59ed2e977a6c568783263f7a8fbde0a76e7934c4a154169f17c2ecc7",
+    "initial.wire": "1ea7a58f79df1480d26959491984ed8a4c590e86586ee345f489f173f3aca2ac",
+    "multi-owner.json": "79bdb05ecad1b8d9882556535803e7c08bc8d311e71f763e7e5a0a50b5975032",
+    "multi-owner.wire": "c5ecb1f058927c568cff8da988bed6f24ca016f7ddae8d74ca5fae197d32cb40"
+  }
+}

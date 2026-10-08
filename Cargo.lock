@@ -1109,6 +1109,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "nethacked-persistence"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
 name = "nethacked-py"
 version = "0.3.0"
 dependencies = [
