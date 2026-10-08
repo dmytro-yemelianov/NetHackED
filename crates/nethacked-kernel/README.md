@@ -132,7 +132,7 @@ wire constructors and no serde implementation. One checked monotonic serial
 space is shared by leases and owner references; release never reuses identities.
 Foreign, fabricated, released and stale identities return `InvalidHandle`.
 These opaque runtime identities have no serialization or wire constructors.
-The D3a registry seam below excludes live retained work.
+The D3a registry-only seam below excludes live retained work; D3b captures the full kernel graph.
 
 `RetentionLimits` bounds live leases, owner sets, total route binding entries,
 captured slots, and aggregate references (one per unique module per lease/owner).
@@ -285,9 +285,66 @@ Exact runtime limits must match the destination profile; retention limits may
 narrow it. Namespace allocation excludes every saved historical/source namespace,
 including in a fresh process, using bounded skips and checked exhaustion.
 
-Live leases, owner references, pins, callbacks and pure captures refuse capture
-and restore; D3b must encode these rather than discard them. Retired holes and
+Live leases, owner references, pins, callbacks and pure captures refuse the
+registry-only APIs. Use the D3b full-kernel seam for these values. Retired holes and
 empty-retention serial history survive. These records are not a competing wire
 transport: D4 will adapt this seam to D1's bounded envelope and the complete host
-barrier/authority exclusion. D3b retained graphs, D3c owner prepared/retained state,
+barrier/authority exclusion. D3c owner prepared/retained state,
 D4–D6/A5 and M5–M7 remain open; aggregate D3 is not reduced by D3a.
+
+
+## D3b complete retained-kernel reconstruction
+
+`kernel_snapshot(&KernelEnrollment)` records every live lease, owner reference,
+shared pin and shared callback beside private retained state. The exclusive host
+explicitly enrolls externally held `OperationBinding` and `PureCapture` values;
+the kernel cannot discover their host storage. Enrollment does not replace or
+omit the automatically captured kernel graph. Operation phases/checkpoints and
+canonical cleanup sets survive. Serial highwaters and holes remain nonreusable.
+No owner payload, workflow frame, guest RAM or service state is stored here.
+
+`restore_kernel` reuses D3a artifact factories, registry/grant/resource admission
+and namespace exclusion. It validates bounded records and complete exact routes,
+ordered import slots, artifacts, signatures, crosslinks, distinct shared IDs,
+source digests and historical source tombstones before one hidden exchange.
+Destination grants must cover every retained slot ceiling, including historical
+source closures and pure captures; revocation or narrowing needed authority
+refuses rather than changing retained semantics. Routes and fresh binding digests
+are reconstructed independently of current dispatch. Current and resumed calls
+continue checking live grants.
+
+Callback origins retain the full caller/service/artifact/capability/slot/source
+binding and an exact source-closure witness even after source lease disposal.
+Adoption uses the retained executable closure. Pure captures carry a private
+route witness and pin their provider plus complete helper closure. Shared pins
+and callbacks have one reservation each; clones share lifetime and block unload
+until their final release. No invocation, callback, preparation, input draw or
+scheduling runs during capture/rebuild.
+
+`RetainedAuthority` additionally approves complete operation contexts through
+`approve_operation_context`; the default refuses. Supply a trusted, independent
+host catalog or policy before reading an incoming save. Approval covers enrolled
+operations and historical/disposed callback sources: namespace, operation,
+lease, checkpoint, phase, cleanup, caller/service artifacts, capability/slot,
+and exact source and retained route identities. Saved digests, ranges and two
+matching wire copies are not authentication. The policy must be bounded, pure
+and stable; D4 later composes this seam with service admission. A bounded metadata
+pass validates graph cross-references, closures and recomputed unique reservation
+references before artifact factories. Callbacks have their own capacity, separate
+from the combined owner/pin capacity; shared handles count once per reservation.
+
+`RetainedAuthority` also approves cleanup participants. Runtime-issued
+fresh cleanup identities exclude every saved historical origin, also on a fresh
+process. `RestoredKernel` exposes only sealed fresh mappings for later D3c/D4
+adapters, including nonexecutable historical source IDs. Its RAII maps own one
+reference: adapters clone the required pins/callbacks/captures, then drop the maps
+to release their reference. Old destination/source credentials remain invalid
+following successful exchange; refusal preserves the populated destination and
+external credentials. Native factory purity, bounds, effect-free construction
+and drop, absence of source aliases, and stable host admission remain explicit
+host assumptions.
+
+These are bounded local graph records, not a second wire transport. D4 supplies
+the D1 envelope and complete host barrier/authority exclusion; the exclusive
+kernel boundary excludes active calls. D3c owner candidates, aggregate D3,
+D4 services, D5–D6 and A5 remain successors and are not accepted by this seam.

@@ -1,17 +1,18 @@
 //! D3a local registry records. D4 supplies the bounded D1 envelope and host barrier.
 //! These records are requests/evidence, never runtime credentials.
+pub use super::retention::persistence::*;
 use super::*;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 
-const MAX_NAMESPACES: usize = 65_536;
-const MAX_ROWS: usize = 65_536;
-const MAX_EDGES: usize = 262_144;
-const MAX_BYTES: usize = 64 * 1024 * 1024;
+pub(super) const MAX_NAMESPACES: usize = 65_536;
+pub(super) const MAX_ROWS: usize = 65_536;
+pub(super) const MAX_EDGES: usize = 262_144;
+pub(super) const MAX_BYTES: usize = 64 * 1024 * 1024;
 
 // Measure without allocating an oversized JSON buffer. This is accounting for
 // local records, not an encoding/decoding API or a replacement for D1.
-fn bounded_size(value: &impl Serialize) -> Result<usize> {
+pub(super) fn bounded_size(value: &impl Serialize) -> Result<usize> {
     struct Counter(usize);
     impl std::io::Write for Counter {
         fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
@@ -111,9 +112,17 @@ pub trait RegistryAuthority {
 }
 
 impl Kernel {
-    /// Exclusive safe boundary; live retention is deliberately refused until D3b.
+    /// Registry-only safe boundary; live retention is deliberately refused.
     pub fn registry_snapshot(&mut self) -> Result<RegistrySnapshot> {
         let (retention_limits, retention_counters) = self.retention.empty_history()?;
+        self.capture_registry(retention_limits, retention_counters)
+    }
+
+    pub(super) fn capture_registry(
+        &self,
+        retention_limits: RetentionLimits,
+        retention_counters: [u64; 3],
+    ) -> Result<RegistrySnapshot> {
         // Bound scratch before copying runtime-owned manifests and authorities.
         let mut scratch = 4096usize;
         for registration in self.registrations.values() {
@@ -228,6 +237,16 @@ impl Kernel {
         host: &impl RegistryAuthority,
     ) -> Result<BTreeMap<u64, ModuleHandle>> {
         self.retention.empty_history()?;
+        let (hidden, handles) = self.build_registry(saved, host)?;
+        *self = hidden;
+        Ok(handles)
+    }
+
+    pub(super) fn build_registry(
+        &self,
+        saved: &RegistrySnapshot,
+        host: &impl RegistryAuthority,
+    ) -> Result<(Kernel, BTreeMap<u64, ModuleHandle>)> {
         saved.preflight(self)?;
         let mut hidden = Kernel::new(self.limits.clone())?;
         // Works in a new process as well: every source/historical namespace is
@@ -347,14 +366,78 @@ impl Kernel {
         hidden
             .retention
             .restore_empty_history(saved.retention_limits.clone(), saved.retention_counters)?;
-        *self = hidden;
-        Ok(handles)
+        Ok((hidden, handles))
     }
 }
 
 impl RegistrySnapshot {
-    fn preflight(&self, destination: &Kernel) -> Result<()> {
-        let (retention_profile, _) = destination.retention.empty_history()?;
+    /// Bounded metadata only, never published or executed. Registry preflight
+    /// must have succeeded. No artifact resolver, Wasm loader or native ports.
+    pub(in crate::kernel) fn structural_kernel(
+        &self,
+        namespace: u64,
+    ) -> Result<(Kernel, BTreeMap<u64, ModuleHandle>)> {
+        let mut k = Kernel::new(self.limits.clone())?;
+        k.instance = namespace;
+        k.next_operation = self.next_operation;
+        k.set_retention_limits(self.retention_limits.clone())?;
+        let handles: BTreeMap<_, _> = self
+            .modules
+            .iter()
+            .map(|r| {
+                (
+                    r.id,
+                    ModuleHandle {
+                        instance: namespace,
+                        generation: r.id,
+                    },
+                )
+            })
+            .collect();
+        for r in &self.modules {
+            // Match registration's manifest checks in source install order,
+            // before constructing any executable material.
+            k.validate_manifest(&r.manifest)?;
+            let attachment = r.manifest.extension.as_ref().map(|e| {
+                (
+                    handles[&r.target.expect("preflight attachment")],
+                    e.target.endpoint.clone(),
+                    e.export.clone(),
+                )
+            });
+            k.registrations.insert(
+                handles[&r.id],
+                Registration {
+                    manifest: r.manifest.clone(),
+                    artifact: r.artifact,
+                    code: Code::Native(BTreeMap::new()),
+                    dependencies: r.dependencies.iter().map(|id| handles[id]).collect(),
+                    attachment,
+                },
+            );
+            k.ids.insert(r.manifest.id.clone(), handles[&r.id]);
+        }
+        for g in &self.grants {
+            k.grants.insert(
+                (handles[&g.caller], g.slot),
+                Grant {
+                    target: handles[&g.target],
+                    authority: g.requested.clone(),
+                    active: g.active,
+                },
+            );
+        }
+        for e in &self.dispatch {
+            k.extensions.insert(
+                (handles[&e.target], e.endpoint.clone()),
+                (handles[&e.extension], e.export.clone()),
+            );
+        }
+        Ok((k, handles))
+    }
+
+    pub(in crate::kernel) fn preflight(&self, destination: &Kernel) -> Result<()> {
+        let (retention_profile, _) = destination.retention.history();
         if self.retention_limits.leases > retention_profile.leases
             || self.retention_limits.owners > retention_profile.owners
             || self.retention_limits.nodes > retention_profile.nodes

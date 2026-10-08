@@ -170,6 +170,7 @@ pub struct PureCapture {
     pub(crate) ceiling: Authority,
     pub(crate) closure: Vec<(CapabilityPermit, Authority)>,
     pub(crate) pin: ModulePin,
+    pub(crate) routing: std::rc::Rc<crate::kernel::retention::Routing>,
 }
 impl PureCapture {
     pub fn binding(&self) -> &CapabilityPermit {
@@ -444,6 +445,18 @@ impl OperationBinding {
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct CleanupIdentity(u64);
 impl CleanupIdentity {
+    pub(crate) fn raw(self) -> u64 {
+        self.0
+    }
+    pub(crate) fn fresh_excluding(excluded: &std::collections::BTreeSet<u64>) -> Result<Self> {
+        for _ in 0..=excluded.len() {
+            let id = Self::issue()?;
+            if !excluded.contains(&id.0) {
+                return Ok(id);
+            }
+        }
+        Err(Error::Limit)
+    }
     pub fn issue() -> Result<Self> {
         use std::sync::atomic::{AtomicU64, Ordering};
         static NEXT_CLEANUP: AtomicU64 = AtomicU64::new(1);

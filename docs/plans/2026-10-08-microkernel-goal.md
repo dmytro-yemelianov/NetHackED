@@ -71,6 +71,8 @@ D3 executes as three dependent runtime slices: D3a captures/rebuilds the module 
 
 D3a kernel registry persistence is reviewed and verified in the [registry checkpoint](../parity/obligations/2026-10-09-microkernel-kernel-registry-checkpoint.json). Fresh native/Wasm modules, original extension bindings, current dispatch and independently approved grants reconstruct from records with checked namespace/resource remapping and preserved counters. Live retained state explicitly refuses until D3b; owner prepared state remains D3c. This does not complete aggregate D3 or A5.
 
+D3b retained-kernel reconstruction is reviewed and verified in the [retained graph checkpoint](../parity/obligations/2026-10-09-microkernel-kernel-retained-checkpoint.json). Exact old routes, shared pins/callbacks, disposed-source provenance, pure captures and enrolled operation contexts survive source-free byte reconstruction while new calls use current dispatch. Independent host context approval defaults to refusal; structural graph checks precede factories. D3c owner prepared state and its aggregate D3 review remain required before D4 services; A5 and NetHack migration remain open.
+
 Each milestone is split only at testable ownership boundaries. Dependency edges are enforced before dispatch. A data-only patch system or an extension compiled into the original engine does not satisfy A2. Forwarding `&mut SimulationWorld` through a new module does not satisfy A7.
 
 ## Execution loop and cost controls

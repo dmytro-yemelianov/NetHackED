@@ -6,6 +6,9 @@ use std::collections::BTreeSet;
 #[path = "callbacks_tests.rs"]
 mod callbacks_tests;
 
+#[path = "persistence/retained.rs"]
+pub mod persistence;
+
 type RouteKey = (ModuleHandle, String);
 
 #[derive(Debug)]
@@ -26,12 +29,20 @@ struct Pipeline {
     origin: Option<Rc<CallbackOrigin>>,
 }
 #[derive(Debug)]
+struct PipelineWitness {
+    descriptor: PipelineDescriptor,
+    routing: Rc<Routing>,
+    references: BTreeSet<ModuleHandle>,
+}
+#[derive(Debug)]
 struct CallbackOrigin {
     caller: ModuleHandle,
     slot: usize,
     target: ModuleHandle,
     ceiling: Authority,
     provenance: CallbackProvenance,
+    service_route: Vec<ProviderBinding>,
+    source_pipeline: PipelineWitness,
 }
 #[derive(Debug)]
 pub(crate) struct CallbackData {
@@ -63,12 +74,14 @@ pub(super) struct Retention {
     owners: BTreeMap<OwnerReference, BTreeSet<ModuleHandle>>,
     callbacks: RefCell<Callbacks>,
     pins: RefCell<Pins>,
+    cleanup_history: RefCell<BTreeSet<u64>>,
 }
 impl Default for Retention {
     fn default() -> Self {
         Self {
             limits: RetentionLimits::default(),
             next_serial: 1,
+            cleanup_history: RefCell::new(BTreeSet::new()),
             pipelines: BTreeMap::new(),
             owners: BTreeMap::new(),
             callbacks: RefCell::new(Callbacks {
@@ -102,14 +115,18 @@ impl Retention {
         {
             return Err(Error::Referenced);
         }
-        Ok((
+        Ok(self.history())
+    }
+
+    pub(super) fn history(&self) -> (RetentionLimits, [u64; 3]) {
+        (
             self.limits.clone(),
             [
                 self.next_serial,
                 self.callbacks.borrow().next,
                 self.pins.borrow().next,
             ],
-        ))
+        )
     }
 
     pub(super) fn restore_empty_history(
@@ -188,12 +205,30 @@ impl CallbackCapture for CallbackFactory<'_> {
             slot,
             source: source.clone(),
         };
+        let source_pipeline = k
+            .retention
+            .pipelines
+            .get(&source.pipeline)
+            .ok_or(Error::InvalidHandle)?;
+        let source_pipeline = PipelineWitness {
+            descriptor: source_pipeline.descriptor.clone(),
+            routing: source_pipeline.routing.clone(),
+            references: source_pipeline
+                .routing
+                .routes
+                .values()
+                .flatten()
+                .map(|b| b.handle)
+                .collect(),
+        };
         let origin = Rc::new(CallbackOrigin {
             caller,
             slot,
             target,
             ceiling: ceiling.clone(),
             provenance: provenance.clone(),
+            service_route: route.clone(),
+            source_pipeline,
         });
         k.validate_callback_origin(&origin)?;
         {
@@ -215,6 +250,9 @@ impl CallbackCapture for CallbackFactory<'_> {
         }
         let mut pipeline = k.build_pipeline(caller, endpoint, ceiling, self.routing)?;
         pipeline.references.insert(caller);
+        pipeline
+            .references
+            .extend(origin.source_pipeline.references.iter().copied());
         for binding in route {
             pipeline.references.insert(binding.handle);
         }
@@ -525,6 +563,7 @@ impl Kernel {
             .checked_add(1)
             .ok_or(Error::Limit)?;
         let pipeline = self.build_pipeline(provider, endpoint, ceiling, None)?;
+        self.reference_capacity(pipeline.references.len())?;
         let lease = PipelineLease {
             instance: self.instance,
             serial: self.retention.next_serial,
@@ -564,7 +603,7 @@ impl Kernel {
             source,
         };
         capture.visit((provider, endpoint.to_owned()), 1)?;
-        self.reference_capacity(capture.references.len())?;
+
         let root = ProviderBinding {
             handle: provider,
             artifact: self.artifact(provider)?,
@@ -573,47 +612,12 @@ impl Kernel {
         let routes: Vec<_> = capture.routing.routes.values().cloned().collect();
         // Canonical ordered runtime-local descriptor includes slot ceilings and
         // root identity, not just executable bytes. Identities are not a codec.
-        let mut digest = Sha256::new();
-        digest.update(b"nethacked-retained-v1");
-        fn bind(digest: &mut Sha256, b: &ProviderBinding) {
-            digest.update(b.handle.instance.to_le_bytes());
-            digest.update(b.handle.generation.to_le_bytes());
-            digest.update(b.artifact);
-            digest.update((b.endpoint.len() as u64).to_le_bytes());
-            digest.update(b.endpoint.as_bytes());
-        }
-        bind(&mut digest, &root);
-        digest.update((routes.len() as u64).to_le_bytes());
-        for route in &routes {
-            digest.update((route.len() as u64).to_le_bytes());
-            for binding in route {
-                bind(&mut digest, binding);
-            }
-        }
-        digest.update(
-            serde_json::to_vec(
-                &serde_json::to_value(&ceiling).map_err(|_| Error::InvalidManifest)?,
-            )
-            .map_err(|_| Error::InvalidManifest)?,
-        );
-        for ((caller, slot), retained) in &capture.routing.slots {
-            digest.update(caller.instance.to_le_bytes());
-            digest.update(caller.generation.to_le_bytes());
-            digest.update((*slot as u64).to_le_bytes());
-            digest.update(retained.target.instance.to_le_bytes());
-            digest.update(retained.target.generation.to_le_bytes());
-            digest.update(
-                serde_json::to_vec(
-                    &serde_json::to_value(&retained.ceiling).map_err(|_| Error::InvalidManifest)?,
-                )
-                .map_err(|_| Error::InvalidManifest)?,
-            );
-        }
+        let hash = pipeline_digest(&root, &ceiling, &routes, &capture.routing)?;
         let descriptor = PipelineDescriptor {
             root,
             ceiling: ceiling.clone(),
             routes,
-            hash: digest.finalize().into(),
+            hash,
         };
         Ok(Pipeline {
             descriptor,
@@ -915,6 +919,17 @@ impl Kernel {
         let mut cleanup = participants.to_vec();
         cleanup.sort();
         cleanup.dedup();
+        {
+            let mut history = self.retention.cleanup_history.borrow_mut();
+            let new = cleanup
+                .iter()
+                .filter(|id| !history.contains(&id.raw()))
+                .count();
+            if history.len().checked_add(new).ok_or(Error::Limit)? > persistence::MAX_CLEANUPS {
+                return Err(Error::Limit);
+            }
+            history.extend(cleanup.iter().map(|id| id.raw()));
+        }
         Ok(OperationBinding {
             operation,
             pipeline,
@@ -1156,4 +1171,47 @@ mod tests {
         let p = k.capture_pipeline(h, "run", authority()).unwrap();
         assert_eq!(k.invoke_pipeline(p, &[], authority()), Ok(vec![]));
     }
+}
+
+fn pipeline_digest(
+    root: &ProviderBinding,
+    ceiling: &Authority,
+    routes: &[Vec<ProviderBinding>],
+    routing: &Routing,
+) -> Result<[u8; 32]> {
+    let mut digest = Sha256::new();
+    digest.update(b"nethacked-retained-v1");
+    fn bind(digest: &mut Sha256, b: &ProviderBinding) {
+        digest.update(b.handle.instance.to_le_bytes());
+        digest.update(b.handle.generation.to_le_bytes());
+        digest.update(b.artifact);
+        digest.update((b.endpoint.len() as u64).to_le_bytes());
+        digest.update(b.endpoint.as_bytes());
+    }
+    bind(&mut digest, root);
+    digest.update((routes.len() as u64).to_le_bytes());
+    for route in routes {
+        digest.update((route.len() as u64).to_le_bytes());
+        for binding in route {
+            bind(&mut digest, binding);
+        }
+    }
+    digest.update(
+        serde_json::to_vec(&serde_json::to_value(ceiling).map_err(|_| Error::InvalidManifest)?)
+            .map_err(|_| Error::InvalidManifest)?,
+    );
+    for ((caller, slot), retained) in &routing.slots {
+        digest.update(caller.instance.to_le_bytes());
+        digest.update(caller.generation.to_le_bytes());
+        digest.update((*slot as u64).to_le_bytes());
+        digest.update(retained.target.instance.to_le_bytes());
+        digest.update(retained.target.generation.to_le_bytes());
+        digest.update(
+            serde_json::to_vec(
+                &serde_json::to_value(&retained.ceiling).map_err(|_| Error::InvalidManifest)?,
+            )
+            .map_err(|_| Error::InvalidManifest)?,
+        );
+    }
+    Ok(digest.finalize().into())
 }

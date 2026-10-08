@@ -1,0 +1,129 @@
+{
+  "schema": 1,
+  "status": "reviewed_runtime_verified_for_containing_commit",
+  "baseline_head": "f0eb2e30689628750b684b4d6381ecffbdb2c223",
+  "milestone": "M4d-D3b",
+  "scope": "Kernel-owned retained routes, shared references, callback origins, pure captures and enrolled operation contexts reconstruct with fresh identities and independent host approval. Owner prepared state and service composition remain successors.",
+  "contract": {
+    "path": "/Users/dmytro/github/NetRust/docs/plans/2026-10-08-owner-persistence-contract.md",
+    "sha256": "7f04e7118c33245a6aa0da16352eaa022d7753dc191bddaeb4963a9ddf55b569"
+  },
+  "runtime": "crates/nethacked-kernel/README.md",
+  "review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-KERNEL-RETAINED/review/answer.txt",
+    "sha256": "abc6c0ce5f0c0f316955e2eba2a611b34a673d1457e7f379a5094fc118b0b604"
+  },
+  "review_verification": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-KERNEL-RETAINED/review/root-verification.json",
+    "sha256": "fc6f8221db27d2e9f6b7ec8355fd0837013e8394ebfb81a2fdc1539c8d804e4d"
+  },
+  "readback": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-KERNEL-RETAINED/readback/answer.txt",
+    "sha256": "88bb114383e6975a3cf413e1dea936dcd30bf59ebc0e6e41024aefbb64601173"
+  },
+  "readback_verification": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-KERNEL-RETAINED/readback/root-verification.json",
+    "sha256": "3ba54daa99aec91f9350aace211b0ab8850f9ce6ad9405f656654eec824f10e9"
+  },
+  "writer_evidence": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-KERNEL-RETAINED/writer-evidence/root-verification.json",
+    "sha256": "40e1ceaf65c536bc6ad77d45307773930f98503d77b7a7b5f93474b6901c594a"
+  },
+  "repair_evidence": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-KERNEL-RETAINED/repair1-evidence/root-verification.json",
+    "sha256": "24deb3df17548303d1f2292e137b0a30ea4913edc08ccf4b18d5e5a037be02a0"
+  },
+  "repair_bindings": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-KERNEL-RETAINED/repair1-evidence/final-binding.json",
+    "sha256": "eca086a0206dcdc68e07bad8e757b326dfe0ef37b3ee6b8d4877e7e6bb73a147"
+  },
+  "repair_delta": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-KERNEL-RETAINED/repair1-evidence/root-repair.diff",
+    "sha256": "5eb04818e3eba7800f6b6e06e050e48e2eadfa74cc80aa82802d42273ffcd633"
+  },
+  "repair_ledger": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-KERNEL-RETAINED/repair1-evidence/repair-ledger.json",
+    "sha256": "10d71f852a1ac76dacaf418555ccfdca904f2dc9f854f3a333669d3f4b8f22d9"
+  },
+  "source_bindings": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-KERNEL-RETAINED/readback-source.json",
+    "sha256": "65df08a158f081c728c5bd66a32c6bf9b26341a58019e2b0a8d130fe1503912f"
+  },
+  "full_gates": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-KERNEL-RETAINED/full-gates/accepted.json",
+    "sha256": "ad3f6f223043696e8f9cb93a8ecd440bee3f2e166da21f003e6bc346e33af8ce"
+  },
+  "gate_result": {
+    "head": "f0eb2e30689628750b684b4d6381ecffbdb2c223",
+    "tests": 1227,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "digest": "3783bf40092d6839c6ee9004be1608eaf2283ba3dd34a4110d24f38846a6e418",
+    "checks": 12
+  },
+  "source_input_count": 456,
+  "focused_checks": {
+    "kernel_tests": 63,
+    "new_retained_tests": 8,
+    "all_feature_owner_tests": 49,
+    "owner_service_tests": 11,
+    "distinct_tests": 123,
+    "actual_kernel_wasm": true,
+    "old_fixture_files_unchanged": 14
+  },
+  "verified_behavior": [
+    "Old exact executable routes and full ordered imports remain independent of current dispatch after byte roundtrip into fresh factories",
+    "Disposed-source callbacks retain full provenance; operations, cleanup identities, permits and pipeline digests remap with fresh namespaces",
+    "Shared pins/callbacks retain one reservation and release/unload after last owner; explicit enrollment covers externally held opaque contexts/pure captures",
+    "Repeated source-free reconstruction preserves semantics and resource remapping; missing/forged authority and malformed graph refuse without changing populated destination",
+    "Complete host-approved operation contexts default to refusal; metadata structure and recomputed unique references validate before artifact factories; callback capacity remains independent"
+  ],
+  "findings_resolved": [
+    "F1 independent complete enrolled/historical source-context approval before authenticated reconstruction",
+    "F2 exact independent callback versus combined owner/pin capacity domains",
+    "F3 bounded complete structural/reference/manifest validation before avoidable artifact factories"
+  ],
+  "repair_history": "F1/F3 each one attempt and zero unsuccessful. F2 two attempts, one failed tight-capacity execution fixture; release needed temporary pins after successful capture/restore boundary assertions. Two independent repair compile setup failures corrected once. Original three writer failures and review probe import failure retained separately; no resets.",
+  "metadata_correction": "Independent readback verified five authority-setup substitutions in the original five D3b tests, not four as writer preservation note stated. Assertions intact; original raw report retained and root correction bound.",
+  "trust_premises": [
+    "Host context catalog/policy supplied independently before reading an incoming save; bounded, pure and stable",
+    "Native factories exact, fresh, bounded, effect-free on construction/drop and free of source mutable aliases",
+    "Exclusive kernel safe boundary; full HostBundle barrier and authority-epoch activation remain D4"
+  ],
+  "enrollment": "Kernel captures all its live references; host explicitly enrolls external OperationBindings and PureCaptures. RestoredKernel RAII maps own references until adapters clone needed values and drop maps.",
+  "usage": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-KERNEL-RETAINED/implementation/usage.json",
+      "sha256": "b28370017863b955ec44ae574b5b60b1d2f792afa641f5fc23af460009f472bf"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-KERNEL-RETAINED/review/usage.json",
+      "sha256": "dd70d26605d5a4f14bb74190acdd1e98cb6c373fba7f0952492278a77b3f4fe7"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-KERNEL-RETAINED/repair1/usage.json",
+      "sha256": "5f7833fb18634c2084e2424f2364078cb4a8b845ee44f5e8f847030a751f9ce3"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-KERNEL-RETAINED/readback/usage.json",
+      "sha256": "a37059b181289dd20c2b9c403f996b30b979a0d11d51b58d5a84e4e78c727189"
+    }
+  ],
+  "meter_note": "Uncached input/output: writer120388/50625, review112015/8678, repair97437/24878, readback80147/8705. Every input ceiling exceeded; writer and repair output also exceeded. Root usage unknown; no savings claim.",
+  "A5_accepted": false,
+  "aggregate_D3_accepted": false,
+  "goldens_changed": false,
+  "existing_committed_tests_changed": false,
+  "parity_families_closed": 0,
+  "residuals": [
+    "D3c owner retained codecs/helpers and sealed prepared candidates/batches, then aggregate D3 acceptance",
+    "D4 coherent services, referenced-schema graph migration and atomic authority-epoch activation",
+    "D5 real legacy save bridge and owner-native receipt continuation",
+    "D6 combined full A5 acceptance including fresh-process suite",
+    "M5 complete selected-wand/populated-NetHack extensions, M6 full existing-domain migration, M7 final audit",
+    "Separate53-family parity backlog"
+  ]
+}

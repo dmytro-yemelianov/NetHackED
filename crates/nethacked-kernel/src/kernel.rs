@@ -82,15 +82,16 @@ impl PureCall for PureBridge<'_> {
         frame.authority.access = Access::Read;
         let closure = self.kernel.inspect_pure_closure(&frame, slot)?;
         let (target, endpoint, authority, _) = self.kernel.slot_target(&frame, slot)?;
-        let pin = self
+        let (routing, pin) = self
             .kernel
-            .pin_route(target, &endpoint, authority, frame.routing.as_deref())?;
+            .capture_pure_route(&frame, slot, target, &endpoint, authority)?;
         Ok(PureCapture {
             provider: frame.provider,
             slot,
             ceiling: frame.authority,
             closure,
             pin,
+            routing,
         })
     }
     fn validate(&self, capture: &PureCapture) -> Result<()> {
@@ -162,12 +163,24 @@ impl Kernel {
         frame: &Frame,
         slot: usize,
     ) -> Result<Vec<(CapabilityPermit, Authority)>> {
+        self.inspect_pure_closure_with(frame, slot, &|h| {
+            Ok(matches!(self.registration(h)?.code, Code::Guest(_)))
+        })
+    }
+    // The retained structural pass uses saved executable kinds before factories.
+    fn inspect_pure_closure_with(
+        &self,
+        frame: &Frame,
+        slot: usize,
+        is_guest: &impl Fn(ModuleHandle) -> Result<bool>,
+    ) -> Result<Vec<(CapabilityPermit, Authority)>> {
         fn visit(
             k: &Kernel,
             frame: &Frame,
             slot: usize,
             depth: u32,
             out: &mut Vec<(CapabilityPermit, Authority)>,
+            is_guest: &impl Fn(ModuleHandle) -> Result<bool>,
         ) -> Result<()> {
             if depth > k.limits.depth || out.len() >= k.limits.calls as usize {
                 return Err(Error::Limit);
@@ -178,7 +191,7 @@ impl Kernel {
                 .capability
                 .clone();
             let last = resolution.last().ok_or(Error::MissingDependency)?;
-            if !matches!(k.registration(last.handle)?.code, Code::Guest(_)) {
+            if !is_guest(last.handle)? {
                 return Err(Error::NativeRefusal);
             }
             out.push((
@@ -202,13 +215,14 @@ impl Kernel {
                         child,
                         depth.checked_add(1).ok_or(Error::Limit)?,
                         out,
+                        is_guest,
                     )?;
                 }
             }
             Ok(())
         }
         let mut out = Vec::new();
-        visit(self, frame, slot, 1, &mut out)?;
+        visit(self, frame, slot, 1, &mut out, is_guest)?;
         Ok(out)
     }
     /// Trusted host admission of an exact current Wasm helper ABI/artifact chain.
