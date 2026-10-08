@@ -1,5 +1,23 @@
 # nethacked-kernel (M3a)
 
+M4-O2 adds `CallerView::call_pure(slot, request)` for authenticated native owner
+ports. It invokes the native provider's declared Wasm helper with the **same**
+fuel/call/depth budget and effective current plus retained grants/routes, imposing
+a Read ceiling throughout the descendant computation. All descendant native
+dispatches refuse before callbacks, including host ports labelled Read; declared
+Wasm helpers/extensions remain callable. Guest input must contain its bounded own
+snapshot and declared detached observations; this bridge supplies no live host
+reads. Detached view clones have neither bridge nor new pin acquisition.
+
+The returned `PureReply` includes detached bytes, exact executable resolution and
+an RAII code pin for the helper's captured dependency closure. `pin_invocation`
+retains caller/provider and retained invocation routes for owner query/candidate
+staging; `Kernel::pin_modules` is host-only code ownership without authority.
+Pins share the existing owner/reference bounds, use checked non-reused serials,
+protect both unload APIs and release on last drop. Normal invocation remains
+unchanged. The optional [`nethacked-owners`](../nethacked-owners/README.md) crate
+owns independent storage and pure domain preparation; publication remains O3.
+
 A generic, safe Rust byte runtime independent of the NetHack domain crates.
 The optional M3b resource coordinator lives in the separate
 [`nethacked-resources`](../nethacked-resources/README.md) crate. This kernel owns
@@ -137,8 +155,8 @@ refuse with `Referenced` before any registry, grant, dispatch or counter mutatio
 Registration, grants, attachment, detach, pipeline capture, release and removal require
 exclusive `&mut Kernel`; invocation holds `&Kernel` throughout all native and
 Wasm calls. The kernel is not cloned and offers no interior-mutable lifecycle
-or callback dispatcher. The capture-only exception below publishes bounded weak
-callback ownership through immutable invocation. Rust's exclusive borrowing enforces the safe boundary
+or callback dispatcher. Callback captures and RAII code pins publish bounded weak
+reference ownership through immutable invocation. Rust's exclusive borrowing enforces the safe boundary
 throughout active calls, including when a host wraps the kernel in `RefCell`.
 No guest-declared safe-point flag is accepted, and capture runs no guest/native
 initialization. Low-level `unregister` preserves its tested unpinned removal
@@ -180,7 +198,8 @@ borrows the kernel for the active call; that capture-capable view cannot
 outlive the borrow. `view.clone()` preserves the existing owned metadata snapshot
 API and returns a detached view without capture authority; snapshots may outlive
 the call and refuse capture. The owning handle can outlive it. Native ports receive no
-kernel, dispatch function, or registry. Capture invokes no code and cannot adopt,
+kernel, general dispatch function, or registry; the scoped guest-only pure bridge
+is described above. Capture invokes no code and cannot adopt,
 release leases, issue operations, change grants, or mutate executable dispatch.
 Ports should validate their request schema before capture and publish ownership
 only after their own validation. Guest JSON supplies an endpoint and requested

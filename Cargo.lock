@@ -1065,6 +1065,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "nethacked-owners"
+version = "0.1.0"
+dependencies = [
+ "nethacked-kernel",
+ "sha2",
+ "wat",
+]
+
+[[package]]
 name = "nethacked-pack"
 version = "0.3.0"
 dependencies = [

@@ -1,6 +1,6 @@
 # NetHack & NetHackED Formal Mechanics Specification
 
-The game-independent [ownership model](ownership-proof-map.md) now formalizes heterogeneous owner state, gated atomic publication and authenticated derived queries. Its runtime ownership/alias correspondence and O2–O4 implementation remain pending; these proofs do not establish NetHack behavior parity.
+The game-independent [ownership model](ownership-proof-map.md) now formalizes heterogeneous owner state, gated atomic publication and authenticated derived queries. Independent typed/blob owner storage and pure command preparation are implemented in [nethacked-owners](../crates/nethacked-owners/README.md). Atomic publication (O3), live integration (O4) and full ownership/alias correspondence remain pending; these proofs do not establish NetHack behavior parity.
 
 This document provides the formal mathematical specification for core NetHack mechanics, cross-referencing the verified **Lean 4 formalization** in [NetMechanics/](../NetMechanics/) with the legacy C implementation in `NetHack-5.0.0/`.
 

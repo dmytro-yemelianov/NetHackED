@@ -139,6 +139,7 @@ pub struct CallerView<'a> {
     pub(crate) max_reply: u32,
     pub(crate) operation: Option<OperationBinding>,
     pub(crate) callback_capture: Option<&'a dyn CallbackCapture>,
+    pub(crate) pure_call: Option<&'a dyn PureCall>,
 }
 impl Clone for CallerView<'_> {
     fn clone(&self) -> Self {
@@ -150,6 +151,24 @@ impl Clone for CallerView<'_> {
 pub(crate) trait CallbackCapture: std::fmt::Debug {
     fn capture(&self, endpoint: &str, ceiling: Authority) -> Result<RetainedCallback>;
 }
+
+/// A lifetime-bound dispatcher restricted to guest computation.
+pub(crate) trait PureCall: std::fmt::Debug {
+    fn call(&self, slot: usize, request: &[u8]) -> Result<PureReply>;
+    fn pin(&self) -> Result<ModulePin>;
+}
+
+/// Detached bytes and the exact executable chain retained by this computation.
+#[derive(Debug)]
+pub struct PureReply {
+    pub bytes: Vec<u8>,
+    pub binding: CapabilityPermit,
+    pub pin: ModulePin,
+}
+
+/// Shared bounded code ownership. Last drop releases the pin automatically.
+#[derive(Clone, Debug)]
+pub struct ModulePin(pub(crate) std::rc::Rc<crate::kernel::retention::PinData>);
 
 /// Opaque host ownership. Clones share one bounded capture; the last drop releases it.
 #[derive(Clone, Debug)]
@@ -257,6 +276,7 @@ impl CallerView<'_> {
             max_reply: self.max_reply,
             operation: self.operation.clone(),
             callback_capture: None,
+            pure_call: None,
         }
     }
 
@@ -265,6 +285,18 @@ impl CallerView<'_> {
         self.callback_capture
             .ok_or(Error::Authority)?
             .capture(endpoint, ceiling)
+    }
+    /// Invoke this native provider's declared Wasm helper using the invocation's
+    /// shared fuel/call/depth budget, retained routing and live grants. All
+    /// descendant native dispatches refuse before callbacks, even Read ports.
+    /// Detached clones deliberately have no callable bridge.
+    pub fn call_pure(&self, slot: usize, request: &[u8]) -> Result<PureReply> {
+        self.pure_call.ok_or(Error::Authority)?.call(slot, request)
+    }
+    /// Retain the exact invocation code closure for detached observations/staging.
+    /// Detached clones cannot acquire new pins or dispatch calls.
+    pub fn pin_invocation(&self) -> Result<ModulePin> {
+        self.pure_call.ok_or(Error::Authority)?.pin()
     }
     /// Inspect only the invoking module's live grants, under this call's ceiling.
     /// A permit is a snapshot, not a credential usable in a later invocation.

@@ -1,0 +1,14 @@
+[package]
+name = "nethacked-owners"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.88"
+license = "NGPL"
+description = "Independent sealed owner storage and authenticated pure domain preparation"
+
+[dependencies]
+nethacked-kernel = { path = "../nethacked-kernel" }
+sha2 = "0.10"
+
+[dev-dependencies]
+wat = "=1.228.0"

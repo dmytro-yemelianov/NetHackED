@@ -14,7 +14,8 @@ pub(crate) mod retention;
 use retention::{Retention, Routing};
 
 /// Trusted bounded native code. A refusal must precede its own effects.
-/// Callbacks receive no dispatcher, mutable kernel, or ambient host services.
+/// Callbacks receive only a lifetime-bound guest-only pure bridge, never a
+/// mutable kernel or ambient host services. Native purity remains trusted.
 pub type NativePort = Rc<dyn Fn(&[u8], &CallerView) -> Result<Vec<u8>>>;
 
 static NEXT_INSTANCE: AtomicU64 = AtomicU64::new(1);
@@ -47,6 +48,7 @@ struct Invocation {
     routing: Option<Rc<Routing>>,
     operation: Option<OperationBinding>,
     path: Option<usize>,
+    pure: bool,
 }
 pub(crate) type SharedBudget = Rc<RefCell<Budget>>;
 #[derive(Clone)]
@@ -56,6 +58,57 @@ pub(crate) struct Frame {
     pub depth: u32,
     pub routing: Option<Rc<Routing>>,
     pub operation: Option<OperationBinding>,
+    pub pure: bool,
+}
+
+struct PureBridge<'a> {
+    kernel: &'a Kernel,
+    frame: Frame,
+    budget: &'a SharedBudget,
+    caller: Option<ModuleHandle>,
+    endpoint: &'a str,
+}
+impl std::fmt::Debug for PureBridge<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("PureBridge")
+    }
+}
+impl PureCall for PureBridge<'_> {
+    fn pin(&self) -> Result<ModulePin> {
+        self.kernel
+            .pin_invocation_route(self.caller, &self.frame, self.endpoint)
+    }
+    fn call(&self, slot: usize, request: &[u8]) -> Result<PureReply> {
+        let mut frame = self.frame.clone();
+        frame.pure = true;
+        frame.authority.access = Access::Read;
+        self.kernel.attempt_slot(&frame, self.budget)?;
+        let (target, endpoint, authority, _) = self.kernel.slot_target(&frame, slot)?;
+        let resolution = self
+            .kernel
+            .resolution(target, &endpoint, frame.routing.as_deref())?;
+        let capability = self
+            .kernel
+            .registration(frame.provider)?
+            .manifest
+            .dependencies
+            .get(slot)
+            .ok_or(Error::InvalidSlot)?
+            .capability
+            .clone();
+        let pin = self
+            .kernel
+            .pin_route(target, &endpoint, authority, frame.routing.as_deref())?;
+        let bytes = self.kernel.call_slot(&frame, slot, request, self.budget)?;
+        Ok(PureReply {
+            bytes,
+            binding: CapabilityPermit {
+                capability,
+                resolution,
+            },
+            pin,
+        })
+    }
 }
 
 pub struct Kernel {
@@ -388,6 +441,7 @@ impl Kernel {
                 routing: None,
                 operation: None,
                 path: None,
+                pure: false,
             },
             &budget,
         )
@@ -468,6 +522,7 @@ impl Kernel {
                 routing: frame.routing.clone(),
                 operation: frame.operation.clone(),
                 path: Some(slot),
+                pure: frame.pure,
             },
             budget,
         )
@@ -487,6 +542,7 @@ impl Kernel {
             routing,
             operation,
             path,
+            pure,
         } = invocation;
         let original = self
             .registration(target)?
@@ -512,6 +568,24 @@ impl Kernel {
             .exports
             .get(&endpoint)
             .ok_or(Error::MissingDependency)?;
+        if pure && matches!(reg.code, Code::Native(_)) {
+            return Err(Error::Authority);
+        }
+        let frame = Frame {
+            provider: target,
+            authority: authority.clone(),
+            depth,
+            routing: routing.clone(),
+            operation: operation.clone(),
+            pure,
+        };
+        let bridge = PureBridge {
+            kernel: self,
+            frame: frame.clone(),
+            budget,
+            caller,
+            endpoint: &endpoint,
+        };
         let factory = retention::CallbackFactory {
             kernel: self,
             caller,
@@ -531,23 +605,11 @@ impl Kernel {
             max_reply: ep.max_reply,
             operation: operation.clone(),
             callback_capture: Some(&factory),
+            pure_call: Some(&bridge),
         };
         let reply = match &reg.code {
             Code::Native(ports) => ports.get(&endpoint).ok_or(Error::Signature)?(request, &view)?,
-            Code::Guest(module) => wasm::execute(
-                self,
-                module,
-                &endpoint,
-                request,
-                Frame {
-                    provider: target,
-                    authority,
-                    depth,
-                    routing,
-                    operation,
-                },
-                budget,
-            )?,
+            Code::Guest(module) => wasm::execute(self, module, &endpoint, request, frame, budget)?,
         };
         if reply.len() > ep.max_reply as usize {
             return Err(Error::Buffer);

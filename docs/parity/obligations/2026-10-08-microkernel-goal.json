@@ -5,7 +5,7 @@
   "plan_sha256": "ee920b29502ffe14128337b1a7c3193c8f895729d1f21ed2eac3e2258a30993b",
   "native_goal": "Complete NetRust microkernel architecture program; formal contracts, executable extensions, existing NetHack migration, integration audit",
   "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
-  "active_unit": "M4-O2",
+  "active_unit": "M4-O3",
   "live_handles": [],
   "acceptance": {
     "A1": "passed_generic_runtime_1fc3290",
@@ -222,12 +222,14 @@
         },
         {
           "id": "M4-O2",
-          "status": "planned",
+          "status": "complete",
           "depends_on": [
             "M4-O1"
           ],
           "contract": "docs/plans/2026-10-08-autonomous-ownership-contract.md",
-          "scope": "Independent typed/blob owner slots and routes, domain command/query ports and pure native/Wasm preparation"
+          "scope": "Independent typed/blob owner slots and routes, domain command/query ports and pure native/Wasm preparation",
+          "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-runtime-checkpoint.json",
+          "runtime": "crates/nethacked-owners/README.md"
         },
         {
           "id": "M4-O3",
@@ -307,7 +309,7 @@
       26945,
       30480
     ],
-    "next_adjustment": "Narrow O2 to independent owner slots/routing and domain command preparation over accepted kernel/ownership APIs. Reuse reviewed proof map; no new historical audit. All formal writer/review/readback soft input allowances exceeded; root unknown.",
+    "next_adjustment": "Narrow O3 to sealed multi-owner publication over accepted Owner/Candidate and shared-gate APIs; reuse existing authority/pure-bridge tests, no new history/formal audit. Writer/review exceeded uncached allowances; test-only readback17627/3065 was within its phase allowance, guard still flagged total input. Root usage unknown.",
     "authority_implementation": {
       "uncached_input": 59709,
       "output": 18592,
@@ -466,16 +468,17 @@
     "resume": "Native goal verified active on user continuation after audit."
   },
   "ownership_followup": {
-    "status": "formal_model_reviewed_runtime_pending",
+    "status": "storage_preparation_reviewed_publication_pending",
     "user_proposal": "Autonomous objects own and maintain their properties, instead of item rows in a shared authoritative database.",
     "direction_discussed": "In-process object/actor ownership behind bounded commands/events; registry locates stable IDs; modules define behavior, extensions change capabilities. Separate network microservices are not required.",
     "must_resolve_before": [
       "concrete owner-state persistence contract",
       "NetHack domain migration"
     ],
-    "current_limit": "Central resource prototype remains unchanged and does not meet autonomous ownership; O1\u2013O4 required before owner codecs and domain migration.",
+    "current_limit": "Independent typed/blob owner slots and pure authenticated preparation implemented; no live mutation/apply API yet. O3 atomic publication and O4 live behavior/service acceptance remain before M4d codecs and NetHack migration.",
     "implementation_claim": false,
     "contract": "docs/plans/2026-10-08-autonomous-ownership-contract.md",
-    "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-ownership-checkpoint.json"
+    "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-ownership-checkpoint.json",
+    "implemented_scope": "O2 independent storage and pure preparation only; full autonomous runtime awaits O3/O4"
   }
 }

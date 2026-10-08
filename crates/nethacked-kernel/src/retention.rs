@@ -43,12 +43,26 @@ struct Callbacks {
     next: u64,
     live: BTreeMap<u64, std::rc::Weak<CallbackData>>,
 }
+#[derive(Debug)]
+pub(crate) struct PinData {
+    references: BTreeSet<ModuleHandle>,
+}
+impl ModulePin {
+    pub fn module_count(&self) -> usize {
+        self.0.references.len()
+    }
+}
+struct Pins {
+    next: u64,
+    live: BTreeMap<u64, std::rc::Weak<PinData>>,
+}
 pub(super) struct Retention {
     limits: RetentionLimits,
     next_serial: u64,
     pipelines: BTreeMap<PipelineLease, Pipeline>,
     owners: BTreeMap<OwnerReference, BTreeSet<ModuleHandle>>,
     callbacks: RefCell<Callbacks>,
+    pins: RefCell<Pins>,
 }
 impl Default for Retention {
     fn default() -> Self {
@@ -58,6 +72,10 @@ impl Default for Retention {
             pipelines: BTreeMap::new(),
             owners: BTreeMap::new(),
             callbacks: RefCell::new(Callbacks {
+                next: 1,
+                live: BTreeMap::new(),
+            }),
+            pins: RefCell::new(Pins {
                 next: 1,
                 live: BTreeMap::new(),
             }),
@@ -381,7 +399,15 @@ impl Kernel {
             attachments: self.extensions.len(),
             grants: self.grants.len(),
             leases: self.retention.pipelines.len(),
-            owners: self.retention.owners.len(),
+            owners: self.retention.owners.len()
+                + self
+                    .retention
+                    .pins
+                    .borrow()
+                    .live
+                    .values()
+                    .filter(|p| p.strong_count() > 0)
+                    .count(),
             references: self
                 .retention
                 .pipelines
@@ -397,6 +423,15 @@ impl Kernel {
                 + live
                     .iter()
                     .map(|c| c.pipeline.references.len())
+                    .sum::<usize>()
+                + self
+                    .retention
+                    .pins
+                    .borrow()
+                    .live
+                    .values()
+                    .filter_map(std::rc::Weak::upgrade)
+                    .map(|p| p.references.len())
                     .sum::<usize>(),
             next_generation: self.next_generation,
             next_retention: self.retention.next_serial,
@@ -602,6 +637,7 @@ impl Kernel {
                 routing: Some(pipeline.routing.clone()),
                 operation,
                 path: None,
+                pure: false,
             },
             &budget,
         )
@@ -619,7 +655,7 @@ impl Kernel {
     pub fn retain_owner(&mut self, handles: &[ModuleHandle]) -> Result<OwnerReference> {
         if handles.is_empty()
             || handles.len() > self.retention.limits.nodes
-            || self.retention.owners.len() >= self.retention.limits.owners
+            || self.lifecycle_state().owners >= self.retention.limits.owners
         {
             return Err(Error::Limit);
         }
@@ -651,6 +687,63 @@ impl Kernel {
         Ok(())
     }
 
+    /// RAII module references for optional owner-local storage and prepared work.
+    /// This pins code only; it confers no invocation authority.
+    pub fn pin_modules(&self, handles: &[ModuleHandle]) -> Result<ModulePin> {
+        if handles.is_empty() || handles.len() > self.retention.limits.nodes {
+            return Err(Error::Limit);
+        }
+        let references: BTreeSet<_> = handles.iter().copied().collect();
+        for handle in &references {
+            self.registration(*handle)?;
+        }
+        if self.lifecycle_state().owners >= self.retention.limits.owners {
+            return Err(Error::Limit);
+        }
+        self.reference_capacity(references.len())?;
+        let mut pins = self.retention.pins.borrow_mut();
+        let next = pins.next.checked_add(1).ok_or(Error::Limit)?;
+        let pin = Rc::new(PinData { references });
+        pins.live.retain(|_, p| p.strong_count() > 0);
+        let serial = pins.next;
+        pins.live.insert(serial, Rc::downgrade(&pin));
+        pins.next = next;
+        Ok(ModulePin(pin))
+    }
+
+    pub(super) fn pin_route(
+        &self,
+        target: ModuleHandle,
+        endpoint: &str,
+        ceiling: Authority,
+        routing: Option<&Routing>,
+    ) -> Result<ModulePin> {
+        let pipeline = self.build_pipeline(target, endpoint, ceiling, routing)?;
+        self.pin_modules(&pipeline.references.into_iter().collect::<Vec<_>>())
+    }
+    pub(super) fn pin_invocation_route(
+        &self,
+        caller: Option<ModuleHandle>,
+        frame: &Frame,
+        endpoint: &str,
+    ) -> Result<ModulePin> {
+        let mut references = self
+            .build_pipeline(
+                frame.provider,
+                endpoint,
+                frame.authority.clone(),
+                frame.routing.as_deref(),
+            )?
+            .references;
+        references.extend(caller);
+        if let Some(routing) = &frame.routing {
+            for route in routing.routes.values() {
+                references.extend(route.iter().map(|b| b.handle));
+            }
+        }
+        self.pin_modules(&references.into_iter().collect::<Vec<_>>())
+    }
+
     pub(super) fn unreferenced(&self, handle: ModuleHandle) -> Result<()> {
         if self
             .retention
@@ -658,6 +751,14 @@ impl Kernel {
             .values()
             .any(|p| p.references.contains(&handle))
             || self.retention.owners.values().any(|r| r.contains(&handle))
+            || self
+                .retention
+                .pins
+                .borrow()
+                .live
+                .values()
+                .filter_map(std::rc::Weak::upgrade)
+                .any(|p| p.references.contains(&handle))
             || self
                 .retention
                 .callbacks

@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "crates/nethacked-owners",
     "crates/nethacked-timers",
     "crates/nethacked-inputs",
     "crates/nethacked-workflows",
