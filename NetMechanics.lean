@@ -5,6 +5,7 @@ import NetMechanics.Architecture
 import NetMechanics.Workflow
 import NetMechanics.Authority
 import NetMechanics.Services
+import NetMechanics.Ownership
 import NetMechanics.BUC
 import NetMechanics.Inventory
 import NetMechanics.Energy
