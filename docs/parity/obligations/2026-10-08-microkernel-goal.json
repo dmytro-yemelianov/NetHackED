@@ -5,7 +5,7 @@
   "plan_sha256": "480c70bd0abfcff5a229e3e1612dee00b54c0af3da43c0b5ac441557f0e86d6c",
   "native_goal": "Complete NetRust microkernel architecture program; formal contracts, executable extensions, existing NetHack migration, integration audit",
   "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
-  "active_unit": "M4c",
+  "active_unit": "M4c-timers",
   "live_handles": [],
   "acceptance": {
     "A1": "passed_generic_runtime_1fc3290",
@@ -151,7 +151,7 @@
         },
         {
           "id": "M4c",
-          "status": "planned",
+          "status": "in_progress",
           "depends_on": [
             "M4b"
           ],
@@ -159,11 +159,13 @@
           "units": [
             {
               "id": "M4c-input",
-              "status": "planned",
+              "status": "complete",
               "depends_on": [
                 "M4b"
               ],
-              "scope": "Recorded input ownership/replay over authoritative checkpoints; optional policy/provider interface"
+              "scope": "Recorded input ownership/replay over authoritative checkpoints; optional policy/provider interface",
+              "contract": "docs/plans/2026-10-08-recorded-input-runtime-contract.md",
+              "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-input-checkpoint.json"
             },
             {
               "id": "M4c-timers",
@@ -216,7 +218,7 @@
     "S1": "reviewed_formal_authority_and_generic_runtime;native_artifact_fidelity_trusted",
     "S2": "reviewed formal protocol and generic authoritative runtime; domain integration pending",
     "S3": "reviewed formal atomic protocol and generic runtime with authenticated phase-operation binding/cleanup",
-    "S4": "reviewed_checked_recorded_input_contract;vanilla_stream_runtime_pending",
+    "S4": "reviewed formal contract and generic authenticated recorded-input runtime; vanilla stream adapter and durable input continuation pending",
     "S5": "reviewed_checked_timer_admission_contract;callback_effects_profile_scheduler_runtime_pending",
     "S6": "reviewed_checked_restore_contract;codec_law_assumed_real_codec_pending",
     "S7": "generic retained routing/references and authoritative workflow lifecycle verified; schema/persistence lifecycle pending"
@@ -234,7 +236,7 @@
       26945,
       30480
     ],
-    "next_adjustment": "Split M4c into input and timer service units over accepted workflow bindings. Compact interface contracts, medium-first writer and fresh high review of delta; no architecture/history re-audit.",
+    "next_adjustment": "Timer ownership/callback unit only, reuse accepted operation/pinning/input APIs and source facts; no fresh architecture/history audit. Medium-first concrete protocol implementation, fresh high semantic review.",
     "authority_implementation": {
       "uncached_input": 59709,
       "output": 18592,
@@ -341,6 +343,18 @@
       "output": 5182,
       "status": "exceeded",
       "adjustment": "Complete local gates/commit. Split M4c into recorded-input and timer units; reuse accepted workflow and authority contracts, no repeated architecture audit."
+    },
+    "input_implementation": {
+      "uncached_input": 79765,
+      "output": 27781,
+      "status": "exceeded",
+      "adjustment": "Narrow review to new input service/fixtures and Cargo diff; accepted kernel/workflow interfaces and previous formal review reused. No broad architecture/history audit or duplicate tests."
+    },
+    "input_review": {
+      "uncached_input": 72382,
+      "output": 5589,
+      "status": "exceeded",
+      "adjustment": "Finish gates/commit locally. Next timer unit reuses accepted operation/pinning/input interfaces; review new timer delta only, no architecture history."
     }
   },
   "requested_interlude": {

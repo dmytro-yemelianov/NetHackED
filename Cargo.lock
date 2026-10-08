@@ -1042,6 +1042,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "nethacked-inputs"
+version = "0.1.0"
+dependencies = [
+ "nethacked-kernel",
+ "nethacked-resources",
+ "nethacked-workflows",
+ "serde",
+ "serde_json",
+ "wat",
+]
+
+[[package]]
 name = "nethacked-kernel"
 version = "0.1.0"
 dependencies = [

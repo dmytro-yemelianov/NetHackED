@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "crates/nethacked-inputs",
     "crates/nethacked-workflows",
     "crates/nethacked-kernel",
     "crates/nethacked-resources",

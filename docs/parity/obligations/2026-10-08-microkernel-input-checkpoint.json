@@ -1,0 +1,67 @@
+{
+  "schema": 1,
+  "status": "verified_for_containing_commit",
+  "baseline_head": "fc95356f2d9e4964b73ed325be70964cac2b5481",
+  "milestone": "M4c-input",
+  "scope": "Optional recorded source/input service with authenticated operation ownership and no-resample checkpoint replay",
+  "new_tests": 9,
+  "review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RECORDED-INPUT/review/answer.txt",
+    "sha256": "91cd33245afc00fa84fb2b6fa74ccfc48aa5cd867453807b76f0b64bf787d649"
+  },
+  "review_inputs": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RECORDED-INPUT/review-source.json",
+    "sha256": "5b2cbcb0efa1aa1a24284f794a43e67cea963041ac2883d4d59c7bfb1b6dc1ae"
+  },
+  "full_gates": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RECORDED-INPUT/full-gates/accepted.json",
+    "sha256": "5a2aa8825ba153af561bc473eb494ffa255515b1c581eef42d662de5e90d2073"
+  },
+  "gate_result": {
+    "head": "fc95356f2d9e4964b73ed325be70964cac2b5481",
+    "tests": 1106,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "digest": "a777c745c1dd2875e10bbe20d9940769bef8c9c0e5b10840922191ec66bace3f",
+    "checks": 12
+  },
+  "focused_checks": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RECORDED-INPUT/writer-evidence/summary.json",
+    "sha256": "b9c4191a7746a8a9ae911ae8fae13c058bd5c31669ebc9ed0cbaa8e7e41680f9"
+  },
+  "focused_test_count": 9,
+  "actual_wasm32": "nethacked-inputs",
+  "source_hashes": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RECORDED-INPUT/writer-evidence/final.sources.sha256",
+    "sha256": "cfa4258cde3ef69a4a0e3f0d09687ab46b657e57ac3ac54f9fc3519f579cd86f"
+  },
+  "repair_history": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RECORDED-INPUT/writer-evidence/failure-history.md",
+    "sha256": "7e455f9330b889f09e2fac22eac5eef6cfc164db88dea404a5b40783ba96dae2"
+  },
+  "source_unchanged": true,
+  "usage": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RECORDED-INPUT/implementation/usage.json",
+      "sha256": "6175c21b46328d2623bfba381af1375316303fc68d9db9e94d4957053e14e8a7"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RECORDED-INPUT/review/usage.json",
+      "sha256": "0a53df1624cdf9faad49d8ff7cd92a8dfd4ae679bbd176719ac721b62faa0350"
+    }
+  ],
+  "meter_note": "Writer79765uncached/27781output and review72382uncached/5589output exceeded soft thresholds; rootusageunknown. No savings/compliance claim. Next timer unit reuses accepted workflow/pinning/input interfaces and reviews only timer delta.",
+  "old_tests_helpers_goldens_changed": false,
+  "acceptance": "All five input fixture groups verified through actual guest and authoritative workflow paths; source/ledger/counters publish atomically and replay never resamples. No durable restoration or vanilla RNG migration claim.",
+  "native_goal_status": "active; M4c-timers next",
+  "parity_families_closed": 0,
+  "residuals": [
+    "Optional timer admission, callback failure policy and continuation ownership",
+    "Concrete codec/restoration and supported legacy NetHack saves",
+    "Vanilla RNG/input adapter and populated NetHack live extension/domain migration",
+    "Trusted native policy identity/boundedness/no external authoritative mutation; finite ledger without eviction; process-local IDs; no composed Rust/Lean refinement proof"
+  ]
+}
