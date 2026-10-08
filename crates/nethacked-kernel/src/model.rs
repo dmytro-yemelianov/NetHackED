@@ -17,6 +17,8 @@ pub enum Error {
     Limit,
     Trap,
     NativeRefusal,
+    Referenced,
+    Cycle,
 }
 
 impl Error {
@@ -80,6 +82,9 @@ pub struct Authority {
     pub scope: Scope,
 }
 impl Authority {
+    pub(crate) fn contains(&self, other: &Self) -> bool {
+        other.access <= self.access && self.scope.intersect(&other.scope) == other.scope
+    }
     pub(crate) fn intersect(&self, other: &Self) -> Self {
         Self {
             access: self.access.min(other.access),
@@ -146,6 +151,61 @@ pub struct ProviderBinding {
 pub struct CapabilityPermit {
     pub capability: Capability,
     pub resolution: Vec<ProviderBinding>,
+}
+
+/// Ephemeral trusted-host identity. No wire constructor or serialization.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
+pub struct PipelineLease {
+    pub(crate) instance: u64,
+    pub(crate) serial: u64,
+}
+
+/// An explicit host-owned reference set for optional services.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
+pub struct OwnerReference {
+    pub(crate) instance: u64,
+    pub(crate) serial: u64,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PipelineDescriptor {
+    pub root: ProviderBinding,
+    pub ceiling: Authority,
+    pub routes: Vec<Vec<ProviderBinding>>,
+    /// Runtime-local binding digest, not a persistence or machine-code claim.
+    pub hash: [u8; 32],
+}
+
+#[derive(Clone, Debug)]
+pub struct RetentionLimits {
+    pub leases: usize,
+    pub owners: usize,
+    pub nodes: usize,
+    pub slots: usize,
+    pub references: usize,
+}
+impl Default for RetentionLimits {
+    fn default() -> Self {
+        Self {
+            leases: 128,
+            owners: 128,
+            nodes: 1024,
+            slots: 1024,
+            references: 4096,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct LifecycleState {
+    pub registrations: usize,
+    pub attachments: usize,
+    pub grants: usize,
+    pub leases: usize,
+    pub owners: usize,
+    pub references: usize,
+    pub next_generation: u64,
+    pub next_retention: u64,
 }
 impl CallerView {
     /// Inspect only the invoking module's live grants, under this call's ceiling.

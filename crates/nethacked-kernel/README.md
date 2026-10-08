@@ -71,3 +71,84 @@ Acceptance requires package tests/clippy, formatting, and an actual standalone
 `cargo build -p nethacked-kernel --target wasm32-unknown-unknown --locked`.
 Independent semantic review and full workspace gates/goldens belong to the root
 follow-up; this package alone does not complete M3 or A3.
+
+## M4a retained execution and lifecycle
+
+`capture_pipeline(provider, endpoint, ceiling)` publishes an opaque
+`PipelineLease` only after a bounded traversal succeeds. It freezes the root
+callable and every ordered extension resolution in the transitive declared
+capability graph of every original/extension module encountered. This includes
+native and guest code and permission-only Read slots to Write-capable resource
+owner ports. All referenced registrations stay installed; the private immutable
+routing map and registration artifacts bind execution to exact incarnations.
+Declared cycles are unsupported and return `Cycle`; missing dependencies and
+limits refuse before publication, reference changes, or serial advancement.
+Capture is conservative: dependencies of intermediate originals are retained
+also, even when an extension currently replaces their execution.
+
+`invoke_pipeline(lease, request, authority)` calls only the captured root.
+Authority must fit the captured root ceiling, otherwise it returns `Authority`.
+Each nested call checks current caller registration, original provider and
+major, live grant and its exact target, request/reply bounds, and ancestor
+scope/access ceilings. It additionally intersects the live grant with that
+slot's captured ceiling. A slot without an active issued grant at capture has
+no retained authority, even if later granted; its code is still referenced.
+Revoke/narrow affects the next resumed invocation immediately. Increasing a
+grant cannot exceed its captured ceiling. Call, depth, fuel, memory and ABI
+preflight follow the ordinary dispatcher; completed native effects remain a
+committed prefix. Nothing captures guest RAM or native service state.
+
+`CallerView::permit` uses the same immutable route map as retained execution,
+with current grants and captured slot ceilings. Read participant permission
+remains distinct from admission to a Write owner endpoint. Resource-service
+prepare/commit can therefore validate the exact old chain after ordinary
+dispatch changes, while still refusing revoked/narrowed participants. Separate
+leases for prepare and commit demonstrate composition, not checkpoint ownership.
+
+`pipeline_descriptor` exposes an immutable root, ceiling, ordered routes and
+SHA-256 binding digest. The digest covers length-framed runtime-local handles,
+artifacts, exports, route boundaries, and canonical root/slot authority data.
+Native artifacts still identify host-supplied bytes, not callback machine code.
+Lease and owner-reference identities have private instance/serial fields, no
+wire constructors and no serde implementation. One checked monotonic serial
+space is shared by leases and owner references; release never reuses identities.
+Foreign, fabricated, released and stale identities return `InvalidHandle`.
+There is no restart identity, schema version, snapshot or restoration codec.
+
+`RetentionLimits` bounds live leases, owner sets, total route binding entries,
+captured slots, and aggregate references (one per unique module per lease/owner).
+`set_retention_limits` requires no live reference owners. `retain_owner` takes a
+bounded nonempty list of live handles, deduplicates it, and returns an opaque
+`OwnerReference`; `release_owner` releases only that set. Optional resource,
+schema and timer hosts must explicitly retain their own code references.
+`release_pipeline` removes exactly its lease, leaving other owners untouched.
+`lifecycle_state` provides counts and next counters for host diagnostics.
+
+`managed_detach(extension)` removes its current dispatch attachment while
+retained calls keep using the captured chain. `managed_attach(extension)` can
+reattach only to its original live target incarnation and refuses occupied
+points. `managed_unload(handle)` checks all retained/owner references, current
+extension dispatch edges, and other registered modules' dependency/attachment
+bindings before removal. Original dependency bindings and current capability
+providers both protect targets, including after legacy unpinned replacement.
+An unattached original with no dependents/references can be unloaded. Checks
+refuse with `Referenced` before any registry, grant, dispatch or counter mutation.
+
+Registration, grants, attachment, detach, capture, release and removal require
+exclusive `&mut Kernel`; invocation holds `&Kernel` throughout all native and
+Wasm calls. The kernel is not cloned and offers no interior-mutable lifecycle
+or callback dispatcher. Rust's exclusive borrowing enforces the safe boundary
+throughout active calls, including when a host wraps the kernel in `RefCell`.
+No guest-declared safe-point flag is accepted, and capture runs no guest/native
+initialization. Low-level `unregister` preserves its tested unpinned removal
+semantics (it may orphan dependents), but always checks retained/owner references.
+It cannot bypass pins. New workflow/session hosts should use managed APIs.
+
+Correspondence: `PipelineDescriptor` plus the private routing/code bindings
+realize the executable-binding prerequisite of `Workflow.Pipeline`;
+`PipelineLease`, managed lifecycle checks and both reference maps implement the
+runtime counterpart of `Services.Lifecycle.BoundPipeline`/`liveReferences`.
+These are concrete host interfaces, not a proved cross-language refinement.
+M4b authoritative workflow frames/checkpoints/resource-operation ownership,
+M4c input/timer callbacks and retry ownership, and M4d schemas/codecs/restoration
+remain pending. No A4/A5 or NetHack migration acceptance follows from M4a.

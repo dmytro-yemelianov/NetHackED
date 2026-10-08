@@ -9,6 +9,10 @@ use std::{
 };
 use wasmi::{Config, Engine, Module};
 
+#[path = "retention.rs"]
+mod retention;
+use retention::{Retention, Routing};
+
 /// Trusted bounded native code. A refusal must precede its own effects.
 /// Callbacks receive no dispatcher, mutable kernel, or ambient host services.
 pub type NativePort = Rc<dyn Fn(&[u8], &CallerView) -> Result<Vec<u8>>>;
@@ -23,6 +27,8 @@ pub(crate) struct Registration {
     pub manifest: Manifest,
     pub artifact: [u8; 32],
     pub code: Code,
+    dependencies: Vec<ModuleHandle>,
+    attachment: Option<(ModuleHandle, String, String)>,
 }
 struct Grant {
     target: ModuleHandle,
@@ -38,6 +44,7 @@ struct Invocation {
     caller: Option<ModuleHandle>,
     authority: Authority,
     depth: u32,
+    routing: Option<Rc<Routing>>,
 }
 pub(crate) type SharedBudget = Rc<RefCell<Budget>>;
 #[derive(Clone)]
@@ -45,6 +52,7 @@ pub(crate) struct Frame {
     pub provider: ModuleHandle,
     pub authority: Authority,
     pub depth: u32,
+    pub routing: Option<Rc<Routing>>,
 }
 
 pub struct Kernel {
@@ -56,6 +64,7 @@ pub struct Kernel {
     ids: BTreeMap<String, ModuleHandle>,
     grants: BTreeMap<(ModuleHandle, usize), Grant>,
     extensions: BTreeMap<(ModuleHandle, String), (ModuleHandle, String)>,
+    retention: Retention,
 }
 
 impl Kernel {
@@ -99,6 +108,7 @@ impl Kernel {
             ids: BTreeMap::new(),
             grants: BTreeMap::new(),
             extensions: BTreeMap::new(),
+            retention: Retention::default(),
         })
     }
 
@@ -244,6 +254,17 @@ impl Kernel {
             digest.update(part);
         }
         let artifact = digest.finalize().into();
+        let dependencies = manifest
+            .dependencies
+            .iter()
+            .map(|dep| {
+                if dep.capability.provider == manifest.id {
+                    Ok(handle)
+                } else {
+                    self.capability(&dep.capability).map(|(h, _)| h)
+                }
+            })
+            .collect::<Result<Vec<_>>>()?;
         self.ids.insert(manifest.id.clone(), handle);
         self.registrations.insert(
             handle,
@@ -251,6 +272,8 @@ impl Kernel {
                 manifest,
                 artifact,
                 code,
+                dependencies,
+                attachment: attachment.clone(),
             },
         );
         if let Some((host, point, export)) = attachment {
@@ -328,6 +351,7 @@ impl Kernel {
     }
     pub fn unregister(&mut self, handle: ModuleHandle) -> Result<()> {
         let id = self.registration(handle)?.manifest.id.clone();
+        self.unreferenced(handle)?;
         self.ids.remove(&id);
         self.registrations.remove(&handle);
         self.grants.retain(|(caller, _), _| *caller != handle);
@@ -356,6 +380,7 @@ impl Kernel {
                 caller: None,
                 authority,
                 depth: 1,
+                routing: None,
             },
             &budget,
         )
@@ -391,13 +416,23 @@ impl Kernel {
         if target != grant.target {
             return Err(Error::InvalidHandle);
         }
-        let authority = frame
+        let mut authority = frame
             .authority
             .intersect(&grant.authority)
             .intersect(&Authority {
                 access: dep.access,
                 scope: Scope::All,
             });
+        if let Some(routing) = &frame.routing {
+            let retained = routing
+                .slots
+                .get(&(frame.provider, slot))
+                .ok_or(Error::InvalidSlot)?;
+            if retained.target != target {
+                return Err(Error::InvalidHandle);
+            }
+            authority = authority.intersect(retained.ceiling.as_ref().ok_or(Error::MissingGrant)?);
+        }
         if authority.access < ep.access {
             return Err(Error::Authority);
         }
@@ -423,6 +458,7 @@ impl Kernel {
                 caller: Some(frame.provider),
                 authority,
                 depth,
+                routing: frame.routing.clone(),
             },
             budget,
         )
@@ -439,6 +475,7 @@ impl Kernel {
             caller,
             mut authority,
             depth,
+            routing,
         } = invocation;
         let original = self
             .registration(target)?
@@ -454,16 +491,10 @@ impl Kernel {
         }
         // A read endpoint itself imposes a ceiling, even for a trusted write invocation.
         authority.access = authority.access.min(original.access);
-        let mut endpoint = endpoint.to_owned();
-        let mut hops = 0;
-        while let Some((next, export)) = self.extensions.get(&(target, endpoint.clone())) {
-            hops += 1;
-            if hops > self.limits.depth {
-                return Err(Error::Limit);
-            }
-            target = *next;
-            endpoint = export.clone();
-        }
+        let resolution = self.resolution(target, endpoint, routing.as_deref())?;
+        let binding = resolution.last().ok_or(Error::MissingDependency)?;
+        target = binding.handle;
+        let endpoint = binding.endpoint.clone();
         let reg = self.registration(target)?;
         let ep = reg
             .manifest
@@ -476,7 +507,7 @@ impl Kernel {
             provider: target,
             provider_artifact: reg.artifact,
             authority: authority.clone(),
-            permits: self.inspect_permits(caller, &authority)?,
+            permits: self.inspect_permits(caller, &authority, routing.as_deref())?,
             max_reply: ep.max_reply,
         };
         let reply = match &reg.code {
@@ -490,6 +521,7 @@ impl Kernel {
                     provider: target,
                     authority,
                     depth,
+                    routing,
                 },
                 budget,
             )?,
@@ -504,6 +536,7 @@ impl Kernel {
         &self,
         caller: Option<ModuleHandle>,
         ceiling: &Authority,
+        routing: Option<&Routing>,
     ) -> Result<Vec<(CapabilityPermit, Authority)>> {
         let Some(caller) = caller else {
             return Ok(Vec::new());
@@ -519,35 +552,31 @@ impl Kernel {
             let Some(grant) = self.grants.get(&(caller, slot)).filter(|g| g.active) else {
                 continue;
             };
-            let Ok((mut target, _)) = self.capability(&dep.capability) else {
+            let Ok((target, _)) = self.capability(&dep.capability) else {
                 continue;
             };
             if target != grant.target {
                 continue;
             }
-            let mut endpoint = dep.capability.endpoint.clone();
-            let mut resolution = Vec::new();
-            loop {
-                if resolution.len() > self.limits.depth as usize {
-                    continue 'slots;
-                }
-                resolution.push(ProviderBinding {
-                    handle: target,
-                    artifact: self.artifact(target)?,
-                    endpoint: endpoint.clone(),
-                });
-                let Some((next, export)) = self.extensions.get(&(target, endpoint.clone())) else {
-                    break;
-                };
-                target = *next;
-                endpoint = export.clone();
-            }
+            let resolution = self.resolution(target, &dep.capability.endpoint, routing)?;
             // Participant access is distinct from endpoint admission access: a
             // read dependency may inspect a write-capable owner's resource.
-            let authority = ceiling.intersect(&grant.authority).intersect(&Authority {
+            let mut authority = ceiling.intersect(&grant.authority).intersect(&Authority {
                 access: dep.access,
                 scope: Scope::All,
             });
+            if let Some(routing) = routing {
+                let Some(retained) = routing.slots.get(&(caller, slot)) else {
+                    continue 'slots;
+                };
+                let Some(captured) = &retained.ceiling else {
+                    continue 'slots;
+                };
+                if retained.target != target {
+                    continue 'slots;
+                }
+                authority = authority.intersect(captured);
+            }
             permits.push((
                 CapabilityPermit {
                     capability: dep.capability.clone(),
