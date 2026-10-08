@@ -9,6 +9,8 @@ use std::{
 };
 use wasmi::{Config, Engine, Module};
 
+#[path = "persistence.rs"]
+pub mod persistence;
 #[path = "retention.rs"]
 pub(crate) mod retention;
 use retention::{Retention, Routing};
@@ -151,6 +153,7 @@ pub struct Kernel {
     grants: BTreeMap<(ModuleHandle, usize), Grant>,
     extensions: BTreeMap<(ModuleHandle, String), (ModuleHandle, String)>,
     retention: Retention,
+    historical_instances: std::collections::BTreeSet<u64>,
 }
 
 impl Kernel {
@@ -290,6 +293,7 @@ impl Kernel {
             grants: BTreeMap::new(),
             extensions: BTreeMap::new(),
             retention: Retention::default(),
+            historical_instances: std::collections::BTreeSet::new(),
         })
     }
 

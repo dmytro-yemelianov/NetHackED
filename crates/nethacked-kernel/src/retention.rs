@@ -83,6 +83,52 @@ impl Default for Retention {
     }
 }
 
+impl Retention {
+    pub(super) fn empty_history(&self) -> Result<(RetentionLimits, [u64; 3])> {
+        if !self.pipelines.is_empty()
+            || !self.owners.is_empty()
+            || self
+                .callbacks
+                .borrow()
+                .live
+                .values()
+                .any(|v| v.strong_count() != 0)
+            || self
+                .pins
+                .borrow()
+                .live
+                .values()
+                .any(|v| v.strong_count() != 0)
+        {
+            return Err(Error::Referenced);
+        }
+        Ok((
+            self.limits.clone(),
+            [
+                self.next_serial,
+                self.callbacks.borrow().next,
+                self.pins.borrow().next,
+            ],
+        ))
+    }
+
+    pub(super) fn restore_empty_history(
+        &mut self,
+        limits: RetentionLimits,
+        counters: [u64; 3],
+    ) -> Result<()> {
+        if counters.contains(&0) {
+            return Err(Error::Limit);
+        }
+        self.empty_history()?;
+        self.limits = limits;
+        self.next_serial = counters[0];
+        self.callbacks.borrow_mut().next = counters[1];
+        self.pins.borrow_mut().next = counters[2];
+        Ok(())
+    }
+}
+
 struct Capture<'a> {
     kernel: &'a Kernel,
     ceiling: &'a Authority,

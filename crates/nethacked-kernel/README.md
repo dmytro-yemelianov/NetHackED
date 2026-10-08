@@ -21,7 +21,7 @@ owns independent storage and pure domain preparation; publication remains O3.
 A generic, safe Rust byte runtime independent of the NetHack domain crates.
 The optional M3b resource coordinator lives in the separate
 [`nethacked-resources`](../nethacked-resources/README.md) crate. This kernel owns
-no resource state or M4 persistence. Registration and invocation APIs are
+no resource state or coherent M4 host persistence. Registration and invocation APIs are
 trusted host APIs; guests
 receive only the ABI below.
 
@@ -131,7 +131,8 @@ Lease and owner-reference identities have private instance/serial fields, no
 wire constructors and no serde implementation. One checked monotonic serial
 space is shared by leases and owner references; release never reuses identities.
 Foreign, fabricated, released and stale identities return `InvalidHandle`.
-There is no restart identity, schema version, snapshot or restoration codec.
+These opaque runtime identities have no serialization or wire constructors.
+The D3a registry seam below excludes live retained work.
 
 `RetentionLimits` bounds live leases, owner sets, total route binding entries,
 captured slots, and aggregate references (one per unique module per lease/owner).
@@ -258,3 +259,35 @@ read-only admission on a captured callback using the same retained-route validat
 as `preflight_pipeline`, plus future operation-context bounds. It consumes no
 adoption counters or leases. Optional timer owners can therefore refuse invalid
 requests before calling `adopt_callback`; native ports still receive only CallerView.
+
+
+## D3a registry reconstruction
+
+`registry_snapshot(&mut Kernel)` captures bounded local registration records,
+exact native-v1/Wasm-ABI-v1 artifacts and manifests, ordered incarnation-bound
+imports, original extension targets, current dispatch, active/revoked grants,
+namespace history and generation/operation/empty-retention high-water counters.
+Saved generation IDs are data. `restore_registry` builds a hidden kernel using
+normal registration and the actual guest loader, compares the complete approved
+manifest/kind and recomputed artifact (including the original target artifact),
+then exchanges the destination only after complete admission. Multiple installed
+detached extensions remain detached; no guest/native invocation or initialization
+callback runs during reconstruction. Old opaque handles remain invalid.
+
+`RegistryAuthority` must resolve exact allowlisted guest bytes or freshly created
+native factories. Native factory purity, bounds, effect-free construction/drop,
+and exclusion of source service aliases are explicit host assumptions. Saved
+grants are requests: checked host resource bindings remap keys and independent
+host policy approves destination authority. Approval may explicitly narrow access
+or keys but cannot broaden the mapped request; revoked grants stay revoked.
+Required unsupported authority must refuse. Current calls still check live grants.
+Exact runtime limits must match the destination profile; retention limits may
+narrow it. Namespace allocation excludes every saved historical/source namespace,
+including in a fresh process, using bounded skips and checked exhaustion.
+
+Live leases, owner references, pins, callbacks and pure captures refuse capture
+and restore; D3b must encode these rather than discard them. Retired holes and
+empty-retention serial history survive. These records are not a competing wire
+transport: D4 will adapt this seam to D1's bounded envelope and the complete host
+barrier/authority exclusion. D3b retained graphs, D3c owner prepared/retained state,
+D4–D6/A5 and M5–M7 remain open; aggregate D3 is not reduced by D3a.

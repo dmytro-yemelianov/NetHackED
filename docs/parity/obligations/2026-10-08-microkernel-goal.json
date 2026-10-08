@@ -2,10 +2,10 @@
   "schema": 1,
   "status": "active",
   "plan": "docs/plans/2026-10-08-microkernel-goal.md",
-  "plan_sha256": "79328bd75c9a86c729984adeb3f219426612a545a20a0f8fc7debe36990c9eb5",
+  "plan_sha256": "8c2764093e47cc70aa8c86fe81698f1428bb07c6163a4dd2fcd49629f93cd786",
   "native_goal": "Complete NetRust microkernel architecture program; formal contracts, executable extensions, existing NetHack migration, integration audit",
   "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
-  "active_unit": "M4d-D3",
+  "active_unit": "M4d-D3b",
   "live_handles": [],
   "acceptance": {
     "A1": "passed_generic_runtime_1fc3290",
@@ -292,7 +292,7 @@
             "M4-O4"
           ],
           "scope": "Concrete autonomous-owner codecs/restoration and executable/schema validation; full A5 including supported legacy compatibility",
-          "current_phase": "D2_verified_D3_retained_kernel_next",
+          "current_phase": "D3a_verified_D3b_retained_kernel_next",
           "contract": "docs/plans/2026-10-08-owner-persistence-contract.md",
           "design_checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-persistence-contract-checkpoint.json",
           "units": [
@@ -340,7 +340,7 @@
             },
             {
               "id": "M4d-D3",
-              "status": "planned",
+              "status": "in_progress",
               "depends_on": [
                 "M4d-D2"
               ],
@@ -350,6 +350,47 @@
               "acceptance_requirements": [
                 "Old complete guest/import/native codec retained while current dispatch differs",
                 "Missing artifacts, changed ABI/grants, forged origins and consumed prepared batch replay refuse"
+              ],
+              "units": [
+                {
+                  "id": "M4d-D3a",
+                  "status": "complete",
+                  "depends_on": [
+                    "M4d-D2"
+                  ],
+                  "scope": "Bounded module registry/artifact/current-dispatch capture and hidden reconstruction with host-approved grants, fresh identities and counter preservation; live retention unsupported until D3b",
+                  "acceptance_requirements": [
+                    "Fresh native/Wasm registry roundtrip with current and detached extension state, dependency slots and independently approved grant remaps",
+                    "Missing/changed artifact, manifest/ABI/grants, stale handles, invalid counters and unsupported live retention refuse without domain effects"
+                  ],
+                  "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-kernel-registry-checkpoint.json",
+                  "runtime": "crates/nethacked-kernel/README.md"
+                },
+                {
+                  "id": "M4d-D3b",
+                  "status": "planned",
+                  "depends_on": [
+                    "M4d-D3a"
+                  ],
+                  "scope": "Complete retained kernel graph reconstruction: exact old routing versus current dispatch, operations/leases/cleanup bindings, shared owner refs/pins/callbacks/pure captures",
+                  "acceptance_requirements": [
+                    "Old complete guest/import chain still executes while new calls use current dispatch after fresh reconstruction",
+                    "Missing code, forged origins, incomplete aliases and insufficient destination authority refuse; remap all namespaces and protect unload until references release"
+                  ]
+                },
+                {
+                  "id": "M4d-D3c",
+                  "status": "planned",
+                  "depends_on": [
+                    "M4d-D3b"
+                  ],
+                  "scope": "Owner retained behavior and private prepared-state codecs, sealed batch reconstruction and aggregate D3 acceptance",
+                  "acceptance_requirements": [
+                    "Restore exact retained native codec/policy/helper and independent next-state candidates without domain re-preparation",
+                    "Pending batch commits once under fresh authoritative views; replay, missing old codecs/grants, mismatched observations/receipts/aliases refuse",
+                    "Combined D3a-D3c review accepts every original D3 requirement before D4"
+                  ]
+                }
               ]
             },
             {
@@ -657,7 +698,7 @@
       "concrete owner-state persistence contract",
       "NetHack domain migration"
     ],
-    "current_limit": "Generic autonomous owners, strict wire/catalog and independent state codecs accepted. Retained kernel/services and native restoration D3-D6 plus NetHack migration M5-M7 remain pending; no full parity claim.",
+    "current_limit": "Independent owner codecs and kernel registry reconstruction accepted. Retained kernel graph and owner prepared state D3b/D3c, coherent services/native restoration D4-D6 and NetHack migration M5-M7 remain required; no full A5/parity claim.",
     "implementation_claim": true,
     "contract": "docs/plans/2026-10-08-autonomous-ownership-contract.md",
     "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-services-checkpoint.json",

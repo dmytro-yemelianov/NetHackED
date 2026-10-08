@@ -244,7 +244,7 @@ pub struct PipelineDescriptor {
     pub hash: [u8; 32],
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RetentionLimits {
     pub leases: usize,
     pub owners: usize,

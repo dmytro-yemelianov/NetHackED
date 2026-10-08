@@ -9,5 +9,6 @@ mod kernel;
 mod model;
 mod wasm;
 
+pub use kernel::persistence;
 pub use kernel::{Kernel, NativePort};
 pub use model::*;
