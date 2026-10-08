@@ -549,7 +549,7 @@ impl Service {
 mod boundary_tests {
     use super::*;
     use nethacked_kernel::{Authority, Dependency, Scope};
-    fn fixture() -> (Service, CallerView, CallerView, Stamp) {
+    fn fixture() -> (Service, CallerView<'static>, CallerView<'static>, Stamp) {
         let captured = Rc::new(RefCell::new(Vec::new()));
         let output = captured.clone();
         let mut k = Kernel::new(nethacked_kernel::Limits::default()).unwrap();

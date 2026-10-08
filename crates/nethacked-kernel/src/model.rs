@@ -128,8 +128,8 @@ pub struct Manifest {
 
 /// Immutable authenticated view. Native ports must validate scoped requests
 /// before effects; the runtime cannot interpret their opaque byte schema.
-#[derive(Clone, Debug)]
-pub struct CallerView {
+#[derive(Debug)]
+pub struct CallerView<'a> {
     pub(crate) caller: Option<ModuleHandle>,
     pub(crate) caller_artifact: Option<[u8; 32]>,
     pub(crate) provider: ModuleHandle,
@@ -138,6 +138,35 @@ pub struct CallerView {
     pub(crate) permits: Vec<(CapabilityPermit, Authority)>,
     pub(crate) max_reply: u32,
     pub(crate) operation: Option<OperationBinding>,
+    pub(crate) callback_capture: Option<&'a dyn CallbackCapture>,
+}
+impl Clone for CallerView<'_> {
+    fn clone(&self) -> Self {
+        CallerView::clone(self)
+    }
+}
+
+/// A borrowed capability, never a dispatcher or a mutable registry.
+pub(crate) trait CallbackCapture: std::fmt::Debug {
+    fn capture(&self, endpoint: &str, ceiling: Authority) -> Result<RetainedCallback>;
+}
+
+/// Opaque host ownership. Clones share one bounded capture; the last drop releases it.
+#[derive(Clone, Debug)]
+pub struct RetainedCallback(pub(crate) std::rc::Rc<crate::kernel::retention::CallbackData>);
+impl RetainedCallback {
+    pub fn provenance(&self) -> &CallbackProvenance {
+        &self.0.provenance
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CallbackProvenance {
+    pub caller: ProviderBinding,
+    pub service: ProviderBinding,
+    pub capability: Capability,
+    pub slot: usize,
+    pub source: OperationBinding,
 }
 
 /// Exact executable resolution of a declared capability, including extensions.
@@ -207,8 +236,36 @@ pub struct LifecycleState {
     pub references: usize,
     pub next_generation: u64,
     pub next_retention: u64,
+    pub callbacks: usize,
+    pub next_callback: u64,
 }
-impl CallerView {
+impl CallerView<'_> {
+    /// A detached metadata snapshot, preserving the original owned view API.
+    /// The invocation-only capture capability is never cloned into storage.
+    #[allow(
+        clippy::should_implement_trait,
+        reason = "Legacy view.clone() storage needs a detached static snapshot; Clone::Self retains its lifetime"
+    )]
+    pub fn clone(&self) -> CallerView<'static> {
+        CallerView {
+            caller: self.caller,
+            caller_artifact: self.caller_artifact,
+            provider: self.provider,
+            provider_artifact: self.provider_artifact,
+            authority: self.authority.clone(),
+            permits: self.permits.clone(),
+            max_reply: self.max_reply,
+            operation: self.operation.clone(),
+            callback_capture: None,
+        }
+    }
+
+    /// Retain this authenticated calling module's public callback export.
+    pub fn capture_callback(&self, endpoint: &str, ceiling: Authority) -> Result<RetainedCallback> {
+        self.callback_capture
+            .ok_or(Error::Authority)?
+            .capture(endpoint, ceiling)
+    }
     /// Inspect only the invoking module's live grants, under this call's ceiling.
     /// A permit is a snapshot, not a credential usable in a later invocation.
     pub fn permit(
@@ -334,7 +391,7 @@ impl CleanupIdentity {
         Ok(Self(id))
     }
 }
-impl CallerView {
+impl CallerView<'_> {
     pub fn operation(&self) -> Option<&OperationBinding> {
         self.operation.as_ref()
     }

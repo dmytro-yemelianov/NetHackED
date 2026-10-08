@@ -134,10 +134,11 @@ providers both protect targets, including after legacy unpinned replacement.
 An unattached original with no dependents/references can be unloaded. Checks
 refuse with `Referenced` before any registry, grant, dispatch or counter mutation.
 
-Registration, grants, attachment, detach, capture, release and removal require
+Registration, grants, attachment, detach, pipeline capture, release and removal require
 exclusive `&mut Kernel`; invocation holds `&Kernel` throughout all native and
 Wasm calls. The kernel is not cloned and offers no interior-mutable lifecycle
-or callback dispatcher. Rust's exclusive borrowing enforces the safe boundary
+or callback dispatcher. The capture-only exception below publishes bounded weak
+callback ownership through immutable invocation. Rust's exclusive borrowing enforces the safe boundary
 throughout active calls, including when a host wraps the kernel in `RefCell`.
 No guest-declared safe-point flag is accepted, and capture runs no guest/native
 initialization. Low-level `unregister` preserves its tested unpinned removal
@@ -170,3 +171,65 @@ Typed participants issue non-reused `CleanupIdentity` values without a service
 registry. `operation_binding_with_cleanup` carries a bounded canonical identity
 set from the workflow owner's frozen participant list. No guest constructor or
 serialization exists. The plain binding API enrolls no participant.
+
+## Authenticated native callback retention
+
+An immutable `CallerView<'call>` offers only
+`capture_callback(endpoint, ceiling) -> RetainedCallback`. Its private factory
+borrows the kernel for the active call; that capture-capable view cannot
+outlive the borrow. `view.clone()` preserves the existing owned metadata snapshot
+API and returns a detached view without capture authority; snapshots may outlive
+the call and refuse capture. The owning handle can outlive it. Native ports receive no
+kernel, dispatch function, or registry. Capture invokes no code and cannot adopt,
+release leases, issue operations, change grants, or mutate executable dispatch.
+Ports should validate their request schema before capture and publish ownership
+only after their own validation. Guest JSON supplies an endpoint and requested
+authority, never authenticated caller, artifact, host, or operation proof.
+
+Capture requires an authenticated calling module, a declared scheduling import,
+and an operation binding. Direct host/plain calls refuse. The endpoint must be
+that calling module's public export (including when the caller is an executable
+extension), with a bounded nonempty name. It needs no self-import. The separate
+export's extension chain resolves during capture. Transitive imports already
+resolved by the active operation retain that routing and intersect its slot
+ceilings; additional routes resolve during capture. The callback root ceiling
+must fit the actual native invocation. Absent historical grants remain absent,
+even after regrant. Immutable provenance binds calling code, actual native
+service code, declared capability/slot, and source operation/checkpoint/phase.
+
+The scope policy requires the current live scheduling grant, bounded by its
+declared access, to contain the **entire captured callback ceiling**, at both
+adoption and every execution/preflight. Narrowing below that ceiling refuses
+even if a particular execution requests less. Revocation refuses; regrant can
+restore only authority within captured root/import ceilings. Nested imports
+also apply ordinary live-grant checks. Source operation identity is provenance,
+not the future execution identity or a requirement that the source lease live.
+
+`adopt_callback(&handle)` is a trusted-host `&mut Kernel` safe boundary. It
+validates host and live origin authority, then atomically issues a fresh
+`(OperationId, PipelineLease)` over the retained routing without resolving current
+dispatch. Ordinary binding, cleanup enrollment, preflight, invocation, resource,
+and input mechanisms apply. `callback_provenance(lease)` exposes immutable origin
+metadata on adopted leases. Dropping all capture handles does not invalidate
+adopted leases; releasing one lease does not invalidate others. The host owns
+each adopted lease and must call `release_pipeline`.
+
+Handles clone shared `Rc` ownership of one capture. A weak index uses at most
+`RetentionLimits::owners` entries, independently of explicit owner sets; dead
+entries are pruned only on successful capture. Live captures also count against
+aggregate `references`; routes, slots, depth, and names use existing bounds.
+Captured routing and origin service chains protect all needed artifacts against
+both removal APIs. Callback serials, operation IDs, and lease IDs use checked
+monotonic counters. Refused admission changes no counters, references, or leases.
+`lifecycle_state` reports live capture counts/references and the next callback
+serial; cloning consumes no identity. Limits cannot change while references live.
+
+Dropping the last unadopted handle immediately releases references, including
+unpublished captures abandoned before native refusal or a later guest trap.
+A capture successfully stored by a native port remains a committed prefix after
+either fault. A successfully allocated but dropped capture consumes its serial;
+this is not whole-call rollback. Internal capture index borrow conflicts refuse
+with `NativeRefusal`. An outer `RefCell<Kernel>` still rejects reentrant mutation
+during invocation; adoption must wait until the immutable borrow ends. There is
+no ambient singleton, timer queue, once-only admission, delivery policy, codec,
+or authoritative domain state in this primitive.

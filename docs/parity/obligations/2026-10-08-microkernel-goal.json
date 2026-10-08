@@ -5,7 +5,7 @@
   "plan_sha256": "480c70bd0abfcff5a229e3e1612dee00b54c0af3da43c0b5ac441557f0e86d6c",
   "native_goal": "Complete NetRust microkernel architecture program; formal contracts, executable extensions, existing NetHack migration, integration audit",
   "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
-  "active_unit": "M4c-timers",
+  "active_unit": "M4c-timer-queue",
   "live_handles": [],
   "acceptance": {
     "A1": "passed_generic_runtime_1fc3290",
@@ -169,11 +169,31 @@
             },
             {
               "id": "M4c-timers",
-              "status": "planned",
+              "status": "in_progress",
               "depends_on": [
                 "M4c-input"
               ],
-              "scope": "Optional timer admission, continuation retention and callback failure policy"
+              "scope": "Optional timer admission, continuation retention and callback failure policy",
+              "units": [
+                {
+                  "id": "M4c-timer-capture",
+                  "status": "complete",
+                  "depends_on": [
+                    "M4c-input"
+                  ],
+                  "contract": "docs/plans/2026-10-08-callback-continuation-contract.md",
+                  "scope": "Bounded callback capture from authenticated invocation, retained code/authority and safe-boundary operation adoption",
+                  "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-callback-checkpoint.json"
+                },
+                {
+                  "id": "M4c-timer-queue",
+                  "status": "planned",
+                  "depends_on": [
+                    "M4c-timer-capture"
+                  ],
+                  "scope": "Optional timer queue, target validation/profile admission, once-only callback/failure/cleanup policy"
+                }
+              ]
             }
           ]
         },
@@ -221,7 +241,7 @@
     "S4": "reviewed formal contract and generic authenticated recorded-input runtime; vanilla stream adapter and durable input continuation pending",
     "S5": "reviewed_checked_timer_admission_contract;callback_effects_profile_scheduler_runtime_pending",
     "S6": "reviewed_checked_restore_contract;codec_law_assumed_real_codec_pending",
-    "S7": "generic retained routing/references and authoritative workflow lifecycle verified; schema/persistence lifecycle pending"
+    "S7": "generic retained routing, workflow lifecycle and authenticated callback capture/adoption verified; timer queue/schema/persistence pending"
   },
   "separate_parity_scope": {
     "families": 53,
@@ -236,7 +256,7 @@
       26945,
       30480
     ],
-    "next_adjustment": "Timer ownership/callback unit only, reuse accepted operation/pinning/input APIs and source facts; no fresh architecture/history audit. Medium-first concrete protocol implementation, fresh high semantic review.",
+    "next_adjustment": "Timer queue only over accepted capture/adoption and input/resource APIs; no new kernel lifetime design, no repeated architecture/history review. Compact callback failure/profile policy contract before one writer.",
     "authority_implementation": {
       "uncached_input": 59709,
       "output": 18592,
@@ -355,6 +375,24 @@
       "output": 5589,
       "status": "exceeded",
       "adjustment": "Finish gates/commit locally. Next timer unit reuses accepted operation/pinning/input interfaces; review new timer delta only, no architecture history."
+    },
+    "callback_implementation": {
+      "uncached_input": 109693,
+      "output": 40851,
+      "status": "exceeded",
+      "adjustment": "Narrow review to new callback capture/adoption delta and fixtures; source hashes and prior accepted architecture reused. Review clone compatibility explicitly without a broad kernel re-audit."
+    },
+    "callback_review": {
+      "uncached_input": 89185,
+      "output": 6467,
+      "status": "exceeded",
+      "adjustment": "Finish local gates/commit; next timer queue uses accepted callback capture/adoption directly, no kernel lifetime redesign or repeated architecture audit."
+    },
+    "callback_repair_review": {
+      "uncached_input": 53048,
+      "output": 4595,
+      "status": "exceeded",
+      "adjustment": "No further model calls for this checkpoint; local final gates/commit. Timer queue reuses accepted capture/adoption with a compact concrete contract."
     }
   },
   "requested_interlude": {

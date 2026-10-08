@@ -10,7 +10,7 @@ use std::{
 use wasmi::{Config, Engine, Module};
 
 #[path = "retention.rs"]
-mod retention;
+pub(crate) mod retention;
 use retention::{Retention, Routing};
 
 /// Trusted bounded native code. A refusal must precede its own effects.
@@ -46,6 +46,7 @@ struct Invocation {
     depth: u32,
     routing: Option<Rc<Routing>>,
     operation: Option<OperationBinding>,
+    path: Option<usize>,
 }
 pub(crate) type SharedBudget = Rc<RefCell<Budget>>;
 #[derive(Clone)]
@@ -386,6 +387,7 @@ impl Kernel {
                 depth: 1,
                 routing: None,
                 operation: None,
+                path: None,
             },
             &budget,
         )
@@ -465,6 +467,7 @@ impl Kernel {
                 depth,
                 routing: frame.routing.clone(),
                 operation: frame.operation.clone(),
+                path: Some(slot),
             },
             budget,
         )
@@ -483,6 +486,7 @@ impl Kernel {
             depth,
             routing,
             operation,
+            path,
         } = invocation;
         let original = self
             .registration(target)?
@@ -508,6 +512,15 @@ impl Kernel {
             .exports
             .get(&endpoint)
             .ok_or(Error::MissingDependency)?;
+        let factory = retention::CallbackFactory {
+            kernel: self,
+            caller,
+            service: binding.clone(),
+            path,
+            authority: &authority,
+            operation: operation.as_ref(),
+            routing: routing.as_deref(),
+        };
         let view = CallerView {
             caller,
             caller_artifact: caller.map(|h| self.artifact(h)).transpose()?,
@@ -517,6 +530,7 @@ impl Kernel {
             permits: self.inspect_permits(caller, &authority, routing.as_deref())?,
             max_reply: ep.max_reply,
             operation: operation.clone(),
+            callback_capture: Some(&factory),
         };
         let reply = match &reg.code {
             Code::Native(ports) => ports.get(&endpoint).ok_or(Error::Signature)?(request, &view)?,

@@ -2,26 +2,53 @@
 use super::*;
 use std::collections::BTreeSet;
 
+#[cfg(test)]
+#[path = "callbacks_tests.rs"]
+mod callbacks_tests;
+
 type RouteKey = (ModuleHandle, String);
 
+#[derive(Debug)]
 pub(crate) struct RetainedSlot {
     pub target: ModuleHandle,
     pub ceiling: Option<Authority>,
 }
+#[derive(Debug)]
 pub(crate) struct Routing {
     routes: BTreeMap<RouteKey, Vec<ProviderBinding>>,
     pub slots: BTreeMap<(ModuleHandle, usize), RetainedSlot>,
 }
+#[derive(Clone, Debug)]
 struct Pipeline {
     descriptor: PipelineDescriptor,
     routing: Rc<Routing>,
     references: BTreeSet<ModuleHandle>,
+    origin: Option<Rc<CallbackOrigin>>,
+}
+#[derive(Debug)]
+struct CallbackOrigin {
+    caller: ModuleHandle,
+    slot: usize,
+    target: ModuleHandle,
+    ceiling: Authority,
+    provenance: CallbackProvenance,
+}
+#[derive(Debug)]
+pub(crate) struct CallbackData {
+    host: u64,
+    pipeline: Pipeline,
+    pub(crate) provenance: CallbackProvenance,
+}
+struct Callbacks {
+    next: u64,
+    live: BTreeMap<u64, std::rc::Weak<CallbackData>>,
 }
 pub(super) struct Retention {
     limits: RetentionLimits,
     next_serial: u64,
     pipelines: BTreeMap<PipelineLease, Pipeline>,
     owners: BTreeMap<OwnerReference, BTreeSet<ModuleHandle>>,
+    callbacks: RefCell<Callbacks>,
 }
 impl Default for Retention {
     fn default() -> Self {
@@ -30,6 +57,10 @@ impl Default for Retention {
             next_serial: 1,
             pipelines: BTreeMap::new(),
             owners: BTreeMap::new(),
+            callbacks: RefCell::new(Callbacks {
+                next: 1,
+                live: BTreeMap::new(),
+            }),
         }
     }
 }
@@ -41,6 +72,110 @@ struct Capture<'a> {
     visiting: BTreeSet<RouteKey>,
     references: BTreeSet<ModuleHandle>,
     nodes: usize,
+    source: Option<&'a Routing>,
+}
+
+pub(super) struct CallbackFactory<'a> {
+    pub kernel: &'a Kernel,
+    pub caller: Option<ModuleHandle>,
+    pub service: ProviderBinding,
+    pub path: Option<usize>,
+    pub authority: &'a Authority,
+    pub operation: Option<&'a OperationBinding>,
+    pub routing: Option<&'a Routing>,
+}
+impl std::fmt::Debug for CallbackFactory<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("CallbackCapture")
+    }
+}
+impl CallbackCapture for CallbackFactory<'_> {
+    fn capture(&self, endpoint: &str, ceiling: Authority) -> Result<RetainedCallback> {
+        let k = self.kernel;
+        let caller = self.caller.ok_or(Error::Authority)?;
+        let slot = self.path.ok_or(Error::Authority)?;
+        let source = self.operation.ok_or(Error::Authority)?;
+        if endpoint.is_empty() || endpoint.len() > k.limits.payload_bytes as usize {
+            return Err(Error::Buffer);
+        }
+        k.validate_authority(&ceiling, false)?;
+        if !self.authority.contains(&ceiling) {
+            return Err(Error::Authority);
+        }
+        let dep = k
+            .registration(caller)?
+            .manifest
+            .dependencies
+            .get(slot)
+            .ok_or(Error::InvalidSlot)?;
+        let (target, _) = k.capability(&dep.capability)?;
+        let route = k.resolution(target, &dep.capability.endpoint, self.routing)?;
+        if route.last() != Some(&self.service) {
+            return Err(Error::Authority);
+        }
+        let provenance = CallbackProvenance {
+            caller: ProviderBinding {
+                handle: caller,
+                artifact: k.artifact(caller)?,
+                endpoint: endpoint.into(),
+            },
+            service: self.service.clone(),
+            capability: dep.capability.clone(),
+            slot,
+            source: source.clone(),
+        };
+        let origin = Rc::new(CallbackOrigin {
+            caller,
+            slot,
+            target,
+            ceiling: ceiling.clone(),
+            provenance: provenance.clone(),
+        });
+        k.validate_callback_origin(&origin)?;
+        {
+            let callbacks = k
+                .retention
+                .callbacks
+                .try_borrow()
+                .map_err(|_| Error::NativeRefusal)?;
+            if callbacks
+                .live
+                .values()
+                .filter(|w| w.strong_count() != 0)
+                .count()
+                >= k.retention.limits.owners
+            {
+                return Err(Error::Limit);
+            }
+            callbacks.next.checked_add(1).ok_or(Error::Limit)?;
+        }
+        let mut pipeline = k.build_pipeline(caller, endpoint, ceiling, self.routing)?;
+        pipeline.references.insert(caller);
+        for binding in route {
+            pipeline.references.insert(binding.handle);
+        }
+        if pipeline.references.len() > k.retention.limits.nodes {
+            return Err(Error::Limit);
+        }
+        k.reference_capacity(pipeline.references.len())?;
+        pipeline.origin = Some(origin);
+        let data = Rc::new(CallbackData {
+            host: k.instance,
+            pipeline,
+            provenance,
+        });
+        let mut callbacks = k
+            .retention
+            .callbacks
+            .try_borrow_mut()
+            .map_err(|_| Error::NativeRefusal)?;
+        let serial = callbacks.next;
+        let next = serial.checked_add(1).ok_or(Error::Limit)?;
+        callbacks.live.retain(|_, w| w.strong_count() != 0);
+        callbacks.live.insert(serial, Rc::downgrade(&data));
+        callbacks.next = next;
+        Ok(RetainedCallback(data))
+    }
 }
 impl Capture<'_> {
     fn visit(&mut self, key: RouteKey, depth: u32) -> Result<()> {
@@ -53,7 +188,10 @@ impl Capture<'_> {
         if depth > self.kernel.limits.depth {
             return Err(Error::Limit);
         }
-        let chain = self.kernel.resolution(key.0, &key.1, None)?;
+        // Imports already resolved by this invocation keep that executable chain.
+        // A separate public callback export absent from the source closure resolves now.
+        let source = self.source.filter(|r| r.routes.contains_key(&key));
+        let chain = self.kernel.resolution(key.0, &key.1, source)?;
         self.nodes = self.nodes.checked_add(chain.len()).ok_or(Error::Limit)?;
         if self.nodes > self.kernel.retention.limits.nodes {
             return Err(Error::Limit);
@@ -64,7 +202,7 @@ impl Capture<'_> {
             let reg = self.kernel.registration(binding.handle)?;
             for (slot, dep) in reg.manifest.dependencies.iter().enumerate() {
                 let (target, _) = self.kernel.capability(&dep.capability)?;
-                let ceiling = match self.kernel.grants.get(&(binding.handle, slot)) {
+                let mut ceiling = match self.kernel.grants.get(&(binding.handle, slot)) {
                     Some(g) if g.active => {
                         if g.target != target {
                             return Err(Error::InvalidHandle);
@@ -76,6 +214,16 @@ impl Capture<'_> {
                     }
                     _ => None,
                 };
+                if let Some(source) = self.source {
+                    if let Some(old) = source.slots.get(&(binding.handle, slot)) {
+                        if old.target != target {
+                            return Err(Error::InvalidHandle);
+                        }
+                        ceiling = ceiling
+                            .zip(old.ceiling.as_ref())
+                            .map(|(live, old)| live.intersect(old));
+                    }
+                }
                 self.routing
                     .slots
                     .insert((binding.handle, slot), RetainedSlot { target, ceiling });
@@ -94,6 +242,73 @@ impl Capture<'_> {
 }
 
 impl Kernel {
+    fn validate_callback_origin(&self, origin: &CallbackOrigin) -> Result<()> {
+        let dep = self
+            .registration(origin.caller)?
+            .manifest
+            .dependencies
+            .get(origin.slot)
+            .ok_or(Error::InvalidSlot)?;
+        let grant = self
+            .grants
+            .get(&(origin.caller, origin.slot))
+            .ok_or(Error::MissingGrant)?;
+        if !grant.active {
+            return Err(Error::Revoked);
+        }
+        let (target, _) = self.capability(&dep.capability)?;
+        if target != origin.target || target != grant.target {
+            return Err(Error::InvalidHandle);
+        }
+        let live = grant.authority.intersect(&Authority {
+            access: dep.access,
+            scope: Scope::All,
+        });
+        if !live.contains(&origin.ceiling) {
+            return Err(Error::Authority);
+        }
+        Ok(())
+    }
+
+    /// Trusted host safe boundary: fresh identities over the captured route, without dispatch recapture.
+    pub fn adopt_callback(
+        &mut self,
+        callback: &RetainedCallback,
+    ) -> Result<(OperationId, PipelineLease)> {
+        let data = &callback.0;
+        if data.host != self.instance {
+            return Err(Error::InvalidHandle);
+        }
+        self.validate_callback_origin(data.pipeline.origin.as_ref().ok_or(Error::Authority)?)?;
+        for &handle in &data.pipeline.references {
+            self.registration(handle)?;
+        }
+        let next_operation = self.next_operation.checked_add(1).ok_or(Error::Limit)?;
+        let next_serial = self
+            .retention
+            .next_serial
+            .checked_add(1)
+            .ok_or(Error::Limit)?;
+        if self.retention.pipelines.len() >= self.retention.limits.leases {
+            return Err(Error::Limit);
+        }
+        self.reference_capacity(data.pipeline.references.len())?;
+        let lease = PipelineLease {
+            instance: self.instance,
+            serial: self.retention.next_serial,
+        };
+        let operation = OperationId {
+            host: self.instance,
+            serial: self.next_operation,
+        };
+        self.retention
+            .pipelines
+            .insert(lease, data.pipeline.clone());
+        self.retention.next_serial = next_serial;
+        self.next_operation = next_operation;
+        Ok((operation, lease))
+    }
+
     pub(super) fn resolution(
         &self,
         target: ModuleHandle,
@@ -147,7 +362,7 @@ impl Kernel {
         {
             return Err(Error::Limit);
         }
-        if !self.retention.pipelines.is_empty() || !self.retention.owners.is_empty() {
+        if self.lifecycle_state().references != 0 {
             return Err(Error::Referenced);
         }
         self.retention.limits = limits;
@@ -155,6 +370,12 @@ impl Kernel {
     }
 
     pub fn lifecycle_state(&self) -> LifecycleState {
+        let callbacks = self.retention.callbacks.borrow();
+        let live: Vec<_> = callbacks
+            .live
+            .values()
+            .filter_map(std::rc::Weak::upgrade)
+            .collect();
         LifecycleState {
             registrations: self.registrations.len(),
             attachments: self.extensions.len(),
@@ -172,9 +393,15 @@ impl Kernel {
                     .owners
                     .values()
                     .map(BTreeSet::len)
+                    .sum::<usize>()
+                + live
+                    .iter()
+                    .map(|c| c.pipeline.references.len())
                     .sum::<usize>(),
             next_generation: self.next_generation,
             next_retention: self.retention.next_serial,
+            callbacks: live.len(),
+            next_callback: callbacks.next,
         }
     }
 
@@ -216,6 +443,33 @@ impl Kernel {
             .next_serial
             .checked_add(1)
             .ok_or(Error::Limit)?;
+        let pipeline = self.build_pipeline(provider, endpoint, ceiling, None)?;
+        let lease = PipelineLease {
+            instance: self.instance,
+            serial: self.retention.next_serial,
+        };
+        self.retention.pipelines.insert(lease, pipeline);
+        self.retention.next_serial = next;
+        Ok(lease)
+    }
+
+    fn build_pipeline(
+        &self,
+        provider: ModuleHandle,
+        endpoint: &str,
+        ceiling: Authority,
+        source: Option<&Routing>,
+    ) -> Result<Pipeline> {
+        self.validate_authority(&ceiling, false)?;
+        let ep = self
+            .registration(provider)?
+            .manifest
+            .exports
+            .get(endpoint)
+            .ok_or(Error::MissingDependency)?;
+        if ceiling.access < ep.access {
+            return Err(Error::Authority);
+        }
         let mut capture = Capture {
             kernel: self,
             ceiling: &ceiling,
@@ -226,6 +480,7 @@ impl Kernel {
             visiting: BTreeSet::new(),
             references: BTreeSet::new(),
             nodes: 0,
+            source,
         };
         capture.visit((provider, endpoint.to_owned()), 1)?;
         self.reference_capacity(capture.references.len())?;
@@ -279,18 +534,12 @@ impl Kernel {
             routes,
             hash: digest.finalize().into(),
         };
-        let pipeline = Pipeline {
+        Ok(Pipeline {
             descriptor,
             routing: Rc::new(capture.routing),
             references: capture.references,
-        };
-        let lease = PipelineLease {
-            instance: self.instance,
-            serial: self.retention.next_serial,
-        };
-        self.retention.pipelines.insert(lease, pipeline);
-        self.retention.next_serial = next;
-        Ok(lease)
+            origin: None,
+        })
     }
 
     pub fn pipeline_descriptor(&self, lease: PipelineLease) -> Result<&PipelineDescriptor> {
@@ -300,6 +549,16 @@ impl Kernel {
             .get(&lease)
             .ok_or(Error::InvalidHandle)?
             .descriptor)
+    }
+
+    /// Immutable creation provenance survives release of every capture handle.
+    pub fn callback_provenance(&self, lease: PipelineLease) -> Result<Option<&CallbackProvenance>> {
+        let pipeline = self
+            .retention
+            .pipelines
+            .get(&lease)
+            .ok_or(Error::InvalidHandle)?;
+        Ok(pipeline.origin.as_ref().map(|origin| &origin.provenance))
     }
 
     pub fn invoke_pipeline(
@@ -342,6 +601,7 @@ impl Kernel {
                 depth: 1,
                 routing: Some(pipeline.routing.clone()),
                 operation,
+                path: None,
             },
             &budget,
         )
@@ -398,6 +658,14 @@ impl Kernel {
             .values()
             .any(|p| p.references.contains(&handle))
             || self.retention.owners.values().any(|r| r.contains(&handle))
+            || self
+                .retention
+                .callbacks
+                .borrow()
+                .live
+                .values()
+                .filter_map(std::rc::Weak::upgrade)
+                .any(|c| c.pipeline.references.contains(&handle))
         {
             return Err(Error::Referenced);
         }
@@ -516,6 +784,14 @@ impl Kernel {
         authority: &Authority,
     ) -> Result<()> {
         self.validate_authority(authority, false)?;
+        let p = self
+            .retention
+            .pipelines
+            .get(&lease)
+            .ok_or(Error::InvalidHandle)?;
+        if let Some(origin) = &p.origin {
+            self.validate_callback_origin(origin)?;
+        }
         let d = self.pipeline_descriptor(lease)?;
         if !d.ceiling.contains(authority) {
             return Err(Error::Authority);
