@@ -789,25 +789,46 @@ impl Kernel {
             .pipelines
             .get(&lease)
             .ok_or(Error::InvalidHandle)?;
+        self.preflight_retained(p, request, authority)
+    }
+
+    /// Read-only callback admission, including the future operation context bounds.
+    /// Does not acquire identities, leases, or references.
+    pub fn preflight_callback(
+        &self,
+        callback: &RetainedCallback,
+        request: &[u8],
+        authority: &Authority,
+        phase: &str,
+        participants: &[CleanupIdentity],
+    ) -> Result<()> {
+        if callback.0.host != self.instance {
+            return Err(Error::InvalidHandle);
+        }
+        if phase.len() > self.limits.payload_bytes as usize {
+            return Err(Error::Buffer);
+        }
+        if participants.len() > self.limits.scope_keys {
+            return Err(Error::Limit);
+        }
+        self.validate_authority(authority, false)?;
+        self.preflight_retained(&callback.0.pipeline, request, authority)
+    }
+
+    fn preflight_retained(
+        &self,
+        p: &Pipeline,
+        request: &[u8],
+        authority: &Authority,
+    ) -> Result<()> {
         if let Some(origin) = &p.origin {
             self.validate_callback_origin(origin)?;
         }
-        let d = self.pipeline_descriptor(lease)?;
+        let d = &p.descriptor;
         if !d.ceiling.contains(authority) {
             return Err(Error::Authority);
         }
-        let resolution = self.resolution(
-            d.root.handle,
-            &d.root.endpoint,
-            Some(
-                &self
-                    .retention
-                    .pipelines
-                    .get(&lease)
-                    .ok_or(Error::InvalidHandle)?
-                    .routing,
-            ),
-        )?;
+        let resolution = self.resolution(d.root.handle, &d.root.endpoint, Some(&p.routing))?;
         for p in resolution {
             let e = self
                 .registration(p.handle)?

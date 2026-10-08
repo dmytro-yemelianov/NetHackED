@@ -233,3 +233,9 @@ with `NativeRefusal`. An outer `RefCell<Kernel>` still rejects reentrant mutatio
 during invocation; adoption must wait until the immutable borrow ends. There is
 no ambient singleton, timer queue, once-only admission, delivery policy, codec,
 or authoritative domain state in this primitive.
+
+`preflight_callback(callback, request, authority, phase, participants)` performs
+read-only admission on a captured callback using the same retained-route validation
+as `preflight_pipeline`, plus future operation-context bounds. It consumes no
+adoption counters or leases. Optional timer owners can therefore refuse invalid
+requests before calling `adopt_callback`; native ports still receive only CallerView.

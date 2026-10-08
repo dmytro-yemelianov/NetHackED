@@ -1124,6 +1124,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "nethacked-timers"
+version = "0.1.0"
+dependencies = [
+ "nethacked-inputs",
+ "nethacked-kernel",
+ "nethacked-resources",
+ "nethacked-workflows",
+ "serde",
+ "serde_json",
+ "wat",
+]
+
+[[package]]
 name = "nethacked-tui"
 version = "0.3.0"
 dependencies = [

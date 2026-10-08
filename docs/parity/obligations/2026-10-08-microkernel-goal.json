@@ -5,7 +5,7 @@
   "plan_sha256": "480c70bd0abfcff5a229e3e1612dee00b54c0af3da43c0b5ac441557f0e86d6c",
   "native_goal": "Complete NetRust microkernel architecture program; formal contracts, executable extensions, existing NetHack migration, integration audit",
   "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
-  "active_unit": "M4c-timer-queue",
+  "active_unit": "M4-ownership-design",
   "live_handles": [],
   "acceptance": {
     "A1": "passed_generic_runtime_1fc3290",
@@ -151,7 +151,7 @@
         },
         {
           "id": "M4c",
-          "status": "in_progress",
+          "status": "complete",
           "depends_on": [
             "M4b"
           ],
@@ -169,7 +169,7 @@
             },
             {
               "id": "M4c-timers",
-              "status": "in_progress",
+              "status": "complete",
               "depends_on": [
                 "M4c-input"
               ],
@@ -187,21 +187,32 @@
                 },
                 {
                   "id": "M4c-timer-queue",
-                  "status": "planned",
+                  "status": "complete",
                   "depends_on": [
                     "M4c-timer-capture"
                   ],
-                  "scope": "Optional timer queue, target validation/profile admission, once-only callback/failure/cleanup policy"
+                  "scope": "Optional timer queue, target validation/profile admission, once-only callback/failure/cleanup policy",
+                  "contract": "docs/plans/2026-10-08-timer-runtime-contract.md",
+                  "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-timer-checkpoint.json"
                 }
               ]
             }
           ]
         },
         {
-          "id": "M4d",
+          "id": "M4-ownership-design",
           "status": "planned",
           "depends_on": [
             "M4c"
+          ],
+          "scope": "Evaluate and specify autonomous object/actor state ownership, bounded interaction and multi-owner atomicity before concrete persistence/domain migration; no actor implementation claim yet"
+        },
+        {
+          "id": "M4d",
+          "status": "planned",
+          "depends_on": [
+            "M4c",
+            "M4-ownership-design"
           ],
           "scope": "Concrete codec/restoration and executable/schema validation; full A5 including supported legacy compatibility"
         }
@@ -239,7 +250,7 @@
     "S2": "reviewed formal protocol and generic authoritative runtime; domain integration pending",
     "S3": "reviewed formal atomic protocol and generic runtime with authenticated phase-operation binding/cleanup",
     "S4": "reviewed formal contract and generic authenticated recorded-input runtime; vanilla stream adapter and durable input continuation pending",
-    "S5": "reviewed_checked_timer_admission_contract;callback_effects_profile_scheduler_runtime_pending",
+    "S5": "reviewed formal admission and generic timer runtime/callback failure-cleanup policy; vanilla scheduling/residency adapters and durable continuation pending",
     "S6": "reviewed_checked_restore_contract;codec_law_assumed_real_codec_pending",
     "S7": "generic retained routing, workflow lifecycle and authenticated callback capture/adoption verified; timer queue/schema/persistence pending"
   },
@@ -256,7 +267,7 @@
       26945,
       30480
     ],
-    "next_adjustment": "Timer queue only over accepted capture/adoption and input/resource APIs; no new kernel lifetime design, no repeated architecture/history review. Compact callback failure/profile policy contract before one writer.",
+    "next_adjustment": "Autonomous owner-state contract only: reuse accepted kernel/service interfaces and formal authority model, identify concrete ownership delta before codec/domain changes; no repeated timer/history audit.",
     "authority_implementation": {
       "uncached_input": 59709,
       "output": 18592,
@@ -393,6 +404,18 @@
       "output": 4595,
       "status": "exceeded",
       "adjustment": "No further model calls for this checkpoint; local final gates/commit. Timer queue reuses accepted capture/adoption with a compact concrete contract."
+    },
+    "timer_implementation": {
+      "uncached_input": 118017,
+      "output": 43081,
+      "status": "exceeded",
+      "adjustment": "Narrow review to timer service/fixtures and preflight delta; reuse accepted callbacks, resource/input/workflow implementations and formal history. No duplicate tests or broad architecture audit."
+    },
+    "timer_review": {
+      "uncached_input": 89289,
+      "output": 6464,
+      "status": "exceeded",
+      "adjustment": "Finish local gates/commit. Next evaluate autonomous owner-state contract using accepted kernel/typed services, no repeated timer or original source audit."
     }
   },
   "requested_interlude": {
@@ -401,5 +424,16 @@
     "status": "complete: M3a committed, native goal paused, Astra PASS_ARCHITECTURE_DIRECTION",
     "review": "docs/parity/obligations/2026-10-08-architecture-astra-review.json",
     "resume": "Native goal verified active on user continuation after audit."
+  },
+  "ownership_followup": {
+    "status": "ready_for_design_evaluation",
+    "user_proposal": "Autonomous objects own and maintain their properties, instead of item rows in a shared authoritative database.",
+    "direction_discussed": "In-process object/actor ownership behind bounded commands/events; registry locates stable IDs; modules define behavior, extensions change capabilities. Separate network microservices are not required.",
+    "must_resolve_before": [
+      "concrete owner-state persistence contract",
+      "NetHack domain migration"
+    ],
+    "current_limit": "Generic resource service still stores shared payloads; existing infrastructure alone does not prove autonomous object ownership. Timer work continues because addressed retained callbacks are compatible.",
+    "implementation_claim": false
   }
 }
