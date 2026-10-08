@@ -1164,6 +1164,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "nethacked-workflows"
+version = "0.1.0"
+dependencies = [
+ "nethacked-kernel",
+ "nethacked-resources",
+ "serde",
+ "serde_json",
+ "wat",
+]
+
+[[package]]
 name = "num-traits"
 version = "0.2.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"

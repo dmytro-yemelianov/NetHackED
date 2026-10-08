@@ -1,8 +1,8 @@
 //! Optional, in-memory, serialized resource transactions over real kernel ports.
 #![forbid(unsafe_code)]
 use nethacked_kernel::{
-    Access, CallerView, Capability, CapabilityPermit, Endpoint, Error, Kernel, Manifest,
-    ModuleHandle, NativePort, Resource, Result,
+    Access, CallerView, Capability, CapabilityPermit, CleanupIdentity, Endpoint, Error, Kernel,
+    Manifest, ModuleHandle, NativePort, OperationBinding, Resource, Result,
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -92,6 +92,7 @@ pub struct OwnerPolicy {
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct Prepared {
+    operation: Option<OperationBinding>,
     caller: ModuleHandle,
     artifact: [u8; 32],
     provider: ModuleHandle,
@@ -111,6 +112,7 @@ pub struct State {
 }
 struct Inner {
     namespace: u64,
+    cleanup_identity: CleanupIdentity,
     limits: Limits,
     binding: Option<(ModuleHandle, [u8; 32])>,
     owners: BTreeMap<String, OwnerPolicy>,
@@ -136,6 +138,7 @@ impl Service {
             .map_err(|_| Error::Limit)?;
         Ok(Self(Rc::new(RefCell::new(Inner {
             namespace,
+            cleanup_identity: CleanupIdentity::issue()?,
             limits,
             binding: None,
             owners: BTreeMap::new(),
@@ -306,6 +309,12 @@ impl Service {
                 inner.reply(snapshot, view)
             }
             "prepare" => {
+                if view
+                    .operation()
+                    .is_some_and(|b| !b.admits_cleanup(inner.cleanup_identity))
+                {
+                    return Err(Error::Authority);
+                }
                 if view.authority().access != Access::Write {
                     return Err(Error::Authority);
                 }
@@ -321,6 +330,7 @@ impl Service {
                 };
                 let output = inner.reply(&id, view)?;
                 let prepared = Prepared {
+                    operation: view.operation().cloned(),
                     caller: view.caller().ok_or(Error::Authority)?,
                     artifact: view.caller_artifact().ok_or(Error::Authority)?,
                     provider: view.provider(),
@@ -345,7 +355,8 @@ impl Service {
                     .pending
                     .get(&id.serial)
                     .ok_or(Error::NativeRefusal)?;
-                if Some(prepared.caller) != view.caller()
+                if prepared.operation.as_ref() != view.operation()
+                    || Some(prepared.caller) != view.caller()
                     || Some(prepared.artifact) != view.caller_artifact()
                     || prepared.provider != view.provider()
                     || prepared.provider_artifact != view.provider_artifact()
@@ -511,6 +522,26 @@ impl Inner {
             return Err(Error::Buffer);
         }
         Ok(output)
+    }
+}
+
+impl Service {
+    /// Trusted typed lifecycle cleanup. Discards only this exact checkpoint's
+    /// pending plans; committed resource/history prefixes are never reverted.
+    pub fn discard_operation(&self, binding: &OperationBinding) -> Result<()> {
+        let mut inner = self.0.try_borrow_mut().map_err(|_| Error::NativeRefusal)?;
+        inner
+            .state
+            .pending
+            .retain(|_, p| p.operation.as_ref() != Some(binding));
+        Ok(())
+    }
+    pub fn cleanup_identity(&self) -> Result<CleanupIdentity> {
+        Ok(self
+            .0
+            .try_borrow()
+            .map_err(|_| Error::NativeRefusal)?
+            .cleanup_identity)
     }
 }
 

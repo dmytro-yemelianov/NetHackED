@@ -94,3 +94,25 @@ reentrant access. The generic item/equipment/timer/debt fixture deletes the thre
 cells together while retaining quantity, terms, creditor and liability in the
 consumed debt cell; unrelated data and an existing event prefix survive. Private
 boundary fixtures cover counter overflow and fallible reply staging.
+
+## Operation-owned prepared plans
+
+Prepared plans capture the kernel's private optional `OperationBinding` and commit
+rechecks exact equality alongside existing caller/artifact/provider/permit checks.
+Same module code in another operation, epoch, phase or lease cannot adopt a live
+plan. Bound and legacy unbound plans cannot adopt one another; legacy unbound
+prepare/commit behavior remains available. Guest commit messages remain transaction
+IDs only; forged JSON context is refused, not interpreted as host authentication.
+
+Trusted lifecycle `discard_operation` discards only pending plans with the exact
+binding; it leaves resources, history and counters unchanged and is idempotent.
+The workflow typed participant adapter runs it after every invoked phase and
+retains the operation's code/participant references on cleanup failure. Host wiring
+must enroll each reachable phase-scoped service in the bounded participant list;
+there is no runtime service discovery. See [workflow policy](../nethacked-workflows/README.md).
+
+Each service exposes its private, non-reused typed cleanup identity to the trusted
+host. Bound preparation additionally refuses if this identity is absent from the
+kernel-authenticated participant set. The workflow freezes that set from enrolled
+typed participants, so omission cannot silently leave abandoned bound plans.
+Participant wrappers must forward the service identity and idempotent discard.

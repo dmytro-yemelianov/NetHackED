@@ -45,6 +45,7 @@ struct Invocation {
     authority: Authority,
     depth: u32,
     routing: Option<Rc<Routing>>,
+    operation: Option<OperationBinding>,
 }
 pub(crate) type SharedBudget = Rc<RefCell<Budget>>;
 #[derive(Clone)]
@@ -53,11 +54,13 @@ pub(crate) struct Frame {
     pub authority: Authority,
     pub depth: u32,
     pub routing: Option<Rc<Routing>>,
+    pub operation: Option<OperationBinding>,
 }
 
 pub struct Kernel {
     instance: u64,
     next_generation: u64,
+    next_operation: u64,
     pub(crate) limits: Limits,
     pub(crate) engine: Engine,
     registrations: BTreeMap<ModuleHandle, Registration>,
@@ -102,6 +105,7 @@ impl Kernel {
         Ok(Self {
             instance,
             next_generation: 1,
+            next_operation: 1,
             engine: Engine::new(&config),
             limits,
             registrations: BTreeMap::new(),
@@ -381,6 +385,7 @@ impl Kernel {
                 authority,
                 depth: 1,
                 routing: None,
+                operation: None,
             },
             &budget,
         )
@@ -459,6 +464,7 @@ impl Kernel {
                 authority,
                 depth,
                 routing: frame.routing.clone(),
+                operation: frame.operation.clone(),
             },
             budget,
         )
@@ -476,6 +482,7 @@ impl Kernel {
             mut authority,
             depth,
             routing,
+            operation,
         } = invocation;
         let original = self
             .registration(target)?
@@ -509,6 +516,7 @@ impl Kernel {
             authority: authority.clone(),
             permits: self.inspect_permits(caller, &authority, routing.as_deref())?,
             max_reply: ep.max_reply,
+            operation: operation.clone(),
         };
         let reply = match &reg.code {
             Code::Native(ports) => ports.get(&endpoint).ok_or(Error::Signature)?(request, &view)?,
@@ -522,6 +530,7 @@ impl Kernel {
                     authority,
                     depth,
                     routing,
+                    operation,
                 },
                 budget,
             )?,

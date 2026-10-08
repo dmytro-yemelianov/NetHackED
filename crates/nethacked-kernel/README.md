@@ -152,3 +152,21 @@ These are concrete host interfaces, not a proved cross-language refinement.
 M4b authoritative workflow frames/checkpoints/resource-operation ownership,
 M4c input/timer callbacks and retry ownership, and M4d schemas/codecs/restoration
 remain pending. No A4/A5 or NetHack migration acceptance follows from M4a.
+
+## Operation context (optional workflow host)
+
+`capture_operation` atomically admits a retained pipeline and a checked, non-reused
+host operation identity. `operation_binding` and `invoke_operation` are trusted
+host APIs, never guest-controlled payload APIs. The private immutable binding
+includes operation namespace/serial, exact pipeline lease, checkpoint sequence and
+phase. It propagates through all nested guest calls into `CallerView::operation`;
+plain invocations expose `None`. `preflight_pipeline` performs root request and
+authority admission before invocation. Resource/phase semantics and cleanup remain
+in optional typed services; the kernel owns no workflow map or universal locator.
+The workflow host must own lease lifetime and derive bindings from stored frames.
+See [workflow trust and lifecycle](../nethacked-workflows/README.md).
+
+Typed participants issue non-reused `CleanupIdentity` values without a service
+registry. `operation_binding_with_cleanup` carries a bounded canonical identity
+set from the workflow owner's frozen participant list. No guest constructor or
+serialization exists. The plain binding API enrolls no participant.

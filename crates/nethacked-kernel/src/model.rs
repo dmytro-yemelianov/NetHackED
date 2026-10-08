@@ -137,6 +137,7 @@ pub struct CallerView {
     pub(crate) authority: Authority,
     pub(crate) permits: Vec<(CapabilityPermit, Authority)>,
     pub(crate) max_reply: u32,
+    pub(crate) operation: Option<OperationBinding>,
 }
 
 /// Exact executable resolution of a declared capability, including extensions.
@@ -275,5 +276,66 @@ impl Default for Limits {
             manifest_entries: 64,
             scope_keys: 64,
         }
+    }
+}
+
+/// Host-issued, non-reused identity. Never decoded from module payloads.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
+pub struct OperationId {
+    pub(crate) host: u64,
+    pub(crate) serial: u64,
+}
+impl OperationId {
+    pub fn namespace(self) -> u64 {
+        self.host
+    }
+    pub fn serial(self) -> u64 {
+        self.serial
+    }
+}
+/// Immutable authenticated invocation context, constructed by trusted host APIs.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct OperationBinding {
+    pub(crate) operation: OperationId,
+    pub(crate) pipeline: PipelineLease,
+    pub(crate) checkpoint: u64,
+    pub(crate) phase: String,
+    pub(crate) cleanup: Vec<CleanupIdentity>,
+}
+impl OperationBinding {
+    pub fn admits_cleanup(&self, identity: CleanupIdentity) -> bool {
+        self.cleanup.binary_search(&identity).is_ok()
+    }
+    pub fn operation(&self) -> OperationId {
+        self.operation
+    }
+    pub fn pipeline(&self) -> PipelineLease {
+        self.pipeline
+    }
+    pub fn checkpoint(&self) -> u64 {
+        self.checkpoint
+    }
+    pub fn phase(&self) -> &str {
+        &self.phase
+    }
+}
+
+/// Non-reused typed participant identity. Issue only in trusted host setup;
+/// no wire constructor exists and no service lookup is associated with it.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
+pub struct CleanupIdentity(u64);
+impl CleanupIdentity {
+    pub fn issue() -> Result<Self> {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static NEXT_CLEANUP: AtomicU64 = AtomicU64::new(1);
+        let id = NEXT_CLEANUP
+            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |n| n.checked_add(1))
+            .map_err(|_| Error::Limit)?;
+        Ok(Self(id))
+    }
+}
+impl CallerView {
+    pub fn operation(&self) -> Option<&OperationBinding> {
+        self.operation.as_ref()
     }
 }

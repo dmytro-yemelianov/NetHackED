@@ -308,7 +308,17 @@ impl Kernel {
         request: &[u8],
         authority: Authority,
     ) -> Result<Vec<u8>> {
-        self.validate_authority(&authority, false)?;
+        self.invoke_pipeline_context(lease, request, authority, None)
+    }
+
+    fn invoke_pipeline_context(
+        &self,
+        lease: PipelineLease,
+        request: &[u8],
+        authority: Authority,
+        operation: Option<OperationBinding>,
+    ) -> Result<Vec<u8>> {
+        self.preflight_pipeline(lease, request, &authority)?;
         let pipeline = self
             .retention
             .pipelines
@@ -331,6 +341,7 @@ impl Kernel {
                 authority,
                 depth: 1,
                 routing: Some(pipeline.routing.clone()),
+                operation,
             },
             &budget,
         )
@@ -440,6 +451,165 @@ impl Kernel {
             return Err(Error::Referenced);
         }
         self.unregister(handle)
+    }
+}
+
+impl Kernel {
+    pub fn issue_operation(&mut self) -> Result<OperationId> {
+        let next = self.next_operation.checked_add(1).ok_or(Error::Limit)?;
+        let id = OperationId {
+            host: self.instance,
+            serial: self.next_operation,
+        };
+        self.next_operation = next;
+        Ok(id)
+    }
+    pub fn operation_cleanup_limit(&self) -> usize {
+        self.limits.scope_keys
+    }
+    pub fn operation_binding(
+        &self,
+        operation: OperationId,
+        pipeline: PipelineLease,
+        checkpoint: u64,
+        phase: &str,
+    ) -> Result<OperationBinding> {
+        self.operation_binding_with_cleanup(operation, pipeline, checkpoint, phase, &[])
+    }
+    pub fn operation_binding_with_cleanup(
+        &self,
+        operation: OperationId,
+        pipeline: PipelineLease,
+        checkpoint: u64,
+        phase: &str,
+        participants: &[CleanupIdentity],
+    ) -> Result<OperationBinding> {
+        if operation.host != self.instance
+            || operation.serial == 0
+            || operation.serial >= self.next_operation
+        {
+            return Err(Error::Authority);
+        }
+        self.pipeline_descriptor(pipeline)?;
+        if phase.len() > self.limits.payload_bytes as usize {
+            return Err(Error::Buffer);
+        }
+        if participants.len() > self.limits.scope_keys {
+            return Err(Error::Limit);
+        }
+        let mut cleanup = participants.to_vec();
+        cleanup.sort();
+        cleanup.dedup();
+        Ok(OperationBinding {
+            operation,
+            pipeline,
+            checkpoint,
+            phase: phase.into(),
+            cleanup,
+        })
+    }
+    /// All root admission checks that can refuse before code is invoked.
+    pub fn preflight_pipeline(
+        &self,
+        lease: PipelineLease,
+        request: &[u8],
+        authority: &Authority,
+    ) -> Result<()> {
+        self.validate_authority(authority, false)?;
+        let d = self.pipeline_descriptor(lease)?;
+        if !d.ceiling.contains(authority) {
+            return Err(Error::Authority);
+        }
+        let resolution = self.resolution(
+            d.root.handle,
+            &d.root.endpoint,
+            Some(
+                &self
+                    .retention
+                    .pipelines
+                    .get(&lease)
+                    .ok_or(Error::InvalidHandle)?
+                    .routing,
+            ),
+        )?;
+        for p in resolution {
+            let e = self
+                .registration(p.handle)?
+                .manifest
+                .exports
+                .get(&p.endpoint)
+                .ok_or(Error::MissingDependency)?;
+            if request.len() > e.max_request as usize {
+                return Err(Error::Buffer);
+            }
+            if authority.access < e.access {
+                return Err(Error::Authority);
+            }
+        }
+        Ok(())
+    }
+    pub fn invoke_operation(
+        &self,
+        binding: &OperationBinding,
+        request: &[u8],
+        authority: Authority,
+    ) -> Result<Vec<u8>> {
+        let authenticated = self.operation_binding_with_cleanup(
+            binding.operation,
+            binding.pipeline,
+            binding.checkpoint,
+            &binding.phase,
+            &binding.cleanup,
+        )?;
+        self.invoke_pipeline_context(binding.pipeline, request, authority, Some(authenticated))
+    }
+}
+
+impl Kernel {
+    /// Acquire both identities with no fallible work after pipeline publication.
+    pub fn capture_operation(
+        &mut self,
+        provider: ModuleHandle,
+        endpoint: &str,
+        authority: Authority,
+    ) -> Result<(OperationId, PipelineLease)> {
+        let next = self.next_operation.checked_add(1).ok_or(Error::Limit)?;
+        let lease = self.capture_pipeline(provider, endpoint, authority)?;
+        let operation = OperationId {
+            host: self.instance,
+            serial: self.next_operation,
+        };
+        self.next_operation = next;
+        Ok((operation, lease))
+    }
+}
+
+#[cfg(test)]
+mod operation_counter_tests {
+    use super::*;
+    #[test]
+    fn exhausted_operation_counter_does_not_acquire_a_lease() {
+        let mut k = Kernel::new(Limits::default()).unwrap();
+        k.next_operation = u64::MAX;
+        let before = k.lifecycle_state();
+        let invalid = ModuleHandle {
+            instance: k.instance,
+            generation: 999,
+        };
+        assert_eq!(
+            k.capture_operation(
+                invalid,
+                "step",
+                Authority {
+                    access: Access::Write,
+                    scope: Scope::All
+                }
+            ),
+            Err(Error::Limit)
+        );
+        assert_eq!(k.issue_operation(), Err(Error::Limit));
+        assert_eq!(k.next_operation, u64::MAX);
+        assert_eq!(k.lifecycle_state(), before);
     }
 }
 

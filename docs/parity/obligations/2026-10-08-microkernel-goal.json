@@ -5,13 +5,13 @@
   "plan_sha256": "480c70bd0abfcff5a229e3e1612dee00b54c0af3da43c0b5ac441557f0e86d6c",
   "native_goal": "Complete NetRust microkernel architecture program; formal contracts, executable extensions, existing NetHack migration, integration audit",
   "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
-  "active_unit": "M4b",
+  "active_unit": "M4c",
   "live_handles": [],
   "acceptance": {
     "A1": "passed_generic_runtime_1fc3290",
     "A2": "passed_live_executable_entityfree_host_1fc3290;NetHack_host_integration_pending_M5",
     "A3": "passed_generic_runtime_resources_checkpoint",
-    "A4": "pending",
+    "A4": "passed_generic_authoritative_workflow_checkpoint;NetHack_host_integration_pending_M5",
     "A5": "pending",
     "A6": "pending",
     "A7": "pending",
@@ -141,11 +141,13 @@
         },
         {
           "id": "M4b",
-          "status": "planned",
+          "status": "complete",
           "depends_on": [
             "M4a"
           ],
-          "scope": "Authoritative workflows/tickets and resource-operation binding"
+          "scope": "Authoritative workflows/tickets and resource-operation binding",
+          "contract": "docs/plans/2026-10-08-runtime-workflow-contract.md",
+          "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-workflow-checkpoint.json"
         },
         {
           "id": "M4c",
@@ -153,7 +155,25 @@
           "depends_on": [
             "M4b"
           ],
-          "scope": "Recorded input/timer services, checkpoint ownership and callback failure policy"
+          "scope": "Recorded input/timer services, checkpoint ownership and callback failure policy",
+          "units": [
+            {
+              "id": "M4c-input",
+              "status": "planned",
+              "depends_on": [
+                "M4b"
+              ],
+              "scope": "Recorded input ownership/replay over authoritative checkpoints; optional policy/provider interface"
+            },
+            {
+              "id": "M4c-timers",
+              "status": "planned",
+              "depends_on": [
+                "M4c-input"
+              ],
+              "scope": "Optional timer admission, continuation retention and callback failure policy"
+            }
+          ]
         },
         {
           "id": "M4d",
@@ -194,12 +214,12 @@
   ],
   "formal_foundations": {
     "S1": "reviewed_formal_authority_and_generic_runtime;native_artifact_fidelity_trusted",
-    "S2": "checked_first_protocol; no_runtime",
-    "S3": "reviewed_formal_atomic_protocol_and_generic_runtime;composed_workflow_binding_pending",
+    "S2": "reviewed formal protocol and generic authoritative runtime; domain integration pending",
+    "S3": "reviewed formal atomic protocol and generic runtime with authenticated phase-operation binding/cleanup",
     "S4": "reviewed_checked_recorded_input_contract;vanilla_stream_runtime_pending",
     "S5": "reviewed_checked_timer_admission_contract;callback_effects_profile_scheduler_runtime_pending",
     "S6": "reviewed_checked_restore_contract;codec_law_assumed_real_codec_pending",
-    "S7": "generic retained routing/references verified; authoritative workflow/schema/persistence lifecycle pending"
+    "S7": "generic retained routing/references and authoritative workflow lifecycle verified; schema/persistence lifecycle pending"
   },
   "separate_parity_scope": {
     "families": 53,
@@ -214,7 +234,7 @@
       26945,
       30480
     ],
-    "next_adjustment": "M4b only authoritativeworkflow protocol plus explicit resource-operation ownership over accepted lease/transaction APIs; specify public interfaces in compact packet, mediumfirst implementation, highsemanticreview. No repeated kernel source/history audit.",
+    "next_adjustment": "Split M4c into input and timer service units over accepted workflow bindings. Compact interface contracts, medium-first writer and fresh high review of delta; no architecture/history re-audit.",
     "authority_implementation": {
       "uncached_input": 59709,
       "output": 18592,
@@ -309,6 +329,18 @@
       ],
       "decision": "Return to accepted medium-first implementation default for concrete existing-contract mappings. M4b writer starts Solmedium when packet resolves scope/authority semantics; usehigh only for a demonstrated new ownership/atomicity ambiguity. Freshsemanticreview staysSolhigh. No additional planning agent or repeated kernel/history audit.",
       "limits": "No empirical medium/high comparison or claimed savings; rootunknown; softceilings and all acceptance/gates unchanged."
+    },
+    "workflow_implementation": {
+      "uncached_input": 99624,
+      "output": 39364,
+      "status": "exceeded",
+      "adjustment": "Narrow review to workflow implementation/new fixtures and existing-crate diff; reuse prior accepted architecture, Lean and routing. No repeated historical audit or tests."
+    },
+    "workflow_review": {
+      "uncached_input": 82305,
+      "output": 5182,
+      "status": "exceeded",
+      "adjustment": "Complete local gates/commit. Split M4c into recorded-input and timer units; reuse accepted workflow and authority contracts, no repeated architecture audit."
     }
   },
   "requested_interlude": {
