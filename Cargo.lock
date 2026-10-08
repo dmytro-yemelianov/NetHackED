@@ -1085,6 +1085,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "nethacked-resources"
+version = "0.1.0"
+dependencies = [
+ "nethacked-kernel",
+ "serde",
+ "serde_json",
+ "wat",
+]
+
+[[package]]
 name = "nethacked-sim"
 version = "0.3.0"
 dependencies = [

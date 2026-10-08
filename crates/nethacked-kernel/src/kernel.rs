@@ -476,6 +476,8 @@ impl Kernel {
             provider: target,
             provider_artifact: reg.artifact,
             authority: authority.clone(),
+            permits: self.inspect_permits(caller, &authority)?,
+            max_reply: ep.max_reply,
         };
         let reply = match &reg.code {
             Code::Native(ports) => ports.get(&endpoint).ok_or(Error::Signature)?(request, &view)?,
@@ -496,6 +498,65 @@ impl Kernel {
             return Err(Error::Buffer);
         }
         Ok(reply)
+    }
+
+    fn inspect_permits(
+        &self,
+        caller: Option<ModuleHandle>,
+        ceiling: &Authority,
+    ) -> Result<Vec<(CapabilityPermit, Authority)>> {
+        let Some(caller) = caller else {
+            return Ok(Vec::new());
+        };
+        let mut permits = Vec::new();
+        'slots: for (slot, dep) in self
+            .registration(caller)?
+            .manifest
+            .dependencies
+            .iter()
+            .enumerate()
+        {
+            let Some(grant) = self.grants.get(&(caller, slot)).filter(|g| g.active) else {
+                continue;
+            };
+            let Ok((mut target, _)) = self.capability(&dep.capability) else {
+                continue;
+            };
+            if target != grant.target {
+                continue;
+            }
+            let mut endpoint = dep.capability.endpoint.clone();
+            let mut resolution = Vec::new();
+            loop {
+                if resolution.len() > self.limits.depth as usize {
+                    continue 'slots;
+                }
+                resolution.push(ProviderBinding {
+                    handle: target,
+                    artifact: self.artifact(target)?,
+                    endpoint: endpoint.clone(),
+                });
+                let Some((next, export)) = self.extensions.get(&(target, endpoint.clone())) else {
+                    break;
+                };
+                target = *next;
+                endpoint = export.clone();
+            }
+            // Participant access is distinct from endpoint admission access: a
+            // read dependency may inspect a write-capable owner's resource.
+            let authority = ceiling.intersect(&grant.authority).intersect(&Authority {
+                access: dep.access,
+                scope: Scope::All,
+            });
+            permits.push((
+                CapabilityPermit {
+                    capability: dep.capability.clone(),
+                    resolution,
+                },
+                authority,
+            ));
+        }
+        Ok(permits)
     }
 }
 

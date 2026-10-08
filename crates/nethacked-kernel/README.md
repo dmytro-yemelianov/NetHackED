@@ -1,8 +1,10 @@
 # nethacked-kernel (M3a)
 
 A generic, safe Rust byte runtime independent of the NetHack domain crates.
-This package does not implement the optional M3b resource coordinator or M4
-persistence. Registration and invocation APIs are trusted host APIs; guests
+The optional M3b resource coordinator lives in the separate
+[`nethacked-resources`](../nethacked-resources/README.md) crate. This kernel owns
+no resource state or M4 persistence. Registration and invocation APIs are
+trusted host APIs; guests
 receive only the ABI below.
 
 `Manifest` uses sorted export/point collections and ordered dependency slots.
@@ -28,6 +30,14 @@ provider incarnation, endpoint, major, and bounded authority. Revoked grants,
 stale providers, and mismatched access refuse before invoking that port. A read
 endpoint itself imposes a read ceiling. Extensions inherit the requesting scope
 and ceiling and use their own slot grants and authenticated executing identity.
+
+`CallerView::permit(capability, resource, access)` inspects a bounded immutable
+snapshot of the invoking module's live manifest/grants under this invocation's
+effective ceiling. It includes the original provider and every resolved extension
+handle/artifact/export, with no dispatcher or registry mutation. It uses no
+coordinator grants and supplies no credentials for future calls. Stateful services
+must obtain a fresh view and recheck permits on commit. `max_reply()` exposes the
+actual native endpoint reply bound for serialization before effects.
 
 Wasm ABI v1 exports `memory`, `alloc(i32) -> i32`, and declared callables
 `(i32, i32) -> i64`. Results pack a pointer in the high 32 bits and length in

@@ -130,8 +130,43 @@ pub struct CallerView {
     pub(crate) provider: ModuleHandle,
     pub(crate) provider_artifact: [u8; 32],
     pub(crate) authority: Authority,
+    pub(crate) permits: Vec<(CapabilityPermit, Authority)>,
+    pub(crate) max_reply: u32,
+}
+
+/// Exact executable resolution of a declared capability, including extensions.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ProviderBinding {
+    pub handle: ModuleHandle,
+    pub artifact: [u8; 32],
+    pub endpoint: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CapabilityPermit {
+    pub capability: Capability,
+    pub resolution: Vec<ProviderBinding>,
 }
 impl CallerView {
+    /// Inspect only the invoking module's live grants, under this call's ceiling.
+    /// A permit is a snapshot, not a credential usable in a later invocation.
+    pub fn permit(
+        &self,
+        capability: &Capability,
+        resource: &Resource,
+        access: Access,
+    ) -> Option<CapabilityPermit> {
+        self.permits
+            .iter()
+            .find(|(p, a)| {
+                &p.capability == capability && a.access >= access && a.scope.allows(resource)
+            })
+            .map(|(p, _)| p.clone())
+    }
+    /// Native services must stage their complete reply before publishing effects.
+    pub fn max_reply(&self) -> u32 {
+        self.max_reply
+    }
     pub fn caller(&self) -> Option<ModuleHandle> {
         self.caller
     }

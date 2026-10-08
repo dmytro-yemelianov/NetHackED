@@ -1,16 +1,16 @@
 {
   "schema": 1,
-  "status": "paused",
+  "status": "active",
   "plan": "docs/plans/2026-10-08-microkernel-goal.md",
   "plan_sha256": "480c70bd0abfcff5a229e3e1612dee00b54c0af3da43c0b5ac441557f0e86d6c",
   "native_goal": "Complete NetRust microkernel architecture program; formal contracts, executable extensions, existing NetHack migration, integration audit",
   "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
-  "active_unit": "M3b",
+  "active_unit": "M4",
   "live_handles": [],
   "acceptance": {
-    "A1": "pending",
-    "A2": "pending",
-    "A3": "pending",
+    "A1": "passed_generic_runtime_1fc3290",
+    "A2": "passed_live_executable_entityfree_host_1fc3290;NetHack_host_integration_pending_M5",
+    "A3": "passed_generic_runtime_resources_checkpoint",
     "A4": "pending",
     "A5": "pending",
     "A6": "pending",
@@ -72,12 +72,12 @@
     },
     {
       "id": "M3",
-      "status": "in_progress",
+      "status": "complete",
       "depends_on": [
         "M2"
       ],
       "implementation": {
-        "phase": "M3a complete; M3b awaits requested Astra interlude",
+        "phase": "M3a/M3b verified",
         "scope": "A1/A2/A3 only; M4 persistence/workflows and M5 NetHack follow",
         "prerequisite_commit": "66c65b750b3864f2f101b3f9871825e25ede188c"
       },
@@ -93,7 +93,7 @@
         },
         {
           "id": "M3b",
-          "status": "planned",
+          "status": "complete",
           "scope": "Optional resource coordinator and fullA3 atomicity through accepted ports",
           "depends_on": [
             "M3a"
@@ -102,7 +102,9 @@
             "Map Lean identities/capabilities to actual authenticated runtime views",
             "Bind exact immutable plans to caller/artifact/effective grants",
             "Revalidate stamps/permissions then atomic owner changes/events"
-          ]
+          ],
+          "contract": "docs/plans/2026-10-08-resource-service-contract.md",
+          "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-resources-checkpoint.json"
         }
       ]
     },
@@ -147,9 +149,9 @@
     }
   ],
   "formal_foundations": {
-    "S1": "reviewed_checked_formal_authority;runtime_code_binding_trusted",
+    "S1": "reviewed_formal_authority_and_generic_runtime;native_artifact_fidelity_trusted",
     "S2": "checked_first_protocol; no_runtime",
-    "S3": "reviewed_checked_formal_atomic_protocol;no_runtime",
+    "S3": "reviewed_formal_atomic_protocol_and_generic_runtime;composed_workflow_binding_pending",
     "S4": "reviewed_checked_recorded_input_contract;vanilla_stream_runtime_pending",
     "S5": "reviewed_checked_timer_admission_contract;callback_effects_profile_scheduler_runtime_pending",
     "S6": "reviewed_checked_restore_contract;codec_law_assumed_real_codec_pending",
@@ -168,7 +170,7 @@
       26945,
       30480
     ],
-    "next_adjustment": "Dispatch one bounded writer forM3a only, no resource coordinator or NetHack migration. Root waits mechanically; one fresh semantic review after stable package checks.",
+    "next_adjustment": "M4 starts with pinned execution/lifecycle boundary against accepted kernel; later workflow/input/timer/codec owners compose on it. No broad architecture/proof/history review.",
     "authority_implementation": {
       "uncached_input": 59709,
       "output": 18592,
@@ -214,6 +216,24 @@
       "output": 2742,
       "status": "exceeded",
       "adjustment": "Narrow next implementation to optional atomic resource coordinator/M3b plus concrete Lean-to-Rust identity/capability mapping; reuse architecture audit and accepted runtime, no broad reread."
+    },
+    "resources_implementation": {
+      "uncached_input": 88485,
+      "output": 34840,
+      "status": "exceeded",
+      "adjustment": "Narrow fresh review to new resource service/fixtures, kernel delta and actual mapping; no repeated original architecture/proof/history audit."
+    },
+    "resources_review": {
+      "uncached_input": 59322,
+      "output": 4315,
+      "status": "exceeded",
+      "adjustment": "Narrow repairreview to changed fixture and mutation evidence, no production reread."
+    },
+    "resources_repair_review": {
+      "uncached_input": 22621,
+      "output": 1086,
+      "guard_status": "exceeded from totalinput; uncachedbelowdifficultthreshold; rootunknown",
+      "adjustment": "NextM4 split first lifecycle/pinned executable identity before workflow+codec/services; bounded native collaboration contract needed beforeNetHack migration."
     }
   },
   "requested_interlude": {
@@ -221,6 +241,6 @@
     "action": "pause native goal; fresh gpt-6-astra review of completed architecture; then resume",
     "status": "complete: M3a committed, native goal paused, Astra PASS_ARCHITECTURE_DIRECTION",
     "review": "docs/parity/obligations/2026-10-08-architecture-astra-review.json",
-    "resume": "User authorized then resume; actual native runtime has no programmatic resume. Await interface Resume control."
+    "resume": "Native goal verified active on user continuation after audit."
   }
 }
