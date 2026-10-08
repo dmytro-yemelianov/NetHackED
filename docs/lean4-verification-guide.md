@@ -6,10 +6,11 @@ This guide details the formal verification architecture of **NetMechanics** in L
 
 ## 1. Project Organization & Verified Modules
 
-The Lean 4 verification project is defined in [lakefile.toml](../lakefile.toml) and root module [NetMechanics.lean](../NetMechanics.lean). All modules compile with zero errors and zero `sorry` placeholders, and the project uses no axioms beyond Lean's standard ones. The table below lists a representative subset (20 of the 44 modules under `NetMechanics/`); the other modules cover areas such as Nutrition, Religion, Traps, Pet, Quest, Sokoban, Skills and Tournament. The game-mechanics models are deliberately simplified abstractions of NetHack mechanics, not a faithful transcription of NetHack 5.0 (see Section 4, Known limitations). `Architecture` is a separate, game-independent first model; its scope and gaps are described in the [architecture design](plans/2026-10-08-microkernel-architecture.md).
+The Lean 4 verification project is defined in [lakefile.toml](../lakefile.toml) and root module [NetMechanics.lean](../NetMechanics.lean). All modules compile with zero errors and zero `sorry` placeholders, and the project uses no axioms beyond Lean's standard ones. The table below lists a representative subset (21 of the 45 modules under `NetMechanics/`); the other modules cover areas such as Nutrition, Religion, Traps, Pet, Quest, Sokoban, Skills and Tournament. The game-mechanics models are deliberately simplified abstractions of NetHack mechanics, not a faithful transcription of NetHack 5.0 (see Section 4, Known limitations). `Architecture` is a separate, game-independent first model; its scope and gaps are described in the [architecture design](plans/2026-10-08-microkernel-architecture.md).
 
 | Module | Source File | Key Inductive Types | Key Verified Theorems |
 | :--- | :--- | :--- | :--- |
+| **`NetMechanics.Services`** | [NetMechanics/Services.lean](../NetMechanics/Services.lean) | `Input.Ledger`, `Timer.Task`, `Lifecycle.State`, `Persistence.Codec` | `accepted_key_cannot_resample`<br>`replay_preserves_ledger`<br>`delivered_once`<br>`attachment_preserves_existing`<br>`dependent_blocks_unload`<br>`restore_refusal` |
 | **`NetMechanics.Authority`** | [NetMechanics/Authority.lean](../NetMechanics/Authority.lean) | `Caller`, `Grant`, `Plan`, `Prepared`, `Policy`, `State` | `prepare_refusal`<br>`commit_authority`<br>`successful_writes`<br>`successful_frame`<br>`successful_history`<br>`replay_refusal` |
 | **`NetMechanics.Workflow`** | [NetMechanics/Workflow.lean](../NetMechanics/Workflow.lean) | `Program`, `Frame`, `Outcome`, `Ticket`, `CheckpointCodec` | `step_appends_trace`<br>`scoped_step_preserves_unrelated_state`<br>`resume_checkpoint`<br>`old_sequence_rejected`<br>`restored_checkpoint_preserves_resume`<br>`direction_cancel_retains_charge_and_time` |
 | **`NetMechanics.Architecture`** | [NetMechanics/Architecture.lean](../NetMechanics/Architecture.lean) | `Kernel`, `Module`, `Extension`, `Scope`, `Session` | `attach_module_preserves_state`<br>`attach_extension_preserves_state`<br>`module_run_preserves_frame`<br>`module_run_preserves_kernel`<br>`extensions_preserve_invariant`<br>`coin_not_functional` |
@@ -82,6 +83,7 @@ Rows marked "(no proptest yet)" have no corresponding proptest at present.
 
 | Lean 4 Theorem | Mathematical Property | Synthesized Rust Proptest |
 | :--- | :--- | :--- |
+| Optional input, timers, attachment/unload and restore services | Recorded choices, pinned admission, dependency/reference guards and validated restore under explicit policy/codec obligations | No runtime/proptest bridge yet; [service contracts](plans/2026-10-08-service-contracts.md). |
 | Architecture attachment, frame/kernel preservation, safe extension composition and optional determinism | Abstract architecture contracts with explicit adapter/safety assumptions | No Rust implementation or proptest bridge yet. |
 | Workflow ordering, owned continuation tickets and checkpoint restore | Resume preserves the committed prefix under the declared codec law; old tickets and replacement pipelines fail | No Rust implementation or proptest bridge yet. |
 | Capability grants and cross-owner prepare/commit | Authority, stamps, atomic refusal, declared writes, history and replay under explicit runtime/validator obligations | No Rust implementation or proptest bridge yet; [contract](plans/2026-10-08-authority-transaction-contract.md). |
@@ -125,7 +127,7 @@ Rows marked "(no proptest yet)" have no corresponding proptest at present.
 
 * `HasLOS` (`NetMechanics/FOV.lean`) is connectivity through transparent cells (king-move links, Chebyshev distance 1), not NetHack's straight-line `clear_path` (`vision.c`); it is not a faithful line-of-sight model.
 * `pathfinding_converges_within` assumes an admissible-gradient oracle; it does not prove that the real grid's BFS distance map always offers a strictly closer passable neighbour.
-* Many of the 378 named theorems have short proofs (`rfl`, `simp`, `decide`); many state definitional facts rather than deep invariants.
+* Many of the 406 named theorems have short proofs (`rfl`, `simp`, `decide`); many state definitional facts rather than deep invariants.
 * The models are simplified and are not NetHack 5.0 itself; see `docs/formal-mechanics-spec.md` for known divergences.
 * There is no machine-checked link between Lean and Rust (see Section 3).
 

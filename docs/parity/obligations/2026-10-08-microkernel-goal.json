@@ -5,7 +5,7 @@
   "plan_sha256": "480c70bd0abfcff5a229e3e1612dee00b54c0af3da43c0b5ac441557f0e86d6c",
   "native_goal": "Complete NetRust microkernel architecture program; formal contracts, executable extensions, existing NetHack migration, integration audit",
   "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
-  "active_unit": "M2",
+  "active_unit": "M3",
   "live_handles": [],
   "acceptance": {
     "A1": "pending",
@@ -35,13 +35,13 @@
         "M0"
       ],
       "implementation": {
-        "status": "compiled_pending_review",
+        "status": "accepted_in_50e1ca8",
         "run": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-AUTHORITY/implementation",
         "theorem_declarations": 48,
         "failure": "prepare_refusal conditional hypothesis simplification",
         "unsuccessful_repairs": 2,
         "total_repair_limit": 3,
-        "next_action": "one narrow Astra/low advice event then third and final targeted repair; no rewrite or proof weakening",
+        "next_action": "completed: third repair, review, full gates and commit",
         "final_repair_attempt": 3,
         "build_jobs": 94
       },
@@ -54,14 +54,25 @@
     },
     {
       "id": "M2",
-      "status": "ready",
+      "status": "complete",
       "depends_on": [
         "M1"
-      ]
+      ],
+      "implementation": {
+        "writer": "root Executing Plans",
+        "scope": "S4-S7 compact service contracts; runtime obligations explicit",
+        "prerequisite_commit": "50e1ca84e001868242ecc58b7141c7582df4d1f0"
+      },
+      "review": {
+        "verdict": "PASS_SERVICE_CONTRACT",
+        "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-SERVICES/review/answer.txt",
+        "sha256": "e3de07152d39c25682e6dbdffef571f642c9b928040dbaca9017005a6dec5f96"
+      },
+      "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-services-checkpoint.json"
     },
     {
       "id": "M3",
-      "status": "planned",
+      "status": "ready",
       "depends_on": [
         "M2"
       ]
@@ -99,10 +110,10 @@
     "S1": "reviewed_checked_formal_authority;runtime_code_binding_trusted",
     "S2": "checked_first_protocol; no_runtime",
     "S3": "reviewed_checked_formal_atomic_protocol;no_runtime",
-    "S4": "pending",
-    "S5": "continuation_interface_checked;timers_pending",
-    "S6": "codec_law_assumed;concrete_codec_migrations_pending",
-    "S7": "registration_model_checked;runtime_lifecycle_pending"
+    "S4": "reviewed_checked_recorded_input_contract;vanilla_stream_runtime_pending",
+    "S5": "reviewed_checked_timer_admission_contract;callback_effects_profile_scheduler_runtime_pending",
+    "S6": "reviewed_checked_restore_contract;codec_law_assumed_real_codec_pending",
+    "S7": "reviewed_checked_lifecycle_contract;loader_validation_trusted"
   },
   "separate_parity_scope": {
     "families": 53,
@@ -129,6 +140,16 @@
       "output": 1937,
       "status": "exceeded",
       "adjustment": "Finish checkpoint with local checks. Next coherent contract smaller; no repeated architecture/history review."
+    },
+    "services_review": {
+      "input_total": 96452,
+      "cached_input": 67968,
+      "uncached_input": 28484,
+      "output": 1830,
+      "guard_status": "exceeded; guard compares total input with packet ceiling",
+      "routing_threshold": "child uncached28484 below difficult50000; whole-unit compliance unknown because root telemetry unavailable",
+      "adjustment": "Finish with local full gates/hash/doc checks. M3 bounded generic kernel/backend and A1-A3; no NetHack migration, no repeated formal/source-fact audit.",
+      "guard_meter_discrepancy": "scripts/parity-agent-guard.py report compares total input at line307, whereas process table defines uncached soft threshold; no unrelated helper changes in this architecture unit."
     }
   }
 }
