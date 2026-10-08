@@ -1,7 +1,7 @@
 {
   "schema": "netrust-autonomous-parity-run-v1",
   "run_state": "running",
-  "goal_activation": "explicit_user_goal_active",
+  "goal_activation": "retained_parity_backlog; architecture_goal_now_active",
   "contract": "docs/plans/2026-10-07-autonomous-parity-run.md",
   "scope_registry": "docs/parity/obligations/2026-10-07-remaining-parity-scope.json",
   "scope_registry_sha256": "ef0c220796234250d4d8e532f66ffbd113503d8db78bc40c002368f90719a5e9",
@@ -22,7 +22,7 @@
   },
   "completion_policy": "contract_final_completion_audit_all_requirements_with_evidence",
   "first_action": "Read-only pinned configuration audit, then independently reviewed P11a contract",
-  "active_unit": "P11a-C1-LIFE",
+  "active_unit": null,
   "live_handles": [],
   "families": [
     {
@@ -1080,7 +1080,7 @@
         "P11a-P1-BILL-SAVE1"
       ],
       "billing_acceptance_contract": "docs/parity/obligations/2026-10-07-p11a-billing-contract/contract.json",
-      "audit_status": "reviewed_contract_only",
+      "audit_status": "accepted_contract_only_delivery_verified",
       "baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/baseline.json",
       "guard_packet": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/audit-packet/packet.json",
       "model": "gpt-6-luna/medium",
@@ -1100,7 +1100,9 @@
       "source_conformance_accepted": false,
       "implementation_children": [
         "P11a-C1-LIFE-API1"
-      ]
+      ],
+      "accepted_commit": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
+      "delivery_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/delivery.json"
     },
     {
       "id": "P11a-B1-PRE",
@@ -1523,7 +1525,7 @@
     {
       "id": "P11a-C1-LIFE-API1",
       "parent": "P11a",
-      "state": "ready",
+      "state": "implementing",
       "contract": "docs/parity/obligations/2026-10-08-p11a-lifetime-contract/unit.json",
       "dependencies": [
         "P11a-C1-LIFE",
@@ -1545,7 +1547,11 @@
         "DG06-bill-settlement"
       ],
       "evidence": null,
-      "repair_counters": {}
+      "repair_counters": {},
+      "baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE-API1/baseline.json",
+      "guard_packet": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE-API1/implementation-packet/packet.json",
+      "before_snapshot": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE-API1/implementation-packet/world.before.rs",
+      "status": "interrupted_for_architecture_revision"
     }
   ],
   "inventory_coverage": {
@@ -1770,7 +1776,7 @@
     "readback_full_342_verified": true,
     "accepted_gate_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/baseline-accepted-gates"
   },
-  "next_action": "Commit reviewed LIFE contract, verifydelivery, then guarded LIFE-API1 exact2-file implementation with prior usage narrowing decision; no new factsexplorer or broad contract audit.",
+  "next_action": "Next Lean architecture contract: capability authority and cross-owner prepare/commit with revision checks; use retained item-retirement/bill facts. No Rust migration or wand completion until architecture contracts are established.",
   "external_accepted_interfaces": {
     "P10a2": {
       "record": "docs/parity/obligations/2026-10-07-p04-p10-final-acceptance.json",
@@ -1805,10 +1811,8 @@
     }
   },
   "goal_runtime_observation": {
-    "status": "active",
-    "source": "actual get_goal on resumed goal continuation",
-    "tokens_used": 1475214,
-    "time_used_seconds": 6772
+    "status": "historical observation only; see architecture queue for current native goal",
+    "source": "new native microkernel goal explicitly created 2026-10-08"
   },
   "controller_efficiency_adjustment": {
     "trigger": "User asks why progress takes so long; optimize process without reducing full parity or mandatory checks.",
@@ -1884,8 +1888,63 @@
     "prior_adjustment": "Narrow to one represented wand-lifetime inventory with knownowners; reduce context/output, reuse accepted billing/config/save/source gates; no whole repo/catalog audit.",
     "comparison_baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-OPTIMIZATION/metrics.json",
     "savings_claim": false,
-    "state": "contract_accepted_pending_commit",
+    "state": "contract_accepted_delivery_verified",
     "observation": "Allphases exceededsoftthreshold; source unchanged. Known symbol futureunit should skip redundant facts explorer, use reviewedcontract directly; no savingsclaim.",
     "unit_evidence": "docs/parity/obligations/2026-10-08-p11a-lifetime-contract/unit.json"
+  },
+  "graph_discovery": {
+    "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/graph-refresh.json",
+    "indexed_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
+    "method_query": "Omit label or use Method for Rust impl owners; Function-only filter gave false0.",
+    "verified_owner_methods": 4
+  },
+  "architecture_design": {
+    "status": "checked_first_formal_model",
+    "priority": "User-requested prerequisite before further parity work",
+    "lean": "NetMechanics/Architecture.lean",
+    "design": "docs/plans/2026-10-08-microkernel-architecture.md",
+    "fact_mapping": "docs/parity/obligations/2026-10-08-architecture-family-map.json",
+    "rust_migration": false,
+    "parity_scope_changed": false,
+    "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-DESIGN/first-model-evidence.json",
+    "review_verdict": "PASS_FOR_FIRST_MODEL_qualified",
+    "review_limit": "Six bounded read commands; no writes, subagents, tests or source re-audit. Root lake build accepted as supplied. The design document\u2019s middle section was truncated by the output cap, so this is a qualified first-model verdict; implementation authority, binding and runtime guarantees remain unverified.",
+    "family_mapping": "53/53 structural only; no 543-row re-audit",
+    "workflow": {
+      "status": "checked_first_formal_protocol_only",
+      "lean": "NetMechanics/Workflow.lean",
+      "doc": "docs/plans/2026-10-08-workflow-contract.md",
+      "theorems": 18,
+      "runtime_implementation": false,
+      "review_verdict": "PASS_FIRST_PROTOCOL",
+      "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-WORKFLOW/first-protocol-evidence.json",
+      "persistence": "conditional codec interface; no verified serializer"
+    },
+    "remaining_contracts": [
+      "capability-authority-and-code-binding",
+      "cross-owner-atomic-mutation",
+      "rng-and-external-input",
+      "timer-ownership",
+      "concrete-persistence-and-migrations",
+      "attachment-replacement-and-unload-lifecycle"
+    ]
+  },
+  "historical_parity_goal": {
+    "activation": "explicit_user_goal_active",
+    "objective": "Complete all seven remaining parity streams following docs/plans/2026-10-07-autonomous-parity-run.md. Continue across all 53 families until its completion audit passes. Start with configuration bootstrap and P11a.",
+    "last_runtime_observation": {
+      "status": "active",
+      "source": "actual get_goal on resumed goal continuation",
+      "tokens_used": 1475214,
+      "time_used_seconds": 6772
+    },
+    "last_active_unit": "P11a-C1-LIFE-API1"
+  },
+  "architecture_goal": {
+    "status": "active",
+    "queue": "docs/parity/obligations/2026-10-08-microkernel-goal.json",
+    "plan": "docs/plans/2026-10-08-microkernel-goal.md",
+    "parity_families_closed_by_architecture": 0,
+    "interrupted_wand_draft": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M0/interrupted-wand-draft/manifest.json"
   }
 }

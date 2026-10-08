@@ -1,0 +1,691 @@
+{
+  "schema": 1,
+  "head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
+  "graph_project": "Users-dmytro-github-NetRust",
+  "graph_query": "MATCH (m:Method) WHERE m.qualified_name CONTAINS '.SimulationWorld.' RETURN m.file_path AS file, m.name AS name ORDER BY file, name",
+  "graph_methods": [
+    {
+      "file": "crates/nethacked-sim/src/actions/doors.rs",
+      "methods": [
+        "handle_open_door",
+        "handle_close_door",
+        "handle_kick",
+        "handle_melee_attack"
+      ]
+    },
+    {
+      "file": "crates/nethacked-sim/src/actions/economy.rs",
+      "methods": [
+        "hero_dunce_or_tourist",
+        "shop_buy_price",
+        "shop_sell_price",
+        "handle_pay",
+        "handle_price_check"
+      ]
+    },
+    {
+      "file": "crates/nethacked-sim/src/actions/engrave.rs",
+      "methods": [
+        "handle_engrave"
+      ]
+    },
+    {
+      "file": "crates/nethacked-sim/src/actions/equipment.rs",
+      "methods": [
+        "effective_hero_intrinsics",
+        "selected_suit_is_worn",
+        "handle_dressing",
+        "finish_dressing",
+        "tick_dressing",
+        "interrupt_dressing",
+        "reconcile_equipment",
+        "remove_destroyed_item_equipment"
+      ]
+    },
+    {
+      "file": "crates/nethacked-sim/src/actions/inventory.rs",
+      "methods": [
+        "hero_weight_capacity",
+        "hero_carried_weight",
+        "hero_encumbrance",
+        "can_lift_weight",
+        "handle_pickup",
+        "handle_drop",
+        "handle_wield",
+        "bag_check_tree",
+        "do_boh_explosion",
+        "destroy_item_tree",
+        "handle_put_in_container",
+        "handle_take_from_container",
+        "handle_apply"
+      ]
+    },
+    {
+      "file": "crates/nethacked-sim/src/actions/items.rs",
+      "methods": [
+        "draw_enchant",
+        "apply_enchant_outcome",
+        "handle_dip",
+        "handle_rub",
+        "handle_dip_potion",
+        "handle_quaff",
+        "handle_read",
+        "handle_eat",
+        "handle_cast",
+        "handle_zap_wand",
+        "handle_zap_selected_wand",
+        "handle_zap_item",
+        "handle_wish"
+      ]
+    },
+    {
+      "file": "crates/nethacked-sim/src/actions/mod.rs",
+      "methods": [
+        "step_player_action"
+      ]
+    },
+    {
+      "file": "crates/nethacked-sim/src/actions/movement.rs",
+      "methods": [
+        "is_safemon",
+        "bump_peaceful",
+        "handle_move"
+      ]
+    },
+    {
+      "file": "crates/nethacked-sim/src/actions/ranged.rs",
+      "methods": [
+        "handle_quiver",
+        "handle_fire",
+        "handle_mount",
+        "handle_dismount"
+      ]
+    },
+    {
+      "file": "crates/nethacked-sim/src/actions/religion.rs",
+      "methods": [
+        "handle_pray",
+        "handle_sacrifice",
+        "handle_donate"
+      ]
+    },
+    {
+      "file": "crates/nethacked-sim/src/actions/stairs.rs",
+      "methods": [
+        "teleport_hero_randomly",
+        "spawn_monster_by_name",
+        "spawn_monster_near",
+        "pack_current_level",
+        "place_steed_with_hero",
+        "unpack_or_generate_level",
+        "handle_descend",
+        "handle_ascend"
+      ]
+    },
+    {
+      "file": "crates/nethacked-sim/src/ad_effects.rs",
+      "methods": [
+        "hero_magic_cancellation",
+        "hero_negates",
+        "hero_ad_effect",
+        "hero_theft_effect",
+        "hero_ad_damage",
+        "drain_en",
+        "tick_hero_afflictions",
+        "hero_moves_at_random"
+      ]
+    },
+    {
+      "file": "crates/nethacked-sim/src/bones.rs",
+      "methods": [
+        "save_bones",
+        "check_and_load_bones"
+      ]
+    },
+    {
+      "file": "crates/nethacked-sim/src/combat.rs",
+      "methods": [
+        "resolve_combat",
+        "sync_hero_form_from_actor",
+        "damage_hero",
+        "land_hit",
+        "anger_quest_guardians",
+        "on_actor_killed",
+        "defender_ac",
+        "resolve_monster_attacks",
+        "push_miss"
+      ]
+    },
+    {
+      "file": "crates/nethacked-sim/src/corpse_revival.rs",
+      "methods": [
+        "revive_ordinary_troll",
+        "revival_origin",
+        "try_revive_troll",
+        "monster_adjacent",
+        "monster_placement_rings",
+        "monster_goodpos",
+        "monster_goodpos_in_branch"
+      ]
+    },
+    {
+      "file": "crates/nethacked-sim/src/monster_generation.rs",
+      "methods": [
+        "create_random_monsters_by_hero",
+        "spawn_random_monster_at",
+        "spawn_random_monster_at_on_level",
+        "insert_initialized_random_monster",
+        "expand_owned_small_group"
+      ]
+    },
+    {
+      "file": "crates/nethacked-sim/src/monsters.rs",
+      "methods": [
+        "is_line_clear",
+        "step_monsters",
+        "monster_ranged_breath",
+        "monster_gazes",
+        "cast_monster_spell",
+        "monster_breathes",
+        "feed_companion_pet"
+      ]
+    },
+    {
+      "file": "crates/nethacked-sim/src/object_timers.rs",
+      "methods": [
+        "migrate_absent_corpse_timers",
+        "corpse_freeze_snapshot",
+        "apply_corpse_freeze_transitions",
+        "timer_target_exists",
+        "start_object_timer",
+        "start_object_timer_signed",
+        "start_object_timer_at",
+        "attach_generated_item",
+        "stop_object_timer",
+        "cancel_object_timers",
+        "consume_split_timer_serials",
+        "reconcile_object_timers",
+        "validate_object_timers",
+        "cache_object_timers",
+        "restore_object_timers",
+        "timer_object_is_global",
+        "restore_saved_object_timers",
+        "run_object_timers"
+      ]
+    },
+    {
+      "file": "crates/nethacked-sim/src/peace.rs",
+      "methods": [
+        "hero_has_amulet",
+        "hero_alignment",
+        "roll_spawn_peaceful",
+        "set_monster_malign",
+        "elbereth_scares",
+        "setmangry"
+      ]
+    },
+    {
+      "file": "crates/nethacked-sim/src/progress.rs",
+      "methods": [
+        "stats",
+        "hero_level",
+        "init_hero_attributes",
+        "hero_attr",
+        "adjattrib",
+        "roll_advance",
+        "newhp",
+        "newpw",
+        "gain_experience",
+        "pluslvl",
+        "losexp",
+        "poisoned",
+        "award_kill_experience"
+      ]
+    },
+    {
+      "file": "crates/nethacked-sim/src/turns.rs",
+      "methods": [
+        "process_turn_ticks",
+        "regenerate_natural_hero_hp"
+      ]
+    },
+    {
+      "file": "crates/nethacked-sim/src/world.rs",
+      "methods": [
+        "item_birth_context",
+        "monster_spawn_context",
+        "remove_actor_dropping_items",
+        "actor_is_genocided",
+        "new_with_character_and_ruleset",
+        "new_with_character",
+        "to_save_json",
+        "from_save_json",
+        "register_existing_artifacts",
+        "hero_coord",
+        "compute_hero_ac",
+        "recompute_hero_ac",
+        "set_locale",
+        "get_locale",
+        "new_with_seed",
+        "get_unpaid_cost",
+        "is_unpaid",
+        "remove_unpaid",
+        "try_remove_unpaid",
+        "billing_settlement_deferred",
+        "unknown_bill_terms",
+        "validate_billing_snapshot",
+        "validate_bill_object",
+        "bill_ledger",
+        "validate_bill_terms",
+        "record_bill_terms",
+        "prepare_whole_disposal",
+        "commit_whole_disposal",
+        "dispose_whole_carried_item",
+        "outstanding_bills",
+        "forget_rot_corpse_references",
+        "economy_ledger",
+        "record_events",
+        "set_max_event_log_len",
+        "actor_at",
+        "normalize_revival_actor_allocator",
+        "hunger_state",
+        "luck_timeout_period",
+        "tick_luck_decay",
+        "compute_perception",
+        "damage_player",
+        "erode_hero_armor",
+        "steal_hero_item",
+        "teleport_theft_attacker",
+        "steal_hero_gold",
+        "seduce_hero",
+        "teleport_hero",
+        "disenchant_hero_item",
+        "polymorph_hero",
+        "make_sick",
+        "curse_hero_items",
+        "handle_clerical_attack",
+        "handle_death_touch",
+        "handle_nurse_heal",
+        "steal_hero_amulet",
+        "exercise_attr",
+        "more_hungry"
+      ]
+    }
+  ],
+  "limitations": [
+    "Graph methods are a structural inventory, not evidence that each body has been semantically audited.",
+    "Supplemental literal-reference scan is needed because the graph does not enumerate type mentions in function signatures/imports."
+  ],
+  "literal_reference_scan": {
+    "command": "rg -l --glob *.rs \\bSimulationWorld\\b crates",
+    "reason": "Graph aggregation omits import and signature mentions; fallback provides a conservative supplemental file inventory.",
+    "files": [
+      {
+        "file": "crates/nethacked-sim/src/bones.rs",
+        "sha256": "fcd0460517922333dad07b31718125784d210aebf66681dadb56e44f333329ce",
+        "migration_owner": "persistence_bones"
+      },
+      {
+        "file": "crates/nethacked-tui/src/main.rs",
+        "sha256": "0cc1a49be11c5580f83a133bffba91714c31066d65e2d4d07d2762300748695b",
+        "migration_owner": "external_frontend_or_adapter"
+      },
+      {
+        "file": "crates/nethacked-sim/src/ad_effects.rs",
+        "sha256": "13405e048340d53a64d218ad347846a709306a658160a0f17738233e1f56a2cc",
+        "migration_owner": "combat_effects"
+      },
+      {
+        "file": "crates/nethacked-sim/src/turns.rs",
+        "sha256": "68c91ca8d6cc9879ca809a134371845e957e95189fc4dd97e6b05b8c682c7607",
+        "migration_owner": "dispatch_or_composition_adapter;review_boundary_during_migration"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/level_persistence_tests.rs",
+        "sha256": "346b73704828f346bcd0e8a6f6506cba673fda1a97447f070a547e5343a30996",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/src/lib.rs",
+        "sha256": "b56ab70287dd9def2f4d9f5cddfcc446d3d743137671bbbd98b449199c25e75d",
+        "migration_owner": "dispatch_or_composition_adapter;review_boundary_during_migration"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/reachability_tests.rs",
+        "sha256": "d5d380542fd557723befa234cf6b79b356201f84161ffed10088048505e75ecb",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/src/actions/religion.rs",
+        "sha256": "d9e48e3dfa9b810ef46b0de5f05895df36aeb8ddb49ceaad05916bd5fc1e93ee",
+        "migration_owner": "hero_progression_religion"
+      },
+      {
+        "file": "crates/nethacked-sim/src/peace.rs",
+        "sha256": "d74c453e53335829d5951f2d15683dc5cd52957b9f85530ebab342159e8ddd1b",
+        "migration_owner": "economy_npc"
+      },
+      {
+        "file": "crates/nethacked-sim/src/actions/engrave.rs",
+        "sha256": "abde0191856473b3673c1999492508dcb95163319f63192bca1c73b0ed295dd4",
+        "migration_owner": "objects_tools"
+      },
+      {
+        "file": "crates/nethacked-data/src/containers.rs",
+        "sha256": "099f79f043fab3964140f0819c8acc10be8f9f795784e64b330da0a21e0e5069",
+        "migration_owner": "external_frontend_or_adapter"
+      },
+      {
+        "file": "crates/nethacked-sim/src/actions/doors.rs",
+        "sha256": "396620eb0bb7b918c3955a72e084e95056ce9701f9e70e5bd1a4c555a5230578",
+        "migration_owner": "spatial_content"
+      },
+      {
+        "file": "crates/nethacked-sim/src/actions/ranged.rs",
+        "sha256": "715ff4c1aa3fdeaedd999e9605c5f52df163c62b179d5ab970194fe67ba596ed",
+        "migration_owner": "combat_effects"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/corpse_birth_tests.rs",
+        "sha256": "97d07d3091ef23972e1b2c749fe53ac9566779b471f9a4615ebf6732494ad8d5",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/corpse_transfer_tests.rs",
+        "sha256": "076254ac417e0ef5655805fc48f9a478aab8c76fe3eb72a51d23ed437e219127",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/src/actions/inventory.rs",
+        "sha256": "a542f717c70198988f2f4112cd858a6a8dadb9a041b224c1ba29b18bb22cab7a",
+        "migration_owner": "objects_tools"
+      },
+      {
+        "file": "crates/nethacked-sim/src/actions/mod.rs",
+        "sha256": "b113139cdfcfa25e734163106b93b21c515f9491e0f1883067b72c44a69882df",
+        "migration_owner": "dispatch_or_composition_adapter;review_boundary_during_migration"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/hero_armor_ac_tests.rs",
+        "sha256": "c6e3aad4288f8035bf05c16148a6fb893b4602443a4a81a7bacb93581b299fc8",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/equipment_occupation_tests.rs",
+        "sha256": "38d5f11b5c9cece12357677eb6b9fc59758d78fdb4de811d71c6788815a45a37",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/monster_energy_tests.rs",
+        "sha256": "b3c118f8d51743a89cd0f82d7ebdc4bab50aeaddb6f5726df3e674515783ba6c",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/src/combat.rs",
+        "sha256": "07febf1d2e5f006db4e32822a413c5b5a0cd2f8e50c801969b62da5b27ef8722",
+        "migration_owner": "combat_effects"
+      },
+      {
+        "file": "crates/nethacked-sim/src/object_timers.rs",
+        "sha256": "385e9d3a79af9a56e155838854c528d43c0c627c092b971c50f112d06167a717",
+        "migration_owner": "object_lifecycle_timer_callbacks"
+      },
+      {
+        "file": "crates/nethacked-pack/tests/pack_lib.rs",
+        "sha256": "a5e1279661904cf386d41c1df56dfd14158caa2eddd0939fde007b53900b466f",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/src/actions/items.rs",
+        "sha256": "1b2b9a4f585154c0361854fd6ab101122edee6020425cc81b1ebe52990be92ea",
+        "migration_owner": "objects_tools"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/wand_billing_tests.rs",
+        "sha256": "1d819942f5b9a72756a5529f9a5972373c96be161dd2798be5685f11b228b5c6",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/item_initialization_tests.rs",
+        "sha256": "3346b8b034253eac385478776f3dcdfbbcb3cf0fbf9db86c64657bb2c223b867",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/src/monsters.rs",
+        "sha256": "1796cf1c0cb62c8557040fbda18d3b42881c9113c1810ffa9275a91166c0057e",
+        "migration_owner": "actor_ai_generation"
+      },
+      {
+        "file": "crates/nethacked-sim/src/monster_generation.rs",
+        "sha256": "8cb18b7085c2d4175fa954b7d9666fa989f0c802eb6f54a3575fe473bfa19e7a",
+        "migration_owner": "actor_ai_generation"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/save_load_tests.rs",
+        "sha256": "3db774e3812220f11ef9dbe879530c68d5ddbbd7153710fc996adaf741298b2a",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/src/actions/equipment.rs",
+        "sha256": "188da56d460196b95037d6c5d16453f0b60497ca2514902c74c1bfb4170be700",
+        "migration_owner": "equipment_properties"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/peacefulness_tests.rs",
+        "sha256": "737a4dadb49b510b70e7a61ba1490686764586ac37d3b6ade6eb15aa99b1239f",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-pack/tests/example_pack.rs",
+        "sha256": "e9885423a0042a86683f8d771ffc1fc638267db63ea7741d4be956a8d1e0e78c",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/monster_group_tests.rs",
+        "sha256": "bba1cf02a356f61741731e9afdb8c4d08bd8d973b629d29b2ae998dbb06ab7cc",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/src/actions/economy.rs",
+        "sha256": "0c4e54ccf34a87f68bd68a60d1f37086243b50ad7ac37bf3460f60d9f0cbc377",
+        "migration_owner": "economy_npc"
+      },
+      {
+        "file": "crates/nethacked-sim/src/progress.rs",
+        "sha256": "1953de5cdb4142bf8a5fc66d26c33d71b7330c9934e044472ffdd1eb2d18914e",
+        "migration_owner": "hero_progression_religion"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/monster_attack_tests.rs",
+        "sha256": "da7edca74bde3b21a0a3b13408060e5b7dd738c8b9348b49949ba52b09bf25c8",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-agent/src/mcp.rs",
+        "sha256": "ef460cb202ebaa2c50af77e798e8394dfa94eb2da481578dc435834b96506296",
+        "migration_owner": "external_frontend_or_adapter"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/ice_box_tests.rs",
+        "sha256": "7488de1a7376b9dfc7065fafb31def857848c8c502742e19839dec1197a37146",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/src/actions/stairs.rs",
+        "sha256": "a4dfcf130106bb8ce5ac8dc2a9607b84ae04d6a851c2c6c3814d35699f550514",
+        "migration_owner": "spatial_content"
+      },
+      {
+        "file": "crates/nethacked-agent/src/session.rs",
+        "sha256": "a34beb58fa04bc59dc7d04a2f9a01d6e4a1ffd48a37f28460684c8c2bfe8f3ac",
+        "migration_owner": "external_frontend_or_adapter"
+      },
+      {
+        "file": "crates/nethacked-sim/src/corpse_revival.rs",
+        "sha256": "b2e3378f42ca18988072b1440b4a2e5dfccebf6148414c1f0cb4c73e97c99f1d",
+        "migration_owner": "object_lifecycle_timer_callbacks"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/ruleset_world_tests.rs",
+        "sha256": "8cbbf60186df84f6de4153421b6518b5c2f088594739543692508715e368eda3",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/src/world.rs",
+        "sha256": "dd1ffd611612dd8a4ba86b0d7935b76bba7b7746051c3750f943655867f1a71d",
+        "migration_owner": "host_composition_and_facade;domain_methods_require_extraction"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/affliction_timer_tests.rs",
+        "sha256": "20182a6a57182071d3f086981e8c3c100ca808731fc8116d27dae65219f28e8b",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/corpse_lifecycle_tests.rs",
+        "sha256": "3ff6277baaecd39f4b0854e44473857fe6e151d69a90d1f497d7145108a405eb",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-agent/src/bones/mod.rs",
+        "sha256": "8f44097ab5f8fe65ee951e15a872f2a604f5c3e39b37bb8b6dd94cc4fc226a48",
+        "migration_owner": "external_frontend_or_adapter"
+      },
+      {
+        "file": "crates/nethacked-sim/src/actions/movement.rs",
+        "sha256": "db22a1bd302db8cf00eb13f210539af2c9e9e935fdb7aa749934f50b11f1f2c6",
+        "migration_owner": "spatial_content"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/hero_weapon_damage_tests.rs",
+        "sha256": "d610a3472f4f9b682f3e2fa304108fe7b7cc7c730d78b882d210eb46e24b742d",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/actor_identity_tests.rs",
+        "sha256": "41f7c7f1531a96e47518cd15a10820f3db429fce864992572010b206eb4f4fb1",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-agent/tests/golden_determinism.rs",
+        "sha256": "dff651d536548ca372addf88fec0ad6fc15a5c5e4a088870f25e8fc19e5c160b",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/hero_attribute_damage_tests.rs",
+        "sha256": "bf51e2221251b697e6218d6cb3435b3202252f94d4acaf601c1f73e36c35582f",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-agent/tests/equipment_actions.rs",
+        "sha256": "2d3f918862ecbcb74f20b331f62c28de3717fabcb6db0cca1053ae6827ba13ba",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-agent/src/bin/demo.rs",
+        "sha256": "3b0a06f517a39115043ffc88d7cb39e448a0ef0c18e9843e1773d1c6536ffcdb",
+        "migration_owner": "external_frontend_or_adapter"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/corpse_revival_tests.rs",
+        "sha256": "d6d63585636e626ee1ce0fe49f3eba3caecc8c9336ad98dad1b78ca66311013f",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-agent/src/arena.rs",
+        "sha256": "5fcd65208c2e7b4b18707c3ebe6b01136bc30266f76270473054f39efe87aae0",
+        "migration_owner": "external_frontend_or_adapter"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/monster_generation_tests.rs",
+        "sha256": "ac242a3323bcb621a79366791fc561883f8d440882eba84d55267c7a609393f6",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/monster_creation_wand_tests.rs",
+        "sha256": "e7ea56c0a4e5c5e5494445cf89c252578ccadacde2ff3c76e7d82ee6230e6dcc",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-agent/tests/bones_server_test.rs",
+        "sha256": "49c3625e59aebfeda83cb2e5d4d6fe6c6adebb20129a61ca1377eba0e9aa278e",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "sha256": "b75e30a0ddd553af063d00cb0e04540a956018da52ea9987b6128fe7fbe2dd0a",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/integrity_tests.rs",
+        "sha256": "1908c5ff29395e3605444c4dea15eaf158beb0e3106ef576f9b65884b083ed2f",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/natural_hp_regeneration_tests.rs",
+        "sha256": "53df86196d675caf9e4431336feefcf34ccb4a748a5e64051d68faefa42ba63c",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-agent/src/ascii.rs",
+        "sha256": "98df2cfa9148a7c615173128bedcd9c81331d4417a8ed7d5612a1de0c33a39d2",
+        "migration_owner": "external_frontend_or_adapter"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/item_definition_identity_tests.rs",
+        "sha256": "be7d1cf64de37cd5e27bdb883d61a7ca809f83d264c0572e72c7966c6f424842",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/actor_sex_tests.rs",
+        "sha256": "921b5cd11d01b09835d12a11db0da6cfd938d5b50b921b2257bc5fa21da52780",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/object_timer_tests.rs",
+        "sha256": "56beaff3baba5d5f21a0114623053ba8bd3897272ad9b95354c91c54eceb03ee",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/saved_monster_traits_tests.rs",
+        "sha256": "59dd7ed010c5e98900d7a54dc7b9af1362fee68b7cea3021fb3f44d5193959cf",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/hero_attribute_hit_tests.rs",
+        "sha256": "5e42d9a266d7363c79105b4da99de8b705b9ab9834aad2a8c8c56e0ca255a716",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/monster_hp_tests.rs",
+        "sha256": "bade34bc8fa0281374dee3d5ebad92b0cfaf5c4efa537e9fd81f1e48c398fd5b",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/hero_capacity_tests.rs",
+        "sha256": "16e2cba91356bc919aaf4151542e3f4b0c2ea12cb2ac20417b8c9f0b31f42f45",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/worn_property_tests.rs",
+        "sha256": "7d2eb7e43c5cf4d97ea866d199e9ba5df013537e6e7de5d1d9631d3ef41f2381",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/selected_wand_tests.rs",
+        "sha256": "23a6edad28e183d4fc31d6a30f9b9abf28946eb2a95ccfa4e9b967694129ef04",
+        "migration_owner": "compatibility_test_or_benchmark"
+      },
+      {
+        "file": "crates/nethacked-sim/tests/corpse_recipe_attachment.rs",
+        "sha256": "e9ca41030ac9c9a8c820e1784e397c233085a10f7fc838e7d34166e849551c20",
+        "migration_owner": "compatibility_test_or_benchmark"
+      }
+    ]
+  },
+  "counts": {
+    "graph_methods": 197,
+    "graph_method_files": 22,
+    "rust_files_with_type_mentions": 72,
+    "production_type_mention_files": 31
+  }
+}

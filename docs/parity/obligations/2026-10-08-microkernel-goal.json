@@ -1,0 +1,134 @@
+{
+  "schema": 1,
+  "status": "active",
+  "plan": "docs/plans/2026-10-08-microkernel-goal.md",
+  "plan_sha256": "480c70bd0abfcff5a229e3e1612dee00b54c0af3da43c0b5ac441557f0e86d6c",
+  "native_goal": "Complete NetRust microkernel architecture program; formal contracts, executable extensions, existing NetHack migration, integration audit",
+  "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
+  "active_unit": "M2",
+  "live_handles": [],
+  "acceptance": {
+    "A1": "pending",
+    "A2": "pending",
+    "A3": "pending",
+    "A4": "pending",
+    "A5": "pending",
+    "A6": "pending",
+    "A7": "pending",
+    "A8": "pending"
+  },
+  "milestones": [
+    {
+      "id": "M0",
+      "status": "complete",
+      "depends_on": [],
+      "evidence": {
+        "draft_archive": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M0/interrupted-wand-draft/manifest.json",
+        "inventory": "docs/parity/obligations/2026-10-08-microkernel-migration-inventory.json",
+        "inventory_sha256": "069042ff0466fc1e03d8247d20bd56dacb4c2527d52f6343cc0746545e832bf6"
+      }
+    },
+    {
+      "id": "M1",
+      "status": "complete",
+      "depends_on": [
+        "M0"
+      ],
+      "implementation": {
+        "status": "compiled_pending_review",
+        "run": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-AUTHORITY/implementation",
+        "theorem_declarations": 48,
+        "failure": "prepare_refusal conditional hypothesis simplification",
+        "unsuccessful_repairs": 2,
+        "total_repair_limit": 3,
+        "next_action": "one narrow Astra/low advice event then third and final targeted repair; no rewrite or proof weakening",
+        "final_repair_attempt": 3,
+        "build_jobs": 94
+      },
+      "review": {
+        "verdict": "PASS_FORMAL_CONTRACT",
+        "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-AUTHORITY/review/answer.txt",
+        "sha256": "b16430504bae0a1b923baff959e63095947ced036077ed4fe9afb168a9fd4224"
+      },
+      "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-foundation-checkpoint.json"
+    },
+    {
+      "id": "M2",
+      "status": "ready",
+      "depends_on": [
+        "M1"
+      ]
+    },
+    {
+      "id": "M3",
+      "status": "planned",
+      "depends_on": [
+        "M2"
+      ]
+    },
+    {
+      "id": "M4",
+      "status": "planned",
+      "depends_on": [
+        "M3"
+      ]
+    },
+    {
+      "id": "M5",
+      "status": "planned",
+      "depends_on": [
+        "M4"
+      ]
+    },
+    {
+      "id": "M6",
+      "status": "planned",
+      "depends_on": [
+        "M5"
+      ]
+    },
+    {
+      "id": "M7",
+      "status": "planned",
+      "depends_on": [
+        "M6"
+      ]
+    }
+  ],
+  "formal_foundations": {
+    "S1": "reviewed_checked_formal_authority;runtime_code_binding_trusted",
+    "S2": "checked_first_protocol; no_runtime",
+    "S3": "reviewed_checked_formal_atomic_protocol;no_runtime",
+    "S4": "pending",
+    "S5": "continuation_interface_checked;timers_pending",
+    "S6": "codec_law_assumed;concrete_codec_migrations_pending",
+    "S7": "registration_model_checked;runtime_lifecycle_pending"
+  },
+  "separate_parity_scope": {
+    "families": 53,
+    "historical_rows": 543,
+    "closed_by_architecture": 0
+  },
+  "efficiency": {
+    "one_writer": true,
+    "nested_agents": false,
+    "root_usage": "unknown",
+    "previous_review_uncached": [
+      26945,
+      30480
+    ],
+    "next_adjustment": "M2 root implementation of compact service contracts; reuse reviewed interfaces and retained facts, avoid another large implementation packet. One fresh review at a coherent checkpoint; local mechanical checks.",
+    "authority_implementation": {
+      "uncached_input": 59709,
+      "output": 18592,
+      "status": "exceeded",
+      "adjustment": "Advice packet contains only failing proof and local definitions; root applies one bounded repair, then one fresh semantic review. No additional implementation agent or broad design reread."
+    },
+    "authority_review": {
+      "uncached_input": 68360,
+      "output": 1937,
+      "status": "exceeded",
+      "adjustment": "Finish checkpoint with local checks. Next coherent contract smaller; no repeated architecture/history review."
+    }
+  }
+}

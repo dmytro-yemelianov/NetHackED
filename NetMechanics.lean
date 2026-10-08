@@ -1,6 +1,9 @@
 -- This module serves as the root of the `NetMechanics` library.
 -- Import modules here that should be built as part of the library.
 import NetMechanics.Basic
+import NetMechanics.Architecture
+import NetMechanics.Workflow
+import NetMechanics.Authority
 import NetMechanics.BUC
 import NetMechanics.Inventory
 import NetMechanics.Energy
