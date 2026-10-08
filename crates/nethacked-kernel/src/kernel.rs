@@ -74,6 +74,35 @@ impl std::fmt::Debug for PureBridge<'_> {
     }
 }
 impl PureCall for PureBridge<'_> {
+    fn capture(&self, slot: usize) -> Result<PureCapture> {
+        let mut frame = self.frame.clone();
+        frame.pure = true;
+        frame.authority.access = Access::Read;
+        let closure = self.kernel.inspect_pure_closure(&frame, slot)?;
+        let (target, endpoint, authority, _) = self.kernel.slot_target(&frame, slot)?;
+        let pin = self
+            .kernel
+            .pin_route(target, &endpoint, authority, frame.routing.as_deref())?;
+        Ok(PureCapture {
+            provider: frame.provider,
+            slot,
+            ceiling: frame.authority,
+            closure,
+            pin,
+        })
+    }
+    fn validate(&self, capture: &PureCapture) -> Result<()> {
+        let mut frame = self.frame.clone();
+        frame.provider = capture.provider;
+        frame.pure = true;
+        frame.authority = frame.authority.intersect(&capture.ceiling);
+        if capture.pin.module_count() == 0
+            || self.kernel.inspect_pure_closure(&frame, capture.slot)? != capture.closure
+        {
+            return Err(Error::Authority);
+        }
+        Ok(())
+    }
     fn pin(&self) -> Result<ModulePin> {
         self.kernel
             .pin_invocation_route(self.caller, &self.frame, self.endpoint)
@@ -125,6 +154,100 @@ pub struct Kernel {
 }
 
 impl Kernel {
+    fn inspect_pure_closure(
+        &self,
+        frame: &Frame,
+        slot: usize,
+    ) -> Result<Vec<(CapabilityPermit, Authority)>> {
+        fn visit(
+            k: &Kernel,
+            frame: &Frame,
+            slot: usize,
+            depth: u32,
+            out: &mut Vec<(CapabilityPermit, Authority)>,
+        ) -> Result<()> {
+            if depth > k.limits.depth || out.len() >= k.limits.calls as usize {
+                return Err(Error::Limit);
+            }
+            let (target, endpoint, authority, _) = k.slot_target(frame, slot)?;
+            let resolution = k.resolution(target, &endpoint, frame.routing.as_deref())?;
+            let capability = k.registration(frame.provider)?.manifest.dependencies[slot]
+                .capability
+                .clone();
+            let last = resolution.last().ok_or(Error::MissingDependency)?;
+            if !matches!(k.registration(last.handle)?.code, Code::Guest(_)) {
+                return Err(Error::NativeRefusal);
+            }
+            out.push((
+                CapabilityPermit {
+                    capability,
+                    resolution: resolution.clone(),
+                },
+                authority.clone(),
+            ));
+            // Declared closure is deliberately conservative: all helper slots
+            // require live grants, including branches the guest did not take.
+            for binding in resolution {
+                let reg = k.registration(binding.handle)?;
+                for child in 0..reg.manifest.dependencies.len() {
+                    let mut next = frame.clone();
+                    next.provider = binding.handle;
+                    next.authority = authority.clone();
+                    visit(
+                        k,
+                        &next,
+                        child,
+                        depth.checked_add(1).ok_or(Error::Limit)?,
+                        out,
+                    )?;
+                }
+            }
+            Ok(())
+        }
+        let mut out = Vec::new();
+        visit(self, frame, slot, 1, &mut out)?;
+        Ok(out)
+    }
+    /// Trusted host admission of an exact current Wasm helper ABI/artifact chain.
+    /// Does not invoke code or grant access; runtime captures check live grants.
+    pub fn pin_pure_binding(
+        &self,
+        provider: ModuleHandle,
+        slot: usize,
+        binding: &CapabilityPermit,
+    ) -> Result<ModulePin> {
+        let dep = self
+            .registration(provider)?
+            .manifest
+            .dependencies
+            .get(slot)
+            .ok_or(Error::InvalidSlot)?;
+        if dep.capability != binding.capability || dep.access != Access::Read {
+            return Err(Error::InvalidManifest);
+        }
+        let (target, ep) = self.capability(&binding.capability)?;
+        if ep.access != Access::Read
+            || self.resolution(target, &binding.capability.endpoint, None)? != binding.resolution
+        {
+            return Err(Error::InvalidManifest);
+        }
+        for b in &binding.resolution {
+            let reg = self.registration(b.handle)?;
+            if reg.artifact != b.artifact {
+                return Err(Error::InvalidHandle);
+            }
+            if !matches!(reg.code, Code::Guest(_)) {
+                return Err(Error::NativeRefusal);
+            }
+        }
+        self.pin_modules(
+            &binding
+                .resolution
+                .iter()
+                .map(|b| b.handle)
+                .collect::<Vec<_>>(),
+        )
+    }
     pub fn new(limits: Limits) -> Result<Self> {
         if limits.memory_bytes < 65536
             || limits.memory_bytes > i32::MAX as usize

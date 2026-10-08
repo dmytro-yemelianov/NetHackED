@@ -3,7 +3,7 @@
 
 use nethacked_kernel::{
     Access, CallerView, Capability, CapabilityPermit, CleanupIdentity, Kernel, ModuleHandle,
-    ModulePin, OperationBinding, ProviderBinding, Resource,
+    ModulePin, OperationBinding, ProviderBinding, PureCapture, Resource,
 };
 use sha2::{Digest, Sha256};
 use std::{
@@ -134,6 +134,10 @@ pub trait WasmCodec<T>: Schema<T> {
         observations: &[Observation],
     ) -> Result<Vec<u8>>;
     fn decode(&self, bytes: &[u8]) -> Result<Proposal<T>>;
+    /// Trusted query codec; decoded bytes are observations, never credentials.
+    fn decode_query(&self, bytes: &[u8]) -> Result<Vec<u8>> {
+        Ok(bytes.to_vec())
+    }
 }
 /// Constructible by trusted domain adapters, never accepted from client requests.
 pub struct Proposal<T> {
@@ -172,6 +176,7 @@ struct Metadata {
     ports: BTreeMap<String, Port>,
     live: Cell<bool>,
     pending: Cell<usize>,
+    behavior_revision: Cell<u64>,
 }
 trait Route {
     fn metadata(&self) -> &Metadata;
@@ -213,6 +218,40 @@ pub struct Owner<T> {
     slot: RefCell<StateSlot<T>>,
     backend: Backend<T>,
     pin: ModulePin,
+    enrollment_code: RefCell<Option<ModulePin>>,
+    compatible: RefCell<Option<Compatible<T>>>,
+    query_policy: RefCell<QueryPolicy>,
+    cache: RefCell<Weak<QueryCache>>,
+}
+struct Compatible<T> {
+    codec: Rc<dyn WasmCodec<T>>,
+    slot: usize,
+    binding: CapabilityPermit,
+    _pin: ModulePin,
+}
+/// Trusted host configuration. Deterministic excludes external/time-varying
+/// inputs; recorded context composition is intentionally unsupported here.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum QueryPolicy {
+    Noncacheable,
+    Deterministic {
+        profile: [u8; 32],
+        input_policy: [u8; 32],
+    },
+}
+/// One disposable entry per owner, held by the host, with no owner/cache cycle.
+pub struct QueryCache {
+    owner: OwnerId,
+    entry: RefCell<Option<CachedEntry>>,
+}
+struct CachedEntry {
+    request: Vec<u8>,
+    policy: QueryPolicy,
+    observation: Observation,
+}
+pub struct CachedQuery {
+    pub observation: Observation,
+    pub hit: bool,
 }
 impl<T> Route for Owner<T> {
     fn metadata(&self) -> &Metadata {
@@ -242,6 +281,8 @@ pub struct Observation {
     route: Rc<dyn Route>,
     dependencies: Vec<Observation>,
     code: ModulePin,
+    behavior_revision: u64,
+    helper: Option<PureCapture>,
 }
 impl Observation {
     pub fn stamp(&self) -> &Stamp {
@@ -280,6 +321,8 @@ struct Prepared<T> {
     reply: Vec<u8>,
     dependencies: Vec<Observation>,
     code: Vec<ModulePin>,
+    codec: Option<Rc<dyn WasmCodec<T>>>,
+    helper: Option<PureCapture>,
 }
 struct Stage<T> {
     host: Host,
@@ -440,7 +483,12 @@ impl Host {
         }
         schema.validate(&initial)?;
         bound(schema.encode(&initial)?.len(), limits.payload_bytes)?;
-        let pin = kernel.pin_modules(&code)?;
+        let pin = kernel.pin_modules(&[spec.module])?;
+        let enrollment_code = if code.len() > 1 {
+            Some(kernel.pin_modules(&code[1..])?)
+        } else {
+            None
+        };
         let mut registry = self.0.registry.borrow_mut();
         if registry.entries.len() >= limits.owners {
             return Err(Error::Limit);
@@ -470,6 +518,7 @@ impl Host {
                 ports: spec.ports,
                 live: Cell::new(true),
                 pending: Cell::new(0),
+                behavior_revision: Cell::new(0),
             },
             slot: RefCell::new(StateSlot {
                 state: initial,
@@ -477,6 +526,10 @@ impl Host {
             }),
             backend,
             pin,
+            enrollment_code: RefCell::new(enrollment_code),
+            compatible: RefCell::new(None),
+            query_policy: RefCell::new(QueryPolicy::Noncacheable),
+            cache: RefCell::new(Weak::new()),
         });
         let route: Rc<dyn Route> = owner.clone();
         registry.entries.insert(
@@ -569,20 +622,51 @@ fn authorize(
     }
     Ok(permit)
 }
+// Only host-sealed work may use retained validation. The opaque binding contains
+// the exact issued operation, pipeline lease, checkpoint and phase; equality with
+// the invocation is checked before recursively relaxing future behavior identity.
+#[derive(Clone, Copy)]
+enum ObservationMode<'a> {
+    Current,
+    Retained(&'a OperationBinding),
+}
+// Batch creation historically defers state/schema/authority refusals to commit.
+// Seal only current behavior identities here; full retained validation remains
+// mandatory at commit, including every recursive stamp, permit and helper capture.
+fn admit_observation_behavior(host: &Host, observation: &Observation) -> Result<()> {
+    let route = host.route(observation.stamp.owner)?;
+    if observation.behavior_revision != route.metadata().behavior_revision.get() {
+        return Err(Error::Stale);
+    }
+    for dependency in &observation.dependencies {
+        admit_observation_behavior(host, dependency)?;
+    }
+    Ok(())
+}
 fn validate_observation(
     host: &Host,
     o: &Observation,
     view: &CallerView<'_>,
     count: &mut usize,
     bytes: &mut usize,
+    mode: ObservationMode<'_>,
 ) -> Result<()> {
+    if let ObservationMode::Retained(operation) = mode {
+        if view.operation() != Some(operation) || !operation.admits_cleanup(host.0.cleanup) {
+            return Err(Error::Authority);
+        }
+    }
     *count = count.checked_add(1).ok_or(Error::Limit)?;
     *bytes = bytes.checked_add(o.data.len()).ok_or(Error::Limit)?;
     bound(*count, host.0.limits.observations)?;
     bound(*bytes, host.0.limits.observation_bytes)?;
     let route = host.route(o.stamp.owner)?;
     let m = route.metadata();
-    if o.stamp != m.current_stamp() || !Rc::ptr_eq(&route, &o.route) {
+    if o.stamp != m.current_stamp()
+        || !Rc::ptr_eq(&route, &o.route)
+        || (matches!(mode, ObservationMode::Current)
+            && o.behavior_revision != m.behavior_revision.get())
+    {
         return Err(Error::Stale);
     }
     if view.caller() != Some(o.caller) || view.caller_artifact() != Some(o.caller_artifact) {
@@ -598,12 +682,162 @@ fn validate_observation(
     if permit != o.permit || o.code.module_count() == 0 {
         return Err(Error::Stale);
     }
+    if let Some(helper) = &o.helper {
+        view.validate_pure(helper)?;
+    }
     for dep in &o.dependencies {
-        validate_observation(host, dep, view, count, bytes)?;
+        validate_observation(host, dep, view, count, bytes, mode)?;
     }
     Ok(())
 }
 impl<T: 'static> Owner<T> {
+    /// Trusted host action at the visibility boundary. Schema identity and
+    /// encoding must remain compatible; semantic codec fidelity is trusted.
+    /// No migration, state setter, provider replacement, or grant is supplied.
+    pub fn admit_compatible_wasm(
+        &self,
+        kernel: &Kernel,
+        schema: [u8; 32],
+        codec: Rc<dyn WasmCodec<T>>,
+        slot: usize,
+        binding: CapabilityPermit,
+    ) -> Result<()> {
+        let _gate = self.host.close_visibility()?;
+        self.host.route(self.id())?;
+        let Backend::Wasm {
+            slot: old_slot,
+            binding: old_binding,
+            ..
+        } = &self.backend
+        else {
+            return Err(Error::Unsupported);
+        };
+        if schema != self.metadata.stamp.schema
+            || slot != *old_slot
+            || binding.capability != old_binding.capability
+        {
+            return Err(Error::Schema);
+        }
+        let next = self
+            .metadata
+            .behavior_revision
+            .get()
+            .checked_add(1)
+            .ok_or(Error::Limit)?;
+        let state = &self.slot.borrow().state;
+        codec.validate(state)?;
+        let encoded = codec.encode(state)?;
+        bound(encoded.len(), self.host.0.limits.payload_bytes)?;
+        if encoded != self.backend.schema()?.encode(state)? {
+            return Err(Error::Schema);
+        }
+        let pin = kernel.pin_pure_binding(self.metadata.stamp.module.handle, slot, &binding)?;
+        *self.compatible.borrow_mut() = Some(Compatible {
+            codec,
+            slot,
+            binding,
+            _pin: pin,
+        });
+        self.enrollment_code.borrow_mut().take();
+        self.metadata.behavior_revision.set(next);
+        self.clear_cache_gated();
+        Ok(())
+    }
+    fn clear_cache_gated(&self) {
+        if let Some(cache) = self.cache.borrow().upgrade() {
+            cache.entry.borrow_mut().take();
+        }
+    }
+    pub fn set_query_policy(&self, policy: QueryPolicy) -> Result<()> {
+        let _gate = self.host.close_visibility()?;
+        self.host.route(self.id())?;
+        *self.query_policy.borrow_mut() = policy;
+        self.clear_cache_gated();
+        Ok(())
+    }
+    pub fn query_cache(&self) -> Result<Rc<QueryCache>> {
+        let _gate = self.host.close_visibility()?;
+        self.host.route(self.id())?;
+        if let Some(cache) = self.cache.borrow().upgrade() {
+            return Ok(cache);
+        }
+        let cache = Rc::new(QueryCache {
+            owner: self.id(),
+            entry: RefCell::new(None),
+        });
+        *self.cache.borrow_mut() = Rc::downgrade(&cache);
+        Ok(cache)
+    }
+    /// Single gated validation/recomputation. Policy is configured by the
+    /// trusted host, never accepted from a request or a guest observation.
+    pub fn query_cached(
+        self: &Rc<Self>,
+        cache: &QueryCache,
+        name: &str,
+        request: &[u8],
+        observations: &[Observation],
+        view: &CallerView<'_>,
+    ) -> Result<CachedQuery> {
+        let _gate = self.host.close_visibility()?;
+        if cache.owner != self.id() {
+            return Err(Error::Stale);
+        }
+        authorize(&self.metadata, name, view, Access::Read)?;
+        bound(request.len(), self.host.0.limits.payload_bytes)?;
+        self.observations(name, observations, view)?;
+        let policy = self.query_policy.borrow().clone();
+        if policy == QueryPolicy::Noncacheable {
+            return Err(Error::Unsupported);
+        }
+        let mut entry = cache.entry.try_borrow_mut().map_err(|_| Error::Busy)?;
+        if let Some(old) = entry.as_ref() {
+            bound(
+                old.observation.data.len(),
+                self.host
+                    .0
+                    .limits
+                    .reply_bytes
+                    .min(view.max_reply() as usize),
+            )?;
+            if old.policy == policy
+                && old.request == request
+                && old.observation.name == name
+                && same_observations(&old.observation.dependencies, observations)
+            {
+                let mut count = 0;
+                let mut bytes = 0;
+                match validate_observation(
+                    &self.host,
+                    &old.observation,
+                    view,
+                    &mut count,
+                    &mut bytes,
+                    ObservationMode::Current,
+                ) {
+                    Ok(()) => {
+                        return Ok(CachedQuery {
+                            observation: old.observation.clone(),
+                            hit: true,
+                        })
+                    }
+                    Err(Error::Stale) => {}
+                    Err(error) => return Err(error),
+                }
+            }
+        }
+        // Failure cannot leave an apparently valid stale cache behind.
+        entry.take();
+        let observation = self.query_gated(name, request, observations, view)?;
+        *entry = Some(CachedEntry {
+            request: request.to_vec(),
+            policy,
+            observation: observation.clone(),
+        });
+        Ok(CachedQuery {
+            observation,
+            hit: false,
+        })
+    }
     pub fn id(&self) -> OwnerId {
         self.metadata.stamp.owner
     }
@@ -625,6 +859,15 @@ impl<T: 'static> Owner<T> {
         observations: &[Observation],
         view: &CallerView<'_>,
     ) -> Result<()> {
+        self.observations_with_mode(name, observations, view, ObservationMode::Current)
+    }
+    fn observations_with_mode(
+        &self,
+        name: &str,
+        observations: &[Observation],
+        view: &CallerView<'_>,
+        mode: ObservationMode<'_>,
+    ) -> Result<()> {
         let port = self.metadata.ports.get(name).ok_or(Error::Invalid)?;
         if observations.len() != port.dependencies.len() {
             return Err(Error::Invalid);
@@ -643,7 +886,7 @@ impl<T: 'static> Owner<T> {
             if observation.stamp != m.current_stamp() || !Rc::ptr_eq(&route, &observation.route) {
                 return Err(Error::Stale);
             }
-            validate_observation(&self.host, observation, view, &mut count, &mut total)?;
+            validate_observation(&self.host, observation, view, &mut count, &mut total, mode)?;
         }
         bound(total, self.host.0.limits.observation_bytes)
     }
@@ -655,6 +898,15 @@ impl<T: 'static> Owner<T> {
         view: &CallerView<'_>,
     ) -> Result<Observation> {
         let _gate = self.host.close_visibility()?;
+        self.query_gated(name, request, observations, view)
+    }
+    fn query_gated(
+        self: &Rc<Self>,
+        name: &str,
+        request: &[u8],
+        observations: &[Observation],
+        view: &CallerView<'_>,
+    ) -> Result<Observation> {
         let permit = authorize(&self.metadata, name, view, Access::Read)?;
         if self.metadata.ports.get(name).map(|p| p.access) != Some(Access::Read) {
             return Err(Error::Invalid);
@@ -662,10 +914,33 @@ impl<T: 'static> Owner<T> {
         bound(request.len(), self.host.0.limits.payload_bytes)?;
         self.observations(name, observations, view)?;
         let code = view.pin_invocation()?;
-        let data =
-            self.backend
-                .schema()?
-                .query(&self.slot.borrow().state, name, request, observations)?;
+        let live = self.compatible.borrow();
+        let (data, helper) = if let Some(live) = live.as_ref() {
+            let capture = view.capture_pure(live.slot)?;
+            if capture.binding() != &live.binding {
+                return Err(Error::Stale);
+            }
+            let input = live
+                .codec
+                .input(&self.slot.borrow().state, name, request, observations)?;
+            bound(input.len(), self.host.0.limits.payload_bytes)?;
+            let output = view.call_pure(live.slot, &input)?;
+            if output.binding != live.binding {
+                return Err(Error::Stale);
+            }
+            bound(output.bytes.len(), self.host.0.limits.reply_bytes)?;
+            (live.codec.decode_query(&output.bytes)?, Some(capture))
+        } else {
+            (
+                self.backend.schema()?.query(
+                    &self.slot.borrow().state,
+                    name,
+                    request,
+                    observations,
+                )?,
+                None,
+            )
+        };
         bound(
             data.len(),
             self.host
@@ -677,7 +952,14 @@ impl<T: 'static> Owner<T> {
         let mut count = 1usize;
         let mut bytes = data.len();
         for observation in observations {
-            validate_observation(&self.host, observation, view, &mut count, &mut bytes)?;
+            validate_observation(
+                &self.host,
+                observation,
+                view,
+                &mut count,
+                &mut bytes,
+                ObservationMode::Current,
+            )?;
         }
         bound(count, self.host.0.limits.observations)?;
         bound(bytes, self.host.0.limits.observation_bytes)?;
@@ -691,6 +973,8 @@ impl<T: 'static> Owner<T> {
             route: self.clone(),
             dependencies: observations.to_vec(),
             code,
+            behavior_revision: self.metadata.behavior_revision.get(),
+            helper,
         })
     }
     /// Bounded detached host inspection, under the same visibility gate.
@@ -739,35 +1023,68 @@ impl<T: 'static> Owner<T> {
                 .ok_or(Error::Limit)?;
         }
         let invocation_pin = view.pin_invocation()?;
-        let (proposal, behavior, mut code) = match &self.backend {
-            Backend::Native(domain) => (
-                domain.prepare(&self.slot.borrow().state, name, request, &observations)?,
-                permit.resolution.clone(),
-                vec![self.pin.clone()],
-            ),
-            Backend::Wasm {
-                codec,
-                slot,
-                binding,
-            } => {
-                let input = codec.input(&self.slot.borrow().state, name, request, &observations)?;
-                bound(input.len(), limits.payload_bytes)?;
-                let output = view.call_pure(*slot, &input)?;
-                if &output.binding != binding {
-                    return Err(Error::Stale);
-                }
-                bound(output.bytes.len(), limits.payload_bytes)?;
-                (
-                    codec.decode(&output.bytes)?,
-                    output.binding.resolution,
-                    vec![self.pin.clone(), output.pin],
-                )
+        let live = self.compatible.borrow();
+        let (proposal, behavior, mut code, codec, helper) = if let Some(live) = live.as_ref() {
+            let capture = view.capture_pure(live.slot)?;
+            if capture.binding() != &live.binding {
+                return Err(Error::Stale);
             }
-            Backend::CommitCallback => return Err(Error::Unsupported),
+            let input =
+                live.codec
+                    .input(&self.slot.borrow().state, name, request, &observations)?;
+            bound(input.len(), limits.payload_bytes)?;
+            let output = view.call_pure(live.slot, &input)?;
+            if output.binding != live.binding {
+                return Err(Error::Stale);
+            }
+            bound(output.bytes.len(), limits.payload_bytes)?;
+            (
+                live.codec.decode(&output.bytes)?,
+                output.binding.resolution,
+                vec![self.pin.clone(), output.pin],
+                Some(live.codec.clone()),
+                Some(capture),
+            )
+        } else {
+            match &self.backend {
+                Backend::Native(domain) => (
+                    domain.prepare(&self.slot.borrow().state, name, request, &observations)?,
+                    permit.resolution.clone(),
+                    vec![self.pin.clone()],
+                    None,
+                    None,
+                ),
+                Backend::Wasm {
+                    codec,
+                    slot,
+                    binding,
+                } => {
+                    let input =
+                        codec.input(&self.slot.borrow().state, name, request, &observations)?;
+                    bound(input.len(), limits.payload_bytes)?;
+                    let output = view.call_pure(*slot, &input)?;
+                    if &output.binding != binding {
+                        return Err(Error::Stale);
+                    }
+                    bound(output.bytes.len(), limits.payload_bytes)?;
+                    (
+                        codec.decode(&output.bytes)?,
+                        output.binding.resolution,
+                        vec![self.pin.clone(), output.pin],
+                        Some(codec.clone()),
+                        None,
+                    )
+                }
+                Backend::CommitCallback => return Err(Error::Unsupported),
+            }
         };
         code.push(invocation_pin);
-        self.backend.schema()?.validate(&proposal.next)?;
-        let encoded = self.backend.schema()?.encode(&proposal.next)?;
+        let schema = codec
+            .as_ref()
+            .map(|c| c.as_ref() as &dyn Schema<T>)
+            .unwrap_or(self.backend.schema()?);
+        schema.validate(&proposal.next)?;
+        let encoded = schema.encode(&proposal.next)?;
         bound(encoded.len(), limits.payload_bytes)?;
         bound(proposal.events.len(), limits.events)?;
         let bytes = proposal
@@ -827,6 +1144,8 @@ impl<T: 'static> Owner<T> {
                 reply: proposal.reply,
                 dependencies: observations,
                 code,
+                codec,
+                helper,
             })),
             active: Cell::new(true),
             retained_bytes,
@@ -837,8 +1156,26 @@ impl<T: 'static> Owner<T> {
     }
 }
 
+fn same_observations(a: &[Observation], b: &[Observation]) -> bool {
+    a.len() == b.len()
+        && a.iter().zip(b).all(|(a, b)| {
+            a.stamp == b.stamp
+                && a.name == b.name
+                && a.data == b.data
+                && a.permit == b.permit
+                && a.caller == b.caller
+                && a.caller_artifact == b.caller_artifact
+                && a.behavior_revision == b.behavior_revision
+                && Rc::ptr_eq(&a.route, &b.route)
+                && same_observations(&a.dependencies, &b.dependencies)
+        })
+}
+
 #[cfg(test)]
 mod fixtures;
+#[cfg(test)]
+#[path = "fixtures/live_queries.rs"]
+mod live_queries;
 #[cfg(test)]
 mod probes;
 

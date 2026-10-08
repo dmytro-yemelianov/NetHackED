@@ -217,7 +217,14 @@ impl<T: 'static> Staged for Stage<T> {
     ) -> Result<()> {
         let prepared = self.prepared.try_borrow().map_err(|_| Error::Busy)?;
         for o in &prepared.as_ref().ok_or(Error::Stale)?.dependencies {
-            validate_observation(&self.host, o, view, count, bytes)?;
+            validate_observation(
+                &self.host,
+                o,
+                view,
+                count,
+                bytes,
+                ObservationMode::Retained(&self.receipt.operation),
+            )?;
         }
         Ok(())
     }
@@ -325,6 +332,11 @@ impl Host {
         let mut p = self.0.publication.borrow_mut();
         bound(candidates.len(), p.limits.participants)?;
         bound(readonly.len(), self.0.limits.observations)?;
+        // Seal current behavior, preserving the existing deferred refusal timing
+        // for state/schema/authority. Commit still revalidates every dependency.
+        for observation in &readonly {
+            admit_observation_behavior(self, observation)?;
+        }
         let ticket = p.next_ticket.checked_add(1).ok_or(Error::Limit)?;
         bound(
             usize::try_from(ticket).map_err(|_| Error::Limit)?,
@@ -511,7 +523,14 @@ impl Batch {
         let mut bytes = 0;
         let readonly = self.state.readonly.try_borrow().map_err(|_| Error::Busy)?;
         for observation in &*readonly {
-            validate_observation(&self.host, observation, view, &mut count, &mut bytes)?;
+            validate_observation(
+                &self.host,
+                observation,
+                view,
+                &mut count,
+                &mut bytes,
+                ObservationMode::Retained(&self.operation),
+            )?;
         }
         for candidate in &self.candidates {
             candidate.stage.dependencies(view, &mut count, &mut bytes)?;
@@ -792,7 +811,12 @@ impl<T: 'static> Stage<T> {
         if participant_permit(&owner.metadata, &r.command, view)? != r.capability {
             return Err(Error::Authority);
         }
-        owner.observations(&r.command, &p.dependencies, view)?;
+        owner.observations_with_mode(
+            &r.command,
+            &p.dependencies,
+            view,
+            ObservationMode::Retained(&r.operation),
+        )?;
         let code_count = match owner.backend {
             Backend::Native(_) => 2,
             Backend::Wasm { .. } => 3,
@@ -801,7 +825,14 @@ impl<T: 'static> Stage<T> {
         if p.code.len() != code_count || p.code.iter().any(|pin| pin.module_count() == 0) {
             return Err(Error::Stale);
         }
-        let schema = owner.backend.schema()?;
+        if let Some(helper) = &p.helper {
+            view.validate_pure(helper)?;
+        }
+        let schema = p
+            .codec
+            .as_ref()
+            .map(|c| c.as_ref() as &dyn Schema<T>)
+            .unwrap_or(owner.backend.schema()?);
         schema.validate(&p.next)?;
         let proposed = schema.encode(&p.next)?;
         let before = schema.encode(&owner.slot.try_borrow().map_err(|_| Error::Busy)?.state)?;

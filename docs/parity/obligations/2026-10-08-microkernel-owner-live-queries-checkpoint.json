@@ -1,0 +1,109 @@
+{
+  "schema": 1,
+  "status": "verified_for_containing_commit",
+  "baseline_head": "3a65cc69f5c51ff2d1fcb1229860e823814a153d",
+  "milestone": "M4-O4a",
+  "scope": "Compatible live Wasm owner behavior, authenticated derived queries and disposable versioned caches",
+  "review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-LIVE-QUERIES/review/answer.txt",
+    "sha256": "ffcc4a0f66d72cfac4c1e1ff8d626d0782d00613356a2855c96e357c6352bc14"
+  },
+  "readback": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-LIVE-QUERIES/readback/answer.txt",
+    "sha256": "253218288f6c07e02c8365fd8bb56c842795fda0ec1a1fdc5da1454046f5163d"
+  },
+  "review_inputs": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-LIVE-QUERIES/readback-source.json",
+    "sha256": "e6bd99a0fe33f374529bab81af2d4ac3b56c37e6e9d76982e7439d051a01e1a0"
+  },
+  "writer_evidence": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-LIVE-QUERIES/writer-evidence/root-verification.json",
+    "sha256": "e76d956ca31cb758dd094f081e76a83c3ce3396c4f578f33c575b935d13a1078"
+  },
+  "initial_fixture_repair": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-LIVE-QUERIES/repair1/result.json",
+    "sha256": "c939fa8eaa36349cb22ab186213a3cdbd6dd0fd8e0e8d21b66afe3baa2dd5e16"
+  },
+  "repair_evidence": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-LIVE-QUERIES/review-repair1-evidence/root-verification.json",
+    "sha256": "622ca26873eb25cefe70369fb0591e60030d440a62301a29ad3cf1c8249afd53"
+  },
+  "repair_diff": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-LIVE-QUERIES/review-repair1-evidence/repair.diff",
+    "sha256": "1811162145b8dc0564a736a671fd68cb9939048743e15bee4c5e4b4d50a5b224"
+  },
+  "repair_counters": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-LIVE-QUERIES/repair-counters.json",
+    "sha256": "e1c78938fdbeca58e2ad06a5449e0f78123beac107eb4e3f8e8575742b461fb8"
+  },
+  "failure_history": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-LIVE-QUERIES/review-repair1-evidence/failure-history.json",
+    "sha256": "66c6030320a1bac0141fb4c6c091abc6e1ddbbd40696d5719d7d51ff36bd673c"
+  },
+  "focused_tests": 81,
+  "focused_owner_tests": 34,
+  "focused_kernel_tests": 47,
+  "new_owner_tests": 12,
+  "actual_wasm32": [
+    "nethacked-owners --features workflows",
+    "nethacked-kernel"
+  ],
+  "old_O2_O3_test_bodies_assertions_helpers_changed": false,
+  "goldens_changed": false,
+  "review_repairs": [
+    "F1: retained sealed observations validate exact operation/lease/checkpoint/phase, grants, state/schema and captured code while allowing compatible future behavior replacement; current cache/query validation remains current. Two repair cycles, one unsuccessful (early readonly refusal timing), then PASS.",
+    "F2: executing guest descendant and extension wrapper with computed positive outputs, finite grant revocation/narrowing, current/retained code replacement and native callback refusal/control. One repair cycle; kernel implementation unchanged after full review."
+  ],
+  "counter_correction": "Writer initially aggregated three successful independent repairs as a global cap. Policy is per underlying defect. Their counts remain one each; new forbidden-All grant fixture received its own first successful repair. No exhausted defect counter was reset.",
+  "usage": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-LIVE-QUERIES/implementation/usage.json",
+      "sha256": "c04354b6222826bb662ce1b512b8608f88263353e8a2fa60726632d440a97568"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-LIVE-QUERIES/review/usage.json",
+      "sha256": "5852ea809b023328cad4821c1e43a4f5984c54d7db047635e18d4f801ce86b20"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-LIVE-QUERIES/review-repair1/usage.json",
+      "sha256": "e605f67131b2a5b4f930e89193cb92c92f103e90b747e551e9e4e04ce19e03d7"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-LIVE-QUERIES/readback/usage.json",
+      "sha256": "ad5b4168fe4b266e1eaadd915c57c6e29cf830f33ceba13cc9d86975bd482917"
+    }
+  ],
+  "meter_note": "Uncached input/output: implementation89182/27589, review76987/7451, repair130021/20861, readback68276/7172. All exceed their soft input ceilings; raw reports retained. Guard also compares total input. Root usage unknown; no savings claim.",
+  "acceptance": "O4a API/cache slice only. Independent full review plus narrow F1/F2 readback PASS; full12/all3 gates PASS. Existing prepared commands retain their codec/proposal across compatible behavior admission. Aggregate retained workflow/timer/service integration remains O4b.",
+  "native_goal_status": "active; next M4-O4b",
+  "parity_families_closed": 0,
+  "trust_assumptions": [
+    "Trusted codec compatibility/encoding and schema identity; native purity, faithful artifacts and absence of mutable aliases",
+    "Deterministic cache policy is a trusted host declaration; varying input must be noncacheable until authenticated recorded-context composition",
+    "Serialized in-process visibility exclusion; no durable/crash recovery claim"
+  ],
+  "residuals": [
+    "O4b: actual recorded inputs, retained timers/workflows, equipment/lifecycle and scalar/device/field host witnesses; fresh aggregate O2-O4 integration review",
+    "O4b must resume old retained workflow/timer through owner query/preparation after compatible admission, beyond committing a candidate sealed before replacement",
+    "M4d: coherent owner codecs/restoration, supported legacy compatibility and A5",
+    "M5: complete selected-wand/populated-NetHack live-extension witness",
+    "M6: all existing-domain migration and M7 final integration audit",
+    "Separate 53-family behavior-parity backlog"
+  ],
+  "full_gates": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-LIVE-QUERIES/full-gates/accepted.json",
+    "sha256": "0144e0153a702c7d61eba6b18ff74e18bd01a05fff7739c513f5b8ede103cab8"
+  },
+  "gate_result": {
+    "head": "3a65cc69f5c51ff2d1fcb1229860e823814a153d",
+    "tests": 1175,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "digest": "04291420cc2fd908e7a466d40936f1d734970ecd54696b46b2e02ebb37100c47",
+    "checks": 12
+  },
+  "source_input_count": 415
+}

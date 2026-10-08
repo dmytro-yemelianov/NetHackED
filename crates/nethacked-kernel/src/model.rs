@@ -156,6 +156,24 @@ pub(crate) trait CallbackCapture: std::fmt::Debug {
 pub(crate) trait PureCall: std::fmt::Debug {
     fn call(&self, slot: usize, request: &[u8]) -> Result<PureReply>;
     fn pin(&self) -> Result<ModulePin>;
+    fn capture(&self, slot: usize) -> Result<PureCapture>;
+    fn validate(&self, capture: &PureCapture) -> Result<()>;
+}
+
+/// Nonexecuting authenticated helper closure. Private fields prevent host or
+/// guest bytes from manufacturing authority. Pins confer no execution rights.
+#[derive(Clone, Debug)]
+pub struct PureCapture {
+    pub(crate) provider: ModuleHandle,
+    pub(crate) slot: usize,
+    pub(crate) ceiling: Authority,
+    pub(crate) closure: Vec<(CapabilityPermit, Authority)>,
+    pub(crate) pin: ModulePin,
+}
+impl PureCapture {
+    pub fn binding(&self) -> &CapabilityPermit {
+        &self.closure[0].0
+    }
 }
 
 /// Detached bytes and the exact executable chain retained by this computation.
@@ -292,6 +310,16 @@ impl CallerView<'_> {
     /// Detached clones deliberately have no callable bridge.
     pub fn call_pure(&self, slot: usize, request: &[u8]) -> Result<PureReply> {
         self.pure_call.ok_or(Error::Authority)?.call(slot, request)
+    }
+    /// Same current/retained routing and live grants as call_pure; no guest
+    /// execution and no fuel/call budget allocation. Detached views refuse.
+    pub fn capture_pure(&self, slot: usize) -> Result<PureCapture> {
+        self.pure_call.ok_or(Error::Authority)?.capture(slot)
+    }
+    /// May inspect a transitive observation's private helper capture. This
+    /// authenticates code and grants only, never the observation's owner port.
+    pub fn validate_pure(&self, capture: &PureCapture) -> Result<()> {
+        self.pure_call.ok_or(Error::Authority)?.validate(capture)
     }
     /// Retain the exact invocation code closure for detached observations/staging.
     /// Detached clones cannot acquire new pins or dispatch calls.

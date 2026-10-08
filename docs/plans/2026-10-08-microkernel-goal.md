@@ -59,6 +59,8 @@ Formal definitions may expose explicit adapter/codec/code-binding assumptions. S
 
 The reviewed [autonomous ownership contract](2026-10-08-autonomous-ownership-contract.md) strengthens M4 before persistence: O1 formal ownership → O2 independent owner storage/commands → O3 atomic publication → O4 live behavior/service integration. M4d depends on the accepted O2–O4 runtime, not just the contract or the centralized resource prototype. Owners maintain private state and behavior; routing stores metadata only. M5–M7 and the separate behavior-parity backlog retain their full scope.
 
+O4 executes in two dependent implementation slices to keep source and review packets bounded. O4a adds compatible live Wasm behavior admission and authenticated, versioned derived queries/caches over independent owners. O4b composes those APIs with actual recorded inputs, retained timers and workflows, including scalar/device/field and equipment/lifecycle witnesses. O4 is accepted only after both slices and a fresh integration review; M4d still depends on that aggregate acceptance. Existing O2/O3 semantics and fixtures remain prerequisites, not substitutes for the new witnesses.
+
 Each milestone is split only at testable ownership boundaries. Dependency edges are enforced before dispatch. A data-only patch system or an extension compiled into the original engine does not satisfy A2. Forwarding `&mut SimulationWorld` through a new module does not satisfy A7.
 
 ## Execution loop and cost controls

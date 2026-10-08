@@ -2,10 +2,10 @@
   "schema": 1,
   "status": "active",
   "plan": "docs/plans/2026-10-08-microkernel-goal.md",
-  "plan_sha256": "ee920b29502ffe14128337b1a7c3193c8f895729d1f21ed2eac3e2258a30993b",
+  "plan_sha256": "e72acc5407c7e1f6815ef70e20906cee0135ca3acda5a41fd18fa18f1d90568e",
   "native_goal": "Complete NetRust microkernel architecture program; formal contracts, executable extensions, existing NetHack migration, integration audit",
   "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
-  "active_unit": "M4-O4",
+  "active_unit": "M4-O4b",
   "live_handles": [],
   "acceptance": {
     "A1": "passed_generic_runtime_1fc3290",
@@ -244,12 +244,37 @@
         },
         {
           "id": "M4-O4",
-          "status": "planned",
+          "status": "in_progress",
           "depends_on": [
             "M4-O3"
           ],
           "contract": "docs/plans/2026-10-08-autonomous-ownership-contract.md",
-          "scope": "Live executable behavior/extensions, derived properties, retained services, heterogeneous/entity-free owner runtime acceptance"
+          "scope": "Live executable behavior/extensions, derived properties, retained services, heterogeneous/entity-free owner runtime acceptance",
+          "units": [
+            {
+              "id": "M4-O4a",
+              "status": "complete",
+              "depends_on": [
+                "M4-O3"
+              ],
+              "scope": "Compatible live Wasm owner behavior and authenticated versioned derived queries/caches",
+              "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-live-queries-checkpoint.json",
+              "runtime": "crates/nethacked-owners/LIVE_QUERIES.md"
+            },
+            {
+              "id": "M4-O4b",
+              "status": "planned",
+              "depends_on": [
+                "M4-O4a"
+              ],
+              "scope": "Actual input/timer/workflow composition, heterogeneous/entity-free and equipment/lifecycle witnesses; aggregate O2-O4 acceptance",
+              "audit_requirements": [
+                "Resume an old retained workflow/timer through owner query and preparation after compatible behavior admission, not only commit a pre-existing sealed candidate",
+                "Compose real recorded inputs, timer targets/cleanup and independent owner commands without a central authoritative property service",
+                "Verify equipment/item dependencies, lifecycle references and scalar/device/field hosts before aggregate O4 acceptance"
+              ]
+            }
+          ]
         },
         {
           "id": "M4d",
@@ -311,7 +336,7 @@
       26945,
       30480
     ],
-    "next_adjustment": "Narrow O4 to executable owner extensions, derived dependencies/cache invalidation and retained service composition over accepted APIs. Use medium-first implementation for concrete mappings; high only for demonstrated unresolved ownership/lifecycle complexity. No repeated Lean/kernel/history audit; root usage unknown.",
+    "next_adjustment": "Narrow O4b to actual retained workflow/timer/input and entity-free owner composition, including preparation after admission. Reuse accepted owner/cache/pure-capture APIs and known facts. Medium-first for concrete mappings; high only for demonstrated unresolved lifecycle complexity. No repeated protocol/history audit; root usage unknown.",
     "authority_implementation": {
       "uncached_input": 59709,
       "output": 18592,
@@ -478,6 +503,30 @@
       "output": 1816,
       "status": "exceeded",
       "adjustment": "Finish local full gates/commit. Next O4 reuses accepted owner/kernel/input/timer/workflow APIs; one focused integration witness, no repeated protocol or source-fact audit."
+    },
+    "live_queries_implementation": {
+      "uncached_input": 89182,
+      "output": 27589,
+      "status": "exceeded",
+      "adjustment": "Narrow review to six changed source/doc files and actual cached/code/authority behavior; accepted O2/O3 reused."
+    },
+    "live_queries_review": {
+      "uncached_input": 76987,
+      "output": 7451,
+      "status": "exceeded",
+      "adjustment": "Reduce repair to F1 retained-vs-current observation distinction and F2 real guest descendant fixtures."
+    },
+    "live_queries_repair": {
+      "uncached_input": 130021,
+      "output": 20861,
+      "status": "exceeded",
+      "adjustment": "Narrow readback to exact repair diff and new tests; unchanged kernel and old fixtures reuse full review."
+    },
+    "live_queries_readback": {
+      "uncached_input": 68276,
+      "output": 7172,
+      "status": "exceeded",
+      "adjustment": "Finish full gates/commit locally. Next O4b explicit integrated workflow/timer/input witness over accepted APIs; no repeated formal/history audit."
     }
   },
   "requested_interlude": {
@@ -488,17 +537,17 @@
     "resume": "Native goal verified active on user continuation after audit."
   },
   "ownership_followup": {
-    "status": "publication_reviewed_verified_live_integration_pending",
+    "status": "live_queries_reviewed_verified_service_integration_pending",
     "user_proposal": "Autonomous objects own and maintain their properties, instead of item rows in a shared authoritative database.",
     "direction_discussed": "In-process object/actor ownership behind bounded commands/events; registry locates stable IDs; modules define behavior, extensions change capabilities. Separate network microservices are not required.",
     "must_resolve_before": [
       "concrete owner-state persistence contract",
       "NetHack domain migration"
     ],
-    "current_limit": "Independent typed/blob owner slots, pure authenticated preparation and sealed heterogeneous atomic publication are implemented and verified. O4 live behavior/service acceptance remains before M4d codecs and NetHack migration.",
+    "current_limit": "O2/O3 storage/preparation/publication and O4a compatible live behavior/derived caches are reviewed and verified. O4b retained workflow/timer/input, equipment/lifecycle and scalar/device/field integration is required before aggregate owner-runtime acceptance, M4d and NetHack migration.",
     "implementation_claim": false,
     "contract": "docs/plans/2026-10-08-autonomous-ownership-contract.md",
     "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-ownership-checkpoint.json",
-    "implemented_scope": "O2 independent storage/preparation plus O3 atomic publication and typed workflow cleanup; aggregate autonomous runtime awaits O4"
+    "implemented_scope": "Independent owner slots, pure preparation, sealed atomic publication, compatible live Wasm behavior and derived-query caches; aggregate owner runtime awaits O4b"
   }
 }
