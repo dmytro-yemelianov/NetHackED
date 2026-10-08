@@ -28,9 +28,13 @@ pub(super) struct Publication {
     next_ticket: u64,
     pub(super) epoch: u64,
     history: Vec<CommitReceipt>,
+    #[cfg(feature = "persistence")]
+    local_history: Vec<persistence::HistoricalCommit>,
     events: usize,
     bytes: usize,
     replies: usize,
+    #[cfg(feature = "persistence")]
+    archived: Vec<persistence::HistoricalCommit>,
 }
 #[cfg(test)]
 impl Publication {
@@ -606,7 +610,7 @@ impl Batch {
         bound(total_events, p.limits.history_events)?;
         bound(total_replies, p.limits.reply_bytes)?;
         bound(
-            p.history.len().checked_add(1).ok_or(Error::Limit)?,
+            usize::try_from(epoch).map_err(|_| Error::Limit)?,
             p.limits.transactions,
         )?;
         let mut receipt = CommitReceipt {
@@ -632,6 +636,14 @@ impl Batch {
             .ok_or(Error::Limit)?;
         let total_bytes = p.bytes.checked_add(storage_bytes).ok_or(Error::Limit)?;
         bound(total_bytes, p.limits.history_bytes)?;
+        #[cfg(feature = "persistence")]
+        let mut local = Some(persistence::HistoricalCommit::from_receipt(
+            self.host.0.id,
+            &receipt,
+            &evidence,
+        ));
+        #[cfg(feature = "persistence")]
+        p.local_history.try_reserve(1).map_err(|_| Error::Limit)?;
         let mut stored = Some(receipt.clone());
         p.history.try_reserve(1).map_err(|_| Error::Limit)?;
         let mut registry = self
@@ -675,6 +687,9 @@ impl Batch {
             registry.pending -= self.candidates.len();
             registry.staging_bytes -= staged_bytes;
             p.history.push(stored);
+            #[cfg(feature = "persistence")]
+            p.local_history
+                .push(local.take().expect("preallocated history evidence"));
             p.epoch = epoch;
             p.events = total_events;
             p.bytes = total_bytes;
@@ -865,5 +880,49 @@ impl<T: 'static> Stage<T> {
             events: p.events.clone(),
             reply: p.reply.clone(),
         })
+    }
+}
+
+#[cfg(feature = "persistence")]
+impl Publication {
+    pub(super) fn capture_local(
+        &self,
+        _origin_host: u64,
+        registry: &Registry,
+    ) -> Result<persistence::LocalHistory> {
+        if registry
+            .tickets
+            .values()
+            .filter_map(Weak::upgrade)
+            .any(|t| !t.consumed.get())
+        {
+            return Err(Error::Unsupported);
+        }
+        let mut records = self.archived.clone();
+        records.extend(self.local_history.iter().cloned());
+        // Every issued ticket is permanently unavailable once its batch is gone;
+        // live unconsumed batches refused above belong to the D3 pending seam.
+        let consumed = (1..=self.next_ticket).collect();
+        Ok(persistence::LocalHistory {
+            next_ticket: self.next_ticket,
+            epoch: self.epoch,
+            records,
+            consumed,
+            events: self.events,
+            bytes: self.bytes,
+            replies: self.replies,
+        })
+    }
+    pub(super) fn restore_local(&mut self, history: &persistence::LocalHistory) -> Result<()> {
+        if self.next_ticket != 0 || !self.history.is_empty() || !self.archived.is_empty() {
+            return Err(Error::Invalid);
+        }
+        self.next_ticket = history.next_ticket;
+        self.epoch = history.epoch;
+        self.events = history.events;
+        self.bytes = history.bytes;
+        self.replies = history.replies;
+        self.archived = history.records.clone();
+        Ok(())
     }
 }

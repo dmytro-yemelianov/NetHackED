@@ -1086,6 +1086,8 @@ dependencies = [
  "nethacked-inputs",
  "nethacked-kernel",
  "nethacked-workflows",
+ "serde",
+ "serde_json",
  "sha2",
  "wat",
 ]

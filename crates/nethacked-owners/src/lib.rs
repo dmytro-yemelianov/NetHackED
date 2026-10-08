@@ -69,6 +69,7 @@ impl Default for Limits {
     }
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
+#[cfg_attr(feature = "persistence", derive(serde::Serialize, serde::Deserialize))]
 pub struct OwnerId {
     host: u64,
     serial: u64,
@@ -82,12 +83,14 @@ pub struct Stamp {
     pub module: ProviderBinding,
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "persistence", derive(serde::Serialize, serde::Deserialize))]
 pub struct Dependency {
     pub owner: OwnerId,
     pub query: String,
     pub schema: [u8; 32],
 }
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "persistence", derive(serde::Serialize, serde::Deserialize))]
 pub struct Port {
     pub access: Access,
     pub major: u32,
@@ -239,6 +242,8 @@ struct HostInner {
     publication: RefCell<Publication>,
     quarantine: Cell<bool>,
     behaviors: Cell<usize>,
+    #[cfg(feature = "persistence")]
+    persistence_origins: RefCell<BTreeSet<u64>>,
 }
 #[derive(Clone)]
 pub struct Host(Rc<HostInner>);
@@ -264,6 +269,7 @@ struct Compatible<T> {
 /// Trusted host configuration. Deterministic excludes external/time-varying
 /// inputs. Declared variable recorded inputs require Noncacheable queries.
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "persistence", derive(serde::Serialize, serde::Deserialize))]
 pub enum QueryPolicy {
     Noncacheable,
     Deterministic {
@@ -402,6 +408,9 @@ impl<T: 'static> Candidate<T> {
 
 impl Host {
     pub fn new(limits: Limits) -> Result<Self> {
+        Self::new_excluding(limits, &BTreeSet::new())
+    }
+    fn new_excluding(limits: Limits, excluded: &BTreeSet<u64>) -> Result<Self> {
         if [
             limits.owners,
             limits.candidates,
@@ -418,9 +427,18 @@ impl Host {
             return Err(Error::Limit);
         }
         static NEXT: AtomicU64 = AtomicU64::new(1);
-        let id = NEXT
-            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |n| n.checked_add(1))
-            .map_err(|_| Error::Limit)?;
+        // At most one skip per admitted origin; never walk to a supplied maximum.
+        let mut id = None;
+        for _ in 0..=excluded.len() {
+            let next = NEXT
+                .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |n| n.checked_add(1))
+                .map_err(|_| Error::Limit)?;
+            if !excluded.contains(&next) {
+                id = Some(next);
+                break;
+            }
+        }
+        let id = id.ok_or(Error::Limit)?;
         Ok(Self(Rc::new(HostInner {
             id,
             limits,
@@ -429,6 +447,8 @@ impl Host {
             publication: RefCell::new(Publication::default()),
             quarantine: Cell::new(false),
             behaviors: Cell::new(0),
+            #[cfg(feature = "persistence")]
+            persistence_origins: RefCell::new(BTreeSet::from([id])),
             registry: RefCell::new(Registry {
                 next_owner: 1,
                 next_candidate: 1,
@@ -478,6 +498,16 @@ impl Host {
         backend: Backend<T>,
     ) -> Result<Rc<Owner<T>>> {
         let _gate = self.close_visibility()?;
+        self.enroll_locked(kernel, spec, initial, backend, None)
+    }
+    fn enroll_locked<T: 'static>(
+        &self,
+        kernel: &Kernel,
+        spec: OwnerSpec,
+        initial: T,
+        backend: Backend<T>,
+        restored: Option<(OwnerId, u64, u64)>,
+    ) -> Result<Rc<Owner<T>>> {
         let schema = backend.schema()?;
         let limits = &self.0.limits;
         if spec.ports.is_empty() || spec.ports.len() > limits.ports {
@@ -512,6 +542,9 @@ impl Host {
                 if !seen.insert(d.owner) {
                     return Err(Error::Invalid);
                 }
+                if restored.is_some() {
+                    continue; // Hidden restore checks the complete graph before opening.
+                }
                 let route = self.route(d.owner)?;
                 let m = route.metadata();
                 if m.stamp.schema != d.schema
@@ -533,15 +566,24 @@ impl Host {
         if registry.entries.len() >= limits.owners {
             return Err(Error::Limit);
         }
-        let next = registry.next_owner.checked_add(1).ok_or(Error::Limit)?;
-        let id = OwnerId {
+        let next = if restored.is_some() {
+            registry.next_owner
+        } else {
+            registry.next_owner.checked_add(1).ok_or(Error::Limit)?
+        };
+        let id = restored.map(|s| s.0).unwrap_or(OwnerId {
             host: self.0.id,
             serial: registry.next_owner,
-        };
+        });
+        if registry.entries.contains_key(&id) {
+            return Err(Error::Invalid);
+        }
+        let generation = restored.map_or(id.serial, |s| s.1);
+        let revision = restored.map_or(0, |s| s.2);
         let stamp = Stamp {
             owner: id,
-            generation: id.serial,
-            revision: 0,
+            generation,
+            revision,
             schema: spec.schema,
             module: ProviderBinding {
                 handle: spec.module,
@@ -553,7 +595,7 @@ impl Host {
             host: self.clone(),
             metadata: Metadata {
                 stamp: stamp.clone(),
-                revision: Cell::new(0),
+                revision: Cell::new(revision),
                 provider_name: manifest.id.clone(),
                 ports: spec.ports,
                 live: Cell::new(true),
@@ -563,7 +605,7 @@ impl Host {
             },
             slot: RefCell::new(StateSlot {
                 state: initial,
-                revision: 0,
+                revision,
             }),
             backend: RefCell::new(backend),
             pin,
@@ -1398,6 +1440,8 @@ mod live_queries;
 mod probes;
 
 mod behavior;
+#[cfg(feature = "persistence")]
+pub mod persistence;
 mod publication;
 pub use behavior::RetainedBehavior;
 pub use publication::{

@@ -1,0 +1,131 @@
+{
+  "schema": 1,
+  "status": "reviewed_runtime_verified_for_containing_commit",
+  "baseline_head": "245331c39da5b731756b909bf75a5faeddf02c29",
+  "milestone": "M4d-D2",
+  "scope": "Owner-local codecs, coherent independent state capture, hidden fresh reconstruction, reference remapping, old-before-migration validation, publication history and nonreuse. Retained kernel authority and full A5 remain successors.",
+  "contract": {
+    "path": "/Users/dmytro/github/NetRust/docs/plans/2026-10-08-owner-persistence-contract.md",
+    "sha256": "7f04e7118c33245a6aa0da16352eaa022d7753dc191bddaeb4963a9ddf55b569"
+  },
+  "runtime": "crates/nethacked-owners/README.md",
+  "review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-STATE/review/answer.txt",
+    "sha256": "5170fa996957e9e0b36354d5454b2681120f483f7773fc85a3f5dee1314acf81"
+  },
+  "readback": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-STATE/readback/answer.txt",
+    "sha256": "ad05b3b8135c658d0f93d7d6aab899b584faf0a6024266f99cd595a493910001"
+  },
+  "writer_evidence": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-STATE/writer-evidence/root-verification.json",
+    "sha256": "93915a2575d9bee00c9fe4b5615182498064e5c1cf4267acdc9d1c3352561552"
+  },
+  "repair_evidence": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-STATE/repair1-evidence/root-verification.json",
+    "sha256": "3ff9e2ea0ca72b2d4751c7e5241b36fe67efc2221e754cba60b722b040a289f8"
+  },
+  "source_bindings": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-STATE/root-generation-test/final-source.json",
+    "sha256": "44a4568f4f8decf6d4f812c908e56dfd689e8d39235cbdc43115c25e26a9649a"
+  },
+  "test_only_repair": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-STATE/root-generation-test/result.json",
+    "sha256": "b9d6d5028d1838f89e7b36685d95686949348c2e2de7279c3e8b4b3f69c1bb35"
+  },
+  "test_only_diff": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-STATE/root-generation-test/test.diff",
+    "sha256": "000d1462dbcc9f1483568206d9dd25bb93ba858085eff33cbb81f2cc58dda388"
+  },
+  "test_readback": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-STATE/readback2/answer.txt",
+    "sha256": "b66ee362d7170390b7bf9645632492a87a5ec3f23b18c55bcab73f8bec9a9b0b"
+  },
+  "repair_diff": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-STATE/repair1-evidence/repair.diff",
+    "sha256": "0e64025a2a88e3e3442c8ae82972d15314db743797e11b81c5de4ce1ded8af00"
+  },
+  "repair_ledger": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-STATE/repair1-evidence/result.json",
+    "sha256": "956a5cd6342fbdc496697f60dbc7e213353a9f3129286c329a5e99bcca679f2c"
+  },
+  "findings_resolved": [
+    "F1 new host namespace excludes every saved origin, including historical disposed origins across separate processes",
+    "F2 typed complete receipt evidence, ordered contributions and per-owner revision lineage are reconciled before reconstruction"
+  ],
+  "repair_history": "Both review defects repaired once; six distinct repair compile/fixture/lint issues and two original fixture setup failures preserved. Independent readback verifies classification; no counter reset. Root adds one four-line generation mutation after correcting the initial matrix count; 49 all-feature tests/fmt/Clippy and final test-only readback pass.",
+  "focused_checks": {
+    "default_owner_tests": 37,
+    "all_feature_owner_tests": 49,
+    "new_persistence_tests": 10,
+    "owner_service_tests": 11,
+    "distinct_all_feature_and_adapter_tests": 60,
+    "specific_history_mutations": 14,
+    "single_field_mutations": 13,
+    "coordinated_mutations": 1,
+    "old_code_negative_controls": 3,
+    "subprocess_helper": "Ignored in parent; explicitly run by write/read subprocess tests",
+    "actual_wasm_feature": "persistence"
+  },
+  "dependencies": "Optional serde/serde_json use existing versions; no owners dependency on persistence orchestrator and no default-feature dependency expansion.",
+  "trust_premises": [
+    "Native codec/factory purity and bounded work",
+    "Faithful encoding and absence of interior/shared mutable aliases",
+    "Accepted panic/finalizer fail-stop policy"
+  ],
+  "authority_limit": "Historical kernel interiors remain diagnostic evidence, never reconstructed credentials. D3 owns authentic retained bindings; D4 owns atomic destination authority admission/activation.",
+  "usage": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-STATE/implementation/usage.json",
+      "sha256": "1eb07544ca9d00c337ab37b4c2f3e9d76338f581d2e2b2124eb9428a2a7fb34c"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-STATE/review/usage.json",
+      "sha256": "90b7a103929543939b3e3b29e6611b9c8488e14c190566bff5e550f4c3ab7b90"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-STATE/repair1/usage.json",
+      "sha256": "2e9760d02febb2626b44a1ae98821a78ee75c8276b62ec830c93b9aad12599fb"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-STATE/readback/usage.json",
+      "sha256": "4821468a40535e747ccc28ae23e078944604ef69b24fc871eec8768a5181380b"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-STATE/readback2/usage.json",
+      "sha256": "4361ed370cdbbac4a1355b65939450927498fb24c787f7a514181a534a299159"
+    }
+  ],
+  "meter_note": "Writer106765/42391, review96066/8516, repair93115/22779 uncached input/output exceeded input ceilings; writer/repair output also exceeded. High readback64078/8477 exceeds input; final test-only readback31925/1216 exceeds normal input ceiling. Root usage unknown; no savings claim.",
+  "full_gates": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-STATE/full-gates/accepted.json",
+    "sha256": "86a8b968c43b6deb24fb8b279e1a525625e6d2483bd09a81aa4b8d02b8767154"
+  },
+  "gate_result": {
+    "head": "245331c39da5b731756b909bf75a5faeddf02c29",
+    "tests": 1211,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "digest": "5a0fd9a54621ea6ee822228b047ffcab309fca3176bdaab5d23dfa5bece86320",
+    "checks": 12
+  },
+  "source_input_count": 451,
+  "runtime_implementation_claim": true,
+  "A5_accepted": false,
+  "goldens_changed": false,
+  "existing_tests_changed": false,
+  "parity_families_closed": 0,
+  "native_goal_status": "active; next M4d-D3",
+  "residuals": [
+    "D3 exact retained kernel/code/behavior and sealed pending reconstruction",
+    "D4 coherent service restoration, referenced-schema graph migrations, destination authority epoch and activation",
+    "D5 real legacy bridge and owner-native receipt continuation",
+    "D6 combined full A5 acceptance",
+    "M5 complete selected-wand/populated-NetHack executable extension integration",
+    "M6 existing-domain migration and M7 final audit",
+    "Separate53-family missing-behavior backlog"
+  ]
+}

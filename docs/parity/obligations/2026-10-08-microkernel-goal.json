@@ -2,10 +2,10 @@
   "schema": 1,
   "status": "active",
   "plan": "docs/plans/2026-10-08-microkernel-goal.md",
-  "plan_sha256": "a8c3c27afe23178d1bb680c93c118a78a25d5e76ee044e437f8d808192e6c539",
+  "plan_sha256": "79328bd75c9a86c729984adeb3f219426612a545a20a0f8fc7debe36990c9eb5",
   "native_goal": "Complete NetRust microkernel architecture program; formal contracts, executable extensions, existing NetHack migration, integration audit",
   "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
-  "active_unit": "M4d-D2",
+  "active_unit": "M4d-D3",
   "live_handles": [],
   "acceptance": {
     "A1": "passed_generic_runtime_1fc3290",
@@ -292,7 +292,7 @@
             "M4-O4"
           ],
           "scope": "Concrete autonomous-owner codecs/restoration and executable/schema validation; full A5 including supported legacy compatibility",
-          "current_phase": "D1_verified_D2_independent_state_next",
+          "current_phase": "D2_verified_D3_retained_kernel_next",
           "contract": "docs/plans/2026-10-08-owner-persistence-contract.md",
           "design_checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-persistence-contract-checkpoint.json",
           "units": [
@@ -324,7 +324,7 @@
             },
             {
               "id": "M4d-D2",
-              "status": "planned",
+              "status": "complete",
               "depends_on": [
                 "M4d-D1"
               ],
@@ -334,7 +334,9 @@
               "acceptance_requirements": [
                 "Fresh independent native/blob/field roundtrip and supported schema migration",
                 "Changed schema/codecs, stale credentials, invalid references/history/counters refuse"
-              ]
+              ],
+              "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-state-checkpoint.json",
+              "runtime": "crates/nethacked-owners/README.md"
             },
             {
               "id": "M4d-D3",
@@ -655,7 +657,7 @@
       "concrete owner-state persistence contract",
       "NetHack domain migration"
     ],
-    "current_limit": "Generic autonomous owners and strict persistence wire/catalog accepted. Independent codecs/restoration D2-D6 and NetHack migration M5-M7 remain pending; no full parity claim.",
+    "current_limit": "Generic autonomous owners, strict wire/catalog and independent state codecs accepted. Retained kernel/services and native restoration D3-D6 plus NetHack migration M5-M7 remain pending; no full parity claim.",
     "implementation_claim": true,
     "contract": "docs/plans/2026-10-08-autonomous-ownership-contract.md",
     "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-services-checkpoint.json",

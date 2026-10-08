@@ -182,3 +182,66 @@ Affected existing tests: `heterogeneous_storage_native_and_actual_wasm_candidate
 `candidate_revalidation_binds_operation_phase_lease_and_live_grants`.
 `query_owner_grant_is_required_even_when_owner_is_absent_from_dependencies` has
 no assertion/body delta; it receives the shared cleanup-enrollment helper change.
+
+## M4d-D2 independent state persistence
+
+Enable `persistence` for the host-only `persistence` module. It adds optional serde
+and serde_json using existing workspace versions; the default dependency graph
+stays unchanged. Owners do not depend on the persistence orchestrator. `Checkpoint`
+is a local bounded snapshot, adapted to the accepted D1 envelope by that orchestrator;
+this module does not implement another OwnerSave transport or grant authority to bytes.
+
+`PersistenceCodec<T>` is separate from `Schema`, `NativeBehavior` and `WasmCodec`.
+Trusted host adapters bind exact schema/codec/policy names, versions and artifact
+identities, perform bounded state encoding/decoding and semantic validation, declare
+internal live/historical references, and approve exact ports, dependency declarations
+and query policy. The native typed, actual Wasm-backed blob and private field-buffer
+implementations in `tests/persistence.rs` demonstrate independent reconstruction and
+real post-restore preparation, query and publication. Purity, bounded CPU/allocation,
+codec fidelity, absence of mutable aliases and effect-free fresh factories remain
+explicit host trust premises; these traits cannot prove them.
+
+`Host::capture_state` holds the common visibility gate across every owner-local
+slot encoder. Every live owner must be captured exactly once. `Restore` creates a
+hidden fresh host, remaps checked live references, owner dependencies and resource
+strings, and invokes host-provided fresh backend factories bound to approved kernel
+modules. The host resolves exact artifacts independently; saved digests cannot
+issue grants. Old bytes decode and validate semantically before remapping or pure
+migration; the exact old codec is mandatory even when a migrator exists. Transformed
+state and configuration validate again before enrollment. Schema changes referenced
+by another owner require a graph migration plan and currently refuse explicitly.
+
+Owner generations/revisions, tombstones and owner/candidate/ticket high-water
+counters persist. Restarts allocate new owner host namespaces excluding every admitted saved origin,
+including disposed historical namespaces, and fresh cleanup identities. Allocation
+skips at most the bounded origin count, uses checked increments, and never walks to
+a supplied maximum;
+retired serials and consumed/abandoned tickets cannot be reused. Historical namespaces
+stay explicit across successive restarts (bounded by the owner identity limit).
+`Host::persistence_history` returns the complete historical publication prefix plus
+new receipts: events, replies, epochs, participant revisions/candidate serials and
+complete original diagnostic origin encodings. Typed ordered receipt trees preserve
+stamps, candidate IDs, policies, observation metadata and participant event/reply
+contributions. Validation reconciles every duplicated publication field and the
+complete diagnostic encoding, and enforces continuous per-owner revision lineage
+through retirement and repeated restores. Historical schemas remain associated with
+their original namespaces across supported migration. Opaque kernel credential
+interiors are retained only as diagnostic leaves; they are never parsed or rebuilt.
+Metadata is untrusted consistency evidence, not authenticated authority or a
+tamper-proof save. These origins are historical evidence,
+never reconstructed operation bindings or permits. `Host::history` continues to return
+only this runtime's typed receipts; authentic retained kernel bindings are D3's seam.
+
+Hidden owner handles refuse while the restore gate is closed. Incomplete/failed
+construction quarantines those handles when dropped; dropping a failed builder cannot
+activate escaped owners. A successful `finish` checks the complete live dependency
+graph before opening. This is local host construction, not D4's destination authority
+validation or atomic bundle activation. Source and nonempty destination hosts are
+never used as hidden storage and remain unchanged on refusal.
+
+Pending candidates, live unconsumed batches, captured behaviors, compatible retained
+helpers and recorded declarations currently return `Unsupported`; none are silently
+omitted. Complete retained kernel/prepared state belongs to D3, service state and
+activation to D4, native compatibility to D5, and combined A5 acceptance to D6.
+This local seam does not close D3–D6, A5 or M5–M7, and supplies no native save migration
+or crash durability guarantee.

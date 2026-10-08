@@ -7,12 +7,15 @@ license = "NGPL"
 description = "Independent sealed owner storage and authenticated pure domain preparation"
 
 [features]
+persistence = ["dep:serde", "dep:serde_json"]
 workflows = ["dep:nethacked-workflows"]
 recorded-inputs = ["dep:nethacked-inputs"]
 
 [dependencies]
 nethacked-kernel = { path = "../nethacked-kernel" }
 sha2 = "0.10"
+serde = { version = "1.0", features = ["derive"], optional = true }
+serde_json = { version = "1.0", optional = true }
 nethacked-workflows = { path = "../nethacked-workflows", optional = true }
 nethacked-inputs = { path = "../nethacked-inputs", optional = true }
 
