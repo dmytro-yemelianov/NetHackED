@@ -57,6 +57,8 @@ Formal definitions may expose explicit adapter/codec/code-binding assumptions. S
 | M6 | Migrate remaining existing domain groups through the established interfaces | A7 passes: equipment/properties, combat, actors/AI, remaining objects/tools, hero/progression, spatial/content, economy/NPCs, commands/presentation and persistence/endings |
 | M7 | Integration and completion audit after every migration group | A8 passes; clean reviewed commits; remaining behavior-parity work explicitly stays in its original backlog |
 
+The reviewed [autonomous ownership contract](2026-10-08-autonomous-ownership-contract.md) strengthens M4 before persistence: O1 formal ownership → O2 independent owner storage/commands → O3 atomic publication → O4 live behavior/service integration. M4d depends on the accepted O2–O4 runtime, not just the contract or the centralized resource prototype. Owners maintain private state and behavior; routing stores metadata only. M5–M7 and the separate behavior-parity backlog retain their full scope.
+
 Each milestone is split only at testable ownership boundaries. Dependency edges are enforced before dispatch. A data-only patch system or an extension compiled into the original engine does not satisfy A2. Forwarding `&mut SimulationWorld` through a new module does not satisfy A7.
 
 ## Execution loop and cost controls

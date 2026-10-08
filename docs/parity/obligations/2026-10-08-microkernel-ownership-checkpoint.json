@@ -1,0 +1,70 @@
+{
+  "schema": 1,
+  "status": "verified_design_for_containing_commit",
+  "baseline_head": "b6b714c30d79a79503277572a11f8ce42916c4e9",
+  "milestone": "M4-ownership-design",
+  "scope": "Autonomous owner-state contract and enforced dependency order before codec/domain migration",
+  "contract": {
+    "path": "/Users/dmytro/github/NetRust/docs/plans/2026-10-08-autonomous-ownership-contract.md",
+    "sha256": "fd300cc5f7bccab494427334a3afe04b179684a5d28afcd3c5cacc159f22aca4"
+  },
+  "review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNERSHIP/review/answer.txt",
+    "sha256": "0b23dd6472357b5538ac87df02d67a421cc94182ea44645c7ad1c6f03d052508"
+  },
+  "readback": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNERSHIP/readback/answer.txt",
+    "sha256": "ee7d1cddff0bda205b4137f6d760c8eb8b9c022b3b5a9f00aa49c063c0f8610d"
+  },
+  "repair_history": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNERSHIP/repair1.json",
+    "sha256": "0fef31f75de33d38ef80939ab7f1429e264f1d87e6b84669da7b03dad865ae3b"
+  },
+  "design_bindings": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNERSHIP/accepted-design-bindings.json",
+    "sha256": "c331af0932ec7c4e0021bb1c97f5c74df884cd67abd3d67b8e8c9b962c0a8e92"
+  },
+  "usage": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNERSHIP/implementation/usage.json",
+      "sha256": "95eaaeb31bd332c6fe54eb89f8cf755590bbce08a77f7bcf87cc09eabcb2195f"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNERSHIP/review/usage.json",
+      "sha256": "c704c64b561192e5ff72c7ac6564c72e8271f0faf7db70c116596455149ebd34"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNERSHIP/readback/usage.json",
+      "sha256": "dbff1eaf0eb077a52f8363ad3f278935d1e9438bb7b81a9f68566a8a473cc535"
+    }
+  ],
+  "meter_note": "Writer61989/7891, review38199/2233, readback22911/852 uncached input/output exceed docs soft input thresholds; root unknown. No savings claim. Next formal unit uses only accepted contract and affected abstract interfaces.",
+  "runtime_implemented": false,
+  "ownership_proofs_implemented": false,
+  "old_tests_helpers_goldens_changed": false,
+  "parity_families_closed": 0,
+  "acceptance": "Independent design PASS after F1 captured-binding versus future-dispatch repair. Runtime/proof acceptance remains O1\u2013O4; M4d requires O4.",
+  "native_goal_status": "active; next M4-O1",
+  "residuals": [
+    "Machine-checked ownership/publication model and representation correspondence",
+    "Independent owner storage, domain behavior and atomic runtime",
+    "Live owner extensions and derived-property/service integration",
+    "Durable owner codecs, legacy saves, full existing NetHack migration and final audit",
+    "Separate 53-family missing-behavior backlog unchanged"
+  ],
+  "full_gates": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNERSHIP/full-gates/accepted.json",
+    "sha256": "ed240adb82b16286a4a43b820eafb84610cd999add2302f266579f4cc7382d5a"
+  },
+  "gate_result": {
+    "head": "b6b714c30d79a79503277572a11f8ce42916c4e9",
+    "tests": 1138,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "digest": "f251d3bbbd5af7b299a54469d6557f7b6ace707f268c889e896d98c0f8e24f35",
+    "checks": 12
+  }
+}

@@ -2,10 +2,10 @@
   "schema": 1,
   "status": "active",
   "plan": "docs/plans/2026-10-08-microkernel-goal.md",
-  "plan_sha256": "480c70bd0abfcff5a229e3e1612dee00b54c0af3da43c0b5ac441557f0e86d6c",
+  "plan_sha256": "ee920b29502ffe14128337b1a7c3193c8f895729d1f21ed2eac3e2258a30993b",
   "native_goal": "Complete NetRust microkernel architecture program; formal contracts, executable extensions, existing NetHack migration, integration audit",
   "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
-  "active_unit": "M4-ownership-design",
+  "active_unit": "M4-O1",
   "live_handles": [],
   "acceptance": {
     "A1": "passed_generic_runtime_1fc3290",
@@ -201,20 +201,58 @@
         },
         {
           "id": "M4-ownership-design",
-          "status": "planned",
+          "status": "complete",
           "depends_on": [
             "M4c"
           ],
-          "scope": "Evaluate and specify autonomous object/actor state ownership, bounded interaction and multi-owner atomicity before concrete persistence/domain migration; no actor implementation claim yet"
+          "scope": "Reviewed autonomous ownership design only; Lean and runtime acceptance remain pending",
+          "contract": "docs/plans/2026-10-08-autonomous-ownership-contract.md",
+          "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-ownership-checkpoint.json"
+        },
+        {
+          "id": "M4-O1",
+          "status": "planned",
+          "depends_on": [
+            "M4-ownership-design"
+          ],
+          "contract": "docs/plans/2026-10-08-autonomous-ownership-contract.md",
+          "scope": "formal ownership and publication transition model, separation/observation/authority proofs with explicit runtime trust boundaries"
+        },
+        {
+          "id": "M4-O2",
+          "status": "planned",
+          "depends_on": [
+            "M4-O1"
+          ],
+          "contract": "docs/plans/2026-10-08-autonomous-ownership-contract.md",
+          "scope": "Independent typed/blob owner slots and routes, domain command/query ports and pure native/Wasm preparation"
+        },
+        {
+          "id": "M4-O3",
+          "status": "planned",
+          "depends_on": [
+            "M4-O2"
+          ],
+          "contract": "docs/plans/2026-10-08-autonomous-ownership-contract.md",
+          "scope": "Sealed tokens, preflight, guarded atomic publication and visibility/refusal/prefix/cleanup fixtures"
+        },
+        {
+          "id": "M4-O4",
+          "status": "planned",
+          "depends_on": [
+            "M4-O3"
+          ],
+          "contract": "docs/plans/2026-10-08-autonomous-ownership-contract.md",
+          "scope": "Live executable behavior/extensions, derived properties, retained services, heterogeneous/entity-free owner runtime acceptance"
         },
         {
           "id": "M4d",
           "status": "planned",
           "depends_on": [
             "M4c",
-            "M4-ownership-design"
+            "M4-O4"
           ],
-          "scope": "Concrete codec/restoration and executable/schema validation; full A5 including supported legacy compatibility"
+          "scope": "Concrete autonomous-owner codecs/restoration and executable/schema validation; full A5 including supported legacy compatibility"
         }
       ]
     },
@@ -267,7 +305,7 @@
       26945,
       30480
     ],
-    "next_adjustment": "Autonomous owner-state contract only: reuse accepted kernel/service interfaces and formal authority model, identify concrete ownership delta before codec/domain changes; no repeated timer/history audit.",
+    "next_adjustment": "Narrow O1 to ownership model over accepted Authority interfaces; no history/source re-audit, bounded context. Ownership writer/readers exceeded soft allowances; root unknown.",
     "authority_implementation": {
       "uncached_input": 59709,
       "output": 18592,
@@ -426,14 +464,16 @@
     "resume": "Native goal verified active on user continuation after audit."
   },
   "ownership_followup": {
-    "status": "ready_for_design_evaluation",
+    "status": "design_reviewed_runtime_pending",
     "user_proposal": "Autonomous objects own and maintain their properties, instead of item rows in a shared authoritative database.",
     "direction_discussed": "In-process object/actor ownership behind bounded commands/events; registry locates stable IDs; modules define behavior, extensions change capabilities. Separate network microservices are not required.",
     "must_resolve_before": [
       "concrete owner-state persistence contract",
       "NetHack domain migration"
     ],
-    "current_limit": "Generic resource service still stores shared payloads; existing infrastructure alone does not prove autonomous object ownership. Timer work continues because addressed retained callbacks are compatible.",
-    "implementation_claim": false
+    "current_limit": "Central resource prototype remains unchanged and does not meet autonomous ownership; O1\u2013O4 required before owner codecs and domain migration.",
+    "implementation_claim": false,
+    "contract": "docs/plans/2026-10-08-autonomous-ownership-contract.md",
+    "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-ownership-checkpoint.json"
   }
 }
