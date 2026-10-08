@@ -2,10 +2,10 @@
   "schema": 1,
   "status": "active",
   "plan": "docs/plans/2026-10-08-microkernel-goal.md",
-  "plan_sha256": "1af7ecb859b9ce387165b38cc891510cfd32e800770b341357a8b84510996e39",
+  "plan_sha256": "e999c33115c97a0d78ffe3ca7d610b4867491a61f93f60bb960ee717a0a62e5b",
   "native_goal": "Complete NetRust microkernel architecture program; formal contracts, executable extensions, existing NetHack migration, integration audit",
   "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
-  "active_unit": "M4d",
+  "active_unit": "M4d-D1",
   "live_handles": [],
   "acceptance": {
     "A1": "passed_generic_runtime_1fc3290",
@@ -286,12 +286,113 @@
         },
         {
           "id": "M4d",
-          "status": "planned",
+          "status": "in_progress",
           "depends_on": [
             "M4c",
             "M4-O4"
           ],
-          "scope": "Concrete autonomous-owner codecs/restoration and executable/schema validation; full A5 including supported legacy compatibility"
+          "scope": "Concrete autonomous-owner codecs/restoration and executable/schema validation; full A5 including supported legacy compatibility",
+          "current_phase": "D1_wire_catalog_next",
+          "contract": "docs/plans/2026-10-08-owner-persistence-contract.md",
+          "design_checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-persistence-contract-checkpoint.json",
+          "units": [
+            {
+              "id": "M4d-contract",
+              "status": "complete",
+              "depends_on": [
+                "M4-O4"
+              ],
+              "scope": "Reviewed concrete persistence/restoration design only; no byte codec or restored host acceptance",
+              "contract": "docs/plans/2026-10-08-owner-persistence-contract.md",
+              "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-persistence-contract-checkpoint.json"
+            },
+            {
+              "id": "M4d-D1",
+              "status": "planned",
+              "depends_on": [
+                "M4d-contract"
+              ],
+              "title": "Wire/catalog",
+              "scope": "New nethacked-persistence strict versioned bounded canonical envelope, typed tables/IDs and artifact/catalog declarations; no runtime authority",
+              "contract": "docs/plans/2026-10-08-owner-persistence-contract.md",
+              "acceptance_requirements": [
+                "Canonical exact byte fixtures and structural bounds",
+                "Malformed/truncated/oversized/noncanonical/duplicate-key or ID/counter refusal"
+              ]
+            },
+            {
+              "id": "M4d-D2",
+              "status": "planned",
+              "depends_on": [
+                "M4d-D1"
+              ],
+              "title": "Independent state",
+              "scope": "Owner-local native/blob/field persistence codecs, identity remapping, reference enumeration and publication history; no composed services",
+              "contract": "docs/plans/2026-10-08-owner-persistence-contract.md",
+              "acceptance_requirements": [
+                "Fresh independent native/blob/field roundtrip and supported schema migration",
+                "Changed schema/codecs, stale credentials, invalid references/history/counters refuse"
+              ]
+            },
+            {
+              "id": "M4d-D3",
+              "status": "planned",
+              "depends_on": [
+                "M4d-D2"
+              ],
+              "title": "Retained kernel",
+              "scope": "Sealed registration/grant/code/lease/callback reconstruction and owner retained behavior/prepared state",
+              "contract": "docs/plans/2026-10-08-owner-persistence-contract.md",
+              "acceptance_requirements": [
+                "Old complete guest/import/native codec retained while current dispatch differs",
+                "Missing artifacts, changed ABI/grants, forged origins and consumed prepared batch replay refuse"
+              ]
+            },
+            {
+              "id": "M4d-D4",
+              "status": "planned",
+              "depends_on": [
+                "M4d-D3"
+              ],
+              "title": "Coherent services",
+              "scope": "Workflow/input/timer/owner-services snapshots and hidden complete host reconstruction, authority-epoch activation",
+              "contract": "docs/plans/2026-10-08-owner-persistence-contract.md",
+              "acceptance_requirements": [
+                "Paused charge/input, first preparation under old code, source-disposed callback, Busy cleanup and exact accepted prefixes",
+                "Bad targets/records/cleanup/replay and barrier failures refuse",
+                "Grant narrowing/revocation and resolver change after staging or at final exchange; safe restaging positive and nonempty destination preserved"
+              ]
+            },
+            {
+              "id": "M4d-D5",
+              "status": "planned",
+              "depends_on": [
+                "M4d-D4"
+              ],
+              "title": "Legacy compatibility",
+              "scope": "Nine independent native-save owner partitions, old-validator/no-catchup import and boundary-only native export, owner-native public record_bill_terms prerequisite",
+              "contract": "docs/plans/2026-10-08-owner-persistence-contract.md",
+              "acceptance_requirements": [
+                "Real supported native legacy import to separate owner bytes, fresh restored facade, state-changing receipt command, native export/reload equivalence",
+                "Preserve RNG/timer/event ordering, active/cached live identity remap and consumed historical origins",
+                "Malformed old state invokes available migrator zero times; missing validator/migration/hash/schema/receipt/ref failures preserve destination"
+              ]
+            },
+            {
+              "id": "M4d-D6",
+              "status": "planned",
+              "depends_on": [
+                "M4d-D5"
+              ],
+              "title": "A5 acceptance",
+              "scope": "Fresh-process combined heterogeneous/pending/legacy conformance and obligation reconciliation; no reduction of M5-M7",
+              "contract": "docs/plans/2026-10-08-owner-persistence-contract.md",
+              "acceptance_requirements": [
+                "Every mandatory state/refusal from contract end-to-end",
+                "All D1-D5 accepted, fresh review, complete gates and unchanged scoped goldens before A5 acceptance"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -556,6 +657,7 @@
     "implementation_claim": true,
     "contract": "docs/plans/2026-10-08-autonomous-ownership-contract.md",
     "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-services-checkpoint.json",
-    "implemented_scope": "Independent owner storage, pure preparation, sealed atomic publication, compatible live executable behavior, derived caches, retained workflow/timer/input composition and entity-free/equipment witnesses"
+    "implemented_scope": "Independent owner storage, pure preparation, sealed atomic publication, compatible live executable behavior, derived caches, retained workflow/timer/input composition and entity-free/equipment witnesses",
+    "persistence_contract": "docs/plans/2026-10-08-owner-persistence-contract.md"
   }
 }

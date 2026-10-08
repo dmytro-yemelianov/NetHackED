@@ -63,6 +63,8 @@ O4 executes in two dependent implementation slices to keep source and review pac
 
 O4b and the aggregate generic owner runtime are now accepted in the [service integration checkpoint](../parity/obligations/2026-10-08-microkernel-owner-services-checkpoint.json). Real retained workflows and timer callbacks first query/prepare after future behavior admission, recorded inputs are authenticated before pure preparation, and metadata-only routes compose independent scalar/device/field and equipment owners. Independent review, refusal/mutation controls and full gates cover this boundary. M4d concrete codecs/restoration is next; NetHack integration and complete domain migration remain M5–M7.
 
+M4d now follows the reviewed [owner persistence contract](2026-10-08-owner-persistence-contract.md): D1 strict wire/catalog → D2 independent state codecs → D3 retained kernel/code reconstruction → D4 coherent service restoration → D5 real legacy compatibility and owner-native receipt continuation → D6 combined A5 acceptance. The nine legacy state partitions remain independently authoritative; World reconstruction is limited to compatibility boundaries. All six runtime units are still required, including authority-epoch activation, old-schema validation before migration and every pending-state witness. This accepted design does not close A5 or reduce M5–M7.
+
 Each milestone is split only at testable ownership boundaries. Dependency edges are enforced before dispatch. A data-only patch system or an extension compiled into the original engine does not satisfy A2. Forwarding `&mut SimulationWorld` through a new module does not satisfy A7.
 
 ## Execution loop and cost controls

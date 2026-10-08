@@ -1,0 +1,97 @@
+{
+  "schema": 1,
+  "status": "reviewed_design_verified_for_containing_commit",
+  "baseline_head": "16d4e0397e6b09c17bb83cf86bf4f25ec0fe92e2",
+  "milestone": "M4d-contract",
+  "scope": "Concrete owner-driven persistence contract and D1-D6 dependency plan; runtime and full A5 remain open",
+  "contract": {
+    "path": "docs/plans/2026-10-08-owner-persistence-contract.md",
+    "sha256": "7f04e7118c33245a6aa0da16352eaa022d7753dc191bddaeb4963a9ddf55b569"
+  },
+  "review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-PERSISTENCE-CONTRACT/review/answer.txt",
+    "sha256": "d053d3301d13f3b8859e2f12c57d743b0ccd47945d8552205cc8bb14feffee8e"
+  },
+  "readback": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-PERSISTENCE-CONTRACT/readback/answer.txt",
+    "sha256": "cc0dffa71053a8c080521e28689201286f092cea9007329413b6da801e82f415"
+  },
+  "writer_evidence": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-PERSISTENCE-CONTRACT/writer-evidence/root-verification.json",
+    "sha256": "30275b3bf36617045b7519d52266bfdb81e04757312761135ec840088c14d8a9"
+  },
+  "repair_evidence": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-PERSISTENCE-CONTRACT/repair1-evidence/root-verification.json",
+    "sha256": "244f0cc9b30625dfa455639934f70417bf8ebb48e2308e11d440e81ed60b0c78"
+  },
+  "repair_diff": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-PERSISTENCE-CONTRACT/repair1-evidence/repair.diff",
+    "sha256": "fcde8ccbfd322d449a56db4e293b787da157f63bb6b7eb34805a56234e2da504"
+  },
+  "repair_counters": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-PERSISTENCE-CONTRACT/repair-counters.json",
+    "sha256": "5714c7acf36ccdff2380507d0325496ce9d718bb65b49f469d977986c4ef7936"
+  },
+  "findings_resolved": [
+    "F1 nine exhaustive owner partitions with concrete D5 owner-native public receipt continuation and boundary-only World import/export",
+    "F2 destination authority identity/epoch admission under policy-update exclusion held through exchange",
+    "F3 approved old schema decoder/validator resolved before old semantic validation, migration and target validation; zero migrator calls on malformed old state"
+  ],
+  "repairs": "Each F1/F2/F3 one repair, zero unsuccessful; raw evidence retained",
+  "usage": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-PERSISTENCE-CONTRACT/implementation/usage.json",
+      "sha256": "13691f2fcf1d5f96f7ebb512a78f16f82129d67e1ea7563800cd8ae31408c5ec"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-PERSISTENCE-CONTRACT/review/usage.json",
+      "sha256": "d1db023b72a5947feede28b554e7556e8467f3d2e5ae796f8a835cebf8a15294"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-PERSISTENCE-CONTRACT/repair1/usage.json",
+      "sha256": "22f5f76764c1d7af10841bd97846c083f74be99354e4d0b0ffbee623c347eda4"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-PERSISTENCE-CONTRACT/readback/usage.json",
+      "sha256": "5d19f7580dd914d9ca4506569d97cac9a0db1468da7cc5b7b8a5716a4a6b3e87"
+    }
+  ],
+  "meter_note": "Uncached input/output: writer61211/8297, review43216/2855, repair53644/7416, readback49770/2889. Writer/repair exceed normal input ceilings; high review/readback within difficult uncached ceilings. Guard total-input reports exceed. Root usage unknown; no savings claim.",
+  "runtime_changed": false,
+  "runtime_implementation_claim": false,
+  "A5_accepted": false,
+  "native_goal_status": "active; next M4d-D1",
+  "units": [
+    "M4d-contract",
+    "M4d-D1",
+    "M4d-D2",
+    "M4d-D3",
+    "M4d-D4",
+    "M4d-D5",
+    "M4d-D6"
+  ],
+  "goldens_changed": false,
+  "parity_families_closed": 0,
+  "full_gates": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-PERSISTENCE-CONTRACT/full-gates/accepted.json",
+    "sha256": "eb69ca607da4fff32ff0243dcb6e98c83df1a7559ed417d887c311b6b0497cd9"
+  },
+  "gate_result": {
+    "head": "16d4e0397e6b09c17bb83cf86bf4f25ec0fe92e2",
+    "tests": 1193,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "digest": "76a9cd4e98d08af932bdfa041b341edba2f604bba0188009eae55658fb98524e",
+    "checks": 12
+  },
+  "source_input_count": 428,
+  "residuals": [
+    "All D1-D6 concrete codec/restoration/legacy implementation and combined A5 acceptance",
+    "M5 full selected-wand/populated-NetHack extension integration",
+    "M6 all existing-domain migration and M7 final audit",
+    "Separate53-family missing-behavior backlog"
+  ]
+}
