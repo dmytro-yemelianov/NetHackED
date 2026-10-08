@@ -1,11 +1,11 @@
 {
   "schema": 1,
-  "status": "active",
+  "status": "paused",
   "plan": "docs/plans/2026-10-08-microkernel-goal.md",
   "plan_sha256": "480c70bd0abfcff5a229e3e1612dee00b54c0af3da43c0b5ac441557f0e86d6c",
   "native_goal": "Complete NetRust microkernel architecture program; formal contracts, executable extensions, existing NetHack migration, integration audit",
   "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
-  "active_unit": "ARCHITECTURE-ASTRA-AUDIT",
+  "active_unit": "M3b",
   "live_handles": [],
   "acceptance": {
     "A1": "pending",
@@ -97,6 +97,11 @@
           "scope": "Optional resource coordinator and fullA3 atomicity through accepted ports",
           "depends_on": [
             "M3a"
+          ],
+          "audit_requirements": [
+            "Map Lean identities/capabilities to actual authenticated runtime views",
+            "Bind exact immutable plans to caller/artifact/effective grants",
+            "Revalidate stamps/permissions then atomic owner changes/events"
           ]
         }
       ]
@@ -106,6 +111,12 @@
       "status": "planned",
       "depends_on": [
         "M3"
+      ],
+      "audit_requirements": [
+        "Bind transactions/input keys/timer admission to authoritative workflow checkpoints",
+        "Pin resolved executable provider/extension chains; protect pending-work retention on unload",
+        "Define callback failure/retry, lifecycle indexes, concrete codecs/schema compatibility",
+        "Store persistent extension state outside ephemeral guest RAM"
       ]
     },
     {
@@ -113,6 +124,11 @@
       "status": "planned",
       "depends_on": [
         "M4"
+      ],
+      "audit_requirements": [
+        "Define bounded native-to-native collaboration and extension composition before migration",
+        "Preserve wand survivor identity/conditional RNG/cancellation costs",
+        "Preserve billing validation before timer catch-up on restoration"
       ]
     },
     {
@@ -192,11 +208,19 @@
       "output": 1253,
       "guard_status": "exceeded from total input; uncached below difficult threshold; root unknown",
       "adjustment": "Requested Astra audit focuses cross-layer boundaries and reuses accepted fixture/proof results, no repeated test execution."
+    },
+    "astra_architecture_audit": {
+      "uncached_input": 59067,
+      "output": 2742,
+      "status": "exceeded",
+      "adjustment": "Narrow next implementation to optional atomic resource coordinator/M3b plus concrete Lean-to-Rust identity/capability mapping; reuse architecture audit and accepted runtime, no broad reread."
     }
   },
   "requested_interlude": {
     "after": "accepted M3a checkpoint",
     "action": "pause native goal; fresh gpt-6-astra review of completed architecture; then resume",
-    "status": "M3a verified; pause/audit follows containing commit"
+    "status": "complete: M3a committed, native goal paused, Astra PASS_ARCHITECTURE_DIRECTION",
+    "review": "docs/parity/obligations/2026-10-08-architecture-astra-review.json",
+    "resume": "User authorized then resume; actual native runtime has no programmatic resume. Await interface Resume control."
   }
 }
