@@ -10,7 +10,14 @@ use std::{
     rc::{Rc, Weak},
 };
 
-type Route = Rc<dyn Fn() -> Result<Stamp>>;
+#[derive(Clone)]
+struct Route {
+    #[cfg(feature = "persistence")]
+    original: nethacked_owners::Stamp,
+    current: Rc<dyn Fn() -> Result<Stamp>>,
+}
+#[cfg(feature = "persistence")]
+pub mod persistence;
 /// Bounded target metadata and weak owner routes; no payload database or World.
 pub struct Targets {
     limit: usize,
@@ -46,22 +53,26 @@ impl Targets {
         let original = stamp.clone();
         routes.insert(
             address.clone(),
-            Rc::new(move || {
-                let owner = weak.upgrade().ok_or(Error::InvalidHandle)?;
-                let now = owner.stamp().map_err(owner_error)?;
-                if now.owner != original.owner
-                    || now.generation != original.generation
-                    || now.schema != original.schema
-                    || now.module != original.module
-                {
-                    return Err(Error::InvalidHandle);
-                }
-                Ok(Stamp {
-                    address: target_address.clone(),
-                    generation: now.generation,
-                    revision: now.revision,
-                })
-            }),
+            Route {
+                #[cfg(feature = "persistence")]
+                original: original.clone(),
+                current: Rc::new(move || {
+                    let owner = weak.upgrade().ok_or(Error::InvalidHandle)?;
+                    let now = owner.stamp().map_err(owner_error)?;
+                    if now.owner != original.owner
+                        || now.generation != original.generation
+                        || now.schema != original.schema
+                        || now.module != original.module
+                    {
+                        return Err(Error::InvalidHandle);
+                    }
+                    Ok(Stamp {
+                        address: target_address.clone(),
+                        generation: now.generation,
+                        revision: now.revision,
+                    })
+                }),
+            },
         );
         Ok(Stamp {
             address,
@@ -77,7 +88,7 @@ impl Targets {
             .get(address)
             .cloned()
             .ok_or(Error::InvalidHandle)?;
-        route()
+        (route.current)()
     }
     pub fn remove(&self, address: &Resource) -> Result<()> {
         self.routes

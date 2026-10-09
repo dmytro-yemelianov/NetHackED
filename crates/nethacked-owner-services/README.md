@@ -88,3 +88,28 @@ remain open. M4-O4b requires independent integration review; root runs workspace
 tests, scoped unchanged goldens and full gates afterward. This writer runs only
 affected owner/kernel/workflow/input/timer/adapter tests, formatting, affected
 all-target Clippy and actual owner/adapter wasm32 builds.
+
+## Local persistence (D4b)
+
+With `persistence`, typed `Capture::owner` enrollment uses D3 `ExecutionRoots` and
+`ExecutionCapture` for exact retained codecs, complete helper closures and callback
+scopes. Adapter bytes contain target metadata, ordered route IDs and shared
+behavior/scope/bundle IDs. They contain no owner payload copies, trait objects,
+pointers or executable credentials. Independently approve the entire adapter
+checkpoint against the accepted kernel and owner graph before reconstruction.
+
+Typed hidden reconstruction uses sealed D3 owner metadata enrollment while the
+owner visibility gate is closed. Actual weak routes resume ordinary owner checks
+after activation. Scope and bundle allocations are shared; the registry retains
+weak routes only. Timer reconstruction releases adapter staging roots after every
+task owns its references. Drop D3 mapping roots after ownership transfer so cleanup
+and disposal can release retained code. Historical target revisions are preserved,
+including terminal tasks whose callbacks advanced their owner; stale pending
+stamps still refuse at explicit delivery.
+
+Factories/codecs must be independently enrolled, faithful, bounded, pure,
+non-panicking, privately allocating and effect-free on drop. Incoming identities
+are requests, never approval. Missing old behavior cannot be replaced with current
+future dispatch, nor can restoration require a disposed source lease. One-use
+claims roll back on failed hidden stages. This seam does not provide the D4e
+coherent barrier/epoch activation, D4c historical inputs, D4d resources or A5.

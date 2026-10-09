@@ -163,6 +163,13 @@ pub struct KernelSnapshot {
     pub operations: Vec<SavedOperation>,
     pub pure_captures: Vec<SavedPureCapture>,
     pub cleanup_history: BTreeSet<u64>,
+    /// Authentic host service roots whose cleanup has not yet been invoked.
+    #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
+    pub service_cleanup: BTreeSet<u64>,
+    /// Metadata-only roots such as an empty timer queue's address. They grant
+    /// no authority; the destination resolver must independently admit them.
+    #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
+    pub service_resources: BTreeSet<Resource>,
     /// Explicit disposed source lease IDs, disjoint from every live lease/owner.
     pub disposed_sources: BTreeSet<u64>,
 }
@@ -187,6 +194,8 @@ pub struct RestoredKernel {
     execution_captures: Vec<SavedPureCapture>,
     execution_resources: BTreeMap<Resource, Resource>,
     workflow_enrollment: Rc<RefCell<BTreeSet<u64>>>,
+    timer_enrollment: Rc<RefCell<BTreeSet<u64>>>,
+    adapter_enrollment: Rc<RefCell<BTreeSet<u64>>>,
 }
 
 /// One-use service reconstruction reservation. A failed hidden build releases
@@ -495,6 +504,8 @@ impl Kernel {
             operations: Vec::new(),
             pure_captures: Vec::new(),
             cleanup_history: self.retention.cleanup_history.borrow().clone(),
+            service_cleanup: BTreeSet::new(),
+            service_resources: BTreeSet::new(),
             disposed_sources: BTreeSet::new(),
         };
         for b in enrollment.operations {
@@ -574,6 +585,9 @@ impl Kernel {
         for context in saved.operation_contexts()? {
             host.approve_operation_context(&context)?;
         }
+        for cleanup in &saved.service_cleanup {
+            host.approve_cleanup(*cleanup)?;
+        }
         // Resolve each resource once; forbid cross-row aliases and unstable maps.
         let resources = saved.resources()?;
         let mut mapped = BTreeMap::new();
@@ -596,7 +610,7 @@ impl Kernel {
             return Err(Error::Limit);
         }
         let mut cleanup = BTreeMap::new();
-        let needed_cleanup: BTreeSet<_> = saved
+        let mut needed_cleanup: BTreeSet<_> = saved
             .operations
             .iter()
             .chain(
@@ -613,6 +627,10 @@ impl Kernel {
             )
             .flat_map(|o| o.cleanup.iter().copied())
             .collect();
+        if !saved.service_cleanup.is_subset(&saved.cleanup_history) {
+            return Err(Error::Authority);
+        }
+        needed_cleanup.extend(&saved.service_cleanup);
         for old in needed_cleanup {
             host.approve_cleanup(old)?;
             let fresh = CleanupIdentity::fresh_excluding(&excluded)?;
@@ -784,6 +802,8 @@ impl Kernel {
             source_bindings,
             execution_namespace: saved.source_namespace,
             workflow_enrollment: Rc::new(RefCell::new(BTreeSet::new())),
+            timer_enrollment: Rc::new(RefCell::new(BTreeSet::new())),
+            adapter_enrollment: Rc::new(RefCell::new(BTreeSet::new())),
             execution_contexts: saved.operation_contexts()?,
             execution_captures: saved.pure_captures.clone(),
             execution_resources: mapped,
@@ -1476,11 +1496,12 @@ impl KernelSnapshot {
             .union(&destination.retention.cleanup_history.borrow())
             .copied()
             .collect();
-        let needed: BTreeSet<_> = self
+        let mut needed: BTreeSet<_> = self
             .operation_contexts()?
             .iter()
             .flat_map(|c| c.operation.cleanup.iter().copied())
             .collect();
+        needed.extend(&self.service_cleanup);
         if cleanup
             .len()
             .checked_add(needed.len())
@@ -1498,6 +1519,7 @@ impl KernelSnapshot {
             || !self.registry.namespaces.contains(&self.source_namespace)
             || self.cleanup_history.len() > MAX_CLEANUPS
             || self.cleanup_history.contains(&0)
+            || !self.service_cleanup.is_subset(&self.cleanup_history)
             || self.disposed_sources.len() > MAX_ROWS
             || self.operations.len() > MAX_ROWS
             || self.pure_captures.len() > MAX_ROWS
@@ -1669,7 +1691,15 @@ impl KernelSnapshot {
         Ok(())
     }
     fn resources(&self) -> Result<BTreeSet<Resource>> {
-        let mut resources = BTreeSet::new();
+        if self.service_resources.len() > MAX_ROWS {
+            return Err(Error::Limit);
+        }
+        for r in &self.service_resources {
+            if r.owner.is_empty() || r.key.is_empty() || r.owner.len() > 256 || r.key.len() > 256 {
+                return Err(Error::Limit);
+            }
+        }
+        let mut resources = self.service_resources.clone();
         let mut add = |a: &Authority| {
             if let Scope::Keys(keys) = &a.scope {
                 resources.extend(keys.iter().cloned());
@@ -2475,5 +2505,194 @@ impl RestoredKernel {
             }
         }
         Ok(())
+    }
+}
+
+/// Timer-owned provenance history. This record supplies no executable credential.
+/// Cancelled records can outlive their source, code registration and callback.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TimerHistory {
+    pub caller: SavedBinding,
+    pub service: SavedBinding,
+    pub capability: Capability,
+    pub slot: usize,
+    pub source: SavedOperation,
+}
+impl ExecutionCaptureIndex<'_> {
+    pub fn timer_history(&self, p: &CallbackProvenance) -> Result<TimerHistory> {
+        if p.caller.handle.instance != self.namespace()
+            || p.service.handle.instance != self.namespace()
+            || p.source.operation.host != self.namespace()
+            || p.source.pipeline.instance != self.namespace()
+        {
+            return Err(Error::InvalidHandle);
+        }
+        let row = TimerHistory {
+            caller: SavedBinding {
+                module: p.caller.handle.generation,
+                artifact: p.caller.artifact,
+                endpoint: p.caller.endpoint.clone(),
+            },
+            service: SavedBinding {
+                module: p.service.handle.generation,
+                artifact: p.service.artifact,
+                endpoint: p.service.endpoint.clone(),
+            },
+            capability: p.capability.clone(),
+            slot: p.slot,
+            source: operation(&p.source),
+        };
+        row.check(self.saved)?;
+        Ok(row)
+    }
+}
+impl TimerHistory {
+    pub fn check(&self, saved: &KernelSnapshot) -> Result<()> {
+        if self.caller.module == 0
+            || self.caller.module >= saved.registry.next_generation
+            || self.service.module == 0
+            || self.service.module >= saved.registry.next_generation
+            || self.source.operation == 0
+            || self.source.operation >= saved.registry.next_operation
+            || self.source.pipeline == 0
+            || self.source.pipeline >= saved.registry.retention_counters[0]
+            || !Kernel::valid_name(&self.caller.endpoint)
+            || !Kernel::valid_name(&self.service.endpoint)
+            || self.source.phase.len() > 256
+            || self
+                .source
+                .cleanup
+                .iter()
+                .any(|id| !saved.cleanup_history.contains(id))
+            || self.source.cleanup.windows(2).any(|w| w[0] >= w[1])
+        {
+            return Err(Error::InvalidHandle);
+        }
+        Ok(())
+    }
+}
+impl RestoredKernel {
+    /// Cancelled diagnostic provenance deliberately uses namespace zero, which
+    /// no Kernel ever issues. It cannot authorize invocation, capture or release.
+    /// Live tasks instead obtain provenance from admitted callbacks/leases.
+    pub fn terminal_timer_history(&self, history: &TimerHistory) -> Result<CallbackProvenance> {
+        let binding = |b: &SavedBinding| ProviderBinding {
+            handle: ModuleHandle {
+                instance: 0,
+                generation: b.module,
+            },
+            artifact: b.artifact,
+            endpoint: b.endpoint.clone(),
+        };
+        Ok(CallbackProvenance {
+            caller: binding(&history.caller),
+            service: binding(&history.service),
+            capability: history.capability.clone(),
+            slot: history.slot,
+            source: OperationBinding {
+                operation: OperationId {
+                    host: 0,
+                    serial: history.source.operation,
+                },
+                pipeline: PipelineLease {
+                    instance: 0,
+                    serial: history.source.pipeline,
+                },
+                checkpoint: history.source.checkpoint,
+                phase: history.source.phase.clone(),
+                cleanup: history
+                    .source
+                    .cleanup
+                    .iter()
+                    .map(|id| self.cleanup.get(id).copied().ok_or(Error::Authority))
+                    .collect::<Result<_>>()?,
+            },
+        })
+    }
+    /// One-use enrollment for an entire timer allocation, including an empty
+    /// queue and cancelled tombstones. Failure releases the hidden reservation.
+    pub fn enroll_timers(&self, service: u64) -> Result<WorkflowEnrollment> {
+        if !self.modules.contains_key(&service) {
+            return Err(Error::InvalidHandle);
+        }
+        let mut occupied = self
+            .timer_enrollment
+            .try_borrow_mut()
+            .map_err(|_| Error::NativeRefusal)?;
+        if !occupied.insert(service) {
+            return Err(Error::Duplicate);
+        }
+        Ok(WorkflowEnrollment {
+            occupied: self.timer_enrollment.clone(),
+            operations: vec![service],
+            complete: false,
+        })
+    }
+}
+
+impl Kernel {
+    /// Additional authentic host service cleanup identities are snapshot-only
+    /// roots. Capture does not enroll or mutate the runtime's cleanup history.
+    pub fn kernel_snapshot_with_cleanup(
+        &mut self,
+        enrollment: &KernelEnrollment<'_>,
+        cleanup: &[CleanupIdentity],
+    ) -> Result<KernelSnapshot> {
+        if cleanup.len() > MAX_ROWS {
+            return Err(Error::Limit);
+        }
+        let mut saved = self.kernel_snapshot(enrollment)?;
+        saved
+            .cleanup_history
+            .extend(cleanup.iter().map(|id| id.raw()));
+        saved
+            .service_cleanup
+            .extend(cleanup.iter().map(|id| id.raw()));
+        if saved.cleanup_history.len() > MAX_ROWS {
+            return Err(Error::Limit);
+        }
+        Ok(saved)
+    }
+}
+impl RestoredKernel {
+    pub fn enroll_owner_adapter(&self, service: u64) -> Result<WorkflowEnrollment> {
+        if !self.modules.contains_key(&service) {
+            return Err(Error::InvalidHandle);
+        }
+        let mut occupied = self
+            .adapter_enrollment
+            .try_borrow_mut()
+            .map_err(|_| Error::NativeRefusal)?;
+        if !occupied.insert(service) {
+            return Err(Error::Duplicate);
+        }
+        Ok(WorkflowEnrollment {
+            occupied: self.adapter_enrollment.clone(),
+            operations: vec![service],
+            complete: false,
+        })
+    }
+}
+
+impl Kernel {
+    /// Snapshot-only local service metadata roots, admitted by the independent
+    /// destination resolver. No grants or source runtime history are created.
+    pub fn kernel_snapshot_with_service_roots(
+        &mut self,
+        enrollment: &KernelEnrollment<'_>,
+        cleanup: &[CleanupIdentity],
+        resources: &[Resource],
+    ) -> Result<KernelSnapshot> {
+        if resources.len() > MAX_ROWS {
+            return Err(Error::Limit);
+        }
+        let mut saved = self.kernel_snapshot_with_cleanup(enrollment, cleanup)?;
+        saved.service_resources.extend(resources.iter().cloned());
+        saved.resources()?;
+        if crate::kernel::persistence::bounded_size(&saved)? > MAX_BYTES {
+            return Err(Error::Limit);
+        }
+        Ok(saved)
     }
 }

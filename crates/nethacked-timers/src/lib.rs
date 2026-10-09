@@ -17,7 +17,11 @@ use std::{
 static NEXT_QUEUE: AtomicU64 = AtomicU64::new(1);
 const PHASE: &str = "timer";
 
-#[derive(Clone, Debug, Serialize)]
+#[cfg(feature = "persistence")]
+pub mod persistence;
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Limits {
     pub records: usize,
     pub targets: usize,
@@ -94,8 +98,18 @@ pub trait CallbackRetention {
     ) -> Result<Rc<dyn CallbackReference>>;
 }
 /// Ownership only. The callback must independently authenticate every use.
-pub trait CallbackReference {}
+pub trait CallbackReference {
+    #[cfg(feature = "persistence")]
+    fn persistence_type(&self) -> &dyn std::any::Any;
+}
+#[cfg(not(feature = "persistence"))]
 impl<T> CallbackReference for T {}
+#[cfg(feature = "persistence")]
+impl<T: 'static> CallbackReference for T {
+    fn persistence_type(&self) -> &dyn std::any::Any {
+        self
+    }
+}
 /// Optional adapter over the existing bounded resource owner, with no copied authority.
 impl TargetValidator for nethacked_resources::Service {
     fn validate(&self, targets: &[Stamp]) -> Result<()> {
@@ -158,6 +172,8 @@ struct Owned {
     callback: Option<RetainedCallback>,
     lease: Option<PipelineLease>,
     reference: Option<Rc<dyn CallbackReference>>,
+    #[cfg(feature = "persistence")]
+    history: Option<nethacked_kernel::persistence::TimerHistory>,
 }
 struct Inner {
     limits: Limits,
@@ -170,6 +186,8 @@ struct Inner {
     validate_on_schedule: bool,
     participants: Vec<Rc<dyn CleanupParticipant>>,
     identities: Vec<CleanupIdentity>,
+    #[cfg(feature = "persistence")]
+    participant_identities: Vec<Option<CleanupIdentity>>,
     tasks: BTreeMap<TaskId, Owned>,
     active: Option<TaskId>,
     retention: Option<Rc<dyn CallbackRetention>>,
@@ -192,8 +210,13 @@ impl Service {
         }
         check_address(&limits, &queue)?;
         let mut identities = Vec::new();
+        #[cfg(feature = "persistence")]
+        let mut participant_identities = Vec::new();
         for p in &participants {
-            if let Some(id) = p.identity()? {
+            let participant_identity = p.identity()?;
+            #[cfg(feature = "persistence")]
+            participant_identities.push(participant_identity);
+            if let Some(id) = participant_identity {
                 if identities.contains(&id) {
                     return Err(Error::Duplicate);
                 }
@@ -212,6 +235,8 @@ impl Service {
             validate_on_schedule,
             participants,
             identities,
+            #[cfg(feature = "persistence")]
+            participant_identities,
             tasks: BTreeMap::new(),
             active: None,
             retention: None,
@@ -359,6 +384,8 @@ impl Service {
                         callback: Some(captured),
                         lease: None,
                         reference,
+                        #[cfg(feature = "persistence")]
+                        history: None,
                     },
                 );
                 i.next_serial = next;
@@ -579,9 +606,21 @@ fn clean(i: &Inner, binding: &OperationBinding) -> Result<()> {
     }
 }
 fn issue_namespace(counter: &AtomicU64) -> Result<u64> {
+    issue_namespace_after(counter, 0)
+}
+// Reserve the saved allocation history and issue in one atomic operation. A
+// failed hidden build burns its allocation just like a dropped ordinary queue.
+fn issue_namespace_after(counter: &AtomicU64, retired: u64) -> Result<u64> {
+    let floor = retired.checked_add(1).ok_or(Error::Limit)?;
     counter
-        .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |v| v.checked_add(1))
+        .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |v| {
+            Some(v.max(floor).saturating_add(1))
+        })
         .map_err(|_| Error::Limit)
+        .and_then(|v| match v.max(floor) {
+            u64::MAX => Err(Error::Limit),
+            namespace => Ok(namespace),
+        })
 }
 fn check_address(l: &Limits, r: &Resource) -> Result<()> {
     if r.owner.is_empty()

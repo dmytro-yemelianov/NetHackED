@@ -759,6 +759,32 @@ fn bounded_json(bytes: &[u8]) -> Result<()> {
     Ok(())
 }
 
+/// Shared bounded canonical local-checkpoint transport, without runtime authority.
+pub fn encode_local_checkpoint<T: Serialize>(value: &T, max_bytes: usize) -> Result<Vec<u8>> {
+    let bytes = serde_json::to_vec(&serde_json::to_value(value).map_err(|_| Error::Bounds)?)
+        .map_err(|_| Error::Bounds)?;
+    if bytes.len() > max_bytes.min(64 * 1024 * 1024) {
+        return Err(Error::Bounds);
+    }
+    bounded_json(&bytes)?;
+    Ok(bytes)
+}
+
+pub fn decode_local_checkpoint<T: serde::de::DeserializeOwned + Serialize>(
+    bytes: &[u8],
+    max_bytes: usize,
+) -> Result<T> {
+    if bytes.len() > max_bytes.min(64 * 1024 * 1024) {
+        return Err(Error::Bounds);
+    }
+    bounded_json(bytes)?;
+    let value: T = serde_json::from_slice(bytes).map_err(|_| Error::Bounds)?;
+    if encode_local_checkpoint(&value, max_bytes)? != bytes {
+        return Err(Error::Bounds);
+    }
+    Ok(value)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

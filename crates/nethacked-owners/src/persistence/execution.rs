@@ -1319,3 +1319,135 @@ fn validate_execution_kernel(c: &ExecutionCheckpoint, k: &KernelSnapshot) -> Res
     }
     Ok(())
 }
+
+impl ExecutionCheckpoint {
+    /// Exact adapter edge check against the owner-local behavior/scope table.
+    pub fn adapter_behavior(
+        &self,
+        id: BehaviorId,
+        target: &Resource,
+        callback: Option<u64>,
+    ) -> Result<()> {
+        let row = self
+            .behaviors
+            .iter()
+            .find(|r| r.id == id.behavior)
+            .ok_or(Error::Stale)?;
+        if &row.target != target {
+            return Err(Error::Authority);
+        }
+        match (id.scope, callback) {
+            (None, None) => Ok(()),
+            (Some(scope), Some(callback))
+                if self.scopes.iter().any(|s| {
+                    s.id == scope && s.behavior == id.behavior && s.callback == callback
+                }) =>
+            {
+                Ok(())
+            }
+            _ => Err(Error::Authority),
+        }
+    }
+}
+impl ExecutionRestore {
+    pub fn adapter_destination(
+        &self,
+        kernel: &Kernel,
+        mapped: &RestoredKernel,
+    ) -> Result<nethacked_kernel::persistence::ExecutionDestination> {
+        self.bound_mappings(kernel, mapped)?;
+        Ok(mapped.execution_destination())
+    }
+    pub fn adapter_behavior<T: 'static>(
+        &self,
+        id: BehaviorId,
+        kernel: &Kernel,
+        mapped: &RestoredKernel,
+    ) -> Result<RetainedBehavior<T>> {
+        self.bound_mappings(kernel, mapped)?;
+        self.behavior(id)
+    }
+}
+
+/// Sealed weak target enrollment from an actual hidden D3 owner allocation.
+/// It carries metadata only; current() uses the ordinary owner visibility gate.
+pub struct AdapterTarget<T> {
+    owner: std::rc::Weak<Owner<T>>,
+    address: Resource,
+    stamp: Stamp,
+}
+impl<T: 'static> AdapterTarget<T> {
+    pub fn address(&self) -> &Resource {
+        &self.address
+    }
+    pub fn stamp(&self) -> &Stamp {
+        &self.stamp
+    }
+    pub fn current(&self) -> Result<Stamp> {
+        let owner = self.owner.upgrade().ok_or(Error::Stale)?;
+        let now = owner.stamp()?;
+        if now.owner != self.stamp.owner
+            || now.generation != self.stamp.generation
+            || now.schema != self.stamp.schema
+            || now.module != self.stamp.module
+        {
+            return Err(Error::Stale);
+        }
+        Ok(now)
+    }
+}
+impl ExecutionRestore {
+    pub fn adapter_target<T: 'static>(
+        &self,
+        owner: &Rc<Owner<T>>,
+        port: &str,
+        kernel: &Kernel,
+        mapped: &RestoredKernel,
+    ) -> Result<AdapterTarget<T>> {
+        self.bound_mappings(kernel, mapped)?;
+        if !Rc::ptr_eq(&owner.host.0, &self.state.host.0)
+            || !self.state.restored.iter().any(|old| {
+                self.state
+                    .remap
+                    .owner(*old)
+                    .is_ok_and(|new| new == owner.id())
+            })
+        {
+            return Err(Error::Authority);
+        }
+        self.state.host.route(owner.id())?;
+        Ok(AdapterTarget {
+            owner: Rc::downgrade(owner),
+            address: owner.resource(port)?,
+            stamp: owner.metadata.current_stamp(),
+        })
+    }
+}
+
+impl ExecutionCapture<'_> {
+    pub fn adapter_target<T: 'static>(
+        &self,
+        owner: &Rc<Owner<T>>,
+        port: &str,
+    ) -> Result<AdapterTarget<T>> {
+        if !Rc::ptr_eq(&owner.host.0, &self.state.host.0) {
+            return Err(Error::Authority);
+        }
+        self.state.host.route(owner.id())?;
+        Ok(AdapterTarget {
+            owner: Rc::downgrade(owner),
+            address: owner.resource(port)?,
+            stamp: owner.metadata.current_stamp(),
+        })
+    }
+}
+
+/// Allocation alias test for typed adapter capture; neither value is a wire ID.
+pub fn adapter_behavior_alias<T>(a: &RetainedBehavior<T>, b: &RetainedBehavior<T>) -> bool {
+    Rc::ptr_eq(&a.inner, &b.inner)
+        && match (&a.scope, &b.scope) {
+            (None, None) => true,
+            (Some(a), Some(b)) => Rc::ptr_eq(a, b),
+            _ => false,
+        }
+}

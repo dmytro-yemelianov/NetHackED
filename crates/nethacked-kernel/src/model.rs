@@ -423,6 +423,10 @@ pub struct OperationBinding {
     pub(crate) cleanup: Vec<CleanupIdentity>,
 }
 impl OperationBinding {
+    /// Immutable authentic cleanup roots for local service persistence.
+    pub fn cleanup_identities(&self) -> &[CleanupIdentity] {
+        &self.cleanup
+    }
     pub fn admits_cleanup(&self, identity: CleanupIdentity) -> bool {
         self.cleanup.binary_search(&identity).is_ok()
     }

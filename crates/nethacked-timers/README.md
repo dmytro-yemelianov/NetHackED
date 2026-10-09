@@ -1,6 +1,6 @@
 # Optional timer queue
 
-`Service` is an opt-in, ephemeral timer owner; kernel time, entities and RNG are
+By default `Service` is an opt-in, ephemeral timer owner; kernel time, entities and RNG are
 unchanged. Install its single `queue` major-1 Write port. Guests submit strict
 `Request::Schedule`/`Cancel` JSON. Only the issued `TaskId` is returned. The service
 checks the authenticated operation, exact provider incarnation, live declared
@@ -73,3 +73,45 @@ Tests reuse accepted kernel callback and input fixtures and the resource
 prepare/commit protocol. Five fixture groups cover policy selection, retained code
 and live authority/stamps, real rescheduling/cancellation, committed resource and
 input prefixes/cleanup, and atomic admission/capacity/counter/ref-release boundaries.
+
+## Local persistence (D4b)
+
+The optional `persistence` feature adds bounded canonical local checkpoint bytes,
+independent capture/restore catalogs and one-use hidden reconstruction. Enroll
+`persistence_enrollment()`, `persistence_cleanup()` and `persistence_resources()`
+with `kernel_snapshot_with_service_roots`; even empty queues and cancelled
+records retain their independently resolved metadata and diagnostic cleanup roots. Bind
+capture entries to the actual participant/reference allocations. Shared cleanup
+allocations occupy one row; ordered occurrences are retained.
+
+A restore catalog supplies the exact approved profile, target codec/validator,
+cleanup factories and optional adapter retention identity. Enroll its staged
+`native_port()` with the independent D3 native artifact factory. Whole structural,
+catalog and independent context approval precedes old semantic validation.
+Rebuild checks the actual kernel destination and current grants before reference
+remapping or cleanup construction. No selection, readiness, scheduling, delivery,
+callback or discard runs during load. Resume only with explicit `deliver_next`
+or terminal `retry_cleanup`. Drop D3 mapping roots after ownership transfer.
+
+Cancelled provenance remains diagnostic history with deliberately invalid kernel
+namespace-zero credentials; it cannot authorize execution. Active delivery or a
+held queue borrow returns `CaptureBusy`. Failed hidden builds release their claim
+and leave the staged port unpublished. Counters, holes and terminal capacity are
+preserved, with a fresh queue namespace. Profile/codec fidelity, bounded purity,
+stable cleanup identities, fresh private factory allocations, non-panicking work
+and effect-free drops are trusted host premises. This is local persistence;
+coherent barriers, epochs and atomic session activation remain D4e, and A5 is open.
+
+Timer checkpoint version 2 persists a namespace allocation high-water mark.
+Capture includes all queues issued in that process and imported history, even
+disposed queues and failed hidden builds. Rebuild atomically reserves that
+history and allocates above it and the current process counter; later ordinary
+queues also allocate above it. Repeated save/load generations thus refuse every
+earlier externally held task ID from that history. Exhaustion returns `Limit`
+without wrapping; an exhausted imported history leaves the allocator exhausted.
+Failed builds burn allocations, leave the staged port unpublished and permit
+claim retry. Version 1 or missing history is refused, since it cannot establish
+these guarantees; this uncommitted optional local format does not change native
+saves. This covers histories carried by the checkpoint and allocations in the
+receiving process, not unrelated independent hosts or later allocations absent
+from an older checkpoint.

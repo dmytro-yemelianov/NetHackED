@@ -6,6 +6,10 @@ rust-version = "1.88"
 license = "NGPL"
 description = "Optional bounded once-admitted callback timer queue"
 
+[features]
+default = []
+persistence = ["nethacked-workflows/persistence"]
+
 [dependencies]
 nethacked-kernel = { path = "../nethacked-kernel" }
 nethacked-resources = { path = "../nethacked-resources" }
