@@ -348,3 +348,22 @@ These are bounded local graph records, not a second wire transport. D4 supplies
 the D1 envelope and complete host barrier/authority exclusion; the exclusive
 kernel boundary excludes active calls. D3c owner candidates, aggregate D3,
 D4 services, D5–D6 and A5 remain successors and are not accepted by this seam.
+
+D3c PASS1 additionally uses `ExecutionCaptureIndex`, a borrowed sealed capture
+adapter for authentic module, cleanup, source, pin, pure capture and callback
+references. It serializes no private credentials and issues no reservations.
+`execution_source_live` distinguishes authentic disposed callback sources from live
+external operation roots. `execution_capture_alias` deduplicates shared pure roots.
+`KernelSnapshot::execution_behavior` checks owner cross-table edges before artifact
+factories; `RestoredKernel` rechecks sealed source/capture/resource/pin mappings after
+D3b approval. These adapters do not widen complete operation-context approval,
+which remains independent and default deny. The owner identity reservation must
+precede kernel resource admission; only the kernel's runtime-issued cleanup mapping
+can bind that hidden host. This local staging bridge adds no HostBundle activation,
+owner candidate/batch reconstruction, or aggregate D3 acceptance.
+
+Each restored graph issues a sealed, nonserialized `ExecutionDestination` for
+adapters to correlate credentials from the same destination restore. Execution
+admission can recheck approved source and retained witness routes and required
+grant ceilings against the live kernel without invoking domain code. Revoked or
+narrowed grants refuse locally; complete bundle activation remains D4 work.

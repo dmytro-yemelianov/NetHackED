@@ -25,7 +25,7 @@ impl Default for PublicationLimits {
 #[derive(Default)]
 pub(super) struct Publication {
     pub(super) limits: PublicationLimits,
-    next_ticket: u64,
+    pub(super) next_ticket: u64,
     pub(super) epoch: u64,
     history: Vec<CommitReceipt>,
     #[cfg(feature = "persistence")]
@@ -66,25 +66,25 @@ pub struct ErasedCandidate {
     pub(super) stage: Rc<dyn Staged>,
 }
 pub struct Batch {
-    host: Host,
-    ticket: u64,
-    state: Rc<TicketState>,
-    coordinator: CapabilityPermit,
-    provider: ProviderBinding,
-    caller: ModuleHandle,
-    artifact: [u8; 32],
-    operation: OperationBinding,
-    candidates: Vec<ErasedCandidate>,
-    writes: Vec<OwnerId>,
-    order: Vec<OwnerId>,
-    policy: [u8; 32],
-    accounting: Rc<dyn Accounting>,
+    pub(super) host: Host,
+    pub(super) ticket: u64,
+    pub(super) state: Rc<TicketState>,
+    pub(super) coordinator: CapabilityPermit,
+    pub(super) provider: ProviderBinding,
+    pub(super) caller: ModuleHandle,
+    pub(super) artifact: [u8; 32],
+    pub(super) operation: OperationBinding,
+    pub(super) candidates: Vec<ErasedCandidate>,
+    pub(super) writes: Vec<OwnerId>,
+    pub(super) order: Vec<OwnerId>,
+    pub(super) policy: [u8; 32],
+    pub(super) accounting: Rc<dyn Accounting>,
 }
 pub(super) struct TicketState {
-    operation: OperationBinding,
-    consumed: Cell<bool>,
-    readonly: RefCell<Vec<Observation>>,
-    code: RefCell<Option<ModulePin>>,
+    pub(super) operation: OperationBinding,
+    pub(super) consumed: Cell<bool>,
+    pub(super) readonly: RefCell<Vec<Observation>>,
+    pub(super) code: RefCell<Option<ModulePin>>,
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CommitReceipt {
@@ -134,6 +134,11 @@ impl From<&Observation> for ObservationReceipt {
     }
 }
 pub(super) trait Staged {
+    #[cfg(feature = "persistence")]
+    fn as_any(&self) -> &dyn Any;
+    #[cfg(feature = "persistence")]
+    fn persistence_enroll(&self, roots: &mut persistence::ExecutionRoots) -> Result<()>;
+
     fn host(&self) -> &Host;
     fn receipt(&self) -> &Receipt;
     fn evidence(&self, view: &CallerView<'_>) -> Result<ProposalView>;
@@ -172,6 +177,15 @@ impl<T> Locked for TypedGuard<'_, T> {
     }
 }
 impl<T: 'static> Staged for Stage<T> {
+    #[cfg(feature = "persistence")]
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    #[cfg(feature = "persistence")]
+    fn persistence_enroll(&self, roots: &mut persistence::ExecutionRoots) -> Result<()> {
+        roots.stage(self)
+    }
+
     fn host(&self) -> &Host {
         &self.host
     }
@@ -859,7 +873,15 @@ impl<T: 'static> Stage<T> {
         if let Some(helper) = &p.helper {
             view.validate_pure(helper)?;
         }
+        #[cfg(not(feature = "persistence"))]
         let backend = owner.backend.borrow();
+        #[cfg(feature = "persistence")]
+        let schema = p
+            .codec
+            .as_ref()
+            .map(|c| c.as_ref() as &dyn Schema<T>)
+            .unwrap_or(p.persistence_backend.schema()?);
+        #[cfg(not(feature = "persistence"))]
         let schema = p
             .codec
             .as_ref()
@@ -889,12 +911,14 @@ impl Publication {
         &self,
         _origin_host: u64,
         registry: &Registry,
+        execution: bool,
     ) -> Result<persistence::LocalHistory> {
-        if registry
-            .tickets
-            .values()
-            .filter_map(Weak::upgrade)
-            .any(|t| !t.consumed.get())
+        if !execution
+            && registry
+                .tickets
+                .values()
+                .filter_map(Weak::upgrade)
+                .any(|t| !t.consumed.get())
         {
             return Err(Error::Unsupported);
         }

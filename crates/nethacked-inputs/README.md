@@ -42,8 +42,25 @@ The ledger is a committed prefix. Guest traps, invalid/rejected workflow results
 and cancellation retain accepted choices. Workflow-owned leases retain executable
 dependencies while replay is possible; records themselves do not acquire kernel
 references. Disposal leaves inert receipts. Records and operation bookkeeping have
-finite capacity, never evict entries, and refuse when full. There is no codec,
-durable restoration, timer, compulsory PRNG or domain-state schema here.
+finite capacity, never evict entries, and refuse when full. There is no timer,
+compulsory PRNG or domain-state schema here.
+
+The optional `persistence` feature supplies an input-owned local ledger seam.
+Enroll `persistence_operations` with kernel capture, then use
+`capture_persistence` with the actual retained observations. Its private checkpoint
+preserves source bytes, ordered records, serial/ordinal counters and namespace
+history. An independently allowlisted fresh policy factory creates a quarantined
+`Restore`; its port refuses calls until `finish` binds every record and observation
+to the separately admitted kernel mappings. Loading never calls the transition.
+Observation IDs select captured input-owned ledger rows, not owner metadata or
+guest credentials. Old namespaces and authority remain invalid. Factories must
+be pure, bounded, fresh and free of source aliases or effects on construction/drop.
+
+This local seam does not activate a whole HostBundle or establish an authority
+epoch. D4 must compose the service barrier, exact native port factories, kernel
+context admission, historical/disposed record orchestration and whole-bundle
+activation. D3c owner pending candidate and sealed batch integration remains open;
+these local tests do not establish combined persistence acceptance.
 
 `Services.lean/Input`: `Key` maps to authenticated operation plus issued ordinal
 (the wire ID additionally has a service namespace/serial); `Record.binding` maps
@@ -63,3 +80,9 @@ reply-size check is also exercised at its exact boundary. Counter setup alone is
 private/test-only. Distinct caller/artifact checks use nested guests within the
 same operation and lease; the kernel prevents replacing an artifact under a live
 handle. Cross-host/provider checks use live IDs and valid scoped grants.
+
+Persistence finish rechecks current grants and approved routes before rebuilding
+records and observations. Its sealed destination credential binds the actual
+service, fresh records, mapped providers/callers/operations and shared pins to the
+kernel restore that admitted them. A composing owner restore requires this same
+destination; identical checkpoint bytes restored elsewhere cannot attach.

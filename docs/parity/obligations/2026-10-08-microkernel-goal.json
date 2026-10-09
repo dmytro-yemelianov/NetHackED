@@ -2,10 +2,10 @@
   "schema": 1,
   "status": "active",
   "plan": "docs/plans/2026-10-08-microkernel-goal.md",
-  "plan_sha256": "5238badeac8831eaf259e9dd1109ca0c310428750b519b49de02915549a62f64",
+  "plan_sha256": "42ba2b7a48180b7bfca84b5dede7e51487ab78e8037ee1fe7eff11eaf5691654",
   "native_goal": "Complete NetRust microkernel architecture program; formal contracts, executable extensions, existing NetHack migration, integration audit",
   "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
-  "active_unit": "M4d-D3c",
+  "active_unit": "M4d-D4",
   "live_handles": [],
   "acceptance": {
     "A1": "passed_generic_runtime_1fc3290",
@@ -292,7 +292,7 @@
             "M4-O4"
           ],
           "scope": "Concrete autonomous-owner codecs/restoration and executable/schema validation; full A5 including supported legacy compatibility",
-          "current_phase": "D3b_verified_D3c_owner_prepared_next",
+          "current_phase": "D3_complete_D4_coherent_services_next",
           "contract": "docs/plans/2026-10-08-owner-persistence-contract.md",
           "design_checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-persistence-contract-checkpoint.json",
           "units": [
@@ -340,7 +340,7 @@
             },
             {
               "id": "M4d-D3",
-              "status": "in_progress",
+              "status": "accepted",
               "depends_on": [
                 "M4d-D2"
               ],
@@ -382,7 +382,7 @@
                 },
                 {
                   "id": "M4d-D3c",
-                  "status": "planned",
+                  "status": "accepted",
                   "depends_on": [
                     "M4d-D3b"
                   ],
@@ -391,9 +391,41 @@
                     "Restore exact retained native codec/policy/helper and independent next-state candidates without domain re-preparation",
                     "Pending batch commits once under fresh authoritative views; replay, missing old codecs/grants, mismatched observations/receipts/aliases refuse",
                     "Combined D3a-D3c review accepts every original D3 requirement before D4"
-                  ]
+                  ],
+                  "execution_passes": [
+                    {
+                      "id": "pass1",
+                      "status": "accepted_in_aggregate_D3c",
+                      "scope": "Hidden identity reservation and exact current/retained owner behavior capture/rebuild; focused checks only, no partial acceptance"
+                    },
+                    {
+                      "id": "pass2",
+                      "status": "accepted_in_aggregate_D3c",
+                      "scope": "Sealed prepared candidates/observations/batches/accounting and consumption; combined D3a-D3c review/full gates/commit",
+                      "checkpoint": "Input ledger plus owner prepared candidate/batch integration; implementation3 complete",
+                      "continuation": "implementation3"
+                    }
+                  ],
+                  "review_checkpoint": {
+                    "verdict": "PASS_D3_OWNER_EXECUTION_REPAIRS",
+                    "original_review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-EXECUTION/review-evidence/report.md",
+                    "readback": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-EXECUTION/readback-evidence/report.md",
+                    "findings_closed": [
+                      "F1",
+                      "F2",
+                      "F3",
+                      "F4"
+                    ],
+                    "full_gates_pending": false
+                  },
+                  "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-owner-execution-checkpoint.json",
+                  "checkpoint_sha256": "fe79f9bb8cc1d3583646e19f3d82c465154469137c7f01ea12f131a410662dd2",
+                  "aggregate_D3_accepted": true
                 }
-              ]
+              ],
+              "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-owner-execution-checkpoint.json",
+              "checkpoint_sha256": "fe79f9bb8cc1d3583646e19f3d82c465154469137c7f01ea12f131a410662dd2",
+              "aggregate_D3_accepted": true
             },
             {
               "id": "M4d-D4",
@@ -700,7 +732,7 @@
       "concrete owner-state persistence contract",
       "NetHack domain migration"
     ],
-    "current_limit": "Independent owner state and complete retained kernel reconstruction accepted. Owner retained/prepared state D3c and aggregate D3, coherent services/native restoration D4-D6 and NetHack migration M5-M7 remain required; no full A5/parity claim.",
+    "current_limit": "Independent owner state, complete retained kernel and prepared execution reconstruction accepted through aggregateD3. D4 coherent services/authority-epoch activation, D5/D6 native compatibility and fullA5, and NetHack migration M5-M7 remain required.",
     "implementation_claim": true,
     "contract": "docs/plans/2026-10-08-autonomous-ownership-contract.md",
     "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-services-checkpoint.json",

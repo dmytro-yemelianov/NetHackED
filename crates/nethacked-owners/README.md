@@ -245,3 +245,92 @@ omitted. Complete retained kernel/prepared state belongs to D3, service state an
 activation to D4, native compatibility to D5, and combined A5 acceptance to D6.
 This local seam does not close D3–D6, A5 or M5–M7, and supplies no native save migration
 or crash durability guarantee.
+
+## D3c PASS1 local execution checkpoint (persistence feature)
+
+`capture_state` and `Restore` keep the D2 state-only boundary and refusals.
+`capture_execution` adds bounded current compatible configuration, exact retained
+behavior allocations, shared callback scope allocations and immutable recorded
+input declarations. It does not capture observations, ledgers, pending candidates
+or live unconsumed batches: these return `Unsupported` and belong to mandatory
+PASS2 and D4. Derived query caches are discarded. This pass is not D3 acceptance.
+
+The trusted host registers actual native build / Wasm codec allocations in a
+`CaptureCatalog`, with exact schema, codec and policy identities and query policy.
+Metadata alone cannot identify a native build. Restore uses an independently
+supplied `RestoreCatalog` of exact fresh factories; a current factory never replaces
+an absent old factory. No domain query, preparation, sampling, publication or
+scheduler executes while loading. Native purity, bounded CPU/allocation, codec
+fidelity, effect-free factory construction/drop, stable admission and absence of
+mutable payload aliases are explicit host premises. Each owner remains separately
+allocated; erased behavior adapters hold metadata and weak owner links.
+
+Use `ExecutionRoots` to enroll every external owner operation and pure capture
+with D3b `KernelEnrollment`. Clones of one capture share a root and reservation;
+missing, foreign or duplicate enrollment refuses. Disposed sources use the complete
+kernel callback/source witness rather than being reenrolled as executable work.
+`ExecutionCaptureIndex` translates authentic runtime values to local table references
+without parsing `Debug`, serializing private credentials, or issuing reservations.
+Capture must cover every live owner, behavior allocation and callback scope.
+
+Construct `OwnerIdentityReservation` with the owner checkpoint and corresponding
+kernel snapshot **before** restoring a separate staging kernel. It allocates a
+hidden, one-use owner namespace excluding all saved historical origins and exposes
+checked resource remapping only. Owner graph and kernel cross-table metadata are
+validated before kernel factories where structurally possible. D3b independently
+approves complete operation contexts (default deny), grants and cleanup participants.
+Consume `bind` with its `RestoredKernel`, then restore owners and take typed behavior
+handles. Cleanup comes only from the sealed kernel mapping; no raw cleanup or
+caller-selected namespace constructor exists. Original and scoped behavior clones
+reuse the admitted pins/callbacks/pure captures and one allocation per saved row.
+Recorded declarations remap exact approved provider bindings and keep query policy.
+
+All returned owner/behavior handles stay hidden until complete local `finish`.
+Aborted builders quarantine escaped handles. This is local admission into a fresh
+staging host/kernel; source and existing destination hosts are never staging storage.
+D4 owns the complete HostBundle barrier, authority exclusion and atomic destination
+activation, including failures after local admission. Current and retained calls
+continue checking live grants, schema, stamps and policy. PASS2 carries pending candidates and unconsumed batches through the sealed local
+execution checkpoint. Combined D3 review, aggregate gates and commit remain pending. Tests in `persistence_execution.rs` use real bytes, destroyed sources, fresh
+independent factories, old transitive helpers/native codecs, repeat restart, shared
+scope/drop/unload checks, zero load execution counters and explicit refusals.
+
+
+Prepared publication persistence (D3c PASS2): enroll candidate/batch roots before
+kernel capture, then capture every live owner and typed candidate (including
+`batch_candidate` for heterogeneous erased participants), and capture each live
+batch with `AccountingCaptureCatalog`. Capture the actual input service last when
+recorded evidence is present. Input-owned opaque observation IDs and checkpoint
+rows authenticate provenance; detached record metadata never constructs credentials.
+Already prepared next states, retained native/Wasm codecs and policy/helper chains,
+recursive readonly evidence, events/replies, pins, execution/checkpoint bindings,
+profile order, accounting identities and high-water counters survive actual bytes.
+Compressed retirement ranges preserve consumed/abandoned identity holes.
+
+Restore the input checkpoint with an independently approved fresh policy catalog
+and quarantined port, admit the kernel with independently approved complete contexts,
+and bind the sealed owner reservation. Attach the input-owned `Restored` ledger and
+call `approve_accounting` before owner codecs/factories. Restore each owner, candidate
+and batch through independent catalogs; complete `finish` before exposing the host.
+Candidates have private constructors and separate typed next allocations; the
+registry retains weak staging references rather than an authoritative payload store.
+Factories must be fresh, bounded, faithful, pure, alias-free, and effect-free during
+construction and drop. These native trust premises are explicit, not guaranteed by
+serialization or artifact labels. Load performs no preparation, query, sampling,
+publication or scheduling. Commit still validates current stamps, readonly and input
+proofs, authority and accounting, then uses the unchanged atomic O3 swap path.
+State-only D2 capture still refuses execution/pending work. D4 retains bundle
+capture/activation, historical input orchestration and authority-epoch exclusion;
+this seam makes no full A5 claim.
+
+Pending admission matches every recursive readonly edge to its ordered port
+declaration, with shared traversal bounds and authenticated original routes.
+Prepared state is decoded and validated in the saved namespace against the exact
+approved old backend's digest and declared references, then decoded through the
+fresh remap with a fresh digest and retained-byte reservation. Codec fidelity and
+effect-free old factories remain native trust premises. Input credentials must
+carry the same sealed kernel-restore destination as the owner staging host;
+checkpoint byte equality alone is insufficient. Current grants for the approved
+operation, retained and historical source witnesses are rechecked before owner,
+candidate and batch domain calls, including readonly and recorded-input scopes.
+These local checks do not replace D4 whole-bundle activation or epoch exclusion.

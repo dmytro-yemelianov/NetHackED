@@ -13,6 +13,8 @@ use std::{
 };
 
 static NEXT_SERVICE: AtomicU64 = AtomicU64::new(1);
+#[cfg(feature = "persistence")]
+pub mod persistence;
 pub const ENDPOINT: &str = "input";
 pub const MAJOR: u32 = 1;
 
@@ -85,6 +87,10 @@ pub struct State {
     pub next_ordinals: BTreeMap<OperationId, u64>,
 }
 struct Inner {
+    #[cfg(feature = "persistence")]
+    quarantine: bool,
+    #[cfg(feature = "persistence")]
+    persistence_origins: BTreeSet<u64>,
     namespace: u64,
     limits: Limits,
     policy: Policy,
@@ -134,6 +140,10 @@ impl Observation {
     }
 }
 fn validate_record(inner: &Inner, r: &Record, view: &CallerView<'_>) -> Result<()> {
+    #[cfg(feature = "persistence")]
+    if inner.quarantine {
+        return Err(Error::Authority);
+    }
     let operation = view.operation().ok_or(Error::Authority)?;
     let (provider, artifact, capability, resource) =
         inner.binding.as_ref().ok_or(Error::Authority)?;
@@ -209,6 +219,10 @@ impl Service {
             .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |n| n.checked_add(1))
             .map_err(|_| Error::Limit)?;
         Ok(Self(Rc::new(RefCell::new(Inner {
+            #[cfg(feature = "persistence")]
+            quarantine: false,
+            #[cfg(feature = "persistence")]
+            persistence_origins: BTreeSet::from([namespace]),
             namespace,
             limits,
             policy,
@@ -224,6 +238,10 @@ impl Service {
     /// One immutable policy and one installed incarnation; replacement uses a new service.
     pub fn install(&self, kernel: &mut Kernel, id: &str) -> Result<ModuleHandle> {
         let mut inner = self.0.try_borrow_mut().map_err(|_| Error::NativeRefusal)?;
+        #[cfg(feature = "persistence")]
+        if inner.quarantine {
+            return Err(Error::Authority);
+        }
         if inner.binding.is_some() {
             return Err(Error::Duplicate);
         }
@@ -282,6 +300,10 @@ impl Service {
     fn dispatch(&self, bytes: &[u8], view: &CallerView) -> Result<Vec<u8>> {
         // The sole fallible borrow covers staging and publication, including callbacks.
         let mut inner = self.0.try_borrow_mut().map_err(|_| Error::NativeRefusal)?;
+        #[cfg(feature = "persistence")]
+        if inner.quarantine {
+            return Err(Error::Authority);
+        }
         if bytes.len() > inner.limits.wire as usize {
             return Err(Error::Buffer);
         }

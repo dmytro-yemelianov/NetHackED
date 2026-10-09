@@ -322,6 +322,8 @@ pub struct Observation {
     behavior_revision: u64,
     helper: Option<PureCapture>,
     execution: Option<OperationBinding>,
+    #[cfg(feature = "persistence")]
+    persistence_execution: Option<OperationBinding>,
     #[cfg(feature = "recorded-inputs")]
     recorded: Vec<nethacked_inputs::Observation>,
 }
@@ -360,6 +362,10 @@ pub struct Candidate<T> {
 struct Prepared<T> {
     owner: Rc<Owner<T>>,
     next: T,
+    #[cfg(feature = "persistence")]
+    persistence_backend: Backend<T>,
+    #[cfg(feature = "persistence")]
+    persistence_policy: QueryPolicy,
     events: Vec<Vec<u8>>,
     reply: Vec<u8>,
     dependencies: Vec<Observation>,
@@ -411,6 +417,11 @@ impl Host {
         Self::new_excluding(limits, &BTreeSet::new())
     }
     fn new_excluding(limits: Limits, excluded: &BTreeSet<u64>) -> Result<Self> {
+        Self::validate_limits(&limits)?;
+        let id = Self::reserve_namespace(excluded)?;
+        Self::with_identity(limits, id, CleanupIdentity::issue()?)
+    }
+    fn validate_limits(limits: &Limits) -> Result<()> {
         if [
             limits.owners,
             limits.candidates,
@@ -426,6 +437,9 @@ impl Host {
         {
             return Err(Error::Limit);
         }
+        Ok(())
+    }
+    fn reserve_namespace(excluded: &BTreeSet<u64>) -> Result<u64> {
         static NEXT: AtomicU64 = AtomicU64::new(1);
         // At most one skip per admitted origin; never walk to a supplied maximum.
         let mut id = None;
@@ -438,12 +452,15 @@ impl Host {
                 break;
             }
         }
-        let id = id.ok_or(Error::Limit)?;
+        id.ok_or(Error::Limit)
+    }
+    // Private constructor; only runtime allocation and sealed reservation bind use it.
+    fn with_identity(limits: Limits, id: u64, cleanup: CleanupIdentity) -> Result<Self> {
         Ok(Self(Rc::new(HostInner {
             id,
             limits,
             gate: Cell::new(false),
-            cleanup: CleanupIdentity::issue()?,
+            cleanup,
             publication: RefCell::new(Publication::default()),
             quarantine: Cell::new(false),
             behaviors: Cell::new(0),
@@ -508,6 +525,18 @@ impl Host {
         backend: Backend<T>,
         restored: Option<(OwnerId, u64, u64)>,
     ) -> Result<Rc<Owner<T>>> {
+        self.enroll_sealed(kernel, spec, initial, backend, restored, None)
+    }
+    #[allow(clippy::too_many_arguments)]
+    fn enroll_sealed<T: 'static>(
+        &self,
+        kernel: &Kernel,
+        spec: OwnerSpec,
+        initial: T,
+        backend: Backend<T>,
+        restored: Option<(OwnerId, u64, u64)>,
+        sealed_pins: Option<(ModulePin, Option<ModulePin>)>,
+    ) -> Result<Rc<Owner<T>>> {
         let schema = backend.schema()?;
         let limits = &self.0.limits;
         if spec.ports.is_empty() || spec.ports.len() > limits.ports {
@@ -556,11 +585,17 @@ impl Host {
         }
         schema.validate(&initial)?;
         bound(schema.encode(&initial)?.len(), limits.payload_bytes)?;
-        let pin = kernel.pin_modules(&[spec.module])?;
-        let enrollment_code = if code.len() > 1 {
-            Some(kernel.pin_modules(&code[1..])?)
+        let (pin, enrollment_code) = if let Some(pins) = sealed_pins {
+            pins
         } else {
-            None
+            (
+                kernel.pin_modules(&[spec.module])?,
+                if code.len() > 1 {
+                    Some(kernel.pin_modules(&code[1..])?)
+                } else {
+                    None
+                },
+            )
         };
         let mut registry = self.0.registry.borrow_mut();
         if registry.entries.len() >= limits.owners {
@@ -1150,6 +1185,8 @@ impl<T: 'static> Owner<T> {
             behavior_revision: retained
                 .map_or(self.metadata.behavior_revision.get(), |b| b.inner.revision),
             execution: retained.map(|_| view.operation().unwrap().clone()),
+            #[cfg(feature = "persistence")]
+            persistence_execution: view.operation().cloned(),
             helper,
             #[cfg(feature = "recorded-inputs")]
             recorded: recorded.to_vec(),
@@ -1397,6 +1434,32 @@ impl<T: 'static> Owner<T> {
             prepared: RefCell::new(Some(Prepared {
                 owner: self.clone(),
                 next: proposal.next,
+                #[cfg(feature = "persistence")]
+                persistence_backend: if let Some(live) = live {
+                    Backend::Wasm {
+                        codec: live.codec.clone(),
+                        slot: live.slot,
+                        binding: live.binding.clone(),
+                    }
+                } else {
+                    match &*backend {
+                        Backend::Native(domain) => Backend::Native(domain.clone()),
+                        Backend::Wasm {
+                            codec,
+                            slot,
+                            binding,
+                        } => Backend::Wasm {
+                            codec: codec.clone(),
+                            slot: *slot,
+                            binding: binding.clone(),
+                        },
+                        Backend::CommitCallback => return Err(Error::Unsupported),
+                    }
+                },
+                #[cfg(feature = "persistence")]
+                persistence_policy: retained
+                    .map(|b| b.inner.policy.clone())
+                    .unwrap_or_else(|| self.query_policy.borrow().clone()),
                 events: proposal.events,
                 reply: proposal.reply,
                 dependencies: observations,

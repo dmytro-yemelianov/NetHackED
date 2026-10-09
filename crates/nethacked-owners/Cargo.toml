@@ -7,7 +7,7 @@ license = "NGPL"
 description = "Independent sealed owner storage and authenticated pure domain preparation"
 
 [features]
-persistence = ["dep:serde", "dep:serde_json"]
+persistence = ["dep:serde", "dep:serde_json", "nethacked-inputs?/persistence"]
 workflows = ["dep:nethacked-workflows"]
 recorded-inputs = ["dep:nethacked-inputs"]
 

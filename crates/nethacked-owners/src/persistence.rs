@@ -4,6 +4,8 @@
 //! No dependency on that orchestrator, no candidate constructor, no activation.
 use super::*;
 use serde::{Deserialize, Serialize};
+mod execution;
+pub use execution::*;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -244,9 +246,12 @@ pub struct Capture {
 }
 impl Host {
     pub fn capture_state(&self) -> Result<Capture> {
+        self.capture_state_mode(false)
+    }
+    fn capture_state_mode(&self, execution: bool) -> Result<Capture> {
         let gate = self.close_visibility()?;
         let registry = self.0.registry.try_borrow().map_err(|_| Error::Busy)?;
-        if registry.pending != 0 || self.0.behaviors.get() != 0 {
+        if !execution && (registry.pending != 0 || self.0.behaviors.get() != 0) {
             return Err(Error::Unsupported);
         }
         let history = self
@@ -254,7 +259,7 @@ impl Host {
             .publication
             .try_borrow()
             .map_err(|_| Error::Busy)?
-            .capture_local(self.0.id, &registry)?;
+            .capture_local(self.0.id, &registry, execution)?;
         let mut owners = Vec::new();
         for (id, entry) in &registry.entries {
             let route = entry.route.upgrade();
@@ -312,7 +317,7 @@ impl Host {
             .0
             .publication
             .borrow()
-            .capture_local(self.0.id, &self.0.registry.borrow())?
+            .capture_local(self.0.id, &self.0.registry.borrow(), false)?
             .records)
     }
 }
@@ -322,15 +327,25 @@ impl Capture {
         owner: &Owner<T>,
         codec: &dyn PersistenceCodec<T>,
     ) -> Result<()> {
+        self.owner_mode(owner, codec, false)
+    }
+    fn owner_mode<T: 'static>(
+        &mut self,
+        owner: &Owner<T>,
+        codec: &dyn PersistenceCodec<T>,
+        execution: bool,
+    ) -> Result<()> {
         if !Rc::ptr_eq(&owner.host.0, &self.host.0) || self.captured.contains(&owner.id()) {
             return Err(Error::Invalid);
         }
         self.host.route(owner.id())?;
-        if owner.compatible.borrow().is_some() || owner.metadata.retained_behaviors.get() != 0 {
+        if !execution
+            && (owner.compatible.borrow().is_some() || owner.metadata.retained_behaviors.get() != 0)
+        {
             return Err(Error::Unsupported);
         }
         #[cfg(feature = "recorded-inputs")]
-        if !owner.recorded.borrow().is_empty() {
+        if !execution && !owner.recorded.borrow().is_empty() {
             return Err(Error::Unsupported);
         }
         let slot = owner.slot.try_borrow().map_err(|_| Error::Busy)?;
@@ -436,6 +451,15 @@ impl Restore {
         host.configure_publication(publication)?;
         let gate = host.close_visibility()?;
         validate_checkpoint(&checkpoint, &host)?;
+        Self::from_reserved(kernel, checkpoint, host, gate, bindings)
+    }
+    fn from_reserved(
+        kernel: &Kernel,
+        checkpoint: Checkpoint,
+        host: Host,
+        gate: Gate,
+        bindings: &BTreeMap<[u8; 32], ModuleHandle>,
+    ) -> Result<Self> {
         let remap = remap_for(&checkpoint, host.0.id);
         for row in &checkpoint.owners {
             let module = *bindings.get(&row.module_artifact).ok_or(Error::Schema)?;
@@ -688,11 +712,18 @@ impl Drop for Restore {
     }
 }
 fn validate_checkpoint(c: &Checkpoint, host: &Host) -> Result<()> {
+    validate_checkpoint_bounds(c, &host.0.limits, &host.0.publication.borrow().limits)
+}
+fn validate_checkpoint_bounds(
+    c: &Checkpoint,
+    limits: &Limits,
+    publication: &PublicationLimits,
+) -> Result<()> {
     if c.version != 1 || c.source_host == 0 || c.next_owner == 0 || c.next_candidate == 0 {
         return Err(Error::Invalid);
     }
-    bound(c.owners.len(), host.0.limits.owners)?;
-    bound(c.origins.len(), host.0.limits.owners)?;
+    bound(c.owners.len(), limits.owners)?;
+    bound(c.origins.len(), limits.owners)?;
     if !c.origins.contains(&c.source_host)
         || c.origins.first() == Some(&0)
         || c.origins.windows(2).any(|w| w[0] >= w[1])
@@ -711,9 +742,9 @@ fn validate_checkpoint(c: &Checkpoint, host: &Host) -> Result<()> {
             return Err(Error::Invalid);
         }
         previous = row.old.serial;
-        bound(row.payload.len(), host.0.limits.payload_bytes)?;
-        bound(row.references.len(), host.0.limits.observations)?;
-        bound(row.ports.len(), host.0.limits.ports)?;
+        bound(row.payload.len(), limits.payload_bytes)?;
+        bound(row.references.len(), limits.observations)?;
+        bound(row.ports.len(), limits.ports)?;
         bound(row.provider.len(), 256)?;
         if row.live {
             if row.ports.is_empty() || row.codec.is_none() || row.backend.is_none() {
@@ -735,7 +766,7 @@ fn validate_checkpoint(c: &Checkpoint, host: &Host) -> Result<()> {
             if name.is_empty() || name.len() > 256 {
                 return Err(Error::Invalid);
             }
-            bound(port.dependencies.len(), host.0.limits.observations)?;
+            bound(port.dependencies.len(), limits.observations)?;
             let mut deps = BTreeSet::new();
             for dependency in &port.dependencies {
                 if !deps.insert(dependency.owner) {
@@ -754,13 +785,13 @@ fn validate_checkpoint(c: &Checkpoint, host: &Host) -> Result<()> {
             }
         }
     }
-    let remap = remap_for(c, host.0.id);
+    let remap = remap_for(c, c.source_host);
     for row in &c.owners {
         for reference in &row.references {
             remap.reference(reference)?;
         }
     }
-    c.history.validate(&host.0.publication.borrow().limits, c)?;
+    c.history.validate(publication, c)?;
     Ok(())
 }
 impl LocalHistory {

@@ -6,6 +6,9 @@ rust-version = "1.88"
 license = "NGPL"
 description = "Optional bounded recorded input over authenticated operations"
 
+[features]
+persistence = []
+
 [dependencies]
 nethacked-kernel = { path = "../nethacked-kernel" }
 serde = { version = "1.0", features = ["derive"] }

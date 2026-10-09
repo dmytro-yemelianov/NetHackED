@@ -132,14 +132,14 @@ pub struct SavedCallback {
     pub id: u64,
     pub pipeline: SavedPipeline,
 }
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SavedPermit {
     pub capability: Capability,
     pub resolution: Vec<SavedBinding>,
     pub ceiling: Authority,
 }
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SavedPureCapture {
     pub provider: u64,
@@ -171,6 +171,7 @@ pub struct KernelSnapshot {
 /// or callback from this map to share ONE reservation. Drop this map's RAII
 /// handles when adapters have taken ownership, to release its last references.
 pub struct RestoredKernel {
+    destination: ExecutionDestination,
     modules: BTreeMap<u64, ModuleHandle>,
     leases: BTreeMap<u64, PipelineLease>,
     owners: BTreeMap<u64, OwnerReference>,
@@ -180,8 +181,25 @@ pub struct RestoredKernel {
     pure_captures: Vec<PureCapture>,
     cleanup: BTreeMap<u64, CleanupIdentity>,
     historical_sources: BTreeMap<u64, PipelineLease>,
+    source_bindings: Vec<(SavedOperation, OperationBinding)>,
+    execution_namespace: u64,
+    execution_contexts: Vec<SavedOperationContext>,
+    execution_captures: Vec<SavedPureCapture>,
+    execution_resources: BTreeMap<Resource, Resource>,
+}
+/// Unforgeable correlation of credentials admitted by one kernel restore.
+/// This identity is never serialized and is not chosen by a caller.
+#[derive(Clone)]
+pub struct ExecutionDestination(Rc<()>);
+impl ExecutionDestination {
+    pub fn same_destination(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.0, &other.0)
+    }
 }
 impl RestoredKernel {
+    pub fn execution_destination(&self) -> ExecutionDestination {
+        self.destination.clone()
+    }
     pub fn modules(&self) -> &BTreeMap<u64, ModuleHandle> {
         &self.modules
     }
@@ -670,7 +688,21 @@ impl Kernel {
                 )
             })
             .collect();
+        let mut source_bindings = Vec::new();
+        for source in saved.operations.iter().chain(
+            saved
+                .leases
+                .iter()
+                .map(|r| &r.pipeline)
+                .chain(saved.callbacks.iter().map(|r| &r.pipeline))
+                .filter_map(|p| p.origin.as_ref().map(|o| &o.source)),
+        ) {
+            if !source_bindings.iter().any(|(s, _)| s == source) {
+                source_bindings.push((source.clone(), remap.operation(source)?));
+            }
+        }
         let result = RestoredKernel {
+            destination: ExecutionDestination(Rc::new(())),
             modules,
             leases,
             owners,
@@ -680,6 +712,11 @@ impl Kernel {
             pure_captures,
             cleanup,
             historical_sources,
+            source_bindings,
+            execution_namespace: saved.source_namespace,
+            execution_contexts: saved.operation_contexts()?,
+            execution_captures: saved.pure_captures.clone(),
+            execution_resources: mapped,
         };
         *self = hidden;
         Ok(result)
@@ -1686,4 +1723,687 @@ fn validate_record_authority(k: &Kernel, a: &Authority, r: &SavedRouting) -> Res
 
 fn checked_sum(mut values: impl Iterator<Item = usize>) -> Result<usize> {
     values.try_fold(0usize, |n, v| n.checked_add(v).ok_or(Error::Limit))
+}
+
+/// A borrowed, sealed adapter over an admitted capture. No raw credential parsing.
+pub struct ExecutionCaptureIndex<'a> {
+    kernel: &'a Kernel,
+    saved: &'a KernelSnapshot,
+}
+impl Kernel {
+    pub fn execution_capture_index<'a>(
+        &'a self,
+        saved: &'a KernelSnapshot,
+    ) -> Result<ExecutionCaptureIndex<'a>> {
+        if saved.source_namespace != self.instance {
+            return Err(Error::InvalidHandle);
+        }
+        Ok(ExecutionCaptureIndex {
+            kernel: self,
+            saved,
+        })
+    }
+    /// Historical sources are enrolled through their authentic callback witnesses,
+    /// not as live operations. No execution or new reservation occurs here.
+    pub fn execution_source_live(&self, source: &OperationBinding) -> Result<bool> {
+        if validate_live_binding(self, source).is_ok() {
+            return Ok(true);
+        }
+        let historical = self
+            .retention
+            .callbacks
+            .borrow()
+            .live
+            .values()
+            .filter_map(|w| w.upgrade())
+            .any(|c| &c.provenance.source == source)
+            || self.retention.pipelines.values().any(|p| {
+                p.origin
+                    .as_ref()
+                    .is_some_and(|o| &o.provenance.source == source)
+            });
+        if historical {
+            Ok(false)
+        } else {
+            Err(Error::InvalidHandle)
+        }
+    }
+}
+impl ExecutionCaptureIndex<'_> {
+    pub fn namespace(&self) -> u64 {
+        self.saved.source_namespace
+    }
+    pub fn module(&self, handle: ModuleHandle) -> Result<u64> {
+        let artifact = self.kernel.artifact(handle)?;
+        if !self
+            .saved
+            .registry
+            .modules
+            .iter()
+            .any(|m| m.id == handle.generation && m.artifact == artifact)
+        {
+            return Err(Error::InvalidHandle);
+        }
+        Ok(handle.generation)
+    }
+    pub fn cleanup(&self, identity: CleanupIdentity) -> Result<u64> {
+        if !self.saved.cleanup_history.contains(&identity.raw()) {
+            return Err(Error::Authority);
+        }
+        Ok(identity.raw())
+    }
+    pub fn source(&self, source: &OperationBinding) -> Result<SavedOperation> {
+        let row = operation(source);
+        if self.kernel.execution_source_live(source)? {
+            if !self.saved.operations.contains(&row) {
+                return Err(Error::Authority);
+            }
+        } else if !self
+            .saved
+            .callbacks
+            .iter()
+            .map(|r| &r.pipeline)
+            .chain(self.saved.leases.iter().map(|r| &r.pipeline))
+            .any(|p| p.origin.as_ref().is_some_and(|o| o.source == row))
+        {
+            return Err(Error::Authority);
+        }
+        Ok(row)
+    }
+    pub fn pin(&self, pin: &ModulePin) -> Result<u64> {
+        let pins = self.kernel.retention.pins.borrow();
+        let id = pins
+            .live
+            .iter()
+            .find_map(|(id, w)| w.upgrade().filter(|p| Rc::ptr_eq(p, &pin.0)).map(|_| *id))
+            .ok_or(Error::InvalidHandle)?;
+        if !self.saved.pins.iter().any(|p| p.id == id) {
+            return Err(Error::Authority);
+        }
+        Ok(id)
+    }
+    pub fn pure(&self, capture: &PureCapture) -> Result<usize> {
+        let pin = self.pin(&capture.pin)?;
+        let row = SavedPureCapture {
+            provider: self.module(capture.provider)?,
+            slot: capture.slot,
+            ceiling: capture.ceiling.clone(),
+            pin,
+            routing: routing(&capture.routing),
+            closure: capture
+                .closure
+                .iter()
+                .map(|(p, a)| SavedPermit {
+                    capability: p.capability.clone(),
+                    resolution: p.resolution.iter().map(binding).collect(),
+                    ceiling: a.clone(),
+                })
+                .collect(),
+        };
+        let matches: Vec<_> = self
+            .saved
+            .pure_captures
+            .iter()
+            .enumerate()
+            .filter(|(_, c)| **c == row)
+            .collect();
+        if matches.len() != 1 {
+            return Err(Error::Authority);
+        }
+        Ok(matches[0].0)
+    }
+    pub fn callback(&self, callback: &RetainedCallback) -> Result<u64> {
+        let callbacks = self.kernel.retention.callbacks.borrow();
+        let id = callbacks
+            .live
+            .iter()
+            .find_map(|(id, w)| {
+                w.upgrade()
+                    .filter(|c| Rc::ptr_eq(c, &callback.0))
+                    .map(|_| *id)
+            })
+            .ok_or(Error::InvalidHandle)?;
+        if !self.saved.callbacks.iter().any(|c| c.id == id) {
+            return Err(Error::Authority);
+        }
+        Ok(id)
+    }
+}
+impl RestoredKernel {
+    /// Only sources admitted by complete D3b operation-context approval exist here.
+    pub fn execution_source(&self, source: &SavedOperation) -> Result<OperationBinding> {
+        self.source_bindings
+            .iter()
+            .find(|(s, _)| s == source)
+            .map(|(_, b)| b.clone())
+            .ok_or(Error::Authority)
+    }
+}
+
+impl RestoredKernel {
+    pub fn execution_pin(&self, id: u64, modules: &[ModuleHandle]) -> Result<ModulePin> {
+        let pin = self.pins.get(&id).ok_or(Error::InvalidHandle)?;
+        if pin.0.references != modules.iter().copied().collect() {
+            return Err(Error::Authority);
+        }
+        Ok(pin.clone())
+    }
+}
+
+impl RestoredKernel {
+    pub fn execution_namespace(&self) -> u64 {
+        self.execution_namespace
+    }
+    pub fn execution_resource(&self, saved: &Resource) -> Result<&Resource> {
+        self.execution_resources.get(saved).ok_or(Error::Authority)
+    }
+    /// Correlate owner edges with the independently admitted complete source
+    /// witness, not merely a capability name or a digest copied from the save.
+    #[allow(clippy::too_many_arguments)]
+    pub fn execution_behavior(
+        &self,
+        capture: usize,
+        source: &SavedOperation,
+        provider: u64,
+        caller: u64,
+        slot: usize,
+        target: &Resource,
+        invocation_pin: u64,
+    ) -> Result<()> {
+        let pure = self
+            .execution_captures
+            .get(capture)
+            .ok_or(Error::Authority)?;
+        if pure.provider != provider || pure.slot != slot {
+            return Err(Error::Authority);
+        }
+        let contexts = self
+            .execution_contexts
+            .iter()
+            .filter(|c| &c.operation == source);
+        let context = contexts
+            .into_iter()
+            .find(|c| {
+                pure.routing
+                    .routes
+                    .iter()
+                    .all(|r| c.pipeline.routing.routes.contains(r))
+                    && pure.routing.slots.iter().all(|s| {
+                        c.pipeline.routing.slots.iter().any(|original| {
+                            original.caller == s.caller
+                                && original.slot == s.slot
+                                && original.target == s.target
+                                && match (&original.ceiling, &s.ceiling) {
+                                    (Some(a), Some(b)) => a.contains(b),
+                                    (None, None) => true,
+                                    _ => false,
+                                }
+                        })
+                    })
+            })
+            .ok_or(Error::Authority)?;
+        if !context.pipeline.routing.slots.iter().any(|s| {
+            s.caller == caller
+                && s.ceiling.as_ref().is_some_and(|a| a.scope.allows(target))
+                && context
+                    .pipeline
+                    .routing
+                    .routes
+                    .iter()
+                    .any(|r| r.module == s.target && r.chain.iter().any(|b| b.module == provider))
+        }) {
+            return Err(Error::Authority);
+        }
+        self.execution_resource(target)?;
+        let scoped = context.pipeline.ceiling.scope.allows(target);
+        if !scoped {
+            return Err(Error::Authority);
+        }
+        let pin = self.pins.get(&invocation_pin).ok_or(Error::InvalidHandle)?;
+        if !pin
+            .0
+            .references
+            .contains(self.modules.get(&provider).ok_or(Error::InvalidHandle)?)
+            || !pin
+                .0
+                .references
+                .contains(self.modules.get(&caller).ok_or(Error::InvalidHandle)?)
+        {
+            return Err(Error::Authority);
+        }
+        Ok(())
+    }
+}
+
+/// Identity comparison for enrollment deduplication; no address is serialized.
+pub fn execution_capture_alias(a: &PureCapture, b: &PureCapture) -> bool {
+    Rc::ptr_eq(&a.pin.0, &b.pin.0) && Rc::ptr_eq(&a.routing, &b.routing)
+}
+
+// Local input ledgers require exact admitted write routes, not owner metadata or
+// ambient current grants. This performs no invocation, sampling or reservation.
+fn record_context<'a>(
+    contexts: &'a [SavedOperationContext],
+    source: &SavedOperation,
+    caller: u64,
+    capability: &Capability,
+    chain: &[SavedBinding],
+    target: &Resource,
+) -> Result<&'a SavedOperationContext> {
+    let context = contexts
+        .iter()
+        .find(|c| &c.operation == source)
+        .ok_or(Error::Authority)?;
+    if chain.is_empty()
+        || context.pipeline.ceiling.access != Access::Write
+        || !context.pipeline.ceiling.scope.allows(target)
+        || !context.pipeline.routing.slots.iter().any(|slot| {
+            slot.caller == caller
+                && slot
+                    .ceiling
+                    .as_ref()
+                    .is_some_and(|a| a.access == Access::Write && a.scope.allows(target))
+                && context.pipeline.routing.routes.iter().any(|route| {
+                    route.module == slot.target
+                        && route.endpoint == capability.endpoint
+                        && route.chain == chain
+                })
+        })
+    {
+        return Err(Error::Authority);
+    }
+    Ok(context)
+}
+impl KernelSnapshot {
+    /// Structural correlation before an input factory is called. Full admission
+    /// remains default-deny through RetainedAuthority's context approval.
+    #[allow(clippy::too_many_arguments)]
+    pub fn execution_record(
+        &self,
+        source: &SavedOperation,
+        caller: u64,
+        capability: &Capability,
+        chain: &[SavedBinding],
+        target: &Resource,
+        pin: Option<u64>,
+    ) -> Result<()> {
+        let contexts = self.operation_contexts()?;
+        let context = record_context(&contexts, source, caller, capability, chain, target)?;
+        let first = chain.first().ok_or(Error::Authority)?;
+        let module = self
+            .registry
+            .modules
+            .iter()
+            .find(|m| m.id == first.module)
+            .ok_or(Error::InvalidHandle)?;
+        let endpoint = module
+            .manifest
+            .exports
+            .get(&capability.endpoint)
+            .ok_or(Error::Authority)?;
+        if module.manifest.id != capability.provider
+            || endpoint.major != capability.major
+            || endpoint.access != Access::Write
+        {
+            return Err(Error::Authority);
+        }
+        if let Some(id) = pin {
+            let required: BTreeSet<_> = context
+                .pipeline
+                .routing
+                .routes
+                .iter()
+                .flat_map(|r| r.chain.iter().map(|b| b.module))
+                .chain([context.pipeline.root.module, caller])
+                .collect();
+            let pin = self
+                .pins
+                .iter()
+                .find(|p| p.id == id)
+                .ok_or(Error::Authority)?;
+            if pin.modules.iter().copied().collect::<BTreeSet<_>>() != required {
+                return Err(Error::Authority);
+            }
+        }
+        Ok(())
+    }
+}
+impl RestoredKernel {
+    /// Recheck the independently approved execution witnesses against the live
+    /// destination. This performs no invocation or domain construction.
+    pub fn execution_live(&self, kernel: &Kernel) -> Result<()> {
+        for context in &self.execution_contexts {
+            self.execution_source(&context.operation)?;
+            for witness in std::iter::once(&context.pipeline)
+                .chain(context.retained.iter())
+                .chain(context.origin.iter().map(|o| &o.source_pipeline))
+            {
+                for binding in std::iter::once(&witness.root)
+                    .chain(witness.routing.routes.iter().flat_map(|r| r.chain.iter()))
+                {
+                    let handle = *self.modules.get(&binding.module).ok_or(Error::Authority)?;
+                    if kernel.artifact(handle)? != binding.artifact
+                        || !kernel
+                            .registration(handle)?
+                            .manifest
+                            .exports
+                            .contains_key(&binding.endpoint)
+                    {
+                        return Err(Error::Authority);
+                    }
+                }
+                for slot in &witness.routing.slots {
+                    let caller = *self.modules.get(&slot.caller).ok_or(Error::Authority)?;
+                    let target = *self.modules.get(&slot.target).ok_or(Error::Authority)?;
+                    let registration = kernel.registration(caller)?;
+                    let dependency = registration
+                        .manifest
+                        .dependencies
+                        .get(slot.slot)
+                        .ok_or(Error::InvalidSlot)?;
+                    if registration.dependencies.get(slot.slot) != Some(&target) {
+                        return Err(Error::MissingDependency);
+                    }
+                    if let Some(saved) = &slot.ceiling {
+                        let authority = Authority {
+                            access: saved.access,
+                            scope: match &saved.scope {
+                                Scope::All => Scope::All,
+                                Scope::Keys(keys) => Scope::Keys(
+                                    keys.iter()
+                                        .map(|r| self.execution_resource(r).cloned())
+                                        .collect::<Result<_>>()?,
+                                ),
+                            },
+                        };
+                        let grant = kernel
+                            .grants
+                            .get(&(caller, slot.slot))
+                            .ok_or(Error::MissingGrant)?;
+                        if !grant.active {
+                            return Err(Error::Revoked);
+                        }
+                        if grant.target != target
+                            || !grant.authority.contains(&authority)
+                            || authority.access > dependency.access
+                        {
+                            return Err(Error::Authority);
+                        }
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+    /// Same correlation against the independently approved contexts and fresh
+    /// routes. Incoming IDs never confer authority to a restored observation.
+    #[allow(clippy::too_many_arguments)]
+    pub fn execution_record(
+        &self,
+        source: &SavedOperation,
+        caller: u64,
+        capability: &Capability,
+        chain: &[ProviderBinding],
+        target: &Resource,
+        pin: Option<u64>,
+    ) -> Result<()> {
+        let saved_chain = chain
+            .iter()
+            .map(|b| {
+                let module = self
+                    .modules
+                    .iter()
+                    .find_map(|(id, m)| (*m == b.handle).then_some(*id))
+                    .ok_or(Error::Authority)?;
+                Ok(SavedBinding {
+                    module,
+                    artifact: b.artifact,
+                    endpoint: b.endpoint.clone(),
+                })
+            })
+            .collect::<Result<Vec<_>>>()?;
+        let context = record_context(
+            &self.execution_contexts,
+            source,
+            caller,
+            capability,
+            &saved_chain,
+            target,
+        )?;
+        self.execution_resource(target)?;
+        self.execution_source(source)?;
+        if let Some(id) = pin {
+            let required = context
+                .pipeline
+                .routing
+                .routes
+                .iter()
+                .flat_map(|r| r.chain.iter().map(|b| b.module))
+                .chain([context.pipeline.root.module, caller])
+                .map(|id| self.modules.get(&id).copied().ok_or(Error::Authority))
+                .collect::<Result<BTreeSet<_>>>()?;
+            if self.pins.get(&id).ok_or(Error::Authority)?.0.references != required {
+                return Err(Error::Authority);
+            }
+        }
+        Ok(())
+    }
+}
+impl KernelSnapshot {
+    /// Owner cross-table preflight before any native artifact factory. These are
+    /// untrusted metadata checks; D3b still requires independent context approval.
+    #[allow(clippy::too_many_arguments)]
+    pub fn execution_behavior(
+        &self,
+        capture: usize,
+        source: &SavedOperation,
+        provider: u64,
+        caller: u64,
+        slot: usize,
+        target: &Resource,
+        invocation_pin: u64,
+    ) -> Result<()> {
+        let pure = self.pure_captures.get(capture).ok_or(Error::Authority)?;
+        if pure.provider != provider || pure.slot != slot {
+            return Err(Error::Authority);
+        }
+        let contexts = self.operation_contexts()?;
+        let context = contexts
+            .iter()
+            .find(|c| {
+                &c.operation == source
+                    && pure
+                        .routing
+                        .routes
+                        .iter()
+                        .all(|r| c.pipeline.routing.routes.contains(r))
+                    && pure.routing.slots.iter().all(|s| {
+                        c.pipeline.routing.slots.iter().any(|original| {
+                            original.caller == s.caller
+                                && original.slot == s.slot
+                                && original.target == s.target
+                                && match (&original.ceiling, &s.ceiling) {
+                                    (Some(a), Some(b)) => a.contains(b),
+                                    (None, None) => true,
+                                    _ => false,
+                                }
+                        })
+                    })
+            })
+            .ok_or(Error::Authority)?;
+        if !context.pipeline.routing.slots.iter().any(|s| {
+            s.caller == caller
+                && s.ceiling.as_ref().is_some_and(|a| a.scope.allows(target))
+                && context
+                    .pipeline
+                    .routing
+                    .routes
+                    .iter()
+                    .any(|r| r.module == s.target && r.chain.iter().any(|b| b.module == provider))
+        }) || !context.pipeline.ceiling.scope.allows(target)
+        {
+            return Err(Error::Authority);
+        }
+        let required: BTreeSet<_> = context
+            .pipeline
+            .routing
+            .routes
+            .iter()
+            .flat_map(|r| r.chain.iter().map(|b| b.module))
+            .chain([provider, caller])
+            .collect();
+        let pin = self
+            .pins
+            .iter()
+            .find(|p| p.id == invocation_pin)
+            .ok_or(Error::InvalidHandle)?;
+        if pin.modules.iter().copied().collect::<BTreeSet<_>>() != required {
+            return Err(Error::Authority);
+        }
+        Ok(())
+    }
+}
+
+impl KernelSnapshot {
+    /// Owner read/write correlation before domain codecs or factories.
+    #[allow(clippy::too_many_arguments)]
+    pub fn execution_owner(
+        &self,
+        source: &SavedOperation,
+        caller: u64,
+        capability: &Capability,
+        chain: &[SavedBinding],
+        target: &Resource,
+        pin: Option<u64>,
+        access: Access,
+    ) -> Result<()> {
+        let contexts = self.operation_contexts()?;
+        let context = owner_context(&contexts, source, caller, capability, chain, target, access)?;
+        let first = chain.first().ok_or(Error::Authority)?;
+        let module = self
+            .registry
+            .modules
+            .iter()
+            .find(|m| m.id == first.module)
+            .ok_or(Error::InvalidHandle)?;
+        let endpoint = module
+            .manifest
+            .exports
+            .get(&capability.endpoint)
+            .ok_or(Error::Authority)?;
+        if module.manifest.id != capability.provider
+            || endpoint.major != capability.major
+            || endpoint.access != access
+        {
+            return Err(Error::Authority);
+        }
+        if let Some(id) = pin {
+            let required: BTreeSet<_> = context
+                .pipeline
+                .routing
+                .routes
+                .iter()
+                .flat_map(|r| r.chain.iter().map(|b| b.module))
+                .chain([context.pipeline.root.module, caller])
+                .collect();
+            let pin = self
+                .pins
+                .iter()
+                .find(|p| p.id == id)
+                .ok_or(Error::Authority)?;
+            if pin.modules.iter().copied().collect::<BTreeSet<_>>() != required {
+                return Err(Error::Authority);
+            }
+        }
+        Ok(())
+    }
+}
+
+fn owner_context<'a>(
+    contexts: &'a [SavedOperationContext],
+    source: &SavedOperation,
+    caller: u64,
+    capability: &Capability,
+    chain: &[SavedBinding],
+    target: &Resource,
+    access: Access,
+) -> Result<&'a SavedOperationContext> {
+    let context = contexts
+        .iter()
+        .find(|c| &c.operation == source)
+        .ok_or(Error::Authority)?;
+    if chain.is_empty()
+        || (context.pipeline.ceiling.access != Access::Write && access == Access::Write)
+        || !context.pipeline.ceiling.scope.allows(target)
+        || !context.pipeline.routing.slots.iter().any(|slot| {
+            slot.caller == caller
+                && slot.ceiling.as_ref().is_some_and(|a| {
+                    (a.access == Access::Write || access == Access::Read) && a.scope.allows(target)
+                })
+                && context.pipeline.routing.routes.iter().any(|route| {
+                    route.module == slot.target
+                        && route.endpoint == capability.endpoint
+                        && route.chain == chain
+                })
+        })
+    {
+        return Err(Error::Authority);
+    }
+    Ok(context)
+}
+impl RestoredKernel {
+    /// Correlate read/write owner evidence against admitted fresh contexts.
+    #[allow(clippy::too_many_arguments)]
+    pub fn execution_owner(
+        &self,
+        source: &SavedOperation,
+        caller: u64,
+        capability: &Capability,
+        chain: &[ProviderBinding],
+        target: &Resource,
+        pin: Option<u64>,
+        access: Access,
+    ) -> Result<()> {
+        let saved_chain = chain
+            .iter()
+            .map(|b| {
+                let module = self
+                    .modules
+                    .iter()
+                    .find_map(|(id, m)| (*m == b.handle).then_some(*id))
+                    .ok_or(Error::Authority)?;
+                Ok(SavedBinding {
+                    module,
+                    artifact: b.artifact,
+                    endpoint: b.endpoint.clone(),
+                })
+            })
+            .collect::<Result<Vec<_>>>()?;
+        let context = owner_context(
+            &self.execution_contexts,
+            source,
+            caller,
+            capability,
+            &saved_chain,
+            target,
+            access,
+        )?;
+        self.execution_resource(target)?;
+        self.execution_source(source)?;
+        if let Some(id) = pin {
+            let required = context
+                .pipeline
+                .routing
+                .routes
+                .iter()
+                .flat_map(|r| r.chain.iter().map(|b| b.module))
+                .chain([context.pipeline.root.module, caller])
+                .map(|id| self.modules.get(&id).copied().ok_or(Error::Authority))
+                .collect::<Result<BTreeSet<_>>>()?;
+            if self.pins.get(&id).ok_or(Error::Authority)?.0.references != required {
+                return Err(Error::Authority);
+            }
+        }
+        Ok(())
+    }
 }

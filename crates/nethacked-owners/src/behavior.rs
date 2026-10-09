@@ -4,11 +4,13 @@ use super::*;
 /// no guest constructor, version selector or historical codec registry.
 pub struct RetainedBehavior<T> {
     pub(super) inner: Rc<Behavior<T>>,
-    scope: Option<Rc<CallbackScope>>,
+    pub(crate) scope: Option<Rc<CallbackScope>>,
 }
-struct CallbackScope {
-    host: Host,
-    origin: nethacked_kernel::CallbackProvenance,
+pub(crate) struct CallbackScope {
+    pub(crate) host: Host,
+    pub(crate) origin: nethacked_kernel::CallbackProvenance,
+    #[cfg(feature = "persistence")]
+    pub(crate) callback: nethacked_kernel::RetainedCallback,
 }
 impl Drop for CallbackScope {
     fn drop(&mut self) {
@@ -16,20 +18,20 @@ impl Drop for CallbackScope {
     }
 }
 pub(super) struct Behavior<T> {
-    owner: Weak<Owner<T>>,
-    host: Host,
-    generation: u64,
-    schema: [u8; 32],
-    caller: ModuleHandle,
-    artifact: [u8; 32],
-    source: OperationBinding,
+    pub(crate) owner: Weak<Owner<T>>,
+    pub(crate) host: Host,
+    pub(crate) generation: u64,
+    pub(crate) schema: [u8; 32],
+    pub(crate) caller: ModuleHandle,
+    pub(crate) artifact: [u8; 32],
+    pub(crate) source: OperationBinding,
     pub(super) codec: Rc<dyn WasmCodec<T>>,
     pub(super) slot: usize,
     pub(super) capture: PureCapture,
     pub(super) revision: u64,
-    policy: QueryPolicy,
-    target: Resource,
-    _invocation: ModulePin,
+    pub(crate) policy: QueryPolicy,
+    pub(crate) target: Resource,
+    pub(crate) _invocation: ModulePin,
 }
 impl<T> Clone for RetainedBehavior<T> {
     fn clone(&self) -> Self {
@@ -102,6 +104,8 @@ impl<T> RetainedBehavior<T> {
         let scope = Rc::new(CallbackScope {
             host: self.inner.host.clone(),
             origin: callback.provenance().clone(),
+            #[cfg(feature = "persistence")]
+            callback: callback.clone(),
         });
         self.inner.host.0.behaviors.set(next);
         Ok(Self {
