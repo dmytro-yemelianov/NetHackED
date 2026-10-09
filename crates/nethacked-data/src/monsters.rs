@@ -9,6 +9,24 @@ use serde::{Deserialize, Serialize};
 use crate::roles::RaceId;
 use rand::Rng;
 
+/// A monster factory's original rand distribution. Callers must preserve the
+/// distribution and its raw RNG consumption, and return refusal immediately.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MonsterDraw {
+    Below(u32),
+    Die(u32),
+}
+
+impl MonsterDraw {
+    /// Infallible adapter using the exact legacy rand operations.
+    pub fn sample(self, rng: &mut impl Rng) -> u32 {
+        match self {
+            Self::Below(bound) => rng.random_range(0..bound),
+            Self::Die(sides) => rng.random_range(1..=sides),
+        }
+    }
+}
+
 /// Re-exported from `nethacked-types` so `nethacked-core` combat can take an [`Attack`].
 pub use nethacked_types::{Attack, AttackType, DamageType};
 
@@ -216,6 +234,18 @@ pub(crate) fn compute_monster_hp_at_level(
     context: MonsterSpawnContext,
     rng: &mut impl Rng,
 ) -> u32 {
+    try_compute_monster_hp_at_level(def, level, context, &mut |draw: MonsterDraw| {
+        Ok::<_, std::convert::Infallible>(draw.sample(rng))
+    })
+    .unwrap()
+}
+
+pub(crate) fn try_compute_monster_hp_at_level<E>(
+    def: &crate::ruleset::MonsterDef,
+    level: u32,
+    context: MonsterSpawnContext,
+    sample: &mut impl FnMut(MonsterDraw) -> Result<u32, E>,
+) -> Result<u32, E> {
     use nethacked_types::EndgamePlane;
     let (hp, minimum) = if let Some(hp) = golem_hp(def.id) {
         (hp, 0)
@@ -223,7 +253,7 @@ pub(crate) fn compute_monster_hp_at_level(
         def.id,
         Some(MonsterSpeciesId::FAMINE | MonsterSpeciesId::PESTILENCE | MonsterSpeciesId::DEATH)
     ) {
-        (roll_hp_dice(rng, 10, 8), 10)
+        (try_roll_hp_dice(sample, 10, 8)?, 10)
     } else if def.level > 49 {
         (2 * (def.level - 6), 0)
     } else if matches!(
@@ -244,12 +274,12 @@ pub(crate) fn compute_monster_hp_at_level(
             if context.endgame_plane.is_some() {
                 8 * level
             } else {
-                4 * level + roll_hp_dice(rng, level, 4)
+                4 * level + try_roll_hp_dice(sample, level, 4)?
             },
             level,
         )
     } else if level == 0 {
-        (rng.random_range(1..=4), 1)
+        (sample(MonsterDraw::Die(4))?, 1)
     } else {
         let home = matches!(
             (def.id, context.endgame_plane),
@@ -268,15 +298,11 @@ pub(crate) fn compute_monster_hp_at_level(
             )
         );
         (
-            roll_hp_dice(rng, level, 8) * if home { 3 } else { 1 },
+            try_roll_hp_dice(sample, level, 8)? * if home { 3 } else { 1 },
             level,
         )
     };
-    if hp == minimum {
-        hp + 1
-    } else {
-        hp
-    }
+    Ok(if hp == minimum { hp + 1 } else { hp })
 }
 
 /// Factory for vanilla species; shares the owned-ruleset spawning policy.
@@ -301,8 +327,12 @@ pub fn create_ghost_record(name: &str, level: u32, hp: u32, coord: Coord) -> Act
     rec
 }
 
-fn roll_hp_dice(rng: &mut impl Rng, count: u32, sides: u32) -> u32 {
-    (0..count).map(|_| rng.random_range(1..=sides)).sum()
+fn try_roll_hp_dice<E>(
+    sample: &mut impl FnMut(MonsterDraw) -> Result<u32, E>,
+    count: u32,
+    sides: u32,
+) -> Result<u32, E> {
+    (0..count).try_fold(0, |hp, _| Ok(hp + sample(MonsterDraw::Die(sides))?))
 }
 
 /// C golemhp(), makemon.c:2233–2263. Fixed species facts, distinct

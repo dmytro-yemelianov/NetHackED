@@ -99,6 +99,21 @@ pub fn rndmonst_adj<'a>(
     gone: impl Fn(&MonsterDef) -> bool,
     mut rn2: impl FnMut(u32) -> u32,
 ) -> Option<&'a MonsterDef> {
+    try_rndmonst_adj(ruleset, ctx, minadj, maxadj, gone, |n| {
+        Ok::<_, std::convert::Infallible>(rn2(n))
+    })
+    .unwrap()
+}
+
+/// Fallible reservoir sampling. Refusal stops at the requested bounded draw.
+pub fn try_rndmonst_adj<'a, E>(
+    ruleset: &'a Ruleset,
+    ctx: &MonsterGenContext,
+    minadj: i32,
+    maxadj: i32,
+    gone: impl Fn(&MonsterDef) -> bool,
+    mut rn2: impl FnMut(u32) -> Result<u32, E>,
+) -> Result<Option<&'a MonsterDef>, E> {
     let zlevel = ctx.level_difficulty;
     // monst.h:259-260 monmin_difficulty / monmax_difficulty
     let minmlev = zlevel / 6 + minadj;
@@ -126,12 +141,12 @@ pub fn rndmonst_adj<'a>(
             + temperature_shift(def, ctx.temperature);
         if weight > 0 {
             total += weight;
-            if (rn2(total as u32) as i32) < weight {
+            if (rn2(total as u32)? as i32) < weight {
                 selected = Some(def);
             }
         }
     }
-    selected
+    Ok(selected)
 }
 
 /// C `rndmonst()`: `rndmonst_adj(0, 0)`.

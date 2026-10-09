@@ -1,6 +1,8 @@
 //! Versioned selected-wand protocol. Detached facts never confer write authority.
-//! Gameplay preparation/publication is deliberately left to the next units.
+//! I1 remains read-only; the explicitly approved V2 profile adds legal native
+//! domain preparation/publication. Production gameplay dispatch follows.
 use super::partitions::*;
+pub use super::runtime::wand_commands::{AuthenticatedWandRng, RawDrawError};
 use crate::world::{BillError, BillTerms};
 use nethacked_arena::{ActorId, ItemDefinition, ItemId, ItemLocation};
 use nethacked_data::{ItemKindId, RulesetRef};
@@ -82,6 +84,7 @@ pub enum WandQuery {
     Actors(ActorsRequest),
     Hero,
     Session,
+    Command(CommandQuery),
 }
 impl WandQuery {
     pub(crate) fn route(&self) -> (&'static str, &'static str) {
@@ -96,6 +99,7 @@ impl WandQuery {
             Self::Actors(_) => ("Actors", "wand_actors"),
             Self::Hero => ("Hero", "wand_hero"),
             Self::Session => ("Session", "wand_session"),
+            Self::Command(q) => q.route(),
         }
     }
     pub(crate) fn validate(&self) -> owners::Result<()> {
@@ -126,6 +130,7 @@ impl WandQuery {
                 }
             }
             Self::Random { draws } => bound(usize::from(*draws), usize::from(MAX_DRAWS))?,
+            Self::Command(CommandQuery::Geography { coord: c }) => coord(*c)?,
             _ => {}
         }
         Ok(())
@@ -305,6 +310,7 @@ pub enum WandFacts {
     Actors(ActorsFacts),
     Hero(HeroFacts),
     Session(SessionFacts),
+    Command(CommandFacts),
 }
 /// Concrete owner provenance is detached evidence. Publication must revalidate
 /// through the original owner ports, never trust this public value as a permit.
@@ -367,7 +373,7 @@ pub(crate) trait Domain {
         c: &super::runtime::OwnerBridgeConfig,
     ) -> owners::Result<WandFacts>;
 }
-pub(crate) fn query<T: Domain>(
+pub(crate) fn query<T: Domain + super::runtime::wand_commands::CommandDomain>(
     s: &T,
     name: &str,
     request: &[u8],
@@ -379,8 +385,22 @@ pub(crate) fn query<T: Domain>(
         return Err(owners::Error::Schema);
     }
     q.validate()?;
+    if let WandQuery::Command(q) = &q {
+        if !c.wand_commands {
+            return Err(owners::Error::Unsupported);
+        }
+        return super::runtime::encode(
+            &WandFacts::Command(s.command_facts(q, obs, c)?),
+            MAX_RESPONSE_BYTES,
+        );
+    }
     super::runtime::encode(&s.facts(&q, obs, c)?, MAX_RESPONSE_BYTES)
 }
 mod domains;
 mod proposals;
 pub use proposals::*;
+
+pub use super::runtime::wand_gameplay::{
+    ActorQuery, FactQuery, FactValue, GameplayError, ObjectQuery, SemanticDraw, WandGameplayAction,
+    WandGameplayReply,
+};

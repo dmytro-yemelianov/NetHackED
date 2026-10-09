@@ -109,11 +109,22 @@ pub fn peace_decision(input: &PeaceMindedInput) -> PeaceDecision {
 /// non-zero, once more for `rn2(2 + abs(mal))` (C's `&&` short-circuit,
 /// makemon.c:2305-2307).
 pub fn peace_minded(input: &PeaceMindedInput, mut rn2: impl FnMut(u32) -> u32) -> bool {
-    match peace_decision(input) {
+    match try_peace_minded(input, |n| Ok::<_, std::convert::Infallible>(rn2(n))) {
+        Ok(value) => value,
+        Err(error) => match error {},
+    }
+}
+
+/// Fallible prescribed draws, preserving the co-aligned short circuit.
+pub fn try_peace_minded<E>(
+    input: &PeaceMindedInput,
+    mut rn2: impl FnMut(u32) -> Result<u32, E>,
+) -> Result<bool, E> {
+    Ok(match peace_decision(input) {
         PeaceDecision::Peaceful => true,
         PeaceDecision::Hostile => false,
-        PeaceDecision::CoalignedRoll { a, b } => rn2(a) != 0 && rn2(b) != 0,
-    }
+        PeaceDecision::CoalignedRoll { a, b } => rn2(a)? != 0 && rn2(b)? != 0,
+    })
 }
 
 /// C `adjalign(n)` (`attrib.c:1297-1315`) on the alignment record.

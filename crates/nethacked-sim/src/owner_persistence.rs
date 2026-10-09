@@ -12,7 +12,9 @@
 
 mod admission;
 mod migration;
-pub use migration::{native_migration_binding, NativeImportRegistry};
+pub use migration::{
+    native_migration_binding, native_wand_gameplay_migration_binding, NativeImportRegistry,
+};
 mod partitions;
 pub use partitions::NativePartitions;
 mod runtime;
@@ -66,13 +68,20 @@ impl PreparedNativeImport {
     /// Complete the compatibility import and move every native field into its
     /// typed domain payload. No live World is retained by the returned transfer.
     pub fn partition(self) -> Result<NativePartitions, LoadError> {
+        self.partition_with_policy(admission::AdmissionPolicy::Strict)
+    }
+
+    fn partition_with_policy(
+        self,
+        policy: admission::AdmissionPolicy,
+    ) -> Result<NativePartitions, LoadError> {
         NativePartitions::from_native(self.world.clone())
-            .admit_references(&self.world.ruleset)
+            .admit_references_with_policy(&self.world.ruleset, policy)
             .map_err(|e| LoadError::Json(format!("native owner references: {e:?}")))?;
         let ruleset = self.world.ruleset.clone();
         let parts = NativePartitions::from_native(self.complete()?);
         parts
-            .admit_references(&ruleset)
+            .admit_references_with_policy(&ruleset, policy)
             .map_err(|e| LoadError::Json(format!("native owner references: {e:?}")))?;
         Ok(parts)
     }

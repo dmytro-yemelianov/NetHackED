@@ -30,13 +30,24 @@ impl NativeReferences {
     }
 }
 
-fn item_definition(item: &ItemRecord, ruleset: &Ruleset) -> Result<()> {
+#[derive(Clone, Copy)]
+pub(super) enum AdmissionPolicy {
+    Strict,
+    WandGameplayV3,
+}
+
+fn item_definition(item: &ItemRecord, ruleset: &Ruleset, policy: AdmissionPolicy) -> Result<()> {
     // Missing legacy identity is not a claimed code binding. Unknown names
     // and unusable quantities preserve their existing command refusals.
     let Some(id) = &item.definition else {
         return Ok(());
     };
-    let def = ruleset.item_for_definition(id).ok_or(Error::Schema)?;
+    let Some(def) = ruleset.item_for_definition(id) else {
+        return match policy {
+            AdmissionPolicy::Strict => Err(Error::Schema),
+            AdmissionPolicy::WandGameplayV3 => Ok(()),
+        };
+    };
     if def.class != item.class {
         return Err(Error::Invariant);
     }
@@ -59,6 +70,14 @@ fn actor_definition(actor: &ActorRecord, ruleset: &Ruleset) -> Result<()> {
 
 impl NativePartitions {
     pub(super) fn admit_references(&self, ruleset: &Ruleset) -> Result<NativeReferences> {
+        self.admit_references_with_policy(ruleset, AdmissionPolicy::Strict)
+    }
+
+    pub(super) fn admit_references_with_policy(
+        &self,
+        ruleset: &Ruleset,
+        policy: AdmissionPolicy,
+    ) -> Result<NativeReferences> {
         let count = self.geography.stored_keys.len();
         if [
             self.geography.stored_levels.len(),
@@ -116,7 +135,7 @@ impl NativePartitions {
         }
         let mut parents = BTreeMap::new();
         for (&(scope, id), item) in &items {
-            item_definition(item, ruleset)?;
+            item_definition(item, ruleset, policy)?;
             match item.location {
                 ItemLocation::CarriedBy(actor) => {
                     let actor_scope = if actor == self.hero.player_id

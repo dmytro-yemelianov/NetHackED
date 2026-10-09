@@ -10,6 +10,7 @@ use std::{rc::Rc, sync::Arc};
 struct Context {
     ruleset: Arc<Ruleset>,
     reference: RulesetRef,
+    policy: super::admission::AdmissionPolicy,
 }
 type Source = (SimulationWorld, bool, bool);
 type Registry = MigrationRegistry<Source, PreparedNativeImport, Context, LoadError>;
@@ -31,6 +32,15 @@ fn digest(parts: &[&[u8]]) -> [u8; 32] {
 pub fn native_migration_binding() -> MigrationBinding {
     static BINDING: std::sync::OnceLock<MigrationBinding> = std::sync::OnceLock::new();
     *BINDING.get_or_init(compiled_binding)
+}
+
+/// Explicit V3 target policy: unresolved item identities remain gameplay facts.
+pub fn native_wand_gameplay_migration_binding() -> MigrationBinding {
+    let mut binding = native_migration_binding();
+    binding.target.schema = digest(&[b"NetHackED nine native owner partitions wand gameplay v3"]);
+    binding.target.codec_version = 3;
+    binding.transform_version = 3;
+    binding
 }
 
 fn compiled_binding() -> MigrationBinding {
@@ -81,10 +91,18 @@ impl Default for NativeImportRegistry {
 
 impl NativeImportRegistry {
     pub fn current() -> Self {
+        Self::for_binding(native_migration_binding())
+    }
+
+    pub fn wand_gameplay_v3() -> Self {
+        Self::for_binding(native_wand_gameplay_migration_binding())
+    }
+
+    fn for_binding(binding: MigrationBinding) -> Self {
         let mut registry = Registry::default();
         registry
             .register(Migration {
-                binding: native_migration_binding(),
+                binding,
                 decode: |bytes, context| {
                     let json =
                         std::str::from_utf8(bytes).map_err(|e| LoadError::Json(e.to_string()))?;
@@ -113,9 +131,16 @@ impl NativeImportRegistry {
                     })
                 },
                 validate_target: |prepared, context| {
-                    NativePartitions::from_native(prepared.world.clone())
-                        .admit_references(&context.ruleset)
-                        .map_err(|e| LoadError::Json(format!("native owner references: {e:?}")))?;
+                    let parts = NativePartitions::from_native(prepared.world.clone());
+                    match context.policy {
+                        super::admission::AdmissionPolicy::Strict => {
+                            parts.admit_references(&context.ruleset)
+                        }
+                        super::admission::AdmissionPolicy::WandGameplayV3 => {
+                            parts.admit_references_with_policy(&context.ruleset, context.policy)
+                        }
+                    }
+                    .map_err(|e| LoadError::Json(format!("native owner references: {e:?}")))?;
                     Ok(())
                 },
             })
@@ -140,6 +165,11 @@ impl NativeImportRegistry {
             &Context {
                 ruleset,
                 reference: reference.clone(),
+                policy: if binding == native_wand_gameplay_migration_binding() {
+                    super::admission::AdmissionPolicy::WandGameplayV3
+                } else {
+                    super::admission::AdmissionPolicy::Strict
+                },
             },
         )
     }

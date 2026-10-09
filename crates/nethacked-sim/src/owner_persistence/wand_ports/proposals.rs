@@ -1,5 +1,231 @@
 use super::*;
 
+/// V2 requests are available only under the explicitly approved command profile.
+/// The witness is a compare guard, not authority; live invocation grants and the
+/// sealed owner ticket remain mandatory.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct WandOperation {
+    pub expected_owner: OwnerWitness,
+    pub dependencies: Vec<OwnerWitness>,
+    pub command: WandOwnerCommand,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum WandOwnerCommand {
+    Sample {
+        reservation: RandomReservation,
+        draw: super::super::runtime::wand_gameplay::SemanticDraw,
+    },
+    Objects(ObjectOperation),
+    Actors(ActorOperation),
+    Geography {
+        coord: Coord,
+        effect: GeographyOperation,
+    },
+    Hero(HeroOperation),
+    Clock(ClockOperation),
+    Random {
+        reservation: RandomReservation,
+        word: RawWord,
+    },
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ObjectOperation {
+    PositiveCharge {
+        target: ObjectRef,
+        expected: i8,
+    },
+    /// A single initialized generated object, never a partition replacement.
+    PublishGenerated {
+        object: nethacked_arena::ItemRecord,
+    },
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ActorOperation {
+    Damage {
+        target: ActorId,
+        amount: u32,
+    },
+    Polymorph {
+        target: ActorId,
+        definition: String,
+    },
+    MakeHostile {
+        target: ActorId,
+    },
+    ForceHostileMalign {
+        target: ActorId,
+        malign: i32,
+    },
+    PublishInitialized {
+        actor: nethacked_arena::ActorRecord,
+    },
+    GainLevel {
+        target: ActorId,
+        hp: u32,
+        level: u32,
+    },
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum GeographyOperation {
+    RevealSecretDoor,
+    CollapseDrawbridge,
+    BreakDoor,
+    FreezePool,
+    EraseEngraving,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum HeroOperation {
+    AdjustAlignment {
+        delta: i32,
+        limit: i32,
+    },
+    RecordKill,
+    MarkQuestLeaderKilled,
+    DefeatQuestNemesis,
+    AdjustFavor {
+        delta: i32,
+    },
+    AdjustLuck {
+        delta: i32,
+    },
+    ClearDivineProtection,
+    CreditExperience {
+        amount: u64,
+    },
+    RecordLevelGain {
+        from: u32,
+        hp: i32,
+        energy: i32,
+        experience: u64,
+    },
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ClockOperation {
+    HeroAct,
+    StartCorpseTimer {
+        target: ObjectRef,
+        kind: crate::ObjectTimerKind,
+        due: Option<u64>,
+    },
+    CancelCorpseTimers {
+        target: ObjectRef,
+    },
+}
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum RawWord {
+    U32,
+    U64,
+}
+
+/// Additional finite facts needed by the shared ports. V1 query encodings and
+/// responses retain their original meaning and profile identities.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum CommandQuery {
+    Gameplay(super::super::runtime::wand_gameplay::FactQuery),
+    Object {
+        target: ObjectRef,
+    },
+    Actor {
+        target: ActorId,
+    },
+    Geography {
+        coord: Coord,
+    },
+    Hero,
+    Genocide {
+        definition: String,
+    },
+    Session,
+    TimerAdmission {
+        target: ObjectRef,
+        kind: crate::ObjectTimerKind,
+        due: Option<u64>,
+    },
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum CommandFacts {
+    Gameplay(super::super::runtime::wand_gameplay::FactValue),
+    Object {
+        target: ObjectRef,
+        frozen: bool,
+    },
+    Actor {
+        target: ActorId,
+        actor: nethacked_arena::ActorRecord,
+    },
+    Geography {
+        coord: Coord,
+        engraving: Option<nethacked_core::engraving::Engraving>,
+    },
+    Hero {
+        race: nethacked_data::RaceId,
+        alignment: i32,
+        pacifist: bool,
+        quest: nethacked_core::QuestState,
+        experience: u64,
+        level_max: u32,
+        constitution: i32,
+        favor: i32,
+        protection: u32,
+        power: u32,
+        max_power: u32,
+    },
+    Genocide {
+        definition: String,
+        forbidden: bool,
+    },
+    Session {
+        role_id: Option<nethacked_data::RoleId>,
+        role_name: String,
+    },
+    TimerAdmission {
+        result: Result<u64, TimerFailure>,
+    },
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TimerFailure {
+    MissingObject,
+    Duplicate,
+    ClockOverflow,
+    SerialOverflow,
+}
+impl From<crate::object_timers::ObjectTimerError> for TimerFailure {
+    fn from(error: crate::object_timers::ObjectTimerError) -> Self {
+        use crate::object_timers::ObjectTimerError as E;
+        match error {
+            E::MissingObject => Self::MissingObject,
+            E::Duplicate => Self::Duplicate,
+            E::ClockOverflow => Self::ClockOverflow,
+            E::SerialOverflow => Self::SerialOverflow,
+        }
+    }
+}
+impl From<TimerFailure> for crate::object_timers::ObjectTimerError {
+    fn from(error: TimerFailure) -> Self {
+        match error {
+            TimerFailure::MissingObject => Self::MissingObject,
+            TimerFailure::Duplicate => Self::Duplicate,
+            TimerFailure::ClockOverflow => Self::ClockOverflow,
+            TimerFailure::SerialOverflow => Self::SerialOverflow,
+        }
+    }
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum OperationResult {
+    Applied,
+    Charge { remaining: i8 },
+    Object { id: ItemId },
+    Actor { id: ActorId },
+    Damage { dead: bool },
+    Revealed { changed: bool },
+    Timer { serial: u64 },
+    TimerRefused { reason: TimerFailure },
+    Sample(u32),
+    Raw32(u32),
+    Raw64(u64),
+}
+
 /// Legal domain requests for subsequent sealed preparation. None is a state
 /// replacement, and I1 grants no write endpoint for these requests.
 #[derive(Debug, Clone, Serialize, Deserialize)]

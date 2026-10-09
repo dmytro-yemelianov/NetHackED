@@ -1,0 +1,221 @@
+{
+  "schema": 1,
+  "unit": "M5-I2",
+  "status": "accepted",
+  "base_head": "f95c8f4d3bec90ac1b40a3446cbb9d7c52a98214",
+  "contract": "docs/plans/2026-10-09-nethack-module-integration-contract.md",
+  "scope": [
+    "Shared existing wand, creation and death/corpse algorithms with borrowed legacy adapters",
+    "Fallible sampling/factories retain old APIs and exact distributions/draw order",
+    "Actual opt-in V3 native caller executes try_zap through declared authenticated owner dependencies; public ActionAst and typed dispatch",
+    "Bounded observations and sealed legal owner operations; safe typed failure and committed event/state/RNG prefixes",
+    "V3 explicit immutable code/profile/session bindings, canonical genocide observations and versioned unresolved-definition admission; old strict profiles/host registry restrictions retained"
+  ],
+  "review": {
+    "assembled": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I2/review/answer.txt",
+      "sha256": "465e084100877cf1a79241edb95b876178f10beafe0169ae7787147432be3f1f"
+    },
+    "initial_status": "REQUEST_CHANGES",
+    "reproduced_findings": 3,
+    "repair": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I2/repair-checkpoint.json",
+      "sha256": "7a047745389a1a655fe6168dca089cad28dea7a0e9f7ca3f70f042be76c8561f"
+    },
+    "independent_root_delta": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I2/delta-review.json",
+      "sha256": "bac6843141edbad4dddf8baab32e74452f345c618f6d6d4a24d182d3c1b4c919"
+    },
+    "status": "PASS_I2",
+    "note": "Independent root delta review composed with initial assembled review; no repeat full audit."
+  },
+  "verification": {
+    "head": "f95c8f4d3bec90ac1b40a3446cbb9d7c52a98214",
+    "tests": 1480,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "digest": "e41d68468ca3861aaf3b198ebfcdad3a5e7e2a184ec40a60e4f3ba05af7b18b9",
+    "checks": 12,
+    "input_count": 531,
+    "manifest": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I2/final-gates/baseline.json",
+      "sha256": "a083302eabdecf41e0b1bd5133f0d9cad295d828fe7a38bcdb7a051d2a744d8d"
+    },
+    "results": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I2/final-gates/results.json",
+      "sha256": "d5eb6280238c54d907884fea35391f282f3592f24e0c9e8e1e8ca98ddbc64052"
+    },
+    "accepted": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I2/final-gates/accepted.json",
+      "sha256": "a60237ce66ac75e76415042e85ed2fa52d90be44282fdd549423f73adfabb13a"
+    },
+    "source_files": [
+      {
+        "path": "crates/nethacked-core/src/corpse_timeout.rs",
+        "sha256": "b578dc189d89b07ab7be5fef1b6e4dcca4455dcb67cb6cfd9439c7d07e64e5d6"
+      },
+      {
+        "path": "crates/nethacked-core/src/peace.rs",
+        "sha256": "b77fe0d90d74d0324ae8e337e1be5a7b779b6ca047f8e25e68272f3fab8c6fee"
+      },
+      {
+        "path": "crates/nethacked-data/src/corpses.rs",
+        "sha256": "799c04763eec7d3885c6edfbd30cffa1b4a72f7950390101999a318726778af3"
+      },
+      {
+        "path": "crates/nethacked-data/src/generation.rs",
+        "sha256": "0d6a406ae051ba6b7f8511d9d13c26189d51c1724f0fcac0ca19fea9197b5666"
+      },
+      {
+        "path": "crates/nethacked-data/src/monsters.rs",
+        "sha256": "507ce164ba8c4cbf15d42c6ed3c6fc3ce312b96f07f15ea799bda024726eeed4"
+      },
+      {
+        "path": "crates/nethacked-data/src/ruleset.rs",
+        "sha256": "17f0ee33ac444ed6405064bb5b4e63044538cfa057b15b32676e247eaf9b419b"
+      },
+      {
+        "path": "crates/nethacked-data/tests/m5_i2_fallible_factories_tests.rs",
+        "sha256": "8ebb7bf4262d383af8214aede31c446fc5dcff766d06520fae432b6030c9272e"
+      },
+      {
+        "path": "crates/nethacked-sim/src/actions/items.rs",
+        "sha256": "4e355b49fe6935c1977c8f8ec6e1e29e81f5b25ac7f50640b44d8adfc2052b89"
+      },
+      {
+        "path": "crates/nethacked-sim/src/actions/mod.rs",
+        "sha256": "9d4380965da13a139af933096e0881ce6818b4b7245798524d3e53efb321b5c8"
+      },
+      {
+        "path": "crates/nethacked-sim/src/actions/wand.rs",
+        "sha256": "c63d00de60a5dc9d47e950f080f615a46bc488239aa4ae9964efd2778a773dee"
+      },
+      {
+        "path": "crates/nethacked-sim/src/actions/wand/creation.rs",
+        "sha256": "7b99e846002714d7c7024a379f0bc63bccc47f36aa98a8ecf5cb956450587495"
+      },
+      {
+        "path": "crates/nethacked-sim/src/actions/wand/effects.rs",
+        "sha256": "5d90a00b9c9eedeac26e8db6fffc6c6926f193c6fc6e7753f7720b03559c2cb2"
+      },
+      {
+        "path": "crates/nethacked-sim/src/actions/wand/ports.rs",
+        "sha256": "73d34bfc93369106e290df09e00167a98965c0b2ae76fd77206cf473d9ade580"
+      },
+      {
+        "path": "crates/nethacked-sim/src/actions/wand_legacy.rs",
+        "sha256": "a34373bd322dd525c4019e49fe91c19b06743a9240bb941abfcd0673c984488a"
+      },
+      {
+        "path": "crates/nethacked-sim/src/monster_generation.rs",
+        "sha256": "a0d8ff099e8a90cea9d8ae67f2fa9b84a3d6626d246c6451653ce0e23d596c4d"
+      },
+      {
+        "path": "crates/nethacked-sim/src/object_timers.rs",
+        "sha256": "3d0b22cddcc5262b142f739bbca33cc0d5cd9d6212e4eeae0125cb31416bd1c7"
+      },
+      {
+        "path": "crates/nethacked-sim/src/owner_persistence.rs",
+        "sha256": "1aed67bb599d2489847382bacf95f4aa8502410d61b249ca0a514821fb45331f"
+      },
+      {
+        "path": "crates/nethacked-sim/src/owner_persistence/admission.rs",
+        "sha256": "cd5d5bfaf298ea1e6e8edfc8f8da90346d6c748ca6a168cce6856cf40d78a564"
+      },
+      {
+        "path": "crates/nethacked-sim/src/owner_persistence/migration.rs",
+        "sha256": "bdcb52099d46a02a044654b302a4582e798ad525d2294a9120716b5258bb58b2"
+      },
+      {
+        "path": "crates/nethacked-sim/src/owner_persistence/runtime.rs",
+        "sha256": "fc6e6b9fe055a6918b2e992ed9d2d39c6fce0aaf984e6439b40390efed9f18fd"
+      },
+      {
+        "path": "crates/nethacked-sim/src/owner_persistence/runtime/tests/wand_commands.rs",
+        "sha256": "76f1dc35d392f033fa43f9e30224da1d4a2ac4a84cf10511b8797413e80bbb52"
+      },
+      {
+        "path": "crates/nethacked-sim/src/owner_persistence/runtime/tests/wand_gameplay.rs",
+        "sha256": "becd97c499a18f3f305e95b9314e827c6a379bb8395138c2e36aa3f6de810dcd"
+      },
+      {
+        "path": "crates/nethacked-sim/src/owner_persistence/runtime/wand_commands.rs",
+        "sha256": "1e567656ae5bce81b2232a5ba1324c0978626f83e0424ae123e8d7e65a287163"
+      },
+      {
+        "path": "crates/nethacked-sim/src/owner_persistence/runtime/wand_commands/domains.rs",
+        "sha256": "1856d87dc9e77d46df30bc96e2ece2a304526a93e224aae6bd6205aba13ecc57"
+      },
+      {
+        "path": "crates/nethacked-sim/src/owner_persistence/runtime/wand_commands/rng.rs",
+        "sha256": "9c8647f170a2ab54442b2b768ac11b326cbbd0e742b80a2ef2800373bf4b920d"
+      },
+      {
+        "path": "crates/nethacked-sim/src/owner_persistence/runtime/wand_gameplay.rs",
+        "sha256": "2b4e90b3a0d4601186a47745d2d5bdf11e9684a3f7a3ad79acd25537f9d60104"
+      },
+      {
+        "path": "crates/nethacked-sim/src/owner_persistence/runtime/wand_gameplay/adapters.rs",
+        "sha256": "6bff652162dc7341698c457286c8244dce5ead124270cd670d193093da3daa2d"
+      },
+      {
+        "path": "crates/nethacked-sim/src/owner_persistence/runtime/wand_gameplay/facts.rs",
+        "sha256": "f42500ffa8c556e4301003abb3b9f6dfaf93c4d28b114e9e91b452531d48f6e9"
+      },
+      {
+        "path": "crates/nethacked-sim/src/owner_persistence/wand_ports.rs",
+        "sha256": "da84d818bb5292f52735f7b7e2911e09eb493991566abf40659ce933f38e2585"
+      },
+      {
+        "path": "crates/nethacked-sim/src/owner_persistence/wand_ports/proposals.rs",
+        "sha256": "5417ce28e0e76c335946f570b4914358a02e3058dcb5257a03a39b1733f38146"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/m5_i2_owner_commands_tests.rs",
+        "sha256": "ff74988135423f9dff24e140c53151d34c543e5638f32163de79b151d3f9d043"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/m5_i2_wand_fallibility_tests.rs",
+        "sha256": "e59fe96cf4c14bacda84c2c55a3956ccefe8a6b3f4e3e17fd0083b4389a020c8"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/m5_i2_wand_owner_tests.rs",
+        "sha256": "13c3597381190018670f36c89e4950be979bcbf5fd048002d31c04ef16b71d76"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/m5_i2_wand_shared_tests.rs",
+        "sha256": "6b70df42302be2c67ab54f3b27ea574be4595ae1a0616c1116d6db99865ba738"
+      },
+      {
+        "path": "crates/nethacked-sim/src/owner_persistence/runtime/tests/wand_gameplay/review_repair.rs",
+        "sha256": "1aeeaefdeba2dc10b3c8a8b2c7c15a7399968b4121da84bd78a1a0c319b4f1dc"
+      }
+    ]
+  },
+  "compatibility": [
+    "Legacy Vec timer failure retains HEAD panic; native try_zap reports typed failure without panic RNG adapter",
+    "Timer insertion with authenticated target observation preserves unobserved registrations; legacy full-residency reconciliation/tie/error order unchanged",
+    "Identity-less legacy wand positive charge retained; explicit identity/class validation retained",
+    "Native placement uses same species terrain rule as shared algorithm; record/occupied/genocide validation retained"
+  ],
+  "coverage_report": "Generated code-reference report refreshed (four additional named references); this is not new C behavior parity or a fidelity claim.",
+  "limits": [
+    "Native gameplay profile opt-in; remaining default host command migration is M6",
+    "I3 lifetime/equipment/timer/shop finalizers remain mandatory, including cleanup of retired targets",
+    "I4 executable replacement and persisted pending operations, I5 combined production witnesses, M6/M7 remain pending",
+    "Existing skill-save ordering caveat remains; differential fixtures clear skills",
+    "Separate53-family missing-C-behavior backlog remains open"
+  ],
+  "efficiency": {
+    "root_usage": "unknown",
+    "latest_writer_uncached_input": 104857,
+    "latest_writer_output": 21151,
+    "assembled_review_uncached_input": 184590,
+    "assembled_review_output": 8605,
+    "soft_limits_exceeded": true,
+    "next_action": "Before I3, implement enforceable per-phase resource stops and revise migration batching/context/review policy; do not claim token savings."
+  }
+}

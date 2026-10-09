@@ -9,7 +9,7 @@ judged in the other parity tables.
 |---|---|---|---|
 | Attack types (AT_*) | 17 | 12 | 70% |
 | Damage types (AD_*) | 47 | 47 | 100% |
-| Objects: wands | 25 | 8 | 32% |
+| Objects: wands | 25 | 12 | 48% |
 | Objects: potions | 26 | 3 | 11% |
 | Objects: scrolls | 23 | 3 | 13% |
 | Objects: spellbooks | 44 | 1 | 2% |
@@ -96,7 +96,7 @@ judged in the other parity tables.
 | C id | Name | Engine references it |
 |---|---|---|
 | `WAN_LIGHT` | wand of light | ❌ |
-| `WAN_SECRET_DOOR_DETECTION` | wand of secret door detection | ❌ |
+| `WAN_SECRET_DOOR_DETECTION` | wand of secret door detection | ✅ |
 | `WAN_ENLIGHTENMENT` | wand of enlightenment | ❌ |
 | `WAN_CREATE_MONSTER` | wand of create monster | ✅ |
 | `WAN_WISHING` | wand of wishing | ✅ |
@@ -107,16 +107,16 @@ judged in the other parity tables.
 | `WAN_SLOW_MONSTER` | wand of slow monster | ❌ |
 | `WAN_SPEED_MONSTER` | wand of speed monster | ❌ |
 | `WAN_UNDEAD_TURNING` | wand of undead turning | ❌ |
-| `WAN_POLYMORPH` | wand of polymorph | ❌ |
+| `WAN_POLYMORPH` | wand of polymorph | ✅ |
 | `WAN_CANCELLATION` | wand of cancellation | ✅ |
-| `WAN_TELEPORTATION` | wand of teleportation | ❌ |
+| `WAN_TELEPORTATION` | wand of teleportation | ✅ |
 | `WAN_OPENING` | wand of opening | ❌ |
 | `WAN_LOCKING` | wand of locking | ❌ |
 | `WAN_PROBING` | wand of probing | ❌ |
 | `WAN_DIGGING` | wand of digging | ✅ |
 | `WAN_MAGIC_MISSILE` | wand of magic missile | ❌ |
 | `WAN_FIRE` | wand of fire | ✅ |
-| `WAN_COLD` | wand of cold | ❌ |
+| `WAN_COLD` | wand of cold | ✅ |
 | `WAN_SLEEP` | wand of sleep | ❌ |
 | `WAN_DEATH` | wand of death | ✅ |
 | `WAN_LIGHTNING` | wand of lightning | ❌ |

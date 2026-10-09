@@ -73,6 +73,62 @@ impl ObjectTimerQueue {
     pub fn entries(&self) -> &[ObjectTimer] {
         &self.entries
     }
+
+    /// Borrowed clock operation; callers supply only object residency lookup.
+    pub(crate) fn reconcile(&mut self, mut exists: impl FnMut(ObjectTimerTarget) -> bool) {
+        self.entries.retain(|timer| exists(timer.target));
+    }
+
+    pub(crate) fn start_at(
+        &mut self,
+        target: ObjectTimerTarget,
+        kind: ObjectTimerKind,
+        due: Option<u64>,
+        mut exists: impl FnMut(ObjectTimerTarget) -> bool,
+    ) -> Result<u64, ObjectTimerError> {
+        self.reconcile(&mut exists);
+        self.start_at_preserving(target, kind, due, exists(target))
+    }
+
+    /// Insert with an authenticated observation of this target only. Other
+    /// registrations remain untouched when their residency was not observed.
+    pub(crate) fn start_at_preserving(
+        &mut self,
+        target: ObjectTimerTarget,
+        kind: ObjectTimerKind,
+        due: Option<u64>,
+        target_exists: bool,
+    ) -> Result<u64, ObjectTimerError> {
+        if !target_exists {
+            return Err(ObjectTimerError::MissingObject);
+        }
+        if self
+            .entries
+            .iter()
+            .any(|t| t.target == target && t.kind == kind)
+        {
+            return Err(ObjectTimerError::Duplicate);
+        }
+        let due = due.ok_or(ObjectTimerError::ClockOverflow)?;
+        let serial = self.next_serial;
+        let next = serial
+            .checked_add(1)
+            .ok_or(ObjectTimerError::SerialOverflow)?;
+        self.next_serial = next;
+        self.insert(ObjectTimer {
+            target,
+            kind,
+            due,
+            serial,
+        });
+        Ok(serial)
+    }
+
+    pub(crate) fn cancel(&mut self, target: ObjectTimerTarget) -> usize {
+        let before = self.entries.len();
+        self.entries.retain(|timer| timer.target != target);
+        before - self.entries.len()
+    }
     fn insert(&mut self, timer: ObjectTimer) {
         // C insert_timer stops at >=: every insertion precedes existing ties,
         // including restored records whose serial is older than live timers.
@@ -269,21 +325,6 @@ impl SimulationWorld {
         }
     }
 
-    fn timer_target_exists(&self, target: ObjectTimerTarget) -> bool {
-        match target {
-            ObjectTimerTarget::Active(id) => self.arena.items.contains_key(id),
-            ObjectTimerTarget::Cached {
-                branch,
-                depth,
-                item,
-            } => self
-                .stored_levels
-                .iter()
-                .find(|(key, _)| *key == (branch, depth))
-                .is_some_and(|(_, stored)| stored.items.iter().any(|(id, _)| *id == item)),
-        }
-    }
-
     /// C start_timer: one timer per object/callback pair, moves + delay.
     /// No RNG, age reset or implicit scheduling occurs here.
     pub fn start_object_timer(
@@ -314,32 +355,20 @@ impl SimulationWorld {
         kind: ObjectTimerKind,
         due: Option<u64>,
     ) -> Result<u64, ObjectTimerError> {
-        self.reconcile_object_timers();
-        if !self.timer_target_exists(target) {
-            return Err(ObjectTimerError::MissingObject);
-        }
-        if self
-            .object_timers
-            .entries
-            .iter()
-            .any(|t| t.target == target && t.kind == kind)
-        {
-            return Err(ObjectTimerError::Duplicate);
-        }
-        let due = due.ok_or(ObjectTimerError::ClockOverflow)?;
-        let serial = self.object_timers.next_serial;
-        let next = serial
-            .checked_add(1)
-            .ok_or(ObjectTimerError::SerialOverflow)?;
-        self.object_timers.next_serial = next;
-        let timer = ObjectTimer {
-            target,
-            kind,
-            due,
-            serial,
-        };
-        self.object_timers.insert(timer);
-        Ok(serial)
+        let items = &self.arena.items;
+        let cached = &self.stored_levels;
+        self.object_timers
+            .start_at(target, kind, due, |target| match target {
+                ObjectTimerTarget::Active(id) => items.contains_key(id),
+                ObjectTimerTarget::Cached {
+                    branch,
+                    depth,
+                    item,
+                } => cached
+                    .iter()
+                    .find(|(key, _)| *key == (branch, depth))
+                    .is_some_and(|(_, stored)| stored.items.iter().any(|(id, _)| *id == item)),
+            })
     }
 
     /// Materialize a sampled tree once, preserving generation order and clock.
@@ -413,11 +442,7 @@ impl SimulationWorld {
 
     /// C obj_stop_timers: invalidate every callback on the object.
     pub fn cancel_object_timers(&mut self, target: ObjectTimerTarget) -> usize {
-        let before = self.object_timers.entries.len();
-        self.object_timers
-            .entries
-            .retain(|timer| timer.target != target);
-        before - self.object_timers.entries.len()
+        self.object_timers.cancel(target)
     }
 
     /// C splitobj copies each surviving callback onto the extracted unit,
@@ -438,11 +463,19 @@ impl SimulationWorld {
 
     /// Direct arena removals are supported: stale generations never dispatch.
     pub(crate) fn reconcile_object_timers(&mut self) {
-        let entries = std::mem::take(&mut self.object_timers.entries);
-        self.object_timers.entries = entries
-            .into_iter()
-            .filter(|timer| self.timer_target_exists(timer.target))
-            .collect();
+        let items = &self.arena.items;
+        let cached = &self.stored_levels;
+        self.object_timers.reconcile(|target| match target {
+            ObjectTimerTarget::Active(id) => items.contains_key(id),
+            ObjectTimerTarget::Cached {
+                branch,
+                depth,
+                item,
+            } => cached
+                .iter()
+                .find(|(key, _)| *key == (branch, depth))
+                .is_some_and(|(_, stored)| stored.items.iter().any(|(id, _)| *id == item)),
+        });
     }
 
     pub(crate) fn validate_object_timers(&self) -> Result<(), String> {

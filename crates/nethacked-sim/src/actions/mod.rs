@@ -10,6 +10,8 @@ pub mod movement;
 pub mod ranged;
 pub mod religion;
 pub mod stairs;
+pub mod wand;
+pub(crate) mod wand_legacy;
 
 use nethacked_core::{energy::NORMAL_SPEED, ActionAst};
 use rand::Rng;

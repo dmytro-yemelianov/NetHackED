@@ -1,7 +1,7 @@
 //! Represented corpse identity/weight and C mkobj.c:388,898 species selection.
 //! Initial rot/Troll recipes are transient; simulation callbacks and glob
 //! conversion remain separate.
-use crate::generation::{rndmonst, MonsterGenContext};
+use crate::generation::{try_rndmonst_adj, MonsterGenContext};
 use crate::roles::RaceId;
 use crate::{MonsterDef, MonsterSpeciesId as M, Ruleset};
 use nethacked_arena::{
@@ -67,14 +67,26 @@ pub fn sample_corpse_timeout(
     context: nethacked_core::corpse_timeout::CorpseTimeoutContext,
     mut rn2: impl FnMut(u32) -> u32,
 ) -> Option<CorpseTimeoutRecipe> {
+    try_sample_corpse_timeout(species, context, |n| {
+        Ok::<_, std::convert::Infallible>(rn2(n))
+    })
+    .unwrap()
+}
+
+/// Fallible timeout sampling, retaining the ordinary noise and revival order.
+pub fn try_sample_corpse_timeout<E>(
+    species: &MonsterDef,
+    context: nethacked_core::corpse_timeout::CorpseTimeoutContext,
+    mut rn2: impl FnMut(u32) -> Result<u32, E>,
+) -> Result<Option<CorpseTimeoutRecipe>, E> {
     use crate::monsters::CorpseTimeoutPolicy;
     if species.corpse_timeout_policy == CorpseTimeoutPolicy::Never {
-        return None;
+        return Ok(None);
     }
-    let delay = nethacked_core::corpse_timeout::initial_rot_delay(context, &mut rn2);
-    Some(match species.corpse_timeout_policy {
+    let delay = nethacked_core::corpse_timeout::try_initial_rot_delay(context, &mut rn2)?;
+    Ok(Some(match species.corpse_timeout_policy {
         CorpseTimeoutPolicy::Ordinary if species.glyph == 'T' => {
-            match nethacked_core::corpse_timeout::initial_troll_revival_delay(rn2) {
+            match nethacked_core::corpse_timeout::try_initial_troll_revival_delay(rn2)? {
                 Some(delay) => CorpseTimeoutRecipe::Revive {
                     sampled_at: context.moves,
                     delay,
@@ -91,7 +103,7 @@ pub fn sample_corpse_timeout(
         },
         CorpseTimeoutPolicy::Rider => CorpseTimeoutRecipe::UnsupportedRider,
         CorpseTimeoutPolicy::Never => unreachable!(),
-    })
+    }))
 }
 
 /// C mon.c:417 undead_to_corpse: dispatch by canonical identity, never name.
@@ -153,7 +165,23 @@ impl Ruleset {
         gone: impl Fn(&MonsterDef) -> bool,
         mut rn2: impl FnMut(u32) -> u32,
     ) -> Option<(&'a MonsterDef, Option<CorpseTimeoutRecipe>)> {
-        let species = self.random_corpse_definition(monsters, gone, &mut rn2)?;
+        self.try_initialize_corpse(item, ctx, monsters, gone, |n| {
+            Ok::<_, std::convert::Infallible>(rn2(n))
+        })
+        .unwrap()
+    }
+
+    fn try_initialize_corpse<'a, E>(
+        &'a self,
+        item: &mut ItemRecord,
+        ctx: crate::containers::ContainerContext,
+        monsters: &MonsterGenContext,
+        gone: impl Fn(&MonsterDef) -> bool,
+        mut rn2: impl FnMut(u32) -> Result<u32, E>,
+    ) -> Result<Option<(&'a MonsterDef, Option<CorpseTimeoutRecipe>)>, E> {
+        let Some(species) = self.try_random_corpse_definition(monsters, gone, &mut rn2)? else {
+            return Ok(None);
+        };
         self.set_corpse_species(item, species);
         item.enchantment = if species.has_flag("neuter") {
             3
@@ -161,12 +189,12 @@ impl Ruleset {
             1
         } else if species.has_flag("male") {
             2
-        } else if rn2(2).min(1) != 0 {
+        } else if rn2(2)?.min(1) != 0 {
             1
         } else {
             2
         };
-        let recipe = sample_corpse_timeout(
+        let recipe = try_sample_corpse_timeout(
             species,
             nethacked_core::corpse_timeout::CorpseTimeoutContext {
                 elapsed_age: item.corpse_age,
@@ -175,8 +203,8 @@ impl Ruleset {
                 in_mklev: ctx.in_mklev,
             },
             rn2,
-        );
-        Some((species, recipe))
+        )?;
+        Ok(Some((species, recipe)))
     }
 
     /// C initialized mkcorpstat: initial random corpse before the actual death
@@ -190,19 +218,38 @@ impl Ruleset {
         gone: impl Fn(&MonsterDef) -> bool,
         mut rn2: impl FnMut(u32) -> u32,
     ) -> Option<crate::containers::GeneratedItem> {
+        self.try_create_initialized_corpse_for_actor(actor, location, ctx, monsters, gone, |n| {
+            Ok::<_, std::convert::Infallible>(rn2(n))
+        })
+        .unwrap()
+    }
+
+    /// Fallible initialized mkcorpstat. Refusal retains consumed draws and
+    /// returns no item or timer operations; no-corpse cases draw nothing.
+    pub fn try_create_initialized_corpse_for_actor<E>(
+        &self,
+        actor: &ActorRecord,
+        location: ItemLocation,
+        ctx: crate::containers::ContainerContext,
+        monsters: &MonsterGenContext,
+        gone: impl Fn(&MonsterDef) -> bool,
+        mut rn2: impl FnMut(u32) -> Result<u32, E>,
+    ) -> Result<Option<crate::containers::GeneratedItem>, E> {
         let actual_def = self.monster_for_actor(actor);
         // C mon.c:892–900: no-corpse deaths return before CORPSTAT_INIT.
         if actual_def.is_some_and(|def| def.gen_flags.iter().any(|flag| flag == "nocorpse")) {
-            return None;
+            return Ok(None);
         }
-        let mut item = self.create_corpse_record_for_actor(actor, location)?;
+        let Some(mut item) = self.create_corpse_record_for_actor(actor, location) else {
+            return Ok(None);
+        };
         let mut operations = Vec::new();
         let mut recipe = None;
         // Unresolved legacy/scripted actors retain unspecified pure records;
         // an unrelated random species must not invent their actual identity.
         if let Some(def) = actual_def {
             let initial_special = if let Some((initial, sampled)) =
-                self.initialize_corpse(&mut item, ctx, monsters, gone, &mut rn2)
+                self.try_initialize_corpse(&mut item, ctx, monsters, gone, &mut rn2)?
             {
                 recipe = sampled;
                 if let Some(sampled) = sampled {
@@ -235,7 +282,7 @@ impl Ruleset {
             self.set_corpse_species(&mut item, final_def);
             if initial_special || special_corpse(final_def) {
                 operations.push(CorpseTimerOperation::Cancel);
-                recipe = sample_corpse_timeout(
+                recipe = try_sample_corpse_timeout(
                     final_def,
                     nethacked_core::corpse_timeout::CorpseTimeoutContext {
                         elapsed_age: item.corpse_age,
@@ -244,18 +291,18 @@ impl Ruleset {
                         in_mklev: ctx.in_mklev,
                     },
                     rn2,
-                );
+                )?;
                 if let Some(sampled) = recipe {
                     operations.push(CorpseTimerOperation::Start(sampled));
                 }
             }
         }
-        Some(crate::containers::GeneratedItem {
+        Ok(Some(crate::containers::GeneratedItem {
             item,
             contents: Vec::new(),
             corpse_timeout: recipe,
             corpse_timer_operations: operations,
-        })
+        }))
     }
 
     /// Apply owned corpse facts without modifying BUC, age or other food state.
@@ -315,14 +362,14 @@ impl Ruleset {
     /// rejection when no level-appropriate common monster exists. Plan B ignores
     /// genocide/extinction like C. Cap at 256 trials for malformed pack flags;
     /// then use the first eligible canonical species, without another draw.
-    fn corpse_monster_number<'a>(
+    fn corpse_monster_number<'a, E>(
         &'a self,
         ctx: &MonsterGenContext,
         gone: &impl Fn(&MonsterDef) -> bool,
-        rn2: &mut impl FnMut(u32) -> u32,
-    ) -> Option<&'a MonsterDef> {
-        if let Some(def) = rndmonst(self, ctx, gone, &mut *rn2) {
-            return Some(def);
+        rn2: &mut impl FnMut(u32) -> Result<u32, E>,
+    ) -> Result<Option<&'a MonsterDef>, E> {
+        if let Some(def) = try_rndmonst_adj(self, ctx, 0, 0, gone, &mut *rn2)? {
+            return Ok(Some(def));
         }
         let eligible = |def: &&MonsterDef| {
             def.id.is_some_and(|id| id < M::LONG_WORM_TAIL)
@@ -333,13 +380,13 @@ impl Ruleset {
                 })
         };
         for _ in 0..256 {
-            let id = M(rn2(M::LONG_WORM_TAIL.index() as u32)
+            let id = M(rn2(M::LONG_WORM_TAIL.index() as u32)?
                 .min(M::LONG_WORM_TAIL.index() as u32 - 1) as u16);
             if let Some(def) = self.monster_by_id(id).filter(eligible) {
-                return Some(def);
+                return Ok(Some(def));
             }
         }
-        self.monsters.iter().filter(eligible).min_by_key(|d| d.id)
+        Ok(self.monsters.iter().filter(eligible).min_by_key(|d| d.id))
     }
 
     /// C corpse branch: 50 attempts after undead conversion, then human. A
@@ -350,8 +397,19 @@ impl Ruleset {
         gone: impl Fn(&MonsterDef) -> bool,
         mut rn2: impl FnMut(u32) -> u32,
     ) -> Option<&'a MonsterDef> {
+        self.try_random_corpse_definition(ctx, gone, |n| Ok::<_, std::convert::Infallible>(rn2(n)))
+            .unwrap()
+    }
+
+    /// Fallible species selection, including every nested fallback attempt.
+    pub fn try_random_corpse_definition<'a, E>(
+        &'a self,
+        ctx: &MonsterGenContext,
+        gone: impl Fn(&MonsterDef) -> bool,
+        mut rn2: impl FnMut(u32) -> Result<u32, E>,
+    ) -> Result<Option<&'a MonsterDef>, E> {
         for _ in 0..50 {
-            let Some(def) = self.corpse_monster_number(ctx, &gone, &mut rn2) else {
+            let Some(def) = self.corpse_monster_number(ctx, &gone, &mut rn2)? else {
                 break;
             };
             let def = match def.id {
@@ -359,9 +417,9 @@ impl Ruleset {
                 None => Some(def),
             };
             if let Some(def) = def.filter(|d| !d.gen_flags.iter().any(|f| f == "nocorpse")) {
-                return Some(def);
+                return Ok(Some(def));
             }
         }
-        self.monster_by_id(M::HUMAN)
+        Ok(self.monster_by_id(M::HUMAN))
     }
 }

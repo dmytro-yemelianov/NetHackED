@@ -144,12 +144,19 @@ impl MonsterDef {
 
     /// C makemon.c:1258–1279, after HP; variable-sex species consume rn2(2).
     pub fn sample_sex(&self, rng: &mut impl Rng) -> ActorSex {
-        self.fixed_sex().unwrap_or_else(|| {
-            if rng.random_range(0..2u32) == 0 {
-                ActorSex::Male
-            } else {
-                ActorSex::Female
-            }
+        self.try_sample_sex(|draw| Ok::<_, std::convert::Infallible>(draw.sample(rng)))
+            .unwrap()
+    }
+
+    /// Fallible sex sampling; fixed flags request no entropy.
+    pub fn try_sample_sex<E>(
+        &self,
+        mut sample: impl FnMut(crate::monsters::MonsterDraw) -> Result<u32, E>,
+    ) -> Result<ActorSex, E> {
+        Ok(match self.fixed_sex() {
+            Some(sex) => sex,
+            None if sample(crate::monsters::MonsterDraw::Below(2))? == 0 => ActorSex::Male,
+            None => ActorSex::Female,
         })
     }
 
@@ -774,7 +781,23 @@ impl Ruleset {
         level_context: (u32, u32),
         rng: &mut impl Rng,
     ) -> ActorRecord {
-        let _identity_draw = rng.random_range(0..2u32);
+        self.try_create_random_monster_record_from_def(def, coord, context, level_context, |draw| {
+            Ok::<_, std::convert::Infallible>(draw.sample(rng))
+        })
+        .unwrap()
+    }
+
+    /// Fallible ordinary initialization. Successful earlier draws remain
+    /// consumed on refusal; no partially initialized actor is returned.
+    pub fn try_create_random_monster_record_from_def<E>(
+        &self,
+        def: &MonsterDef,
+        coord: Coord,
+        context: MonsterSpawnContext,
+        level_context: (u32, u32),
+        mut sample: impl FnMut(crate::monsters::MonsterDraw) -> Result<u32, E>,
+    ) -> Result<ActorRecord, E> {
+        let _identity_draw = sample(crate::monsters::MonsterDraw::Below(2))?;
         let mut actor = if def.sample_hp {
             let adjusted = if def.level > 49 {
                 50
@@ -785,14 +808,19 @@ impl Ruleset {
                     level_context.1,
                 )
             };
-            let hp = crate::monsters::compute_monster_hp_at_level(def, adjusted, context, rng);
+            let hp = crate::monsters::try_compute_monster_hp_at_level(
+                def,
+                adjusted,
+                context,
+                &mut sample,
+            )?;
             let level = crate::monsters::random_monster_spawn_level(def, hp, adjusted);
             def.create_record_with_hp(coord, hp, hp, level)
         } else {
             def.create_record_with_hp(coord, def.base_hp, def.max_hp, def.level)
         };
-        actor.sex = Some(def.sample_sex(rng));
-        actor
+        actor.sex = Some(def.try_sample_sex(&mut sample)?);
+        Ok(actor)
     }
 
     /// Detached ordinary revival initialization. Consume C's nonwrapping
