@@ -20,6 +20,96 @@ use serde::{Deserialize, Serialize};
 
 use crate::events::GameEvent;
 
+pub(crate) fn validate_bill_object<'a>(
+    id: ItemId,
+    items: &'a nethacked_arena::ItemStorage,
+    player_id: ActorId,
+    billing: &BillingState,
+    ruleset: &Ruleset,
+) -> Result<&'a nethacked_arena::ItemRecord, BillError> {
+    if billing.consumed.iter().any(|bill| bill.origin == id) {
+        return Err(BillError::AlreadyConsumed);
+    }
+    let object = items.get(id).ok_or(BillError::StaleItem)?;
+    if object.location != ItemLocation::CarriedBy(player_id) {
+        return Err(BillError::NotCarried);
+    }
+    let rs = ruleset;
+    let def = match &object.definition {
+        Some(identity) => rs.item_for_definition(identity),
+        None => rs.item(&object.name),
+    }
+    .ok_or(BillError::InvalidDefinition)?;
+    if def.class != object.class {
+        return Err(BillError::InvalidDefinition);
+    }
+    if object.class != ItemClass::Wand
+        || object.is_container
+        || items
+            .iter()
+            .any(|(_, item)| item.location == ItemLocation::InContainer(id))
+    {
+        return Err(BillError::UnsupportedBillingScope);
+    }
+    if object.quantity == 0 {
+        return Err(BillError::ZeroQuantity);
+    }
+    Ok(object)
+}
+
+pub(crate) fn bill_ledger<'a>(
+    id: ItemId,
+    unpaid_items: &'a [(ItemId, u32)],
+    billing: &'a BillingState,
+    cached_unpaid: impl Iterator<Item = &'a (ItemId, u32)>,
+    cached_contains: bool,
+) -> Result<(Option<u32>, Option<&'a BillTerms>), BillError> {
+    let tuples: Vec<_> = unpaid_items
+        .iter()
+        .chain(cached_unpaid)
+        .filter(|(i, _)| *i == id)
+        .collect();
+    let receipts: Vec<_> = billing
+        .live_terms
+        .iter()
+        .filter(|(i, _)| *i == id)
+        .collect();
+    if tuples.len() > 1 || receipts.len() > 1 || cached_contains {
+        return Err(BillError::DuplicateLedger);
+    }
+    if !receipts.is_empty() && tuples.is_empty() {
+        return Err(BillError::InvalidReceipt);
+    }
+    // A carried item must belong to the active compatibility ledger.
+    if !tuples.is_empty() && !unpaid_items.iter().any(|(i, _)| *i == id) {
+        return Err(BillError::InvalidReceipt);
+    }
+    Ok((
+        tuples.first().map(|(_, base)| *base),
+        receipts.first().map(|(_, terms)| terms),
+    ))
+}
+
+pub(crate) fn validate_bill_terms(
+    terms: &BillTerms,
+    quantity: u32,
+    base: u32,
+) -> Result<(), BillError> {
+    if terms.legacy_base_cost != base {
+        return Err(BillError::InvalidReceipt);
+    }
+    let (Some(q), Some(price)) = (terms.billed_quantity, terms.unit_price) else {
+        return Err(BillError::InvalidReceipt);
+    };
+    if q == 0 || price == 0 || u64::from(q) * u64::from(price) > i64::MAX as u64 {
+        return Err(BillError::InvalidReceipt);
+    }
+    if q != quantity {
+        return Err(BillError::UnsupportedBillingScope);
+    }
+    Ok(())
+}
+
 /// Stored state of a dungeon level when player travels to other floors.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StoredLevel {
@@ -59,7 +149,7 @@ pub struct BillingState {
     pub consumed: Vec<ConsumedBillRecord>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BillError {
     AlreadyConsumed,
     StaleItem,
@@ -143,6 +233,117 @@ impl std::fmt::Display for LoadError {
 }
 
 impl std::error::Error for LoadError {}
+
+/// Borrowed level membership shared by native loading and owner admission.
+pub(crate) struct BillingLevel<'a> {
+    pub items: &'a [(ItemId, nethacked_arena::ItemRecord)],
+    pub unpaid_items: &'a [(ItemId, u32)],
+}
+
+pub(crate) fn validate_billing_parts(
+    ruleset: &Ruleset,
+    items: &nethacked_arena::ItemStorage,
+    unpaid_items: &[(ItemId, u32)],
+    billing: &BillingState,
+    stored_levels: &[BillingLevel<'_>],
+) -> Result<(), BillError> {
+    let rs = ruleset;
+    let validate_object = |object: &nethacked_arena::ItemRecord| {
+        let def = match &object.definition {
+            Some(identity) => rs.item_for_definition(identity),
+            None => rs.item(&object.name),
+        }
+        .ok_or(BillError::InvalidDefinition)?;
+        if def.class != object.class {
+            return Err(BillError::InvalidDefinition);
+        }
+        if object.class != ItemClass::Wand || object.is_container {
+            return Err(BillError::UnsupportedBillingScope);
+        }
+        if object.quantity == 0 {
+            return Err(BillError::ZeroQuantity);
+        }
+        Ok(())
+    };
+    let mut seen = std::collections::BTreeSet::new();
+    for (id, terms) in &billing.live_terms {
+        if !seen.insert(*id) {
+            return Err(BillError::DuplicateLedger);
+        }
+        let mut owners = items.get(*id).into_iter().chain(
+            stored_levels
+                .iter()
+                .flat_map(|level| level.items)
+                .filter(|(i, _)| i == id)
+                .map(|(_, object)| object),
+        );
+        let object = owners.next().ok_or(BillError::StaleItem)?;
+        if owners.next().is_some() {
+            return Err(BillError::DuplicateLedger);
+        }
+        let mut tuples = unpaid_items
+            .iter()
+            .chain(stored_levels.iter().flat_map(|level| level.unpaid_items))
+            .filter(|(i, _)| i == id);
+        let (_, base) = tuples.next().ok_or(BillError::InvalidReceipt)?;
+        if tuples.next().is_some() {
+            return Err(BillError::DuplicateLedger);
+        }
+        // The tuple and its object must belong to the same level owner.
+        if items.contains_key(*id) {
+            if !unpaid_items.iter().any(|(i, _)| i == id) {
+                return Err(BillError::InvalidReceipt);
+            }
+        } else if !stored_levels.iter().any(|level| {
+            level.items.iter().any(|(i, _)| i == id)
+                && level.unpaid_items.iter().any(|(i, _)| i == id)
+        }) {
+            return Err(BillError::InvalidReceipt);
+        }
+        validate_object(object)?;
+        if items
+            .iter()
+            .map(|(_, object)| object)
+            .chain(
+                stored_levels
+                    .iter()
+                    .flat_map(|level| level.items.iter().map(|(_, object)| object)),
+            )
+            .any(|object| object.location == ItemLocation::InContainer(*id))
+        {
+            return Err(BillError::UnsupportedBillingScope);
+        }
+        validate_bill_terms(terms, object.quantity, *base)?;
+    }
+    for bill in &billing.consumed {
+        if !seen.insert(bill.origin)
+            || items.contains_key(bill.origin)
+            || stored_levels.iter().any(|level| {
+                level.items.iter().any(|(id, _)| *id == bill.origin)
+                    || level.unpaid_items.iter().any(|(id, _)| *id == bill.origin)
+            })
+            || unpaid_items.iter().any(|(id, _)| *id == bill.origin)
+        {
+            return Err(BillError::DuplicateLedger);
+        }
+        validate_object(&bill.object)?;
+        if bill.object.location != ItemLocation::Limbo {
+            return Err(BillError::InvalidReceipt);
+        }
+        if bill.terms.billed_quantity.is_none() && bill.terms.unit_price.is_none() {
+            if bill.terms.creditor.is_some() {
+                return Err(BillError::InvalidReceipt);
+            }
+        } else {
+            validate_bill_terms(
+                &bill.terms,
+                bill.object.quantity,
+                bill.terms.legacy_base_cost,
+            )?;
+        }
+    }
+    Ok(())
+}
 
 /// The complete, deterministic game simulation world.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -579,6 +780,19 @@ impl SimulationWorld {
         rs: Arc<Ruleset>,
         rref: &RulesetRef,
     ) -> Result<Self, LoadError> {
+        // Keep the legacy acceptance contract, including no post-catchup
+        // rejection. The bounded owner boundary additionally revalidates.
+        Ok(Self::prepare_native_import(json, rs, rref)?.catch_up_native_import())
+    }
+
+    /// Compatibility decoder only: preserve native serde policies and error order.
+    /// Queue validation is structural and needs no restored item tags. These
+    /// native checks precede normalization; no registry migration runs here.
+    pub(crate) fn decode_native_import(
+        json: &str,
+        rs: Arc<Ruleset>,
+        rref: &RulesetRef,
+    ) -> Result<(Self, bool, bool), LoadError> {
         let value: serde_json::Value =
             serde_json::from_str(json).map_err(|e| LoadError::Json(e.to_string()))?;
         let legacy_equipment = value.get("equipment").is_none();
@@ -601,6 +815,27 @@ impl SimulationWorld {
         world
             .validate_billing_snapshot()
             .map_err(|error| LoadError::Json(format!("billing: {error:?}")))?;
+        if !legacy_object_timers {
+            world.validate_object_timers().map_err(LoadError::Json)?;
+        }
+        Ok((world, legacy_equipment, legacy_object_timers))
+    }
+
+    /// Normalize accepted native absence/tags and restore queue ordering once.
+    /// This is not a user/registry migration or complete owner admission.
+    pub(crate) fn prepare_native_import(
+        json: &str,
+        rs: Arc<Ruleset>,
+        rref: &RulesetRef,
+    ) -> Result<Self, LoadError> {
+        Self::normalize_native_import(Self::decode_native_import(json, rs, rref)?)
+    }
+
+    /// The approved legacy transformation; callers must first use the native
+    /// decoder and old-schema validators, without catchup or normalization.
+    pub(crate) fn normalize_native_import(
+        (mut world, legacy_equipment, legacy_object_timers): (Self, bool, bool),
+    ) -> Result<Self, LoadError> {
         // Old saves lack these optional tags. Resolve through the owned
         // definition's canonical identity/profile, without guessing by name.
         let restore_tags = |item: &mut nethacked_arena::ItemRecord| {
@@ -653,21 +888,35 @@ impl SimulationWorld {
         world.reconcile_equipment();
         world.recompute_hero_ac();
         if !legacy_object_timers {
-            world.validate_object_timers().map_err(LoadError::Json)?;
             world.restore_saved_object_timers();
         } else {
             world
                 .migrate_absent_corpse_timers()
                 .map_err(|error| LoadError::Json(format!("legacy corpse timer: {error:?}")))?;
         }
+        Ok(world)
+    }
+
+    /// Shared catchup, without broadening the public legacy load contract.
+    fn catch_up_native_import(mut self) -> Self {
         // New absent-owner samples are already installed in source insertion
         // order; saved-owner restoration must not reverse their ties again.
         // C restore.c:930 catches up after object references are restored.
         // No clock advance; off-level timers remain deferred.
-        let expired = world.run_object_timers();
+        let expired = self.run_object_timers();
         if !expired.is_empty() {
-            world.record_events(&expired);
+            self.record_events(&expired);
         }
+        self
+    }
+
+    /// Consume hidden detached state, catch up once, then validate the result.
+    pub(crate) fn complete_native_import(self) -> Result<Self, LoadError> {
+        let world = self.catch_up_native_import();
+        world
+            .validate_billing_snapshot()
+            .map_err(|error| LoadError::Json(format!("billing: {error:?}")))?;
+        world.validate_object_timers().map_err(LoadError::Json)?;
         Ok(world)
     }
 
@@ -799,194 +1048,50 @@ impl SimulationWorld {
     }
 
     /// Read-only save preflight. Historical origins/creditors are not live lookups.
-    fn validate_billing_snapshot(&self) -> Result<(), BillError> {
-        let rs = Arc::clone(&self.ruleset);
-        let validate_object = |object: &nethacked_arena::ItemRecord| {
-            let def = match &object.definition {
-                Some(identity) => rs.item_for_definition(identity),
-                None => rs.item(&object.name),
-            }
-            .ok_or(BillError::InvalidDefinition)?;
-            if def.class != object.class {
-                return Err(BillError::InvalidDefinition);
-            }
-            if object.class != ItemClass::Wand || object.is_container {
-                return Err(BillError::UnsupportedBillingScope);
-            }
-            if object.quantity == 0 {
-                return Err(BillError::ZeroQuantity);
-            }
-            Ok(())
-        };
-        let mut seen = std::collections::BTreeSet::new();
-        for (id, terms) in &self.billing.live_terms {
-            if !seen.insert(*id) {
-                return Err(BillError::DuplicateLedger);
-            }
-            let mut owners = self.arena.items.get(*id).into_iter().chain(
-                self.stored_levels
-                    .iter()
-                    .flat_map(|(_, level)| &level.items)
-                    .filter(|(i, _)| i == id)
-                    .map(|(_, object)| object),
-            );
-            let object = owners.next().ok_or(BillError::StaleItem)?;
-            if owners.next().is_some() {
-                return Err(BillError::DuplicateLedger);
-            }
-            let mut tuples = self
-                .unpaid_items
-                .iter()
-                .chain(
-                    self.stored_levels
-                        .iter()
-                        .flat_map(|(_, level)| &level.unpaid_items),
-                )
-                .filter(|(i, _)| i == id);
-            let (_, base) = tuples.next().ok_or(BillError::InvalidReceipt)?;
-            if tuples.next().is_some() {
-                return Err(BillError::DuplicateLedger);
-            }
-            // The tuple and its object must belong to the same level owner.
-            if self.arena.items.contains_key(*id) {
-                if !self.unpaid_items.iter().any(|(i, _)| i == id) {
-                    return Err(BillError::InvalidReceipt);
-                }
-            } else if !self.stored_levels.iter().any(|(_, level)| {
-                level.items.iter().any(|(i, _)| i == id)
-                    && level.unpaid_items.iter().any(|(i, _)| i == id)
-            }) {
-                return Err(BillError::InvalidReceipt);
-            }
-            validate_object(object)?;
-            if self
-                .arena
-                .items
-                .iter()
-                .map(|(_, object)| object)
-                .chain(
-                    self.stored_levels
-                        .iter()
-                        .flat_map(|(_, level)| level.items.iter().map(|(_, object)| object)),
-                )
-                .any(|object| object.location == ItemLocation::InContainer(*id))
-            {
-                return Err(BillError::UnsupportedBillingScope);
-            }
-            Self::validate_bill_terms(terms, object.quantity, *base)?;
-        }
-        for bill in &self.billing.consumed {
-            if !seen.insert(bill.origin)
-                || self.arena.items.contains_key(bill.origin)
-                || self.stored_levels.iter().any(|(_, level)| {
-                    level.items.iter().any(|(id, _)| *id == bill.origin)
-                        || level.unpaid_items.iter().any(|(id, _)| *id == bill.origin)
-                })
-                || self.unpaid_items.iter().any(|(id, _)| *id == bill.origin)
-            {
-                return Err(BillError::DuplicateLedger);
-            }
-            validate_object(&bill.object)?;
-            if bill.object.location != ItemLocation::Limbo {
-                return Err(BillError::InvalidReceipt);
-            }
-            if bill.terms.billed_quantity.is_none() && bill.terms.unit_price.is_none() {
-                if bill.terms.creditor.is_some() {
-                    return Err(BillError::InvalidReceipt);
-                }
-            } else {
-                Self::validate_bill_terms(
-                    &bill.terms,
-                    bill.object.quantity,
-                    bill.terms.legacy_base_cost,
-                )?;
-            }
-        }
-        Ok(())
+    pub(crate) fn validate_billing_snapshot(&self) -> Result<(), BillError> {
+        let levels: Vec<_> = self
+            .stored_levels
+            .iter()
+            .map(|(_, level)| BillingLevel {
+                items: &level.items,
+                unpaid_items: &level.unpaid_items,
+            })
+            .collect();
+        validate_billing_parts(
+            &self.ruleset,
+            &self.arena.items,
+            &self.unpaid_items,
+            &self.billing,
+            &levels,
+        )
     }
 
     fn validate_bill_object(&self, id: ItemId) -> Result<&nethacked_arena::ItemRecord, BillError> {
-        if self.billing.consumed.iter().any(|bill| bill.origin == id) {
-            return Err(BillError::AlreadyConsumed);
-        }
-        let object = self.arena.items.get(id).ok_or(BillError::StaleItem)?;
-        if object.location != ItemLocation::CarriedBy(self.player_id) {
-            return Err(BillError::NotCarried);
-        }
-        let rs = Arc::clone(&self.ruleset);
-        let def = match &object.definition {
-            Some(identity) => rs.item_for_definition(identity),
-            None => rs.item(&object.name),
-        }
-        .ok_or(BillError::InvalidDefinition)?;
-        if def.class != object.class {
-            return Err(BillError::InvalidDefinition);
-        }
-        if object.class != ItemClass::Wand
-            || object.is_container
-            || !self.arena.items_in_container(id).is_empty()
-        {
-            return Err(BillError::UnsupportedBillingScope);
-        }
-        if object.quantity == 0 {
-            return Err(BillError::ZeroQuantity);
-        }
-        Ok(object)
+        validate_bill_object(
+            id,
+            &self.arena.items,
+            self.player_id,
+            &self.billing,
+            &self.ruleset,
+        )
     }
 
     fn bill_ledger(&self, id: ItemId) -> Result<(Option<u32>, Option<&BillTerms>), BillError> {
-        let tuples: Vec<_> = self
-            .unpaid_items
-            .iter()
-            .chain(
-                self.stored_levels
-                    .iter()
-                    .flat_map(|(_, level)| level.unpaid_items.iter()),
-            )
-            .filter(|(i, _)| *i == id)
-            .collect();
-        let receipts: Vec<_> = self
-            .billing
-            .live_terms
-            .iter()
-            .filter(|(i, _)| *i == id)
-            .collect();
-        if tuples.len() > 1
-            || receipts.len() > 1
-            || self
-                .stored_levels
+        bill_ledger(
+            id,
+            &self.unpaid_items,
+            &self.billing,
+            self.stored_levels
                 .iter()
-                .any(|(_, level)| level.items.iter().any(|(i, _)| *i == id))
-        {
-            return Err(BillError::DuplicateLedger);
-        }
-        if !receipts.is_empty() && tuples.is_empty() {
-            return Err(BillError::InvalidReceipt);
-        }
-        // A carried item must belong to the active compatibility ledger.
-        if !tuples.is_empty() && !self.unpaid_items.iter().any(|(i, _)| *i == id) {
-            return Err(BillError::InvalidReceipt);
-        }
-        Ok((
-            tuples.first().map(|(_, base)| *base),
-            receipts.first().map(|(_, terms)| terms),
-        ))
+                .flat_map(|(_, level)| level.unpaid_items.iter()),
+            self.stored_levels
+                .iter()
+                .any(|(_, level)| level.items.iter().any(|(i, _)| *i == id)),
+        )
     }
 
     fn validate_bill_terms(terms: &BillTerms, quantity: u32, base: u32) -> Result<(), BillError> {
-        if terms.legacy_base_cost != base {
-            return Err(BillError::InvalidReceipt);
-        }
-        let (Some(q), Some(price)) = (terms.billed_quantity, terms.unit_price) else {
-            return Err(BillError::InvalidReceipt);
-        };
-        if q == 0 || price == 0 || u64::from(q) * u64::from(price) > i64::MAX as u64 {
-            return Err(BillError::InvalidReceipt);
-        }
-        if q != quantity {
-            return Err(BillError::UnsupportedBillingScope);
-        }
-        Ok(())
+        validate_bill_terms(terms, quantity, base)
     }
 
     /// Admit prescribed source terms once. This does not calculate historical prices.

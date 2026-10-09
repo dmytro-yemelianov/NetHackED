@@ -48,6 +48,28 @@ pub struct ObjectTimerQueue {
 }
 
 impl ObjectTimerQueue {
+    pub(crate) fn validate_snapshot(&self) -> Result<(), String> {
+        let timers = &self.entries;
+        for (index, timer) in timers.iter().enumerate() {
+            if timer.serial >= self.next_serial {
+                return Err("object timer serial exceeds persisted insertion counter".into());
+            }
+            if timers[..index].iter().any(|previous| {
+                previous.serial == timer.serial
+                    || (previous.target == timer.target && previous.kind == timer.kind)
+            }) {
+                return Err("duplicate persisted object timer".into());
+            }
+            if index > 0 {
+                let previous = timers[index - 1];
+                if previous.due > timer.due {
+                    return Err("persisted object timers are out of due order".into());
+                }
+            }
+        }
+        Ok(())
+    }
+
     pub fn entries(&self) -> &[ObjectTimer] {
         &self.entries
     }
@@ -424,25 +446,7 @@ impl SimulationWorld {
     }
 
     pub(crate) fn validate_object_timers(&self) -> Result<(), String> {
-        let timers = &self.object_timers.entries;
-        for (index, timer) in timers.iter().enumerate() {
-            if timer.serial >= self.object_timers.next_serial {
-                return Err("object timer serial exceeds persisted insertion counter".into());
-            }
-            if timers[..index].iter().any(|previous| {
-                previous.serial == timer.serial
-                    || (previous.target == timer.target && previous.kind == timer.kind)
-            }) {
-                return Err("duplicate persisted object timer".into());
-            }
-            if index > 0 {
-                let previous = timers[index - 1];
-                if previous.due > timer.due {
-                    return Err("persisted object timers are out of due order".into());
-                }
-            }
-        }
-        Ok(())
+        self.object_timers.validate_snapshot()
     }
 
     pub(crate) fn cache_object_timers(&mut self, branch: BranchId, depth: usize, items: &[ItemId]) {

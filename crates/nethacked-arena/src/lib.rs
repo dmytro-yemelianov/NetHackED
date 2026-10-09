@@ -183,14 +183,19 @@ impl SavedMonsterTraits {
     }
 }
 
+/// Native item allocation state, including generational slots.
+pub type ItemStorage = SlotMap<ItemId, ItemRecord>;
+/// Native actor allocation state, including generational slots.
+pub type ActorStorage = SlotMap<ActorId, ActorRecord>;
+
 /// The centralized entity arena replacing all ambient pointers.
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct EntityArena {
     /// All artifacts ever created, including destroyed and cached objects.
     #[serde(default, skip_serializing_if = "std::collections::BTreeSet::is_empty")]
     pub artifact_history: std::collections::BTreeSet<String>,
-    pub items: SlotMap<ItemId, ItemRecord>,
-    pub actors: SlotMap<ActorId, ActorRecord>,
+    pub items: ItemStorage,
+    pub actors: ActorStorage,
 }
 
 impl EntityArena {

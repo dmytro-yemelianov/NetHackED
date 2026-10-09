@@ -1,0 +1,80 @@
+{
+  "schema": 1,
+  "status": "reviewed_and_verified_in_containing_commit",
+  "baseline_head": "6e1f5d1b3cfb222280ba5813650c420c87de4484",
+  "milestone": "M4d-D5",
+  "scope": "Native legacy compatibility through nine independent owners, public Billing command, bounded exact migration registry and atomic restore admission",
+  "contract": {
+    "path": "/Users/dmytro/github/NetRust/docs/plans/2026-10-08-owner-persistence-contract.md",
+    "sha256": "7f04e7118c33245a6aa0da16352eaa022d7753dc191bddaeb4963a9ddf55b569"
+  },
+  "prerequisite": {
+    "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-09-microkernel-session-composition-checkpoint.json",
+    "sha256": "d889c3c3cd9aa5ec0f6306477c370da72ac21cb3cc49eac0cc89e7b4ab317e3d"
+  },
+  "review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-LEGACY-BRIDGE/review/REVIEW.json",
+    "sha256": "1aa1de38f27a2706b7f071879bfab77fc506c8c2de2ea4221792413f5b158a42"
+  },
+  "source_bindings": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-LEGACY-BRIDGE/migration-evidence/source.json",
+    "sha256": "f3fda49dbe12929e253656d75cb4f616dce68ff12d3a1938e35c796c7184d366"
+  },
+  "full_gates": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-LEGACY-BRIDGE/final-gates/accepted.json",
+    "sha256": "b5d13274fc61de2d10d74e4c794823810900402a11631d5b237ad1c080bc38a4"
+  },
+  "gate_result": {
+    "head": "6e1f5d1b3cfb222280ba5813650c420c87de4484",
+    "tests": 1410,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "digest": "5396980dd4e0757f2a768385fe0eea533feaf089c978f50a48ab496b281a22c4",
+    "checks": 12
+  },
+  "source_input_count": 504,
+  "focused_tests": 56,
+  "verified_behavior": [
+    "Exhaustive typed partition of native and cached state; independent owner allocations retain arena generations, native scoped identities, order, RNG and timer state. World exists only at detached compatibility boundaries.",
+    "Real native import, separate owner bytes, source destruction, fresh reconstruction, public Billing-only record_bill_terms, detached native export and production reload match legacy reference behavior.",
+    "Source legacy validation precedes approved normalization; due-timer catchup remains hidden, runs once after pre-catchup reference admission, and is revalidated. Public legacy loader semantics and absence/default policies remain.",
+    "Host registry resolves exact source/target/transform identities before decoding; malformed source invokes available transformation zero times. Actual owner schema migration validates old state and target before factories.",
+    "Native live/cached reference admission precedes executable restore factories. Malformed references preserve a populated destination; consumed creditor/item origins remain historical and unknown legacy debt remains unresolved."
+  ],
+  "evidence": {
+    "native-boundary-evidence": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-LEGACY-BRIDGE/native-boundary-evidence/result.json",
+      "sha256": "50f1e704703162c6abb7f91639df3a795c3d41ccbe4b71ca612e31e49be99de7"
+    },
+    "partitions-evidence": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-LEGACY-BRIDGE/partitions-evidence/result.json",
+      "sha256": "01725774323293dbe199a25b648a25d8d3edf62db9072a156f117eab67d36bbf"
+    },
+    "owner-runtime-evidence": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-LEGACY-BRIDGE/owner-runtime-evidence/result.json",
+      "sha256": "ac050b2593bffd13d9362bb46c56496a5b85cfab427cef7e58088d2df7f0f65d"
+    },
+    "state-admission-evidence": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-LEGACY-BRIDGE/state-admission-evidence/result.json",
+      "sha256": "b404abe738b013959f7543ff3ec0abde8e63ac5af4d614a790030a3e75d1d06f"
+    },
+    "migration-evidence": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-LEGACY-BRIDGE/migration-evidence/result.json",
+      "sha256": "f494dc57b68b8481e4e175736feca9351f99da4411da05edb4ec388351245534"
+    }
+  },
+  "review_usage": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-LEGACY-BRIDGE/review/usage.json",
+    "sha256": "a0f0bb617ce5c6457c25e771d04b024912e4c56951df1de61fb3eb80240f8c37"
+  },
+  "limits": [
+    "Trusted native codec purity, bounds and alias exclusion remain host premises.",
+    "Populated native skill byte order retains NATIVE-SAVE-SKILL-ORDER.",
+    "No arbitrary gameplay continuation through World behind the owner facade; domain commands migrate in M5/M6.",
+    "D6 full A5 and M5-M7 remain mandatory. Separate 53-family missing-behavior scope is unchanged."
+  ],
+  "next": "M4d-D6"
+}

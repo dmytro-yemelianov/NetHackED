@@ -5,7 +5,7 @@
   "plan_sha256": "a137874bb8523b04d614818d2ca55c7dcb8363d7a136ee6934298d85e04d2d41",
   "native_goal": "Complete NetRust microkernel architecture program; formal contracts, executable extensions, existing NetHack migration, integration audit",
   "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
-  "active_unit": "M4d-D5",
+  "active_unit": "M4d-D6",
   "live_handles": [],
   "acceptance": {
     "A1": "passed_generic_runtime_1fc3290",
@@ -525,7 +525,7 @@
             },
             {
               "id": "M4d-D5",
-              "status": "planned",
+              "status": "accepted",
               "depends_on": [
                 "M4d-D4"
               ],
@@ -536,7 +536,10 @@
                 "Real supported native legacy import to separate owner bytes, fresh restored facade, state-changing receipt command, native export/reload equivalence",
                 "Preserve RNG/timer/event ordering, active/cached live identity remap and consumed historical origins",
                 "Malformed old state invokes available migrator zero times; missing validator/migration/hash/schema/receipt/ref failures preserve destination"
-              ]
+              ],
+              "implementation_step": "Independent PASS_D5; 56 focused tests, full12/all3 and containing commit deliver the complete D5 bridge. D6 aggregate acceptance remains.",
+              "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-legacy-bridge-checkpoint.json",
+              "checkpoint_sha256": "e8eef60b2f8fa8521b95ee746099e09e2a5dbc16b1dc390829e914442daa7e01"
             },
             {
               "id": "M4d-D6",
@@ -813,7 +816,7 @@
       "concrete owner-state persistence contract",
       "NetHack domain migration"
     ],
-    "current_limit": "D4e coherent concrete session composition accepted. D5 native compatibility/nine independent NetHack owners, D6 full A5 and M5-M7 production migration remain.",
+    "current_limit": "D5 native compatibility and nine independent native domain owners accepted. D6 full A5 and M5-M7 production domain migration remain.",
     "implementation_claim": true,
     "contract": "docs/plans/2026-10-08-autonomous-ownership-contract.md",
     "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-services-checkpoint.json",

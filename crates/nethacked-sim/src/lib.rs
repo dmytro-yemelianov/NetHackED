@@ -9,6 +9,7 @@ pub mod events;
 mod monster_generation;
 pub mod monsters;
 pub mod object_timers;
+pub mod owner_persistence;
 pub mod peace;
 pub mod progress;
 pub mod turns;

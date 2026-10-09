@@ -1079,6 +1079,24 @@ impl SessionFactory {
             vec![(binding, Rc::new(self))],
         )
     }
+
+    /// Pure, bounded inspection for additional host-profile state admission.
+    /// Parsing and source pairing do not authorize restoration; `build` still
+    /// applies the complete configured catalog and authority checks.
+    pub fn inspect_owner_states(
+        &self,
+        bytes: &[u8],
+    ) -> Result<(Vec<OwnerRow>, owners::ExecutionCheckpoint), runtime::Error> {
+        let p = Parsed::parse(bytes, self.authority.limits)?;
+        p.owners
+            .preflight_source(
+                &p.kernel,
+                &self.authority.owner_limits,
+                &self.authority.publication_limits,
+            )
+            .map_err(refused)?;
+        Ok((p.wire.owners, p.owners))
+    }
 }
 struct Parsed {
     wire: Wire,

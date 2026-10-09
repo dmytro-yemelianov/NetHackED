@@ -203,6 +203,19 @@ pub struct ExecutionCheckpoint {
     pending: PendingCheckpoint,
 }
 impl ExecutionCheckpoint {
+    /// Borrow sealed live payloads for host profile admission before factories.
+    /// These are untrusted checkpoint bytes, not live state or an approval.
+    pub fn state_payloads(&self) -> impl Iterator<Item = (OwnerId, &CodecIdentity, &[u8])> {
+        self.state
+            .owners
+            .iter()
+            .filter(|row| row.live)
+            .filter_map(|row| {
+                row.codec
+                    .as_ref()
+                    .map(|codec| (row.old, codec, row.payload.as_slice()))
+            })
+    }
     /// Exact unavailable dependency, without decoding state or invoking factories.
     pub fn missing_owner_dependency<T>(
         &self,
