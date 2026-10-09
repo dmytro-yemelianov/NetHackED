@@ -16,7 +16,7 @@ pub(crate) mod retention;
 use retention::{Retention, Routing};
 
 /// Trusted bounded native code. A refusal must precede its own effects.
-/// Callbacks receive only a lifetime-bound guest-only pure bridge, never a
+/// Callbacks receive lifetime-bound declared-dependency bridges, never a
 /// mutable kernel or ambient host services. Native purity remains trusted.
 pub type NativePort = Rc<dyn Fn(&[u8], &CallerView) -> Result<Vec<u8>>>;
 
@@ -73,6 +73,16 @@ struct PureBridge<'a> {
 impl std::fmt::Debug for PureBridge<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str("PureBridge")
+    }
+}
+impl DependencyCall for PureBridge<'_> {
+    fn call(&self, slot: usize, request: &[u8]) -> Result<Vec<u8>> {
+        if self.frame.pure {
+            return Err(Error::Authority);
+        }
+        self.kernel.attempt_slot(&self.frame, self.budget)?;
+        self.kernel
+            .call_slot(&self.frame, slot, request, self.budget)
     }
 }
 impl PureCall for PureBridge<'_> {
@@ -326,6 +336,18 @@ impl Kernel {
     pub fn manifest(&self, handle: ModuleHandle) -> Result<&Manifest> {
         self.session.check_live().map_err(session_error)?;
         Ok(&self.registration(handle)?.manifest)
+    }
+    /// Trusted-host metadata lookup for an exactly approved public module.
+    /// Returns its current instance/generation, without dispatch, extension
+    /// resolution, grants or an authenticated CallerView. Native collaborators
+    /// continue to use their invocation's declared dependency slots.
+    pub fn registered_module(&self, manifest: &Manifest) -> Result<ModuleHandle> {
+        self.session.check_live().map_err(session_error)?;
+        let handle = *self.ids.get(&manifest.id).ok_or(Error::MissingDependency)?;
+        if self.registration(handle)?.manifest != *manifest {
+            return Err(Error::Authority);
+        }
+        Ok(handle)
     }
     pub fn artifact(&self, handle: ModuleHandle) -> Result<[u8; 32]> {
         self.session.check_live().map_err(session_error)?;
@@ -774,6 +796,7 @@ impl Kernel {
                 .cloned(),
             callback_capture: Some(&factory),
             pure_call: Some(&bridge),
+            dependency_call: (!pure).then_some(&bridge as &dyn DependencyCall),
         };
         let reply = match &reg.code {
             Code::Native(ports) => ports.get(&endpoint).ok_or(Error::Signature)?(request, &view)?,

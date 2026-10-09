@@ -1,6 +1,6 @@
 //! Current-schema D4 session composition. World exists only in detached native
 //! import/export, never in a port, behavior, registry or publication callback.
-use super::{partitions::*, NativeImportRegistry, NativePartitions};
+use super::{partitions::*, wand_ports as wand, NativeImportRegistry, NativePartitions};
 use crate::world::{bill_ledger, validate_bill_object, validate_bill_terms, BillError, BillTerms};
 use crate::{LoadError, Ruleset, RulesetRef, SimulationWorld};
 use nethacked_arena::ItemId;
@@ -62,8 +62,9 @@ impl From<pr::Error> for OwnerBridgeError {
 /// It carries no source owners, World, closures over payloads, or mutable state.
 #[derive(Clone)]
 pub struct OwnerBridgeConfig {
-    ruleset: Arc<Ruleset>,
-    ruleset_ref: RulesetRef,
+    pub(super) ruleset: Arc<Ruleset>,
+    pub(super) ruleset_ref: RulesetRef,
+    wand_ports: bool,
     native_registry: NativeImportRegistry,
     native_binding: nethacked_persistence::migration::MigrationBinding,
 }
@@ -78,11 +79,57 @@ impl OwnerBridgeConfig {
         Ok(Self {
             ruleset,
             ruleset_ref,
+            wand_ports: false,
             native_registry: NativeImportRegistry::current(),
             native_binding: super::native_migration_binding(),
         })
     }
 
+    /// Explicitly approve the I1 native collaborator/code/codec/port profile.
+    /// Historical registrations retain their original identities and behavior.
+    pub fn with_wand_ports(mut self) -> Self {
+        self.wand_ports = true;
+        self
+    }
+    fn schema_tag(&self, tag: u8) -> u8 {
+        if self.wand_ports {
+            tag + 100
+        } else {
+            tag
+        }
+    }
+    fn codec_identity(&self, name: &str, tag: u8) -> op::CodecIdentity {
+        if self.wand_ports {
+            identity(&format!("{name}-wand-i1"), tag + 100)
+        } else {
+            identity(name, tag)
+        }
+    }
+    fn receipt_policy(&self) -> [u8; 32] {
+        if self.wand_ports {
+            [175; 32]
+        } else {
+            POLICY
+        }
+    }
+    fn receipt_identity(&self) -> op::ArtifactIdentity {
+        if self.wand_ports {
+            artifact("native-wand-i1-receipt-accounting", 175)
+        } else {
+            accounting_identity()
+        }
+    }
+    fn session_binding(&self) -> pr::Binding {
+        if self.wand_ports {
+            pr::Binding {
+                name: "native-owner-wand-i1-session".into(),
+                version: 1,
+                artifact: [176; 32],
+            }
+        } else {
+            binding()
+        }
+    }
     /// Explicit host selection; save bytes cannot add registrations or choose
     /// another parser. Missing or changed tuples refuse before decoding.
     pub fn with_native_import(
@@ -98,7 +145,7 @@ impl OwnerBridgeConfig {
 
 // Count before allocating JSON values/output. Decoding checks bytes first and
 // requires exact canonical re-encoding, including nested fields and defaults.
-fn encode<T: Serialize>(value: &T, limit: usize) -> owners::Result<Vec<u8>> {
+pub(super) fn encode<T: Serialize>(value: &T, limit: usize) -> owners::Result<Vec<u8>> {
     struct Counter {
         count: usize,
         limit: usize,
@@ -129,7 +176,10 @@ fn encode<T: Serialize>(value: &T, limit: usize) -> owners::Result<Vec<u8>> {
     }
     Ok(bytes)
 }
-fn decode<T: DeserializeOwned + Serialize>(bytes: &[u8], limit: usize) -> owners::Result<T> {
+pub(super) fn decode<T: DeserializeOwned + Serialize>(
+    bytes: &[u8],
+    limit: usize,
+) -> owners::Result<T> {
     if bytes.len() > limit.min(PAYLOAD) {
         return Err(owners::Error::Limit);
     }
@@ -206,6 +256,9 @@ macro_rules! codec {
                 request: &[u8],
                 obs: &[Observation],
             ) -> owners::Result<Vec<u8>> {
+                if self.0.wand_ports && name.starts_with("wand_") {
+                    return wand::query(s, name, request, obs, &self.0);
+                }
                 if name != "query" || !request.is_empty() || !obs.is_empty() {
                     return Err(owners::Error::Unsupported);
                 }
@@ -225,7 +278,7 @@ macro_rules! codec {
         }
         impl op::PersistenceCodec<$state> for $codec {
             fn identity(&self) -> op::CodecIdentity {
-                identity($name, $tag)
+                self.0.codec_identity($name, $tag)
             }
             fn encode_state(&self, s: &$state, limit: usize) -> owners::Result<Vec<u8>> {
                 self.validate(s)?;
@@ -253,7 +306,11 @@ macro_rules! codec {
                 p: &BTreeMap<String, Port>,
                 q: &QueryPolicy,
             ) -> owners::Result<()> {
-                validate_ports($name, p, q)
+                if self.0.wand_ports {
+                    validate_wand_ports($name, p, q)
+                } else {
+                    validate_ports($name, p, q)
+                }
             }
         }
     };
@@ -392,6 +449,9 @@ impl Schema<BillingState> for BillingCodec {
         request: &[u8],
         obs: &[Observation],
     ) -> owners::Result<Vec<u8>> {
+        if self.0.wand_ports && name.starts_with("wand_") {
+            return wand::query(s, name, request, obs, &self.0);
+        }
         if name != "admit" {
             return Err(owners::Error::Unsupported);
         }
@@ -426,7 +486,7 @@ impl NativeBehavior<BillingState> for BillingCodec {
 }
 impl op::PersistenceCodec<BillingState> for BillingCodec {
     fn identity(&self) -> op::CodecIdentity {
-        identity("Billing", 6)
+        self.0.codec_identity("Billing", 6)
     }
     fn encode_state(&self, s: &BillingState, limit: usize) -> owners::Result<Vec<u8>> {
         encode(s, limit)
@@ -446,6 +506,18 @@ impl op::PersistenceCodec<BillingState> for BillingCodec {
         p: &BTreeMap<String, Port>,
         q: &QueryPolicy,
     ) -> owners::Result<()> {
+        let legacy;
+        let p = if self.0.wand_ports {
+            validate_wand_ports("Billing", p, q)?;
+            legacy = p
+                .iter()
+                .filter(|(name, _)| !name.starts_with("wand_"))
+                .map(|(n, p)| (n.clone(), p.clone()))
+                .collect::<BTreeMap<_, _>>();
+            &legacy
+        } else {
+            p
+        };
         if *q != QueryPolicy::Noncacheable || p.len() != 2 {
             return Err(owners::Error::Schema);
         }
@@ -457,7 +529,7 @@ impl op::PersistenceCodec<BillingState> for BillingCodec {
                 || p.dependencies
                     .iter()
                     .zip([2, 4, 9])
-                    .any(|(d, tag)| d.query != "query" || d.schema != [tag; 32])
+                    .any(|(d, tag)| d.query != "query" || d.schema != [self.0.schema_tag(tag); 32])
                 || p.dependencies
                     .iter()
                     .map(|d| d.owner)
@@ -482,7 +554,7 @@ impl Accounting for ReceiptAccounting {
     fn validate(&self, p: &[ProposalView], obs: &[Observation]) -> owners::Result<()> {
         if p.len() != 1
             || p[0].receipt.command != COMMAND
-            || p[0].receipt.stamp.schema != [6; 32]
+            || p[0].receipt.stamp.schema != [self.0.schema_tag(6); 32]
             || !p[0].events.is_empty()
             || !p[0].reply.is_empty()
         {
@@ -600,6 +672,11 @@ struct SourceRoutes {
     hero: Rc<owners::Owner<HeroState>>,
     session: Rc<owners::Owner<SessionState>>,
     billing: Rc<owners::Owner<BillingState>>,
+    geography: Rc<owners::Owner<GeographyState>>,
+    actors: Rc<owners::Owner<ActorsState>>,
+    equipment: Rc<owners::Owner<EquipmentState>>,
+    clock: Rc<owners::Owner<ClockState>>,
+    random: Rc<owners::Owner<RandomState>>,
 }
 enum Routes {
     Initial(RefCell<Option<SourceRoutes>>),
@@ -617,6 +694,11 @@ impl Routes {
                     hero: r.hero.clone(),
                     session: r.session.clone(),
                     billing: r.billing.clone(),
+                    geography: r.geography.clone(),
+                    actors: r.actors.clone(),
+                    equipment: r.equipment.clone(),
+                    clock: r.clock.clone(),
+                    random: r.random.clone(),
                 })
             }
             Self::Restored(h) => Ok(SourceRoutes {
@@ -625,6 +707,11 @@ impl Routes {
                 hero: h.owner("Hero")?,
                 session: h.owner("Session")?,
                 billing: h.owner("Billing")?,
+                geography: h.owner("Geography")?,
+                actors: h.owner("Actors")?,
+                equipment: h.owner("Equipment")?,
+                clock: h.owner("Clock")?,
+                random: h.owner("Random")?,
             }),
         }
     }
@@ -663,9 +750,9 @@ fn native_ports(handles: Rc<Routes>, config: OwnerBridgeConfig) -> BTreeMap<Stri
                     observations,
                     &[billing.id()],
                     vec![billing.id()],
-                    POLICY,
+                    config.receipt_policy(),
                     Rc::new(ReceiptAccounting(config.clone())),
-                    capability(COMMAND),
+                    profile_capability(&config, COMMAND),
                     view,
                 )
                 .map_err(native_refusal)?;
@@ -688,6 +775,483 @@ fn native_ports(handles: Rc<Routes>, config: OwnerBridgeConfig) -> BTreeMap<Stri
 }
 fn native_refusal(_: owners::Error) -> kernel::Error {
     kernel::Error::NativeRefusal
+}
+
+fn bridge_stamps(b: &session::HostBundle) -> owners::Result<Vec<owners::Stamp>> {
+    macro_rules! stamp {
+        ($state:ident, $key:literal) => {
+            b.owner::<$state>($key)
+                .ok_or(owners::Error::Schema)?
+                .owner
+                .stamp()?
+        };
+    }
+    Ok(vec![
+        stamp!(GeographyState, "Geography"),
+        stamp!(ObjectsState, "Objects"),
+        stamp!(ActorsState, "Actors"),
+        stamp!(HeroState, "Hero"),
+        stamp!(EquipmentState, "Equipment"),
+        stamp!(BillingState, "Billing"),
+        stamp!(ClockState, "Clock"),
+        stamp!(RandomState, "Random"),
+        stamp!(SessionState, "Session"),
+    ])
+}
+
+// I1 deliberately has its own artifact/ABI/schema/factory approvals. Legacy
+// constants above continue to describe the exact accepted historical code.
+const I1_NATIVE_ID: &[u8] = b"NetHackED M5-I1 typed owner observations v1";
+const I1_PROVIDER: &str = "native-owner-wand-i1-provider-v1";
+const I1_CALLER: &str = "native-owner-wand-i1-caller-v1";
+const I1_CALLER_ID: &[u8] = b"NetHackED M5-I1 native bounded observation caller v1";
+const I1_RANDOM: &str = "native-owner-wand-i1-random-v1";
+const I1_RANDOM_ID: &[u8] = b"NetHackED M5-I1 native random reservation observations v1";
+const WAND_ROUTES: [(&str, &str); 10] = [
+    ("Geography", "wand_geography"),
+    ("Objects", "wand_objects"),
+    ("Actors", "wand_actors"),
+    ("Hero", "wand_hero"),
+    ("Equipment", "wand_equipment"),
+    ("Billing", "wand_billing"),
+    ("Billing", "wand_consumed"),
+    ("Clock", "wand_clock"),
+    ("Random", "wand_random"),
+    ("Session", "wand_session"),
+];
+fn wand_declarations(name: &str) -> Vec<(&'static str, &'static str, u8)> {
+    match name {
+        "Objects" => vec![
+            ("Hero", "wand_hero", 104),
+            ("Session", "wand_session", 109),
+            ("Geography", "wand_geography", 101),
+        ],
+        "Actors" => vec![("Geography", "wand_geography", 101)],
+        "Equipment" => vec![("Objects", "wand_objects", 102), ("Hero", "wand_hero", 104)],
+        "Billing" => vec![
+            ("Objects", "wand_objects", 102),
+            ("Geography", "wand_geography", 101),
+        ],
+        "Clock" => vec![("Objects", "wand_objects", 102)],
+        _ => vec![],
+    }
+}
+fn add_wand_ports(
+    name: &str,
+    mut ports: BTreeMap<String, Port>,
+    ids: &BTreeMap<&str, owners::OwnerId>,
+) -> owners::Result<BTreeMap<String, Port>> {
+    for (_, query) in WAND_ROUTES.iter().filter(|(owner, _)| *owner == name) {
+        let dependencies = if *query == "wand_consumed" {
+            vec![]
+        } else {
+            wand_declarations(name)
+                .into_iter()
+                .map(|(key, query, tag)| {
+                    Ok(Dependency {
+                        owner: *ids.get(key).ok_or(owners::Error::Schema)?,
+                        query: query.into(),
+                        schema: [tag; 32],
+                    })
+                })
+                .collect::<owners::Result<Vec<_>>>()?
+        };
+        ports.insert((*query).into(), port(Access::Read, dependencies));
+    }
+    Ok(ports)
+}
+fn validate_wand_ports(
+    name: &str,
+    ports: &BTreeMap<String, Port>,
+    policy: &QueryPolicy,
+) -> owners::Result<()> {
+    if *policy != QueryPolicy::Noncacheable {
+        return Err(owners::Error::Schema);
+    }
+    let expected = WAND_ROUTES
+        .iter()
+        .filter(|(owner, _)| *owner == name)
+        .collect::<Vec<_>>();
+    let legacy_count = if name == "Billing" { 2 } else { 1 };
+    if ports.len() != expected.len() + legacy_count {
+        return Err(owners::Error::Schema);
+    }
+    for (_, query) in expected {
+        let p = ports.get(*query).ok_or(owners::Error::Schema)?;
+        let deps = if *query == "wand_consumed" {
+            vec![]
+        } else {
+            wand_declarations(name)
+        };
+        if p.access != Access::Read
+            || p.major != 1
+            || p.dependencies.len() != deps.len()
+            || p.dependencies
+                .iter()
+                .zip(&deps)
+                .any(|(d, (_, query, tag))| d.query != *query || d.schema != [*tag; 32])
+            || p.dependencies
+                .iter()
+                .map(|d| d.owner)
+                .collect::<BTreeSet<_>>()
+                .len()
+                != deps.len()
+        {
+            return Err(owners::Error::Schema);
+        }
+    }
+    if name != "Billing" {
+        let legacy = ports
+            .iter()
+            .filter(|(name, _)| !name.starts_with("wand_"))
+            .map(|(n, p)| (n.clone(), p.clone()))
+            .collect();
+        validate_ports(name, &legacy, policy)?;
+    }
+    Ok(())
+}
+fn profile_native_id(config: &OwnerBridgeConfig) -> &'static [u8] {
+    if config.wand_ports {
+        I1_NATIVE_ID
+    } else {
+        NATIVE_ID
+    }
+}
+fn profile_capability(config: &OwnerBridgeConfig, endpoint: &str) -> Capability {
+    Capability {
+        provider: if config.wand_ports {
+            I1_PROVIDER
+        } else {
+            PROVIDER
+        }
+        .into(),
+        endpoint: endpoint.into(),
+        major: 1,
+    }
+}
+fn profile_provider(config: &OwnerBridgeConfig) -> Manifest {
+    if !config.wand_ports {
+        return provider_manifest();
+    }
+    let mut m = provider_manifest();
+    m.id = I1_PROVIDER.into();
+    for (_, name) in WAND_ROUTES {
+        if name != "wand_random" {
+            m.exports.insert(
+                name.into(),
+                Endpoint {
+                    max_request: wand::MAX_REQUEST_BYTES as u32,
+                    max_reply: wand::MAX_RESPONSE_BYTES as u32,
+                    ..endpoint(Access::Read)
+                },
+            );
+        }
+    }
+    m
+}
+fn profile_caller(config: &OwnerBridgeConfig) -> Manifest {
+    if !config.wand_ports {
+        return caller_manifest();
+    }
+    let mut m = caller_manifest();
+    m.id = I1_CALLER.into();
+    for dep in &mut m.dependencies {
+        dep.capability.provider = I1_PROVIDER.into();
+    }
+    for (_, name) in WAND_ROUTES {
+        m.dependencies.push(kernel::Dependency {
+            capability: if name == "wand_random" {
+                random_capability()
+            } else {
+                profile_capability(config, name)
+            },
+            access: Access::Read,
+        });
+    }
+    m.exports.insert(
+        "observe".into(),
+        Endpoint {
+            max_request: wand::MAX_REQUEST_BYTES as u32,
+            max_reply: wand::MAX_RESPONSE_BYTES as u32,
+            ..endpoint(Access::Read)
+        },
+    );
+    m
+}
+fn random_capability() -> Capability {
+    Capability {
+        provider: I1_RANDOM.into(),
+        endpoint: "wand_random".into(),
+        major: 1,
+    }
+}
+fn random_manifest() -> Manifest {
+    Manifest {
+        id: I1_RANDOM.into(),
+        exports: [
+            ("query".into(), endpoint(Access::Read)),
+            (
+                "wand_random".into(),
+                Endpoint {
+                    max_request: wand::MAX_REQUEST_BYTES as u32,
+                    max_reply: wand::MAX_RESPONSE_BYTES as u32,
+                    ..endpoint(Access::Read)
+                },
+            ),
+        ]
+        .into(),
+        dependencies: vec![],
+        extension_points: BTreeSet::new(),
+        extension: None,
+    }
+}
+fn approve_wand_grant(
+    caller: &kp::SavedModule,
+    slot: usize,
+    target: &kp::SavedModule,
+    requested: &Authority,
+    config: &OwnerBridgeConfig,
+) -> kernel::Result<Authority> {
+    let manifest = profile_caller(config);
+    let is_caller = caller.manifest == manifest
+        && manifest.dependencies.get(slot).is_some_and(|dep| {
+            target.manifest
+                == if dep.capability == random_capability() {
+                    random_manifest()
+                } else {
+                    profile_provider(config)
+                }
+        });
+    if !is_caller {
+        return Err(kernel::Error::Authority);
+    }
+    let Scope::Keys(keys) = &requested.scope else {
+        return Err(kernel::Error::Authority);
+    };
+    let mut expected: BTreeSet<String> = [
+        "publication",
+        "1.wand_geography",
+        "2.query",
+        "2.wand_hero",
+        "3.query",
+        "3.wand_session",
+        "4.query",
+        "4.wand_objects",
+        "5.wand_actors",
+        "6.wand_equipment",
+        "7.admit",
+        "7.record_bill_terms",
+        "7.wand_billing",
+        "7.wand_consumed",
+        "8.wand_clock",
+        "9.wand_random",
+    ]
+    .into_iter()
+    .map(str::to_owned)
+    .collect();
+    if manifest.dependencies[slot].capability == random_capability() {
+        expected = ["9.wand_random".to_owned()].into();
+    }
+    let namespace = &keys.first().ok_or(kernel::Error::Authority)?.owner;
+    let access = if slot == 2 {
+        Access::Write
+    } else {
+        Access::Read
+    };
+    if requested.access != access
+        || keys.len() != expected.len()
+        || keys.iter().map(|r| r.key.clone()).collect::<BTreeSet<_>>() != expected
+        || namespace
+            .strip_prefix("owners-")
+            .is_none_or(|s| s.parse::<u64>().is_err())
+        || keys.iter().any(|r| r.owner != *namespace)
+    {
+        return Err(kernel::Error::Authority);
+    }
+    Ok(requested.clone())
+}
+#[allow(clippy::too_many_arguments)]
+fn wand_resources(
+    name: &str,
+    geography: &Rc<owners::Owner<GeographyState>>,
+    objects: &Rc<owners::Owner<ObjectsState>>,
+    actors: &Rc<owners::Owner<ActorsState>>,
+    hero: &Rc<owners::Owner<HeroState>>,
+    equipment: &Rc<owners::Owner<EquipmentState>>,
+    billing: &Rc<owners::Owner<BillingState>>,
+    clock: &Rc<owners::Owner<ClockState>>,
+    random: &Rc<owners::Owner<RandomState>>,
+    session: &Rc<owners::Owner<SessionState>>,
+) -> owners::Result<Vec<Resource>> {
+    WAND_ROUTES
+        .iter()
+        .filter(|(owner, _)| *owner == name)
+        .map(|(_, q)| match name {
+            "Geography" => geography.resource(q),
+            "Objects" => objects.resource(q),
+            "Actors" => actors.resource(q),
+            "Hero" => hero.resource(q),
+            "Equipment" => equipment.resource(q),
+            "Billing" => billing.resource(q),
+            "Clock" => clock.resource(q),
+            "Random" => random.resource(q),
+            "Session" => session.resource(q),
+            _ => Err(owners::Error::Schema),
+        })
+        .collect()
+}
+impl SourceRoutes {
+    fn stamp(&self, name: &str) -> owners::Result<owners::Stamp> {
+        match name {
+            "Geography" => self.geography.stamp(),
+            "Objects" => self.objects.stamp(),
+            "Actors" => self.actors.stamp(),
+            "Hero" => self.hero.stamp(),
+            "Equipment" => self.equipment.stamp(),
+            "Billing" => self.billing.stamp(),
+            "Clock" => self.clock.stamp(),
+            "Random" => self.random.stamp(),
+            "Session" => self.session.stamp(),
+            _ => Err(owners::Error::Schema),
+        }
+    }
+    fn observe(
+        &self,
+        q: &wand::WandQuery,
+        view: &CallerView,
+    ) -> owners::Result<(Observation, Vec<Observation>)> {
+        use wand::{ObjectRequest, WandQuery as Q};
+        q.validate()?;
+        let geo = |residency| {
+            Q::Geography(wand::GeographyRequest {
+                residency,
+                cells: vec![],
+                trajectory: None,
+            })
+        };
+        let object = |target| Q::Objects(ObjectRequest::Identity(target));
+        let deps = match q {
+            Q::Objects(r) => {
+                let residency = match r {
+                    ObjectRequest::Selection(_) => wand::Residency::Active,
+                    ObjectRequest::Identity(t) => t.residency,
+                };
+                vec![Q::Hero, Q::Session, geo(residency)]
+            }
+            Q::Equipment(t) => vec![object(*t), Q::Hero],
+            Q::Clock(t) => vec![object(*t)],
+            Q::Billing { target, .. } => vec![object(*target), geo(target.residency)],
+            Q::Actors(r) => vec![geo(r.residency)],
+            _ => vec![],
+        };
+        let mut immediate = Vec::with_capacity(deps.len());
+        let mut provenance = Vec::new();
+        for dep in deps {
+            let (observation, nested) = self.observe(&dep, view)?;
+            provenance.extend(nested);
+            provenance.push(observation.clone());
+            immediate.push(observation);
+        }
+        let request = encode(q, wand::MAX_REQUEST_BYTES)?;
+        let name = q.route().1;
+        let observation = match q {
+            Q::Objects(_) => self.objects.query(name, &request, &immediate, view),
+            Q::Equipment(_) => self.equipment.query(name, &request, &immediate, view),
+            Q::Billing { .. } | Q::ConsumedBilling { .. } => {
+                self.billing.query(name, &request, &immediate, view)
+            }
+            Q::Clock(_) => self.clock.query(name, &request, &immediate, view),
+            Q::Random { .. } => self.random.query(name, &request, &immediate, view),
+            Q::Geography(_) => self.geography.query(name, &request, &immediate, view),
+            Q::Actors(_) => self.actors.query(name, &request, &immediate, view),
+            Q::Hero => self.hero.query(name, &request, &immediate, view),
+            Q::Session => self.session.query(name, &request, &immediate, view),
+        }?;
+        Ok((observation, provenance))
+    }
+    fn read(&self, request: &[u8], view: &CallerView) -> kernel::Result<Vec<u8>> {
+        let read: wand::WandRead =
+            decode(request, wand::MAX_REQUEST_BYTES).map_err(native_refusal)?;
+        read.query.validate().map_err(native_refusal)?;
+        let stamp = self.stamp(read.query.route().0).map_err(native_refusal)?;
+        if read
+            .expected_owner
+            .as_ref()
+            .is_some_and(|e| *e != wand::OwnerWitness::from(&stamp))
+        {
+            return Err(kernel::Error::NativeRefusal);
+        }
+        let (observation, deps) = self.observe(&read.query, view).map_err(native_refusal)?;
+        let facts =
+            decode(observation.bytes(), wand::MAX_RESPONSE_BYTES).map_err(native_refusal)?;
+        let wire = wand::WireObservation {
+            witness: wand::OwnerWitness::from(observation.stamp()),
+            dependencies: deps
+                .iter()
+                .map(|d| wand::OwnerWitness::from(d.stamp()))
+                .collect(),
+            facts,
+        };
+        encode(&wire, wand::MAX_RESPONSE_BYTES).map_err(native_refusal)
+    }
+}
+fn profile_native_ports(
+    handles: Rc<Routes>,
+    config: OwnerBridgeConfig,
+) -> BTreeMap<String, NativePort> {
+    let mut ports = native_ports(handles.clone(), config.clone());
+    if !config.wand_ports {
+        return ports;
+    }
+    for (_, name) in WAND_ROUTES {
+        if name != "wand_random" {
+            let routes = handles.clone();
+            ports.insert(
+                name.into(),
+                Rc::new(move |request, view| read_route(&routes, name, request, view)),
+            );
+        }
+    }
+    ports
+}
+fn read_route(
+    routes: &Routes,
+    endpoint: &str,
+    request: &[u8],
+    view: &CallerView,
+) -> kernel::Result<Vec<u8>> {
+    let read: wand::WandRead = decode(request, wand::MAX_REQUEST_BYTES).map_err(native_refusal)?;
+    if read.query.route().1 != endpoint {
+        return Err(kernel::Error::NativeRefusal);
+    }
+    routes.get()?.read(request, view)
+}
+fn random_native_ports(routes: Rc<Routes>) -> BTreeMap<String, NativePort> {
+    let query: NativePort = Rc::new(|_, _| Err(kernel::Error::NativeRefusal));
+    let random: NativePort =
+        Rc::new(move |request, view| read_route(&routes, "wand_random", request, view));
+    [("query".into(), query), ("wand_random".into(), random)].into()
+}
+fn caller_native_ports() -> BTreeMap<String, NativePort> {
+    let query: NativePort = Rc::new(|_, _| Err(kernel::Error::NativeRefusal));
+    let run: NativePort = Rc::new(|request, view| view.call_dependency(2, request));
+    let observe: NativePort = Rc::new(|request, view| {
+        let read: wand::WandRead =
+            decode(request, wand::MAX_REQUEST_BYTES).map_err(native_refusal)?;
+        read.query.validate().map_err(native_refusal)?;
+        let slot = WAND_ROUTES
+            .iter()
+            .position(|route| *route == read.query.route())
+            .ok_or(kernel::Error::MissingDependency)?
+            + 3;
+        view.call_dependency(slot, request)
+    });
+    [
+        ("query".into(), query),
+        ("run".into(), run),
+        ("observe".into(), observe),
+    ]
+    .into()
 }
 
 struct KernelFactory(OwnerBridgeConfig);
@@ -720,16 +1284,37 @@ impl kp::RegistryAuthority for Resolver {
     fn resolve(&self, saved: &kp::SavedModule) -> kernel::Result<kp::ArtifactMaterial> {
         // Both manifests and executable identities are host constants. Registry
         // reconstruction verifies their artifact digests independently.
-        if saved.manifest == provider_manifest() && saved.executable == kp::Executable::NativeV1 {
+        if saved.manifest == profile_provider(&self.config)
+            && saved.executable == kp::Executable::NativeV1
+        {
             Ok(kp::ArtifactMaterial::Native {
-                manifest: provider_manifest(),
-                identity: NATIVE_ID.to_vec(),
-                ports: native_ports(
+                manifest: profile_provider(&self.config),
+                identity: profile_native_id(&self.config).to_vec(),
+                ports: profile_native_ports(
                     Rc::new(Routes::Restored(self.handles.clone())),
                     self.config.clone(),
                 ),
             })
-        } else if saved.manifest == caller_manifest()
+        } else if self.config.wand_ports
+            && saved.manifest == random_manifest()
+            && saved.executable == kp::Executable::NativeV1
+        {
+            Ok(kp::ArtifactMaterial::Native {
+                manifest: random_manifest(),
+                identity: I1_RANDOM_ID.to_vec(),
+                ports: random_native_ports(Rc::new(Routes::Restored(self.handles.clone()))),
+            })
+        } else if self.config.wand_ports
+            && saved.manifest == profile_caller(&self.config)
+            && saved.executable == kp::Executable::NativeV1
+        {
+            Ok(kp::ArtifactMaterial::Native {
+                manifest: profile_caller(&self.config),
+                identity: I1_CALLER_ID.to_vec(),
+                ports: caller_native_ports(),
+            })
+        } else if !self.config.wand_ports
+            && saved.manifest == caller_manifest()
             && saved.executable == kp::Executable::WasmAbiV1
         {
             Ok(kp::ArtifactMaterial::Guest {
@@ -750,6 +1335,9 @@ impl kp::RegistryAuthority for Resolver {
         target: &kp::SavedModule,
         requested: &Authority,
     ) -> kernel::Result<Authority> {
+        if self.config.wand_ports {
+            return approve_wand_grant(caller, slot, target, requested, &self.config);
+        }
         if caller.manifest != caller_manifest()
             || target.manifest != provider_manifest()
             || slot > 2
@@ -825,7 +1413,7 @@ fn restore_authority(
             let c = config.clone();
             let mut catalog = op::RestoreCatalog::default();
             catalog.allow(
-                identity($name, $tag),
+                config.codec_identity($name, $tag),
                 QueryPolicy::Noncacheable,
                 move |_| Ok(Backend::Native(Rc::new($codec(c.clone())))),
             )?;
@@ -849,11 +1437,13 @@ fn restore_authority(
     factory!(SessionCodec, SessionState, "Session", 9);
     let mut accounting = op::AccountingRestoreCatalog::default();
     let c = config.clone();
-    accounting.allow(accounting_identity(), POLICY, move || {
-        Ok(Rc::new(ReceiptAccounting(c.clone())))
-    })?;
+    accounting.allow(
+        config.receipt_identity(),
+        config.receipt_policy(),
+        move || Ok(Rc::new(ReceiptAccounting(c.clone()))),
+    )?;
     Ok(session::RestoreAuthority {
-        bindings: [binding()].into(),
+        bindings: [config.session_binding()].into(),
         kernel: Rc::new(KernelFactory(config.clone())),
         owners: factories,
         accounting: Rc::new(accounting),
@@ -881,6 +1471,41 @@ impl pr::TrustedFactory<session::HostBundle> for ProfileFactory {
         let (rows, checkpoint) = self.inner.inspect_owner_states(bytes)?;
         self.admit(&rows, &checkpoint)
             .map_err(|_| pr::Error::FactoryRefused)?;
+        if self.config.wand_ports {
+            // The session parser above has already checked framing, canonical
+            // syntax and aggregate bounds. Inspect only its kernel section for
+            // the independent public caller; artifact approval remains with
+            // Resolver. This is save admission, never a production owner query.
+            #[derive(Deserialize)]
+            struct Sections<'a> {
+                #[serde(borrow)]
+                sections: Vec<Section<'a>>,
+            }
+            #[derive(Deserialize)]
+            struct Section<'a> {
+                name: &'a str,
+                local_payload: &'a str,
+            }
+            let wire: Sections<'_> =
+                serde_json::from_slice(&bytes[nethacked_persistence::HEADER_LEN..])
+                    .map_err(|_| pr::Error::FactoryRefused)?;
+            let section = wire
+                .sections
+                .iter()
+                .find(|s| s.name == "kernel")
+                .ok_or(pr::Error::FactoryRefused)?;
+            let payload = nethacked_persistence::Hex(section.local_payload.to_owned())
+                .bytes(SaveLimits::default())
+                .map_err(|_| pr::Error::FactoryRefused)?;
+            let kernel: kp::KernelSnapshot =
+                serde_json::from_slice(&payload).map_err(|_| pr::Error::FactoryRefused)?;
+            if !kernel.registry.modules.iter().any(|m| {
+                m.manifest == profile_caller(&self.config)
+                    && m.executable == kp::Executable::NativeV1
+            }) {
+                return Err(pr::Error::FactoryRefused);
+            }
+        }
         self.inner.build(context, bytes)
     }
 }
@@ -907,7 +1532,7 @@ impl ProfileFactory {
                     .find(|row| row.key == $name)
                     .ok_or(owners::Error::Schema)?;
                 let (codec, bytes) = payloads.get(&row.owner).ok_or(owners::Error::Schema)?;
-                if **codec != identity($name, $tag) {
+                if **codec != self.config.codec_identity($name, $tag) {
                     return Err(owners::Error::Schema);
                 }
                 decode::<$state>(bytes, PAYLOAD)?
@@ -935,16 +1560,26 @@ impl ProfileFactory {
 fn restore_configuration(
     config: &OwnerBridgeConfig,
 ) -> Result<pr::ApprovedConfiguration<session::HostBundle>, OwnerBridgeError> {
+    let mut profiles = vec![config.clone()];
+    if config.wand_ports {
+        let mut legacy = config.clone();
+        legacy.wand_ports = false;
+        profiles.push(legacy);
+    }
+    let mut entries: Vec<(pr::Binding, Rc<dyn pr::TrustedFactory<session::HostBundle>>)> = vec![];
+    for profile in profiles {
+        entries.push((
+            profile.session_binding(),
+            Rc::new(ProfileFactory {
+                inner: session::SessionFactory::new(restore_authority(&profile)?),
+                config: profile,
+            }),
+        ));
+    }
     Ok(pr::ApprovedConfiguration::new(
         BTreeSet::new(),
-        [binding()].into(),
-        vec![(
-            binding(),
-            Rc::new(ProfileFactory {
-                inner: session::SessionFactory::new(restore_authority(config)?),
-                config: config.clone(),
-            }),
-        )],
+        entries.iter().map(|(binding, _)| binding.clone()).collect(),
+        entries,
     )?)
 }
 
@@ -955,6 +1590,25 @@ pub struct OwnerBridge {
     key: pr::AuthorityKey,
     credential: RefCell<pr::RuntimeCredential>,
     config: OwnerBridgeConfig,
+}
+fn bridge_caller(
+    b: &session::HostBundle,
+    config: &OwnerBridgeConfig,
+) -> Result<kernel::ModuleHandle, OwnerBridgeError> {
+    let random = b
+        .owner::<RandomState>("Random")
+        .ok_or(owners::Error::Schema)?
+        .owner
+        .stamp()?;
+    let k = b.kernel()?;
+    // Legacy restoration through an opt-in facade retains the historical caller.
+    if k.manifest(random.module.handle)? == &caller_manifest() {
+        return Ok(random.module.handle);
+    }
+    if !config.wand_ports || k.manifest(random.module.handle)? != &random_manifest() {
+        return Err(kernel::Error::Authority.into());
+    }
+    Ok(k.registered_module(&profile_caller(config))?)
 }
 impl OwnerBridge {
     pub fn import_native(
@@ -995,12 +1649,26 @@ impl OwnerBridge {
         let mut kernel = Kernel::new(kernel::Limits::default())?;
         let handles = Rc::new(Routes::Initial(RefCell::new(None)));
         let provider = kernel.register_native(
-            provider_manifest(),
-            NATIVE_ID,
-            native_ports(handles.clone(), config.clone()),
+            profile_provider(&config),
+            profile_native_id(&config),
+            profile_native_ports(handles.clone(), config.clone()),
         )?;
-        let caller = kernel.register_guest(caller_manifest(), &caller_bytes()?)?;
+        let random_module = if config.wand_ports {
+            Some(kernel.register_native(
+                random_manifest(),
+                I1_RANDOM_ID,
+                random_native_ports(handles.clone()),
+            )?)
+        } else {
+            None
+        };
+        let caller = if config.wand_ports {
+            kernel.register_native(profile_caller(&config), I1_CALLER_ID, caller_native_ports())?
+        } else {
+            kernel.register_guest(caller_manifest(), &caller_bytes()?)?
+        };
         let mut allocations: Vec<Rc<dyn session::OwnerAllocation>> = vec![];
+        let mut wand_deps = BTreeMap::new();
         macro_rules! enroll {
             ($codec:ident, $name:literal, $tag:literal, $state:expr, $module:expr, $ports:expr) => {{
                 let codec = Rc::new($codec(config.clone()));
@@ -1009,15 +1677,19 @@ impl OwnerBridge {
                     &kernel,
                     OwnerSpec {
                         module: $module,
-                        schema: [$tag; 32],
-                        ports: $ports,
+                        schema: [config.schema_tag($tag); 32],
+                        ports: if config.wand_ports {
+                            add_wand_ports($name, $ports, &wand_deps)?
+                        } else {
+                            $ports
+                        },
                     },
                     $state,
                     Backend::Native(behavior.clone()),
                 )?;
                 let mut catalog = op::CaptureCatalog::default();
                 catalog.register(
-                    identity($name, $tag),
+                    config.codec_identity($name, $tag),
                     QueryPolicy::Noncacheable,
                     Backend::Native(behavior),
                 )?;
@@ -1035,7 +1707,7 @@ impl OwnerBridge {
                 owner
             }};
         }
-        enroll!(
+        let geography_owner = enroll!(
             GeographyCodec,
             "Geography",
             1,
@@ -1043,6 +1715,39 @@ impl OwnerBridge {
             provider,
             basic_ports("Geography")
         );
+        // Objects' declared dependencies are enrolled below, so in I1 order
+        // Hero and Session precede Objects. Legacy order stays byte-compatible.
+        let early_hero = if config.wand_ports {
+            Some(enroll!(
+                HeroCodec,
+                "Hero",
+                4,
+                hero.clone(),
+                provider,
+                basic_ports("Hero")
+            ))
+        } else {
+            None
+        };
+        if let Some(h) = &early_hero {
+            wand_deps.insert("Hero", h.id());
+        }
+        wand_deps.insert("Geography", geography_owner.id());
+        let early_session = if config.wand_ports {
+            Some(enroll!(
+                SessionCodec,
+                "Session",
+                9,
+                session_state.clone(),
+                provider,
+                basic_ports("Session")
+            ))
+        } else {
+            None
+        };
+        if let Some(s) = &early_session {
+            wand_deps.insert("Session", s.id());
+        }
         let objects = enroll!(
             ObjectsCodec,
             "Objects",
@@ -1051,7 +1756,8 @@ impl OwnerBridge {
             provider,
             basic_ports("Objects")
         );
-        enroll!(
+        wand_deps.insert("Objects", objects.id());
+        let actors_owner = enroll!(
             ActorsCodec,
             "Actors",
             3,
@@ -1059,8 +1765,11 @@ impl OwnerBridge {
             provider,
             basic_ports("Actors")
         );
-        let hero = enroll!(HeroCodec, "Hero", 4, hero, provider, basic_ports("Hero"));
-        enroll!(
+        let hero = match early_hero {
+            Some(h) => h,
+            None => enroll!(HeroCodec, "Hero", 4, hero, provider, basic_ports("Hero")),
+        };
+        let equipment_owner = enroll!(
             EquipmentCodec,
             "Equipment",
             5,
@@ -1069,29 +1778,32 @@ impl OwnerBridge {
             basic_ports("Equipment")
         );
         // Readers precede Billing in the host enrollment order.
-        let session_owner = enroll!(
-            SessionCodec,
-            "Session",
-            9,
-            session_state,
-            provider,
-            basic_ports("Session")
-        );
+        let session_owner = match early_session {
+            Some(s) => s,
+            None => enroll!(
+                SessionCodec,
+                "Session",
+                9,
+                session_state,
+                provider,
+                basic_ports("Session")
+            ),
+        };
         let deps = vec![
             Dependency {
                 owner: objects.id(),
                 query: "query".into(),
-                schema: [2; 32],
+                schema: [config.schema_tag(2); 32],
             },
             Dependency {
                 owner: hero.id(),
                 query: "query".into(),
-                schema: [4; 32],
+                schema: [config.schema_tag(4); 32],
             },
             Dependency {
                 owner: session_owner.id(),
                 query: "query".into(),
-                schema: [9; 32],
+                schema: [config.schema_tag(9); 32],
             },
         ];
         let billing = enroll!(
@@ -1106,7 +1818,7 @@ impl OwnerBridge {
             ]
             .into()
         );
-        enroll!(
+        let clock_owner = enroll!(
             ClockCodec,
             "Clock",
             7,
@@ -1114,14 +1826,14 @@ impl OwnerBridge {
             provider,
             basic_ports("Clock")
         );
-        // The idle Random owner pins the public caller artifact. Its metadata
-        // supplies the freshly restored caller handle; it has no gameplay ports.
-        enroll!(
+        // I1 Random has an independently approved native read provider. The
+        // historical idle Random owner continues to pin the D5 Wasm caller.
+        let random_owner = enroll!(
             RandomCodec,
             "Random",
             8,
             random,
-            caller,
+            random_module.unwrap_or(caller),
             basic_ports("Random")
         );
         let keys = BTreeSet::from([
@@ -1132,7 +1844,31 @@ impl OwnerBridge {
             hero.resource("query")?,
             session_owner.resource("query")?,
         ]);
-        for slot in 0..3 {
+        let keys = if config.wand_ports {
+            let mut keys = keys;
+            for (name, _) in WAND_ROUTES {
+                for resource in wand_resources(
+                    name,
+                    &geography_owner,
+                    &objects,
+                    &actors_owner,
+                    &hero,
+                    &equipment_owner,
+                    &billing,
+                    &clock_owner,
+                    &random_owner,
+                    &session_owner,
+                )? {
+                    keys.insert(resource);
+                }
+            }
+            keys
+        } else {
+            keys
+        };
+        for slot in 0..profile_caller(&config).dependencies.len() {
+            let random_slot = config.wand_ports
+                && profile_caller(&config).dependencies[slot].capability == random_capability();
             kernel.issue_grant(
                 caller,
                 slot,
@@ -1142,7 +1878,11 @@ impl OwnerBridge {
                     } else {
                         Access::Read
                     },
-                    scope: Scope::Keys(keys.clone()),
+                    scope: Scope::Keys(if random_slot {
+                        [random_owner.resource("wand_random")?].into()
+                    } else {
+                        keys.clone()
+                    }),
                 },
             )?;
         }
@@ -1153,12 +1893,17 @@ impl OwnerBridge {
                 hero,
                 session: session_owner,
                 billing,
+                geography: geography_owner,
+                actors: actors_owner,
+                equipment: equipment_owner,
+                clock: clock_owner,
+                random: random_owner,
             }));
         }
         let mut accounting = op::AccountingCaptureCatalog::default();
         accounting.register(
-            accounting_identity(),
-            POLICY,
+            config.receipt_identity(),
+            config.receipt_policy(),
             Rc::new(ReceiptAccounting(config.clone())),
         )?;
         let configuration = restore_configuration(&config)?;
@@ -1204,10 +1949,19 @@ impl OwnerBridge {
     /// Atomically replace a nonempty facade after complete profile admission.
     /// Failure leaves the current session and its credential usable.
     pub fn restore(&self, bytes: &[u8]) -> Result<(), OwnerBridgeError> {
-        let mut stage = self
-            .session
-            .prepare_restore_diagnosed(&self.key, &binding(), bytes)
-            .map_err(OwnerBridgeError::Admission)?;
+        let prepared = self.session.prepare_restore_diagnosed(
+            &self.key,
+            &self.config.session_binding(),
+            bytes,
+        );
+        let mut stage = match prepared {
+            Ok(stage) => stage,
+            Err(original) if self.config.wand_ports => self
+                .session
+                .prepare_restore_diagnosed(&self.key, &binding(), bytes)
+                .map_err(|_| OwnerBridgeError::Admission(original))?,
+            Err(error) => return Err(OwnerBridgeError::Admission(error)),
+        };
         self.session.activate(&mut stage)?;
         *self.credential.borrow_mut() = self.session.issue_credential(&self.key)?;
         Ok(())
@@ -1263,6 +2017,58 @@ impl OwnerBridge {
             .map_err(|_| owners::Error::Invariant)?;
         Ok(world)
     }
+    /// Execute an authenticated finite read through the installed native ports.
+    /// No publication, draw, operation ID, or preparation counter is consumed.
+    pub fn observe_wand(
+        &self,
+        read: wand::WandRead,
+    ) -> Result<wand::WandObservation, OwnerBridgeError> {
+        self.observe_wand_scoped(read, Scope::All)
+    }
+    /// Apply an additional caller scope ceiling (useful to hosts delegating reads).
+    pub fn observe_wand_scoped(
+        &self,
+        read: wand::WandRead,
+        scope: Scope,
+    ) -> Result<wand::WandObservation, OwnerBridgeError> {
+        read.query.validate()?;
+        let request = encode(&read, wand::MAX_REQUEST_BYTES)?;
+        self.session.with_runtime(&self.credential.borrow(), |b| {
+            let caller = bridge_caller(b, &self.config)?;
+            let bytes = b.kernel()?.invoke(
+                caller,
+                "observe",
+                &request,
+                Authority {
+                    access: Access::Read,
+                    scope,
+                },
+            )?;
+            let wire: wand::WireObservation = decode(&bytes, wand::MAX_RESPONSE_BYTES)?;
+            let stamps = bridge_stamps(b)?;
+            let stamp = stamps
+                .iter()
+                .find(|s| wand::OwnerWitness::from(*s) == wire.witness)
+                .ok_or(owners::Error::Stale)?
+                .clone();
+            let dependencies = wire
+                .dependencies
+                .iter()
+                .map(|w| {
+                    stamps
+                        .iter()
+                        .find(|s| wand::OwnerWitness::from(*s) == *w)
+                        .cloned()
+                        .ok_or(owners::Error::Stale)
+                })
+                .collect::<owners::Result<Vec<_>>>()?;
+            Ok::<_, OwnerBridgeError>(wand::WandObservation {
+                stamp,
+                dependencies,
+                facts: wire.facts,
+            })
+        })?
+    }
     pub fn record_bill_terms(&self, id: ItemId, terms: BillTerms) -> Result<(), BillError> {
         self.receipt(id, terms)
             .map_err(|_| BillError::InvalidReceipt)?
@@ -1274,13 +2080,7 @@ impl OwnerBridge {
     ) -> Result<Result<(), BillError>, OwnerBridgeError> {
         let request = encode(&ReceiptRequest { id, terms }, PAYLOAD)?;
         let result = self.session.with_runtime(&self.credential.borrow(), |b| {
-            let caller = b
-                .owner::<RandomState>("Random")
-                .ok_or(owners::Error::Schema)?
-                .owner
-                .stamp()?
-                .module
-                .handle;
+            let caller = bridge_caller(b, &self.config)?;
             let cleanup = b.host().cleanup_identity()?;
             let (lease, operation) = b.update_kernel(|k| {
                 let lease = k.capture_pipeline(
@@ -1318,6 +2118,7 @@ impl OwnerBridge {
 mod tests {
     mod admission;
     mod fresh_process;
+    mod wand_ports;
     use super::*;
     use nethacked_arena::ItemLocation;
     use nethacked_types::Buc;

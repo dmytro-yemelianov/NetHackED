@@ -143,6 +143,7 @@ pub struct CallerView<'a> {
     pub(crate) callback_origin: Option<CallbackProvenance>,
     pub(crate) callback_capture: Option<&'a dyn CallbackCapture>,
     pub(crate) pure_call: Option<&'a dyn PureCall>,
+    pub(crate) dependency_call: Option<&'a dyn DependencyCall>,
 }
 impl Clone for CallerView<'_> {
     fn clone(&self) -> Self {
@@ -161,6 +162,11 @@ pub(crate) trait PureCall: std::fmt::Debug {
     fn pin(&self) -> Result<ModulePin>;
     fn capture(&self, slot: usize) -> Result<PureCapture>;
     fn validate(&self, capture: &PureCapture) -> Result<()>;
+}
+
+/// An invocation-only bridge to the provider's declared dependency slots.
+pub(crate) trait DependencyCall: std::fmt::Debug {
+    fn call(&self, slot: usize, request: &[u8]) -> Result<Vec<u8>>;
 }
 
 /// Nonexecuting authenticated helper closure. Private fields prevent host or
@@ -300,6 +306,7 @@ impl CallerView<'_> {
             callback_origin: None,
             callback_capture: None,
             pure_call: None,
+            dependency_call: None,
         }
     }
 
@@ -315,6 +322,15 @@ impl CallerView<'_> {
     /// Detached clones deliberately have no callable bridge.
     pub fn call_pure(&self, slot: usize, request: &[u8]) -> Result<PureReply> {
         self.pure_call.ok_or(Error::Authority)?.call(slot, request)
+    }
+    /// Invoke this native provider's declared dependency with the invocation's
+    /// live grants, retained routing and shared call/depth/fuel budget. This
+    /// does not grant access to a kernel or permit choosing arbitrary modules.
+    /// Pure preparation and detached views cannot use this bridge.
+    pub fn call_dependency(&self, slot: usize, request: &[u8]) -> Result<Vec<u8>> {
+        self.dependency_call
+            .ok_or(Error::Authority)?
+            .call(slot, request)
     }
     /// Same current/retained routing and live grants as call_pure; no guest
     /// execution and no fuel/call budget allocation. Detached views refuse.

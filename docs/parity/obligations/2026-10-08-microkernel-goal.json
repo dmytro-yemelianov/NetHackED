@@ -5,7 +5,7 @@
   "plan_sha256": "51b6bfd5a1b077089cc38a2b10346f9e905d37e575e531be558f97ed9259ca06",
   "native_goal": "Complete NetRust microkernel architecture program; formal contracts, executable extensions, existing NetHack migration, integration audit",
   "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
-  "active_unit": "M5-I1",
+  "active_unit": "M5-I2",
   "live_handles": [],
   "acceptance": {
     "A1": "passed_generic_runtime_1fc3290",
@@ -590,12 +590,15 @@
         },
         {
           "id": "M5-I1",
-          "status": "planned",
+          "status": "accepted",
           "depends_on": [
             "M5-CONTRACT"
           ],
           "scope": "Typed command-specific observations, proposals, owner registrations and bounds",
-          "contract": "docs/plans/2026-10-09-nethack-module-integration-contract.md"
+          "contract": "docs/plans/2026-10-09-nethack-module-integration-contract.md",
+          "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I1/review/answer.txt",
+          "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-m5-i1-checkpoint.json",
+          "checkpoint_sha256": "8603399af2b9892bf554326aeca19273bd91fe3fde548fdaf4819244d64ad344"
         },
         {
           "id": "M5-I2",
@@ -863,6 +866,17 @@
       "output": 7172,
       "status": "exceeded",
       "adjustment": "Finish full gates/commit locally. Next O4b explicit integrated workflow/timer/input witness over accepted APIs; no repeated formal/history audit."
+    },
+    "m5_i1": {
+      "writer_uncached": 150995,
+      "writer_output": 51379,
+      "finisher_uncached": 174271,
+      "finisher_output": 36883,
+      "review_uncached": 110571,
+      "review_output": 6353,
+      "root_usage": "unknown",
+      "status": "soft thresholds exceeded; finisher guard extraction failed; raw telemetry retained",
+      "next_adjustment": "Split I2 into bounded algorithm/legacy-adapter and owner-caller integration phases, reuse accepted I1 semantics. Review only actual changed algorithm and direct call seams; no repeated eight-owner or historical audit."
     }
   },
   "requested_interlude": {

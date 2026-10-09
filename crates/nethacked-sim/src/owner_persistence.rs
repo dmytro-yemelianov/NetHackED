@@ -16,6 +16,7 @@ pub use migration::{native_migration_binding, NativeImportRegistry};
 mod partitions;
 pub use partitions::NativePartitions;
 mod runtime;
+pub mod wand_ports;
 pub use runtime::{OwnerBridge, OwnerBridgeConfig, OwnerBridgeError};
 
 use std::sync::Arc;

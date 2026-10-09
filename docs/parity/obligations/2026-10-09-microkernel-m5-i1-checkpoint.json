@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "status": "reviewed_and_verified_in_containing_commit",
+  "baseline_head": "ea2961925f93f6242c3775409a4b25de6590e514",
+  "milestone": "M5-I1",
+  "scope": "Opt-in typed bounded owner observations/proposals and authenticated native collaborator bridge; no command execution migration claim",
+  "contract": {
+    "path": "/Users/dmytro/github/NetRust/docs/plans/2026-10-09-nethack-module-integration-contract.md",
+    "sha256": "3e6ddb2ddac91e866bf5cbd8fec0eccff2e4e7846c516a0d6ca29fad249e87e7"
+  },
+  "prerequisite": {
+    "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-09-nethack-module-integration-contract-checkpoint.json",
+    "sha256": "cbf31423ead512eaaaf883663a5f8a0e69c32f437775da04e13a0755ec8a6dca"
+  },
+  "review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I1/review/answer.txt",
+    "sha256": "c8ba9311e13a3b43b28ffe6b1901dc479dbd3e009af8949813929c0b7903faae"
+  },
+  "source_bindings": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I1/candidate-source.json",
+    "sha256": "f4d0bc945f543475886d47addf978a61301fe2b7b75654012d26ab741646f58d"
+  },
+  "focused": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I1/focused.json",
+    "sha256": "1e11df8f1700fd1adcf2e44e1fe3c386b65403bad8450f9dac114e033953fb2a"
+  },
+  "full_gates": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I1/final-gates/accepted.json",
+    "sha256": "d3af704d62c1a1e64e6cc2a690de34f17cfe34d7854a4d0e802128da9af78bbf"
+  },
+  "gate_result": {
+    "head": "ea2961925f93f6242c3775409a4b25de6590e514",
+    "tests": 1431,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "digest": "084528683d82cb59810e460ec921325486a474c4109457c3490efc9755bfa067",
+    "checks": 12
+  },
+  "source_input_count": 512,
+  "verified_behavior": [
+    "Authenticated native-to-native declared dependencies retain operation, scope, live grants, captured executable routes and shared depth/call budgets. Detached views and pure preparation cannot dispatch.",
+    "All nine independent owner domains provide typed finite observations with owner/schema/revision/binding provenance and bounded dependency witnesses. RNG reservation metadata does not draw or mutate.",
+    "Domain proposals express legal typed requests rather than arbitrary state replacement. New port schemas/artifact identities require explicit opt-in approvals; default legacy persistence/admission behavior remains compatible.",
+    "Missing native caller and malformed profile reconstruction refuse before factories or destination exchange."
+  ],
+  "usage_evidence": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I1/writer/usage.json",
+      "sha256": "0ce73dbc2ac755836db71d69dce8fd26a3752752a18ed2bf498e05f2be50f880"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I1/finish/usage.json",
+      "sha256": "8fb0f66e3a676f59d22bfa741f9e31fd1d41b68a05fb4bb917a071ed962e7f13"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I1/finish-telemetry-supplement.json",
+      "sha256": "a75f1ad33dbfb4a5121dd7ad807f1cc12dc7e82ed4a3902cbe76a7b060c8a840"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I1/review/usage.json",
+      "sha256": "3c6d8c2ae9d2e84f06412764c7b0e14388e90c9ee51265cfadc5f1aeaa56b0fc"
+    }
+  ],
+  "efficiency": {
+    "writer_uncached": 150995,
+    "writer_output": 51379,
+    "finisher_uncached": 174271,
+    "finisher_output": 36883,
+    "review_uncached": 110571,
+    "review_output": 6353,
+    "root_usage": "unknown",
+    "status": "soft thresholds exceeded; finisher guard extraction failed; raw telemetry retained",
+    "next_adjustment": "Split I2 into bounded algorithm/legacy-adapter and owner-caller integration phases, reuse accepted I1 semantics. Review only actual changed algorithm and direct call seams; no repeated eight-owner or historical audit."
+  },
+  "limits": [
+    "I2 actual command algorithms/dispatchers, I3 sealed publications, I4 live extension and I5 combined production acceptance remain open.",
+    "M6 remaining production/default-host migration and M7 aggregate audit remain open.",
+    "The separate 53-family missing-behavior parity backlog remains open.",
+    "No Rust-to-Lean refinement proof or future golden rebaseline is claimed."
+  ],
+  "next": "M5-I2"
+}
