@@ -63,6 +63,18 @@ pub struct Checkpoint {
     observations: Vec<ObservationRow>,
 }
 impl Checkpoint {
+    pub fn count_references(&self, n: &mut nethacked_kernel::persistence::ReferenceCounter) {
+        n.add(3); // provider, resource and policy
+        for r in &self.records {
+            n.operation(&r.operation);
+            n.add(1);
+            n.add(r.permit.resolution.len());
+        }
+        n.add(self.next_ordinals.len());
+        for _ in &self.observations {
+            n.add(2);
+        } // record and pin
+    }
     pub fn to_bytes(&self, limit: usize) -> Result<Vec<u8>> {
         // Count before allocating the output. Input-owned data never exceeds the
         // local envelope even if a host supplied permissive limits.
@@ -288,6 +300,7 @@ pub struct ObservationId(usize);
 impl Service {
     /// Enroll these exact accepted operation contexts before kernel capture.
     pub fn persistence_operations(&self) -> Result<Vec<OperationBinding>> {
+        self.session()?.check_live().map_err(|_| Error::Authority)?;
         let inner = self.0.try_borrow().map_err(|_| Error::NativeRefusal)?;
         if inner.quarantine {
             return Err(Error::Authority);
@@ -305,6 +318,7 @@ impl Service {
     }
     /// Enroll only surviving sources; disposed receipts remain diagnostic history.
     pub fn persistence_operations_for(&self, kernel: &Kernel) -> Result<Vec<OperationBinding>> {
+        self.session()?.check_live().map_err(|_| Error::Authority)?;
         Ok(self
             .persistence_operations()?
             .into_iter()
@@ -313,6 +327,7 @@ impl Service {
     }
     /// Preserve immutable cleanup identity roots even after source disposal.
     pub fn persistence_cleanups(&self) -> Result<Vec<nethacked_kernel::CleanupIdentity>> {
+        self.session()?.check_live().map_err(|_| Error::Authority)?;
         let inner = self.0.try_borrow().map_err(|_| Error::NativeRefusal)?;
         if inner.quarantine {
             return Err(Error::Authority);
@@ -328,6 +343,7 @@ impl Service {
     }
     /// Resource roots must also be captured for empty/source-only services.
     pub fn persistence_resources(&self) -> Result<Vec<Resource>> {
+        self.session()?.check_live().map_err(|_| Error::Authority)?;
         let inner = self.0.try_borrow().map_err(|_| Error::NativeRefusal)?;
         if inner.quarantine {
             return Err(Error::Authority);
@@ -345,6 +361,7 @@ impl Service {
         index: &ExecutionCaptureIndex<'_>,
         observations: &[&Observation],
     ) -> Result<(Checkpoint, Vec<ObservationId>)> {
+        self.session()?.capture_ready().map_err(|_| Error::Busy)?;
         let inner = self.0.try_borrow().map_err(|_| Error::NativeRefusal)?;
         if inner.quarantine {
             return Err(Error::Authority);
@@ -487,6 +504,17 @@ pub struct Catalog {
     entries: BTreeMap<(String, u32), Factory>,
 }
 impl Catalog {
+    pub fn missing_dependency(&self, c: &Checkpoint) -> Option<String> {
+        (!self
+            .entries
+            .contains_key(&(c.policy.clone(), c.policy_version)))
+        .then(|| {
+            format!(
+                "input policy: {:?}; version: {}",
+                c.policy, c.policy_version
+            )
+        })
+    }
     pub fn allow(
         &mut self,
         identity: String,
@@ -819,4 +847,16 @@ fn is_live(historical: &bool) -> bool {
 
 fn is_zero(value: &u64) -> bool {
     *value == 0
+}
+
+impl Checkpoint {
+    pub fn native_binding(&self, kernel: &KernelSnapshot) -> Result<(String, String)> {
+        let module = kernel
+            .registry
+            .modules
+            .iter()
+            .find(|m| m.id == self.provider.module && m.artifact == self.provider.artifact)
+            .ok_or(Error::Authority)?;
+        Ok((module.manifest.id.clone(), self.provider.endpoint.clone()))
+    }
 }

@@ -1114,9 +1114,17 @@ dependencies = [
 name = "nethacked-persistence"
 version = "0.1.0"
 dependencies = [
+ "nethacked-inputs",
+ "nethacked-kernel",
+ "nethacked-owner-services",
+ "nethacked-owners",
+ "nethacked-resources",
+ "nethacked-timers",
+ "nethacked-workflows",
  "serde",
  "serde_json",
  "sha2",
+ "wat",
 ]
 
 [[package]]

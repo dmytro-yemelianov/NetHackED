@@ -234,6 +234,7 @@ struct Registry {
     staging_bytes: usize,
 }
 struct HostInner {
+    session: nethacked_kernel::session::Participant,
     id: u64,
     limits: Limits,
     gate: Cell<bool>,
@@ -300,6 +301,7 @@ impl<T> Route for Owner<T> {
 /// A host gate guard; dropping it opens this serialized executor's visibility.
 pub struct Gate {
     host: Host,
+    _session: Option<nethacked_kernel::session::ParticipantGuard>,
 }
 impl Drop for Gate {
     fn drop(&mut self) {
@@ -384,6 +386,10 @@ struct Stage<T> {
     retained_bytes: usize,
 }
 impl<T> Candidate<T> {
+    #[cfg(feature = "persistence")]
+    pub fn persistence_is_pending(&self) -> bool {
+        self.stage.active.get()
+    }
     pub fn receipt(&self) -> &Receipt {
         &self.stage.receipt
     }
@@ -457,6 +463,7 @@ impl Host {
     // Private constructor; only runtime allocation and sealed reservation bind use it.
     fn with_identity(limits: Limits, id: u64, cleanup: CleanupIdentity) -> Result<Self> {
         Ok(Self(Rc::new(HostInner {
+            session: Default::default(),
             id,
             limits,
             gate: Cell::new(false),
@@ -477,14 +484,30 @@ impl Host {
             }),
         })))
     }
+    pub fn enroll_session(&self, token: &nethacked_kernel::session::Enrollment) -> Result<()> {
+        self.0.session.enroll(token).map_err(|_| Error::Busy)
+    }
     pub fn close_visibility(&self) -> Result<Gate> {
+        let session = self.0.session.enter().map_err(|e| match e {
+            nethacked_kernel::session::Error::Busy => Error::Busy,
+            _ => Error::Stale,
+        })?;
+        self.close_capture_visibility(Some(session))
+    }
+    fn close_capture_visibility(
+        &self,
+        session: Option<nethacked_kernel::session::ParticipantGuard>,
+    ) -> Result<Gate> {
         if self.0.quarantine.get() {
             return Err(Error::Quarantined);
         }
         if self.0.gate.replace(true) {
             return Err(Error::Busy);
         }
-        Ok(Gate { host: self.clone() })
+        Ok(Gate {
+            host: self.clone(),
+            _session: session,
+        })
     }
     /// Sorted metadata only, including tombstones. Never exposes payloads/routes.
     pub fn registry(&self) -> Result<Vec<Stamp>> {
@@ -585,18 +608,10 @@ impl Host {
         }
         schema.validate(&initial)?;
         bound(schema.encode(&initial)?.len(), limits.payload_bytes)?;
-        let (pin, enrollment_code) = if let Some(pins) = sealed_pins {
-            pins
-        } else {
-            (
-                kernel.pin_modules(&[spec.module])?,
-                if code.len() > 1 {
-                    Some(kernel.pin_modules(&code[1..])?)
-                } else {
-                    None
-                },
-            )
-        };
+        self.0
+            .session
+            .preflight_change()
+            .map_err(|_| Error::Limit)?;
         let mut registry = self.0.registry.borrow_mut();
         if registry.entries.len() >= limits.owners {
             return Err(Error::Limit);
@@ -613,6 +628,17 @@ impl Host {
         if registry.entries.contains_key(&id) {
             return Err(Error::Invalid);
         }
+        let (pin, enrollment_code) = if let Some(pins) = sealed_pins {
+            pins
+        } else {
+            let module = [spec.module];
+            let mut groups = vec![module.as_slice()];
+            if code.len() > 1 {
+                groups.push(&code[1..]);
+            }
+            let mut pins = kernel.pin_module_groups(&groups)?.into_iter();
+            (pins.next().expect("module pin reserved"), pins.next())
+        };
         let generation = restored.map_or(id.serial, |s| s.1);
         let revision = restored.map_or(0, |s| s.2);
         let stamp = Stamp {
@@ -626,6 +652,7 @@ impl Host {
                 endpoint: String::new(),
             },
         };
+        self.0.session.changed().map_err(|_| Error::Limit)?;
         let owner = Rc::new(Owner {
             host: self.clone(),
             metadata: Metadata {
@@ -651,6 +678,7 @@ impl Host {
             #[cfg(feature = "recorded-inputs")]
             recorded: RefCell::new(BTreeMap::new()),
         });
+        self.0.session.retain_during_capture(&owner);
         let route: Rc<dyn Route> = owner.clone();
         registry.entries.insert(
             id,
@@ -686,6 +714,7 @@ impl Host {
         if route.metadata().pending.get() != 0 {
             return Err(Error::Referenced);
         }
+        self.0.session.changed().map_err(|_| Error::Limit)?;
         route.metadata().live.set(false);
         Ok(())
     }
@@ -870,20 +899,32 @@ impl<T: 'static> Owner<T> {
         if encoded != backend.schema()?.encode(state)? {
             return Err(Error::Schema);
         }
-        let pin = kernel.pin_pure_binding(self.metadata.stamp.module.handle, slot, &binding)?;
         drop(backend);
-        *self.backend.borrow_mut() = Backend::Wasm {
+        let mut backend = self.backend.try_borrow_mut().map_err(|_| Error::Busy)?;
+        let mut compatible = self.compatible.try_borrow_mut().map_err(|_| Error::Busy)?;
+        let mut enrollment_code = self
+            .enrollment_code
+            .try_borrow_mut()
+            .map_err(|_| Error::Busy)?;
+        self.host
+            .0
+            .session
+            .preflight_change()
+            .map_err(|_| Error::Limit)?;
+        let pin = kernel.pin_pure_binding(self.metadata.stamp.module.handle, slot, &binding)?;
+        self.host.0.session.changed().map_err(|_| Error::Limit)?;
+        *backend = Backend::Wasm {
             codec: codec.clone(),
             slot,
             binding: binding.clone(),
         };
-        *self.compatible.borrow_mut() = Some(Compatible {
+        *compatible = Some(Compatible {
             codec,
             slot,
             binding,
             _pin: pin,
         });
-        self.enrollment_code.borrow_mut().take();
+        enrollment_code.take();
         self.metadata.behavior_revision.set(next);
         self.clear_cache_gated();
         Ok(())
@@ -909,6 +950,7 @@ impl<T: 'static> Owner<T> {
         {
             return Err(Error::Unsupported);
         }
+        self.host.0.session.changed().map_err(|_| Error::Limit)?;
         *self.query_policy.borrow_mut() = policy;
         self.clear_cache_gated();
         Ok(())
@@ -1473,6 +1515,7 @@ impl<T: 'static> Owner<T> {
             retained_bytes,
         });
         let erased: Rc<dyn Staged> = stage.clone();
+        self.host.0.session.retain_during_capture(&stage);
         registry.staging.insert(serial, Rc::downgrade(&erased));
         Ok(Candidate { stage })
     }
@@ -1544,3 +1587,11 @@ mod recorded;
 use recorded::recorded_size;
 #[cfg(feature = "recorded-inputs")]
 pub use recorded::RecordedDeclaration;
+
+#[cfg(all(
+    test,
+    feature = "persistence",
+    feature = "recorded-inputs",
+    feature = "workflows"
+))]
+mod capture_retirement_tests;

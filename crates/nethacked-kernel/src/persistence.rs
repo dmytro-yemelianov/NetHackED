@@ -1,7 +1,10 @@
 //! D3a local registry records. D4 supplies the bounded D1 envelope and host barrier.
 //! These records are requests/evidence, never runtime credentials.
 pub use super::retention::persistence::*;
+#[path = "persistence/references.rs"]
+mod references;
 use super::*;
+pub use references::ReferenceCounter;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 
@@ -114,6 +117,9 @@ pub trait RegistryAuthority {
 impl Kernel {
     /// Registry-only safe boundary; live retention is deliberately refused.
     pub fn registry_snapshot(&mut self) -> Result<RegistrySnapshot> {
+        self.session
+            .capture_ready()
+            .map_err(crate::kernel::session_error)?;
         let (retention_limits, retention_counters) = self.retention.empty_history()?;
         self.capture_registry(retention_limits, retention_counters)
     }
@@ -236,8 +242,19 @@ impl Kernel {
         saved: &RegistrySnapshot,
         host: &impl RegistryAuthority,
     ) -> Result<BTreeMap<u64, ModuleHandle>> {
+        let _session = self.session.enter().map_err(crate::kernel::session_error)?;
         self.retention.empty_history()?;
         let (hidden, handles) = self.build_registry(saved, host)?;
+        if let Some(token) = self
+            .session
+            .enrollment()
+            .map_err(crate::kernel::session_error)?
+        {
+            hidden.enroll_session(&token)?;
+        }
+        self.session
+            .changed()
+            .map_err(crate::kernel::session_error)?;
         *self = hidden;
         Ok(handles)
     }

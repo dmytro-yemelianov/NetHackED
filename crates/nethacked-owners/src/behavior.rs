@@ -14,6 +14,8 @@ pub(crate) struct CallbackScope {
 }
 impl Drop for CallbackScope {
     fn drop(&mut self) {
+        // The session retains this allocation through capture. Accounting must
+        // also finish for retired/fail-stopped hosts; it invokes no user code.
         self.host.0.behaviors.set(self.host.0.behaviors.get() - 1);
     }
 }
@@ -43,6 +45,7 @@ impl<T> Clone for RetainedBehavior<T> {
 }
 impl<T> Drop for Behavior<T> {
     fn drop(&mut self) {
+        // Capture roots defer destruction, rather than suppressing accounting.
         if let Some(owner) = self.owner.upgrade() {
             owner
                 .metadata
@@ -107,6 +110,7 @@ impl<T> RetainedBehavior<T> {
             #[cfg(feature = "persistence")]
             callback: callback.clone(),
         });
+        self.inner.host.0.session.retain_during_capture(&scope);
         self.inner.host.0.behaviors.set(next);
         Ok(Self {
             inner: self.inner.clone(),
@@ -203,6 +207,7 @@ impl<T: 'static> Owner<T> {
             target: resource(&self.metadata, name),
             _invocation: view.pin_invocation()?,
         });
+        self.host.0.session.retain_during_capture(&inner);
         self.host.0.behaviors.set(next);
         self.metadata.retained_behaviors.set(owner_next);
         Ok(RetainedBehavior { inner, scope: None })
@@ -267,6 +272,7 @@ impl<T: 'static> Owner<T> {
             target: resource(&self.metadata, name),
             _invocation: invocation,
         });
+        self.host.0.session.retain_during_capture(&inner);
         self.host.0.behaviors.set(next);
         self.metadata.retained_behaviors.set(owner_next);
         Ok(RetainedBehavior { inner, scope: None })

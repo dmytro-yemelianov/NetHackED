@@ -200,6 +200,90 @@ pub(super) struct PendingCapture {
     #[cfg(feature = "recorded-inputs")]
     recorded: Vec<nethacked_inputs::Observation>,
 }
+impl StampRow {
+    fn count_references(&self, n: &mut nethacked_kernel::persistence::ReferenceCounter) {
+        n.add(2);
+    }
+}
+impl ObservationRow {
+    fn count_references(&self, n: &mut nethacked_kernel::persistence::ReferenceCounter) {
+        self.stamp.count_references(n);
+        n.add(2); // caller and pin
+        n.add(self.permit.resolution.len());
+        n.add(usize::from(self.helper.is_some()));
+        if let Some(o) = &self.source {
+            n.operation(o);
+        }
+        #[cfg(feature = "recorded-inputs")]
+        n.add(self.recorded.len());
+        for d in &self.dependencies {
+            d.count_references(n);
+        }
+    }
+}
+impl PendingCheckpoint {
+    pub(super) fn missing_owner_dependency<T>(
+        &self,
+        old: OwnerId,
+        codec: &dyn PersistenceCodec<T>,
+        catalog: &RestoreCatalog<T>,
+    ) -> Option<String> {
+        for c in self.candidates.iter().filter(|c| c.stamp.owner == old) {
+            if c.state_codec != codec.identity() {
+                return Some(format!("candidate state codec/schema: {:?}", c.state_codec));
+            }
+            if catalog.resolve(&c.build, &c.policy).is_err() {
+                return Some(format!(
+                    "candidate codec/schema/policy: {:?}; {:?}",
+                    c.build, c.policy
+                ));
+            }
+        }
+        None
+    }
+    pub(super) fn count_references(&self, n: &mut nethacked_kernel::persistence::ReferenceCounter) {
+        for c in &self.candidates {
+            n.add(6); // build and state schema/codec/policy artifacts
+            n.add(c.backend.helpers.len());
+            c.stamp.count_references(n);
+            n.add(1);
+            n.operation(&c.source);
+            n.add(c.capability.resolution.len());
+            n.add(c.behavior.len());
+            if let Some(p) = &c.permit {
+                n.add(p.resolution.len());
+            }
+            n.add(c.references.len());
+            n.add(c.pins.len());
+            n.add(usize::from(c.helper.is_some()));
+            for d in &c.dependencies {
+                d.count_references(n);
+            }
+            #[cfg(feature = "recorded-inputs")]
+            n.add(c.recorded.len());
+        }
+        for b in &self.batches {
+            n.add(b.coordinator.resolution.len());
+            n.add(4); // provider, caller, accounting and pin
+            n.operation(&b.source);
+            n.add(b.candidates.len());
+            n.add(b.writes.len());
+            n.add(b.order.len());
+            for r in &b.readonly {
+                r.count_references(n);
+            }
+        }
+        #[cfg(feature = "recorded-inputs")]
+        {
+            if let Some(c) = &self.inputs {
+                c.count_references(n);
+            }
+            for _ in &self.observations {
+                n.add(2);
+            }
+        }
+    }
+}
 impl PendingCapture {
     #[cfg(feature = "recorded-inputs")]
     fn recorded(&mut self, values: &[nethacked_inputs::Observation]) -> Vec<usize> {
@@ -326,6 +410,7 @@ impl ExecutionRoots {
     pub(crate) fn stage<T>(&mut self, stage: &Stage<T>) -> Result<()> {
         let p = stage.prepared.try_borrow().map_err(|_| Error::Busy)?;
         let p = p.as_ref().ok_or(Error::Stale)?;
+        self.stages.insert(stage.receipt.serial);
         self.pending_operation(&stage.receipt.operation);
         self.pending_helper(&p.helper);
         for d in &p.dependencies {
@@ -334,6 +419,7 @@ impl ExecutionRoots {
         Ok(())
     }
     pub fn batch(&mut self, batch: &Batch) -> Result<()> {
+        self.tickets.insert(batch.ticket);
         self.pending_operation(&batch.operation);
         for d in &*batch.state.readonly.try_borrow().map_err(|_| Error::Busy)? {
             self.observation(d)?;
@@ -477,6 +563,13 @@ impl ExecutionCapture<'_> {
         let id = entries.next().ok_or(Error::Authority)?.0.clone();
         if entries.next().is_some() {
             return Err(Error::Invalid);
+        }
+        if batch
+            .accounting_identity
+            .as_ref()
+            .is_some_and(|saved| saved != &id)
+        {
+            return Err(Error::Schema);
         }
         let readonly = batch.state.readonly.try_borrow().map_err(|_| Error::Busy)?;
         let code = batch.state.code.try_borrow().map_err(|_| Error::Busy)?;
@@ -777,6 +870,25 @@ fn validate_dependency_edges(port: &Port, rows: &[ObservationRow]) -> Result<()>
     Ok(())
 }
 impl PendingCheckpoint {
+    pub(super) fn preflight_owner_candidates(
+        &self,
+        owner: OwnerId,
+        candidates: &[u64],
+    ) -> Result<()> {
+        let selected = candidates.iter().copied().collect::<BTreeSet<_>>();
+        if selected.len() != candidates.len()
+            || selected
+                != self
+                    .candidates
+                    .iter()
+                    .filter(|c| c.stamp.owner == owner)
+                    .map(|c| c.serial)
+                    .collect()
+        {
+            return Err(Error::Authority);
+        }
+        Ok(())
+    }
     pub(super) fn validate(
         &self,
         c: &ExecutionCheckpoint,
@@ -1092,6 +1204,39 @@ pub(super) struct PendingRestore {
     inputs: Option<nethacked_inputs::persistence::Restored>,
 }
 impl PendingRestore {
+    /// Re-enroll admitted prepared allocations without exposing their private state.
+    pub(super) fn enroll_capture_catalog<T: 'static>(
+        &self,
+        owner: OwnerId,
+        checkpoint: &PendingCheckpoint,
+        catalog: &mut CaptureCatalog<T>,
+    ) -> Result<()> {
+        for row in checkpoint
+            .candidates
+            .iter()
+            .filter(|r| r.stamp.owner == owner)
+        {
+            let erased = self
+                .stages
+                .get(&row.serial)
+                .and_then(Weak::upgrade)
+                .ok_or(Error::Stale)?;
+            let stage = erased
+                .as_any()
+                .downcast_ref::<Stage<T>>()
+                .ok_or(Error::Schema)?;
+            let prepared = stage.prepared.try_borrow().map_err(|_| Error::Busy)?;
+            let prepared = prepared.as_ref().ok_or(Error::Stale)?;
+            let backend = copy_backend(&prepared.persistence_backend);
+            if catalog
+                .identify(&backend, &row.policy, row.stamp.schema)
+                .is_err()
+            {
+                catalog.register(row.build.clone(), row.policy.clone(), backend)?;
+            }
+        }
+        Ok(())
+    }
     pub(super) fn new(_mapped: &RestoredKernel) -> Self {
         Self {
             #[cfg(feature = "recorded-inputs")]
@@ -1128,6 +1273,43 @@ impl PendingRestore {
             return Err(Error::Unsupported);
         }
         Ok(())
+    }
+}
+impl PendingCheckpoint {
+    pub(super) fn approve_owner<T>(
+        &self,
+        owner: OwnerId,
+        codec: &dyn PersistenceCodec<T>,
+        catalog: &RestoreCatalog<T>,
+    ) -> Result<()> {
+        for row in self.candidates.iter().filter(|r| r.stamp.owner == owner) {
+            if row.state_codec != codec.identity() {
+                return Err(Error::Schema);
+            }
+            catalog.resolve(&row.build, &row.policy)?;
+        }
+        Ok(())
+    }
+}
+impl AccountingRestoreCatalog {
+    pub fn approve_checkpoint(&self, checkpoint: &ExecutionCheckpoint) -> Result<()> {
+        for row in &checkpoint.pending.batches {
+            self.resolve(row)?;
+        }
+        Ok(())
+    }
+    pub fn missing_dependency(&self, checkpoint: &ExecutionCheckpoint) -> Option<String> {
+        checkpoint
+            .pending
+            .batches
+            .iter()
+            .find(|r| self.resolve(r).is_err())
+            .map(|r| {
+                format!(
+                    "accounting artifact: {:?}; policy: {:?}",
+                    r.accounting, r.policy
+                )
+            })
     }
 }
 impl ExecutionCheckpoint {
@@ -1365,6 +1547,7 @@ impl ExecutionRestore {
             active: Cell::new(false),
             retained_bytes: retained,
         });
+        self.state.host.0.session.retain_during_capture(&stage);
         let erased: Rc<dyn Staged> = stage.clone();
         {
             let mut r = self.state.host.0.registry.borrow_mut();
@@ -1461,6 +1644,8 @@ impl ExecutionRestore {
             readonly: RefCell::new(readonly),
             code: RefCell::new(Some(code)),
         });
+        self.state.host.0.session.retain_during_capture(&state);
+        self.state.host.0.session.retain_during_capture(&accounting);
         self.state
             .host
             .0
@@ -1470,6 +1655,7 @@ impl ExecutionRestore {
             .insert(ticket, Rc::downgrade(&state));
         self.pending.tickets.insert(ticket, Rc::downgrade(&state));
         Ok(Batch {
+            accounting_identity: Some(row.accounting.clone()),
             host: self.state.host.clone(),
             ticket,
             state,
@@ -1514,5 +1700,28 @@ fn validate_retired(rows: &Option<Vec<(u64, u64)>>, end: u64, live: &BTreeSet<u6
         Some(rows) if rows == &retired_ranges(end, live)? => Ok(()),
         None if live.is_empty() => Ok(()),
         _ => Err(Error::Stale),
+    }
+}
+
+impl AccountingRestoreCatalog {
+    pub fn capture_catalog(&self, batches: &[Batch]) -> Result<AccountingCaptureCatalog> {
+        let mut catalog = AccountingCaptureCatalog::default();
+        for batch in batches {
+            let row = self
+                .entries
+                .iter()
+                .find(|(i, p, _)| {
+                    Some(i) == batch.accounting_identity.as_ref() && *p == batch.policy
+                })
+                .ok_or(Error::Schema)?;
+            if !catalog
+                .entries
+                .iter()
+                .any(|(_, _, a)| Rc::ptr_eq(a, &batch.accounting))
+            {
+                catalog.register(row.0.clone(), row.1, batch.accounting.clone())?;
+            }
+        }
+        Ok(catalog)
     }
 }

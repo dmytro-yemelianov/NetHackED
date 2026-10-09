@@ -273,6 +273,7 @@ impl CallbackCapture for CallbackFactory<'_> {
             .map_err(|_| Error::NativeRefusal)?;
         let serial = callbacks.next;
         let next = serial.checked_add(1).ok_or(Error::Limit)?;
+        k.session.retain_during_capture(&data);
         callbacks.live.retain(|_, w| w.strong_count() != 0);
         callbacks.live.insert(serial, Rc::downgrade(&data));
         callbacks.next = next;
@@ -377,6 +378,7 @@ impl Kernel {
         &mut self,
         callback: &RetainedCallback,
     ) -> Result<(OperationId, PipelineLease)> {
+        let _session = self.session.enter().map_err(crate::kernel::session_error)?;
         let data = &callback.0;
         if data.host != self.instance {
             return Err(Error::InvalidHandle);
@@ -456,6 +458,7 @@ impl Kernel {
 
     /// Configure explicit bounds only while no retained references exist.
     pub fn set_retention_limits(&mut self, limits: RetentionLimits) -> Result<()> {
+        let _session = self.session.enter().map_err(crate::kernel::session_error)?;
         if limits.leases == 0
             || limits.owners == 0
             || limits.nodes == 0
@@ -467,6 +470,9 @@ impl Kernel {
         if self.lifecycle_state().references != 0 {
             return Err(Error::Referenced);
         }
+        self.session
+            .changed()
+            .map_err(crate::kernel::session_error)?;
         self.retention.limits = limits;
         Ok(())
     }
@@ -544,6 +550,7 @@ impl Kernel {
         endpoint: &str,
         ceiling: Authority,
     ) -> Result<PipelineLease> {
+        let _session = self.session.enter().map_err(crate::kernel::session_error)?;
         self.validate_authority(&ceiling, false)?;
         let ep = self
             .registration(provider)?
@@ -652,6 +659,7 @@ impl Kernel {
         request: &[u8],
         authority: Authority,
     ) -> Result<Vec<u8>> {
+        let _session = self.session.enter().map_err(crate::kernel::session_error)?;
         self.invoke_pipeline_context(lease, request, authority, None)
     }
 
@@ -694,6 +702,11 @@ impl Kernel {
     }
 
     pub fn release_pipeline(&mut self, lease: PipelineLease) -> Result<()> {
+        let _session = self.session.enter().map_err(crate::kernel::session_error)?;
+        self.pipeline_descriptor(lease)?;
+        self.session
+            .changed()
+            .map_err(crate::kernel::session_error)?;
         self.retention
             .pipelines
             .remove(&lease)
@@ -703,6 +716,7 @@ impl Kernel {
 
     /// Bounded host reference ownership; no schema/service type is embedded here.
     pub fn retain_owner(&mut self, handles: &[ModuleHandle]) -> Result<OwnerReference> {
+        let _session = self.session.enter().map_err(crate::kernel::session_error)?;
         if handles.is_empty()
             || handles.len() > self.retention.limits.nodes
             || self.lifecycle_state().owners >= self.retention.limits.owners
@@ -724,12 +738,22 @@ impl Kernel {
             instance: self.instance,
             serial: self.retention.next_serial,
         };
+        self.session
+            .changed()
+            .map_err(crate::kernel::session_error)?;
         self.retention.owners.insert(owner, references);
         self.retention.next_serial = next;
         Ok(owner)
     }
 
     pub fn release_owner(&mut self, owner: OwnerReference) -> Result<()> {
+        let _session = self.session.enter().map_err(crate::kernel::session_error)?;
+        if !self.retention.owners.contains_key(&owner) {
+            return Err(Error::InvalidHandle);
+        }
+        self.session
+            .changed()
+            .map_err(crate::kernel::session_error)?;
         self.retention
             .owners
             .remove(&owner)
@@ -740,25 +764,58 @@ impl Kernel {
     /// RAII module references for optional owner-local storage and prepared work.
     /// This pins code only; it confers no invocation authority.
     pub fn pin_modules(&self, handles: &[ModuleHandle]) -> Result<ModulePin> {
-        if handles.is_empty() || handles.len() > self.retention.limits.nodes {
+        Ok(self.pin_module_groups(&[handles])?.remove(0))
+    }
+
+    /// Reserve independent pins atomically, including their allocation history.
+    /// Every group's admission and the aggregate limits precede publication.
+    pub fn pin_module_groups(&self, groups: &[&[ModuleHandle]]) -> Result<Vec<ModulePin>> {
+        let _session = self.session.enter().map_err(crate::kernel::session_error)?;
+        if groups.is_empty() {
             return Err(Error::Limit);
         }
-        let references: BTreeSet<_> = handles.iter().copied().collect();
-        for handle in &references {
-            self.registration(*handle)?;
+        let mut reservations = Vec::with_capacity(groups.len());
+        let mut additional = 0usize;
+        for handles in groups {
+            if handles.is_empty() || handles.len() > self.retention.limits.nodes {
+                return Err(Error::Limit);
+            }
+            let references: BTreeSet<_> = handles.iter().copied().collect();
+            for handle in &references {
+                self.registration(*handle)?;
+            }
+            additional = additional
+                .checked_add(references.len())
+                .ok_or(Error::Limit)?;
+            reservations.push(references);
         }
-        if self.lifecycle_state().owners >= self.retention.limits.owners {
+        if self
+            .lifecycle_state()
+            .owners
+            .checked_add(groups.len())
+            .ok_or(Error::Limit)?
+            > self.retention.limits.owners
+        {
             return Err(Error::Limit);
         }
-        self.reference_capacity(references.len())?;
+        self.reference_capacity(additional)?;
         let mut pins = self.retention.pins.borrow_mut();
-        let next = pins.next.checked_add(1).ok_or(Error::Limit)?;
-        let pin = Rc::new(PinData { references });
+        let next = pins
+            .next
+            .checked_add(u64::try_from(groups.len()).map_err(|_| Error::Limit)?)
+            .ok_or(Error::Limit)?;
         pins.live.retain(|_, p| p.strong_count() > 0);
+        let mut result = Vec::with_capacity(groups.len());
         let serial = pins.next;
-        pins.live.insert(serial, Rc::downgrade(&pin));
+        for (offset, references) in reservations.into_iter().enumerate() {
+            let pin = Rc::new(PinData { references });
+            self.session.retain_during_capture(&pin);
+            pins.live
+                .insert(serial + offset as u64, Rc::downgrade(&pin));
+            result.push(ModulePin(pin));
+        }
         pins.next = next;
-        Ok(ModulePin(pin))
+        Ok(result)
     }
 
     pub(super) fn pin_route(
@@ -825,16 +882,21 @@ impl Kernel {
 
     /// Detach affects future calls only. Retained chains continue to own code.
     pub fn managed_detach(&mut self, extension: ModuleHandle) -> Result<()> {
+        let _session = self.session.enter().map_err(crate::kernel::session_error)?;
         self.registration(extension)?;
         if !self.extensions.values().any(|(h, _)| *h == extension) {
             return Err(Error::MissingDependency);
         }
+        self.session
+            .changed()
+            .map_err(crate::kernel::session_error)?;
         self.extensions.retain(|_, (h, _)| *h != extension);
         Ok(())
     }
 
     /// Reattach only to the original, still installed target incarnation.
     pub fn managed_attach(&mut self, extension: ModuleHandle) -> Result<()> {
+        let _session = self.session.enter().map_err(crate::kernel::session_error)?;
         let reg = self.registration(extension)?;
         let (target, endpoint, export) = reg.attachment.clone().ok_or(Error::InvalidManifest)?;
         self.registration(target)?;
@@ -842,6 +904,9 @@ impl Kernel {
         if self.extensions.contains_key(&key) {
             return Err(Error::Duplicate);
         }
+        self.session
+            .changed()
+            .map_err(crate::kernel::session_error)?;
         self.extensions.insert(key, (extension, export));
         Ok(())
     }
@@ -849,6 +914,7 @@ impl Kernel {
     /// Session hosts use this stricter removal boundary. Legacy unregister keeps
     /// its unpinned behavior, but cannot remove any retained code.
     pub fn managed_unload(&mut self, handle: ModuleHandle) -> Result<()> {
+        let _session = self.session.enter().map_err(crate::kernel::session_error)?;
         self.registration(handle)?;
         self.unreferenced(handle)?;
         if self
@@ -875,6 +941,7 @@ impl Kernel {
 
 impl Kernel {
     pub fn issue_operation(&mut self) -> Result<OperationId> {
+        let _session = self.session.enter().map_err(crate::kernel::session_error)?;
         let next = self.next_operation.checked_add(1).ok_or(Error::Limit)?;
         let id = OperationId {
             host: self.instance,
@@ -930,6 +997,9 @@ impl Kernel {
         pipeline: PipelineLease,
         participants: &[CleanupIdentity],
     ) -> Result<Vec<CleanupIdentity>> {
+        self.session
+            .check_live()
+            .map_err(crate::kernel::session_error)?;
         if operation.host != self.instance
             || operation.serial == 0
             || operation.serial >= self.next_operation
@@ -943,6 +1013,15 @@ impl Kernel {
         let mut cleanup = participants.to_vec();
         cleanup.sort();
         cleanup.dedup();
+        // An already enrolled binding is an immutable capture read. Only new
+        // cleanup enrollment enters the mutation barrier.
+        if cleanup
+            .iter()
+            .all(|id| self.retention.cleanup_history.borrow().contains(&id.raw()))
+        {
+            return Ok(cleanup);
+        }
+        let _session = self.session.enter().map_err(crate::kernel::session_error)?;
         {
             let mut history = self.retention.cleanup_history.borrow_mut();
             let new = cleanup
@@ -1031,6 +1110,7 @@ impl Kernel {
         request: &[u8],
         authority: Authority,
     ) -> Result<Vec<u8>> {
+        let _session = self.session.enter().map_err(crate::kernel::session_error)?;
         let authenticated = self.operation_binding_with_cleanup(
             binding.operation,
             binding.pipeline,
@@ -1050,6 +1130,7 @@ impl Kernel {
         endpoint: &str,
         authority: Authority,
     ) -> Result<(OperationId, PipelineLease)> {
+        let _session = self.session.enter().map_err(crate::kernel::session_error)?;
         let next = self.next_operation.checked_add(1).ok_or(Error::Limit)?;
         let lease = self.capture_pipeline(provider, endpoint, authority)?;
         let operation = OperationId {
@@ -1058,35 +1139,6 @@ impl Kernel {
         };
         self.next_operation = next;
         Ok((operation, lease))
-    }
-}
-
-#[cfg(test)]
-mod operation_counter_tests {
-    use super::*;
-    #[test]
-    fn exhausted_operation_counter_does_not_acquire_a_lease() {
-        let mut k = Kernel::new(Limits::default()).unwrap();
-        k.next_operation = u64::MAX;
-        let before = k.lifecycle_state();
-        let invalid = ModuleHandle {
-            instance: k.instance,
-            generation: 999,
-        };
-        assert_eq!(
-            k.capture_operation(
-                invalid,
-                "step",
-                Authority {
-                    access: Access::Write,
-                    scope: Scope::All
-                }
-            ),
-            Err(Error::Limit)
-        );
-        assert_eq!(k.issue_operation(), Err(Error::Limit));
-        assert_eq!(k.next_operation, u64::MAX);
-        assert_eq!(k.lifecycle_state(), before);
     }
 }
 
@@ -1232,4 +1284,33 @@ fn pipeline_digest(
         );
     }
     Ok(digest.finalize().into())
+}
+
+#[cfg(test)]
+mod operation_counter_tests {
+    use super::*;
+    #[test]
+    fn exhausted_operation_counter_does_not_acquire_a_lease() {
+        let mut k = Kernel::new(Limits::default()).unwrap();
+        k.next_operation = u64::MAX;
+        let before = k.lifecycle_state();
+        let invalid = ModuleHandle {
+            instance: k.instance,
+            generation: 999,
+        };
+        assert_eq!(
+            k.capture_operation(
+                invalid,
+                "step",
+                Authority {
+                    access: Access::Write,
+                    scope: Scope::All
+                }
+            ),
+            Err(Error::Limit)
+        );
+        assert_eq!(k.issue_operation(), Err(Error::Limit));
+        assert_eq!(k.next_operation, u64::MAX);
+        assert_eq!(k.lifecycle_state(), before);
+    }
 }

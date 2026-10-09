@@ -7,6 +7,7 @@
 
 mod kernel;
 mod model;
+pub mod session;
 mod wasm;
 
 pub use kernel::persistence;

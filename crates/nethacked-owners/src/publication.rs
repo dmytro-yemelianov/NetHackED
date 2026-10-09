@@ -79,6 +79,9 @@ pub struct Batch {
     pub(super) order: Vec<OwnerId>,
     pub(super) policy: [u8; 32],
     pub(super) accounting: Rc<dyn Accounting>,
+    // Exact admitted provenance, independent of a potentially shared policy.
+    #[cfg(feature = "persistence")]
+    pub(super) accounting_identity: Option<crate::persistence::ArtifactIdentity>,
 }
 pub(super) struct TicketState {
     pub(super) operation: OperationBinding,
@@ -308,7 +311,8 @@ impl Host {
         }
     }
     pub fn cleanup_identity(&self) -> Result<CleanupIdentity> {
-        let _gate = self.close_visibility()?;
+        self.0.session.check_live().map_err(|_| Error::Stale)?;
+        let _gate = self.close_capture_visibility(None)?;
         Ok(self.0.cleanup)
     }
     /// Enrollment-time bounds. Refuses after the first ticket is issued.
@@ -331,6 +335,7 @@ impl Host {
         if p.next_ticket != 0 || self.0.registry.borrow().pending != 0 {
             return Err(Error::Referenced);
         }
+        self.0.session.changed().map_err(|_| Error::Limit)?;
         p.limits = limits;
         Ok(())
     }
@@ -381,12 +386,16 @@ impl Host {
             readonly: RefCell::new(readonly),
             code: RefCell::new(Some(code)),
         });
+        self.0.session.retain_during_capture(&state);
+        self.0.session.retain_during_capture(&accounting);
         self.0
             .registry
             .borrow_mut()
             .tickets
             .insert(ticket, Rc::downgrade(&state));
         Ok(Batch {
+            #[cfg(feature = "persistence")]
+            accounting_identity: None,
             host: self.clone(),
             ticket,
             state,
@@ -500,6 +509,17 @@ fn coordinator_permit(
 }
 
 impl Batch {
+    #[cfg(feature = "persistence")]
+    pub fn persistence_candidate_serials(&self) -> Vec<u64> {
+        self.candidates
+            .iter()
+            .map(|c| c.stage.receipt().serial)
+            .collect()
+    }
+    #[cfg(feature = "persistence")]
+    pub fn persistence_is_pending(&self) -> bool {
+        !self.state.consumed.get()
+    }
     #[cfg(test)]
     pub(crate) fn consumed_for_test(&self) -> bool {
         self.state.consumed.get()
@@ -830,6 +850,8 @@ impl<T> Stage<T> {
 }
 impl<T> Drop for Stage<T> {
     fn drop(&mut self) {
+        // The actual Stage is retained until capture ends. Retired hosts still
+        // release their local reservation and prepared allocations exactly once.
         self.release_pending(&mut self.host.0.registry.borrow_mut());
     }
 }
@@ -907,6 +929,11 @@ impl<T: 'static> Stage<T> {
 
 #[cfg(feature = "persistence")]
 impl Publication {
+    pub(super) fn historical_prefix(&self) -> Vec<persistence::HistoricalCommit> {
+        let mut records = self.archived.clone();
+        records.extend(self.local_history.iter().cloned());
+        records
+    }
     pub(super) fn capture_local(
         &self,
         _origin_host: u64,
@@ -922,8 +949,7 @@ impl Publication {
         {
             return Err(Error::Unsupported);
         }
-        let mut records = self.archived.clone();
-        records.extend(self.local_history.iter().cloned());
+        let records = self.historical_prefix();
         // Every issued ticket is permanently unavailable once its batch is gone;
         // live unconsumed batches refused above belong to the D3 pending seam.
         let consumed = (1..=self.next_ticket).collect();

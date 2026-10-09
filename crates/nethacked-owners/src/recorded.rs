@@ -48,6 +48,7 @@ impl<T: 'static> Owner<T> {
                 .ok_or(Error::Limit)?;
         }
         bound(size, self.host.0.limits.observation_bytes)?;
+        self.host.0.session.changed().map_err(|_| Error::Limit)?;
         if !declarations.is_empty() && self.metadata.ports[name].access == Access::Read {
             *self.query_policy.borrow_mut() = QueryPolicy::Noncacheable;
         }

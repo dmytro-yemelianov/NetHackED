@@ -144,6 +144,7 @@ impl PureCall for PureBridge<'_> {
 }
 
 pub struct Kernel {
+    pub(crate) session: crate::session::Participant,
     instance: u64,
     next_generation: u64,
     next_operation: u64,
@@ -158,6 +159,9 @@ pub struct Kernel {
 }
 
 impl Kernel {
+    pub fn enroll_session(&self, token: &crate::session::Enrollment) -> Result<()> {
+        self.session.enroll(token).map_err(session_error)
+    }
     fn inspect_pure_closure(
         &self,
         frame: &Frame,
@@ -233,6 +237,7 @@ impl Kernel {
         slot: usize,
         binding: &CapabilityPermit,
     ) -> Result<ModulePin> {
+        let _session = self.session.enter().map_err(crate::kernel::session_error)?;
         let dep = self
             .registration(provider)?
             .manifest
@@ -297,6 +302,7 @@ impl Kernel {
             .set_max_recursion_depth(limits.wasm_recursion)
             .set_max_cached_stacks(0);
         Ok(Self {
+            session: Default::default(),
             instance,
             next_generation: 1,
             next_operation: 1,
@@ -318,9 +324,11 @@ impl Kernel {
         self.registrations.get(&handle).ok_or(Error::InvalidHandle)
     }
     pub fn manifest(&self, handle: ModuleHandle) -> Result<&Manifest> {
+        self.session.check_live().map_err(session_error)?;
         Ok(&self.registration(handle)?.manifest)
     }
     pub fn artifact(&self, handle: ModuleHandle) -> Result<[u8; 32]> {
+        self.session.check_live().map_err(session_error)?;
         Ok(self.registration(handle)?.artifact)
     }
     pub fn register_native(
@@ -329,6 +337,7 @@ impl Kernel {
         artifact: &[u8],
         ports: BTreeMap<String, NativePort>,
     ) -> Result<ModuleHandle> {
+        let _session = self.session.enter().map_err(crate::kernel::session_error)?;
         self.validate_manifest(&manifest)?;
         if ports.keys().ne(manifest.exports.keys()) {
             return Err(Error::Signature);
@@ -336,6 +345,7 @@ impl Kernel {
         self.publish(manifest, artifact, Code::Native(ports), b"native-v1")
     }
     pub fn register_guest(&mut self, manifest: Manifest, bytes: &[u8]) -> Result<ModuleHandle> {
+        let _session = self.session.enter().map_err(crate::kernel::session_error)?;
         self.validate_manifest(&manifest)?;
         if bytes.len() > self.limits.module_bytes {
             return Err(Error::Limit);
@@ -464,6 +474,7 @@ impl Kernel {
                 }
             })
             .collect::<Result<Vec<_>>>()?;
+        self.session.changed().map_err(session_error)?;
         self.ids.insert(manifest.id.clone(), handle);
         self.registrations.insert(
             handle,
@@ -519,6 +530,7 @@ impl Kernel {
         slot: usize,
         authority: Authority,
     ) -> Result<()> {
+        let _session = self.session.enter().map_err(crate::kernel::session_error)?;
         self.validate_authority(&authority, true)?;
         let dep = self
             .registration(caller)?
@@ -530,6 +542,7 @@ impl Kernel {
             return Err(Error::Authority);
         }
         let (target, _) = self.capability(&dep.capability)?;
+        self.session.changed().map_err(session_error)?;
         self.grants.insert(
             (caller, slot),
             Grant {
@@ -541,7 +554,12 @@ impl Kernel {
         Ok(())
     }
     pub fn revoke_grant(&mut self, caller: ModuleHandle, slot: usize) -> Result<()> {
+        let _session = self.session.enter().map_err(crate::kernel::session_error)?;
         self.registration(caller)?;
+        if !self.grants.contains_key(&(caller, slot)) {
+            return Err(Error::MissingGrant);
+        }
+        self.session.changed().map_err(session_error)?;
         self.grants
             .get_mut(&(caller, slot))
             .ok_or(Error::MissingGrant)?
@@ -549,8 +567,10 @@ impl Kernel {
         Ok(())
     }
     pub fn unregister(&mut self, handle: ModuleHandle) -> Result<()> {
+        let _session = self.session.enter().map_err(crate::kernel::session_error)?;
         let id = self.registration(handle)?.manifest.id.clone();
         self.unreferenced(handle)?;
+        self.session.changed().map_err(session_error)?;
         self.ids.remove(&id);
         self.registrations.remove(&handle);
         self.grants.retain(|(caller, _), _| *caller != handle);
@@ -565,6 +585,7 @@ impl Kernel {
         request: &[u8],
         authority: Authority,
     ) -> Result<Vec<u8>> {
+        let _session = self.session.enter().map_err(crate::kernel::session_error)?;
         self.validate_authority(&authority, false)?;
         let budget = Rc::new(RefCell::new(Budget {
             fuel: self.limits.fuel,
@@ -818,6 +839,14 @@ impl Kernel {
             ));
         }
         Ok(permits)
+    }
+}
+
+pub(crate) fn session_error(e: crate::session::Error) -> Error {
+    match e {
+        crate::session::Error::Busy => Error::Busy,
+        crate::session::Error::Exhausted => Error::Limit,
+        _ => Error::Authority,
     }
 }
 

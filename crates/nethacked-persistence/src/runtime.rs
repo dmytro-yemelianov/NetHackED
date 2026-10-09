@@ -3,7 +3,7 @@
 //! Native factory fidelity, complete proof enrollment, immutable configuration,
 //! private allocations/alias exclusion and effect-free construction/drop are
 //! explicit trust premises. This module cannot make arbitrary native code pure.
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet};
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::rc::Rc;
@@ -112,8 +112,12 @@ pub struct BuildContext<'a, B> {
     configuration: &'a ApprovedConfiguration<B>,
     proofs: Proofs,
     refused: Option<Error>,
+    enrollment: Option<Enrollment>,
 }
 impl<B> BuildContext<'_, B> {
+    pub fn enrollment(&self) -> Result<&Enrollment, Error> {
+        self.enrollment.as_ref().ok_or(Error::Exhausted)
+    }
     pub fn require_permission(&mut self, permission: &Permission) -> Result<(), Error> {
         if !self.configuration.permissions.contains(permission) {
             self.refused = Some(Error::Unauthorized);
@@ -132,31 +136,18 @@ impl<B> BuildContext<'_, B> {
     }
 }
 
-struct Domain {
-    occupied: Cell<bool>,
-    failed: Cell<bool>,
-}
-impl Domain {
-    fn enter(&self) -> Result<DomainGuard<'_>, Error> {
-        if self.occupied.get() {
-            return Err(Error::Busy);
+use nethacked_kernel::session::{Domain, Enrollment};
+pub type DomainGuard<'a> = nethacked_kernel::session::Guard<'a>;
+impl From<nethacked_kernel::session::Error> for Error {
+    fn from(e: nethacked_kernel::session::Error) -> Self {
+        use nethacked_kernel::session::Error as E;
+        match e {
+            E::Busy => Self::Busy,
+            E::Retired => Self::StaleStage,
+            E::Foreign => Self::ForeignDomain,
+            E::Exhausted => Self::Exhausted,
+            E::FailStop => Self::FailStop,
         }
-        if self.failed.get() {
-            return Err(Error::FailStop);
-        }
-        self.occupied.set(true);
-        Ok(DomainGuard { domain: self })
-    }
-}
-/// A held guard blocks *all* runtime access, capture, staging and authority changes.
-/// Dropping it releases exclusion, including during unwinding. Forgetting it
-/// intentionally leaves the domain Busy; it cannot open an exclusion hole.
-pub struct DomainGuard<'a> {
-    domain: &'a Domain,
-}
-impl Drop for DomainGuard<'_> {
-    fn drop(&mut self) {
-        self.domain.occupied.set(false);
     }
 }
 struct AuthorityIdentity;
@@ -174,6 +165,7 @@ pub struct RuntimeCredential {
     identity: Rc<AuthorityIdentity>,
     epoch: u64,
     generation: u64,
+    domain_epoch: u64,
     permissions: BTreeSet<Permission>,
 }
 
@@ -237,6 +229,7 @@ pub struct RestoreStage<B> {
     configuration: Rc<Held<ApprovedConfiguration<B>>>,
     epoch: u64,
     generation: u64,
+    domain_epoch: u64,
     factory: Binding,
     proofs: Proofs,
     bundle: Held<B>,
@@ -258,6 +251,10 @@ impl Activation {
 }
 
 impl<B: 'static> HostSlot<B> {
+    #[cfg(feature = "session")]
+    pub(crate) fn capture_epoch(&self) -> u64 {
+        self.domain.epoch()
+    }
     /// Host enrollment only. All supplied allocations/factories obey the native
     /// premises above. Initial credentials cover the initial approved permissions.
     pub fn new(
@@ -270,10 +267,7 @@ impl<B: 'static> HostSlot<B> {
         if backend != Backend::Serial {
             return Err(Error::Unsupported);
         }
-        let domain = Rc::new(Domain {
-            occupied: Cell::new(false),
-            failed: Cell::new(false),
-        });
+        let domain = Rc::new(Domain::new());
         let identity = Rc::new(AuthorityIdentity);
         let key = AuthorityKey {
             domain: domain.clone(),
@@ -284,6 +278,7 @@ impl<B: 'static> HostSlot<B> {
             identity: identity.clone(),
             epoch: 1,
             generation: 1,
+            domain_epoch: domain.epoch(),
             permissions: configuration.get().permissions.clone(),
         };
         Ok((
@@ -301,6 +296,10 @@ impl<B: 'static> HostSlot<B> {
             credential,
         ))
     }
+    pub fn enrollment(&self, key: &AuthorityKey) -> Result<Enrollment, Error> {
+        let _guard = self.try_hold(key)?;
+        Ok(self.domain.enrollment(self.state.borrow().generation))
+    }
     fn check_key(&self, key: &AuthorityKey, state: &State<B>) -> Result<(), Error> {
         if !Rc::ptr_eq(&key.domain, &self.domain) {
             return Err(Error::ForeignDomain);
@@ -311,7 +310,7 @@ impl<B: 'static> HostSlot<B> {
         Ok(())
     }
     pub fn try_hold(&self, key: &AuthorityKey) -> Result<DomainGuard<'_>, Error> {
-        let guard = self.domain.enter()?;
+        let guard = self.domain.exclusive()?;
         self.check_key(key, &self.state.borrow())?;
         Ok(guard)
     }
@@ -322,8 +321,9 @@ impl<B: 'static> HostSlot<B> {
         key: &AuthorityKey,
         encoder: impl FnOnce(&B) -> Result<S, Error>,
     ) -> Result<S, Error> {
-        let _guard = self.try_hold(key)?;
+        let _guard = self.domain.capture()?;
         let state = self.state.borrow();
+        self.check_key(key, &state)?;
         contain(|| encoder(state.bundle.get())).map_err(|()| Error::EncoderPanicked)?
     }
     /// Every enrolled invocation/publication/delivery/scheduling/lifecycle/mutation
@@ -335,7 +335,7 @@ impl<B: 'static> HostSlot<B> {
         credential: &RuntimeCredential,
         call: impl FnOnce(&mut B) -> R,
     ) -> Result<R, Error> {
-        let _guard = self.domain.enter()?;
+        let _guard = self.domain.runtime()?;
         let mut state = self.state.borrow_mut();
         if !Rc::ptr_eq(&credential.domain, &self.domain) {
             return Err(Error::ForeignDomain);
@@ -346,7 +346,7 @@ impl<B: 'static> HostSlot<B> {
         if credential.generation != state.generation {
             return Err(Error::StaleStage);
         }
-        if credential.epoch != state.epoch {
+        if credential.epoch != state.epoch || credential.domain_epoch != self.domain.epoch() {
             return Err(Error::AuthorityChanged);
         }
         if !credential
@@ -376,6 +376,7 @@ impl<B: 'static> HostSlot<B> {
             identity: state.identity.clone(),
             epoch: state.epoch,
             generation: state.generation,
+            domain_epoch: self.domain.epoch(),
             permissions,
         })
     }
@@ -431,6 +432,10 @@ impl<B: 'static> HostSlot<B> {
             configuration,
             proofs: Proofs::default(),
             refused: None,
+            enrollment: state
+                .generation
+                .checked_add(1)
+                .map(|next| self.domain.enrollment(next)),
         };
         let mut bundle = Held(Some(
             contain(|| enrolled.get().build(&mut context, metadata))
@@ -446,6 +451,7 @@ impl<B: 'static> HostSlot<B> {
             configuration: state.configuration.clone(),
             epoch: state.epoch,
             generation: state.generation,
+            domain_epoch: self.domain.epoch(),
             factory: factory.clone(),
             proofs: context.proofs,
             bundle,
@@ -470,7 +476,7 @@ impl<B: 'static> HostSlot<B> {
         handles
             .try_reserve_exact(1)
             .map_err(|_| Error::Allocation)?;
-        let _guard = self.domain.enter()?;
+        let _guard = self.domain.exclusive()?;
         let mut state = self.state.borrow_mut();
         if !Rc::ptr_eq(&stage.domain, &self.domain) {
             return Err(Error::ForeignDomain);
@@ -481,7 +487,10 @@ impl<B: 'static> HostSlot<B> {
         if stage.bundle.0.is_none() {
             return Err(Error::ConsumedStage);
         }
-        if stage.epoch != state.epoch || !Rc::ptr_eq(&stage.configuration, &state.configuration) {
+        if stage.domain_epoch != self.domain.epoch()
+            || stage.epoch != state.epoch
+            || !Rc::ptr_eq(&stage.configuration, &state.configuration)
+        {
             return Err(Error::AuthorityChanged);
         }
         if stage.generation != state.generation {
@@ -508,12 +517,14 @@ impl<B: 'static> HostSlot<B> {
             identity: state.identity.clone(),
             epoch: state.epoch,
             generation: next,
+            domain_epoch: self.domain.epoch(),
             permissions: BTreeSet::new(),
         };
         #[cfg(test)]
         boundary();
         std::mem::swap(&mut state.bundle, &mut stage.bundle);
         state.generation = next;
+        self.domain.exchange(next);
         handles.push(RuntimeCredential {
             permissions: std::mem::take(&mut stage.proofs.permissions),
             ..credential

@@ -87,6 +87,21 @@ struct CaptureProgram {
     identity: Identity,
     codec: Rc<dyn StateCodec>,
 }
+impl Checkpoint {
+    pub fn count_references(&self, n: &mut nethacked_kernel::persistence::ReferenceCounter) {
+        for p in &self.participants {
+            n.add(1);
+            n.add(usize::from(p.cleanup.is_some()));
+        }
+        for f in &self.frames {
+            n.operation(&f.source);
+            n.add(3);
+            n.authority(&f.program.authority); // provider, program artifact, codec
+            n.add(f.references.len());
+            n.add(f.participants.len());
+        }
+    }
+}
 struct CaptureParticipant {
     build: Identity,
     value: Rc<dyn CleanupParticipant>,
@@ -172,6 +187,20 @@ pub struct RestoreCatalog {
     participants: BTreeMap<Identity, ParticipantFactory>,
 }
 impl RestoreCatalog {
+    pub fn missing_dependency(&self, c: &Checkpoint) -> Option<String> {
+        for f in &c.frames {
+            if self.codec(&f.program).is_err() {
+                return Some(format!(
+                    "program: {:?}; codec: {:?}",
+                    f.program.identity, f.program.codec
+                ));
+            }
+        }
+        c.participants
+            .iter()
+            .find(|p| !self.participants.contains_key(&p.build))
+            .map(|p| format!("cleanup artifact: {:?}", p.build))
+    }
     pub fn program(&mut self, program: ProgramRow, codec: Rc<dyn StateCodec>) -> Result<()> {
         program.identity.check()?;
         program.codec.check()?;
@@ -210,6 +239,7 @@ impl Workflows {
     /// Enroll exact bindings in D3's kernel snapshot. Includes terminal and
     /// safe-boundary Running operations; pending cleanup keeps its exact epoch.
     pub fn persistence_enrollment(&self, kernel: &Kernel) -> Result<Vec<OperationBinding>> {
+        self.1.check_live().map_err(|_| Error::Busy)?;
         let inner = self.0.try_borrow_mut().map_err(|_| Error::Busy)?;
         inner
             .frames
@@ -232,6 +262,7 @@ impl Workflows {
         index: &ExecutionCaptureIndex<'_>,
         catalog: &CaptureCatalog,
     ) -> Result<Checkpoint> {
+        self.1.capture_ready().map_err(|_| Error::Busy)?;
         if !Rc::ptr_eq(&self.0, &catalog.owner.0) {
             return Err(Error::Status);
         }
@@ -508,7 +539,7 @@ impl Checkpoint {
         kernel: &KernelSnapshot,
         limits: Limits,
         catalog: &RestoreCatalog,
-        authority: &impl FrameAuthority,
+        authority: &(impl FrameAuthority + ?Sized),
     ) -> Result<Validated> {
         Workflows::new(limits.clone())?;
         self.bounds(&limits)?;
@@ -783,6 +814,76 @@ pub fn decode_local_checkpoint<T: serde::de::DeserializeOwned + Serialize>(
         return Err(Error::Bounds);
     }
     Ok(value)
+}
+
+impl RestoreCatalog {
+    pub fn capture_catalog(
+        &self,
+        checkpoint: &Checkpoint,
+        service: &Workflows,
+        mapped: &RestoredKernel,
+    ) -> Result<CaptureCatalog> {
+        let mut capture = CaptureCatalog::new(service);
+        let inner = service.0.try_borrow().map_err(|_| Error::Busy)?;
+        for f in &checkpoint.frames {
+            let binding = mapped.execution_source(&f.source)?;
+            let codec = &self
+                .programs
+                .iter()
+                .find(|(p, _)| p == &f.program)
+                .ok_or(Error::Status)?
+                .1;
+            capture.programs.push(CaptureProgram {
+                operation: binding.operation(),
+                identity: f.program.identity.clone(),
+                codec: codec.clone(),
+            });
+            let owned = inner
+                .frames
+                .get(&binding.operation())
+                .ok_or(Error::Unknown)?;
+            for (index, participant) in owned.participants.iter().enumerate() {
+                if capture
+                    .participants
+                    .iter()
+                    .any(|p| Rc::ptr_eq(&p.value, participant))
+                {
+                    continue;
+                }
+                let row = checkpoint
+                    .participants
+                    .iter()
+                    .find(|p| p.id == f.participants[index])
+                    .ok_or(Error::Status)?;
+                capture.participants.push(CaptureParticipant {
+                    build: row.build.clone(),
+                    value: participant.clone(),
+                });
+            }
+        }
+        Ok(capture)
+    }
+}
+
+impl Checkpoint {
+    pub fn preflight_source(&self, kernel: &KernelSnapshot) -> Result<()> {
+        self.bounds(&Limits::default())?;
+        if self.namespace != kernel.source_namespace {
+            return Err(Error::Status);
+        }
+        for frame in &self.frames {
+            if !kernel.operations.contains(&frame.source)
+                || !kernel
+                    .registry
+                    .modules
+                    .iter()
+                    .any(|m| m.id == frame.program.provider && m.artifact == frame.program.artifact)
+            {
+                return Err(Error::Status);
+            }
+        }
+        Ok(())
+    }
 }
 
 #[cfg(test)]

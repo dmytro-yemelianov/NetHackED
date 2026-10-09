@@ -19,6 +19,8 @@ pub enum Error {
     NativeRefusal,
     Referenced,
     Cycle,
+    /// Enrolled session is capturing, activating or executing another root call.
+    Busy,
 }
 
 impl Error {

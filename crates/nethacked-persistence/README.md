@@ -1,10 +1,11 @@
-# Owner persistence D1
+# Owner persistence
 
 This crate implements the structural `OwnerSaveV1` wire and `SaveCatalog0`, at
 contract HEAD 7b4e74d. It does **not** establish persistence acceptance. D2–D6, full A5,
 M5–M7 and full parity remain open. The wire layer has no factories, execution,
-restoration, code loading or automatic migration. The crate has no kernel/World
-dependency or filesystem operations. Separate host runtime primitives are described below.
+restoration, code loading or automatic migration. The D1 wire layer does not
+embed World state or perform filesystem operations. The concrete optional `session` feature adds
+kernel, owner and service dependencies. Separate host runtime primitives are described below.
 
 ```rust
 use nethacked_persistence::{decode, encode, SaveLimits, OwnerSaveV1, Error};
@@ -221,8 +222,62 @@ mutation panic similarly returns `RuntimePanicked` and fail-stops because arbitr
 native mutations/effects cannot be rolled back. No policy promises rollback after
 destructive retirement or crash/external-I/O exactly-once behavior.
 
-D4e-2 must implement concrete factories/capture codecs beside each service's
-private state, remap authenticated fresh credentials and all references, enroll
-all retained access paths, preserve old code/accepted prefixes/prepared candidates,
-rebuild services from strict bytes and exercise the full combined pending/refusal
-matrix. This mechanism by itself certifies none of those service semantics.
+## Concrete D4e-2 session continuation
+
+With `session`, `session::Session` owns the accepted `runtime::HostSlot` and a
+concrete `HostBundle`: a kernel, independently allocated typed owners, sealed
+prepared batches, and optional workflows, recorded inputs, timers, owner-service
+adapters and resources. Typed owner allocations/factories are sealed. Native
+ports receive narrow reconstructed handles, including one shared owner-cleanup
+allocation used by both workflows and timers.
+
+Envelope version 2 carries canonical local checkpoints in bounded hex sections.
+The outer grammar remains unsigned; local workflow ABI errors may use canonical
+signed integers. Payload and edge accounting includes all sections. Source-kernel
+pairing and typed graph/catalog admission precede executable artifact factories.
+Incoming metadata supplies no authority. Independently enrolled immutable native
+codecs, factories and resolvers retain their fidelity, boundedness, freshness,
+source-free construction and effect-free destruction premises.
+
+Capture checks complete owner/behavior/candidate/ticket roots before payload
+encoders. Shared enrollment distinguishes ordinary nested runtime dispatch from
+capture reentry and rejects retired aliases. Raw enrolled grant, dispatch and
+lifecycle changes invalidate stages and authority enrollment; another preparation
+requires explicit independent configuration enrollment. A narrower policy cannot
+rebuild an incompatible saved slot ceiling or regain removed scopes.
+
+The new `tests/session.rs` and `tests/session_callbacks.rs` use the existing native,
+guest, codec and service fixtures. They cover empty sessions, source-free resave,
+capture reentry/refusal, nonempty destination refusals, current-policy restaging,
+retained old code, a native/blob/private-field/Wasm prepared batch with readonly
+and recorded-input observations, paused charge/input continuation, disposed-source
+callbacks and terminal workflow/timer Busy cleanup together. Loading performs no
+preparation, sampling, delivery or cleanup; continuation uses explicit runtime
+operations. Existing runtime exchange/interleaving assertions remain unchanged.
+
+Run `cargo test -p nethacked-persistence --all-features --locked` for the concrete
+fixtures and runtime checks. This continuation does not self-accept D4: independent
+review and the root gates remain required. D4/D5–D6, full A5, M5–M7 and the 53
+families remain open.
+Concrete session transport charges every encoded typed reference occurrence to
+one checked `aggregate_edges` total before executable reconstruction: outer
+owner roots; kernel artifacts, imports, grants, dispatch, leases, pins, callbacks,
+operation/cleanup roots and resource scopes; owner codecs, declared dependencies,
+retained behaviors, scopes, observations, candidates, batches and historical
+receipts; workflow, input, timer, adapter and resource links. Repeated links to a
+shared allocation each cost one occurrence; they still reconstruct one allocation.
+Inline reference-bearing structures are traversed recursively. Row definitions,
+counters, digests and opaque payload bytes are not guessed to be references.
+Exact schema/codec/policy identities each count as a catalog link; a qualified
+module binding counts once. The duplicated input checkpoint in the owner section
+is charged as encoded, as is the independent input section. Overflow refuses.
+Local signed canonical integers and unsigned outer canonical integers retain
+their separate syntax rules. Capture and restore use the same typed inspection.
+
+`Session::prepare_restore_diagnosed` is an additive load boundary returning the
+existing runtime error plus structured section/dependency/reason details. It
+names the exact unavailable executable artifact, owner schema/codec/policy,
+accounting artifact/policy, service codec/profile or cleanup artifact. It uses
+the same admission path as `prepare_restore`; unsupported formats and migrations
+still refuse. Diagnostics do not resolve factories or execute policies. Native
+factory errors retain their bounded trusted implementation premises.

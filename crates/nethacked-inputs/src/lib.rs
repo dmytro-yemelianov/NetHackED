@@ -101,6 +101,7 @@ pub struct State {
     pub next_ordinals: BTreeMap<OperationId, u64>,
 }
 struct Inner {
+    session: Rc<nethacked_kernel::session::Participant>,
     #[cfg(feature = "persistence")]
     quarantine: bool,
     #[cfg(feature = "persistence")]
@@ -144,6 +145,7 @@ impl Observation {
     /// Fresh authority and exact legacy replay scope, without sampling or policy
     /// callbacks. Called before pure computation and at publication preflight.
     pub fn validate(&self, view: &CallerView<'_>) -> Result<()> {
+        let _session = self.service.session()?.enter().map_err(|_| Error::Busy)?;
         let inner = self
             .service
             .0
@@ -183,6 +185,21 @@ fn validate_record(inner: &Inner, r: &Record, view: &CallerView<'_>) -> Result<(
     Ok(())
 }
 impl Service {
+    fn session(&self) -> Result<Rc<nethacked_kernel::session::Participant>> {
+        self.0
+            .try_borrow()
+            .map(|inner| inner.session.clone())
+            .map_err(|_| Error::NativeRefusal)
+    }
+    pub fn enroll_session(
+        &self,
+        token: &nethacked_kernel::session::Enrollment,
+    ) -> nethacked_kernel::Result<()> {
+        self.session()?.enroll(token).map_err(|e| match e {
+            nethacked_kernel::session::Error::Busy => nethacked_kernel::Error::Busy,
+            _ => nethacked_kernel::Error::Authority,
+        })
+    }
     /// An ID is only a lookup key. Authenticated caller/operation/permit and exact
     /// request select the accepted record; no guest value is used here.
     pub fn observation(
@@ -191,6 +208,7 @@ impl Service {
         request: &[u8],
         view: &CallerView<'_>,
     ) -> Result<Observation> {
+        let _session = self.session()?.enter().map_err(|_| Error::Busy)?;
         let inner = self.0.try_borrow().map_err(|_| Error::NativeRefusal)?;
         let record = inner
             .state
@@ -234,6 +252,7 @@ impl Service {
         }
         let namespace = issue_namespace_after(&NEXT_SERVICE, retired)?;
         Ok(Self(Rc::new(RefCell::new(Inner {
+            session: Rc::new(Default::default()),
             #[cfg(feature = "persistence")]
             quarantine: false,
             #[cfg(feature = "persistence")]
@@ -252,6 +271,7 @@ impl Service {
     }
     /// One immutable policy and one installed incarnation; replacement uses a new service.
     pub fn install(&self, kernel: &mut Kernel, id: &str) -> Result<ModuleHandle> {
+        let _session = self.session()?.enter().map_err(|_| Error::Busy)?;
         let mut inner = self.0.try_borrow_mut().map_err(|_| Error::NativeRefusal)?;
         #[cfg(feature = "persistence")]
         if inner.quarantine {
@@ -305,6 +325,7 @@ impl Service {
     }
     /// Both actions require declared write permission for `{installed_id}/source`.
     pub fn inspect(&self) -> Result<State> {
+        let _session = self.session()?.enter().map_err(|_| Error::Busy)?;
         Ok(self
             .0
             .try_borrow()
@@ -313,6 +334,7 @@ impl Service {
             .clone())
     }
     fn dispatch(&self, bytes: &[u8], view: &CallerView) -> Result<Vec<u8>> {
+        let _session = self.session()?.enter().map_err(|_| Error::Busy)?;
         // The sole fallible borrow covers staging and publication, including callbacks.
         let mut inner = self.0.try_borrow_mut().map_err(|_| Error::NativeRefusal)?;
         #[cfg(feature = "persistence")]

@@ -20,15 +20,20 @@ struct Route {
 pub mod persistence;
 /// Bounded target metadata and weak owner routes; no payload database or World.
 pub struct Targets {
+    session: nethacked_kernel::session::Participant,
     limit: usize,
     routes: RefCell<BTreeMap<Resource, Route>>,
 }
 impl Targets {
+    pub fn enroll_session(&self, token: &nethacked_kernel::session::Enrollment) -> Result<()> {
+        self.session.enroll(token).map_err(|_| Error::Authority)
+    }
     pub fn new(limit: usize) -> Result<Self> {
         if limit == 0 {
             return Err(Error::Limit);
         }
         Ok(Self {
+            session: Default::default(),
             limit,
             routes: RefCell::new(BTreeMap::new()),
         })
@@ -36,6 +41,7 @@ impl Targets {
     /// One address per registered owner port. Schema/provider/incarnation are
     /// sealed into the weak route; task wire stamps alone confer no rights.
     pub fn register<T: 'static>(&self, owner: &Rc<Owner<T>>, port: &str) -> Result<Stamp> {
+        let _session = self.session.enter().map_err(|_| Error::Busy)?;
         let stamp = owner.stamp().map_err(owner_error)?;
         let address = owner.resource(port).map_err(owner_error)?;
         let mut routes = self
@@ -51,6 +57,7 @@ impl Targets {
         let weak = Rc::downgrade(owner);
         let target_address = address.clone();
         let original = stamp.clone();
+        self.session.changed().map_err(|_| Error::Limit)?;
         routes.insert(
             address.clone(),
             Route {
@@ -81,6 +88,7 @@ impl Targets {
         })
     }
     pub fn current(&self, address: &Resource) -> Result<Stamp> {
+        let _session = self.session.enter().map_err(|_| Error::Busy)?;
         let route = self
             .routes
             .try_borrow()
@@ -91,16 +99,22 @@ impl Targets {
         (route.current)()
     }
     pub fn remove(&self, address: &Resource) -> Result<()> {
-        self.routes
+        let _session = self.session.enter().map_err(|_| Error::Busy)?;
+        let mut routes = self
+            .routes
             .try_borrow_mut()
-            .map_err(|_| Error::NativeRefusal)?
-            .remove(address)
-            .ok_or(Error::InvalidHandle)?;
+            .map_err(|_| Error::NativeRefusal)?;
+        if !routes.contains_key(address) {
+            return Err(Error::InvalidHandle);
+        }
+        self.session.changed().map_err(|_| Error::Limit)?;
+        routes.remove(address);
         Ok(())
     }
 }
 impl TargetValidator for Targets {
     fn validate(&self, targets: &[Stamp]) -> Result<()> {
+        let _session = self.session.enter().map_err(|_| Error::Busy)?;
         if targets.len() > self.limit {
             return Err(Error::Limit);
         }
@@ -181,6 +195,7 @@ impl<T: 'static> BehaviorRoute for Behavior<T> {
     }
 }
 pub struct CallbackBehaviors {
+    session: nethacked_kernel::session::Participant,
     limit: usize,
     routes: RefCell<Vec<Weak<dyn BehaviorRoute>>>,
 }
@@ -210,16 +225,21 @@ impl<T> WeakBehavior<T> {
     }
 }
 impl CallbackBehaviors {
+    pub fn enroll_session(&self, token: &nethacked_kernel::session::Enrollment) -> Result<()> {
+        self.session.enroll(token).map_err(|_| Error::Authority)
+    }
     pub fn new(limit: usize) -> Result<Self> {
         if limit == 0 {
             return Err(Error::Limit);
         }
         Ok(Self {
+            session: Default::default(),
             limit,
             routes: RefCell::new(Vec::new()),
         })
     }
     pub fn register<T: 'static>(&self, behavior: RetainedBehavior<T>) -> Result<BehaviorHandle<T>> {
+        let _session = self.session.enter().map_err(|_| Error::Busy)?;
         let mut routes = self
             .routes
             .try_borrow_mut()
@@ -228,11 +248,13 @@ impl CallbackBehaviors {
         if routes.len() >= self.limit {
             return Err(Error::Limit);
         }
+        self.session.changed().map_err(|_| Error::Limit)?;
         let route = Rc::new(Behavior {
             behavior,
             bindings: RefCell::new(Vec::new()),
             limit: self.limit,
         });
+        self.session.retain_during_capture(&route);
         let erased: Rc<dyn BehaviorRoute> = route.clone();
         routes.push(Rc::downgrade(&erased));
         Ok(BehaviorHandle { route })
@@ -243,6 +265,7 @@ impl CallbackBehaviors {
         handle: &BehaviorHandle<T>,
         view: &CallerView<'_>,
     ) -> Result<RetainedBehavior<T>> {
+        let _session = self.session.enter().map_err(|_| Error::Busy)?;
         handle.route.for_execution(view)
     }
 }
@@ -252,6 +275,7 @@ struct Bundle {
 }
 impl CallbackRetention for CallbackBehaviors {
     fn preflight(&self, view: &CallerView<'_>, targets: &[Stamp]) -> Result<()> {
+        let _session = self.session.enter().map_err(|_| Error::Busy)?;
         let routes: Vec<_> = self
             .routes
             .try_borrow()
@@ -281,6 +305,7 @@ impl CallbackRetention for CallbackBehaviors {
         callback: &RetainedCallback,
         targets: &[Stamp],
     ) -> Result<Rc<dyn CallbackReference>> {
+        let _session = self.session.enter().map_err(|_| Error::Busy)?;
         let routes: Vec<_> = self
             .routes
             .try_borrow()
@@ -302,9 +327,11 @@ impl CallbackRetention for CallbackBehaviors {
             .iter()
             .map(|r| r.bind(callback))
             .collect::<Result<Vec<_>>>()?;
-        Ok(Rc::new(Bundle {
+        let bundle = Rc::new(Bundle {
             _routes: routes,
             _references: references,
-        }))
+        });
+        self.session.retain_during_capture(&bundle);
+        Ok(bundle)
     }
 }

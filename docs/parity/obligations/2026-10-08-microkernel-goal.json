@@ -2,10 +2,10 @@
   "schema": 1,
   "status": "active",
   "plan": "docs/plans/2026-10-08-microkernel-goal.md",
-  "plan_sha256": "ffebae91baac43ebb424c3dcd84325cd219359878759638116f23b0716c52592",
+  "plan_sha256": "a137874bb8523b04d614818d2ca55c7dcb8363d7a136ee6934298d85e04d2d41",
   "native_goal": "Complete NetRust microkernel architecture program; formal contracts, executable extensions, existing NetHack migration, integration audit",
   "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
-  "active_unit": "M4d-D4e-2",
+  "active_unit": "M4d-D5",
   "live_handles": [],
   "acceptance": {
     "A1": "passed_generic_runtime_1fc3290",
@@ -292,7 +292,7 @@
             "M4-O4"
           ],
           "scope": "Concrete autonomous-owner codecs/restoration and executable/schema validation; full A5 including supported legacy compatibility",
-          "current_phase": "D4e_1_complete_D4e_2_concrete_service_composition_next",
+          "current_phase": "D4e_complete_D5_legacy_compatibility_next",
           "contract": "docs/plans/2026-10-08-owner-persistence-contract.md",
           "design_checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-persistence-contract-checkpoint.json",
           "units": [
@@ -488,7 +488,7 @@
                 },
                 {
                   "id": "M4d-D4e",
-                  "status": "in_progress",
+                  "status": "accepted",
                   "depends_on": [
                     "M4d-D4d"
                   ],
@@ -508,14 +508,18 @@
                     },
                     {
                       "id": "M4d-D4e-2",
-                      "status": "planned",
+                      "status": "accepted",
                       "title": "Coherent runtime composition and combined continuation witnesses",
                       "depends_on": [
                         "M4d-D4e-1"
                       ],
-                      "scope": "Wire every participating kernel/owner/workflow/input/timer/adapter/optional-resource mutation and capture seam into the domain; strict bytes, hidden complete reconstruction, all original combined positive/refusal cases and no bypass through retained aliases. Full D4e requires this child."
+                      "scope": "Wire every participating kernel/owner/workflow/input/timer/adapter/optional-resource mutation and capture seam into the domain; strict bytes, hidden complete reconstruction, all original combined positive/refusal cases and no bypass through retained aliases. Full D4e requires this child.",
+                      "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-session-composition-checkpoint.json",
+                      "checkpoint_sha256": "d889c3c3cd9aa5ec0f6306477c370da72ac21cb3cc49eac0cc89e7b4ab317e3d"
                     }
-                  ]
+                  ],
+                  "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-session-composition-checkpoint.json",
+                  "checkpoint_sha256": "d889c3c3cd9aa5ec0f6306477c370da72ac21cb3cc49eac0cc89e7b4ab317e3d"
                 }
               ]
             },
@@ -809,7 +813,7 @@
       "concrete owner-state persistence contract",
       "NetHack domain migration"
     ],
-    "current_limit": "D3 retained owner execution, D4a-d local service persistence and D4e-1 serial host-domain mechanism accepted. D4e-2 concrete service enrollment/coherent capture/rebuild/combined activation tests, D5-D6 native compatibility/fullA5 and M5-M7 all NetHack migration remain.",
+    "current_limit": "D4e coherent concrete session composition accepted. D5 native compatibility/nine independent NetHack owners, D6 full A5 and M5-M7 production migration remain.",
     "implementation_claim": true,
     "contract": "docs/plans/2026-10-08-autonomous-ownership-contract.md",
     "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-services-checkpoint.json",

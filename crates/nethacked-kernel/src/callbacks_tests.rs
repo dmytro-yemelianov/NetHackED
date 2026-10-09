@@ -86,3 +86,62 @@ fn adoption_both_counter_overflows_are_atomic_without_identity_reuse() {
         assert_eq!(h.k.lifecycle_state().references, 0);
     }
 }
+
+use std::rc::Rc;
+
+#[test]
+fn pins_and_callbacks_survive_complete_capture_then_release_on_success_and_unwind() {
+    for unwind in [false, true] {
+        let mut h = Host::new(false);
+        let (callback, source) = h.capture();
+        let pin = h.k.pin_modules(&[h.actor]).unwrap();
+        let domain = Rc::new(session::Domain::new());
+        h.k.enroll_session(&domain.enrollment(1)).unwrap();
+        let before = h.k.lifecycle_state();
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _guard = domain.capture().unwrap();
+            drop(callback);
+            drop(pin);
+            assert_eq!(h.k.lifecycle_state(), before);
+            assert_eq!(h.k.invoke_operation(&source, &[], auth()), Err(Error::Busy));
+            assert_eq!(h.k.pin_modules(&[h.actor]).err(), Some(Error::Busy));
+            if unwind {
+                panic!("encoder unwinds after dropping infrastructure roots");
+            }
+        }));
+        assert_eq!(result.is_err(), unwind);
+        let after = h.k.lifecycle_state();
+        assert_eq!(before.callbacks, after.callbacks + 1);
+        assert_eq!(before.owners, after.owners + 1);
+        assert!(after.references < before.references);
+        assert!(domain.runtime().is_ok());
+    }
+}
+
+#[test]
+fn aggregate_pin_reservations_preserve_history_on_every_refusal() {
+    for case in 0..5 {
+        let mut h = Host::new(false);
+        h.source();
+        let module = h.actor;
+        match case {
+            0 => h.k.retention.limits.owners = h.k.lifecycle_state().owners + 1,
+            1 => h.k.retention.limits.references = h.k.lifecycle_state().references + 1,
+            2 => h.k.retention.pins.borrow_mut().next = u64::MAX - 1,
+            3 => h.k.retention.pins.borrow_mut().next = u64::MAX,
+            _ => (),
+        }
+        let before = (h.k.lifecycle_state(), h.k.retention.history().1);
+        let first = [module];
+        let second = if case == 4 { vec![] } else { vec![module] };
+        assert_eq!(
+            h.k.pin_module_groups(&[&first, &second]).err(),
+            Some(Error::Limit)
+        );
+        assert_eq!((h.k.lifecycle_state(), h.k.retention.history().1), before);
+        // Single admission still works when only the aggregate reservation refuses.
+        if case < 3 {
+            assert!(h.k.pin_modules(&first).is_ok());
+        }
+    }
+}

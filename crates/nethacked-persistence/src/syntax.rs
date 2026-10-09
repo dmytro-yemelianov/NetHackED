@@ -41,19 +41,41 @@ pub(crate) fn hex_key(key: &str) -> bool {
 }
 /// Framing/count walk with bounded key/name scratch at each nesting level.
 pub(crate) fn check(bytes: &[u8], limits: SaveLimits, canonical: bool) -> Result<(), Error> {
+    check_edges(bytes, limits, canonical, 0, false).map(|_| ())
+}
+#[cfg(feature = "session")]
+pub(crate) fn check_many<'a>(
+    outer: &[u8],
+    parts: impl IntoIterator<Item = &'a [u8]>,
+    limits: SaveLimits,
+) -> Result<(), Error> {
+    let mut edges = check_edges(outer, limits, true, 0, false)?;
+    for bytes in parts {
+        edges = check_edges(bytes, limits, true, edges, true)?;
+    }
+    Ok(())
+}
+fn check_edges(
+    bytes: &[u8],
+    limits: SaveLimits,
+    canonical: bool,
+    edges: usize,
+    local_signed: bool,
+) -> Result<usize, Error> {
     std::str::from_utf8(bytes).map_err(|_| Error::Json)?;
     let mut parser = Parser {
         bytes,
         pos: 0,
         limits,
         canonical,
-        edges: 0,
+        edges,
+        local_signed,
     };
     parser.value(1, "")?;
     if parser.pos != bytes.len() {
         return Err(Error::Noncanonical);
     }
-    Ok(())
+    Ok(parser.edges)
 }
 struct Parser<'a> {
     bytes: &'a [u8],
@@ -61,6 +83,7 @@ struct Parser<'a> {
     limits: SaveLimits,
     canonical: bool,
     edges: usize,
+    local_signed: bool,
 }
 impl Parser<'_> {
     fn byte(&self) -> Result<u8, Error> {
@@ -206,7 +229,9 @@ impl Parser<'_> {
                         _ => return Err(Error::Json),
                     }
                 }
-                if has_target && has_mode {
+                // Concrete local checkpoints are counted by their typed seams.
+                // D1's Reference grammar applies only to D1/outer syntax.
+                if !self.local_signed && has_target && has_mode {
                     self.edges = self.edges.checked_add(1).ok_or(Error::Edges)?;
                     if self.edges > self.limits.aggregate_edges {
                         return Err(Error::Edges);
@@ -255,6 +280,24 @@ impl Parser<'_> {
                 }
                 let text = std::str::from_utf8(raw).map_err(|_| Error::Json)?;
                 text.parse::<u64>().map_err(|_| Error::Json)?;
+            }
+            b'-' if self.local_signed => {
+                let start = self.pos;
+                self.pos += 1;
+                let digits = self.pos;
+                while self.bytes.get(self.pos).is_some_and(u8::is_ascii_digit) {
+                    self.pos += 1;
+                }
+                let raw = &self.bytes[digits..self.pos];
+                if raw.is_empty() {
+                    return Err(Error::Json);
+                }
+                if raw[0] == b'0' {
+                    return Err(Error::Noncanonical);
+                }
+                let text =
+                    std::str::from_utf8(&self.bytes[start..self.pos]).map_err(|_| Error::Json)?;
+                text.parse::<i64>().map_err(|_| Error::Json)?;
             }
             b't' => self.literal(b"true")?,
             b'f' => self.literal(b"false")?,

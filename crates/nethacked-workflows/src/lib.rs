@@ -171,8 +171,20 @@ struct Inner {
 }
 /// Shared handles enable callbacks to attempt reentrancy; try_borrow refuses it.
 #[derive(Clone)]
-pub struct Workflows(Rc<RefCell<Inner>>);
+pub struct Workflows(
+    Rc<RefCell<Inner>>,
+    Rc<nethacked_kernel::session::Participant>,
+);
 impl Workflows {
+    pub fn enroll_session(
+        &self,
+        token: &nethacked_kernel::session::Enrollment,
+    ) -> nethacked_kernel::Result<()> {
+        self.1.enroll(token).map_err(|e| match e {
+            nethacked_kernel::session::Error::Busy => nethacked_kernel::Error::Busy,
+            _ => nethacked_kernel::Error::Authority,
+        })
+    }
     pub fn new(limits: Limits) -> Result<Self> {
         if [
             limits.operations,
@@ -196,10 +208,13 @@ impl Workflows {
             .trace_events
             .checked_mul(limits.event_bytes)
             .ok_or(Error::Bounds)?;
-        Ok(Self(Rc::new(RefCell::new(Inner {
-            limits,
-            frames: BTreeMap::new(),
-        }))))
+        Ok(Self(
+            Rc::new(RefCell::new(Inner {
+                limits,
+                frames: BTreeMap::new(),
+            })),
+            Rc::new(Default::default()),
+        ))
     }
     pub fn start(
         &self,
@@ -208,6 +223,7 @@ impl Workflows {
         state: Vec<u8>,
         participants: Vec<Rc<dyn CleanupParticipant>>,
     ) -> Result<OperationId> {
+        let _session = self.1.enter().map_err(|_| Error::Busy)?;
         let mut inner = self.0.try_borrow_mut().map_err(|_| Error::Busy)?;
         let l = &inner.limits;
         if inner.frames.len() >= l.operations
@@ -277,10 +293,24 @@ impl Workflows {
         Ok(operation)
     }
     pub fn inspect(&self, id: OperationId) -> Result<Frame> {
+        let _session = self.1.enter().map_err(|_| Error::Busy)?;
         let inner = self.0.try_borrow().map_err(|_| Error::Busy)?;
         Ok(inner.frames.get(&id).ok_or(Error::Unknown)?.frame.clone())
     }
+    /// Fresh host-issued handles in deterministic order, without payload access.
+    pub fn operations(&self) -> Result<Vec<OperationId>> {
+        let _session = self.1.enter().map_err(|_| Error::Busy)?;
+        Ok(self
+            .0
+            .try_borrow()
+            .map_err(|_| Error::Busy)?
+            .frames
+            .keys()
+            .copied()
+            .collect())
+    }
     pub fn ticket(&self, id: OperationId) -> Result<Ticket> {
+        let _session = self.1.enter().map_err(|_| Error::Busy)?;
         let inner = self.0.try_borrow().map_err(|_| Error::Busy)?;
         let owned = inner.frames.get(&id).ok_or(Error::Unknown)?;
         if !matches!(owned.frame.status, Status::Suspended(_)) {
@@ -289,6 +319,7 @@ impl Workflows {
         Ok(ticket(owned))
     }
     pub fn resume(&self, ticket_value: &Ticket) -> Result<()> {
+        let _session = self.1.enter().map_err(|_| Error::Busy)?;
         let mut inner = self.0.try_borrow_mut().map_err(|_| Error::Busy)?;
         let owned = inner
             .frames
@@ -306,6 +337,7 @@ impl Workflows {
         Ok(())
     }
     pub fn step(&self, kernel: &Kernel, id: OperationId, input: &[u8]) -> Result<Status> {
+        let _session = self.1.enter().map_err(|_| Error::Busy)?;
         let mut inner = self.0.try_borrow_mut().map_err(|_| Error::Busy)?;
         let Inner { limits, frames } = &mut *inner;
         let owned = frames.get_mut(&id).ok_or(Error::Unknown)?;
@@ -374,6 +406,7 @@ impl Workflows {
     }
     /// Cleanup failure never makes a phase runnable, including after retry.
     pub fn retry_cleanup(&self, id: OperationId) -> Result<()> {
+        let _session = self.1.enter().map_err(|_| Error::Busy)?;
         let mut inner = self.0.try_borrow_mut().map_err(|_| Error::Busy)?;
         let owned = inner.frames.get_mut(&id).ok_or(Error::Unknown)?;
         if !matches!(owned.frame.status, Status::Faulted(_)) {
@@ -384,6 +417,7 @@ impl Workflows {
     /// Explicit host retirement for a live operation, including exhausted counters.
     /// No phase is replayed and the last checkpoint/committed prefix is preserved.
     pub fn abandon(&self, id: OperationId) -> Result<()> {
+        let _session = self.1.enter().map_err(|_| Error::Busy)?;
         let mut inner = self.0.try_borrow_mut().map_err(|_| Error::Busy)?;
         let owned = inner.frames.get_mut(&id).ok_or(Error::Unknown)?;
         if !matches!(owned.frame.status, Status::Running | Status::Suspended(_)) {
@@ -393,6 +427,7 @@ impl Workflows {
         Ok(())
     }
     pub fn dispose(&self, kernel: &mut Kernel, id: OperationId) -> Result<()> {
+        let _session = self.1.enter().map_err(|_| Error::Busy)?;
         let mut inner = self.0.try_borrow_mut().map_err(|_| Error::Busy)?;
         let owned = inner.frames.get_mut(&id).ok_or(Error::Unknown)?;
         if matches!(owned.frame.status, Status::Running | Status::Suspended(_)) {
@@ -450,6 +485,7 @@ mod fault_error {
             NativeRefusal,
             Referenced,
             Cycle,
+            Busy,
         ]
         .into_iter()
         .find(|e| e.abi_code() == code)
@@ -552,6 +588,38 @@ fn apply(f: &mut Frame, o: Outcome) {
             f.trace.extend(events);
             f.status = Status::Rejected;
         }
+    }
+}
+
+#[cfg(test)]
+mod admission_tests {
+    use super::*;
+    #[test]
+    fn invalid_program_and_kernel_lease_capacity_do_not_leak_references() {
+        let (mut k, w, id, _) = super::tests::setup(Limits::default(), super::tests::done());
+        let before = w.inspect(id).unwrap();
+        let life = k.lifecycle_state();
+        for which in 0..3 {
+            let mut p = before.program.clone();
+            match which {
+                0 => p.initial = "unknown".into(),
+                1 => {
+                    p.allowed.insert(("a".into(), "unknown".into()));
+                }
+                _ => {
+                    p.phases.insert("x".repeat(129));
+                }
+            }
+            assert_eq!(w.start(&mut k, p, vec![], vec![]), Err(Error::Bounds));
+            assert_eq!(k.lifecycle_state(), life);
+            assert_eq!(w.inspect(id).unwrap(), before);
+        }
+        assert_eq!(
+            w.start(&mut k, before.program.clone(), vec![], vec![]),
+            Err(Error::Kernel(KernelError::Limit))
+        );
+        assert_eq!(k.lifecycle_state(), life);
+        assert_eq!(w.inspect(id).unwrap(), before);
     }
 }
 
@@ -729,38 +797,6 @@ mod tests {
             w.dispose(&mut k, id),
             Err(Error::Kernel(KernelError::InvalidHandle))
         );
-        assert_eq!(w.inspect(id).unwrap(), before);
-    }
-}
-
-#[cfg(test)]
-mod admission_tests {
-    use super::*;
-    #[test]
-    fn invalid_program_and_kernel_lease_capacity_do_not_leak_references() {
-        let (mut k, w, id, _) = super::tests::setup(Limits::default(), super::tests::done());
-        let before = w.inspect(id).unwrap();
-        let life = k.lifecycle_state();
-        for which in 0..3 {
-            let mut p = before.program.clone();
-            match which {
-                0 => p.initial = "unknown".into(),
-                1 => {
-                    p.allowed.insert(("a".into(), "unknown".into()));
-                }
-                _ => {
-                    p.phases.insert("x".repeat(129));
-                }
-            }
-            assert_eq!(w.start(&mut k, p, vec![], vec![]), Err(Error::Bounds));
-            assert_eq!(k.lifecycle_state(), life);
-            assert_eq!(w.inspect(id).unwrap(), before);
-        }
-        assert_eq!(
-            w.start(&mut k, before.program.clone(), vec![], vec![]),
-            Err(Error::Kernel(KernelError::Limit))
-        );
-        assert_eq!(k.lifecycle_state(), life);
         assert_eq!(w.inspect(id).unwrap(), before);
     }
 }

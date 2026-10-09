@@ -7,6 +7,20 @@ license = "NGPL"
 description = "Bounded structural OwnerSaveV1 wire and declarative catalog"
 
 [dependencies]
+nethacked-kernel = { path = "../nethacked-kernel" }
+nethacked-owners = { path = "../nethacked-owners", features = ["persistence", "workflows", "recorded-inputs"], optional = true }
+nethacked-owner-services = { path = "../nethacked-owner-services", features = ["persistence"], optional = true }
+nethacked-workflows = { path = "../nethacked-workflows", features = ["persistence"], optional = true }
+nethacked-inputs = { path = "../nethacked-inputs", features = ["persistence"], optional = true }
+nethacked-timers = { path = "../nethacked-timers", features = ["persistence"], optional = true }
+nethacked-resources = { path = "../nethacked-resources", features = ["persistence"], optional = true }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sha2 = "0.10"
+
+[features]
+default = []
+session = ["dep:nethacked-owners", "dep:nethacked-owner-services", "dep:nethacked-workflows", "dep:nethacked-inputs", "dep:nethacked-timers", "dep:nethacked-resources"]
+
+[dev-dependencies]
+wat = "=1.228.0"

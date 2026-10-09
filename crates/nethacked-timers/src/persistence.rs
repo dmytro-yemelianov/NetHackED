@@ -84,6 +84,7 @@ fn error_code(code: i32) -> Result<Error> {
         Error::NativeRefusal,
         Error::Referenced,
         Error::Cycle,
+        Error::Busy,
     ]
     .into_iter()
     .find(|e| e.abi_code() == code)
@@ -136,6 +137,27 @@ pub struct Checkpoint {
     pub tasks: Vec<TaskRow>,
 }
 impl Checkpoint {
+    pub fn count_references(&self, n: &mut nethacked_kernel::persistence::ReferenceCounter) {
+        n.add(4);
+        n.add(usize::from(self.retention.is_some())); // queue, service, profile, target codec and retention
+        for p in &self.participants {
+            n.add(1);
+            n.add(usize::from(p.cleanup.is_some()));
+        }
+        n.add(self.occurrences.len());
+        for t in &self.tasks {
+            n.add(2);
+            n.operation(&t.provenance.source);
+            n.authority(&t.ceiling);
+            n.add(t.targets.len());
+            n.add(usize::from(t.callback.is_some()));
+            if let Some(o) = &t.invocation {
+                n.operation(o);
+            }
+            n.add(usize::from(t.lease.is_some()));
+            n.add(usize::from(t.reference.is_some()));
+        }
+    }
     pub fn to_bytes(&self, max: usize) -> Result<Vec<u8>> {
         nethacked_workflows::persistence::encode_local_checkpoint(self, max)
             .map_err(|_| Error::Buffer)
@@ -214,6 +236,9 @@ impl CaptureCatalog {
 }
 impl Service {
     pub fn persistence_resources(&self) -> PersistenceResult<Vec<Resource>> {
+        self.1
+            .check_live()
+            .map_err(|_| PersistenceError::CaptureBusy)?;
         let i = busy(self.0.try_borrow_mut())?;
         if i.active.is_some() {
             return Err(PersistenceError::CaptureBusy);
@@ -231,6 +256,9 @@ impl Service {
         Ok(resources.into_iter().collect())
     }
     pub fn persistence_cleanup(&self) -> PersistenceResult<Vec<CleanupIdentity>> {
+        self.1
+            .check_live()
+            .map_err(|_| PersistenceError::CaptureBusy)?;
         let i = busy(self.0.try_borrow_mut())?;
         if i.active.is_some() {
             return Err(PersistenceError::CaptureBusy);
@@ -242,6 +270,9 @@ impl Service {
         Ok(identities.into_iter().collect())
     }
     pub fn persistence_participants(&self) -> PersistenceResult<Vec<Rc<dyn CleanupParticipant>>> {
+        self.1
+            .check_live()
+            .map_err(|_| PersistenceError::CaptureBusy)?;
         let i = busy(self.0.try_borrow_mut())?;
         if i.active.is_some() {
             return Err(PersistenceError::CaptureBusy);
@@ -251,6 +282,9 @@ impl Service {
     pub fn persistence_references(
         &self,
     ) -> PersistenceResult<Vec<(TaskId, Rc<dyn CallbackReference>)>> {
+        self.1
+            .check_live()
+            .map_err(|_| PersistenceError::CaptureBusy)?;
         let i = busy(self.0.try_borrow_mut())?;
         if i.active.is_some() {
             return Err(PersistenceError::CaptureBusy);
@@ -261,6 +295,9 @@ impl Service {
             .collect())
     }
     pub fn persistence_enrollment(&self) -> PersistenceResult<Vec<OperationBinding>> {
+        self.1
+            .check_live()
+            .map_err(|_| PersistenceError::CaptureBusy)?;
         let i = busy(self.0.try_borrow_mut())?;
         if i.active.is_some() || i.tasks.values().any(|o| o.task.status == Status::Running) {
             return Err(PersistenceError::CaptureBusy);
@@ -275,6 +312,9 @@ impl Service {
         index: &ExecutionCaptureIndex<'_>,
         catalog: &CaptureCatalog,
     ) -> PersistenceResult<Checkpoint> {
+        self.1
+            .capture_ready()
+            .map_err(|_| PersistenceError::CaptureBusy)?;
         let i = busy(self.0.try_borrow_mut())?;
         if i.active.is_some() || i.tasks.values().any(|o| o.task.status == Status::Running) {
             return Err(PersistenceError::CaptureBusy);
@@ -415,6 +455,21 @@ pub struct RestoreCatalog {
     port: Rc<RefCell<Option<Service>>>,
 }
 impl RestoreCatalog {
+    pub fn missing_dependency(&self, c: &Checkpoint) -> Option<String> {
+        if self.profile.0 != c.profile {
+            return Some(format!("profile policy: {:?}", c.profile));
+        }
+        if self.targets.0 != c.targets {
+            return Some(format!("target codec: {:?}", c.targets));
+        }
+        if self.retention.as_ref().map(|r| &r.0) != c.retention.as_ref() {
+            return Some(format!("retention artifact: {:?}", c.retention));
+        }
+        c.participants
+            .iter()
+            .find(|p| !self.participants.contains_key(&p.build))
+            .map(|p| format!("cleanup artifact: {:?}", p.build))
+    }
     pub fn new(
         profile: Identity,
         policy: Rc<dyn Profile>,
@@ -945,22 +1000,25 @@ impl Validated {
                     .transpose()
             })
             .collect::<Result<_>>()?;
-        let service = Service(Rc::new(RefCell::new(Inner {
-            limits: c.limits.clone(),
-            queue,
-            namespace,
-            next_serial: c.next_serial,
-            binding: Some((module, c.artifact, c.capability.clone())),
-            profile: catalog.profile.1.clone(),
-            validator: catalog.targets.1.clone(),
-            validate_on_schedule: c.validate_on_schedule,
-            participants,
-            identities,
-            participant_identities,
-            tasks,
-            active: None,
-            retention: catalog.retention.as_ref().map(|v| v.1.clone()),
-        })));
+        let service = Service(
+            Rc::new(RefCell::new(Inner {
+                limits: c.limits.clone(),
+                queue,
+                namespace,
+                next_serial: c.next_serial,
+                binding: Some((module, c.artifact, c.capability.clone())),
+                profile: catalog.profile.1.clone(),
+                validator: catalog.targets.1.clone(),
+                validate_on_schedule: c.validate_on_schedule,
+                participants,
+                identities,
+                participant_identities,
+                tasks,
+                active: None,
+                retention: catalog.retention.as_ref().map(|v| v.1.clone()),
+            })),
+            Rc::new(Default::default()),
+        );
         *catalog
             .port
             .try_borrow_mut()
@@ -992,3 +1050,55 @@ fn check_provenance(h: &TimerHistory, p: &CallbackProvenance, m: &RestoredKernel
 #[cfg(test)]
 #[path = "persistence_tests.rs"]
 mod tests;
+
+impl RestoreCatalog {
+    pub fn capture_catalog(
+        &self,
+        checkpoint: &Checkpoint,
+        service: &Service,
+    ) -> Result<CaptureCatalog> {
+        let mut capture = CaptureCatalog::new(
+            service,
+            checkpoint.profile.clone(),
+            checkpoint.targets.clone(),
+            checkpoint.retention.clone(),
+        )?;
+        let inner = service.0.try_borrow().map_err(|_| Error::Busy)?;
+        let participants = inner.participants.clone();
+        let references = inner
+            .tasks
+            .iter()
+            .filter_map(|(id, owned)| owned.reference.as_ref().map(|r| (id.serial, r.clone())))
+            .collect::<Vec<_>>();
+        drop(inner);
+        for (position, participant) in participants.iter().enumerate() {
+            let row = checkpoint
+                .participants
+                .get(checkpoint.occurrences[position])
+                .ok_or(Error::Authority)?;
+            capture
+                .participant(row.build.clone(), participant.clone())
+                .map_err(|_| Error::Authority)?;
+        }
+        for (id, reference) in &references {
+            let row = checkpoint
+                .tasks
+                .iter()
+                .find(|r| r.serial == *id)
+                .ok_or(Error::Authority)?;
+            let serial = row.reference.ok_or(Error::Authority)?;
+            if !capture.references.iter().any(|(n, _)| *n == serial) {
+                capture
+                    .reference(serial, reference.clone())
+                    .map_err(|_| Error::Authority)?;
+            }
+        }
+        Ok(capture)
+    }
+}
+
+impl Checkpoint {
+    pub fn preflight_source(&self, kernel: &KernelSnapshot) -> Result<()> {
+        self.structure(kernel, &Limits::default())
+    }
+}

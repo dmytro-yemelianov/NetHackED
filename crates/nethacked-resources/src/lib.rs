@@ -129,8 +129,20 @@ struct Inner {
     state: State,
 }
 #[derive(Clone)]
-pub struct Service(Rc<RefCell<Inner>>);
+pub struct Service(
+    Rc<RefCell<Inner>>,
+    Rc<nethacked_kernel::session::Participant>,
+);
 impl Service {
+    pub fn enroll_session(
+        &self,
+        token: &nethacked_kernel::session::Enrollment,
+    ) -> nethacked_kernel::Result<()> {
+        self.1.enroll(token).map_err(|e| match e {
+            nethacked_kernel::session::Error::Busy => nethacked_kernel::Error::Busy,
+            _ => nethacked_kernel::Error::Authority,
+        })
+    }
     pub fn new(limits: Limits, accounting: Validator) -> Result<Self> {
         Self::new_after(limits, accounting, 0)
     }
@@ -152,29 +164,33 @@ impl Service {
             })
             .map_err(|_| Error::Limit)?
             .max(minimum);
-        Ok(Self(Rc::new(RefCell::new(Inner {
-            #[cfg(feature = "persistence")]
-            quarantine: false,
-            #[cfg(feature = "persistence")]
-            inert: BTreeSet::new(),
-            namespace,
-            cleanup_identity: CleanupIdentity::issue()?,
-            limits,
-            binding: None,
-            owners: BTreeMap::new(),
-            accounting,
-            state: State {
-                resources: BTreeMap::new(),
-                history: vec![],
-                pending: BTreeMap::new(),
-                next_serial: 1,
-                next_generation: 1,
-                commits: 0,
-            },
-        }))))
+        Ok(Self(
+            Rc::new(RefCell::new(Inner {
+                #[cfg(feature = "persistence")]
+                quarantine: false,
+                #[cfg(feature = "persistence")]
+                inert: BTreeSet::new(),
+                namespace,
+                cleanup_identity: CleanupIdentity::issue()?,
+                limits,
+                binding: None,
+                owners: BTreeMap::new(),
+                accounting,
+                state: State {
+                    resources: BTreeMap::new(),
+                    history: vec![],
+                    pending: BTreeMap::new(),
+                    next_serial: 1,
+                    next_generation: 1,
+                    commits: 0,
+                },
+            })),
+            Rc::new(Default::default()),
+        ))
     }
     /// Trusted host installation. One service is bound to one exact incarnation.
     pub fn install(&self, kernel: &mut Kernel, id: &str) -> Result<ModuleHandle> {
+        let _session = self.1.enter().map_err(|_| Error::Busy)?;
         let mut inner = self.0.try_borrow_mut().map_err(|_| Error::NativeRefusal)?;
         #[cfg(feature = "persistence")]
         if inner.quarantine {
@@ -228,6 +244,7 @@ impl Service {
         Ok(handle)
     }
     pub fn register_owner(&self, owner: &str, policy: OwnerPolicy) -> Result<()> {
+        let _session = self.1.enter().map_err(|_| Error::Busy)?;
         let mut inner = self.0.try_borrow_mut().map_err(|_| Error::NativeRefusal)?;
         #[cfg(feature = "persistence")]
         if inner.quarantine {
@@ -251,6 +268,7 @@ impl Service {
     }
     /// Trusted initialization/update; deletion and recreation allocate a new generation.
     pub fn put(&self, address: Resource, value: Vec<u8>) -> Result<Stamp> {
+        let _session = self.1.enter().map_err(|_| Error::Busy)?;
         let mut inner = self.0.try_borrow_mut().map_err(|_| Error::NativeRefusal)?;
         #[cfg(feature = "persistence")]
         if inner.quarantine {
@@ -297,6 +315,7 @@ impl Service {
         Ok(stamp)
     }
     pub fn delete(&self, address: &Resource) -> Result<()> {
+        let _session = self.1.enter().map_err(|_| Error::Busy)?;
         let mut inner = self.0.try_borrow_mut().map_err(|_| Error::NativeRefusal)?;
         #[cfg(feature = "persistence")]
         if inner.quarantine {
@@ -309,6 +328,7 @@ impl Service {
         Ok(())
     }
     pub fn state(&self) -> Result<State> {
+        let _session = self.1.enter().map_err(|_| Error::Busy)?;
         Ok(self
             .0
             .try_borrow()
@@ -317,6 +337,7 @@ impl Service {
             .clone())
     }
     fn dispatch(&self, endpoint: &str, bytes: &[u8], view: &CallerView) -> Result<Vec<u8>> {
+        let _session = self.1.enter().map_err(|_| Error::Busy)?;
         // Hold the sole borrow across validation, serialization and publication.
         // Every reentrant admin/port/inspection attempt refuses instead of panicking.
         let mut inner = self.0.try_borrow_mut().map_err(|_| Error::NativeRefusal)?;
@@ -573,6 +594,7 @@ impl Service {
     /// Trusted typed lifecycle cleanup. Discards only this exact checkpoint's
     /// pending plans; committed resource/history prefixes are never reverted.
     pub fn discard_operation(&self, binding: &OperationBinding) -> Result<()> {
+        let _session = self.1.enter().map_err(|_| Error::Busy)?;
         let mut inner = self.0.try_borrow_mut().map_err(|_| Error::NativeRefusal)?;
         #[cfg(feature = "persistence")]
         if inner.quarantine {
@@ -590,6 +612,7 @@ impl Service {
         Ok(())
     }
     pub fn cleanup_identity(&self) -> Result<CleanupIdentity> {
+        self.1.check_live().map_err(|_| Error::Authority)?;
         Ok(self
             .0
             .try_borrow()

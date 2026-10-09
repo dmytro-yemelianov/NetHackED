@@ -143,6 +143,27 @@ pub struct Checkpoint {
     history: LocalHistory,
 }
 impl Checkpoint {
+    pub(super) fn count_references(&self, n: &mut nethacked_kernel::persistence::ReferenceCounter) {
+        for o in &self.owners {
+            n.add(1); // module artifact
+            if o.codec.is_some() {
+                n.add(3);
+            } // exact schema/codec/policy artifacts
+            if let Some(b) = &o.backend {
+                n.add(b.helpers.len());
+            }
+            n.add(o.references.len());
+            for p in o.ports.values() {
+                n.add(p.dependencies.len());
+            }
+        }
+        for h in &self.history.records {
+            n.add(h.participants.len());
+            n.add(h.candidate_serials.len());
+            n.add(h.contributions.len());
+            h.evidence.count_references(n);
+        }
+    }
     /// Local bounded bytes; the orchestrator owns D1 envelope/table adaptation.
     pub fn to_bytes(&self, limit: usize) -> Result<Vec<u8>> {
         let bytes = serde_json::to_vec(self).map_err(|_| Error::Invalid)?;
@@ -249,7 +270,8 @@ impl Host {
         self.capture_state_mode(false)
     }
     fn capture_state_mode(&self, execution: bool) -> Result<Capture> {
-        let gate = self.close_visibility()?;
+        self.0.session.capture_ready().map_err(|_| Error::Busy)?;
+        let gate = self.close_capture_visibility(None)?;
         let registry = self.0.registry.try_borrow().map_err(|_| Error::Busy)?;
         if !execution && (registry.pending != 0 || self.0.behaviors.get() != 0) {
             return Err(Error::Unsupported);
@@ -313,12 +335,7 @@ impl Host {
     /// Includes restored historical origins and new receipts, without credentials.
     pub fn persistence_history(&self) -> Result<Vec<HistoricalCommit>> {
         let _gate = self.close_visibility()?;
-        Ok(self
-            .0
-            .publication
-            .borrow()
-            .capture_local(self.0.id, &self.0.registry.borrow(), false)?
-            .records)
+        Ok(self.0.publication.borrow().historical_prefix())
     }
 }
 impl Capture {
@@ -1076,6 +1093,36 @@ mod evidence {
                 events: r.events.clone(),
                 reply: r.reply.clone(),
                 history_encoding: Vec::new(),
+            }
+        }
+    }
+    impl ObservationReceipt {
+        fn count_references(&self, n: &mut nethacked_kernel::persistence::ReferenceCounter) {
+            n.add(3); // stamp owner/module and caller
+            n.add(self.capability.resolution.len());
+            #[cfg(feature = "recorded-inputs")]
+            n.add(self.recorded_inputs.len());
+            for d in &self.dependencies {
+                d.count_references(n);
+            }
+        }
+    }
+    impl CommitReceipt {
+        pub(super) fn count_references(
+            &self,
+            n: &mut nethacked_kernel::persistence::ReferenceCounter,
+        ) {
+            n.add(2);
+            n.add(self.coordinator.resolution.len());
+            for p in &self.participants {
+                n.add(4); // owner, module, caller and operation
+                n.add(p.capability.resolution.len());
+                n.add(p.behavior.len());
+                #[cfg(feature = "recorded-inputs")]
+                n.add(p.recorded_inputs.len());
+            }
+            for o in &self.observations {
+                o.count_references(n);
             }
         }
     }

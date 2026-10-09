@@ -4,6 +4,19 @@ Effective after SAVE1 commit `a6c12aa`, on the user's instruction to finish that
 
 ## Measured problem
 
+### 2026-10-09 correction after session-composition review
+
+The user requested reconsideration of the approach. The B review used 214,452 uncached input / 37,842 output tokens in 1,285 seconds; its repair used 169,361 / 46,340 in 1,582 seconds. Repeated declarations of narrower context have not controlled cost. These rules supersede conflicting execution defaults below; acceptance requirements, scope, frozen tests and per-cause retry history remain intact.
+
+- A coordinator may implement a small, concretely reproduced repair directly when no child writer is active. A separate implementation agent is optional. The repair still receives independent review; the coordinator cannot accept its own code.
+- Give a reviewer the candidate diff, reproduced failures and affected requirements. Preserve acceptance of unchanged behavior. Follow-up review covers the repair and its actual effects; a broader review needs a concrete new finding. Resolve findings from the existing coverage map instead of producing another full map or implementation history.
+- One Cargo runner means one concurrent process, not one invocation. Correct a failed fixture and rerun its target normally. Do not introduce direct-rustc compilation or package reconstruction merely to keep an artificial invocation count at one.
+- Root owns mechanical evidence. Reuse the existing runner and input manifest; keep one baseline and final source binding per candidate, the diff, command results and raw failure logs. Reviewers inspect those bindings and write findings. Do not ask models to create another evidence framework or reconstruct every intermediate source version after the work is finished. Record missing historical provenance explicitly; it cannot support an acceptance claim.
+- During repair, run the reproducing test and affected regressions. Run required broader checks on the stable candidate, and the full gates/goldens before commit. Repeat only checks invalidated by changed inputs or a concrete unresolved concern.
+- A packet states the finite acceptance checks and stopping condition. Return a concise verdict or a concrete incomplete checkpoint when those checks cannot finish; do not keep expanding documentation or predecessor audits after the result is known. Report measured usage without claiming savings or a live token cap.
+
+The already-running readback finishes under its bound packet. Apply this correction to subsequent work; no concurrent source edits. The next action is to repair only its confirmed findings, obtain independent delta acceptance, then run the required final gates and commit. This amendment requires no additional process-review agent or separate optimization program.
+
 SAVE1 implementation took 28.25 minutes and its independent review 20.30 minutes. Its 12 final gates took 191.29 seconds. The implementation reported 102,597 uncached input tokens (total input minus cached input), 29,462 output tokens; review reported 117,608 and 19,794 respectively. These are CLI telemetry, not weekly allowance percentages or API billing. Reasoning is recorded separately and is not added to output without confirmed telemetry semantics.
 
 The final 11-command focused allocation was repeated three times after fixture refinements. Failed save assertions exposed complete serialized byte arrays through very long log lines. Reports and mechanical source/archive proofs were duplicated. The first optimization therefore removes repeated exposure and repeated work; it does not remove verification. The external `PROCESS-OPTIMIZATION/metrics.json` under the run's evidence root preserves the measurements and source hashes.

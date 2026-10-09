@@ -194,8 +194,20 @@ struct Inner {
 }
 /// Shared queue: Running is published and its borrow released before guest execution.
 #[derive(Clone)]
-pub struct Service(Rc<RefCell<Inner>>);
+pub struct Service(
+    Rc<RefCell<Inner>>,
+    Rc<nethacked_kernel::session::Participant>,
+);
 impl Service {
+    pub fn enroll_session(
+        &self,
+        token: &nethacked_kernel::session::Enrollment,
+    ) -> nethacked_kernel::Result<()> {
+        self.1.enroll(token).map_err(|e| match e {
+            nethacked_kernel::session::Error::Busy => nethacked_kernel::Error::Busy,
+            _ => nethacked_kernel::Error::Authority,
+        })
+    }
     pub fn new(
         limits: Limits,
         queue: Resource,
@@ -224,25 +236,29 @@ impl Service {
             }
         }
         let namespace = issue_namespace(&NEXT_QUEUE)?;
-        Ok(Self(Rc::new(RefCell::new(Inner {
-            limits,
-            queue,
-            namespace,
-            next_serial: 1,
-            binding: None,
-            profile,
-            validator,
-            validate_on_schedule,
-            participants,
-            identities,
-            #[cfg(feature = "persistence")]
-            participant_identities,
-            tasks: BTreeMap::new(),
-            active: None,
-            retention: None,
-        }))))
+        Ok(Self(
+            Rc::new(RefCell::new(Inner {
+                limits,
+                queue,
+                namespace,
+                next_serial: 1,
+                binding: None,
+                profile,
+                validator,
+                validate_on_schedule,
+                participants,
+                identities,
+                #[cfg(feature = "persistence")]
+                participant_identities,
+                tasks: BTreeMap::new(),
+                active: None,
+                retention: None,
+            })),
+            Rc::new(Default::default()),
+        ))
     }
     pub fn install(&self, kernel: &mut Kernel, id: &str) -> Result<ModuleHandle> {
+        let _session = self.1.enter().map_err(|_| Error::Busy)?;
         let mut i = self.0.try_borrow_mut().map_err(|_| Error::NativeRefusal)?;
         if i.active.is_some() {
             return Err(Error::NativeRefusal);
@@ -290,6 +306,7 @@ impl Service {
     }
     /// Configure before install/first task; failed configuration preserves state.
     pub fn retain_callbacks(&self, retention: Rc<dyn CallbackRetention>) -> Result<()> {
+        let _session = self.1.enter().map_err(|_| Error::Busy)?;
         let mut i = self.0.try_borrow_mut().map_err(|_| Error::NativeRefusal)?;
         if i.binding.is_some() || !i.tasks.is_empty() || i.retention.is_some() {
             return Err(Error::NativeRefusal);
@@ -298,6 +315,7 @@ impl Service {
         Ok(())
     }
     pub fn state(&self) -> Result<State> {
+        let _session = self.1.enter().map_err(|_| Error::Busy)?;
         let i = self.0.try_borrow().map_err(|_| Error::NativeRefusal)?;
         Ok(State {
             queue: i.namespace,
@@ -311,6 +329,7 @@ impl Service {
         })
     }
     fn dispatch(&self, bytes: &[u8], view: &CallerView) -> Result<Vec<u8>> {
+        let _session = self.1.enter().map_err(|_| Error::Busy)?;
         let mut i = self.0.try_borrow_mut().map_err(|_| Error::NativeRefusal)?;
         if bytes.len() > i.limits.wire_bytes as usize {
             return Err(Error::Buffer);
@@ -413,6 +432,7 @@ impl Service {
     }
     /// Trusted host only. Pre-admission errors preserve identities and all task state.
     pub fn deliver_next(&self, kernel: &mut Kernel, context: &[u8]) -> Result<Option<Task>> {
+        let _session = self.1.enter().map_err(|_| Error::Busy)?;
         let (id, binding, authority, payload) = {
             let mut i = self.0.try_borrow_mut().map_err(|_| Error::NativeRefusal)?;
             if i.active.is_some() {
@@ -508,6 +528,7 @@ impl Service {
     }
     /// Only idempotent discard is retried. Never executes a callback.
     pub fn retry_cleanup(&self, id: TaskId) -> Result<()> {
+        let _session = self.1.enter().map_err(|_| Error::Busy)?;
         let mut i = self.0.try_borrow_mut().map_err(|_| Error::NativeRefusal)?;
         if i.active.is_some() {
             return Err(Error::NativeRefusal);
@@ -528,6 +549,7 @@ impl Service {
     /// Terminal records occupy finite capacity until the host disposes them.
     /// Failed lease release leaves the record intact and can be retried.
     pub fn dispose(&self, kernel: &mut Kernel, id: TaskId) -> Result<()> {
+        let _session = self.1.enter().map_err(|_| Error::Busy)?;
         let mut i = self.0.try_borrow_mut().map_err(|_| Error::NativeRefusal)?;
         if i.active.is_some() {
             return Err(Error::NativeRefusal);

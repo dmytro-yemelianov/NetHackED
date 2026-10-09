@@ -417,6 +417,9 @@ impl Kernel {
     /// Exclusive host safe boundary. The enrollment contract covers external
     /// values; all kernel-owned retained edges are captured automatically.
     pub fn kernel_snapshot(&mut self, enrollment: &KernelEnrollment<'_>) -> Result<KernelSnapshot> {
+        self.session
+            .capture_ready()
+            .map_err(crate::kernel::session_error)?;
         if enrollment.operations.len() > MAX_ROWS || enrollment.pure_captures.len() > MAX_ROWS {
             return Err(Error::Limit);
         }
@@ -588,6 +591,7 @@ impl Kernel {
         saved: &KernelSnapshot,
         host: &impl RetainedAuthority,
     ) -> Result<RestoredKernel> {
+        let _session = self.session.enter().map_err(crate::kernel::session_error)?;
         saved.preflight(self)?;
         saved.structural_preflight(self)?;
         let source_snapshot = serde_json::to_vec(saved).map_err(|_| Error::Authority)?;
@@ -691,6 +695,7 @@ impl Kernel {
             let references = remap.references(&row.modules)?;
             hidden.reference_capacity(references.len())?;
             let pin = ModulePin(Rc::new(PinData { references }));
+            hidden.session.retain_during_capture(&pin.0);
             hidden
                 .retention
                 .pins
@@ -714,6 +719,7 @@ impl Kernel {
                 pipeline: p,
                 provenance,
             }));
+            hidden.session.retain_during_capture(&c.0);
             hidden
                 .retention
                 .callbacks
@@ -826,6 +832,16 @@ impl Kernel {
             execution_captures: saved.pure_captures.clone(),
             execution_resources: mapped,
         };
+        if let Some(token) = self
+            .session
+            .enrollment()
+            .map_err(crate::kernel::session_error)?
+        {
+            hidden.enroll_session(&token)?;
+        }
+        self.session
+            .changed()
+            .map_err(crate::kernel::session_error)?;
         *self = hidden;
         Ok(result)
     }
@@ -1856,6 +1872,9 @@ impl Kernel {
         &'a self,
         saved: &'a KernelSnapshot,
     ) -> Result<ExecutionCaptureIndex<'a>> {
+        self.session
+            .capture_ready()
+            .map_err(crate::kernel::session_error)?;
         if saved.source_namespace != self.instance {
             return Err(Error::InvalidHandle);
         }

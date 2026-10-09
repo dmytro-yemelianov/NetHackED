@@ -183,7 +183,8 @@ struct ScopeRow {
     callback: u64,
 }
 /// IDs refer to shared rows; copying an ID never creates another reservation.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct BehaviorId {
     pub behavior: u64,
     pub scope: Option<u64>,
@@ -202,6 +203,160 @@ pub struct ExecutionCheckpoint {
     pending: PendingCheckpoint,
 }
 impl ExecutionCheckpoint {
+    /// Exact unavailable dependency, without decoding state or invoking factories.
+    pub fn missing_owner_dependency<T>(
+        &self,
+        old: OwnerId,
+        codec: &dyn PersistenceCodec<T>,
+        catalog: &RestoreCatalog<T>,
+    ) -> Option<String> {
+        let state = self.state.owners.iter().find(|o| o.old == old && o.live)?;
+        if state.codec.as_ref() != Some(&codec.identity()) {
+            return Some(format!("state codec/schema: {:?}", state.codec));
+        }
+        let current = self.current.iter().find(|r| r.owner == old)?;
+        if catalog.resolve(&current.build, &state.policy).is_err() {
+            return Some(format!(
+                "current codec/schema/policy: {:?}; {:?}",
+                current.build, state.policy
+            ));
+        }
+        for b in self.behaviors.iter().filter(|b| b.owner == old) {
+            if catalog.resolve(&b.build, &b.policy).is_err() {
+                return Some(format!(
+                    "retained codec/schema/policy: {:?}; {:?}",
+                    b.build, b.policy
+                ));
+            }
+        }
+        self.pending.missing_owner_dependency(old, codec, catalog)
+    }
+    pub fn count_references(&self, n: &mut nethacked_kernel::persistence::ReferenceCounter) {
+        self.state.count_references(n);
+        n.add(1); // shared cleanup
+        for c in &self.current {
+            n.add(3); // exact schema/codec/policy artifacts
+            n.add(3); // owner, module, pin
+            n.add(usize::from(c.enrollment_pin.is_some()));
+            n.add(usize::from(c.compatible_pin.is_some()));
+            if let Some(p) = &c.permit {
+                n.add(p.resolution.len());
+            }
+            #[cfg(feature = "recorded-inputs")]
+            for rows in c.recorded.values() {
+                n.add(rows.len());
+            }
+        }
+        for b in &self.behaviors {
+            n.add(8);
+            n.operation(&b.source);
+        } // owner, caller, target, pin, pure capture and schema/codec/policy
+        for _ in &self.scopes {
+            n.add(2);
+        } // behavior and callback
+        self.pending.count_references(n);
+    }
+    /// Typed outer references are admitted while all payloads remain sealed.
+    pub fn reference_owner(&self, id: BehaviorId) -> Result<OwnerId> {
+        let behavior = self
+            .behaviors
+            .iter()
+            .find(|b| b.id == id.behavior)
+            .ok_or(Error::Stale)?;
+        if let Some(scope) = id.scope {
+            if !self
+                .scopes
+                .iter()
+                .any(|s| s.id == scope && s.behavior == id.behavior)
+            {
+                return Err(Error::Authority);
+            }
+        }
+        Ok(behavior.owner)
+    }
+    pub fn preflight_behavior_references(&self, references: &[BehaviorId]) -> Result<()> {
+        let mut behaviors = BTreeSet::new();
+        let mut scopes = BTreeSet::new();
+        for id in references {
+            self.reference_owner(*id)?;
+            behaviors.insert(id.behavior);
+            if let Some(scope) = id.scope {
+                scopes.insert(scope);
+            }
+        }
+        if behaviors != self.behaviors.iter().map(|b| b.id).collect()
+            || scopes != self.scopes.iter().map(|s| s.id).collect()
+        {
+            return Err(Error::Unsupported);
+        }
+        Ok(())
+    }
+    pub fn preflight_owner_candidates(&self, owner: OwnerId, candidates: &[u64]) -> Result<()> {
+        self.pending.preflight_owner_candidates(owner, candidates)
+    }
+    pub fn preflight_owner_target(
+        &self,
+        owner: OwnerId,
+        port: &str,
+        target: &Resource,
+    ) -> Result<()> {
+        let row = self
+            .state
+            .owners
+            .iter()
+            .find(|o| o.old == owner && o.live)
+            .ok_or(Error::Stale)?;
+        if !row.ports.contains_key(port)
+            || target
+                != &(Resource {
+                    owner: format!("owners-{}", owner.host),
+                    key: format!("{}.{}", owner.serial, port),
+                })
+        {
+            return Err(Error::Authority);
+        }
+        Ok(())
+    }
+    /// Exact source pairing and complete local graph admission, without allocations
+    /// or executing any codec/backend factory.
+    pub fn preflight_source(
+        &self,
+        kernel: &KernelSnapshot,
+        limits: &Limits,
+        publication: &PublicationLimits,
+    ) -> Result<()> {
+        validate_checkpoint_bounds(&self.state, limits, publication)?;
+        validate_execution(self, limits)?;
+        self.pending.validate(self, limits, publication)?;
+        validate_execution_kernel(self, kernel)?;
+        self.pending.kernel(self, kernel)
+    }
+    pub fn approve_owner<T>(
+        &self,
+        old: OwnerId,
+        codec: &dyn PersistenceCodec<T>,
+        catalog: &RestoreCatalog<T>,
+    ) -> Result<()> {
+        let state = self
+            .state
+            .owners
+            .iter()
+            .find(|o| o.old == old && o.live)
+            .ok_or(Error::Stale)?;
+        if state.codec.as_ref() != Some(&codec.identity()) {
+            return Err(Error::Schema);
+        }
+        let current = self
+            .current
+            .iter()
+            .find(|r| r.owner == old)
+            .ok_or(Error::Stale)?;
+        catalog.resolve(&current.build, &state.policy)?;
+        for row in self.behaviors.iter().filter(|b| b.owner == old) {
+            catalog.resolve(&row.build, &row.policy)?;
+        }
+        self.pending.approve_owner(old, codec, catalog)
+    }
     pub fn to_bytes(&self, limit: usize) -> Result<Vec<u8>> {
         let b = serde_json::to_vec(&serde_json::to_value(self).map_err(|_| Error::Invalid)?)
             .map_err(|_| Error::Invalid)?;
@@ -239,11 +394,61 @@ impl ExecutionCheckpoint {
 #[derive(Default)]
 pub struct ExecutionRoots {
     allocations: BTreeSet<usize>,
+    scopes: BTreeSet<usize>,
+    owners: BTreeSet<OwnerId>,
+    stages: BTreeSet<u64>,
+    tickets: BTreeSet<u64>,
     operations: Vec<OperationBinding>,
     captures: Vec<PureCapture>,
 }
 impl ExecutionRoots {
+    pub fn owner<T: 'static>(&mut self, owner: &Owner<T>) -> Result<()> {
+        if !self.owners.insert(owner.id()) {
+            return Err(Error::Invalid);
+        }
+        Ok(())
+    }
+    /// Refuse incomplete enrollment before any payload encoder can run. Strong
+    /// bundle roots then prevent last-alias drops from changing this graph during
+    /// capture, even when a trusted native codec drops its own aliases.
+    pub fn preflight(&self, host: &Host) -> Result<()> {
+        host.0.session.capture_ready().map_err(|_| Error::Busy)?;
+        let registry = host.0.registry.try_borrow().map_err(|_| Error::Busy)?;
+        let owners = registry
+            .entries
+            .iter()
+            .filter_map(|(id, entry)| {
+                entry
+                    .route
+                    .upgrade()
+                    .filter(|r| r.metadata().live.get())
+                    .map(|_| *id)
+            })
+            .collect();
+        let stages = registry
+            .staging
+            .iter()
+            .filter_map(|(id, weak)| weak.upgrade().map(|_| *id))
+            .collect();
+        let tickets = registry
+            .tickets
+            .iter()
+            .filter_map(|(id, weak)| weak.upgrade().filter(|t| !t.consumed.get()).map(|_| *id))
+            .collect();
+        if self.owners != owners
+            || self.stages != stages
+            || self.tickets != tickets
+            || registry.pending != self.stages.len()
+            || self.allocations.len().checked_add(self.scopes.len()) != Some(host.0.behaviors.get())
+        {
+            return Err(Error::Unsupported);
+        }
+        Ok(())
+    }
     pub fn behavior<T>(&mut self, behavior: &RetainedBehavior<T>) -> Result<()> {
+        if let Some(scope) = &behavior.scope {
+            self.scopes.insert(Rc::as_ptr(scope) as usize);
+        }
         if self.allocations.len() >= 65_536 {
             return Err(Error::Limit);
         }
@@ -503,13 +708,7 @@ impl OwnerIdentityReservation {
         bound(checkpoint.state.origins.len(), limits.owners)?;
         let excluded = checkpoint.state.origins.iter().copied().collect();
         Host::validate_limits(&limits)?;
-        validate_checkpoint_bounds(&checkpoint.state, &limits, &publication)?;
-        validate_execution(&checkpoint, &limits)?;
-        checkpoint
-            .pending
-            .validate(&checkpoint, &limits, &publication)?;
-        validate_execution_kernel(&checkpoint, kernel)?;
-        checkpoint.pending.kernel(&checkpoint, kernel)?;
+        checkpoint.preflight_source(kernel, &limits, &publication)?;
         let id = Host::reserve_namespace(&excluded)?;
         let remap = remap_for(&checkpoint.state, id);
         Ok(Self {
@@ -850,6 +1049,7 @@ impl ExecutionRestore {
                 .metadata
                 .retained_behaviors
                 .set(owner.metadata.retained_behaviors.get() + 1);
+            self.state.host.0.session.retain_during_capture(&inner);
             self.behaviors.insert(b.id, Box::new(inner));
         }
         for s in self
@@ -872,6 +1072,7 @@ impl ExecutionRestore {
                 .0
                 .behaviors
                 .set(self.state.host.0.behaviors.get() + 1);
+            self.state.host.0.session.retain_during_capture(&scope);
             self.scopes.insert(s.id, scope);
         }
         self.state.restored.insert(old);
@@ -900,6 +1101,47 @@ impl ExecutionRestore {
             None
         };
         Ok(RetainedBehavior { inner, scope })
+    }
+    /// Re-enroll the actual reconstructed allocations for a later coherent save.
+    /// Identities come from the admitted source graph, never a guessed codec.
+    pub fn capture_catalog<T: 'static>(&self, owner: &Rc<Owner<T>>) -> Result<CaptureCatalog<T>> {
+        let mut catalog = CaptureCatalog::default();
+        let current = self
+            .checkpoint
+            .current
+            .iter()
+            .find(|c| self.state.remap.owner(c.owner).ok() == Some(owner.id()))
+            .ok_or(Error::Stale)?;
+        catalog.register(
+            current.build.clone(),
+            owner.query_policy.borrow().clone(),
+            copy_backend(&owner.backend.borrow()),
+        )?;
+        for b in self
+            .checkpoint
+            .behaviors
+            .iter()
+            .filter(|b| b.owner == current.owner)
+        {
+            let retained = self.behavior::<T>(BehaviorId {
+                behavior: b.id,
+                scope: None,
+            })?;
+            let backend = Backend::Wasm {
+                codec: retained.inner.codec.clone(),
+                slot: retained.inner.slot,
+                binding: retained.inner.capture.binding().clone(),
+            };
+            if catalog.identify(&backend, &b.policy, b.schema).is_err() {
+                catalog.register(b.build.clone(), b.policy.clone(), backend)?;
+            }
+        }
+        self.pending.enroll_capture_catalog(
+            current.owner,
+            &self.checkpoint.pending,
+            &mut catalog,
+        )?;
+        Ok(catalog)
     }
     pub fn finish(self) -> Result<Host> {
         self.pending.validate_finish(&self.checkpoint.pending)?;
@@ -1450,4 +1692,20 @@ pub fn adapter_behavior_alias<T>(a: &RetainedBehavior<T>, b: &RetainedBehavior<T
             (Some(a), Some(b)) => Rc::ptr_eq(a, b),
             _ => false,
         }
+}
+
+fn copy_backend<T>(backend: &Backend<T>) -> Backend<T> {
+    match backend {
+        Backend::Native(n) => Backend::Native(n.clone()),
+        Backend::Wasm {
+            codec,
+            slot,
+            binding,
+        } => Backend::Wasm {
+            codec: codec.clone(),
+            slot: *slot,
+            binding: binding.clone(),
+        },
+        Backend::CommitCallback => Backend::CommitCallback,
+    }
 }

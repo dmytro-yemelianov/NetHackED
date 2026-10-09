@@ -84,6 +84,19 @@ pub struct Checkpoint {
     pub commits: u64,
 }
 impl Checkpoint {
+    pub fn count_references(&self, n: &mut nethacked_kernel::persistence::ReferenceCounter) {
+        n.add(1);
+        n.add(usize::from(self.binding.is_some()));
+        n.add(self.owners.len());
+        n.add(1); // accounting policy qualified codec identity
+        n.add(self.owners.len()); // one qualified policy codec identity per owner
+        n.add(self.cells.len());
+        for p in &self.pending {
+            n.add(p.plan.readonly.len());
+            n.add(p.plan.writes.len());
+            n.resource_context(&p.context);
+        }
+    }
     pub fn to_bytes(&self, limit: usize) -> Result<Vec<u8>> {
         // Bound the serialized size before canonical Value allocation.
         struct Counter(usize, usize);
@@ -172,11 +185,17 @@ impl CaptureCatalog {
         Ok(())
     }
 }
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct RestoreCatalog {
     codecs: BTreeMap<CodecIdentity, Rc<dyn PolicyCodec>>,
 }
 impl RestoreCatalog {
+    pub fn missing_dependency(&self, c: &Checkpoint) -> Option<String> {
+        std::iter::once(&c.accounting)
+            .chain(c.owners.iter().map(|o| &o.policy))
+            .find(|p| self.get(p).is_err())
+            .map(|p| format!("policy codec/schema: {:?}; role: {:?}", p.codec, p.role))
+    }
     pub fn codec(&mut self, codec: Rc<dyn PolicyCodec>) -> Result<()> {
         let id = codec.identity();
         check_identity(&id)?;
@@ -223,6 +242,9 @@ impl Service {
     /// Cleanup and address roots for the kernel's snapshot-only service roots.
     /// Includes stale/deleted pending addresses; no authority is manufactured.
     pub fn persistence_roots(&self) -> PersistenceResult<(CleanupIdentity, Vec<Resource>)> {
+        self.1
+            .check_live()
+            .map_err(|_| PersistenceError::CaptureBusy)?;
         let inner = self
             .0
             .try_borrow_mut()
@@ -253,6 +275,9 @@ impl Service {
         &self,
         kernel: &Kernel,
     ) -> PersistenceResult<Vec<OperationBinding>> {
+        self.1
+            .check_live()
+            .map_err(|_| PersistenceError::CaptureBusy)?;
         let inner = self
             .0
             .try_borrow_mut()
@@ -271,6 +296,9 @@ impl Service {
         Ok(bindings)
     }
     pub fn persistence_history(&self) -> PersistenceResult<Vec<OperationBinding>> {
+        self.1
+            .check_live()
+            .map_err(|_| PersistenceError::CaptureBusy)?;
         let inner = self
             .0
             .try_borrow_mut()
@@ -291,6 +319,9 @@ impl Service {
         kernel: &KernelSnapshot,
         catalog: &CaptureCatalog,
     ) -> PersistenceResult<Checkpoint> {
+        self.1
+            .capture_ready()
+            .map_err(|_| PersistenceError::CaptureBusy)?;
         let inner = self
             .0
             .try_borrow_mut()
@@ -640,7 +671,7 @@ impl Checkpoint {
         limits: &Limits,
         kernel: &KernelSnapshot,
         catalog: RestoreCatalog,
-        authority: &impl ResourceAuthority,
+        authority: &(impl ResourceAuthority + ?Sized),
     ) -> Result<Validated> {
         self.structural(limits, kernel)?;
         // All catalog and contextual admission precedes avoidable native codecs.
@@ -1015,6 +1046,38 @@ fn bounded_json(bytes: &[u8]) -> Result<()> {
         return Err(Error::Buffer);
     }
     Ok(())
+}
+
+impl RestoreCatalog {
+    pub fn capture_catalog(
+        &self,
+        checkpoint: &Checkpoint,
+        service: &Service,
+    ) -> Result<CaptureCatalog> {
+        let mut capture = CaptureCatalog::new(service);
+        capture.accounting(
+            self.codecs
+                .get(&checkpoint.accounting.codec)
+                .ok_or(Error::Authority)?
+                .clone(),
+        )?;
+        for owner in &checkpoint.owners {
+            capture.owner(
+                &owner.owner,
+                self.codecs
+                    .get(&owner.policy.codec)
+                    .ok_or(Error::Authority)?
+                    .clone(),
+            )?;
+        }
+        Ok(capture)
+    }
+}
+
+impl Checkpoint {
+    pub fn preflight_source(&self, kernel: &KernelSnapshot) -> Result<()> {
+        self.structural(&Limits::default(), kernel)
+    }
 }
 
 #[cfg(test)]

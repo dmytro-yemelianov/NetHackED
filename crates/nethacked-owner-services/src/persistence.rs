@@ -63,6 +63,22 @@ pub struct Checkpoint {
     pub bundles: Vec<BundleRow>,
 }
 impl Checkpoint {
+    pub fn count_references(&self, n: &mut nethacked_kernel::persistence::ReferenceCounter) {
+        n.add(2);
+        n.add(self.targets.len()); // service and adapter artifact
+        for r in &self.routes {
+            n.add(2);
+            n.add(usize::from(r.behavior.scope.is_some()));
+        }
+        for b in &self.bundles {
+            n.add(1);
+            n.add(b.routes.len());
+            for s in &b.scopes {
+                n.add(1);
+                n.add(usize::from(s.scope.is_some()));
+            }
+        }
+    }
     pub fn to_bytes(&self, max: usize) -> Result<Vec<u8>> {
         nethacked_workflows::persistence::encode_local_checkpoint(self, max)
             .map_err(|_| Error::Buffer)
@@ -114,6 +130,8 @@ impl Capture {
         callbacks: Rc<CallbackBehaviors>,
         identity: Identity,
     ) -> Result<Self> {
+        targets.session.capture_ready().map_err(|_| Error::Busy)?;
+        callbacks.session.capture_ready().map_err(|_| Error::Busy)?;
         check_identity(&identity)?;
         Ok(Self {
             targets,
@@ -626,6 +644,7 @@ impl Restore {
                 _routes: routes,
                 _references: refs,
             });
+            self.callbacks.session.retain_during_capture(&reference);
             references.insert(b.id, reference);
         }
         self.claim.finish();
