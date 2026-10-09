@@ -101,3 +101,47 @@ while preserving the checkpoint/prefix. This permits safe subsequent disposal
 even when a sequence counter is exhausted. Borrow guards prohibit abandonment
 during a phase; prior successful phase cleanup already discarded abandoned plans.
 A cleanup-faulted operation instead uses cleanup retry before disposal.
+
+## Optional local persistence (D4a)
+
+Enable `persistence` for the workflow-owned `persistence` module. This is a local
+prerequisite: it neither replaces a session nor activates a `HostBundle`.
+D4e must supply the complete capture barrier, independent context/authority
+approval, shared destination epoch exclusion, and atomic whole-bundle exchange.
+
+Enroll exact bindings with `persistence_enrollment`, capture the kernel through
+D3 `KernelEnrollment`, then call `capture_local` with its sealed capture index.
+`CaptureCatalog` binds approved program/codec identities to actual operations
+and participant allocations. All safe boundaries are supported, including
+`Running`, suspended and terminal frames with pending cleanup. Held borrows and
+in-flight invocation return `Busy`. Capture does not invoke endpoints or cleanup.
+
+The independent `RestoreCatalog` admits exact old programs, state codecs and
+participant factories; `FrameAuthority` defaults to refusal and must independently
+approve the complete checkpoint, trace and enrollment. Do not approve an incoming
+row by echoing it or checking its digest. Validate every local checkpoint against
+the D3 snapshot before constructing a kernel or any domain factory. `Validated`
+is consumed by `rebuild` using D3's admitted destination map and live grant proof.
+A successful reconstruction consumes its kernel workflow enrollment, preventing
+replay. A failed hidden build publishes no workflow handles and releases that
+reservation. Source state and existing destination objects remain untouched.
+
+Local bytes are bounded canonical JSON; the complete OwnerSave envelope belongs
+to D4e. Pure bounded codecs validate approved old semantics before explicit
+reference remapping and validate fresh semantics/references afterwards. Opaque
+nonreference bytes may be copied; reference-bearing bytes must declare every
+module, operation, lease, pipeline-code, cleanup or resource reference. Old local
+handles must never be guessed or silently retained. Exact native factory builds,
+codec fidelity/purity and effect-free factory/destructor behavior are trusted host
+premises. Factories receive only their actual fresh optional cleanup identity;
+identityless participants stay enrolled, and shared allocations reconstruct once.
+They must not export ungated mutable service handles from a failed build.
+
+Load calls no `start`, `resume`, `step`, endpoint or `discard`. Fresh host tickets
+continue the next phase explicitly; old tickets and consumed tickets refuse.
+Pending cleanup preserves its exact invocation binding and the accepted ordered
+participant prefix. Only explicit `retry_cleanup` on reconstructed workflows continues discard at
+the failed participant; it never replays code or a previously accepted discard.
+Existing live workflows retain their established idempotent retry behavior. Explicit
+terminal disposal releases the exact retained lease once. Kernel counters and
+retired identity holes remain kernel-owned.

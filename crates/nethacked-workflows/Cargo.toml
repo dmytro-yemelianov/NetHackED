@@ -6,6 +6,10 @@ rust-version = "1.88"
 license = "NGPL"
 description = "Optional authoritative bounded module workflows"
 
+[features]
+default = []
+persistence = []
+
 [dependencies]
 nethacked-kernel = { path = "../nethacked-kernel" }
 nethacked-resources = { path = "../nethacked-resources" }

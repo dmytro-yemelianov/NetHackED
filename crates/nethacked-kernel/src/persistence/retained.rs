@@ -186,6 +186,30 @@ pub struct RestoredKernel {
     execution_contexts: Vec<SavedOperationContext>,
     execution_captures: Vec<SavedPureCapture>,
     execution_resources: BTreeMap<Resource, Resource>,
+    workflow_enrollment: Rc<RefCell<BTreeSet<u64>>>,
+}
+
+/// One-use service reconstruction reservation. A failed hidden build releases
+/// the reservation; a successful build permanently consumes its enrollment.
+pub struct WorkflowEnrollment {
+    occupied: Rc<RefCell<BTreeSet<u64>>>,
+    operations: Vec<u64>,
+    complete: bool,
+}
+impl WorkflowEnrollment {
+    pub fn finish(mut self) {
+        self.complete = true;
+    }
+}
+impl Drop for WorkflowEnrollment {
+    fn drop(&mut self) {
+        if !self.complete {
+            let mut occupied = self.occupied.borrow_mut();
+            for id in &self.operations {
+                occupied.remove(id);
+            }
+        }
+    }
 }
 /// Unforgeable correlation of credentials admitted by one kernel restore.
 /// This identity is never serialized and is not chosen by a caller.
@@ -197,6 +221,51 @@ impl ExecutionDestination {
     }
 }
 impl RestoredKernel {
+    /// Reserve only independently admitted exact sources. No raw caller map is
+    /// accepted, and overlap/replay refuses before local factories run.
+    pub fn enroll_workflows(&self, sources: &[SavedOperation]) -> Result<WorkflowEnrollment> {
+        let mut operations = BTreeSet::new();
+        for source in sources {
+            self.execution_source(source)?;
+            if !operations.insert(source.operation) {
+                return Err(Error::Duplicate);
+            }
+        }
+        let mut occupied = self
+            .workflow_enrollment
+            .try_borrow_mut()
+            .map_err(|_| Error::NativeRefusal)?;
+        if operations.iter().any(|id| occupied.contains(id)) {
+            return Err(Error::Duplicate);
+        }
+        occupied.extend(&operations);
+        Ok(WorkflowEnrollment {
+            occupied: self.workflow_enrollment.clone(),
+            operations: operations.into_iter().collect(),
+            complete: false,
+        })
+    }
+    /// Explicit local-state reference transform. Include the fresh namespace:
+    /// restored module generations may retain their kernel-owned serials.
+    pub fn execution_module_identity(&self, id: u64) -> Result<(u64, u64)> {
+        let module = self.modules.get(&id).ok_or(Error::InvalidHandle)?;
+        Ok((module.instance, module.generation))
+    }
+    pub fn execution_cleanup_identity(&self, id: u64) -> Result<u64> {
+        Ok(self.cleanup.get(&id).ok_or(Error::InvalidHandle)?.raw())
+    }
+    pub fn execution_operation_identity(&self, id: u64) -> Result<(u64, u64)> {
+        let (_, binding) = self
+            .source_bindings
+            .iter()
+            .find(|(s, _)| s.operation == id)
+            .ok_or(Error::InvalidHandle)?;
+        Ok((binding.operation.host, binding.operation.serial))
+    }
+    pub fn execution_lease_identity(&self, id: u64) -> Result<(u64, u64)> {
+        let lease = self.leases.get(&id).ok_or(Error::InvalidHandle)?;
+        Ok((lease.instance, lease.serial))
+    }
     pub fn execution_destination(&self) -> ExecutionDestination {
         self.destination.clone()
     }
@@ -714,6 +783,7 @@ impl Kernel {
             historical_sources,
             source_bindings,
             execution_namespace: saved.source_namespace,
+            workflow_enrollment: Rc::new(RefCell::new(BTreeSet::new())),
             execution_contexts: saved.operation_contexts()?,
             execution_captures: saved.pure_captures.clone(),
             execution_resources: mapped,

@@ -10,6 +10,8 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     rc::Rc,
 };
+#[cfg(feature = "persistence")]
+pub mod persistence;
 
 #[derive(Clone, Debug)]
 pub struct Limits {
@@ -85,14 +87,15 @@ pub struct StepRequest {
     pub state: Vec<u8>,
     pub input: Vec<u8>,
 }
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Fault {
+    #[serde(with = "fault_error")]
     Invocation(KernelError),
     InvalidOutcome,
     Cleanup,
     Abandoned,
 }
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Status {
     Running,
     Suspended(Vec<u8>),
@@ -159,6 +162,8 @@ struct Owned {
     participants: Vec<Rc<dyn CleanupParticipant>>,
     identities: Vec<CleanupIdentity>,
     cleanup: Option<OperationBinding>,
+    cleaned: usize,
+    skip_cleaned: bool,
 }
 struct Inner {
     limits: Limits,
@@ -241,6 +246,12 @@ impl Workflows {
         )?;
         let pipeline = kernel.pipeline_descriptor(lease)?.clone();
         let phase = program.initial.clone();
+        // Enroll actual cleanup identities at admission, rather than changing
+        // kernel identity history when a safe-boundary checkpoint is captured.
+        if let Err(e) = kernel.enroll_operation_cleanup(operation, lease, &identities) {
+            kernel.release_pipeline(lease)?;
+            return Err(e.into());
+        }
         inner.frames.insert(
             operation,
             Owned {
@@ -259,6 +270,8 @@ impl Workflows {
                 participants,
                 identities,
                 cleanup: None,
+                cleaned: 0,
+                skip_cleaned: false,
             },
         );
         Ok(operation)
@@ -345,6 +358,7 @@ impl Workflows {
             Ok(outcome)
         });
         owned.cleanup = Some(binding);
+        owned.cleaned = 0;
         owned.frame.cleanup_pending = true;
         // Cleanup applies to this invocation epoch, even on trap/invalid result.
         let cleanup = clean(owned);
@@ -394,13 +408,53 @@ impl Workflows {
 }
 fn clean(owned: &mut Owned) -> Result<()> {
     if let Some(binding) = &owned.cleanup {
-        for participant in &owned.participants {
+        // Existing live workflows retain their idempotent retry contract.
+        // Reconstructed workflows continue the authenticated accepted prefix.
+        let first = if owned.skip_cleaned { owned.cleaned } else { 0 };
+        for (index, participant) in owned.participants.iter().enumerate().skip(first) {
             participant.discard(binding).map_err(|_| Error::Cleanup)?;
+            owned.cleaned = owned.cleaned.max(index + 1);
         }
         owned.cleanup = None;
         owned.frame.cleanup_pending = false;
     }
     Ok(())
+}
+
+// Preserve the exact stable kernel refusal without exposing a handle decoder.
+mod fault_error {
+    use super::KernelError;
+    use serde::{Deserialize, Deserializer, Serializer};
+    pub fn serialize<S: Serializer>(e: &KernelError, s: S) -> std::result::Result<S::Ok, S::Error> {
+        s.serialize_i32(e.abi_code())
+    }
+    pub fn deserialize<'de, D: Deserializer<'de>>(
+        d: D,
+    ) -> std::result::Result<KernelError, D::Error> {
+        use KernelError::*;
+        let code = i32::deserialize(d)?;
+        [
+            InvalidManifest,
+            InvalidModule,
+            InvalidHandle,
+            MissingDependency,
+            Duplicate,
+            Signature,
+            InvalidSlot,
+            MissingGrant,
+            Revoked,
+            Authority,
+            Buffer,
+            Limit,
+            Trap,
+            NativeRefusal,
+            Referenced,
+            Cycle,
+        ]
+        .into_iter()
+        .find(|e| e.abi_code() == code)
+        .ok_or_else(|| serde::de::Error::custom("unknown kernel refusal"))
+    }
 }
 fn ticket(o: &Owned) -> Ticket {
     Ticket {

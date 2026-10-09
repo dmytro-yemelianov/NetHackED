@@ -913,6 +913,30 @@ impl Kernel {
         if phase.len() > self.limits.payload_bytes as usize {
             return Err(Error::Buffer);
         }
+        let cleanup = self.enroll_operation_cleanup(operation, pipeline, participants)?;
+        Ok(OperationBinding {
+            operation,
+            pipeline,
+            checkpoint,
+            phase: phase.into(),
+            cleanup,
+        })
+    }
+    /// Register cleanup identities at admission without admitting an invocation.
+    /// Invocation bindings still enforce the phase payload bound separately.
+    pub fn enroll_operation_cleanup(
+        &self,
+        operation: OperationId,
+        pipeline: PipelineLease,
+        participants: &[CleanupIdentity],
+    ) -> Result<Vec<CleanupIdentity>> {
+        if operation.host != self.instance
+            || operation.serial == 0
+            || operation.serial >= self.next_operation
+        {
+            return Err(Error::Authority);
+        }
+        self.pipeline_descriptor(pipeline)?;
         if participants.len() > self.limits.scope_keys {
             return Err(Error::Limit);
         }
@@ -930,13 +954,7 @@ impl Kernel {
             }
             history.extend(cleanup.iter().map(|id| id.raw()));
         }
-        Ok(OperationBinding {
-            operation,
-            pipeline,
-            checkpoint,
-            phase: phase.into(),
-            cleanup,
-        })
+        Ok(cleanup)
     }
     /// All root admission checks that can refuse before code is invoked.
     pub fn preflight_pipeline(

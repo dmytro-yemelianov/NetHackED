@@ -2,10 +2,10 @@
   "schema": 1,
   "status": "active",
   "plan": "docs/plans/2026-10-08-microkernel-goal.md",
-  "plan_sha256": "42ba2b7a48180b7bfca84b5dede7e51487ab78e8037ee1fe7eff11eaf5691654",
+  "plan_sha256": "e525490ad3c89fe5b53d75e3a579bb00125dff6202db3522acc3b1ea45c714f6",
   "native_goal": "Complete NetRust microkernel architecture program; formal contracts, executable extensions, existing NetHack migration, integration audit",
   "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
-  "active_unit": "M4d-D4",
+  "active_unit": "M4d-D4b",
   "live_handles": [],
   "acceptance": {
     "A1": "passed_generic_runtime_1fc3290",
@@ -292,7 +292,7 @@
             "M4-O4"
           ],
           "scope": "Concrete autonomous-owner codecs/restoration and executable/schema validation; full A5 including supported legacy compatibility",
-          "current_phase": "D3_complete_D4_coherent_services_next",
+          "current_phase": "D4a_complete_D4b_timer_adapter_persistence_next",
           "contract": "docs/plans/2026-10-08-owner-persistence-contract.md",
           "design_checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-persistence-contract-checkpoint.json",
           "units": [
@@ -429,7 +429,7 @@
             },
             {
               "id": "M4d-D4",
-              "status": "planned",
+              "status": "in_progress",
               "depends_on": [
                 "M4d-D3"
               ],
@@ -440,6 +440,55 @@
                 "Paused charge/input, first preparation under old code, source-disposed callback, Busy cleanup and exact accepted prefixes",
                 "Bad targets/records/cleanup/replay and barrier failures refuse",
                 "Grant narrowing/revocation and resolver change after staging or at final exchange; safe restaging positive and nonempty destination preserved"
+              ],
+              "units": [
+                {
+                  "id": "M4d-D4a",
+                  "status": "accepted",
+                  "depends_on": [
+                    "M4d-D3"
+                  ],
+                  "title": "Workflow local persistence",
+                  "scope": "Frozen programs, frame state codec, running/suspended/terminal status, tickets and exact cleanup participants/context; fresh kernel mappings, no step/resume/discard on load.",
+                  "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-workflow-persistence-checkpoint.json",
+                  "checkpoint_sha256": "244b552d8fe421d7badfc78ae0bf7e3bb7e8b6704f6efc525cbc89f51e02c87d"
+                },
+                {
+                  "id": "M4d-D4b",
+                  "status": "planned",
+                  "depends_on": [
+                    "M4d-D4a"
+                  ],
+                  "title": "Timer and owner adapter persistence",
+                  "scope": "Pending/cancelled/terminal tasks, profiles and target validation, shared old callback bundles/weak routes, disposed source and Busy cleanup without automatic delivery."
+                },
+                {
+                  "id": "M4d-D4c",
+                  "status": "planned",
+                  "depends_on": [
+                    "M4d-D4b"
+                  ],
+                  "title": "Historical recorded inputs",
+                  "scope": "Complete source and ledger provenance across disposed/historical operations; fresh observations/counters and replay with no sampling."
+                },
+                {
+                  "id": "M4d-D4d",
+                  "status": "planned",
+                  "depends_on": [
+                    "M4d-D4c"
+                  ],
+                  "title": "Optional resource participant persistence",
+                  "scope": "Preserve enabled resource-service cells, policies, accepted event/transaction history, pending plans and cleanup ownership via approved local codec/factories; no new NetHack domain storage here."
+                },
+                {
+                  "id": "M4d-D4e",
+                  "status": "planned",
+                  "depends_on": [
+                    "M4d-D4d"
+                  ],
+                  "title": "Coherent session activation",
+                  "scope": "Whole-domain capture barrier, hidden HostBundle graph, authority identity/epoch exclusion through atomic exchange and every original D4 positive/refusal integration witness."
+                }
               ]
             },
             {
@@ -732,7 +781,7 @@
       "concrete owner-state persistence contract",
       "NetHack domain migration"
     ],
-    "current_limit": "Independent owner state, complete retained kernel and prepared execution reconstruction accepted through aggregateD3. D4 coherent services/authority-epoch activation, D5/D6 native compatibility and fullA5, and NetHack migration M5-M7 remain required.",
+    "current_limit": "Independent owner/retained execution through D3 and local workflow persistence D4a accepted. D4b timer/adapters, D4c historical inputs, D4d optional resources, D4e coherent authority-epoch activation, D5-D6 native compatibility/fullA5 and M5-M7 NetHack migration remain.",
     "implementation_claim": true,
     "contract": "docs/plans/2026-10-08-autonomous-ownership-contract.md",
     "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-services-checkpoint.json",

@@ -1,0 +1,129 @@
+{
+  "schema": 1,
+  "status": "reviewed_and_verified_in_containing_commit",
+  "baseline_head": "7a8cfb0451b5de6cb904b5751ee796731c784dcf",
+  "milestone": "M4d-D4a",
+  "scope": "Workflow-local program/frame/state/ticket/cleanup persistence; full coherent session activation remains D4e",
+  "contract": {
+    "path": "/Users/dmytro/github/NetRust/docs/plans/2026-10-08-owner-persistence-contract.md",
+    "sha256": "7f04e7118c33245a6aa0da16352eaa022d7753dc191bddaeb4963a9ddf55b569"
+  },
+  "prerequisite": {
+    "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-09-microkernel-owner-execution-checkpoint.json",
+    "sha256": "fe79f9bb8cc1d3583646e19f3d82c465154469137c7f01ea12f131a410662dd2"
+  },
+  "runtime": "nethacked-workflows optional persistence feature and bounded kernel enrollment/mapping bridges",
+  "review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-WORKFLOW-PERSISTENCE/review-evidence/review.md",
+    "sha256": "f15173e40f2837292a381714b08bf6757aa7e8ae907d3cc4bcb0db83172b5ecd"
+  },
+  "readback": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-WORKFLOW-PERSISTENCE/readback1-evidence/handoff.md",
+    "sha256": "d46fad95515d5f6241ccc6f2d7c25fa84780f78e01dff8df84593f4415a942af"
+  },
+  "readback_verification": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-WORKFLOW-PERSISTENCE/readback1-root-verification.json",
+    "sha256": "da2f2b507d303177bba99b98d0ebdbe8de4b18310e6167971f24781b881c3232"
+  },
+  "implementation_handoff": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-WORKFLOW-PERSISTENCE/implementation-evidence/HANDOFF.md",
+    "sha256": "2a4b2348b352474dbd3bb6343af49054b12c29674e3b58b76ecd1a4bc6ebe2ce"
+  },
+  "repair_handoff": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-WORKFLOW-PERSISTENCE/repair1-evidence/handoff.md",
+    "sha256": "dc6920a8cc1aab718480d293cfd07b127cbd418776d9b875ca55e5671147fec7"
+  },
+  "repair_delta": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-WORKFLOW-PERSISTENCE/repair1-evidence/repair.diff",
+    "sha256": "998ad3f933cac04dd8928bf10d87353eecde039a23016e26fc95d187db117dbe"
+  },
+  "failure_ledger": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-WORKFLOW-PERSISTENCE/readback1-evidence/failure-ledger.json",
+    "sha256": "52a8c6b4c145dd08e1f83ca16a408d5466467ac16d6dac73b8cecb05aaf5c015"
+  },
+  "source_bindings": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-WORKFLOW-PERSISTENCE/readback1-source.json",
+    "sha256": "599101d0f71e42b94f7349e4eda8aa53d2c2147bd2b8a46151456c9f731d2fba"
+  },
+  "full_gates": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-WORKFLOW-PERSISTENCE/gates/accepted.json",
+    "sha256": "a78d2af4fb5b7789cc0c72e4ea0348b12e3de1af29b56bb1c54322b09599ce55"
+  },
+  "gate_result": {
+    "head": "7a8cfb0451b5de6cb904b5751ee796731c784dcf",
+    "tests": 1228,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "digest": "8ccd390a363cb05e91362fdf124fd7744fd87d9997225ac9023afb88c8081488",
+    "checks": 12
+  },
+  "source_input_count": 468,
+  "focused_checks": {
+    "workflows_default": 10,
+    "workflows_persistence": 30,
+    "kernel_owners_owner_services_all_features": 140,
+    "independent_readback_executions": 22,
+    "scoped_fmt_clippy": "pass",
+    "actual_workflows_persistence_kernel_wasm32": "pass",
+    "final_checks": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-WORKFLOW-PERSISTENCE/repair1-evidence/final-checks.json",
+      "sha256": "545a164480eab7beccadc17dc8bf2bc6e0d3400e0485442c4da884245691f246"
+    }
+  },
+  "verified_behavior": [
+    "Canonical bounded workflow-owned checkpoints encode exact approved immutable programs, local state schemas and explicit references.",
+    "Running between steps, suspended and terminal states preserve phase, sequence, trace and pending cleanup without executing start/resume/step/endpoint/discard during load.",
+    "Fresh kernel operation/lease/context mappings and independently approved current grants bind restored frames to their destination; tickets reject stale namespaces and replay.",
+    "Old semantic state validates before explicit fresh-reference remap; all independently checkable frame/enrollment/catalog refusals precede avoidable domain codec/factory calls.",
+    "Ordered aliases of identified or identityless cleanup participants retain shared allocation and approved occurrence/cursor context; accepted domain prefixes and idempotent retry semantics survive.",
+    "Capture is observational after resume and refuses active invocation or held mutable borrow; failed hidden builds roll back enrollment and quarantine incomplete frames.",
+    "Cleanup identity registration is separate from invocation admission, preserving start/first-step error ordering and actual authority/payload/phase/live-lease checks.",
+    "One-use reconstruction, old retained native/Wasm continuation and future dispatch, cleanup lifetimes, capacity and tampering controls retain existing behavior."
+  ],
+  "findings_resolved": [
+    "F1 legal repeated participant enrollment must remain representable and share one reconstructed allocation.",
+    "F2 checkpoint-wide independent approval precedes semantic codecs, including later-frame refusal.",
+    "F3 cleanup enrollment preserves public invocation-bound refusal timing."
+  ],
+  "repair_history": "F1-F3 each one repair attempt with zero unsuccessful repair attempts. Original three implementation causes, one repair import fixture and three readback fixture issues remain in cumulative evidence; no resets.",
+  "trust_premises": [
+    "Native codec/factory identity, fidelity, purity, bounded work, private allocation, no escaped aliases and effect-free construction/drop remain host premises.",
+    "Local workflow reconstruction does not supply the complete HostBundle capture/activation barrier or authority-epoch exclusion.",
+    "No composed Lean-to-Rust refinement, crash journal or external exactly-once guarantee claimed."
+  ],
+  "usage": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-WORKFLOW-PERSISTENCE/implementation/usage.json",
+      "sha256": "6ee35332c8d7c215efe5aa288d8e0cf98f994536ad1061c31abee3e20bc39017"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-WORKFLOW-PERSISTENCE/review/usage.json",
+      "sha256": "a7ef851358cfdffda8e06fae5c9aea04d43fd47a8fd030ae5f4ce9ce13b582de"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-WORKFLOW-PERSISTENCE/repair1/usage.json",
+      "sha256": "d2ef10d751a0b33f1b130c658dea437e81d8823e3bacf3ad7923460ef333fa55"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-WORKFLOW-PERSISTENCE/readback1/usage.json",
+      "sha256": "4c8f70a593eef0b5fc7495479c9cba1761c5f18abd0c7e25892bc9aecea767f2"
+    }
+  ],
+  "meter_note": "All four model phases exceeded difficult soft thresholds. Exact defect probes and previous accepted reviews/checks reused; root usage unknown, no savings claim.",
+  "A5_accepted": false,
+  "aggregate_D4_accepted": false,
+  "goldens_changed": false,
+  "existing_committed_tests_changed": false,
+  "parity_families_closed": 0,
+  "residuals": [
+    "D4b pending/terminal timer state, independent profiles/targets and owner-service weak routes/shared retained callback bundles.",
+    "D4c historical/disposed recorded-input ledger orchestration.",
+    "D4d optional resource-service state, policies, history and cleanup persistence when enrolled.",
+    "D4e coherent capture/hidden HostBundle and atomic authority-epoch activation with every original combined case.",
+    "D5 real legacy save compatibility, nine independent NetHack state owners and public owner-native billing continuation; D6 fresh-process full A5.",
+    "M5 populated-session extension slice, M6 complete production-domain migration, M7 final acceptance; separate53-family behavior parity backlog remains open."
+  ]
+}
