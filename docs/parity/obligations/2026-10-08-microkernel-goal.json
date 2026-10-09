@@ -2,10 +2,10 @@
   "schema": 1,
   "status": "active",
   "plan": "docs/plans/2026-10-08-microkernel-goal.md",
-  "plan_sha256": "d79e9f66bc389de605c202082f4cee4e1c0ed4c95a81d41a3739e211e46a7f07",
+  "plan_sha256": "51b6bfd5a1b077089cc38a2b10346f9e905d37e575e531be558f97ed9259ca06",
   "native_goal": "Complete NetRust microkernel architecture program; formal contracts, executable extensions, existing NetHack migration, integration audit",
   "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
-  "active_unit": "M5",
+  "active_unit": "M5-I1",
   "live_handles": [],
   "acceptance": {
     "A1": "passed_generic_runtime_1fc3290",
@@ -570,7 +570,7 @@
     },
     {
       "id": "M5",
-      "status": "planned",
+      "status": "in_progress",
       "depends_on": [
         "M4"
       ],
@@ -578,6 +578,61 @@
         "Define bounded native-to-native collaboration and extension composition before migration",
         "Preserve wand survivor identity/conditional RNG/cancellation costs",
         "Preserve billing validation before timer catch-up on restoration"
+      ],
+      "contract": "docs/plans/2026-10-09-nethack-module-integration-contract.md",
+      "checkpoint": "docs/parity/obligations/2026-10-09-nethack-module-integration-contract-checkpoint.json",
+      "checkpoint_sha256": "cbf31423ead512eaaaf883663a5f8a0e69c32f437775da04e13a0755ec8a6dca",
+      "implementation_units": [
+        {
+          "id": "M5-CONTRACT",
+          "status": "accepted_contract_only",
+          "checkpoint": "docs/parity/obligations/2026-10-09-nethack-module-integration-contract-checkpoint.json"
+        },
+        {
+          "id": "M5-I1",
+          "status": "planned",
+          "depends_on": [
+            "M5-CONTRACT"
+          ],
+          "scope": "Typed command-specific observations, proposals, owner registrations and bounds",
+          "contract": "docs/plans/2026-10-09-nethack-module-integration-contract.md"
+        },
+        {
+          "id": "M5-I2",
+          "status": "planned",
+          "depends_on": [
+            "M5-I1"
+          ],
+          "scope": "Actual wand caller, shared algorithms, bounded legacy adapters and both public dispatchers",
+          "contract": "docs/plans/2026-10-09-nethack-module-integration-contract.md"
+        },
+        {
+          "id": "M5-I3",
+          "status": "planned",
+          "depends_on": [
+            "M5-I2"
+          ],
+          "scope": "Sealed lifetime/equipment/timer/shop publication with retained accounting prefixes",
+          "contract": "docs/plans/2026-10-09-nethack-module-integration-contract.md"
+        },
+        {
+          "id": "M5-I4",
+          "status": "planned",
+          "depends_on": [
+            "M5-I3"
+          ],
+          "scope": "Live executable NetHack extension, retained paused operation and fresh-process persistence",
+          "contract": "docs/plans/2026-10-09-nethack-module-integration-contract.md"
+        },
+        {
+          "id": "M5-I5",
+          "status": "planned",
+          "depends_on": [
+            "M5-I4"
+          ],
+          "scope": "Combined production A2/A4/A6 and native compatibility acceptance",
+          "contract": "docs/plans/2026-10-09-nethack-module-integration-contract.md"
+        }
       ]
     },
     {

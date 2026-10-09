@@ -1,0 +1,68 @@
+{
+  "schema": 1,
+  "status": "reviewed_contract_only",
+  "baseline_head": "1b1e6f5b7a744e4c4d2e8480a5b1f6fe2aeaf647",
+  "unit": "M5-CONTRACT",
+  "contract": {
+    "path": "/Users/dmytro/github/NetRust/docs/plans/2026-10-09-nethack-module-integration-contract.md",
+    "sha256": "3e6ddb2ddac91e866bf5cbd8fec0eccff2e4e7846c516a0d6ca29fad249e87e7"
+  },
+  "prerequisite": {
+    "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-09-microkernel-a5-checkpoint.json",
+    "sha256": "12052883f3379d7191e42a7609f52bbf614fd4c66f78e4038c20fb533b6fe4e2"
+  },
+  "review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-CONTRACT/f1-review/REVIEW.json",
+    "sha256": "627ebf11f69d99ae1752d13cf07088ff5c2de82f0556c3f8078417630ba61ab9"
+  },
+  "prior_finite_review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-CONTRACT/readback2/answer.txt",
+    "sha256": "a52d013d04bcd349c1191e90304858e983fcb738997e0529f56b4cef0950cc77"
+  },
+  "phase_usage": {
+    "writer": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-CONTRACT/writer/usage.json",
+      "sha256": "fcfdcfb1318299b0d79c5230793a5a6d75fe79f86900c379b297ef11da24b282"
+    },
+    "review": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-CONTRACT/review/usage.json",
+      "sha256": "c8af87984045782ca12b0c09c06688ddeb84696cdfc59db448338feb7538c500"
+    },
+    "readback": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-CONTRACT/readback/usage.json",
+      "sha256": "8f7ece672745a144fed71101205950f0f1781cd996c4da2b5d5cbab2f5dfc8c2"
+    },
+    "readback2": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-CONTRACT/readback2/usage.json",
+      "sha256": "121ca5e71ad3835e07aa73ad8627eb8f6f7460cce7569921716675165eeb5031"
+    },
+    "f1-review": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-CONTRACT/f1-review/usage.json",
+      "sha256": "8481a3e85cde0a60909199796100cb6474ee87b22101c58aa8d9cea545ee8bfe"
+    }
+  },
+  "source_bindings": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-CONTRACT/candidate-source.json",
+    "sha256": "cd11e9cc2927d871c9ae349a48fb55d9a3b2666580a040ab203cd25bf157215d"
+  },
+  "gate_reuse": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-CONTRACT/gate-reuse.json",
+    "sha256": "66f15030b3ee892ecc6000106d893107dc4d22e8d8da24bb07ba5a0a95aece4f"
+  },
+  "limits": [
+    "No M5 implementation or A2/A4 NetHack/A6 acceptance.",
+    "Existing missing behavior53-family backlog unchanged.",
+    "Concrete source-read/path mistakes and all phase usage preserved externally; no savings claim."
+  ],
+  "next": "M5-I1",
+  "fresh_doc_checks": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-CONTRACT/doc-gates/accepted.json",
+    "sha256": "11817ea6cf0138b16eb626a4ac274d5621ef83bd07e684a8e3d4f0632079fe4f"
+  },
+  "measured_phase_usage": {
+    "uncached_input": 136256,
+    "output": 10118,
+    "root_usage": "unknown",
+    "next_adjustment": "Narrow next writer to I1 typed observations and existing runtime seams only; no planning/predecessor audit, root supplies exact file paths and relevant excerpts. No savings claim."
+  }
+}
