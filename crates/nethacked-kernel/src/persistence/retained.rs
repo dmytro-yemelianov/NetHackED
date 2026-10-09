@@ -2696,3 +2696,187 @@ impl Kernel {
         Ok(saved)
     }
 }
+
+/// Input-owned diagnostic provenance. It carries no grant, pin or executable map.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct InputHistory {
+    pub source: SavedOperation,
+    pub caller: u64,
+    pub caller_artifact: [u8; 32],
+    pub resolution: Vec<SavedBinding>,
+}
+impl InputHistory {
+    pub fn check(&self, saved: &KernelSnapshot) -> Result<()> {
+        if self.resolution.is_empty() || self.resolution.len() > MAX_ROWS {
+            return Err(Error::Limit);
+        }
+        let module = |id: u64, artifact: [u8; 32]| -> Result<()> {
+            if id == 0 || id >= saved.registry.next_generation {
+                return Err(Error::InvalidHandle);
+            }
+            if saved
+                .registry
+                .modules
+                .iter()
+                .any(|m| m.id == id && m.artifact != artifact)
+            {
+                return Err(Error::Authority);
+            }
+            Ok(())
+        };
+        module(self.caller, self.caller_artifact)?;
+        for b in &self.resolution {
+            module(b.module, b.artifact)?;
+            if !Kernel::valid_name(&b.endpoint)
+                || saved
+                    .registry
+                    .modules
+                    .iter()
+                    .any(|m| m.id == b.module && !m.manifest.exports.contains_key(&b.endpoint))
+            {
+                return Err(Error::InvalidHandle);
+            }
+        }
+        // Routes are acyclic extension chains. Check every constraint for which
+        // immutable manifest evidence remains, without reviving unloaded code
+        // or consulting current attachments/grants for historical execution.
+        let mut seen = BTreeSet::new();
+        for b in &self.resolution {
+            if !seen.insert(b.module) {
+                return Err(Error::Authority);
+            }
+        }
+        for pair in self.resolution.windows(2) {
+            let previous = saved
+                .registry
+                .modules
+                .iter()
+                .find(|m| m.id == pair[0].module);
+            let next = saved
+                .registry
+                .modules
+                .iter()
+                .find(|m| m.id == pair[1].module);
+            if previous.is_some_and(|m| !m.manifest.extension_points.contains(&pair[0].endpoint)) {
+                return Err(Error::Authority);
+            }
+            if let Some(next) = next {
+                let extension = next.manifest.extension.as_ref().ok_or(Error::Authority)?;
+                if extension.export != pair[1].endpoint
+                    || extension.target.endpoint != pair[0].endpoint
+                {
+                    return Err(Error::Authority);
+                }
+                if let Some(previous) = previous {
+                    if extension.target.provider != previous.manifest.id
+                        || previous.manifest.exports.get(&pair[0].endpoint)
+                            != next.manifest.exports.get(&pair[1].endpoint)
+                        || previous.manifest.exports[&pair[0].endpoint].major
+                            != extension.target.major
+                    {
+                        return Err(Error::Authority);
+                    }
+                }
+            }
+        }
+        let first = &self.resolution[0];
+        TimerHistory {
+            caller: SavedBinding {
+                module: self.caller,
+                artifact: self.caller_artifact,
+                endpoint: first.endpoint.clone(),
+            },
+            service: first.clone(),
+            capability: Capability {
+                provider: "history".into(),
+                endpoint: first.endpoint.clone(),
+                major: 1,
+            },
+            slot: 0,
+            source: self.source.clone(),
+        }
+        .check(saved)
+    }
+}
+impl ExecutionCaptureIndex<'_> {
+    /// Distinguish a missing live enrollment from disposed diagnostic history.
+    pub fn input_source_is_live(&self, source: &OperationBinding) -> bool {
+        validate_live_binding(self.kernel, source).is_ok()
+    }
+    /// Only sealed host-issued bindings may enter diagnostic history. Namespace
+    /// zero is reserved for previously restored inert history, never live work.
+    pub fn input_history(
+        &self,
+        source: &OperationBinding,
+        caller: ModuleHandle,
+        caller_artifact: [u8; 32],
+        chain: &[ProviderBinding],
+    ) -> Result<InputHistory> {
+        let namespace = source.operation.host;
+        if (namespace != 0 && namespace != self.namespace())
+            || source.pipeline.instance != namespace
+            || caller.instance != namespace
+            || chain.iter().any(|b| b.handle.instance != namespace)
+        {
+            return Err(Error::InvalidHandle);
+        }
+        let row = InputHistory {
+            source: operation(source),
+            caller: caller.generation,
+            caller_artifact,
+            resolution: chain.iter().map(binding).collect(),
+        };
+        row.check(self.saved)?;
+        Ok(row)
+    }
+}
+impl RestoredKernel {
+    /// A diagnostic operation cannot be invoked or enrolled as a live source.
+    pub fn terminal_input_source(&self, history: &InputHistory) -> Result<OperationBinding> {
+        Ok(OperationBinding {
+            operation: OperationId {
+                host: 0,
+                serial: history.source.operation,
+            },
+            pipeline: PipelineLease {
+                instance: 0,
+                serial: history.source.pipeline,
+            },
+            checkpoint: history.source.checkpoint,
+            phase: history.source.phase.clone(),
+            cleanup: history
+                .source
+                .cleanup
+                .iter()
+                .map(|id| self.cleanup.get(id).copied().ok_or(Error::Authority))
+                .collect::<Result<_>>()?,
+        })
+    }
+}
+impl ModuleHandle {
+    /// Namespace-zero diagnostic metadata cannot designate a runtime module.
+    pub fn inert_history(generation: u64) -> Self {
+        Self {
+            instance: 0,
+            generation,
+        }
+    }
+}
+
+impl KernelSnapshot {
+    /// Structural resource binding preflight, independent of live operations.
+    pub fn execution_resource_declared(&self, resource: &Resource) -> Result<bool> {
+        Ok(self.resources()?.contains(resource))
+    }
+}
+
+impl KernelSnapshot {
+    /// Complete factory-free metadata preflight for composing local services.
+    pub fn validate_execution_metadata(&self) -> Result<()> {
+        let mut destination = Kernel::new(self.registry.limits.clone())?;
+        destination.set_retention_limits(self.registry.retention_limits.clone())?;
+        self.preflight(&destination)?;
+        self.structural_preflight(&destination)
+    }
+}

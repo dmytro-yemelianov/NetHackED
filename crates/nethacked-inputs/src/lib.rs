@@ -13,6 +13,20 @@ use std::{
 };
 
 static NEXT_SERVICE: AtomicU64 = AtomicU64::new(1);
+// Match the timer allocator: reserve carried history and issue atomically;
+// exhaustion stays at MAX rather than wrapping into an old namespace.
+fn issue_namespace_after(counter: &AtomicU64, retired: u64) -> Result<u64> {
+    let floor = retired.checked_add(1).ok_or(Error::Limit)?;
+    counter
+        .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |v| {
+            Some(v.max(floor).saturating_add(1))
+        })
+        .map_err(|_| Error::Limit)
+        .and_then(|v| match v.max(floor) {
+            u64::MAX => Err(Error::Limit),
+            namespace => Ok(namespace),
+        })
+}
 #[cfg(feature = "persistence")]
 pub mod persistence;
 pub const ENDPOINT: &str = "input";
@@ -208,6 +222,9 @@ impl Service {
         })
     }
     pub fn new(limits: Limits, policy: Policy, source: Vec<u8>) -> Result<Self> {
+        Self::new_after(limits, policy, source, 0)
+    }
+    fn new_after(limits: Limits, policy: Policy, source: Vec<u8>, retired: u64) -> Result<Self> {
         if source.len() > limits.source
             || policy.identity.is_empty()
             || policy.identity.len() > limits.wire as usize
@@ -215,9 +232,7 @@ impl Service {
         {
             return Err(Error::Buffer);
         }
-        let namespace = NEXT_SERVICE
-            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |n| n.checked_add(1))
-            .map_err(|_| Error::Limit)?;
+        let namespace = issue_namespace_after(&NEXT_SERVICE, retired)?;
         Ok(Self(Rc::new(RefCell::new(Inner {
             #[cfg(feature = "persistence")]
             quarantine: false,

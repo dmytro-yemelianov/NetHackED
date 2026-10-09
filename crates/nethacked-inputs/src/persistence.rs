@@ -2,7 +2,7 @@
 //! authority epoch; this builder alone must never replace a live HostBundle.
 use super::*;
 use nethacked_kernel::persistence::{
-    ExecutionCaptureIndex, KernelSnapshot, RestoredKernel, SavedOperation,
+    ExecutionCaptureIndex, InputHistory, KernelSnapshot, RestoredKernel, SavedOperation,
 };
 
 const MAX_BYTES: usize = 64 * 1024 * 1024;
@@ -25,6 +25,8 @@ struct Permit {
 #[serde(deny_unknown_fields)]
 struct Row {
     serial: u64,
+    #[serde(default, skip_serializing_if = "is_live")]
+    historical: bool,
     ordinal: u64,
     operation: SavedOperation,
     caller: u64,
@@ -46,6 +48,8 @@ pub struct Checkpoint {
     version: u32,
     namespace: u64,
     origins: BTreeSet<u64>,
+    #[serde(default, skip_serializing_if = "is_zero")]
+    namespace_high_water: u64,
     kernel_namespace: u64,
     policy: String,
     policy_version: u32,
@@ -103,6 +107,7 @@ impl Checkpoint {
     }
     fn validate(&self, limits: &Limits, kernel: &KernelSnapshot) -> Result<()> {
         self.to_bytes(MAX_BYTES)?;
+        kernel.validate_execution_metadata()?;
         if self.version != 1
             || self.namespace == 0
             || self.kernel_namespace == 0
@@ -110,6 +115,8 @@ impl Checkpoint {
             || self.origins.len() >= MAX_ROWS
             || self.origins.contains(&0)
             || !self.origins.contains(&self.namespace)
+            || self.origins.contains(&u64::MAX)
+            || self.namespace_high_water == u64::MAX
             || self.policy.is_empty()
             || self.policy.len() > limits.wire as usize
             || self.provider.endpoint != ENDPOINT
@@ -124,6 +131,9 @@ impl Checkpoint {
         {
             return Err(Error::Limit);
         }
+        if !kernel.execution_resource_declared(&self.resource)? {
+            return Err(Error::Authority);
+        }
         if kernel.source_namespace != self.kernel_namespace {
             return Err(Error::Authority);
         }
@@ -136,7 +146,11 @@ impl Checkpoint {
         if provider.artifact != self.provider.artifact
             || provider.manifest.id != self.capability.provider
             || provider.manifest.id != self.resource.owner
-            || !provider.manifest.exports.contains_key(ENDPOINT)
+            || !provider
+                .manifest
+                .exports
+                .get(ENDPOINT)
+                .is_some_and(|e| e.major == MAJOR && e.access == Access::Write)
         {
             return Err(Error::Authority);
         }
@@ -159,6 +173,25 @@ impl Checkpoint {
                 return Err(Error::NativeRefusal);
             }
             *ordinal = ordinal.checked_add(1).ok_or(Error::Limit)?;
+            if r.historical {
+                history(r).check(kernel)?;
+                if kernel.leases.iter().any(|l| l.id == r.operation.pipeline)
+                    || kernel
+                        .operations
+                        .iter()
+                        .any(|o| o.pipeline == r.operation.pipeline)
+                {
+                    return Err(Error::Authority);
+                }
+                let first = &r.permit.resolution[0];
+                if first.module != self.provider.module
+                    || first.artifact != self.provider.artifact
+                    || first.endpoint != ENDPOINT
+                {
+                    return Err(Error::Authority);
+                }
+                continue;
+            }
             let caller = kernel
                 .registry
                 .modules
@@ -223,6 +256,9 @@ impl Checkpoint {
                 .iter()
                 .find(|r| r.serial == o.serial)
                 .ok_or(Error::Authority)?;
+            if r.historical {
+                return Err(Error::Authority);
+            }
             let chain = r
                 .permit
                 .resolution
@@ -267,6 +303,42 @@ impl Service {
         }
         Ok(ops)
     }
+    /// Enroll only surviving sources; disposed receipts remain diagnostic history.
+    pub fn persistence_operations_for(&self, kernel: &Kernel) -> Result<Vec<OperationBinding>> {
+        Ok(self
+            .persistence_operations()?
+            .into_iter()
+            .filter(|op| kernel.execution_source_live(op).unwrap_or(false))
+            .collect())
+    }
+    /// Preserve immutable cleanup identity roots even after source disposal.
+    pub fn persistence_cleanups(&self) -> Result<Vec<nethacked_kernel::CleanupIdentity>> {
+        let inner = self.0.try_borrow().map_err(|_| Error::NativeRefusal)?;
+        if inner.quarantine {
+            return Err(Error::Authority);
+        }
+        Ok(inner
+            .state
+            .records
+            .iter()
+            .flat_map(|r| r.operation.cleanup_identities().iter().copied())
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect())
+    }
+    /// Resource roots must also be captured for empty/source-only services.
+    pub fn persistence_resources(&self) -> Result<Vec<Resource>> {
+        let inner = self.0.try_borrow().map_err(|_| Error::NativeRefusal)?;
+        if inner.quarantine {
+            return Err(Error::Authority);
+        }
+        Ok(vec![inner
+            .binding
+            .as_ref()
+            .ok_or(Error::Authority)?
+            .3
+            .clone()])
+    }
     /// Capture accepted ledger and explicitly enrolled observation reservations.
     pub fn capture_persistence(
         &self,
@@ -307,6 +379,7 @@ impl Service {
             namespace: inner.namespace,
             kernel_namespace: index.namespace(),
             origins: inner.persistence_origins.clone(),
+            namespace_high_water: NEXT_SERVICE.load(Ordering::Relaxed) - 1,
             policy: inner.policy.identity.clone(),
             policy_version: inner.policy.version,
             provider: Binding {
@@ -322,26 +395,35 @@ impl Service {
                 .records
                 .iter()
                 .map(|r| {
+                    let historical = match index.source(&r.operation) {
+                        Ok(_) => false,
+                        Err(e) if index.input_source_is_live(&r.operation) => return Err(e),
+                        Err(_) => true,
+                    };
+                    let h = index.input_history(
+                        &r.operation,
+                        r.caller,
+                        r.caller_artifact,
+                        &r.permit.resolution,
+                    )?;
                     Ok(Row {
+                        historical,
                         serial: r.id.serial,
                         ordinal: r.ordinal,
-                        operation: index.source(&r.operation)?,
-                        caller: index.module(r.caller)?,
+                        operation: h.source,
+                        caller: h.caller,
                         caller_artifact: r.caller_artifact,
                         permit: Permit {
                             capability: r.permit.capability.clone(),
-                            resolution: r
-                                .permit
+                            resolution: h
                                 .resolution
-                                .iter()
-                                .map(|b| {
-                                    Ok(Binding {
-                                        module: index.module(b.handle)?,
-                                        artifact: b.artifact,
-                                        endpoint: b.endpoint.clone(),
-                                    })
+                                .into_iter()
+                                .map(|b| Binding {
+                                    module: b.module,
+                                    artifact: b.artifact,
+                                    endpoint: b.endpoint,
                                 })
-                                .collect::<Result<_>>()?,
+                                .collect(),
                         },
                         request: r.request.clone(),
                         value: r.value.clone(),
@@ -355,7 +437,15 @@ impl Service {
                 .iter()
                 .map(|r| {
                     Ok((
-                        index.source(&r.operation)?.operation,
+                        index
+                            .input_history(
+                                &r.operation,
+                                r.caller,
+                                r.caller_artifact,
+                                &r.permit.resolution,
+                            )?
+                            .source
+                            .operation,
                         *inner
                             .state
                             .next_ordinals
@@ -443,16 +533,12 @@ impl Restore {
         if policy.identity != c.policy || policy.version != c.policy_version {
             return Err(Error::Authority);
         }
-        let service = Service::new(limits, policy, c.source.clone())?;
+        let retired = c
+            .namespace_high_water
+            .max(*c.origins.last().ok_or(Error::Limit)?);
+        let service = Service::new_after(limits, policy, c.source.clone(), retired)?;
         {
             let mut inner = service.0.borrow_mut();
-            // Also exclude saved origins after a process restart, when the local
-            // allocator may initially produce a previously issued namespace.
-            while c.origins.contains(&inner.namespace) {
-                inner.namespace = NEXT_SERVICE
-                    .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |n| n.checked_add(1))
-                    .map_err(|_| Error::Limit)?;
-            }
             inner.persistence_origins = c.origins.clone();
             if inner.persistence_origins.len() >= MAX_ROWS {
                 return Err(Error::Limit);
@@ -494,7 +580,11 @@ impl Restore {
         };
         let mut records = BTreeMap::new();
         for r in &c.records {
-            let operation = mapped.execution_source(&r.operation)?;
+            let operation = if r.historical {
+                mapped.terminal_input_source(&history(r))?
+            } else {
+                mapped.execution_source(&r.operation)?
+            };
             state.next_ordinals.insert(
                 operation.operation(),
                 c.next_ordinals[&r.operation.operation],
@@ -505,20 +595,26 @@ impl Restore {
                 .iter()
                 .map(|b| {
                     Ok(nethacked_kernel::ProviderBinding {
-                        handle: module(b.module, b.artifact)?,
+                        handle: if r.historical {
+                            ModuleHandle::inert_history(b.module)
+                        } else {
+                            module(b.module, b.artifact)?
+                        },
                         artifact: b.artifact,
                         endpoint: b.endpoint.clone(),
                     })
                 })
                 .collect::<Result<Vec<_>>>()?;
-            mapped.execution_record(
-                &r.operation,
-                r.caller,
-                &c.capability,
-                &chain,
-                &c.resource,
-                None,
-            )?;
+            if !r.historical {
+                mapped.execution_record(
+                    &r.operation,
+                    r.caller,
+                    &c.capability,
+                    &chain,
+                    &c.resource,
+                    None,
+                )?;
+            }
             let id = RecordId {
                 namespace,
                 serial: r.serial,
@@ -528,9 +624,17 @@ impl Restore {
                 id,
                 ordinal: r.ordinal,
                 operation,
-                caller: module(r.caller, r.caller_artifact)?,
+                caller: if r.historical {
+                    ModuleHandle::inert_history(r.caller)
+                } else {
+                    module(r.caller, r.caller_artifact)?
+                },
                 caller_artifact: r.caller_artifact,
-                provider,
+                provider: if r.historical {
+                    ModuleHandle::inert_history(c.provider.module)
+                } else {
+                    provider
+                },
                 provider_artifact: c.provider.artifact,
                 permit: CapabilityPermit {
                     capability: c.capability.clone(),
@@ -685,4 +789,34 @@ impl Checkpoint {
             .and_then(|n| n.checked_add(self.policy.len()))
             .ok_or(Error::Limit)
     }
+}
+
+fn history(r: &Row) -> InputHistory {
+    InputHistory {
+        source: r.operation.clone(),
+        caller: r.caller,
+        caller_artifact: r.caller_artifact,
+        resolution: r
+            .permit
+            .resolution
+            .iter()
+            .map(|b| nethacked_kernel::persistence::SavedBinding {
+                module: b.module,
+                artifact: b.artifact,
+                endpoint: b.endpoint.clone(),
+            })
+            .collect(),
+    }
+}
+
+#[cfg(test)]
+#[path = "../tests/support/history.rs"]
+mod history_tests;
+
+fn is_live(historical: &bool) -> bool {
+    !*historical
+}
+
+fn is_zero(value: &u64) -> bool {
+    *value == 0
 }

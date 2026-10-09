@@ -46,11 +46,12 @@ finite capacity, never evict entries, and refuse when full. There is no timer,
 compulsory PRNG or domain-state schema here.
 
 The optional `persistence` feature supplies an input-owned local ledger seam.
-Enroll `persistence_operations` with kernel capture, then use
+Enroll `persistence_operations_for(kernel)` and `persistence_cleanups`, together
+with `persistence_resources`, through `kernel_snapshot_with_service_roots`, then use
 `capture_persistence` with the actual retained observations. Its private checkpoint
 preserves source bytes, ordered records, serial/ordinal counters and namespace
 history. An independently allowlisted fresh policy factory creates a quarantined
-`Restore`; its port refuses calls until `finish` binds every record and observation
+`Restore`; its port refuses calls until `finish` binds executable records and observations
 to the separately admitted kernel mappings. Loading never calls the transition.
 Observation IDs select captured input-owned ledger rows, not owner metadata or
 guest credentials. Old namespaces and authority remain invalid. Factories must
@@ -58,9 +59,12 @@ be pure, bounded, fresh and free of source aliases or effects on construction/dr
 
 This local seam does not activate a whole HostBundle or establish an authority
 epoch. D4 must compose the service barrier, exact native port factories, kernel
-context admission, historical/disposed record orchestration and whole-bundle
-activation. D3c owner pending candidate and sealed batch integration remains open;
-these local tests do not establish combined persistence acceptance.
+context admission and whole-bundle activation (D4e). The D3c pending candidate
+and sealed batch bridges remain supported. Completed/disposed/unloaded history
+loads as inert namespace-zero provenance, retaining exact ledger and counters
+without reviving historical code or grants. Historical rows cannot issue
+observations or replay under fresh work; only live rows use admitted contexts and
+pins. This local seam does not establish whole-bundle acceptance.
 
 `Services.lean/Input`: `Key` maps to authenticated operation plus issued ordinal
 (the wire ID additionally has a service namespace/serial); `Record.binding` maps
@@ -86,3 +90,10 @@ records and observations. Its sealed destination credential binds the actual
 service, fresh records, mapped providers/callers/operations and shared pins to the
 kernel restore that admitted them. A composing owner restore requires this same
 destination; identical checkpoint bytes restored elsewhere cannot attach.
+
+Input checkpoints carry the allocation high-water, including namespace holes.
+Restore reserves it against every later ordinary or restored service allocation;
+exhaustion refuses without wrapping. Historical rows must refer to terminal
+sources, even when live operation enrollment or observations are absent. Old
+routes are checked against available immutable manifests and cannot contain
+cycles or impossible extension links; unloaded code and dead grants stay inert.

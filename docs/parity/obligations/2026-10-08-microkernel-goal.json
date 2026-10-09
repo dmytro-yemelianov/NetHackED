@@ -2,10 +2,10 @@
   "schema": 1,
   "status": "active",
   "plan": "docs/plans/2026-10-08-microkernel-goal.md",
-  "plan_sha256": "4e513a9dcc61575e419258ca7c62fada939aae594a1e25ec625257cac83e5cac",
+  "plan_sha256": "36b52886e5bd6f8e00872b86e6686f17bb0b76190a595934429747544b39e342",
   "native_goal": "Complete NetRust microkernel architecture program; formal contracts, executable extensions, existing NetHack migration, integration audit",
   "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
-  "active_unit": "M4d-D4c",
+  "active_unit": "M4d-D4d",
   "live_handles": [],
   "acceptance": {
     "A1": "passed_generic_runtime_1fc3290",
@@ -292,7 +292,7 @@
             "M4-O4"
           ],
           "scope": "Concrete autonomous-owner codecs/restoration and executable/schema validation; full A5 including supported legacy compatibility",
-          "current_phase": "D4b_complete_D4c_historical_inputs_next",
+          "current_phase": "D4c_complete_D4d_optional_resource_persistence_next",
           "contract": "docs/plans/2026-10-08-owner-persistence-contract.md",
           "design_checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-persistence-contract-checkpoint.json",
           "units": [
@@ -466,12 +466,14 @@
                 },
                 {
                   "id": "M4d-D4c",
-                  "status": "planned",
+                  "status": "accepted",
                   "depends_on": [
                     "M4d-D4b"
                   ],
                   "title": "Historical recorded inputs",
-                  "scope": "Complete source and ledger provenance across disposed/historical operations; fresh observations/counters and replay with no sampling."
+                  "scope": "Complete source and ledger provenance across disposed/historical operations; fresh observations/counters and replay with no sampling.",
+                  "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-input-history-checkpoint.json",
+                  "checkpoint_sha256": "3980c9ae7c7d2a71ce31655a94198d4bf7942bb9baa54b7c6f7645100b303c09"
                 },
                 {
                   "id": "M4d-D4d",
@@ -783,7 +785,7 @@
       "concrete owner-state persistence contract",
       "NetHack domain migration"
     ],
-    "current_limit": "Independent owner/retained execution D3 and local workflow/timer/adapter persistence D4a-b accepted. D4c historical inputs, D4d optional resources, D4e coherent authority-epoch activation, D5-D6 native compatibility/fullA5 and M5-M7 all NetHack migration remain.",
+    "current_limit": "Independent owner/retained execution D3 and local workflow/timer/adapter/input persistence D4a-c accepted. D4d optional resource persistence, D4e coherent authority-epoch activation, D5-D6 native compatibility/fullA5 and M5-M7 all NetHack migration remain.",
     "implementation_claim": true,
     "contract": "docs/plans/2026-10-08-autonomous-ownership-contract.md",
     "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-services-checkpoint.json",
