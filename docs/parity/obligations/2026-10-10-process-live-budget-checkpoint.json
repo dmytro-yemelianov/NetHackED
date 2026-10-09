@@ -1,0 +1,93 @@
+{
+  "status": "accepted_source_verified_delivery_pending",
+  "baseline_head": "205afc9302300e1cd7e1ec24cbc483849578648d",
+  "source_manifest": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-LIVE-BUDGET/repair-source.json",
+    "sha256": "20650a13dfb21b7d0640e2c3fcd7390cf2fb12cad864f322d333e00a9418f6d8"
+  },
+  "scope": "Meter primary tasks, require bounded App Server launches, observed token/wall/command/initial-telemetry stops, interrupt and group cleanup, uncached accounting and fail-closed current/historical usage reports.",
+  "independent_review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-LIVE-BUDGET/review-acceptance.json",
+    "sha256": "8eb87d1a90c09f710e449249031b6106d63f87be569f305355389f4b37871326"
+  },
+  "review_execution_budget_failure_retained": true,
+  "python_tests": 31,
+  "python_test_log": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-LIVE-BUDGET/netrust-process-runtime-tests6.log",
+    "sha256": "851c90e47afe4014d3fc204187790b3364cf1af4384fa2b5c0e244bbef4d43d7"
+  },
+  "full_gates": {
+    "status": "passed",
+    "directory": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-LIVE-BUDGET/final-gates",
+    "accepted": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-LIVE-BUDGET/final-gates/accepted.json",
+      "sha256": "955ec7bf5d61d99f0de2e66c3f046ff0c64b13fde535401314ef8eea10403f23"
+    },
+    "input_snapshot": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-LIVE-BUDGET/final-gates/baseline.json",
+      "sha256": "d45febb3ba51bbb23b3de80a9e50de5cc9b372c8f17767bcef064e79425a56d3"
+    },
+    "checks": 12,
+    "workspace_tests": 1480,
+    "unchanged_goldens": 3,
+    "non_documentation_inputs": 534
+  },
+  "observed_child_usage": {
+    "runs": [
+      {
+        "run": "smoke",
+        "stop_reason": "input_limit",
+        "uncached_input_tokens": 18142,
+        "output_tokens": 16,
+        "commands": 0
+      },
+      {
+        "run": "review",
+        "stop_reason": "input_limit",
+        "uncached_input_tokens": 37381,
+        "output_tokens": 707,
+        "commands": 9
+      },
+      {
+        "run": "review-narrow",
+        "stop_reason": "input_limit",
+        "uncached_input_tokens": 35537,
+        "output_tokens": 1277,
+        "commands": 5
+      },
+      {
+        "run": "review-runtime",
+        "stop_reason": "input_limit",
+        "uncached_input_tokens": 30681,
+        "output_tokens": 1179,
+        "commands": 3
+      },
+      {
+        "run": "review-final",
+        "stop_reason": null,
+        "uncached_input_tokens": 39097,
+        "output_tokens": 3160,
+        "commands": 6
+      },
+      {
+        "run": "repair-review",
+        "stop_reason": "input_limit",
+        "uncached_input_tokens": 32223,
+        "output_tokens": 1310,
+        "commands": 3
+      }
+    ],
+    "uncached_input_tokens": 193061,
+    "output_tokens": 7649,
+    "root_usage": "unknown",
+    "no_savings_or_weekly_quota_claim": true
+  },
+  "limitations": [
+    "Observed boundaries can overshoot by an in-flight request; no exact API/weekly quota claim.",
+    "Owned process group cleanup does not claim detached process containment.",
+    "App Server inherits host configuration; declared model/provider/effort/cwd/sandbox/approval pins are verified.",
+    "Small docs stay root-local because measured cold startup exceeds12k docs ceiling.",
+    "No demonstrated savings yet; pilot three accepted domain groups."
+  ],
+  "next": "Clean controller commit, then M5-I3 coherent cross-owner lifetime/accounting; full architecture and53-family backlog remain open."
+}

@@ -5,7 +5,7 @@
   "plan_sha256": "51b6bfd5a1b077089cc38a2b10346f9e905d37e575e531be558f97ed9259ca06",
   "native_goal": "Complete NetRust microkernel architecture program; formal contracts, executable extensions, existing NetHack migration, integration audit",
   "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
-  "active_unit": "PROCESS-OPTIMIZATION",
+  "active_unit": "M5-I3",
   "live_handles": [],
   "acceptance": {
     "A1": "passed_generic_runtime_1fc3290",
@@ -925,8 +925,8 @@
       "next_adjustment": "B2 Sol/medium wiring to checkpoint API map; no nine-owner/kernel/history audit; isolate concrete missing fallibility seam."
     },
     "native_goal_observed_status": "active; goal continuation resumed and revalidated",
-    "latest_phase": "I2 semantic review accepted after3reproduced repairs; full12 PASS,1480tests/all3unchangedgoldens,531non-doc inputs unchanged. Before I3 enforce resource budgets and improve grouping/context/review loops; no savings claim.",
-    "next_action": "Process optimization and enforceable budgets before M5-I3; architecture scope M5-I3-I5/M6/M7 unchanged."
+    "latest_phase": "Controller source independentlyreviewed and verified:31Python tests,1480workspace tests,all12gates,all3unchangedgoldens;534non-docinputs digest a3ae2bb69208f57f23f83ab716de94657b458499c04dbda9b5647b170cf267bc. Delivered repairverdict before laterbudgetstop retained separately; noexecutionbudgetPASS/savingsclaim. Controllercommitnext, then coherentI3; no more optimizationreviewprogram.",
+    "next_action": "M5-I3 implementation after controller delivery. Existing validated proposal enums do not implement cross-owner lifetime; ready API map retained externally. M5-I4/I5,M6,M7 remain."
   },
   "requested_interlude": {
     "after": "accepted M3a checkpoint",

@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -42,7 +43,9 @@ class GuardTests(unittest.TestCase):
             "prerequisites": [], "policies": ["one writer"], "focused_checks": ["unittest"],
             "final_checks": ["full gates"], "retry": {"attempt": 0, "maximum": 1},
             "ceilings": {"input_tokens": 30000, "output_tokens": 8000},
-            "prior_phases": [], "root_usage": "known", "adjustment": None}
+            "prior_phases": [], "root_usage": "known", "adjustment": None,
+            "task": str(self.prompt), "execution": {"backend": "app-server", "max_wall_seconds": 600,
+                "max_commands": 24, "telemetry_deadline_seconds": 120}}
         self.save()
         self.head = patch.object(guard.subprocess, "run", side_effect=self.fake_run)
         self.head.start()
@@ -50,6 +53,10 @@ class GuardTests(unittest.TestCase):
         self.tokens = patch.object(guard, "prompt_tokens", return_value=5)
         self.tokens.start()
         self.addCleanup(self.tokens.stop)
+        self.live_original = guard.run_live
+        self.live = patch.object(guard, "run_live", side_effect=self.fake_live)
+        self.live.start()
+        self.addCleanup(self.live.stop)
 
     @staticmethod
     def bind(path):
@@ -63,6 +70,11 @@ class GuardTests(unittest.TestCase):
             return type("Result", (), {"returncode": 0, "stdout": "abc123\n"})()
         kwargs["stdout"].write(b'{"type":"turn.completed","usage":{"input_tokens":10,"cached_input_tokens":2,"output_tokens":4,"reasoning_output_tokens":1}}\n')
         return type("Result", (), {"returncode": 0})()
+
+    def fake_live(self, packet, run):
+        (run / "events.jsonl").write_text('{"type":"turn.completed","usage":{"input_tokens":10,"cached_input_tokens":2,"output_tokens":4,"reasoning_output_tokens":1}}\n')
+        (run / "control.json").write_text('{"stop_reason":null,"usage":{}}')
+        return {"stop_reason": None, "runner_error": None}
 
     def test_preflight_rejects_missing_oversize_changed_and_stale(self):
         self.assertEqual(guard.validate(self.packet_file)[1], 5)
@@ -104,17 +116,41 @@ class GuardTests(unittest.TestCase):
         with self.assertRaisesRegex(guard.GuardError, "prompt and schema"):
             guard.validate(self.packet_file)
 
+    def test_launch_controls_and_primary_task_are_mandatory_and_bounded(self):
+        for execution in (None, {}, dict(self.packet["execution"], max_wall_seconds=601),
+                          dict(self.packet["execution"], max_commands=True),
+                          dict(self.packet["execution"], telemetry_deadline_seconds=181)):
+            with self.subTest(execution=execution):
+                original = self.packet["execution"]
+                self.packet["execution"] = execution
+                self.save()
+                with self.assertRaises(guard.GuardError):
+                    guard.validate(self.packet_file)
+                self.packet["execution"] = original
+        self.packet["task"] = str(self.dir / "unbound-task.txt")
+        self.save()
+        with self.assertRaisesRegex(guard.GuardError, "primary task"):
+            guard.validate(self.packet_file)
+
+    def test_primary_task_counts_toward_context_limit(self):
+        task = self.dir / "task.txt"
+        task.write_text("large task")
+        self.packet["task"] = str(task)
+        self.packet["bindings"].append(self.bind(task))
+        self.save()
+        with patch.object(guard, "prompt_tokens", return_value=600):
+            with self.assertRaisesRegex(guard.GuardError, "exceeds"):
+                guard.validate(self.packet_file)
+
     def test_launch_snapshots_argv_and_replay(self):
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(guard.launch(self.packet_file), 0)
         self.assertEqual((self.run / "prompt.txt").read_bytes(), self.prompt.read_bytes())
         self.assertEqual((self.run / "schema.json").read_bytes(), self.schema.read_bytes())
         self.assertEqual(json.loads((self.run / "runner.json").read_text())["exit_code"], 0)
-        argv = guard.subprocess.run.call_args_list[-1].args[0]
-        self.assertEqual(argv[0], "codex")
-        self.assertIn("--ignore-user-config", argv)
-        self.assertIn('approval_policy="never"', argv)
-        self.assertEqual(argv[-1], "-")
+        packet, run = guard.run_live.call_args.args
+        self.assertEqual(packet["execution"]["backend"], "app-server")
+        self.assertEqual(run, self.run)
         with self.assertRaisesRegex(guard.GuardError, "duplicate started run"):
             guard.validate(self.packet_file)
 
@@ -131,7 +167,8 @@ class GuardTests(unittest.TestCase):
 
     def test_real_local_fake_codex_receives_prompt_and_writes_events(self):
         fake = self.dir / "codex"
-        fake.write_text("#!/bin/sh\ncat > \"$FAKE_STDIN\"\nprintf '%s\\n' '{\"type\":\"turn.completed\",\"usage\":{\"input_tokens\":1,\"cached_input_tokens\":0,\"output_tokens\":1,\"reasoning_output_tokens\":0}}'\n", encoding="utf-8")
+        server = Path(__file__).with_name("fake_codex_app_server.py")
+        fake.write_text(f'#!{sys.executable}\nexec(compile(open({str(server)!r}).read(), {str(server)!r}, "exec"))\n', encoding="utf-8")
         fake.chmod(0o755)
         def git_or_real(argv, **kwargs):
             if argv[0] == "git":
@@ -140,10 +177,10 @@ class GuardTests(unittest.TestCase):
             return subprocess.CompletedProcess(argv, process.wait())
         env = {"PATH": str(self.dir) + os.pathsep + os.environ.get("PATH", ""),
                "FAKE_STDIN": str(self.dir / "received-prompt.txt")}
-        with patch.dict(os.environ, env), patch.object(guard.subprocess, "run", side_effect=git_or_real):
+        with patch.dict(os.environ, env), patch.object(guard.subprocess, "run", side_effect=git_or_real), patch.object(guard, "run_live", wraps=self.live_original):
             with contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(guard.launch(self.packet_file), 0)
-        self.assertEqual((self.dir / "received-prompt.txt").read_bytes(), self.prompt.read_bytes())
+        self.assertEqual((self.dir / "received-prompt.txt").read_text(), self.prompt.read_text())
         self.assertEqual(self.usage_result()[1]["status"], "pass")
 
     def test_runner_start_failure_is_persisted_and_replay_rejected(self):
@@ -151,7 +188,7 @@ class GuardTests(unittest.TestCase):
             if argv[0] == "git":
                 return self.fake_run(argv, **kwargs)
             raise FileNotFoundError("codex")
-        with patch.object(guard.subprocess, "run", side_effect=unavailable):
+        with patch.object(guard, "run_live", side_effect=FileNotFoundError("codex")):
             with contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(guard.launch(self.packet_file), 1)
         self.assertEqual(json.loads((self.run / "runner.json").read_text())["runner_error"], "FileNotFoundError")
@@ -164,11 +201,43 @@ class GuardTests(unittest.TestCase):
         (self.run / "prompt.txt").write_bytes(self.prompt.read_bytes())
         (self.run / "schema.json").write_bytes(self.schema.read_bytes())
         (self.run / "runner.json").write_text(json.dumps({"exit_code": exit_code, "runner_error": None, "unit": self.packet["unit"], "phase_index": self.packet["phase_index"], "prompt_estimate": 5, "model": self.packet["model"], "effort": "medium", "wall_seconds": 1, "bindings": self.packet["bindings"]}), encoding="utf-8")
+        # Historical usage fixtures intentionally exercise the exec report
+        # format; new launch/controller integrity has separate tests.
+        saved = json.loads((self.run / "packet.json").read_text())
+        saved.pop("execution", None)
+        (self.run / "packet.json").write_text(json.dumps(saved))
         (self.run / "events.jsonl").write_text(events, encoding="utf-8")
 
     def usage_result(self):
         with contextlib.redirect_stdout(io.StringIO()):
             return guard.usage(self.run), json.loads((self.run / "usage.json").read_text())
+
+    def test_bound_control_must_agree_with_successful_runner_and_events(self):
+        values = {"input_tokens": 10, "cached_input_tokens": 2,
+                  "output_tokens": 4, "reasoning_output_tokens": 1}
+        self.write_run(json.dumps({"type": "turn.completed", "usage": values}) + "\n")
+        (self.run / "packet.json").write_text(json.dumps(self.packet))
+        (self.run / "task.txt").write_bytes(self.prompt.read_bytes())
+        runner = json.loads((self.run / "runner.json").read_text())
+        good = {"stop_reason": None, "completed": True, "interrupt_sent": False,
+                "runner_error": None, "thread_id": "t", "turn_id": "u",
+                "commands": 0, "usage": dict(values, uncached_input_tokens=8)}
+        cases = [dict(good, stop_reason="protocol_error", completed=False),
+                 dict(good, completed=False), dict(good, interrupt_sent=True),
+                 dict(good, runner_error="ProtocolError"), dict(good, thread_id=""),
+                 dict(good, commands=True), dict(good, commands=24),
+                 dict(good, usage=dict(good["usage"], uncached_input_tokens=9)),
+                 {k: v for k, v in good.items() if k != "stop_reason"}]
+        for control in [good] + cases:
+            with self.subTest(control=control):
+                (self.run / "control.json").write_text(json.dumps(control))
+                runner["control_sha256"] = guard.sha(self.run / "control.json")
+                (self.run / "runner.json").write_text(json.dumps(runner))
+                code, report = self.usage_result()
+                self.assertEqual(report["status"], "pass" if control == good else "failed")
+                self.assertEqual(code, 0 if control == good else 1)
+                if control != good:
+                    self.assertIsNone(report["usage"])
 
     def test_usage_rejects_nonpositive_and_malformed_snapshot_identity(self):
         event = {"type": "turn.completed", "usage": {"input_tokens": 1, "cached_input_tokens": 0, "output_tokens": 1, "reasoning_output_tokens": 0}}
@@ -325,7 +394,7 @@ class GuardTests(unittest.TestCase):
         self.write_run(json.dumps(base) + "\n")
         code, report = self.usage_result()
         self.assertEqual((code, report["status"], report["usage"]["uncached_input_tokens"]), (0, "pass", 8))
-        base["usage"]["input_tokens"] = 30001
+        base["usage"]["input_tokens"] = 30003  # 30001 uncached after the two cached tokens.
         (self.run / "events.jsonl").write_text(json.dumps(base) + "\n", encoding="utf-8")
         self.assertEqual(self.usage_result()[1]["status"], "exceeded")
         for usage in ({"input_tokens": -1, "cached_input_tokens": 0, "output_tokens": 1, "reasoning_output_tokens": 0},
@@ -356,6 +425,24 @@ class GuardTests(unittest.TestCase):
         (self.run / "packet.json").write_text('{"unit":"PROCESS-GUARDS","phase":"normal","phase_index":1}', encoding="utf-8")
         with self.assertRaisesRegex(guard.GuardError, "ceilings"):
             guard.usage(self.run)
+
+    def test_usage_limits_uncached_input_and_output_independently(self):
+        event = {"type": "turn.completed", "usage": {
+            "input_tokens": 1000000, "cached_input_tokens": 970000,
+            "output_tokens": 8000, "reasoning_output_tokens": 1000}}
+        self.write_run(json.dumps(event) + "\n")
+        code, report = self.usage_result()
+        self.assertEqual(code, 0)
+        self.assertEqual(report["status"], "pass")
+        self.assertEqual(report["usage"]["uncached_input_tokens"], 30000)
+        for field, value in (("cached_input_tokens", 969999), ("output_tokens", 8001)):
+            with self.subTest(field=field):
+                changed = json.loads(json.dumps(event))
+                changed["usage"][field] = value
+                (self.run / "events.jsonl").write_text(json.dumps(changed) + "\n")
+                code, report = self.usage_result()
+                self.assertEqual(code, 1)
+                self.assertEqual(report["status"], "exceeded")
 
     def test_prior_usage_requires_adjustment_and_complete_set(self):
         prior = self.dir / "prior.json"

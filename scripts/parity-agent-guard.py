@@ -3,7 +3,7 @@
 
 This checks one packet and one local runner invocation with a fixed
 workspace-write sandbox and the packet's repository as the runner cwd. It cannot lock other
-writers, cap live model spending, intercept agent tools, or prove that a
+writers, guarantee an exact model-spending quota, intercept agent tools, or prove that a
 coordinator declared every unit. Those remain coordinator responsibilities.
 """
 
@@ -14,6 +14,7 @@ from pathlib import Path
 import subprocess
 import sys
 import time
+import importlib.util
 
 
 LIMITS = {"docs": (12000, 4000), "normal": (30000, 8000), "difficult": (50000, 12000)}
@@ -22,6 +23,7 @@ REQUIRED = ("unit", "phase", "phase_index", "expected_head", "repo", "run_direct
             "model", "effort", "rationale", "prompt", "output_schema", "bindings",
             "allowlist", "prerequisites", "policies", "focused_checks", "final_checks",
             "retry", "ceilings", "prior_phases", "root_usage", "adjustment")
+EXECUTION_LIMITS = {"docs": (300, 12), "normal": (600, 24), "difficult": (900, 36)}
 
 
 class GuardError(Exception):
@@ -150,6 +152,20 @@ def validate_packet_structure(packet):
 
 def validate(packet_path):
     packet = validate_packet_structure(json_file(packet_path))
+    execution = packet.get("execution")
+    keys = {"backend", "max_wall_seconds", "max_commands", "telemetry_deadline_seconds"}
+    if not isinstance(execution, dict) or set(execution) != keys or execution["backend"] != "app-server":
+        fail("new launches require app-server execution controls")
+    for key in keys - {"backend"}:
+        if not isinstance(execution[key], int) or isinstance(execution[key], bool) or execution[key] <= 0:
+            fail("execution limits must be positive integers")
+    wall, commands = EXECUTION_LIMITS[packet["phase"]]
+    if execution["max_wall_seconds"] > wall or execution["max_commands"] > commands or execution["telemetry_deadline_seconds"] > min(180, execution["max_wall_seconds"]):
+        fail("execution limits exceed phase policy")
+    task = packet.get("task")
+    required_string(task, "primary task")
+    if task not in {item["path"] for item in packet["bindings"]}:
+        fail("primary task must be a direct binding")
     for item in packet["bindings"] + packet["prerequisites"]:
         binding(item, "evidence")
     for index, item in enumerate(packet["prior_phases"], 1):
@@ -172,7 +188,7 @@ def validate(packet_path):
         fail("run_directory must be external to repository")
     if run.exists():
         fail("duplicate started run")
-    count = prompt_tokens(packet["prompt"])
+    count = sum(prompt_tokens(path) for path in {packet["prompt"], task})
     if count > 1000:
         fail(f"prompt estimate {count} exceeds 1000 o200k_base tokens")
     schema = json_file(packet["output_schema"])
@@ -186,35 +202,40 @@ def launch(packet_path):
     run = Path(packet["run_directory"])
     run.mkdir(parents=True, exist_ok=False)
     (run / "packet.json").write_text(json.dumps(packet, sort_keys=True) + "\n", encoding="utf-8")
-    for name, source in (("prompt.txt", packet["prompt"]),
+    for name, source in (("prompt.txt", packet["prompt"]), ("task.txt", packet["task"]),
                          ("schema.json", packet["output_schema"])):
         (run / name).write_bytes(Path(source).read_bytes())
-    snapshots = {"prompt.txt": packet["prompt"], "schema.json": packet["output_schema"]}
+    snapshots = {"prompt.txt": packet["prompt"], "task.txt": packet["task"], "schema.json": packet["output_schema"]}
     for name, source in snapshots.items():
         expected = next(item["sha256"] for item in packet["bindings"] if item["path"] == source)
         if sha(run / name) != expected:
             fail(f"{name} changed after preflight")
-    argv = ["codex", "-c", 'approval_policy="never"', "-c",
-            f'model_reasoning_effort="{packet["effort"]}"', "exec", "--ephemeral",
-            "--ignore-user-config", "-m", packet["model"], "-s", "workspace-write",
-            "-C", str(Path(packet["repo"]).resolve()), "--output-schema", str(run / "schema.json"),
-            "--json", "-o", str(run / "answer.txt"), "-"]
     started = time.monotonic()
     runner_error = None
-    with (run / "prompt.txt").open("rb") as source, (run / "events.jsonl").open("wb") as out, (run / "stderr.log").open("wb") as err:
-        try:
-            result = subprocess.run(argv, stdin=source, stdout=out, stderr=err, check=False)
-            exit_code = result.returncode
-        except OSError as exc:
-            exit_code = -1
-            runner_error = exc.__class__.__name__
+    try:
+        result = run_live(packet, run)
+        exit_code = 0 if result["stop_reason"] is None else 1
+        runner_error = result["runner_error"]
+    except OSError as exc:
+        exit_code = -1
+        runner_error = exc.__class__.__name__
     status = {"exit_code": exit_code, "runner_error": runner_error,
               "wall_seconds": round(time.monotonic() - started, 3),
               "model": packet["model"], "effort": packet["effort"], "prompt_estimate": estimated,
               "bindings": packet["bindings"], "phase_index": packet["phase_index"], "unit": packet["unit"]}
+    if (run / "control.json").is_file():
+        status["control_sha256"] = sha(run / "control.json")
     (run / "runner.json").write_text(json.dumps(status, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps({"run_directory": str(run), "exit_code": exit_code, "wall_seconds": status["wall_seconds"]}))
     return 0 if exit_code == 0 else 1
+
+
+def run_live(packet, run):
+    # Resolve beside this script, including when loaded through a test spec.
+    spec = importlib.util.spec_from_file_location("parity_agent_runtime", Path(__file__).with_name("parity_agent_runtime.py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.run_live(packet, run)
 
 
 def usage(run_dir):
@@ -234,12 +255,20 @@ def usage(run_dir):
         fail("packet missing mandatory fields")
     bindings = packet["bindings"]
     packet_valid = True
+    captured_control = None
     try:
         validate_packet_structure(packet)
         if Path(packet["run_directory"]).absolute() != run.absolute():
             fail("saved run_directory mismatch")
-        for name, source in (("prompt.txt", packet["prompt"]),
-                             ("schema.json", packet["output_schema"])):
+        captured = {"prompt.txt": packet["prompt"], "schema.json": packet["output_schema"]}
+        if "execution" in packet:
+            captured["task.txt"] = packet["task"]
+            if runner.get("control_sha256") != sha(run / "control.json"):
+                fail("captured control binding mismatch")
+            captured_control = json_file(run / "control.json")
+            if not isinstance(captured_control, dict):
+                fail("invalid captured control")
+        for name, source in captured.items():
             expected = next(item["sha256"] for item in bindings if item["path"] == source)
             if sha(run / name) != expected:
                 fail("captured prompt or schema binding mismatch")
@@ -304,11 +333,26 @@ def usage(run_dir):
             values["uncached_input_tokens"] = values["input_tokens"] - values["cached_input_tokens"]
             if values["uncached_input_tokens"] >= 0 and values["reasoning_output_tokens"] <= values["output_tokens"]:
                 ceiling = packet["ceilings"]
-                status = "pass" if values["input_tokens"] <= ceiling["input_tokens"] and values["output_tokens"] <= ceiling["output_tokens"] else "exceeded"
+                status = "pass" if values["uncached_input_tokens"] <= ceiling["input_tokens"] and values["output_tokens"] <= ceiling["output_tokens"] else "exceeded"
             else:
                 values = None
     if valid_exit and exit_code != 0 or runner_failed_event or valid_error and error is not None:
         status = "failed"
+    if packet.get("execution") and packet_valid:
+        commands = captured_control.get("commands")
+        control_success = (
+            "stop_reason" in captured_control and captured_control["stop_reason"] is None
+            and captured_control.get("completed") is True
+            and captured_control.get("interrupt_sent") is False
+            and "runner_error" in captured_control and captured_control["runner_error"] is None
+            and all(isinstance(captured_control.get(k), str) and captured_control[k]
+                    for k in ("thread_id", "turn_id"))
+            and isinstance(commands, int) and not isinstance(commands, bool)
+            and 0 <= commands < packet["execution"]["max_commands"]
+            and values is not None and captured_control.get("usage") == values)
+        if not control_success:
+            status = "failed"
+            values = None
     report = {"unit": packet["unit"], "phase_index": packet["phase_index"], "status": status,
               "root_usage": packet.get("root_usage", "unknown"), "usage": values,
               "requested_model": runner.get("model"), "requested_effort": runner.get("effort"),
@@ -317,6 +361,9 @@ def usage(run_dir):
               "wall_seconds": runner.get("wall_seconds"),
               "bindings": runner.get("bindings"), "runner_exit_code": runner.get("exit_code"),
               "runner_error": error}
+    if packet.get("execution") and packet_valid:
+        report["stop_reason"] = captured_control.get("stop_reason")
+        report["last_observed_usage"] = captured_control.get("usage")
     target = run / "usage.json"
     target.write_text(json.dumps(report, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps({"status": status, "report": str(target), "usage": values}))
