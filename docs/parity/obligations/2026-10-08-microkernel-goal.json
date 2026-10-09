@@ -2,10 +2,10 @@
   "schema": 1,
   "status": "active",
   "plan": "docs/plans/2026-10-08-microkernel-goal.md",
-  "plan_sha256": "e6fe1b21b0248c7b67a187052467c122f40c6373ce08838a41d1eb6d98ce9cdf",
+  "plan_sha256": "ffebae91baac43ebb424c3dcd84325cd219359878759638116f23b0716c52592",
   "native_goal": "Complete NetRust microkernel architecture program; formal contracts, executable extensions, existing NetHack migration, integration audit",
   "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
-  "active_unit": "M4d-D4e",
+  "active_unit": "M4d-D4e-2",
   "live_handles": [],
   "acceptance": {
     "A1": "passed_generic_runtime_1fc3290",
@@ -292,7 +292,7 @@
             "M4-O4"
           ],
           "scope": "Concrete autonomous-owner codecs/restoration and executable/schema validation; full A5 including supported legacy compatibility",
-          "current_phase": "D4d_complete_D4e_coherent_activation_next",
+          "current_phase": "D4e_1_complete_D4e_2_concrete_service_composition_next",
           "contract": "docs/plans/2026-10-08-owner-persistence-contract.md",
           "design_checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-persistence-contract-checkpoint.json",
           "units": [
@@ -488,12 +488,34 @@
                 },
                 {
                   "id": "M4d-D4e",
-                  "status": "planned",
+                  "status": "in_progress",
                   "depends_on": [
                     "M4d-D4d"
                   ],
                   "title": "Coherent session activation",
-                  "scope": "Whole-domain capture barrier, hidden HostBundle graph, authority identity/epoch exclusion through atomic exchange and every original D4 positive/refusal integration witness."
+                  "scope": "Whole-domain capture barrier, hidden HostBundle graph, authority identity/epoch exclusion through atomic exchange and every original D4 positive/refusal integration witness.",
+                  "units": [
+                    {
+                      "id": "M4d-D4e-1",
+                      "status": "accepted",
+                      "title": "Serialized host domain and authority-bound atomic activation",
+                      "depends_on": [
+                        "M4d-D4d"
+                      ],
+                      "scope": "Reusable sealed exclusion/authority epoch/hidden stage/atomic bundle exchange mechanism with interleaving, reentrancy, panic and stale-stage tests; no whole-service capture/reconstruction acceptance.",
+                      "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-host-domain-checkpoint.json",
+                      "checkpoint_sha256": "604c81f68579f9fabce1822c31b415b495aadc4dc0cf632818b1020de876e14e"
+                    },
+                    {
+                      "id": "M4d-D4e-2",
+                      "status": "planned",
+                      "title": "Coherent runtime composition and combined continuation witnesses",
+                      "depends_on": [
+                        "M4d-D4e-1"
+                      ],
+                      "scope": "Wire every participating kernel/owner/workflow/input/timer/adapter/optional-resource mutation and capture seam into the domain; strict bytes, hidden complete reconstruction, all original combined positive/refusal cases and no bypass through retained aliases. Full D4e requires this child."
+                    }
+                  ]
                 }
               ]
             },
@@ -787,7 +809,7 @@
       "concrete owner-state persistence contract",
       "NetHack domain migration"
     ],
-    "current_limit": "Independent owner/retained execution D3 and local workflow/timer/adapter/input/optional-resource persistence D4a-d accepted. D4e coherent authority-epoch activation, D5-D6 native compatibility/fullA5 and M5-M7 all NetHack migration remain.",
+    "current_limit": "D3 retained owner execution, D4a-d local service persistence and D4e-1 serial host-domain mechanism accepted. D4e-2 concrete service enrollment/coherent capture/rebuild/combined activation tests, D5-D6 native compatibility/fullA5 and M5-M7 all NetHack migration remain.",
     "implementation_claim": true,
     "contract": "docs/plans/2026-10-08-autonomous-ownership-contract.md",
     "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-services-checkpoint.json",

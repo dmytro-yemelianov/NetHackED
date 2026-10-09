@@ -2,8 +2,9 @@
 
 This crate implements the structural `OwnerSaveV1` wire and `SaveCatalog0`, at
 contract HEAD 7b4e74d. It does **not** establish persistence acceptance. D2–D6, full A5,
-M5–M7 and full parity remain open. It has no kernel/World dependency, filesystem
-operations, factories, execution, restoration, code loading or automatic migration.
+M5–M7 and full parity remain open. The wire layer has no factories, execution,
+restoration, code loading or automatic migration. The crate has no kernel/World
+dependency or filesystem operations. Separate host runtime primitives are described below.
 
 ```rust
 use nethacked_persistence::{decode, encode, SaveLimits, OwnerSaveV1, Error};
@@ -126,3 +127,102 @@ have a fixed 32-byte bound independent of the caller's private-payload ceiling.
 All option fields require explicit nulls. Every live owner has exactly one current
 dispatch row. The reviewed [D1 contract](../../docs/plans/2026-10-08-owner-persistence-contract.md)
 and its existing O1–O4/acceptance references remain the acceptance basis.
+
+## D4e-1 host runtime mechanism
+
+`runtime` adds serial host-only orchestration at HEAD235a1f3 without changing D1
+wire types, bytes, strictness, limits, catalogs or transport behavior. D4e-1 supplies
+the exclusion/authority/stage/exchange mechanism only. D4e-2 all-service enrollment,
+coherent byte capture/rebuild and **every original combined D4 case** remain
+mandatory. This is no whole-D4, A5, D5–D6, M5–M7 or 53-family acceptance claim.
+
+`HostSlot<B>` owns one complete heterogeneous bundle: for example, a struct of
+separate `Box<TypedOwner>`, kernel/workflow/input/timer allocations, adapters and
+optional resources, with host-erased participants where needed. It is neither an
+entity store nor a generic mutable domain database nor a live World wrapper.
+`Rc`-sealed domain and authority identities cannot be supplied by save metadata.
+The backend is explicitly serial and !Send/!Sync; `Backend::Threaded` returns
+`Unsupported` because no threaded exclusion proof exists.
+
+The API sequence is:
+
+1. Trusted host enrollment calls `ApprovedConfiguration::new` with exact
+   `Binding` identities, effective `Permission` atoms and native `TrustedFactory<B>`
+   objects, then `HostSlot::new`. The host receives a sealed `AuthorityKey` and
+   initial `RuntimeCredential`. Factories are host code, never serialized closures.
+2. Every enrolled invocation, publication, delivery, scheduling, lifecycle or
+   mutation uses `with_runtime`. Credentials bind authority epoch and bundle
+   generation; admission errors run the callback zero times. Native command return
+   values are not interpreted as admission or rolled back. Adapters must preserve
+   their own preflight/refusal semantics and enforce service-specific permissions.
+3. `capture` uses the same exclusion for the **entire** immutable snapshot/encoder
+   call. Its result must be detached immutable data. Active calls, publication,
+   delivery or a `try_hold` guard make all reentry `Busy`; the closure runs zero
+   times. Paused work, including a Running workflow between steps, holds no guard
+   and remains capturable. Nested changes/staging/activation also refuse `Busy`.
+4. `prepare_restore` selects an exact already approved factory under exclusion.
+   The factory must validate old and target semantics, reconstruct fresh namespaces
+   and complete private cross-links, and declare every required current permission
+   and exact artifact/schema/codec/policy/resolver binding through `BuildContext`.
+   Failed requirements are sticky even if a factory ignores their errors. Only the
+   runtime constructs the context, precomputed proofs and hidden `RestoreStage`;
+   there is no stage constructor, bundle getter or arbitrary ready-state approval.
+5. All config/grant/catalog changes use `replace_configuration`, replacing one
+   immutable approved configuration and advancing the checked trusted epoch.
+   This covers revoke/narrow, module/factory admission, resolvers, codecs and
+   policies. `rotate_authority` additionally replaces authority identity and
+   invalidates old administration keys. Neither exposes mutable catalog state.
+   Runtime credentials become stale too; `issue_credential` can reissue only
+   currently approved permission atoms. Permissions are exact host-defined atoms;
+   D4e-2 adapters must map actual capability/access/resource scope completely.
+6. `activate(&mut stage)` pre-reserves its result handle storage, acquires that
+   same exclusion, checks domain/authority/config identity, epoch, destination
+   generation, exact factory and all precomputed proofs, then exchanges **one
+   whole bundle**. No fallible factory/codec/callback/final-admission work occurs
+   between checks and exchange. Result permissions move from precomputed storage.
+   Refusal preserves the current bundle, effects, credentials and hidden stage;
+   Busy can retry. A changed epoch requires restaging. Safe sufficient narrowing
+   and approved resolver updates can restage, with no reclaimed revoked scope.
+   Success invalidates old bundle credentials and all previously built stages;
+   the successful stage becomes consumed. No callbacks resume automatically.
+
+The domain gate releases on all ordinary refusals and unwinding. Epoch and bundle
+generation advance with `checked_add`, never wrap or reset; exhaustion refuses
+before changing anything. Result reservation failure likewise precedes exchange.
+There is a private **test-only** boundary probe immediately after final checks;
+production has no hook or final admission callback. Tests inject actual guarded
+updates/reentry there: all return Busy, so no check-then-swap window exists.
+
+Native fidelity, bounded work, full semantic/reference/proof enrollment, immutable
+factory/resolver configuration, alias exclusion, pure snapshot encoding and
+effect-free hidden construction/drop remain explicit premises. A trusted factory
+can violate them; this API does not prove arbitrary closure safety. `with_runtime`
+is a host adapter seam, not a guest capability sandbox. No mutable state aliases
+may escape snapshot/build/runtime callbacks. Existing retained service aliases
+must be enrolled in D4e-2: wrapping a slot **cannot gate unenrolled aliases**.
+
+With native unwinding, encoder/factory panic returns `EncoderPanicked` or
+`FactoryPanicked`, releases exclusion and preserves the destination; retry is
+supported. Detached stages/bundles/configurations contain destructor panics.
+Configuration ownership protects each supplied factory reference, including the
+last reference and duplicate-enrollment refusal cleanup. Shared references retain
+normal `Rc` lifetime semantics; destruction from a caller-retained naked `Rc`
+after the configuration releases it is outside this boundary.
+The panic payload is quarantined by leaking it because its own destructor may
+panic. Effect-free destruction remains a premise. Arbitrary nested destructor
+panics during unwinding, allocator aborts and panic=abort cannot be recovered;
+they are process fail-stop. The wasm build checks compilation, not unwinding.
+
+After committed exchange the old bundle retires **while exclusion is still held**.
+A retirement panic returns a successful `Activation` with
+`Retirement::PanickedFailStop`, permanently disables that domain, and releases the
+guard. It does not revert the new bundle or restore old credentials. A runtime
+mutation panic similarly returns `RuntimePanicked` and fail-stops because arbitrary
+native mutations/effects cannot be rolled back. No policy promises rollback after
+destructive retirement or crash/external-I/O exactly-once behavior.
+
+D4e-2 must implement concrete factories/capture codecs beside each service's
+private state, remap authenticated fresh credentials and all references, enroll
+all retained access paths, preserve old code/accepted prefixes/prepared candidates,
+rebuild services from strict bytes and exercise the full combined pending/refusal
+matrix. This mechanism by itself certifies none of those service semantics.

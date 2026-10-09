@@ -1,7 +1,8 @@
-//! D1 transport only: no codec execution, restored authority, or runtime handles.
+//! D1 wire transport plus separate host-only serial runtime orchestration.
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
+pub mod runtime;
 mod syntax;
 
 pub const MAGIC: &[u8; 8] = b"NHOWNR01";
