@@ -2,17 +2,17 @@
   "schema": 1,
   "status": "active",
   "plan": "docs/plans/2026-10-08-microkernel-goal.md",
-  "plan_sha256": "a137874bb8523b04d614818d2ca55c7dcb8363d7a136ee6934298d85e04d2d41",
+  "plan_sha256": "d79e9f66bc389de605c202082f4cee4e1c0ed4c95a81d41a3739e211e46a7f07",
   "native_goal": "Complete NetRust microkernel architecture program; formal contracts, executable extensions, existing NetHack migration, integration audit",
   "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
-  "active_unit": "M4d-D6",
+  "active_unit": "M5",
   "live_handles": [],
   "acceptance": {
     "A1": "passed_generic_runtime_1fc3290",
     "A2": "passed_live_executable_entityfree_host_1fc3290;NetHack_host_integration_pending_M5",
     "A3": "passed_generic_runtime_resources_checkpoint;passed_autonomous_owner_runtime_owner_services_checkpoint",
     "A4": "passed_generic_authoritative_workflow_checkpoint;NetHack_host_integration_pending_M5;retained_owner_workflow_timer_composition_passed",
-    "A5": "pending",
+    "A5": "passed_fresh_process_combined_native_heterogeneous_pending_legacy_checkpoint",
     "A6": "pending",
     "A7": "pending",
     "A8": "pending"
@@ -110,7 +110,7 @@
     },
     {
       "id": "M4",
-      "status": "in_progress",
+      "status": "accepted",
       "depends_on": [
         "M3"
       ],
@@ -286,7 +286,7 @@
         },
         {
           "id": "M4d",
-          "status": "in_progress",
+          "status": "accepted",
           "depends_on": [
             "M4c",
             "M4-O4"
@@ -429,7 +429,7 @@
             },
             {
               "id": "M4d-D4",
-              "status": "in_progress",
+              "status": "accepted",
               "depends_on": [
                 "M4d-D3"
               ],
@@ -521,7 +521,9 @@
                   "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-session-composition-checkpoint.json",
                   "checkpoint_sha256": "d889c3c3cd9aa5ec0f6306477c370da72ac21cb3cc49eac0cc89e7b4ab317e3d"
                 }
-              ]
+              ],
+              "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-session-composition-checkpoint.json",
+              "checkpoint_sha256": "d889c3c3cd9aa5ec0f6306477c370da72ac21cb3cc49eac0cc89e7b4ab317e3d"
             },
             {
               "id": "M4d-D5",
@@ -543,7 +545,7 @@
             },
             {
               "id": "M4d-D6",
-              "status": "planned",
+              "status": "accepted",
               "depends_on": [
                 "M4d-D5"
               ],
@@ -553,11 +555,18 @@
               "acceptance_requirements": [
                 "Every mandatory state/refusal from contract end-to-end",
                 "All D1-D5 accepted, fresh review, complete gates and unchanged scoped goldens before A5 acceptance"
-              ]
+              ],
+              "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-a5-checkpoint.json",
+              "checkpoint_sha256": "12052883f3379d7191e42a7609f52bbf614fd4c66f78e4038c20fb533b6fe4e2",
+              "implementation_step": "Independent PASS_A5; 35 focused parent tests, twelve producer/consumer subprocesses, full12/all3 unchanged goldens."
             }
-          ]
+          ],
+          "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-a5-checkpoint.json",
+          "checkpoint_sha256": "12052883f3379d7191e42a7609f52bbf614fd4c66f78e4038c20fb533b6fe4e2"
         }
-      ]
+      ],
+      "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-a5-checkpoint.json",
+      "checkpoint_sha256": "12052883f3379d7191e42a7609f52bbf614fd4c66f78e4038c20fb533b6fe4e2"
     },
     {
       "id": "M5",
@@ -816,7 +825,7 @@
       "concrete owner-state persistence contract",
       "NetHack domain migration"
     ],
-    "current_limit": "D5 native compatibility and nine independent native domain owners accepted. D6 full A5 and M5-M7 production domain migration remain.",
+    "current_limit": "D1-D6/A5 persistence accepted. M5-M7 production domain migration and final architecture audit remain.",
     "implementation_claim": true,
     "contract": "docs/plans/2026-10-08-autonomous-ownership-contract.md",
     "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-services-checkpoint.json",

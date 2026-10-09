@@ -3,7 +3,7 @@ use nethacked_persistence::Hex;
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 
-fn rewrite(bytes: &[u8], name: &str, mutate: impl FnOnce(&mut Value)) -> Vec<u8> {
+pub(super) fn rewrite(bytes: &[u8], name: &str, mutate: impl FnOnce(&mut Value)) -> Vec<u8> {
     let mut wire: Value =
         serde_json::from_slice(&bytes[nethacked_persistence::HEADER_LEN..]).unwrap();
     let old = wire["owners"]

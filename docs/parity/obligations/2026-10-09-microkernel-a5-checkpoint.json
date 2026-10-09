@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "status": "reviewed_and_verified_in_containing_commit",
+  "baseline_head": "406b9e73da423000ee74d18b582cc38b8c7426c6",
+  "milestone": "M4d-D6",
+  "scope": "A5 combined fresh-process persistence acceptance; existing D1-D5 mechanisms retained",
+  "contract": {
+    "path": "/Users/dmytro/github/NetRust/docs/plans/2026-10-08-owner-persistence-contract.md",
+    "sha256": "7f04e7118c33245a6aa0da16352eaa022d7753dc191bddaeb4963a9ddf55b569"
+  },
+  "prerequisite": {
+    "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-09-microkernel-legacy-bridge-checkpoint.json",
+    "sha256": "e8eef60b2f8fa8521b95ee746099e09e2a5dbc16b1dc390829e914442daa7e01"
+  },
+  "review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-A5-ACCEPTANCE/review/REVIEW.json",
+    "sha256": "1cedd79853734204509bb643780461c1a5739b1eb0a2c1119cd2414657af3ad3"
+  },
+  "source_bindings": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-A5-ACCEPTANCE/source.json",
+    "sha256": "290c6c6f0e984051fa7b3317883f8f5fd72275e11f902edf2a6e2c0e00269a9d"
+  },
+  "focused": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-A5-ACCEPTANCE/focused.json",
+    "sha256": "e90cf1481ec379335d68fbb4231e6f0f9a9f8e6c07626646aca44c1effc90ec5"
+  },
+  "full_gates": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-A5-ACCEPTANCE/final-gates/accepted.json",
+    "sha256": "cd225ff248f4e860505d85d4120094b1e218e2fd09a98e50f436baec5bc9bd56"
+  },
+  "gate_result": {
+    "head": "406b9e73da423000ee74d18b582cc38b8c7426c6",
+    "tests": 1412,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "digest": "4809e9f3b3e7e03f722f549695a7a388f3bd50c878f67f6e379eee1ae18ed330",
+    "checks": 12
+  },
+  "source_input_count": 506,
+  "verified_behavior": [
+    "Producer exits successfully before a distinct consumer reconstructs heterogeneous pending state using transport bytes and separately approved code material. No live source owner or authority handle crosses processes.",
+    "Retained native/Wasm behavior, prepared private state, recorded input, charged workflow, disposed-source callbacks and terminal Busy cleanup continue without duplicated effects.",
+    "Malformed references, missing old codec/artifact, changed bytes/ABI, configuration replacement, revocation and Busy refusal preserve populated owner/service state and valid post-change credentials.",
+    "Production native legacy import validates before transformation/factories, migrates hidden state, admits receipt continuation and retains native reload/gameplay reference behavior. restore_native refuses atomically on malformed source."
+  ],
+  "review_usage": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-A5-ACCEPTANCE/review/usage.json",
+    "sha256": "42edec8372437629985081ae97505ebc8cbd24709ebff3227c4f76839b35c6a7"
+  },
+  "limits": [
+    "Codec purity, bounds, alias exclusion and approved native artifact identity remain host premises.",
+    "Lean contracts do not claim a Rust refinement proof.",
+    "NATIVE-SAVE-SKILL-ORDER remains open.",
+    "M5-M7 production domain migration and the separate 53-family behavior-parity backlog remain open."
+  ],
+  "next": "M5"
+}

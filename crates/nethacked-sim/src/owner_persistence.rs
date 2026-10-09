@@ -5,7 +5,7 @@
 //! composition. The caller supplies the approved immutable ruleset/reference.
 //! Native live-reference admission precedes executable restore factories.
 //! Native parser/normalization selection uses a host-approved exact migration
-//! registry. Independent D5 acceptance and final workspace gates remain pending.
+//! registry. Gameplay continuation beyond receipt admission migrates separately.
 //! Public legacy loading shares preparation/catchup but retains its original
 //! acceptance contract without post-catchup rejection. Explicit completion
 //! here can refuse a legacy input whose timer effects invalidate its receipts.

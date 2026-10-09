@@ -147,6 +147,19 @@ fn queued_disposed_source_and_terminal_busy_restore_old_closure() {
     callbacks_roundtrip(true);
 }
 fn callbacks_roundtrip(terminal: bool) {
+    callback_resume(terminal, callback_fixture(terminal));
+}
+
+#[path = "session_callbacks/fresh_process.rs"]
+mod fresh_process;
+use fresh_process::Fixture;
+
+#[test]
+fn a5_fresh_process_pending_and_terminal_acceptance() {
+    fresh_process::run();
+}
+
+fn callback_fixture(terminal: bool) -> Fixture {
     NATIVE_EXECUTIONS.with(|n| n.set(0));
     let mut h = Harness::new(Limits::default(), KernelLimits::default(), "");
     let effects = Rc::new(Cell::new(0));
@@ -1149,6 +1162,33 @@ fn callbacks_roundtrip(terminal: bool) {
     drop(reference);
     drop(h.action);
     assert!(weak_w.upgrade().is_none());
+    Fixture {
+        wire,
+        materials,
+        base,
+        base_ids,
+        future_binding,
+        future_ids,
+        input_limits,
+        task,
+        old_operation: (operation.namespace(), operation.serial()),
+        operation: Some(operation),
+    }
+}
+
+fn callback_resume(terminal: bool, fixture: Fixture) {
+    let Fixture {
+        wire,
+        materials,
+        base,
+        base_ids,
+        future_binding,
+        future_ids,
+        input_limits,
+        task,
+        operation,
+        old_operation,
+    } = fixture;
     let effects = Rc::new(Cell::new(0));
     let busy = Rc::new(Cell::new(true));
     let destination_preparations = Rc::new(PreparedEffects::default());
@@ -1156,6 +1196,9 @@ fn callbacks_roundtrip(terminal: bool) {
     // Refresh only from an accepted local capture. Each invocation constructs
     // fresh immutable typed catalogs; it never examines an untrusted load input.
     let missing_catalog = Cell::new("");
+    let denied_artifact = Cell::new(None);
+    let changed_artifact = Cell::new(false);
+    let changed_abi = Cell::new(false);
     let configuration = |trusted_wire: &[u8]| {
         let trusted_adapter = trusted_section::<adapter::Checkpoint>(trusted_wire, "adapters");
         let trusted_timer =
@@ -1181,22 +1224,24 @@ fn callbacks_roundtrip(terminal: bool) {
         let mut nf = RestoreCatalog::default();
         let b = base.clone();
         let ids = base_ids.clone();
-        nf.allow(identity(6), QueryPolicy::Noncacheable, move |r| {
-            Ok(Backend::Wasm {
-                codec: Rc::new(OldNativeCodec),
-                slot: 0,
-                binding: CapabilityPermit {
-                    capability: b.capability.clone(),
-                    resolution: b
-                        .resolution
-                        .iter()
-                        .zip(&ids)
-                        .map(|(b, id)| r.binding(b, *id))
-                        .collect::<Result<_>>()?,
-                },
+        if missing_catalog.get() != "old-native-codec" {
+            nf.allow(identity(6), QueryPolicy::Noncacheable, move |r| {
+                Ok(Backend::Wasm {
+                    codec: Rc::new(OldNativeCodec),
+                    slot: 0,
+                    binding: CapabilityPermit {
+                        capability: b.capability.clone(),
+                        resolution: b
+                            .resolution
+                            .iter()
+                            .zip(&ids)
+                            .map(|(b, id)| r.binding(b, *id))
+                            .collect::<Result<_>>()?,
+                    },
+                })
             })
-        })
-        .unwrap();
+            .unwrap();
+        }
         let mut cf = RestoreCatalog::default();
         let b = future_binding.clone();
         let ids = future_ids.clone();
@@ -1256,7 +1301,24 @@ fn callbacks_roundtrip(terminal: bool) {
         let mut authority = composed::RestoreAuthority {
             bindings: [composer_id()].into(),
             kernel: Rc::new(CallbackKernel {
-                materials: materials.clone(),
+                materials: materials
+                    .iter()
+                    .filter(|(artifact, _)| Some(**artifact) != denied_artifact.get())
+                    .map(|(artifact, material)| {
+                        let mut material = material.clone();
+                        if changed_abi.get() && *artifact == base.resolution[0].artifact {
+                            if let Material::Guest(manifest, _) = &mut material {
+                                manifest.exports.get_mut("compute").unwrap().major += 1;
+                            }
+                        }
+                        if changed_artifact.get() && *artifact == base.resolution[0].artifact {
+                            if let Material::Guest(_, bytes) = &mut material {
+                                bytes.push(0);
+                            }
+                        }
+                        (*artifact, material)
+                    })
+                    .collect(),
                 approved,
                 resolutions: resolutions.clone(),
             }),
@@ -1353,7 +1415,7 @@ fn callbacks_roundtrip(terminal: bool) {
             "timers" => authority.timers = None,
             "adapters" => authority.adapters = None,
             "resources" => authority.resources = None,
-            "" => (),
+            "" | "old-native-codec" => (),
             _ => unreachable!(),
         }
         composed::SessionFactory::new(authority)
@@ -1395,6 +1457,203 @@ fn callbacks_roundtrip(terminal: bool) {
     assert_eq!(destination_preparations.preparations.get(), 0);
     destination.activate(&mut stage).unwrap();
     assert!(destination.with_runtime(&old_credential, |_| ()).is_err());
+    if operation.is_none() {
+        // Repeat authority/refusal interleavings on the full pending graph in
+        // the fresh consumer, now that the destination is populated.
+        let credential = destination.issue_credential(&key).unwrap();
+        let saved = destination.capture(&key, SaveLimits::default()).unwrap();
+        let count = resolutions.get();
+        let invalid_schema = rewrite_section(&wire, "owners", |v| {
+            v["state"]["owners"][0]["codec"]["schema_digest"] =
+                serde_json::to_value([250u8; 32]).unwrap();
+        });
+        let invalid_record = rewrite_section(&wire, "inputs", |v| {
+            v["records"][0]["ordinal"] = serde_json::json!(u64::MAX);
+        });
+        let invalid_cleanup = rewrite_section(&wire, "timers", |v| {
+            v["tasks"][0]["provenance"]["source"]["cleanup"] = serde_json::json!([u64::MAX]);
+        });
+        let invalid_target = rewrite_section(&wire, "timers", |v| {
+            let generation = v["tasks"][0]["targets"][0]["generation"].as_u64().unwrap();
+            v["tasks"][0]["targets"][0]["generation"] = serde_json::json!(generation + 1);
+        });
+        let truncated = wire[..nethacked_persistence::HEADER_LEN].to_vec();
+        for invalid in [
+            &bad_pair,
+            &bad_reference,
+            &invalid_schema,
+            &invalid_record,
+            &invalid_cleanup,
+            &invalid_target,
+            &truncated,
+        ] {
+            assert!(destination
+                .prepare_restore(&key, &composer_id(), invalid)
+                .is_err());
+            assert_eq!(resolutions.get(), count);
+            assert_eq!(
+                destination.capture(&key, SaveLimits::default()).unwrap(),
+                saved
+            );
+            destination
+                .with_runtime(&credential, |b| {
+                    assert_eq!(
+                        b.host().persistence_history().unwrap().len(),
+                        if terminal { 2 } else { 1 }
+                    );
+                })
+                .unwrap();
+            assert_eq!(effects.get(), 0);
+            assert_eq!(destination_preparations.preparations.get(), 0);
+        }
+
+        // Exact old code/codec availability is independent of future dispatch.
+        // A changed resolver is explicit host configuration, never save authority.
+        for kind in [
+            "retained-artifact",
+            "changed-artifact",
+            "changed-abi",
+            "old-native-codec",
+        ] {
+            denied_artifact
+                .set((kind == "retained-artifact").then_some(base.resolution[0].artifact));
+            changed_artifact.set(kind == "changed-artifact");
+            changed_abi.set(kind == "changed-abi");
+            missing_catalog.set(if kind == "old-native-codec" { kind } else { "" });
+            destination
+                .replace_configuration(&key, configuration(&wire))
+                .unwrap();
+            let credential = destination.issue_credential(&key).unwrap();
+            let state = destination
+                .with_runtime(&credential, fresh_process::domain_state)
+                .unwrap();
+            assert!(
+                destination
+                    .prepare_restore(&key, &composer_id(), &wire)
+                    .is_err(),
+                "{kind}"
+            );
+            assert_eq!(
+                destination
+                    .with_runtime(&credential, fresh_process::domain_state)
+                    .unwrap(),
+                state
+            );
+            assert_eq!(effects.get(), 0);
+            assert_eq!(destination_preparations.preparations.get(), 0);
+        }
+        denied_artifact.set(None);
+        changed_artifact.set(false);
+        changed_abi.set(false);
+        missing_catalog.set("");
+        destination
+            .replace_configuration(&key, configuration(&wire))
+            .unwrap();
+        let credential = destination.issue_credential(&key).unwrap();
+
+        let mut busy_stage = destination
+            .prepare_restore(&key, &composer_id(), &wire)
+            .unwrap();
+        let before_busy = destination.capture(&key, SaveLimits::default()).unwrap();
+        destination
+            .with_runtime(&credential, |_| {
+                assert!(matches!(
+                    destination.activate(&mut busy_stage),
+                    Err(runtime::Error::Busy)
+                ));
+            })
+            .unwrap();
+        assert_eq!(
+            destination.capture(&key, SaveLimits::default()).unwrap(),
+            before_busy
+        );
+        // A Busy refusal does not consume the stage or rerun preparation.
+        destination.activate(&mut busy_stage).unwrap();
+        assert_eq!(effects.get(), 0);
+        assert_eq!(destination_preparations.preparations.get(), 0);
+
+        let mut changed = destination
+            .prepare_restore(&key, &composer_id(), &wire)
+            .unwrap();
+        let before_configuration = destination.capture(&key, SaveLimits::default()).unwrap();
+        destination
+            .replace_configuration(&key, configuration(&wire))
+            .unwrap();
+        let credential = destination.issue_credential(&key).unwrap();
+        assert!(matches!(
+            destination.activate(&mut changed),
+            Err(runtime::Error::AuthorityChanged)
+        ));
+        assert_eq!(
+            destination.capture(&key, SaveLimits::default()).unwrap(),
+            before_configuration
+        );
+        destination
+            .with_runtime(&credential, |b| {
+                assert_eq!(
+                    b.owner::<Vec<u8>>("wasm").unwrap().owner.inspect().unwrap(),
+                    bytes(if terminal { 17 } else { 5 })
+                );
+            })
+            .unwrap();
+
+        let mut revoked = destination
+            .prepare_restore(&key, &composer_id(), &wire)
+            .unwrap();
+        destination
+            .with_runtime(&credential, |b| {
+                let module = b
+                    .owner::<u64>("native")
+                    .unwrap()
+                    .owner
+                    .stamp()
+                    .unwrap()
+                    .module
+                    .handle;
+                b.update_kernel(|kernel| kernel.revoke_grant(module, 0))
+                    .unwrap()
+                    .unwrap();
+            })
+            .unwrap();
+        let credential = destination.issue_credential(&key).unwrap();
+        // Capture itself requires live grants for the pending work. After a
+        // deliberate revocation compare authenticated owner/service state,
+        // and ensure failed activation does not make capture authorized again.
+        assert!(destination.capture(&key, SaveLimits::default()).is_err());
+        let before_revocation_refusal = destination
+            .with_runtime(&credential, fresh_process::domain_state)
+            .unwrap();
+        assert!(matches!(
+            destination.activate(&mut revoked),
+            Err(runtime::Error::AuthorityChanged)
+        ));
+        assert_eq!(
+            destination
+                .with_runtime(&credential, fresh_process::domain_state)
+                .unwrap(),
+            before_revocation_refusal
+        );
+        assert!(destination.capture(&key, SaveLimits::default()).is_err());
+        destination
+            .with_runtime(&credential, |b| {
+                assert_eq!(
+                    b.owner::<u64>("native").unwrap().owner.inspect().unwrap(),
+                    (if terminal { 55u64 } else { 41u64 }).to_le_bytes()
+                );
+            })
+            .unwrap();
+        assert_eq!(effects.get(), 0);
+        assert_eq!(destination_preparations.preparations.get(), 0);
+        // Explicit trusted reenrollment permits restaging without reviving an
+        // old stage or old credential, before the original continuation checks.
+        destination
+            .replace_configuration(&key, configuration(&wire))
+            .unwrap();
+        let mut admitted = destination
+            .prepare_restore(&key, &composer_id(), &wire)
+            .unwrap();
+        destination.activate(&mut admitted).unwrap();
+    }
     let mut links = ReferenceCounter::new();
     let body: serde_json::Value =
         serde_json::from_slice(&wire[nethacked_persistence::HEADER_LEN..]).unwrap();
@@ -1654,8 +1913,16 @@ fn callbacks_roundtrip(terminal: bool) {
                     )
                 })
                 .unwrap();
-            assert_ne!(fresh, operation);
-            assert!(workflows.ticket(operation).is_err());
+            assert_ne!((fresh.namespace(), fresh.serial()), old_operation);
+            if let Some(operation) = operation {
+                // Preserve the original same-process stale host-ticket check.
+                assert_ne!(fresh, operation);
+                assert!(workflows.ticket(operation).is_err());
+            } else {
+                // A fresh process cannot manufacture the old host token. Its
+                // restored operation must exclude that historical namespace.
+                assert_ne!(fresh.namespace(), old_operation.0);
+            }
             let ticket = workflows.ticket(fresh).unwrap();
             workflows.resume(&ticket).unwrap();
             let inputs = bundle.services().inputs.as_ref().unwrap();

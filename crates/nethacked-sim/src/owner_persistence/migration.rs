@@ -147,7 +147,7 @@ impl NativeImportRegistry {
 
 #[cfg(test)]
 thread_local! {
-    static TRANSFORMS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+    pub(crate) static TRANSFORMS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
 }
 
 #[cfg(test)]

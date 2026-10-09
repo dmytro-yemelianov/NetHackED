@@ -1212,6 +1212,16 @@ impl OwnerBridge {
         *self.credential.borrow_mut() = self.session.issue_credential(&self.key)?;
         Ok(())
     }
+
+    /// Validate and migrate a native save on hidden detached state, then
+    /// atomically replace this facade through the same owner admission path.
+    /// Import failures leave its current owners and credentials usable.
+    pub fn restore_native(&self, json: &str, byte_limit: usize) -> Result<(), OwnerBridgeError> {
+        let source = Self::import_native(json, byte_limit, self.config.clone())?;
+        let bytes = source.capture()?;
+        drop(source);
+        self.restore(&bytes)
+    }
     fn partitions(&self) -> Result<NativePartitions, OwnerBridgeError> {
         self.session
             .with_runtime(&self.credential.borrow(), |b| {
@@ -1307,6 +1317,7 @@ impl OwnerBridge {
 #[cfg(test)]
 mod tests {
     mod admission;
+    mod fresh_process;
     use super::*;
     use nethacked_arena::ItemLocation;
     use nethacked_types::Buc;
