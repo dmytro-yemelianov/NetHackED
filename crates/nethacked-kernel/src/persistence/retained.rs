@@ -152,6 +152,9 @@ pub struct SavedPureCapture {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct KernelSnapshot {
+    /// Shared process cleanup allocation history, including retired holes.
+    #[serde(default)]
+    pub cleanup_high_water: u64,
     pub version: u32,
     pub source_namespace: u64,
     pub registry: RegistrySnapshot,
@@ -178,6 +181,8 @@ pub struct KernelSnapshot {
 /// or callback from this map to share ONE reservation. Drop this map's RAII
 /// handles when adapters have taken ownership, to release its last references.
 pub struct RestoredKernel {
+    // Complete source record retained by the runtime, never a wire credential.
+    source_snapshot: Vec<u8>,
     destination: ExecutionDestination,
     modules: BTreeMap<u64, ModuleHandle>,
     leases: BTreeMap<u64, PipelineLease>,
@@ -196,6 +201,8 @@ pub struct RestoredKernel {
     workflow_enrollment: Rc<RefCell<BTreeSet<u64>>>,
     timer_enrollment: Rc<RefCell<BTreeSet<u64>>>,
     adapter_enrollment: Rc<RefCell<BTreeSet<u64>>>,
+    resource_enrollment: Rc<RefCell<BTreeSet<u64>>>,
+    destination_namespace: u64,
 }
 
 /// One-use service reconstruction reservation. A failed hidden build releases
@@ -468,6 +475,7 @@ impl Kernel {
         }
         let registry = self.capture_registry(limits, counters)?;
         let mut saved = KernelSnapshot {
+            cleanup_high_water: *self.retention.cleanup_history.borrow().last().unwrap_or(&0),
             version: 1,
             source_namespace: self.instance,
             registry,
@@ -582,6 +590,7 @@ impl Kernel {
     ) -> Result<RestoredKernel> {
         saved.preflight(self)?;
         saved.structural_preflight(self)?;
+        let source_snapshot = serde_json::to_vec(saved).map_err(|_| Error::Authority)?;
         for context in saved.operation_contexts()? {
             host.approve_operation_context(&context)?;
         }
@@ -605,10 +614,16 @@ impl Kernel {
         };
         let (mut hidden, modules) = self.build_registry(&saved.registry, &adapter)?;
         let mut excluded = saved.cleanup_history.clone();
+        if saved.cleanup_high_water != 0 {
+            excluded.insert(saved.cleanup_high_water);
+        }
         excluded.extend(self.retention.cleanup_history.borrow().iter().copied());
         if excluded.len() > MAX_CLEANUPS {
             return Err(Error::Limit);
         }
+        CleanupIdentity::retire_through(
+            saved.cleanup_high_water.max(*excluded.last().unwrap_or(&0)),
+        )?;
         let mut cleanup = BTreeMap::new();
         let mut needed_cleanup: BTreeSet<_> = saved
             .operations
@@ -789,6 +804,7 @@ impl Kernel {
             }
         }
         let result = RestoredKernel {
+            source_snapshot,
             destination: ExecutionDestination(Rc::new(())),
             modules,
             leases,
@@ -804,6 +820,8 @@ impl Kernel {
             workflow_enrollment: Rc::new(RefCell::new(BTreeSet::new())),
             timer_enrollment: Rc::new(RefCell::new(BTreeSet::new())),
             adapter_enrollment: Rc::new(RefCell::new(BTreeSet::new())),
+            resource_enrollment: Rc::new(RefCell::new(BTreeSet::new())),
+            destination_namespace: hidden.instance,
             execution_contexts: saved.operation_contexts()?,
             execution_captures: saved.pure_captures.clone(),
             execution_resources: mapped,
@@ -1387,6 +1405,9 @@ impl KernelSnapshot {
     }
 
     fn structural_preflight(&self, destination: &Kernel) -> Result<()> {
+        if self.cleanup_high_water == u64::MAX {
+            return Err(Error::Limit);
+        }
         // Saved metadata gets the same routing, digest, reference and pure
         // closure validation as constructed artifacts, with no host factories.
         let (k, modules) = self.registry.structural_kernel(self.source_namespace)?;
@@ -2172,6 +2193,9 @@ impl RestoredKernel {
     /// Recheck the independently approved execution witnesses against the live
     /// destination. This performs no invocation or domain construction.
     pub fn execution_live(&self, kernel: &Kernel) -> Result<()> {
+        if kernel.instance != self.destination_namespace {
+            return Err(Error::Authority);
+        }
         for context in &self.execution_contexts {
             self.execution_source(&context.operation)?;
             for witness in std::iter::once(&context.pipeline)
@@ -2688,6 +2712,9 @@ impl Kernel {
             return Err(Error::Limit);
         }
         let mut saved = self.kernel_snapshot_with_cleanup(enrollment, cleanup)?;
+        // Service snapshots carry shared ordinary-allocation holes. Plain kernel
+        // capture remains observational under unrelated service allocations.
+        saved.cleanup_high_water = saved.cleanup_high_water.max(CleanupIdentity::high_water());
         saved.service_resources.extend(resources.iter().cloned());
         saved.resources()?;
         if crate::kernel::persistence::bounded_size(&saved)? > MAX_BYTES {
@@ -2874,9 +2901,499 @@ impl KernelSnapshot {
 impl KernelSnapshot {
     /// Complete factory-free metadata preflight for composing local services.
     pub fn validate_execution_metadata(&self) -> Result<()> {
+        if self.cleanup_high_water == u64::MAX {
+            return Err(Error::Limit);
+        }
         let mut destination = Kernel::new(self.registry.limits.clone())?;
         destination.set_retention_limits(self.registry.retention_limits.clone())?;
         self.preflight(&destination)?;
         self.structural_preflight(&destination)
+    }
+}
+
+/// Resource-local captured authority. Metadata is admitted against actual kernel
+/// registrations and retained routes; it is never an invocation credential.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ResourcePermit {
+    pub capability: Capability,
+    pub resolution: Vec<SavedBinding>,
+    pub target: Resource,
+    pub access: Access,
+}
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ResourceContext {
+    pub operation: Option<SavedOperation>,
+    pub caller: SavedBinding,
+    pub provider: SavedBinding,
+    pub permits: Vec<ResourcePermit>,
+    pub historical: bool,
+}
+impl ResourceContext {
+    pub fn check(&self, saved: &KernelSnapshot) -> Result<()> {
+        let module = |b: &SavedBinding| -> Result<Option<&SavedModule>> {
+            if b.module == 0 || b.module >= saved.registry.next_generation {
+                return Err(Error::InvalidHandle);
+            }
+            let m = saved.registry.modules.iter().find(|m| m.id == b.module);
+            if m.is_some_and(|m| m.artifact != b.artifact) {
+                return Err(Error::Authority);
+            }
+            Ok(m)
+        };
+        let caller = module(&self.caller)?;
+        let provider = module(&self.provider)?;
+        if self.provider.endpoint != "prepare" || !Kernel::valid_name(&self.caller.endpoint) {
+            return Err(Error::Authority);
+        }
+        let mut missing = caller.is_none() || provider.is_none();
+        for permit in &self.permits {
+            if permit.resolution.is_empty() || permit.resolution.len() > MAX_ROWS {
+                return Err(Error::Limit);
+            }
+            let mut seen = BTreeSet::new();
+            for binding in &permit.resolution {
+                let m = module(binding)?;
+                missing |= m.is_none();
+                if !seen.insert(binding.module)
+                    || !Kernel::valid_name(&binding.endpoint)
+                    || m.is_some_and(|m| !m.manifest.exports.contains_key(&binding.endpoint))
+                {
+                    return Err(Error::Authority);
+                }
+            }
+            let first = &permit.resolution[0];
+            if first.endpoint != permit.capability.endpoint || permit.capability.major == 0 {
+                return Err(Error::Authority);
+            }
+            if let Some(m) = module(first)? {
+                let endpoint = &m.manifest.exports[&first.endpoint];
+                if m.manifest.id != permit.capability.provider
+                    || endpoint.major != permit.capability.major
+                    || endpoint.access < permit.access
+                {
+                    return Err(Error::Authority);
+                }
+            }
+            for pair in permit.resolution.windows(2) {
+                let previous = module(&pair[0])?;
+                let next = module(&pair[1])?;
+                if previous
+                    .is_some_and(|m| !m.manifest.extension_points.contains(&pair[0].endpoint))
+                {
+                    return Err(Error::Authority);
+                }
+                if let Some(next) = next {
+                    let ext = next.manifest.extension.as_ref().ok_or(Error::Authority)?;
+                    if ext.export != pair[1].endpoint
+                        || ext.target.endpoint != pair[0].endpoint
+                        || next.target != Some(pair[0].module)
+                        || previous.is_some_and(|m| {
+                            ext.target.provider != m.manifest.id
+                                || m.manifest.exports.get(&pair[0].endpoint)
+                                    != next.manifest.exports.get(&pair[1].endpoint)
+                        })
+                    {
+                        return Err(Error::Authority);
+                    }
+                }
+            }
+            if !saved.execution_resource_declared(&permit.target)? {
+                return Err(Error::Authority);
+            }
+        }
+        let mut disposed = false;
+        if let Some(operation) = &self.operation {
+            TimerHistory {
+                caller: self.caller.clone(),
+                service: self.provider.clone(),
+                capability: Capability {
+                    provider: "resources".into(),
+                    endpoint: "prepare".into(),
+                    major: 1,
+                },
+                slot: 0,
+                source: operation.clone(),
+            }
+            .check(saved)?;
+            let live = saved.leases.iter().any(|l| l.id == operation.pipeline)
+                || saved
+                    .operations
+                    .iter()
+                    .any(|o| o.pipeline == operation.pipeline);
+            disposed = !live;
+            if live && !saved.operations.contains(operation) {
+                return Err(Error::Authority);
+            }
+        }
+        if self.historical != (missing || disposed) {
+            return Err(Error::Authority);
+        }
+        if self.historical {
+            return Ok(());
+        }
+        let caller = caller.ok_or(Error::Authority)?;
+        let provider = provider.ok_or(Error::Authority)?;
+        if !provider.manifest.exports.contains_key("prepare") {
+            return Err(Error::Authority);
+        }
+        let contexts = saved.operation_contexts()?;
+        let routing = self
+            .operation
+            .as_ref()
+            .map(|op| {
+                contexts
+                    .iter()
+                    .find(|c| &c.operation == op)
+                    .ok_or(Error::Authority)
+            })
+            .transpose()?;
+        // The service invocation itself must be reachable from the captured caller.
+        if !caller.dependencies.contains(&provider.id) {
+            return Err(Error::Authority);
+        }
+        // Pending executable work needs independently admitted service grants,
+        // including legacy unbound plans without a retained routing witness.
+        for endpoint in ["prepare", "commit"] {
+            let export = provider
+                .manifest
+                .exports
+                .get(endpoint)
+                .ok_or(Error::Authority)?;
+            let slot = caller
+                .manifest
+                .dependencies
+                .iter()
+                .enumerate()
+                .find(|(slot, d)| {
+                    d.capability.provider == provider.manifest.id
+                        && d.capability.endpoint == endpoint
+                        && d.capability.major == export.major
+                        && d.access >= Access::Write
+                        && caller.dependencies.get(*slot) == Some(&provider.id)
+                })
+                .map(|(slot, _)| slot)
+                .ok_or(Error::Authority)?;
+            let grant = saved
+                .registry
+                .grants
+                .iter()
+                .find(|g| g.caller == caller.id && g.slot == slot)
+                .filter(|g| g.active && g.target == provider.id)
+                .ok_or(Error::Revoked)?;
+            if grant.requested.access < Access::Write
+                || self
+                    .permits
+                    .iter()
+                    .any(|p| !grant.requested.scope.allows(&p.target))
+            {
+                return Err(Error::Authority);
+            }
+        }
+        for permit in &self.permits {
+            let first = &permit.resolution[0];
+            let slot = caller
+                .manifest
+                .dependencies
+                .iter()
+                .enumerate()
+                .find(|(slot, d)| {
+                    d.capability == permit.capability
+                        && d.access >= permit.access
+                        && caller.dependencies.get(*slot) == Some(&first.module)
+                })
+                .map(|(slot, _)| slot)
+                .ok_or(Error::Authority)?;
+            let authority = saved
+                .registry
+                .grants
+                .iter()
+                .find(|g| g.caller == caller.id && g.slot == slot)
+                .filter(|g| g.active && g.target == first.module)
+                .ok_or(Error::Revoked)?;
+            if authority.requested.access < permit.access
+                || !authority.requested.scope.allows(&permit.target)
+            {
+                return Err(Error::Authority);
+            }
+            if let Some(context) = routing {
+                if context.pipeline.ceiling.access < permit.access
+                    || !context.pipeline.ceiling.scope.allows(&permit.target)
+                    || !context.pipeline.routing.slots.iter().any(|s| {
+                        s.caller == caller.id
+                            && s.slot == slot
+                            && s.ceiling.as_ref().is_some_and(|a| {
+                                a.access >= permit.access && a.scope.allows(&permit.target)
+                            })
+                            && context.pipeline.routing.routes.iter().any(|r| {
+                                r.module == s.target
+                                    && r.endpoint == permit.capability.endpoint
+                                    && r.chain == permit.resolution
+                            })
+                    })
+                {
+                    return Err(Error::Authority);
+                }
+            }
+        }
+        Ok(())
+    }
+}
+impl ExecutionCaptureIndex<'_> {
+    /// Accept live handles from this host and diagnostic handles from namespace
+    /// zero only. Missing live enrollment cannot be recast as historical work.
+    pub fn resource_binding(
+        &self,
+        handle: ModuleHandle,
+        artifact: [u8; 32],
+        endpoint: &str,
+    ) -> Result<SavedBinding> {
+        if handle.instance != 0 && handle.instance != self.namespace() {
+            return Err(Error::InvalidHandle);
+        }
+        let b = SavedBinding {
+            module: handle.generation,
+            artifact,
+            endpoint: endpoint.into(),
+        };
+        if b.module == 0
+            || b.module >= self.saved.registry.next_generation
+            || self
+                .saved
+                .registry
+                .modules
+                .iter()
+                .any(|m| m.id == b.module && m.artifact != artifact)
+        {
+            return Err(Error::Authority);
+        }
+        Ok(b)
+    }
+    pub fn resource_operation(&self, source: &OperationBinding) -> Result<SavedOperation> {
+        if source.operation.host != 0 && source.operation.host != self.namespace() {
+            return Err(Error::InvalidHandle);
+        }
+        let row = operation(source);
+        if self.input_source_is_live(source) && !self.saved.operations.contains(&row) {
+            return Err(Error::Authority);
+        }
+        Ok(row)
+    }
+}
+impl RestoredKernel {
+    /// Correlate an independently approved complete source record with the
+    /// record actually restored. This is provenance, not independent approval
+    /// or a comparison with the (possibly safely narrowed) destination state.
+    pub fn resource_snapshot_matches(&self, approved: &KernelSnapshot) -> Result<()> {
+        bounded_size(approved)?;
+        if self.source_snapshot != serde_json::to_vec(approved).map_err(|_| Error::Authority)? {
+            return Err(Error::Authority);
+        }
+        Ok(())
+    }
+    /// Claim the exact cleanup root, including an uninstalled or unloaded service.
+    pub fn enroll_resources(&self, cleanup: u64) -> Result<WorkflowEnrollment> {
+        if !self.cleanup.contains_key(&cleanup) {
+            return Err(Error::Authority);
+        }
+        let mut occupied = self
+            .resource_enrollment
+            .try_borrow_mut()
+            .map_err(|_| Error::NativeRefusal)?;
+        if !occupied.insert(cleanup) {
+            return Err(Error::Duplicate);
+        }
+        Ok(WorkflowEnrollment {
+            occupied: self.resource_enrollment.clone(),
+            operations: vec![cleanup],
+            complete: false,
+        })
+    }
+    pub fn resource_context_live(&self, kernel: &Kernel, context: &ResourceContext) -> Result<()> {
+        self.execution_live(kernel)?;
+        if context.historical {
+            return Ok(());
+        }
+        let caller = *self
+            .modules
+            .get(&context.caller.module)
+            .ok_or(Error::Authority)?;
+        let provider = *self
+            .modules
+            .get(&context.provider.module)
+            .ok_or(Error::Authority)?;
+        let service = kernel.registration(provider)?;
+        let registration = kernel.registration(caller)?;
+        for endpoint in ["prepare", "commit"] {
+            let export = service
+                .manifest
+                .exports
+                .get(endpoint)
+                .ok_or(Error::Authority)?;
+            let slot = registration
+                .manifest
+                .dependencies
+                .iter()
+                .enumerate()
+                .find(|(slot, d)| {
+                    d.capability.provider == service.manifest.id
+                        && d.capability.endpoint == endpoint
+                        && d.capability.major == export.major
+                        && d.access >= Access::Write
+                        && registration.dependencies.get(*slot) == Some(&provider)
+                })
+                .map(|(slot, _)| slot)
+                .ok_or(Error::Authority)?;
+            let grant = kernel
+                .grants
+                .get(&(caller, slot))
+                .filter(|g| g.active)
+                .ok_or(Error::Revoked)?;
+            if grant.target != provider || grant.authority.access < Access::Write {
+                return Err(Error::Authority);
+            }
+            for permit in &context.permits {
+                if !grant
+                    .authority
+                    .scope
+                    .allows(self.execution_resource(&permit.target)?)
+                {
+                    return Err(Error::Authority);
+                }
+            }
+        }
+        for p in &context.permits {
+            let registration = kernel.registration(caller)?;
+            let target = *self
+                .modules
+                .get(&p.resolution[0].module)
+                .ok_or(Error::Authority)?;
+            let slot = registration
+                .manifest
+                .dependencies
+                .iter()
+                .enumerate()
+                .find(|(s, d)| {
+                    d.capability == p.capability
+                        && registration.dependencies.get(*s) == Some(&target)
+                })
+                .map(|(s, _)| s)
+                .ok_or(Error::Authority)?;
+            let grant = kernel
+                .grants
+                .get(&(caller, slot))
+                .filter(|g| g.active)
+                .ok_or(Error::Revoked)?;
+            if grant.target != target
+                || grant.authority.access < p.access
+                || !grant
+                    .authority
+                    .scope
+                    .allows(self.execution_resource(&p.target)?)
+            {
+                return Err(Error::Authority);
+            }
+        }
+        Ok(())
+    }
+}
+
+impl Kernel {
+    /// Exact native allocation correlation, without invoking a port. A fresh
+    /// service can activate only if its own closures back this registration.
+    pub fn resource_ports_match(
+        &self,
+        handle: ModuleHandle,
+        expected: &BTreeMap<String, NativePort>,
+    ) -> Result<()> {
+        let registration = self.registration(handle)?;
+        let crate::kernel::Code::Native(ports) = &registration.code else {
+            return Err(Error::Authority);
+        };
+        if ports.len() != expected.len()
+            || expected
+                .iter()
+                .any(|(name, p)| !ports.get(name).is_some_and(|actual| Rc::ptr_eq(actual, p)))
+        {
+            return Err(Error::Authority);
+        }
+        Ok(())
+    }
+}
+impl KernelSnapshot {
+    /// Bounded, effect-free equality with a separately approved source packet.
+    /// Equality does not itself grant approval.
+    pub fn resource_snapshot_matches(&self, approved: &Self) -> Result<()> {
+        bounded_size(self)?;
+        bounded_size(approved)?;
+        if serde_json::to_vec(self).map_err(|_| Error::Authority)?
+            != serde_json::to_vec(approved).map_err(|_| Error::Authority)?
+        {
+            return Err(Error::Authority);
+        }
+        Ok(())
+    }
+    /// Called only after independent local admission. Advances shared ordinary
+    /// allocation too; abandoned stages cannot reissue retired cleanup holes.
+    pub fn reserve_cleanup_history(&self) -> Result<()> {
+        CleanupIdentity::retire_through(
+            self.cleanup_high_water
+                .max(*self.cleanup_history.last().unwrap_or(&0)),
+        )
+    }
+}
+
+impl Kernel {
+    /// Authenticates a sealed resource plan's issued binding even after its last
+    /// executable lease was disposed. Namespace zero is already inert history.
+    pub fn resource_source_live(&self, source: &OperationBinding) -> Result<bool> {
+        let ns = source.operation.host;
+        if (ns != 0 && ns != self.instance)
+            || source.pipeline.instance != ns
+            || source.operation.serial == 0
+            || source.operation.serial >= self.next_operation
+            || source.pipeline.serial == 0
+            || source.pipeline.serial >= self.retention.next_serial
+        {
+            return Err(Error::InvalidHandle);
+        }
+        Ok(validate_live_binding(self, source).is_ok())
+    }
+    pub fn kernel_snapshot_with_resource_roots(
+        &mut self,
+        enrollment: &KernelEnrollment<'_>,
+        cleanup: &[CleanupIdentity],
+        resources: &[Resource],
+        sources: &[OperationBinding],
+    ) -> Result<KernelSnapshot> {
+        if sources.len() > MAX_ROWS {
+            return Err(Error::Limit);
+        }
+        for source in sources {
+            self.resource_source_live(source)?;
+        }
+        let mut saved = self.kernel_snapshot_with_service_roots(enrollment, cleanup, resources)?;
+        for source in sources {
+            if !self.resource_source_live(source)?
+                && self
+                    .retention
+                    .pipelines
+                    .keys()
+                    .any(|p| p.serial == source.pipeline.serial)
+            {
+                return Err(Error::Authority);
+            }
+            saved
+                .cleanup_history
+                .extend(source.cleanup.iter().map(|c| c.raw()));
+            saved
+                .service_cleanup
+                .extend(source.cleanup.iter().map(|c| c.raw()));
+        }
+        if saved.cleanup_history.len() > MAX_CLEANUPS {
+            return Err(Error::Limit);
+        }
+        Ok(saved)
     }
 }

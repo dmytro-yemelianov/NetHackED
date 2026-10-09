@@ -1138,6 +1138,7 @@ name = "nethacked-resources"
 version = "0.1.0"
 dependencies = [
  "nethacked-kernel",
+ "nethacked-workflows",
  "serde",
  "serde_json",
  "wat",

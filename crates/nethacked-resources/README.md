@@ -79,13 +79,12 @@ merely because both structures are called `Capability`.
 | `Identity`, `fresh`, `Prepared`, `prepare` | Process-unique service namespace plus checked serial, private pending map containing exact plan, caller/artifact, service binding and per-participant resolutions. Service namespace replaces the transaction host token; binding to kernel host is separately enforced by instance-bound caller/provider handles. Successful prepare changes only pending/serial. |
 | `commitValid`, `patch`, `applyPrepared`, `commit` | Fresh view plus stored plan revalidation; staged complete state; one assignment under the service borrow publishes all owner patches and event append, increments commits and removes pending. Refusal preserves all service data/counters/pending; replay fails. |
 
-The namespace allocator is injective within one running process and fails before
-overflow. Kernel module handles are likewise process-instance-bound. Neither
-claims non-reuse across restart, snapshot rollback, distributed hosts, or future
-persistent codecs. Host owner predicates, native artifacts, hashing and Wasm
-isolation remain trusted adapter obligations. No durable/distributed exactly-once,
-composed workflow binding/pinning, schema migration, timer scheduler, or NetHack
-migration is implemented. A refusal does not undo previously committed calls.
+Without the optional persistence feature, namespace allocation is process-local
+and fails before overflow. Kernel module handles are process-instance-bound.
+Host owner predicates, native artifacts, hashing and Wasm isolation remain
+trusted adapter obligations. No durable/distributed exactly-once, schema migration,
+timer scheduler, or NetHack migration is implemented. A refusal does not undo
+previously committed calls.
 
 Runtime fixtures exercise real Wasm read/prepare/commit, separate readonly grants,
 revocation/narrowing, stale stamps and generation reuse, provider/extension
@@ -116,3 +115,63 @@ host. Bound preparation additionally refuses if this identity is absent from the
 kernel-authenticated participant set. The workflow freezes that set from enrolled
 typed participants, so omission cannot silently leave abandoned bound plans.
 Participant wrappers must forward the service identity and idempotent discard.
+
+## Optional local persistence (D4d)
+
+Enable `persistence` for canonical bounded `Checkpoint` bytes beside the private
+service state. Capture preserves cells/stamps, deleted-address generation history,
+ordered events, counters, immutable owner/accounting policy identity, and exact
+pending plans and contexts. Bound, unbound and already stale/conflicted plans
+remain distinct; load never calls prepare, commits a plan, invokes predicates or
+runs cleanup. Borrowed state and capture from an invoked validator return
+`CaptureBusy`.
+
+The host enrolls each exact immutable predicate in `CaptureCatalog` with its
+approved `PolicyCodec`. `RestoreCatalog` separately supplies the original codecs;
+wire names do not register factories. Codecs must provide faithful bounded pure
+encoding, fresh private closure storage, complete reference reconstruction through
+the approved kernel maps, and effect-free construction/drop. Closure addresses
+are never serialized. `ResourceAuthority` independently approves the complete
+checkpoint and kernel snapshot pair, including diagnostic historical context and
+cleanup roots. Transport hashes alone are not approval.
+
+Capture combines `persistence_enrollment`, `persistence_roots` and sealed
+`persistence_history` with `kernel_snapshot_with_resource_roots`. Resource-only
+disposed provenance is diagnostic history: it never enters kernel executable
+source maps or weakens callback-origin preflight equality. Missing-module handles
+remain inert; surviving module/artifact and cleanup identities map to their fresh
+destinations. Historical receipts have no accessible transaction credential.
+
+Restore validates structure, bounds, catalogs, references and independent approval
+before avoidable codec callbacks. `Validated::stage` creates one quarantined service
+and its `ports()`. The kernel artifact factory must install those exact closures;
+`Staged::restore_kernel` checks the complete independently approved source snapshot
+before kernel admission, factories or destination allocation. `Staged::finish`
+also checks sealed runtime provenance of that exact source snapshot before claims
+or policy decoding, including when the host separately restored the kernel. A
+same-namespace replacement of history, high-water marks or other state refuses;
+wire labels and transport hashes cannot supply this provenance. Separately
+restoring a kernel has its own admission/allocation effects; this local finish
+barrier does not roll those back or implement D4e whole-host activation.
+`Staged::finish` checks the actual destination, ports, current service and owner
+grants, then uses the kernel's one-use enrollment claim. Wrong allocation, revoked
+or insufficient scope, missing codecs and changed context refuse activation;
+failed stages drop without executing policies. Sufficient narrowing of an unbound
+plan's grants is legal. Retained bound routing keeps its independently approved
+ceiling requirements.
+
+Workflow participant factories must return the same reconstructed `Service`
+allocation used by the ports (a `Service` clone shares it). Paused frames and
+terminal cleanup restore without calls. Retry discards only the exact invocation's
+pending plans, keeping committed cells/events/counters and unrelated bound or
+unbound plans. The integration witness commits one plan while another remains
+pending during Busy cleanup.
+
+Approved high-water histories retire service/transaction namespaces and cleanup
+identities, including holes, across repeated OS-process save/load and subsequent
+ordinary allocations. Old external transaction IDs cannot substitute for mapped
+credentials; overflow refuses. This is local snapshot continuation, with explicit
+trusted native purity/fidelity premises. HostBundle exclusion/atomic activation is
+D4e; D5–D6, aggregate A5 and full production migration remain open. These APIs
+do not promise crash-atomic save publication, rollback prevention between competing
+snapshots or exactly-once external I/O.

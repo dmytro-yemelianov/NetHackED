@@ -1,0 +1,164 @@
+{
+  "schema": 1,
+  "status": "reviewed_and_verified_in_containing_commit",
+  "baseline_head": "6f2f3e774a5c4e11eaf9a7a3c45f7faf5c60ebbd",
+  "milestone": "M4d-D4d",
+  "scope": "Optional resource-service local state, approved policies/accounting, pending plans, inert provenance and shared workflow cleanup; coherent whole-session activation remains D4e",
+  "contract": {
+    "path": "/Users/dmytro/github/NetRust/docs/plans/2026-10-08-owner-persistence-contract.md",
+    "sha256": "7f04e7118c33245a6aa0da16352eaa022d7753dc191bddaeb4963a9ddf55b569"
+  },
+  "prerequisite": {
+    "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-09-microkernel-input-history-checkpoint.json",
+    "sha256": "3980c9ae7c7d2a71ce31655a94198d4bf7942bb9baa54b7c6f7645100b303c09"
+  },
+  "runtime": "nethacked-resources optional persistence and sealed kernel resource/cleanup/source-record bridges",
+  "review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCE-PERSISTENCE/review-evidence/REVIEW.md",
+    "sha256": "16248ff7c9ea1b10404011b8ea9ba475d601f95365b8e3c098f8835acb126e10"
+  },
+  "readback": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCE-PERSISTENCE/readback-evidence/REVIEW.md",
+    "sha256": "9fa77066aed31eba6a7e740248995b5ad78cc30759137fe213c054d900fbbddc"
+  },
+  "readback_verification": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCE-PERSISTENCE/readback-root-verification.json",
+    "sha256": "aa2ea7df7826f347463cb85aca2001bfe713a7d7219f4d7430f133904b280b37"
+  },
+  "implementation_handoff": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCE-PERSISTENCE/implementation2-evidence/HANDOFF.md",
+    "sha256": "2682fb9384e6dd5684cb90ec33aa202e726b98e35a38f897ff13d363ae11d4ec"
+  },
+  "repair_handoff": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCE-PERSISTENCE/repair-evidence/HANDOFF.md",
+    "sha256": "24b398e1c5626160c70caf9fbaff66c154a0a49843e4b716d0efd1668bef1945"
+  },
+  "repair_delta": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCE-PERSISTENCE/repair.diff",
+    "sha256": "b8d663cc376562b2fac02d46b27008ac83916e6cb69ac12119e9e6ed535cc341"
+  },
+  "source_bindings": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCE-PERSISTENCE/readback-source.json",
+    "sha256": "08fc3ecf360148c2b0eea7afba29ced34d8ee31d028c95639a71496982d8c8ea"
+  },
+  "full_gates": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCE-PERSISTENCE/full-gates/accepted.json",
+    "sha256": "3be2891686367b0df0157adddd8103b54438d44749ebac0c8fe9a7eff2fbeacd"
+  },
+  "gate_result": {
+    "head": "6f2f3e774a5c4e11eaf9a7a3c45f7faf5c60ebbd",
+    "tests": 1248,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "digest": "8c637d5f726c5ed45c0b7baa9fe27339bef2f04b2d391b071535a8bb902ab019",
+    "checks": 12
+  },
+  "source_input_count": 482,
+  "focused_checks": {
+    "resource_default": 17,
+    "resource_persistence": 42,
+    "kernel_workflows_all_features": 93,
+    "independent_full_review_selected_regressions": 9,
+    "independent_readback_tests": 6,
+    "subprocess_witness": "Three fresh OS-process cycles plus subsequent ordinary allocations, carried holes/overflow and stale external transaction refusal",
+    "scoped_fmt_clippy": "pass",
+    "actual_resource_persistence_wasm32": "pass",
+    "repair_checks": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCE-PERSISTENCE/repair-evidence/commands.json",
+      "sha256": "e16246694afb9e438fdcb6c7cb1cf5985137aeec8a3ae1694718ee2ee14315b2"
+    },
+    "readback_checks": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCE-PERSISTENCE/readback-evidence/commands.json",
+      "sha256": "8e28e592e91963e09de77ab396165e8379a1e80179808c04e7b926837ee08476"
+    }
+  },
+  "verified_behavior": [
+    "Cells, revisions/generations, ordered accepted event history, commit/serial/generation counters and exact independently approved owner/accounting policies reconstruct without invoking predicates.",
+    "Live bound, legacy unbound, conflicted/stale and legal disposed/unloaded pending plans preserve readonly/write/delete/event order, captured permits and caller/provider/artifact/context provenance; no reprepare, commit or discard during load.",
+    "Explicit post-load commit retains current service/owner authority, exact destination/context, stamps and policy checks with once-only atomic publication; bound and unbound plans cannot adopt each other.",
+    "Historical pending provenance stays inert; independently approved cleanup roots map freshly without entering executable disposed-source maps. Existing executable disposed-source equality is preserved.",
+    "Paused resume and real borrowed-resource terminal Busy cleanup use the same restored service allocation as kernel native ports; exact operation/epoch/phase discard preserves committed prefixes and unrelated pending work.",
+    "Structural/catalog/reference checks precede avoidable factories. Capture remains observational/Busy; one-use claims, quarantine/drop, invalid-stage retry and sufficient current grant narrowing retain their checks.",
+    "Restored and ordinary allocations reserve carried transaction/service/cleanup history, including holes, repeated fresh processes and exhaustion without wrap. Old external identities cannot replace fresh mappings.",
+    "Ordinary kernel snapshots retain local observational history; service-root capture samples shared cleanup allocation history, and restored retired boundaries remain retained.",
+    "Staging retains the exact independently approved kernel snapshot; immutable sealed complete bounded source bytes authenticate the RestoredKernel. Finish compares before resource claims/decoding; guarded restore compares before kernel reconstruction and preserves nonempty destinations on mismatch.",
+    "Source witness remains immutable after caller input mutation; independently approved alternate snapshots, valid retry and safe current grant narrowing remain supported."
+  ],
+  "findings_resolved": [
+    "R1: same-namespace kernel snapshot substitution bypassed resource pair approval. Exact sealed source-record comparison now rejects before resource claims and policy decoding; guarded restore rejects before kernel reconstruction."
+  ],
+  "failure_history": {
+    "implementation": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCE-PERSISTENCE/implementation-evidence/failure-ledger.json",
+      "sha256": "d432c49507ad7ac9cd238d850d52f6b6da11a3a315370aefe1af0e9a48cb754b"
+    },
+    "continuation": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCE-PERSISTENCE/implementation2-evidence/failure-cause-accounting.json",
+      "sha256": "9f9d85d9ac1af31fda36441a23b3909f05d13350454534c628ddb199f906fc5e"
+    },
+    "advice": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCE-PERSISTENCE/advice/answer.txt",
+      "sha256": "60b78db199bfe703b8be56da7794464233fd3f3f3ad53a88395a236728cff58f"
+    },
+    "review": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCE-PERSISTENCE/review-evidence/failure-ledger.json",
+      "sha256": "9131f0bfde24ecbf590d9293a5bd5793df01db5e52b2b510d953fa0a5a02e9d8"
+    },
+    "repair": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCE-PERSISTENCE/repair-evidence/counters.json",
+      "sha256": "5a9af074f793c694656d5b59f784224bb74b9be4af488fd4eaa5109a96b8740d"
+    },
+    "readback": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCE-PERSISTENCE/readback-evidence/cumulative-failure-ledger.json",
+      "sha256": "05cb4a912f0aa694b853a4d56b4b52f5820af2bb00479d845cdcfa90bd963808"
+    },
+    "note": "Disposed/unloaded provenance had two failed runtime attempts, then one narrow Astra/low advice and final third PASS. R1 one independent failing reproduction, one repair attempt and zero unsuccessful repairs. Distinct development/fixture/lint/tooling failures and root metadata setup misses retained; no counter reset. Requested models known, actual backends unknown."
+  },
+  "trust_premises": [
+    "Native factory fidelity, purity, bounded computation, private allocation, alias exclusion and effect-free construction/drop remain host premises.",
+    "Whole HostBundle capture/activation and authority-epoch exclusion remain D4e. Separate raw kernel restoration retains its own effects; resource finish cannot retroactively roll them back.",
+    "Nonreuse covers carried saved history and receiving-process allocations, not unrelated-host global identity or unsaved history.",
+    "This optional generic resource service remains a compatibility module. New NetHack domains continue as independent owners.",
+    "No whole-host crash guarantee, exactly-once external IO or composed Lean-to-Rust refinement claimed."
+  ],
+  "usage": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCE-PERSISTENCE/implementation/usage.json",
+      "sha256": "701ab836945bb8e5a02aa2964f8fd99d3a9a397a4921eb8953082f19a48489f6"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCE-PERSISTENCE/advice/usage.json",
+      "sha256": "4942486142f90cb3d3b794a0028a5d136e3830f3994a68835b2efbbb3fd8fb37"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCE-PERSISTENCE/implementation2/usage.json",
+      "sha256": "362125fc37c8fd2af832335bffbafdefcbb0e6855b6aef75199c41c32e0d1a37"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCE-PERSISTENCE/review/usage.json",
+      "sha256": "c2c0736078cd0eabe095560e426a43f76c5d73df35c669ef8b6a9a159d37b4c8"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCE-PERSISTENCE/repair/usage.json",
+      "sha256": "fbaec25bb9b4adfc02ae3430cdf7624607bb63f1ccda2d7443dff710eb32e11f"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCE-PERSISTENCE/readback/usage.json",
+      "sha256": "c0b4edcf463c9fec9923c74cd835abde4a48eadfd58a58d6a80af6a85125431c"
+    }
+  ],
+  "meter_note": "All six model phases exceeded soft uncached-input thresholds; root usage unknown. No savings claim.",
+  "A5_accepted": false,
+  "aggregate_D4_accepted": false,
+  "goldens_changed": false,
+  "existing_committed_tests_changed": false,
+  "parity_families_closed": 0,
+  "residuals": [
+    "D4e coherent capture/hidden HostBundle and atomic authority-epoch activation with all original combined cases.",
+    "D5 real legacy save compatibility, nine independent NetHack owners and public owner-native billing continuation; D6 full fresh-process A5.",
+    "M5 populated-session extension slice, M6 all existing production-domain migration, M7 final acceptance; separate53-family behavior parity backlog remains open."
+  ]
+}

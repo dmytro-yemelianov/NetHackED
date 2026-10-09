@@ -12,9 +12,13 @@ use std::{
     sync::atomic::{AtomicU64, Ordering},
 };
 
+#[cfg(feature = "persistence")]
+pub mod persistence;
+
 static NEXT_SERVICE: AtomicU64 = AtomicU64::new(1);
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Limits {
     pub owners: usize,
     pub resources: usize,
@@ -66,6 +70,7 @@ pub struct Identity {
     pub serial: u64,
 }
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Snapshot {
     pub stamp: Stamp,
     pub value: Vec<u8>,
@@ -111,6 +116,10 @@ pub struct State {
     pub commits: u64,
 }
 struct Inner {
+    #[cfg(feature = "persistence")]
+    quarantine: bool,
+    #[cfg(feature = "persistence")]
+    inert: BTreeSet<u64>,
     namespace: u64,
     cleanup_identity: CleanupIdentity,
     limits: Limits,
@@ -123,6 +132,9 @@ struct Inner {
 pub struct Service(Rc<RefCell<Inner>>);
 impl Service {
     pub fn new(limits: Limits, accounting: Validator) -> Result<Self> {
+        Self::new_after(limits, accounting, 0)
+    }
+    fn new_after(limits: Limits, accounting: Validator, retired: u64) -> Result<Self> {
         if limits.owners == 0
             || limits.resources == 0
             || limits.participants == 0
@@ -133,10 +145,18 @@ impl Service {
         {
             return Err(Error::Limit);
         }
+        let minimum = retired.checked_add(1).ok_or(Error::Limit)?;
         let namespace = NEXT_SERVICE
-            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |n| n.checked_add(1))
-            .map_err(|_| Error::Limit)?;
+            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |n| {
+                n.max(minimum).checked_add(1)
+            })
+            .map_err(|_| Error::Limit)?
+            .max(minimum);
         Ok(Self(Rc::new(RefCell::new(Inner {
+            #[cfg(feature = "persistence")]
+            quarantine: false,
+            #[cfg(feature = "persistence")]
+            inert: BTreeSet::new(),
             namespace,
             cleanup_identity: CleanupIdentity::issue()?,
             limits,
@@ -156,6 +176,10 @@ impl Service {
     /// Trusted host installation. One service is bound to one exact incarnation.
     pub fn install(&self, kernel: &mut Kernel, id: &str) -> Result<ModuleHandle> {
         let mut inner = self.0.try_borrow_mut().map_err(|_| Error::NativeRefusal)?;
+        #[cfg(feature = "persistence")]
+        if inner.quarantine {
+            return Err(Error::Authority);
+        }
         if inner.binding.is_some() {
             return Err(Error::Duplicate);
         }
@@ -205,6 +229,10 @@ impl Service {
     }
     pub fn register_owner(&self, owner: &str, policy: OwnerPolicy) -> Result<()> {
         let mut inner = self.0.try_borrow_mut().map_err(|_| Error::NativeRefusal)?;
+        #[cfg(feature = "persistence")]
+        if inner.quarantine {
+            return Err(Error::Authority);
+        }
         if !name(owner)
             || !name(&policy.capability.provider)
             || !name(&policy.capability.endpoint)
@@ -224,6 +252,10 @@ impl Service {
     /// Trusted initialization/update; deletion and recreation allocate a new generation.
     pub fn put(&self, address: Resource, value: Vec<u8>) -> Result<Stamp> {
         let mut inner = self.0.try_borrow_mut().map_err(|_| Error::NativeRefusal)?;
+        #[cfg(feature = "persistence")]
+        if inner.quarantine {
+            return Err(Error::Authority);
+        }
         inner.address(&address)?;
         if value.len() > inner.limits.payload {
             return Err(Error::Limit);
@@ -266,6 +298,10 @@ impl Service {
     }
     pub fn delete(&self, address: &Resource) -> Result<()> {
         let mut inner = self.0.try_borrow_mut().map_err(|_| Error::NativeRefusal)?;
+        #[cfg(feature = "persistence")]
+        if inner.quarantine {
+            return Err(Error::Authority);
+        }
         if !inner.state.resources.contains_key(address) {
             return Err(Error::NativeRefusal);
         }
@@ -284,6 +320,10 @@ impl Service {
         // Hold the sole borrow across validation, serialization and publication.
         // Every reentrant admin/port/inspection attempt refuses instead of panicking.
         let mut inner = self.0.try_borrow_mut().map_err(|_| Error::NativeRefusal)?;
+        #[cfg(feature = "persistence")]
+        if inner.quarantine {
+            return Err(Error::Authority);
+        }
         if inner.binding != Some((view.provider(), view.provider_artifact()))
             || view.caller().is_none()
             || view.caller_artifact().is_none()
@@ -355,6 +395,10 @@ impl Service {
                     .pending
                     .get(&id.serial)
                     .ok_or(Error::NativeRefusal)?;
+                #[cfg(feature = "persistence")]
+                if inner.inert.contains(&id.serial) {
+                    return Err(Error::Authority);
+                }
                 if prepared.operation.as_ref() != view.operation()
                     || Some(prepared.caller) != view.caller()
                     || Some(prepared.artifact) != view.caller_artifact()
@@ -530,10 +574,19 @@ impl Service {
     /// pending plans; committed resource/history prefixes are never reverted.
     pub fn discard_operation(&self, binding: &OperationBinding) -> Result<()> {
         let mut inner = self.0.try_borrow_mut().map_err(|_| Error::NativeRefusal)?;
+        #[cfg(feature = "persistence")]
+        if inner.quarantine {
+            return Err(Error::Authority);
+        }
         inner
             .state
             .pending
             .retain(|_, p| p.operation.as_ref() != Some(binding));
+        #[cfg(feature = "persistence")]
+        {
+            let remaining: BTreeSet<_> = inner.state.pending.keys().copied().collect();
+            inner.inert.retain(|id| remaining.contains(id));
+        }
         Ok(())
     }
     pub fn cleanup_identity(&self) -> Result<CleanupIdentity> {

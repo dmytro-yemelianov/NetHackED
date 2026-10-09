@@ -448,7 +448,16 @@ impl OperationBinding {
 /// no wire constructor exists and no service lookup is associated with it.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct CleanupIdentity(u64);
+static NEXT_CLEANUP: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
 impl CleanupIdentity {
+    pub(crate) fn high_water() -> u64 {
+        NEXT_CLEANUP.load(std::sync::atomic::Ordering::Relaxed) - 1
+    }
+    pub(crate) fn retire_through(value: u64) -> Result<()> {
+        let next = value.checked_add(1).ok_or(Error::Limit)?;
+        NEXT_CLEANUP.fetch_max(next, std::sync::atomic::Ordering::Relaxed);
+        Ok(())
+    }
     pub(crate) fn raw(self) -> u64 {
         self.0
     }
@@ -462,8 +471,8 @@ impl CleanupIdentity {
         Err(Error::Limit)
     }
     pub fn issue() -> Result<Self> {
-        use std::sync::atomic::{AtomicU64, Ordering};
-        static NEXT_CLEANUP: AtomicU64 = AtomicU64::new(1);
+        use std::sync::atomic::Ordering;
+
         let id = NEXT_CLEANUP
             .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |n| n.checked_add(1))
             .map_err(|_| Error::Limit)?;
