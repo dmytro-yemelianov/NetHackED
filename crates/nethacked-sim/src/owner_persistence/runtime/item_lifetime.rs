@@ -502,7 +502,7 @@ impl LifetimeDomain for BillingState {
     }
 }
 
-struct LifetimeAccounting;
+struct LifetimeAccounting(u8);
 impl Accounting for LifetimeAccounting {
     fn validate(
         &self,
@@ -516,12 +516,15 @@ impl Accounting for LifetimeAccounting {
         let mut canonical = None;
         let mut roles = BTreeSet::new();
         for p in proposals {
-            let role = match p.receipt.stamp.schema[0] {
-                232 => "Objects",
-                235 => "Equipment",
-                234 => "Hero",
-                236 => "Billing",
-                237 => "Clock",
+            let role = match p.receipt.stamp.schema[0]
+                .checked_sub(self.0)
+                .ok_or(owners::Error::Invariant)?
+            {
+                2 => "Objects",
+                5 => "Equipment",
+                4 => "Hero",
+                6 => "Billing",
+                7 => "Clock",
                 _ => return Err(owners::Error::Invariant),
             };
             let (query, tag) = match role {
@@ -533,7 +536,7 @@ impl Accounting for LifetimeAccounting {
                 _ => return Err(owners::Error::Invariant),
             };
             if p.receipt.command != COMMAND
-                || p.receipt.stamp.schema != [230 + tag; 32]
+                || p.receipt.stamp.schema != [self.0 + tag; 32]
                 || !owners.insert(p.receipt.stamp.owner)
                 || !roles.insert(role)
                 || (matches!(role, "Objects" | "Billing")
@@ -558,7 +561,10 @@ impl Accounting for LifetimeAccounting {
         Ok(())
     }
 }
-fn accounting_identity() -> op::ArtifactIdentity {
+fn accounting_identity(c: &OwnerBridgeConfig) -> op::ArtifactIdentity {
+    if c.wand_charge_attempts {
+        return artifact("native-lifetime-charge-five-owner-accounting-i5c", 250);
+    }
     artifact("native-lifetime-i3-five-owner-accounting", 247)
 }
 pub(super) fn capture_accounting(
@@ -566,7 +572,15 @@ pub(super) fn capture_accounting(
     c: &OwnerBridgeConfig,
 ) -> owners::Result<()> {
     if c.item_lifetime {
-        a.register(accounting_identity(), POLICY, Rc::new(LifetimeAccounting))?;
+        a.register(
+            accounting_identity(c),
+            POLICY,
+            Rc::new(LifetimeAccounting(if c.wand_charge_attempts {
+                240
+            } else {
+                230
+            })),
+        )?;
     }
     Ok(())
 }
@@ -575,12 +589,89 @@ pub(super) fn restore_accounting(
     c: &OwnerBridgeConfig,
 ) -> owners::Result<()> {
     if c.item_lifetime {
-        a.allow(accounting_identity(), POLICY, || {
-            Ok(Rc::new(LifetimeAccounting))
+        let offset = if c.wand_charge_attempts { 240 } else { 230 };
+        a.allow(accounting_identity(c), POLICY, move || {
+            Ok(Rc::new(LifetimeAccounting(offset)))
         })?;
     }
     Ok(())
 }
+fn stage_retirement(
+    routes: &SourceRoutes,
+    config: &OwnerBridgeConfig,
+    request: &Retirement,
+    view: &CallerView,
+) -> owners::Result<owners::Batch> {
+    let target = request.target;
+    let bytes = encode(request, MAX_REQUEST_BYTES)?;
+    let mut immediate = vec![];
+    let mut provenance = vec![];
+    for q in queries(target) {
+        let (o, _) = routes.observe(&q, view)?;
+        // Equipment, Hero and Clock are sealed writers: their own prepare
+        // stamps already protect their full local state. Retain the two
+        // finite decision roots; their nested residency/code observations
+        // remain authenticated by the existing Host protocol.
+        if matches!(
+            q,
+            WandQuery::Command(
+                CommandQuery::LifetimeObject { .. } | CommandQuery::LifetimeBilling { .. }
+            )
+        ) {
+            provenance.push(o.clone());
+        }
+        immediate.push(o);
+    }
+    // The selected object and accounting are checked again by private
+    // owners against these fresh, invocation-authenticated observations.
+    let observations = |role| {
+        immediate
+            .iter()
+            .filter(|o| {
+                declarations(role)
+                    .iter()
+                    .any(|(_, query, _)| o.query() == *query)
+            })
+            .cloned()
+            .collect::<Vec<_>>()
+    };
+    let mut candidates = vec![];
+    macro_rules! stage {
+        ($field:ident, $role:literal) => {
+            candidates.push(
+                routes
+                    .$field
+                    .prepare(COMMAND, &bytes, observations($role), view)?
+                    .erase(),
+            );
+        };
+    }
+    stage!(objects, "Objects");
+    stage!(equipment, "Equipment");
+    stage!(hero, "Hero");
+    stage!(billing, "Billing");
+    stage!(clock, "Clock");
+    let ids = LIFETIME_OWNERS
+        .iter()
+        .map(|role| routes.stamp(role).map(|s| s.owner))
+        .collect::<owners::Result<Vec<_>>>()?;
+    let batch = routes.host.batch(
+        candidates,
+        provenance,
+        &ids,
+        ids.clone(),
+        POLICY,
+        Rc::new(LifetimeAccounting(if config.wand_charge_attempts {
+            240
+        } else {
+            230
+        })),
+        profile_capability(config, COMMAND),
+        view,
+    )?;
+    Ok(batch)
+}
+
 struct NativeLifetime<'a, 'v> {
     routes: &'a SourceRoutes,
     view: &'a CallerView<'v>,
@@ -656,72 +747,26 @@ impl LifetimePort for NativeLifetime<'_, '_> {
             terms,
             consumed: prepared.into_consumed(),
         };
-        let bytes = encode(&request, MAX_REQUEST_BYTES)?;
-        let mut immediate = vec![];
-        let mut provenance = vec![];
-        for q in queries(target) {
-            let (o, _) = self.routes.observe(&q, self.view)?;
-            // Equipment, Hero and Clock are sealed writers: their own prepare
-            // stamps already protect their full local state. Retain the two
-            // finite decision roots; their nested residency/code observations
-            // remain authenticated by the existing Host protocol.
-            if matches!(
-                q,
-                WandQuery::Command(
-                    CommandQuery::LifetimeObject { .. } | CommandQuery::LifetimeBilling { .. }
-                )
-            ) {
-                provenance.push(o.clone());
+        let batch = stage_retirement(self.routes, self.config, &request, self.view)?;
+        #[cfg(test)]
+        let stale = replay_tests::capture_stale(self.routes, &request, self.view)?;
+        let _receipt = match batch.commit(self.view) {
+            Ok(receipt) => receipt,
+            Err(e) => {
+                batch.discard()?;
+                return Err(e.into());
             }
-            immediate.push(o);
-        }
-        // The selected object and accounting are checked again by private
-        // owners against these fresh, invocation-authenticated observations.
-        let observations = |role| {
-            immediate
-                .iter()
-                .filter(|o| {
-                    declarations(role)
-                        .iter()
-                        .any(|(_, query, _)| o.query() == *query)
-                })
-                .cloned()
-                .collect::<Vec<_>>()
         };
-        let mut candidates = vec![];
-        macro_rules! stage {
-            ($field:ident, $role:literal) => {
-                candidates.push(
-                    self.routes
-                        .$field
-                        .prepare(COMMAND, &bytes, observations($role), self.view)?
-                        .erase(),
-                );
-            };
-        }
-        stage!(objects, "Objects");
-        stage!(equipment, "Equipment");
-        stage!(hero, "Hero");
-        stage!(billing, "Billing");
-        stage!(clock, "Clock");
-        let ids = LIFETIME_OWNERS
-            .iter()
-            .map(|role| self.routes.stamp(role).map(|s| s.owner))
-            .collect::<owners::Result<Vec<_>>>()?;
-        let batch = self.routes.host.batch(
-            candidates,
-            provenance,
-            &ids,
-            ids.clone(),
-            POLICY,
-            Rc::new(LifetimeAccounting),
-            profile_capability(self.config, COMMAND),
+        #[cfg(test)]
+        replay_tests::verify(
+            self.routes,
+            self.config,
+            &request,
             self.view,
+            &batch,
+            stale,
+            &_receipt,
         )?;
-        if let Err(e) = batch.commit(self.view) {
-            batch.discard()?;
-            return Err(e.into());
-        }
         Ok(if request.consumed.is_some() {
             WholeDisposal::RetainedBilled { origin: target.id }
         } else {
@@ -877,10 +922,171 @@ pub(super) fn grant_names() -> BTreeSet<String> {
     }
     keys
 }
-pub(super) fn grant_keys(keys: &BTreeSet<Resource>) -> BTreeSet<Resource> {
-    let allowed = grant_names();
+pub(super) fn grant_keys(keys: &BTreeSet<Resource>, c: &OwnerBridgeConfig) -> BTreeSet<Resource> {
+    let allowed = super::wand_commands::charge_grant_names(grant_names(), c);
     keys.iter()
         .filter(|r| allowed.contains(&r.key))
         .cloned()
         .collect()
+}
+
+#[cfg(test)]
+mod replay_tests {
+    use super::*;
+    thread_local! {
+        static ENABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+        static VERIFIED: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+    }
+    struct ReplayGuard;
+    impl Drop for ReplayGuard {
+        fn drop(&mut self) {
+            ENABLED.with(|flag| flag.set(false));
+        }
+    }
+    pub(super) fn capture_stale(
+        routes: &SourceRoutes,
+        request: &Retirement,
+        view: &CallerView,
+    ) -> owners::Result<Option<Vec<Observation>>> {
+        if !ENABLED.with(|flag| flag.get()) {
+            return Ok(None);
+        }
+        let query = CommandQuery::LifetimeBilling {
+            target: request.target,
+        };
+        Ok(Some(
+            super::super::wand_commands::query_dependencies(&query)
+                .iter()
+                .map(|q| routes.observe(q, view).map(|(observation, _)| observation))
+                .collect::<owners::Result<Vec<_>>>()?,
+        ))
+    }
+    #[allow(clippy::too_many_arguments)]
+    pub(super) fn verify(
+        routes: &SourceRoutes,
+        c: &OwnerBridgeConfig,
+        request: &Retirement,
+        view: &CallerView,
+        consumed: &owners::Batch,
+        stale: Option<Vec<Observation>>,
+        receipt: &owners::CommitReceipt,
+    ) -> owners::Result<()> {
+        let Some(stale) = stale else {
+            return Ok(());
+        };
+        assert!(request.consumed.is_some());
+        let states = || -> owners::Result<Vec<Vec<u8>>> {
+            Ok(vec![
+                routes.objects.inspect()?,
+                routes.equipment.inspect()?,
+                routes.hero.inspect()?,
+                routes.billing.inspect()?,
+                routes.clock.inspect()?,
+                routes.random.inspect()?,
+                routes.actors.inspect()?,
+                routes.geography.inspect()?,
+                routes.session.inspect()?,
+            ])
+        };
+        let before = states()?;
+        let history = routes.host.history()?;
+        assert_eq!(history.last(), Some(receipt));
+        assert_eq!(
+            receipt
+                .participants
+                .iter()
+                .map(|p| p.stamp.owner)
+                .collect::<Vec<_>>(),
+            LIFETIME_OWNERS
+                .iter()
+                .map(|name| routes.stamp(name).unwrap().owner)
+                .collect::<Vec<_>>()
+        );
+        assert!(receipt
+            .participants
+            .iter()
+            .all(|p| p.request_digest == receipt.participants[0].request_digest));
+        assert_eq!(consumed.commit(view), Err(owners::Error::Stale));
+        // Replay actual authenticated dependency observations returned before
+        // publication. Admission refuses their old owner revisions before the
+        // billing query callback can emit a replacement fact.
+        let query = WandQuery::Command(CommandQuery::LifetimeBilling {
+            target: request.target,
+        });
+        assert!(matches!(
+            routes.billing.query(
+                BILL_QUERY,
+                &encode(&query, MAX_REQUEST_BYTES)?,
+                &stale,
+                view
+            ),
+            Err(owners::Error::Stale)
+        ));
+        // Resubmit the exact original retirement/shop evidence against fresh
+        // observations: the removed origin cannot be admitted a second time.
+        assert!(stage_retirement(routes, c, request, view).is_err());
+        assert_eq!(states()?, before);
+        assert_eq!(routes.host.history()?, history);
+        VERIFIED.with(|count| count.set(count.get() + 1));
+        Ok(())
+    }
+    #[test]
+    fn actual_native_retirement_refuses_consumed_batch_stale_observation_and_shop_evidence_replay()
+    {
+        let mut world = SimulationWorld::new_with_seed(724);
+        world.arena.items.clear();
+        world.wielded_item = None;
+        world.hero.quivered_item = None;
+        world.equipment = Default::default();
+        world.unpaid_items.clear();
+        world.billing = Default::default();
+        let mut object = world
+            .ruleset
+            .create_item_record(
+                "wand of fire",
+                ItemLocation::CarriedBy(world.player_id),
+                nethacked_types::Buc::Uncursed,
+            )
+            .unwrap();
+        object.enchantment = -1;
+        object.quantity = 3;
+        let id = world.arena.spawn_item(object.clone());
+        world.wielded_item = Some(id);
+        world.hero.quivered_item = Some(id);
+        world.unpaid_items.push((id, 30));
+        let terms = BillTerms {
+            billed_quantity: Some(3),
+            unit_price: Some(40),
+            creditor: None,
+            legacy_base_cost: 30,
+        };
+        world.record_bill_terms(id, terms.clone()).unwrap();
+        let cfg = OwnerBridgeConfig::new(world.ruleset.clone(), world.ruleset_ref.clone())
+            .unwrap()
+            .with_item_lifetime();
+        let json = world.to_save_json().unwrap();
+        let bridge = OwnerBridge::import_native(&json, json.len(), cfg).unwrap();
+        VERIFIED.with(|count| count.set(0));
+        ENABLED.with(|flag| flag.set(true));
+        let guard = ReplayGuard;
+        assert_eq!(
+            bridge
+                .finalize_retained_object(Some(ObjectRef {
+                    id,
+                    residency: Residency::Active
+                }))
+                .unwrap(),
+            Ok(LifetimeReply::Retired { billed: true })
+        );
+        drop(guard);
+        assert_eq!(VERIFIED.with(|count| count.get()), 1);
+        let after = bridge.export_native().unwrap();
+        assert!(after.arena.items.get(id).is_none());
+        assert!(after.wielded_item.is_none() && after.hero.quivered_item.is_none());
+        assert_eq!(after.billing.consumed.len(), 1);
+        object.location = ItemLocation::Limbo;
+        assert_eq!(after.billing.consumed[0].object, object);
+        assert_eq!(after.billing.consumed[0].terms, terms);
+        assert_eq!(after.rng.get_word_pos(), world.rng.get_word_pos());
+    }
 }

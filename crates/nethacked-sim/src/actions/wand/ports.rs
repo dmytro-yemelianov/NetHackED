@@ -136,6 +136,17 @@ impl<T: ObjectFacts> TryObjectFacts<std::convert::Infallible> for InfalliblePort
 }
 
 pub trait TryObjects<E>: TryObjectFacts<E> {
+    fn source_charge_policy(&self) -> bool {
+        false
+    }
+    fn charge_attempt(
+        &mut self,
+        _id: ItemId,
+        _spe: i8,
+        _supported: bool,
+    ) -> Result<Option<nethacked_core::artifacts_wands::WandChargeAttempt>, E> {
+        Ok(None)
+    }
     fn spend_positive_charge(&mut self, id: ItemId, remaining: i8) -> Result<(), E>;
     fn insert_generated(&mut self, item: ItemRecord) -> Result<ItemId, E>;
     fn timer_target_exists(&self, target: ObjectTimerTarget) -> Result<bool, E>;

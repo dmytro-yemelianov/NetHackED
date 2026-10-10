@@ -125,6 +125,12 @@ def validate_packet_structure(packet):
     direct_bindings = {item["path"] for item in packet["bindings"]}
     if not {packet["prompt"], packet["output_schema"]}.issubset(direct_bindings):
         fail("prompt and schema must be bound")
+    if "source_packet" in packet:
+        required_string(packet["source_packet"], "source packet")
+        if packet["source_packet"] not in direct_bindings:
+            fail("source packet must be a direct binding")
+        if packet["source_packet"] in {packet["prompt"], packet.get("task")}:
+            fail("source packet must be separate from instructions")
     if len(packet["prior_phases"]) != packet["phase_index"] - 1:
         fail("prior phase set incomplete")
     for index, item in enumerate(packet["prior_phases"], 1):
@@ -191,6 +197,10 @@ def validate(packet_path):
     count = sum(prompt_tokens(path) for path in {packet["prompt"], task})
     if count > 1000:
         fail(f"prompt estimate {count} exceeds 1000 o200k_base tokens")
+    if "source_packet" in packet:
+        source_count = prompt_tokens(packet["source_packet"])
+        if source_count > min(packet["ceilings"]["input_tokens"] // 2, packet["ceilings"]["input_tokens"] - count):
+            fail("source packet exceeds bounded initial context")
     schema = json_file(packet["output_schema"])
     if not isinstance(schema, dict) or schema.get("type") != "object" or not isinstance(schema.get("properties"), dict):
         fail("output_schema must define an object with properties")
@@ -202,10 +212,11 @@ def launch(packet_path):
     run = Path(packet["run_directory"])
     run.mkdir(parents=True, exist_ok=False)
     (run / "packet.json").write_text(json.dumps(packet, sort_keys=True) + "\n", encoding="utf-8")
-    for name, source in (("prompt.txt", packet["prompt"]), ("task.txt", packet["task"]),
-                         ("schema.json", packet["output_schema"])):
-        (run / name).write_bytes(Path(source).read_bytes())
     snapshots = {"prompt.txt": packet["prompt"], "task.txt": packet["task"], "schema.json": packet["output_schema"]}
+    if "source_packet" in packet:
+        snapshots["source-packet.txt"] = packet["source_packet"]
+    for name, source in snapshots.items():
+        (run / name).write_bytes(Path(source).read_bytes())
     for name, source in snapshots.items():
         expected = next(item["sha256"] for item in packet["bindings"] if item["path"] == source)
         if sha(run / name) != expected:
@@ -222,6 +233,7 @@ def launch(packet_path):
     status = {"exit_code": exit_code, "runner_error": runner_error,
               "wall_seconds": round(time.monotonic() - started, 3),
               "model": packet["model"], "effort": packet["effort"], "prompt_estimate": estimated,
+              "source_estimate": prompt_tokens(run / "source-packet.txt") if "source_packet" in packet else 0,
               "bindings": packet["bindings"], "phase_index": packet["phase_index"], "unit": packet["unit"]}
     if (run / "control.json").is_file():
         status["control_sha256"] = sha(run / "control.json")
@@ -268,10 +280,14 @@ def usage(run_dir):
             captured_control = json_file(run / "control.json")
             if not isinstance(captured_control, dict):
                 fail("invalid captured control")
+        if "source_packet" in packet:
+            captured["source-packet.txt"] = packet["source_packet"]
         for name, source in captured.items():
             expected = next(item["sha256"] for item in bindings if item["path"] == source)
             if sha(run / name) != expected:
                 fail("captured prompt or schema binding mismatch")
+        if "source_packet" in packet and runner.get("source_estimate") != prompt_tokens(run / "source-packet.txt"):
+            fail("captured source estimate mismatch")
         schema = json_file(run / "schema.json")
         if not isinstance(schema, dict) or schema.get("type") != "object" or not isinstance(schema.get("properties"), dict):
             fail("invalid captured schema")
@@ -289,6 +305,9 @@ def usage(run_dir):
         and isinstance(runner.get("phase_index"), int) and not isinstance(runner["phase_index"], bool)
         and isinstance(wall, (int, float)) and not isinstance(wall, bool) and 0 <= wall < float("inf")
         and isinstance(estimate, int) and not isinstance(estimate, bool) and 0 <= estimate <= 1000
+        and isinstance(runner.get("source_estimate", 0), int) and not isinstance(runner.get("source_estimate", 0), bool)
+        and 0 <= runner.get("source_estimate", 0) <= packet["ceilings"]["input_tokens"] // 2
+        and ("source_packet" in packet or runner.get("source_estimate", 0) == 0)
         and valid_error)
     completed = []
     malformed = False

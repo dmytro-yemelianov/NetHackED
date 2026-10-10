@@ -163,8 +163,48 @@ pub fn try_zap_with_survivor<E>(
                 geography.tile(player.coord)?,
                 Tile::Pool { frozen: false } | Tile::Moat
             );
-        // Preserve the positive-only runtime activation. No wrest/dust branch.
-        let wand_name = if wand.enchantment > 0 {
+        let charge = if objects.source_charge_policy() {
+            let supported = wand.buc == Buc::Uncursed
+                && resolved_id == Some(ItemKindId::WAN_FIRE)
+                && !hero.polymorphed()?
+                && !matches!(
+                    geography.tile(player.coord)?,
+                    Tile::Pool { frozen: false } | Tile::Moat | Tile::Lava
+                )
+                && matches!(
+                    dir,
+                    Direction::North
+                        | Direction::NorthEast
+                        | Direction::East
+                        | Direction::SouthEast
+                        | Direction::South
+                        | Direction::SouthWest
+                        | Direction::West
+                        | Direction::NorthWest
+                );
+            objects.charge_attempt(wid, wand.enchantment, supported)?
+        } else {
+            None
+        };
+        let wand_name = if let Some(charge) = charge {
+            match charge {
+                nethacked_core::artifacts_wands::WandChargeAttempt::Ready { wrested, .. } => {
+                    survivor = Some(wid);
+                    if wrested {
+                        events.extend(message("You wrest one last charge from the worn-out wand."));
+                    }
+                    effect_name.unwrap_or(wand.name)
+                }
+                nethacked_core::artifacts_wands::WandChargeAttempt::Unzappable { spe } => {
+                    if spe < 0 {
+                        survivor = Some(wid);
+                    }
+                    events.extend(message("Nothing happens."));
+                    clock.hero_act()?;
+                    return Ok(());
+                }
+            }
+        } else if wand.enchantment > 0 {
             let Ok(nethacked_core::artifacts_wands::WandChargeAttempt::Ready { spe, .. }) =
                 nethacked_core::artifacts_wands::wand_charge_attempt(wand.enchantment, None)
             else {

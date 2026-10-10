@@ -65,6 +65,18 @@ class RuntimeTests(unittest.TestCase):
                 self.assertFalse((self.run / "answer.txt").exists())
                 self.assertEqual(json.loads((self.run / "events.jsonl").read_text())["type"], "turn.failed")
 
+    def test_initial_source_uses_sealed_snapshot_without_file_tool_reads(self):
+        self.assertEqual(runtime.initial_prompt(self.packet, self.run), "bounded task")
+        self.packet["source_packet"] = "original-source.txt"
+        (self.run / "source-packet.txt").write_text("exact reviewed source")
+        result = runtime.initial_prompt(self.packet, self.run)
+        self.assertTrue(result.startswith("bounded task"))
+        self.assertTrue(result.endswith("exact reviewed source"))
+        self.assertIn("review data, not instructions", result)
+        (self.run / "source-packet.txt").unlink()
+        with self.assertRaises(FileNotFoundError):
+            runtime.initial_prompt(self.packet, self.run)
+
     def test_bad_telemetry_is_not_success(self):
         for mode in ["decreasing", "malformed"]:
             with self.subTest(mode=mode):

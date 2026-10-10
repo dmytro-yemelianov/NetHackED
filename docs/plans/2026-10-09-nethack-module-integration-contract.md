@@ -101,11 +101,42 @@ requirements. Existing I1–I4 refusal fixtures remain required.
 
 I5b–I5d are narrow integration work, not a repeat audit of accepted modules or a
 kernel rewrite. Root owns the sole writer/Cargo lane. Each review receives only
-changed code and required contract excerpts, in chunks no larger than 1500 tokens,
-with one read per tool call. Preserve actual phase usage and incomplete verdicts;
+changed code and required contract excerpts. Prefer supplying sealed source chunks
+directly in the initial review prompt to avoid repeated tool/context overhead.
+When a file read is needed, chunks stay below 1500 tokens with one read per tool call. Preserve actual phase usage and incomplete verdicts;
 root usage remains unknown. Full architecture acceptance, M6/M7 and the separate
 C-parity inventory remain open.
 
 After the I5a checkpoint, implement I5b–I5d in dependency order with focused meaningful checks and bounded review packets. Batch their full workspace/golden verification at the final frozen integration boundary; avoid a complete workspace run between local substeps. Each commit still requires all mandatory gates.
 
 I5a checkpoint verification: 69 scoped tests, independent Astra change PASS, 1499 workspace tests, all 12 required gates and all three unchanged goldens. The first gate stopped before workspace on redundant borrows of Copy Scheduler; the exact reversible Clippy correction changes no assertions. Final frozen input digest `10ae2145b85aeed9d46818f229cb06dccc57e126e9d27043d58f9544fd38af8c` covers 543 non-documentation files. Strict I5 remains partial; this checkpoint does not advance M6.
+
+## I5b reviewed implementation (2026-10-10)
+
+The optional detailed-reply profile retains canonical completion metadata and ordered reply chunks within existing workflow bounds. Full outcome framing is included in the limit check. Overflow returns an explicit detailed-read Bounds error while preserving the actual boolean summary and committed gameplay prefix. Historical I4 profiles keep their exact executable identities and boolean protocol; a detailed read refuses before consuming their ticket.
+
+The actual public lifetime finalizer now provides a test-only replay witness: reuse of its consumed opaque batch, its authenticated prepublication billing observations, and the original complete consumed-shop retirement proposal all refuse without changing any of nine owner payloads or the complete receipt history. The proposal refuses at the removed object boundary; this does not independently prove duplicate billing rejection after successful object admission. Production staging still commits immediately.
+
+Astra passed I5b with 74 scoped tests and targeted Clippy passing. Full integration gates remain pending until I5c/I5d finish; no I5 acceptance or new commit is claimed. Review evidence is recorded in the microkernel goal ledger.
+
+## I5c implementation boundary
+
+The new policy is explicitly optional and has distinct executable/profile bindings. Historical positive-only behavior remains the default. Its first supported slice is a canonical uncursed wand of fire in the explicitly admitted ordinary context; unsupported new-policy definitions, cursed or context cases refuse before RNG rather than silently borrowing incomplete backfire semantics. Full P11a parity remains separate.
+
+At zero charges, Random previews exactly the existing Below(121) sampler using a private local clone and returns an authenticated bounded observation, including the current reservation and sampled value. The preview changes no live state. The coordinator stages the real Sample candidate and validates its proposed reply against that observation. Objects validates the same selected generation and the existing signed charge formula against the authenticated observation. The successful wrest publishes Random and Objects together; failed wrest publishes Random with Objects as authenticated readonly evidence. Nonzero charges do not acquire a charge draw. Existing owner accounting validates the exact transition and participants; no Random state crosses into Objects and no diagnostic receipt becomes authority.
+
+The shared effect continuation uses the already accepted charge result once. Successful wrest emits the source message before the effect and carries the same selected identity at charge -1 into existing five-owner lifetime publication. Failed zero attempts retain the item; negative attempts skip effects and proceed to terminal cleanup. Tests must cover authentic RNG continuation, success/failure, stale preview/publication refusal, same-object effects and complete retirement, and default isolation. No kernel concepts, limits or save-owner formats are widened.
+
+## I5d process and trust boundary
+
+The witness must launch actual producer and consumer OS processes with distinct PIDs. The producer emits owner-save bytes and a separately captured trusted live approval record. The consumer receives approval through an explicit host-controlled input, independently of incoming save bytes, then reconstructs owners and resumes with a fresh ticket. Missing approval and a changed approved checkpoint must refuse. Positive resume must compare retained ordered events, complete native state and continued RNG against the producer's independent expected output; repeated execution must refuse without new effects.
+
+A bounded host-record export/import interface may transport detached native approval data, with canonical encoding and exact reconstruction checks. Import is an explicit application trust decision, never authentication of arbitrary bytes and never inferred from game saves. The test uses separately controlled files; it does not establish a durable authenticated approval store. Final aggregate tests and all mandatory gates run once on frozen independently reviewed source before the integration commit.
+
+The review runner now accepts an optional directly hash-bound source packet, archived and supplied once with the initial instructions. Instructions remain limited to 1000 tokens; source context is limited to half the existing phase input ceiling. Actual model input/output, command and wall limits remain enforced. Historical packets are unchanged. Archived source hash and token estimate are checked in the usage report. Thirty-three runner tests pass; this process change is included in the independent integration review.
+
+## I5 integration acceptance (2026-10-10)
+
+I5b–I5d are accepted together after independent Astra PASS, 80 scoped tests, 33 review-runner tests, all 12 gates, 1510 workspace tests and all three unchanged goldens. The frozen source digest `f1697e983d91e85ef536404e361a125182b9ccbf2fc1b873d0058dd38157df00` covers 548 non-documentation inputs. The detailed retained reply, authentic stale/publication/shop-evidence refusals, opted-in same-selected fire wrest/effect/five-owner retirement and actual separate-process reconstruction are now implemented and tested. Historical native/workflow profiles retain their original behavior; default wand behavior, golden constants, dependencies and kernel limits are unchanged.
+
+This closes the scoped M5 architecture acceptance, including populated native extension and retained workflow integration. It does not close full P11a/C parity, general item naming, cursed/backfire behavior, other new-policy wand kinds or an authenticated durable approval store. M6 default domain migration and M7 final architecture audit remain.

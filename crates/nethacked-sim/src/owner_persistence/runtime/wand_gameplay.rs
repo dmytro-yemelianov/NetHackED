@@ -148,6 +148,7 @@ struct Invocation<'a, 'v> {
     view: &'a CallerView<'v>,
     config: &'a OwnerBridgeConfig,
     calls: std::cell::Cell<usize>,
+    deferred_time: std::cell::Cell<bool>,
 }
 impl Invocation<'_, '_> {
     fn call<T: Serialize, R: DeserializeOwned + Serialize>(
@@ -217,7 +218,7 @@ impl Invocation<'_, '_> {
         };
         let expected_owner = self.read(owner_query)?.witness;
         let mut dependencies = vec![];
-        for q in wand_commands::dependencies(&command) {
+        for q in wand_commands::dependencies(&command, self.config) {
             let o = self.read(q)?;
             dependencies.extend(o.dependencies);
             dependencies.push(o.witness);
@@ -278,6 +279,7 @@ pub(super) fn caller_ports(
                     view,
                     config: &c,
                     calls: std::cell::Cell::new(0),
+                    deferred_time: std::cell::Cell::new(false),
                 };
                 let result = run(&invocation, action);
                 encode(&result, REPLY_BYTES).map_err(native_refusal)
@@ -358,6 +360,33 @@ fn run(i: &Invocation<'_, '_>, action: WandGameplayAction) -> WandGameplayReply 
             &session,
         )?;
         let mut events = outcome.events;
+        let dust = if i.config.wand_charge_attempts {
+            if let Some(id) = outcome.survivor {
+                let facts = i
+                    .read(WandQuery::Objects(ObjectRequest::Identity(ObjectRef {
+                        id,
+                        residency: Residency::Active,
+                    })))
+                    .map_err(|error| algorithm::WandFailure {
+                        error: algorithm::WandError::Authority(error),
+                        events: events.clone(),
+                    })?;
+                match facts.facts {
+                    WandFacts::Objects(f) => (f.charges < 0).then_some({
+                        if f.quantity == 1 {
+                            "The wand of fire turns to dust."
+                        } else {
+                            "The wands of fire turn to dust."
+                        }
+                    }),
+                    _ => None,
+                }
+            } else {
+                None
+            }
+        } else {
+            None
+        };
         if i.config.item_lifetime && outcome.survivor.is_some() {
             let action = super::item_lifetime::LifetimeAction {
                 survivor: outcome.survivor.map(|id| ObjectRef {
@@ -378,7 +407,7 @@ fn run(i: &Invocation<'_, '_>, action: WandGameplayAction) -> WandGameplayReply 
                 Ok(super::item_lifetime::LifetimeReply::Unchanged) => {}
                 Ok(super::item_lifetime::LifetimeReply::Retired { .. }) => {
                     events.push(crate::GameEvent::LogMessage {
-                        text: "Your wand turns to dust.".into(),
+                        text: dust.unwrap_or("Your wand turns to dust.").into(),
                     })
                 }
                 Err(error) => {
@@ -388,6 +417,13 @@ fn run(i: &Invocation<'_, '_>, action: WandGameplayAction) -> WandGameplayReply 
                     })
                 }
             }
+        }
+        if i.deferred_time.replace(false) {
+            i.command(WandOwnerCommand::Clock(ClockOperation::HeroAct))
+                .map_err(|error| algorithm::WandFailure {
+                    error: algorithm::WandError::Authority(error),
+                    events: events.clone(),
+                })?;
         }
         Ok(events)
     })();

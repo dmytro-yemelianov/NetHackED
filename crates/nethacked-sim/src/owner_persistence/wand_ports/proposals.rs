@@ -31,6 +31,10 @@ pub enum WandOwnerCommand {
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ObjectOperation {
+    ChargeAttempt {
+        target: ObjectRef,
+        expected: i8,
+    },
     PositiveCharge {
         target: ObjectRef,
         expected: i8,
@@ -122,6 +126,7 @@ pub enum RawWord {
 /// responses retain their original meaning and profile identities.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum CommandQuery {
+    WrestPreview,
     Gameplay(super::super::runtime::wand_gameplay::FactQuery),
     LifetimeObject {
         target: ObjectRef,
@@ -151,6 +156,10 @@ pub enum CommandQuery {
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum CommandFacts {
+    WrestPreview {
+        reservation: RandomReservation,
+        draw: u32,
+    },
     Gameplay(super::super::runtime::wand_gameplay::FactValue),
     LifetimeObject(super::super::runtime::item_lifetime::ObjectFacts),
     LifetimeBilling(super::super::runtime::item_lifetime::LedgerFacts),
@@ -221,14 +230,33 @@ impl From<TimerFailure> for crate::object_timers::ObjectTimerError {
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum OperationResult {
+    ChargeAttempt {
+        remaining: i8,
+        ready: bool,
+        wrested: bool,
+    },
     Applied,
-    Charge { remaining: i8 },
-    Object { id: ItemId },
-    Actor { id: ActorId },
-    Damage { dead: bool },
-    Revealed { changed: bool },
-    Timer { serial: u64 },
-    TimerRefused { reason: TimerFailure },
+    Charge {
+        remaining: i8,
+    },
+    Object {
+        id: ItemId,
+    },
+    Actor {
+        id: ActorId,
+    },
+    Damage {
+        dead: bool,
+    },
+    Revealed {
+        changed: bool,
+    },
+    Timer {
+        serial: u64,
+    },
+    TimerRefused {
+        reason: TimerFailure,
+    },
     Sample(u32),
     Raw32(u32),
     Raw64(u64),

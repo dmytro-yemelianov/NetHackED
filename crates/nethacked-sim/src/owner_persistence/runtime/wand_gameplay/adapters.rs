@@ -77,6 +77,40 @@ impl Objects<'_, '_> {
     }
 }
 impl TryObjects<Error> for Objects<'_, '_> {
+    fn source_charge_policy(&self) -> bool {
+        self.0.config.wand_charge_attempts
+    }
+    fn charge_attempt(
+        &mut self,
+        id: ItemId,
+        spe: i8,
+        supported: bool,
+    ) -> Result<Option<nethacked_core::artifacts_wands::WandChargeAttempt>, Error> {
+        if !supported {
+            return Err(Error::Protocol);
+        }
+        let OperationResult::ChargeAttempt {
+            remaining,
+            ready,
+            wrested,
+        } = self
+            .0
+            .command(WandOwnerCommand::Objects(ObjectOperation::ChargeAttempt {
+                target: target(id),
+                expected: spe,
+            }))?
+        else {
+            return Err(Error::Protocol);
+        };
+        Ok(Some(if ready {
+            nethacked_core::artifacts_wands::WandChargeAttempt::Ready {
+                spe: remaining,
+                wrested,
+            }
+        } else {
+            nethacked_core::artifacts_wands::WandChargeAttempt::Unzappable { spe: remaining }
+        }))
+    }
     fn spend_positive_charge(&mut self, id: ItemId, remaining: i8) -> Result<(), Error> {
         match self
             .0
@@ -434,6 +468,12 @@ impl TryWorldClock<Error> for Clock<'_, '_> {
 }
 impl TryClock<Error> for Clock<'_, '_> {
     fn hero_act(&mut self) -> Result<(), Error> {
+        if self.0.config.wand_charge_attempts {
+            if self.0.deferred_time.replace(true) {
+                return Err(Error::Protocol);
+            }
+            return Ok(());
+        }
         applied(
             self.0
                 .command(WandOwnerCommand::Clock(ClockOperation::HeroAct))?,

@@ -96,6 +96,22 @@ class GuardTests(unittest.TestCase):
         with self.assertRaisesRegex(guard.GuardError, "stale HEAD"):
             guard.validate(self.packet_file)
 
+    def test_bound_inline_source_keeps_instruction_limit_and_archives_exact_bytes(self):
+        source = self.dir / "source.txt"
+        source.write_text("def changed(): return 1\n", encoding="utf-8")
+        self.packet["source_packet"] = str(source)
+        self.save()
+        with self.assertRaisesRegex(guard.GuardError, "direct binding"):
+            guard.validate(self.packet_file)
+        self.packet["bindings"].append(self.bind(source))
+        self.save()
+        with patch.object(guard, "prompt_tokens", side_effect=lambda path: 20001 if str(path) == str(source) else 5):
+            with self.assertRaisesRegex(guard.GuardError, "bounded initial context"):
+                guard.validate(self.packet_file)
+        self.assertEqual(guard.launch(self.packet_file), 0)
+        self.assertEqual((self.run / "source-packet.txt").read_bytes(), source.read_bytes())
+        self.assertEqual(json.loads((self.run / "runner.json").read_text())["source_estimate"], 5)
+
     def test_malformed_routing_and_unknown_root_need_adjustment(self):
         self.packet["phase"] = []
         self.save()

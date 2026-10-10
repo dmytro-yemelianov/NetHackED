@@ -100,6 +100,9 @@ impl CommandDomain for ObjectsState {
             return Err(owners::Error::Schema);
         };
         match op {
+            ObjectOperation::ChargeAttempt { target, expected } => {
+                super::charge::apply(self, *target, *expected, obs, c)
+            }
             ObjectOperation::PositiveCharge { target, expected } => {
                 // This unit implements the positive-only prefix, never wrest or retirement.
                 let current = object(self, obs, *target)?;
@@ -623,6 +626,33 @@ impl CommandDomain for ClockState {
     }
 }
 impl CommandDomain for RandomState {
+    fn command_facts(
+        &self,
+        q: &CommandQuery,
+        _: &[Observation],
+        c: &OwnerBridgeConfig,
+    ) -> owners::Result<CommandFacts> {
+        if !c.wand_charge_attempts || !matches!(q, CommandQuery::WrestPreview) {
+            return Err(owners::Error::Unsupported);
+        }
+        let reservation = RandomReservation {
+            stream: self.rng.get_stream(),
+            word_position: self.rng.get_word_pos(),
+            max_draws: 1,
+            algorithm_version: 1,
+        };
+        let mut local = self.clone();
+        let OperationResult::Sample(draw) = super::super::wand_gameplay::facts::sample(
+            &mut local,
+            &reservation,
+            &super::super::wand_gameplay::SemanticDraw::Below(121),
+            c,
+        )?
+        else {
+            return Err(owners::Error::Invariant);
+        };
+        Ok(CommandFacts::WrestPreview { reservation, draw })
+    }
     fn apply(
         &mut self,
         command: &WandOwnerCommand,

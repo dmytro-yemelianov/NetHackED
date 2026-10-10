@@ -82,6 +82,8 @@ pub struct OwnerBridgeConfig {
     pub(super) wand_gameplay: bool,
     pub(super) item_lifetime: bool,
     pub(super) wand_workflows: bool,
+    pub(super) wand_workflow_replies: bool,
+    pub(super) wand_charge_attempts: bool,
     pub(super) workflow_approval: Option<wand_workflows::WandWorkflowApproval>,
     pub(super) wand_extensions: bool,
     pub(super) extension_catalog: Vec<wand_extensions::WandGuest>,
@@ -105,6 +107,8 @@ impl OwnerBridgeConfig {
             wand_gameplay: false,
             item_lifetime: false,
             wand_workflows: false,
+            wand_workflow_replies: false,
+            wand_charge_attempts: false,
             workflow_approval: None,
             wand_extensions: false,
             extension_catalog: vec![],
@@ -161,6 +165,14 @@ impl OwnerBridgeConfig {
         self.wand_workflows = true;
         Ok(self)
     }
+    /// Opt into versioned, bounded retained replies including ordered events.
+    pub fn with_wand_workflow_replies(mut self) -> Result<Self, OwnerBridgeError> {
+        if !self.wand_workflows {
+            return Err(owners::Error::Unsupported.into());
+        }
+        self.wand_workflow_replies = true;
+        Ok(self)
+    }
     pub fn with_wand_workflow_approval(
         mut self,
         approval: wand_workflows::WandWorkflowApproval,
@@ -178,7 +190,16 @@ impl OwnerBridgeConfig {
             super::admission::AdmissionPolicy::Strict
         }
     }
+    /// Explicit ordinary uncursed fire-wand charge-attempt profile. Historical profiles stay positive-only.
+    pub fn with_wand_charge_attempts(self) -> Self {
+        let mut c = self.with_item_lifetime();
+        c.wand_charge_attempts = true;
+        c
+    }
     fn schema_tag(&self, tag: u8) -> u8 {
+        if self.wand_charge_attempts {
+            return tag + 240;
+        }
         if self.item_lifetime {
             tag + 230
         } else if self.wand_gameplay {
@@ -192,6 +213,9 @@ impl OwnerBridgeConfig {
         }
     }
     fn codec_identity(&self, name: &str, tag: u8) -> op::CodecIdentity {
+        if self.wand_charge_attempts {
+            return identity(&format!("{name}-charge-i5c"), tag + 240);
+        }
         if self.item_lifetime {
             identity(&format!("{name}-lifetime-i3"), tag + 230)
         } else if self.wand_gameplay {
@@ -223,7 +247,20 @@ impl OwnerBridgeConfig {
         }
     }
     fn session_binding(&self) -> pr::Binding {
-        if self.wand_workflows {
+        if self.wand_charge_attempts {
+            return pr::Binding {
+                name: "native-wand-charge-i5c-session".into(),
+                version: 8,
+                artifact: [248; 32],
+            };
+        }
+        if self.wand_workflow_replies {
+            pr::Binding {
+                name: "native-wand-workflow-replies-i5-session".into(),
+                version: 7,
+                artifact: [240; 32],
+            }
+        } else if self.wand_workflows {
             pr::Binding {
                 name: "native-wand-workflows-i4-session".into(),
                 version: 6,
@@ -1117,7 +1154,12 @@ fn profile_limits(config: &OwnerBridgeConfig) -> kernel::Limits {
     limits
 }
 fn profile_native_id(config: &OwnerBridgeConfig) -> &'static [u8] {
-    if config.wand_workflows {
+    if config.wand_charge_attempts {
+        return b"NetHackED atomic charge owner adapters i5c v1";
+    }
+    if config.wand_workflow_replies {
+        b"NetHackED detailed workflow owner adapters i5 v1"
+    } else if config.wand_workflows {
         b"NetHackED workflow owner adapters i4 v2"
     } else if config.item_lifetime {
         item_lifetime::NATIVE_ID
@@ -1161,7 +1203,7 @@ fn profile_provider(config: &OwnerBridgeConfig) -> Manifest {
     }
     .into();
     for (_, name) in wand_commands::read_routes(config) {
-        if name != "wand_random" {
+        if name != "wand_random" || config.wand_charge_attempts {
             m.exports.insert(
                 name.into(),
                 Endpoint {
@@ -1442,13 +1484,16 @@ fn profile_native_ports(
         return ports;
     }
     for (_, name) in wand_commands::read_routes(&config) {
-        if name != "wand_random" {
+        if name != "wand_random" || config.wand_charge_attempts {
             let routes = handles.clone();
             ports.insert(
                 name.into(),
                 Rc::new(move |request, view| read_route(&routes, name, request, view)),
             );
         }
+    }
+    if config.wand_charge_attempts {
+        ports = wand_commands::random_ports(ports, handles.clone(), config.clone());
     }
     wand_commands::native_ports(ports, handles, config)
 }
@@ -1580,8 +1625,8 @@ impl kp::RegistryAuthority for Resolver {
         {
             Ok(kp::ArtifactMaterial::Native {
                 manifest: wand_workflows::manifest(&self.config),
-                identity: wand_workflows::CODE.to_vec(),
-                ports: wand_workflows::ports(),
+                identity: wand_workflows::code(&self.config).to_vec(),
+                ports: wand_workflows::ports(&self.config),
             })
         } else if self.config.wand_extensions
             && saved.executable == kp::Executable::NativeV1
@@ -1869,6 +1914,14 @@ fn restore_configuration(
 fn approved_profiles(config: &OwnerBridgeConfig) -> Vec<OwnerBridgeConfig> {
     let mut profiles = vec![config.clone()];
     let mut config = config.clone();
+    if config.wand_charge_attempts {
+        config.wand_charge_attempts = false;
+        profiles.push(config.clone());
+    }
+    if config.wand_workflow_replies {
+        config.wand_workflow_replies = false;
+        profiles.push(config.clone());
+    }
     if config.wand_workflows {
         config.wand_workflows = false;
         config.workflow_approval = None;
@@ -1934,7 +1987,10 @@ fn bridge_caller(
         return Err(kernel::Error::Authority.into());
     }
     for profile in approved_profiles(config) {
-        if k.manifest(random.module.handle)? == &wand_commands::random_manifest(&profile) {
+        if k.manifest(random.module.handle)? == &wand_commands::random_manifest(&profile)
+            || (profile.wand_charge_attempts
+                && k.manifest(random.module.handle)? == &profile_provider(&profile))
+        {
             if let Ok(caller) = k.registered_module(&profile_caller(&profile)) {
                 return Ok(caller);
             }
@@ -2097,6 +2153,23 @@ impl OwnerBridge {
         if let Some(s) = &early_session {
             wand_deps.insert("Session", s.id());
         }
+        // The opt-in Objects charge command declares the Random preview owner.
+        // Historical profiles retain their original allocation order.
+        let early_random = if config.wand_charge_attempts {
+            Some(enroll!(
+                RandomCodec,
+                "Random",
+                8,
+                random.clone(),
+                provider,
+                basic_ports("Random")
+            ))
+        } else {
+            None
+        };
+        if let Some(r) = &early_random {
+            wand_deps.insert("Random", r.id());
+        }
         let objects = enroll!(
             ObjectsCodec,
             "Objects",
@@ -2178,14 +2251,17 @@ impl OwnerBridge {
         );
         // I1 Random has an independently approved native read provider. The
         // historical idle Random owner continues to pin the D5 Wasm caller.
-        let random_owner = enroll!(
-            RandomCodec,
-            "Random",
-            8,
-            random,
-            random_module.unwrap_or(caller),
-            basic_ports("Random")
-        );
+        let random_owner = match early_random {
+            Some(r) => r,
+            None => enroll!(
+                RandomCodec,
+                "Random",
+                8,
+                random,
+                random_module.unwrap_or(caller),
+                basic_ports("Random")
+            ),
+        };
         let keys = BTreeSet::from([
             host.publication_resource(),
             billing.resource("admit")?,
@@ -2237,7 +2313,8 @@ impl OwnerBridge {
             keys
         };
         for slot in 0..profile_caller(&config).dependencies.len() {
-            let random_slot = config.wand_ports
+            let random_slot = !config.wand_charge_attempts
+                && config.wand_ports
                 && profile_caller(&config).dependencies[slot]
                     .capability
                     .provider
@@ -2263,7 +2340,7 @@ impl OwnerBridge {
                                 .endpoint
                                 == item_lifetime::COMMAND
                         {
-                            item_lifetime::grant_keys(&keys)
+                            item_lifetime::grant_keys(&keys, &config)
                         } else {
                             keys.clone()
                         },
@@ -2524,9 +2601,11 @@ mod tests {
     mod admission;
     mod fresh_process;
     mod wand_aggregate;
+    mod wand_charge_attempts;
     mod wand_commands;
     mod wand_gameplay;
     mod wand_ports;
+    mod wand_workflow_replies;
     use super::*;
     use nethacked_arena::ItemLocation;
     use nethacked_types::Buc;

@@ -3,6 +3,7 @@
 use super::*;
 use wand::*;
 
+mod charge;
 mod domains;
 mod rng;
 pub use rng::{AuthenticatedWandRng, RawDrawError};
@@ -35,6 +36,7 @@ const READS: [(&str, &str); 6] = [
 impl CommandQuery {
     pub(crate) fn route(&self) -> (&'static str, &'static str) {
         READS[match self {
+            Self::WrestPreview => return ("Random", "wand_random"),
             Self::LifetimeObject { .. } => return ("Objects", super::item_lifetime::OBJECT_QUERY),
             Self::LifetimeBilling { .. } => return ("Billing", super::item_lifetime::BILL_QUERY),
             Self::Object { .. } => 0,
@@ -74,7 +76,12 @@ pub(super) fn read_routes(c: &OwnerBridgeConfig) -> Vec<(&'static str, &'static 
     routes
 }
 pub(super) fn random_id(c: &OwnerBridgeConfig) -> &'static [u8] {
-    if c.wand_workflows {
+    if c.wand_charge_attempts {
+        return b"NetHackED atomic charge random_id i5c v1";
+    }
+    if c.wand_workflow_replies {
+        b"NetHackED detailed workflow random owner adapter i5 v1"
+    } else if c.wand_workflows {
         b"NetHackED workflow random owner adapter i4 v2"
     } else if c.wand_gameplay {
         super::wand_gameplay::RANDOM_ID
@@ -85,7 +92,12 @@ pub(super) fn random_id(c: &OwnerBridgeConfig) -> &'static [u8] {
     }
 }
 pub(super) fn caller_id(c: &OwnerBridgeConfig) -> &'static [u8] {
-    if c.wand_workflows {
+    if c.wand_charge_attempts {
+        return b"NetHackED atomic charge caller_id i5c v1";
+    }
+    if c.wand_workflow_replies {
+        b"NetHackED detailed workflow-capable wand caller i5 v1"
+    } else if c.wand_workflows {
         b"NetHackED workflow-capable wand caller i4 v2"
     } else if c.wand_extensions {
         super::wand_extensions::CALLER_ID
@@ -100,6 +112,9 @@ pub(super) fn caller_id(c: &OwnerBridgeConfig) -> &'static [u8] {
     }
 }
 pub(super) fn random_capability(c: &OwnerBridgeConfig) -> Capability {
+    if c.wand_charge_attempts {
+        return profile_capability(c, "wand_random");
+    }
     if !c.wand_commands {
         return super::random_capability();
     }
@@ -115,6 +130,9 @@ pub(super) fn random_capability(c: &OwnerBridgeConfig) -> Capability {
     }
 }
 fn command_capability(c: &OwnerBridgeConfig, endpoint: &str) -> Capability {
+    if c.wand_charge_attempts {
+        return profile_capability(c, endpoint);
+    }
     if endpoint == COMMANDS[5].1 {
         Capability {
             provider: if c.wand_gameplay {
@@ -155,6 +173,11 @@ pub(super) fn provider_manifest(mut m: Manifest, c: &OwnerBridgeConfig) -> Manif
         for (_, name) in COMMANDS.iter().filter(|r| r.0 != "Random") {
             m.exports.insert((*name).into(), command_endpoint());
         }
+    }
+    if c.wand_charge_attempts {
+        m.exports
+            .insert("wand_random".into(), endpoint(Access::Read));
+        m.exports.insert(COMMANDS[5].1.into(), command_endpoint());
     }
     if c.item_lifetime {
         m.exports
@@ -206,7 +229,16 @@ pub(super) fn command_count(name: &str, c: &OwnerBridgeConfig) -> usize {
         0
     }
 }
-fn declarations(name: &str, command: &str) -> Vec<(&'static str, &'static str, u8)> {
+fn declarations(
+    name: &str,
+    command: &str,
+    c: &OwnerBridgeConfig,
+) -> Vec<(&'static str, &'static str, u8)> {
+    if c.wand_charge_attempts && name == "Objects" {
+        let mut d = wand_declarations("Objects");
+        d.push(("Random", "wand_random", 108));
+        return d;
+    }
     if command == "wand_clock_energy_v2" {
         return vec![];
     }
@@ -230,7 +262,7 @@ pub(super) fn add_ports(
 ) -> owners::Result<BTreeMap<String, Port>> {
     if c.wand_commands {
         for (_, command) in COMMANDS.iter().filter(|r| r.0 == name) {
-            let dependencies = declarations(name, command)
+            let dependencies = declarations(name, command, c)
                 .into_iter()
                 .map(|(owner, query, tag)| {
                     Ok(Dependency {
@@ -255,7 +287,7 @@ pub(super) fn validate_ports(
     }
     for (_, command) in COMMANDS.iter().filter(|r| r.0 == name) {
         let p = ports.get(*command).ok_or(owners::Error::Schema)?;
-        let deps = declarations(name, command);
+        let deps = declarations(name, command, c);
         if p.major != 1
             || p.access != Access::Write
             || p.dependencies.len() != deps.len()
@@ -337,15 +369,17 @@ pub(super) fn query_owner(
             r.hero.query(name, request, obs, view)
         }
         CommandQuery::Session => r.session.query(name, request, obs, view),
+        CommandQuery::WrestPreview => r.random.query(name, request, obs, view),
         CommandQuery::Gameplay(super::wand_gameplay::FactQuery::Clock)
         | CommandQuery::TimerAdmission { .. } => r.clock.query(name, request, obs, view),
     }
 }
-pub(super) fn dependencies(command: &WandOwnerCommand) -> Vec<WandQuery> {
+pub(super) fn dependencies(command: &WandOwnerCommand, c: &OwnerBridgeConfig) -> Vec<WandQuery> {
     match command {
         WandOwnerCommand::Objects(op) => {
             let (residency, cells) = match op {
-                ObjectOperation::PositiveCharge { target, .. } => (target.residency, vec![]),
+                ObjectOperation::ChargeAttempt { target, .. }
+                | ObjectOperation::PositiveCharge { target, .. } => (target.residency, vec![]),
                 ObjectOperation::PublishGenerated { object } => (
                     Residency::Active,
                     match object.location {
@@ -354,7 +388,17 @@ pub(super) fn dependencies(command: &WandOwnerCommand) -> Vec<WandQuery> {
                     },
                 ),
             };
-            vec![WandQuery::Hero, WandQuery::Session, geo(residency, cells)]
+            let mut q = vec![WandQuery::Hero, WandQuery::Session, geo(residency, cells)];
+            if c.wand_charge_attempts {
+                q.push(
+                    if matches!(op, ObjectOperation::ChargeAttempt { expected: 0, .. }) {
+                        WandQuery::Command(CommandQuery::WrestPreview)
+                    } else {
+                        WandQuery::Random { draws: 0 }
+                    },
+                );
+            }
+            q
         }
         WandOwnerCommand::Actors(op) => vec![
             geo(
@@ -386,10 +430,15 @@ fn gather(
     r: &SourceRoutes,
     command: &WandOwnerCommand,
     view: &CallerView,
+    c: &OwnerBridgeConfig,
 ) -> owners::Result<(Vec<Observation>, Vec<Observation>)> {
     let mut immediate = vec![];
+    if let WandOwnerCommand::Objects(ObjectOperation::ChargeAttempt { target, expected }) = command
+    {
+        charge::preflight(r, *target, *expected, view, c)?;
+    }
     let mut provenance = vec![];
-    for q in dependencies(command) {
+    for q in dependencies(command, c) {
         let (o, nested) = r.observe(&q, view)?;
         provenance.extend(nested);
         immediate.push(o.clone());
@@ -479,6 +528,7 @@ pub(super) fn capture_accounting(
     if c.wand_commands {
         a.register(accounting_identity(), POLICY, Rc::new(CommandAccounting))?;
     }
+    charge::capture(a, c)?;
     super::item_lifetime::capture_accounting(a, c)?;
     Ok(())
 }
@@ -491,6 +541,7 @@ pub(super) fn restore_accounting(
             Ok(Rc::new(CommandAccounting))
         })?;
     }
+    charge::restore(a, c)?;
     super::item_lifetime::restore_accounting(a, c)?;
     Ok(())
 }
@@ -516,9 +567,14 @@ fn execute(
     if OwnerWitness::from(&r.stamp(owner)?) != request.expected_owner {
         return Err(owners::Error::Stale);
     }
-    let (immediate, provenance) = gather(r, &request.command, view)?;
+    let (immediate, provenance) = gather(r, &request.command, view, c)?;
     if witnesses(&provenance) != request.dependencies {
         return Err(owners::Error::Stale);
+    }
+    if let WandOwnerCommand::Objects(ObjectOperation::ChargeAttempt { target, expected }) =
+        request.command
+    {
+        return charge::execute(r, target, expected, immediate, provenance, view, c);
     }
     if let WandOwnerCommand::Clock(ClockOperation::StartCorpseTimer { target, kind, due }) =
         &request.command
@@ -671,6 +727,32 @@ pub(super) fn random_resources(
     }
     Ok(keys)
 }
+pub(super) fn charge_grant_names(
+    names: BTreeSet<String>,
+    c: &OwnerBridgeConfig,
+) -> BTreeSet<String> {
+    if !c.wand_charge_attempts {
+        return names;
+    }
+    names
+        .into_iter()
+        .map(|key| {
+            let Some((number, tail)) = key.split_once('.') else {
+                return key;
+            };
+            let number = match number {
+                "4" => 5,
+                "5" => 6,
+                "6" => 7,
+                "7" => 8,
+                "8" => 9,
+                "9" => 4,
+                _ => return key,
+            };
+            format!("{number}.{tail}")
+        })
+        .collect()
+}
 pub(super) fn gameplay_grant_names(c: &OwnerBridgeConfig) -> BTreeSet<String> {
     let mut expected: BTreeSet<String> = [
         "publication",
@@ -707,7 +789,7 @@ pub(super) fn gameplay_grant_names(c: &OwnerBridgeConfig) -> BTreeSet<String> {
             ));
         }
     }
-    expected
+    charge_grant_names(expected, c)
 }
 pub(super) fn approve_grant(
     caller: &kp::SavedModule,
@@ -734,7 +816,8 @@ pub(super) fn approve_grant(
         }
         return Err(kernel::Error::Authority);
     }
-    let random = dep.capability.provider == random_capability(c).provider;
+    let random =
+        !c.wand_charge_attempts && dep.capability.provider == random_capability(c).provider;
     if caller.manifest != manifest
         || target.manifest
             != if random {
@@ -752,15 +835,18 @@ pub(super) fn approve_grant(
     let namespace = &keys.first().ok_or(kernel::Error::Authority)?.owner;
     let mut expected = gameplay_grant_names(c);
     if c.item_lifetime && dep.capability.endpoint == super::item_lifetime::COMMAND {
-        expected = super::item_lifetime::grant_names();
+        expected = charge_grant_names(super::item_lifetime::grant_names(), c);
     }
     if random {
-        expected = [
-            "publication".into(),
-            "9.wand_random".into(),
-            format!("9.{}", COMMANDS[5].1),
-        ]
-        .into();
+        expected = charge_grant_names(
+            [
+                "publication".into(),
+                "9.wand_random".into(),
+                format!("9.{}", COMMANDS[5].1),
+            ]
+            .into(),
+            c,
+        );
     }
     if namespace
         .strip_prefix("owners-")
@@ -802,8 +888,13 @@ impl OwnerBridge {
             }?;
             Ok::<_, owners::Error>(OwnerWitness::from(&stamp))
         })??;
+        if let WandOwnerCommand::Objects(ObjectOperation::ChargeAttempt { target, expected }) =
+            &command
+        {
+            charge::guard_bridge(self, *target, *expected)?;
+        }
         let mut guards = vec![];
-        for query in dependencies(&command) {
+        for query in dependencies(&command, &self.config) {
             let o = self.observe_wand(WandRead {
                 query,
                 expected_owner: None,
@@ -899,7 +990,7 @@ pub(super) fn admit_profile(
     if c.wand_workflows {
         expected.push((
             super::wand_workflows::manifest(c),
-            super::wand_workflows::CODE,
+            super::wand_workflows::code(c),
         ));
     }
     let guests: Vec<_> = registry

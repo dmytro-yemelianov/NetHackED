@@ -9,11 +9,11 @@
   "live_handles": [],
   "acceptance": {
     "A1": "passed_generic_runtime_1fc3290",
-    "A2": "passed_live_executable_entityfree_host_1fc3290;NetHack_host_integration_pending_M5",
+    "A2": "passed_generic_entityfree_host_and_live_populated_NetHack_extension_M5_I5",
     "A3": "passed_generic_runtime_resources_checkpoint;passed_autonomous_owner_runtime_owner_services_checkpoint",
-    "A4": "passed_generic_authoritative_workflow_checkpoint;NetHack_host_integration_pending_M5;retained_owner_workflow_timer_composition_passed",
+    "A4": "passed_authoritative_workflow_and_actual_separate_process_NetHack_retained_execution_M5_I5",
     "A5": "passed_fresh_process_combined_native_heterogeneous_pending_legacy_checkpoint",
-    "A6": "pending",
+    "A6": "passed_scoped_native_module_integration_M5_I5; full_C_parity_separate",
     "A7": "pending",
     "A8": "pending"
   },
@@ -570,7 +570,7 @@
     },
     {
       "id": "M5",
-      "status": "in_progress",
+      "status": "accepted",
       "depends_on": [
         "M4"
       ],
@@ -767,7 +767,7 @@
         },
         {
           "id": "M5-I5",
-          "status": "partial",
+          "status": "accepted_in_this_commit",
           "depends_on": [
             "M5-I4"
           ],
@@ -785,7 +785,7 @@
             "mechanical_clippy_proof": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I5/mechanical-clippy-proof.json",
             "gates": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I5/final-gates",
             "next": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I5/next-i5b.json",
-            "status": "accepted_in_this_commit",
+            "status": "accepted_in_f8a03f1",
             "workspace_passed": 1499,
             "source_digest": "10ae2145b85aeed9d46818f229cb06dccc57e126e9d27043d58f9544fd38af8c",
             "non_documentation_inputs": 543,
@@ -798,20 +798,84 @@
             ],
             "delivery_source": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I5/delivery-source.json"
           },
-          "remaining": [
-            "I5b versioned retained events and authentic protocol/shop-evidence replays",
-            "I5c opted-in source-correct same-selected charge/effect/lifetime route",
-            "I5d actual separate-process witness and final aggregate acceptance"
-          ]
+          "remaining": [],
+          "i5b_checkpoint": {
+            "stage": "I5b",
+            "status": "accepted_with_I5_final_integration",
+            "parent": "f8a03f101420b7d30de7082e0545c5a76df47816",
+            "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I5b/review/answer.txt",
+            "review_sha256": "2c9d0121d3246206a7b85666440a924809fd33ebfe10037493149f07d4259d9e",
+            "review_usage": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I5b/review/usage.json",
+            "focused_passed": 74,
+            "focused_log": "/private/tmp/netrust-i5b-scoped.log",
+            "clippy_log": "/private/tmp/netrust-i5b-clippy.log",
+            "strict_I5_acceptance": "partial",
+            "replay_boundary": "Actual consumed Batch, authenticated stale billing observations, and original complete consumed-shop retirement proposal against fresh facts. Does not separately prove duplicate billing after successful object admission.",
+            "limits": "No default bounds, dependencies or golden changes. Historical boolean-only workflow artifacts remain supported.",
+            "next": [
+              "I5c atomic opt-in signed charge/effect/same-object retirement",
+              "I5d separate OS process, independent trusted approval transport, final aggregate gates"
+            ],
+            "source_bindings": [
+              {
+                "path": "crates/nethacked-sim/src/owner_persistence/runtime.rs",
+                "sha256": "23c474b07c686cdfcba8e0a39c26e5e2055eda39b4ddb2b7aa348c8d51dc8592"
+              },
+              {
+                "path": "crates/nethacked-sim/src/owner_persistence/runtime/item_lifetime.rs",
+                "sha256": "39bedbfc8f4301116660a6ee55cdbb619c821399f8aef259d3103253c716d76b"
+              },
+              {
+                "path": "crates/nethacked-sim/src/owner_persistence/runtime/wand_commands.rs",
+                "sha256": "c5d8b70e774d0cfd781320efda0ecd7c492b1d22fdea8659536b4ffc7db04ebe"
+              },
+              {
+                "path": "crates/nethacked-sim/src/owner_persistence/runtime/wand_workflows.rs",
+                "sha256": "4bcb089453b9a502f7378e1856903c39cbe4a24de07f3ea182af369a7312394c"
+              },
+              {
+                "path": "crates/nethacked-sim/src/owner_persistence/runtime/tests/wand_workflow_replies.rs",
+                "sha256": "c76028d6393ce3db15588a8828f58e83eb30429582b3c2765236a8e9117fdf08"
+              }
+            ]
+          },
+          "integration_checkpoint": {
+            "stage": "I5b-I5d",
+            "status": "accepted_in_this_commit",
+            "parent": "f8a03f101420b7d30de7082e0545c5a76df47816",
+            "focused_passed": 80,
+            "runner_passed": 33,
+            "workspace_passed": 1510,
+            "checks": 12,
+            "source_digest": "f1697e983d91e85ef536404e361a125182b9ccbf2fc1b873d0058dd38157df00",
+            "non_documentation_inputs": 548,
+            "goldens": [
+              "golden_vanilla_event_logs_are_unchanged",
+              "golden_vanilla_bestiary_combat_is_unchanged",
+              "golden_vanilla_runs_are_unchanged"
+            ],
+            "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I5cd/review/answer.txt",
+            "review_sha256": "605bcf8d3885034269dead0ea5114a3e7c26698b363a1e1f331b91cde7b778a1",
+            "review_usage": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I5cd/review/usage.json",
+            "full_gate_acceptance": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I5cd/final-gates/accepted.json",
+            "full_gate_acceptance_sha256": "8aeca34e175903a1da6386a668760537b5f6789035f5c199c9034701955ab7bb",
+            "delivery_source": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I5cd/delivery-source.json",
+            "scope": "Native module architecture acceptance, optional ordinary uncursed hero-carried horizontal canonical fire charge/effect/retirement; full C/P11a parity and general naming remain open.",
+            "trust_boundary": "Separate explicit trusted host approval record; canonical format is not authentication and no durable authenticated store is claimed."
+          }
         }
-      ]
+      ],
+      "integration_checkpoint": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I5cd/architecture-checkpoint.json"
     },
     {
       "id": "M6",
       "status": "planned",
       "depends_on": [
         "M5"
-      ]
+      ],
+      "plan": "docs/plans/2026-10-10-default-domain-migration.md",
+      "next_unit": "M6-I1 cancellation frame/equipment reconciliation/derived AC",
+      "planning_status": "draft; precise implementation packet required before source changes"
     },
     {
       "id": "M7",
@@ -1062,8 +1126,8 @@
       "next_adjustment": "B2 Sol/medium wiring to checkpoint API map; no nine-owner/kernel/history audit; isolate concrete missing fallibility seam."
     },
     "native_goal_observed_status": "paused; manual continuation authorized, no full completion claim",
-    "latest_phase": "I5a supported aggregate accepted; strictI5partial, I5b next",
-    "next_action": "I5b narrow retained-result and authentic replay interface; preserve historical artifacts, no accepted module/history audit",
+    "latest_phase": "M5 I5 integration accepted; M6 default domain migration next",
+    "next_action": "M6 bounded default-dispatch migration specification using accepted owner services; no kernel or C parity re-audit",
     "i4_review_adjustment": "Actual output hard cap2000: required complementary final reviews with each sealed source chunk<=1500 tokens and one read per chunk. CORE8885/WIRING11178 source tokens; no full history/baseline reread. Completed uncached32647/35975 and output1110/886 respectively; root usage unknown.",
     "i5_review": {
       "model": "gpt-6-astra",
@@ -1075,6 +1139,33 @@
       "commands": 3,
       "wall_seconds": 37.84,
       "verdict": "PASS_added_fixture; strictI5partial",
+      "root_usage": "unknown"
+    },
+    "i5b_review": {
+      "model": "gpt-6-astra",
+      "effort": "medium",
+      "source_tokens": 10505,
+      "chunks": 8,
+      "uncached_input": 43044,
+      "cached_input": 439680,
+      "output": 1725,
+      "commands": 14,
+      "wall_seconds": 78.244,
+      "verdict": "PASS_I5b_only",
+      "root_usage": "unknown"
+    },
+    "i5cd_review": {
+      "model": "gpt-6-astra",
+      "effort": "medium",
+      "source_tokens": 20433,
+      "inline_context_tokens": 21300,
+      "instruction_tokens": 536,
+      "uncached_input": 43323,
+      "cached_input": 41984,
+      "output": 1192,
+      "commands": 1,
+      "wall_seconds": 49.28,
+      "verdict": "I5c PASS; I5d PASS; source_packet runner PASS",
       "root_usage": "unknown"
     }
   },
@@ -1093,7 +1184,7 @@
       "concrete owner-state persistence contract",
       "NetHack domain migration"
     ],
-    "current_limit": "D1-D6/A5 persistence accepted. M5-M7 production domain migration and final architecture audit remain.",
+    "current_limit": "D1-D6/A5 persistence and scoped M5 module integration accepted. M6 default domain migration and M7 final architecture audit remain.",
     "implementation_claim": true,
     "contract": "docs/plans/2026-10-08-autonomous-ownership-contract.md",
     "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-services-checkpoint.json",
