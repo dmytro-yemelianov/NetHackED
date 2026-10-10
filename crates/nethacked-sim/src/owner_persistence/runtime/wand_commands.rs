@@ -76,6 +76,9 @@ pub(super) fn read_routes(c: &OwnerBridgeConfig) -> Vec<(&'static str, &'static 
     routes
 }
 pub(super) fn random_id(c: &OwnerBridgeConfig) -> &'static [u8] {
+    if c.monster_ticks {
+        return b"NetHackED monster random_id M6-I3 v1";
+    }
     if c.regeneration_ticks {
         return b"NetHackED regeneration random_id M6-I2c v1";
     }
@@ -104,6 +107,9 @@ pub(super) fn random_id(c: &OwnerBridgeConfig) -> &'static [u8] {
     }
 }
 pub(super) fn caller_id(c: &OwnerBridgeConfig) -> &'static [u8] {
+    if c.monster_ticks {
+        return b"NetHackED monster caller M6-I3 v1";
+    }
     if c.dressing_ticks {
         return b"NetHackED dressing caller M6-I2d v1";
     }
@@ -562,6 +568,7 @@ pub(super) fn capture_accounting(
     super::metabolic_ticks::capture(a, c)?;
     super::regeneration_ticks::capture(a, c)?;
     super::timer_ticks::capture(a, c)?;
+    super::monster_ticks::capture(a, c)?;
     super::item_lifetime::capture_accounting(a, c)?;
     Ok(())
 }
@@ -581,6 +588,7 @@ pub(super) fn restore_accounting(
     super::metabolic_ticks::restore(a, c)?;
     super::regeneration_ticks::restore(a, c)?;
     super::timer_ticks::restore(a, c)?;
+    super::monster_ticks::restore(a, c)?;
     super::item_lifetime::restore_accounting(a, c)?;
     Ok(())
 }

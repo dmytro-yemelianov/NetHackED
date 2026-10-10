@@ -25,6 +25,7 @@ pub mod default_commands;
 pub mod dressing_ticks;
 pub(crate) mod item_lifetime;
 pub mod metabolic_ticks;
+pub mod monster_ticks;
 pub mod passive_ticks;
 mod phase_support;
 pub mod regeneration_ticks;
@@ -97,6 +98,7 @@ pub struct OwnerBridgeConfig {
     pub(super) regeneration_ticks: bool,
     pub(super) dressing_ticks: bool,
     pub(super) timer_ticks: bool,
+    pub(super) monster_ticks: bool,
     pub(super) workflow_approval: Option<wand_workflows::WandWorkflowApproval>,
     pub(super) wand_extensions: bool,
     pub(super) extension_catalog: Vec<wand_extensions::WandGuest>,
@@ -128,6 +130,7 @@ impl OwnerBridgeConfig {
             regeneration_ticks: false,
             dressing_ticks: false,
             timer_ticks: false,
+            monster_ticks: false,
             workflow_approval: None,
             wand_extensions: false,
             extension_catalog: vec![],
@@ -245,7 +248,15 @@ impl OwnerBridgeConfig {
         c.timer_ticks = true;
         c
     }
+    pub fn with_monster_ticks(self) -> Self {
+        let mut c = self.with_timer_ticks();
+        c.monster_ticks = true;
+        c
+    }
     fn schema_tag(&self, tag: u8) -> u8 {
+        if self.monster_ticks {
+            return tag + 90;
+        }
         if self.timer_ticks {
             return tag + 100;
         }
@@ -280,6 +291,9 @@ impl OwnerBridgeConfig {
         }
     }
     fn codec_identity(&self, name: &str, tag: u8) -> op::CodecIdentity {
+        if self.monster_ticks {
+            return identity(&format!("{name}-monster-i3"), tag + 90);
+        }
         if self.timer_ticks {
             return identity(&format!("{name}-timer-i2e"), tag + 100);
         }
@@ -332,6 +346,13 @@ impl OwnerBridgeConfig {
         }
     }
     fn session_binding(&self) -> pr::Binding {
+        if self.monster_ticks {
+            return pr::Binding {
+                name: "native-monster-i3-session".into(),
+                version: 15,
+                artifact: [90; 32],
+            };
+        }
         if self.timer_ticks {
             return pr::Binding {
                 name: "native-timer-i2e-session".into(),
@@ -2166,6 +2187,10 @@ fn restore_configuration(
 fn approved_profiles(config: &OwnerBridgeConfig) -> Vec<OwnerBridgeConfig> {
     let mut profiles = vec![config.clone()];
     let mut config = config.clone();
+    if config.monster_ticks {
+        config.monster_ticks = false;
+        profiles.push(config.clone());
+    }
     if config.timer_ticks {
         config.timer_ticks = false;
         profiles.push(config.clone());
@@ -2912,6 +2937,7 @@ mod tests {
     mod dressing_ticks;
     mod fresh_process;
     mod metabolic_ticks;
+    mod monster_ticks;
     mod passive_ticks;
     mod regeneration_ticks;
     mod timer_ticks;
