@@ -1,5 +1,6 @@
 //! Action execution and dispatch across modular domain handlers.
 
+pub mod command_frame;
 pub mod doors;
 pub mod economy;
 pub mod engrave;

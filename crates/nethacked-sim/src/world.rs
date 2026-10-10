@@ -3,8 +3,7 @@ use std::sync::Arc;
 
 use nethacked_arena::{ActorId, EntityArena, ItemId, ItemLocation};
 use nethacked_core::{
-    armor_base_ac, energy::SchedulerState, find_ac, nutrition::hunger_of_nutrition, HungerState,
-    SpellKind,
+    energy::SchedulerState, nutrition::hunger_of_nutrition, HungerState, SpellKind,
 };
 use nethacked_data::ruleset::{Ruleset, RulesetRef};
 use nethacked_data::{CharacterConfig, ItemKindId, MonsterSpeciesId, RoleId};
@@ -798,28 +797,15 @@ impl SimulationWorld {
     /// Only explicitly worn, directly carried armor contributes. Divine
     /// protection is subtracted as C `u.ublessed`.
     pub fn compute_hero_ac(&self) -> i32 {
-        let mut worn_armor = Vec::new();
-        for &(slot, id) in &self.equipment.armor {
-            let Some(item) = self.arena.items.get(id) else {
-                continue;
-            };
-            if item.location != ItemLocation::CarriedBy(self.player_id) {
-                continue;
-            }
-            let base_ac = self
-                .ruleset
-                .item(&item.name)
-                .and_then(|def| def.armor.as_ref())
-                .filter(|armor| armor.slot == slot)
-                .map(|armor| armor.base_ac)
-                .or_else(|| {
-                    (slot != nethacked_core::ac::ArmorSlot::Suit).then(|| armor_base_ac(&item.name))
-                });
-            if let Some(base_ac) = base_ac {
-                worn_armor.push((base_ac, item.enchantment as i32, item.erosion));
-            }
-        }
-        find_ac(10, &worn_armor, self.divine_protection as i32)
+        crate::actions::command_frame::armor_class(
+            &self.equipment,
+            &crate::actions::command_frame::BorrowedObjects {
+                items: &self.arena.items,
+                rules: &self.ruleset,
+            },
+            self.player_id,
+            self.divine_protection,
+        )
     }
 
     /// Recomputes the hero's AC and updates `player.ac`.

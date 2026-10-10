@@ -21,6 +21,7 @@ use std::{
     sync::Arc,
 };
 
+pub mod default_commands;
 pub(crate) mod item_lifetime;
 pub(crate) mod wand_commands;
 pub(crate) mod wand_extensions;
@@ -84,6 +85,7 @@ pub struct OwnerBridgeConfig {
     pub(super) wand_workflows: bool,
     pub(super) wand_workflow_replies: bool,
     pub(super) wand_charge_attempts: bool,
+    pub(super) default_commands: bool,
     pub(super) workflow_approval: Option<wand_workflows::WandWorkflowApproval>,
     pub(super) wand_extensions: bool,
     pub(super) extension_catalog: Vec<wand_extensions::WandGuest>,
@@ -109,6 +111,7 @@ impl OwnerBridgeConfig {
             wand_workflows: false,
             wand_workflow_replies: false,
             wand_charge_attempts: false,
+            default_commands: false,
             workflow_approval: None,
             wand_extensions: false,
             extension_catalog: vec![],
@@ -196,7 +199,15 @@ impl OwnerBridgeConfig {
         c.wand_charge_attempts = true;
         c
     }
+    pub fn with_default_commands(self) -> Self {
+        let mut c = self.with_wand_gameplay();
+        c.default_commands = true;
+        c
+    }
     fn schema_tag(&self, tag: u8) -> u8 {
+        if self.default_commands {
+            return tag + 180;
+        }
         if self.wand_charge_attempts {
             return tag + 240;
         }
@@ -213,6 +224,9 @@ impl OwnerBridgeConfig {
         }
     }
     fn codec_identity(&self, name: &str, tag: u8) -> op::CodecIdentity {
+        if self.default_commands {
+            return identity(&format!("{name}-default-frame-i1"), tag + 180);
+        }
         if self.wand_charge_attempts {
             return identity(&format!("{name}-charge-i5c"), tag + 240);
         }
@@ -247,6 +261,13 @@ impl OwnerBridgeConfig {
         }
     }
     fn session_binding(&self) -> pr::Binding {
+        if self.default_commands {
+            return pr::Binding {
+                name: "native-default-frame-i1-session".into(),
+                version: 9,
+                artifact: [180; 32],
+            };
+        }
         if self.wand_charge_attempts {
             return pr::Binding {
                 name: "native-wand-charge-i5c-session".into(),
@@ -465,6 +486,9 @@ macro_rules! codec {
                 request: &[u8],
                 obs: &[Observation],
             ) -> owners::Result<Vec<u8>> {
+                if self.0.default_commands && name.starts_with("frame_") {
+                    return default_commands::FrameDomain::frame_query(s, name, request, &self.0);
+                }
                 if self.0.wand_ports && name.starts_with("wand_") {
                     return wand::query(s, name, request, obs, &self.0);
                 }
@@ -482,6 +506,11 @@ macro_rules! codec {
                 request: &[u8],
                 obs: &[Observation],
             ) -> owners::Result<Proposal<$state>> {
+                if self.0.default_commands && name.starts_with("frame_") {
+                    return default_commands::FrameDomain::frame_prepare(
+                        s, name, request, obs, &self.0,
+                    );
+                }
                 wand_commands::prepare(s, name, request, obs, &self.0)
             }
         }
@@ -1082,7 +1111,12 @@ fn add_wand_ports(
             .collect::<owners::Result<Vec<_>>>()?;
         ports.insert((*query).into(), port(Access::Read, dependencies));
     }
-    wand_commands::add_ports(name, ports, ids, config)
+    default_commands::add_ports(
+        name,
+        wand_commands::add_ports(name, ports, ids, config)?,
+        ids,
+        config,
+    )
 }
 fn validate_wand_ports(
     name: &str,
@@ -1090,6 +1124,14 @@ fn validate_wand_ports(
     policy: &QueryPolicy,
     config: &OwnerBridgeConfig,
 ) -> owners::Result<()> {
+    default_commands::validate_ports(name, ports, config)?;
+    let filtered;
+    let ports = if config.default_commands {
+        filtered = default_commands::filtered_ports(ports);
+        &filtered
+    } else {
+        ports
+    };
     if *policy != QueryPolicy::Noncacheable {
         return Err(owners::Error::Schema);
     }
@@ -1154,6 +1196,9 @@ fn profile_limits(config: &OwnerBridgeConfig) -> kernel::Limits {
     limits
 }
 fn profile_native_id(config: &OwnerBridgeConfig) -> &'static [u8] {
+    if config.default_commands {
+        return b"NetHackED bounded default frame M6-I1 v1";
+    }
     if config.wand_charge_attempts {
         return b"NetHackED atomic charge owner adapters i5c v1";
     }
@@ -1214,7 +1259,7 @@ fn profile_provider(config: &OwnerBridgeConfig) -> Manifest {
             );
         }
     }
-    wand_commands::provider_manifest(m, config)
+    default_commands::provider(wand_commands::provider_manifest(m, config), config)
 }
 fn profile_caller(config: &OwnerBridgeConfig) -> Manifest {
     if !config.wand_ports {
@@ -1250,7 +1295,7 @@ fn profile_caller(config: &OwnerBridgeConfig) -> Manifest {
             ..endpoint(Access::Read)
         },
     );
-    wand_commands::caller_manifest(m, config)
+    default_commands::caller(wand_commands::caller_manifest(m, config), config)
 }
 fn random_capability() -> Capability {
     Capability {
@@ -1495,6 +1540,7 @@ fn profile_native_ports(
     if config.wand_charge_attempts {
         ports = wand_commands::random_ports(ports, handles.clone(), config.clone());
     }
+    let ports = default_commands::native(ports, handles.clone(), &config);
     wand_commands::native_ports(ports, handles, config)
 }
 fn read_route(
@@ -1538,13 +1584,16 @@ fn caller_native_ports(config: OwnerBridgeConfig) -> BTreeMap<String, NativePort
             + 3;
         view.call_dependency(slot, request)
     });
-    wand_commands::caller_ports(
-        [
-            ("query".into(), query),
-            ("run".into(), run),
-            ("observe".into(), observe),
-        ]
-        .into(),
+    default_commands::caller_ports(
+        wand_commands::caller_ports(
+            [
+                ("query".into(), query),
+                ("run".into(), run),
+                ("observe".into(), observe),
+            ]
+            .into(),
+            &config,
+        ),
         &config,
     )
 }
@@ -1914,6 +1963,10 @@ fn restore_configuration(
 fn approved_profiles(config: &OwnerBridgeConfig) -> Vec<OwnerBridgeConfig> {
     let mut profiles = vec![config.clone()];
     let mut config = config.clone();
+    if config.default_commands {
+        config.default_commands = false;
+        profiles.push(config.clone());
+    }
     if config.wand_charge_attempts {
         config.wand_charge_attempts = false;
         profiles.push(config.clone());
@@ -2312,6 +2365,25 @@ impl OwnerBridge {
         } else {
             keys
         };
+        let keys = if config.default_commands {
+            let mut keys = keys;
+            let r = SourceRoutes {
+                host: host.clone(),
+                objects: objects.clone(),
+                hero: hero.clone(),
+                session: session_owner.clone(),
+                billing: billing.clone(),
+                geography: geography_owner.clone(),
+                actors: actors_owner.clone(),
+                equipment: equipment_owner.clone(),
+                clock: clock_owner.clone(),
+                random: random_owner.clone(),
+            };
+            keys.extend(default_commands::resources(&r)?);
+            keys
+        } else {
+            keys
+        };
         for slot in 0..profile_caller(&config).dependencies.len() {
             let random_slot = !config.wand_charge_attempts
                 && config.wand_ports
@@ -2599,6 +2671,7 @@ impl OwnerBridge {
 #[cfg(test)]
 mod tests {
     mod admission;
+    mod default_commands;
     mod fresh_process;
     mod wand_aggregate;
     mod wand_charge_attempts;

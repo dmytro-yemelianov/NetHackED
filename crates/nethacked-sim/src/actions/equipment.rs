@@ -189,36 +189,14 @@ impl SimulationWorld {
 
     /// C cancel_doff/cancel_don: vanished/relocated items cannot be callback targets.
     pub(crate) fn reconcile_equipment(&mut self) {
-        let arena = &self.arena;
-        let player = self.player_id;
-        let rules = &self.ruleset;
-        let mut seen = Vec::new();
-        self.equipment.armor.retain(|(slot, id)| {
-            let valid = arena.items.get(*id).is_some_and(|item| {
-                item.location == ItemLocation::CarriedBy(player)
-                    && item.class == ItemClass::Armor
-                    && rules
-                        .item(&item.name)
-                        .and_then(|def| def.armor.as_ref())
-                        .is_none_or(|armor| armor.slot == *slot)
-            }) && !seen.contains(slot);
-            if valid {
-                seen.push(*slot);
-            }
-            valid
-        });
-        if self.equipment.dressing.as_ref().is_some_and(|d| {
-            d.turns_left == 0
-                || self.equipment.worn(ArmorSlot::Suit) != Some(d.item)
-                || !arena
-                    .items
-                    .get(d.item)
-                    .and_then(|item| rules.item(&item.name))
-                    .and_then(|def| def.armor.as_ref())
-                    .is_some_and(|armor| armor.slot == ArmorSlot::Suit)
-        }) {
-            self.equipment.dressing = None;
-        }
+        self.equipment = super::command_frame::reconcile(
+            &self.equipment,
+            &super::command_frame::BorrowedObjects {
+                items: &self.arena.items,
+                rules: &self.ruleset,
+            },
+            self.player_id,
+        );
     }
 
     /// C dig.c:2164–2167 removes worn references before corpse disposal.
