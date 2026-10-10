@@ -137,39 +137,39 @@ impl MonsterOutcome {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-struct ClockFacts {
-    turn: u64,
+pub(super) struct ClockFacts {
+    pub(super) turn: u64,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-struct ObjectFacts {
-    items: ItemStorage,
+pub(super) struct ObjectFacts {
+    pub(super) items: ItemStorage,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-struct ActorFacts {
-    actors: ActorStorage,
+pub(super) struct ActorFacts {
+    pub(super) actors: ActorStorage,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-struct HeroFacts {
-    player: ActorId,
-    alignment_record: i32,
-    luck: i32,
-    genocide: GenocideRegistry,
+pub(super) struct HeroFacts {
+    pub(super) player: ActorId,
+    pub(super) alignment_record: i32,
+    pub(super) luck: i32,
+    pub(super) genocide: GenocideRegistry,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-struct GeographyFacts {
-    level: DungeonLevel,
-    branch: BranchId,
-    depth: usize,
+pub(super) struct GeographyFacts {
+    pub(super) level: DungeonLevel,
+    pub(super) branch: BranchId,
+    pub(super) depth: usize,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-struct SessionFacts {
-    role: String,
-    locale: Locale,
+pub(super) struct SessionFacts {
+    pub(super) role: String,
+    pub(super) locale: Locale,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -205,7 +205,21 @@ fn outcome(
     let h: HeroFacts = fact(obs, 3)?;
     let g: GeographyFacts = fact(obs, 7)?;
     let s: SessionFacts = fact(obs, 8)?;
+    compute_monster_outcome(actor_id, &c, &o, &a, &h, &g, &s, config, rng)
+}
 
+#[allow(clippy::too_many_arguments, clippy::manual_filter)]
+pub(super) fn compute_monster_outcome(
+    actor_id: ActorId,
+    c: &ClockFacts,
+    o: &ObjectFacts,
+    a: &ActorFacts,
+    h: &HeroFacts,
+    g: &GeographyFacts,
+    s: &SessionFacts,
+    config: &OwnerBridgeConfig,
+    rng: &mut rand_chacha::ChaCha8Rng,
+) -> owners::Result<MonsterOutcome> {
     let Some(hero_actor) = a.actors.get(h.player).cloned() else {
         return Err(owners::Error::Unsupported);
     };

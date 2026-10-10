@@ -187,7 +187,7 @@ impl SimulationWorld {
 
 /// C `heal = (u.ulevel + ACURR(A_CON)) > rn2(100)`; the natural path
 /// always draws once when eligible, even when the sum guarantees healing.
-fn natural_hp_heal(level: u32, con: i32, mut rn2: impl FnMut(u32) -> u32) -> u32 {
+pub(crate) fn natural_hp_heal(level: u32, con: i32, mut rn2: impl FnMut(u32) -> u32) -> u32 {
     crate::passive_regeneration::heal(level, con, rn2(100))
 }
 

@@ -21,6 +21,7 @@ use std::{
     sync::Arc,
 };
 
+pub mod action_time;
 pub mod default_commands;
 pub mod dressing_ticks;
 pub(crate) mod item_lifetime;
@@ -99,6 +100,7 @@ pub struct OwnerBridgeConfig {
     pub(super) dressing_ticks: bool,
     pub(super) timer_ticks: bool,
     pub(super) monster_ticks: bool,
+    pub(super) wait_action: bool,
     pub(super) workflow_approval: Option<wand_workflows::WandWorkflowApproval>,
     pub(super) wand_extensions: bool,
     pub(super) extension_catalog: Vec<wand_extensions::WandGuest>,
@@ -131,6 +133,7 @@ impl OwnerBridgeConfig {
             dressing_ticks: false,
             timer_ticks: false,
             monster_ticks: false,
+            wait_action: false,
             workflow_approval: None,
             wand_extensions: false,
             extension_catalog: vec![],
@@ -253,7 +256,15 @@ impl OwnerBridgeConfig {
         c.monster_ticks = true;
         c
     }
+    pub fn with_wait_action(self) -> Self {
+        let mut c = self.with_monster_ticks();
+        c.wait_action = true;
+        c
+    }
     fn schema_tag(&self, tag: u8) -> u8 {
+        if self.wait_action {
+            return tag + 80;
+        }
         if self.monster_ticks {
             return tag + 90;
         }
@@ -291,6 +302,9 @@ impl OwnerBridgeConfig {
         }
     }
     fn codec_identity(&self, name: &str, tag: u8) -> op::CodecIdentity {
+        if self.wait_action {
+            return identity(&format!("{name}-wait-i4"), tag + 80);
+        }
         if self.monster_ticks {
             return identity(&format!("{name}-monster-i3"), tag + 90);
         }
@@ -346,6 +360,13 @@ impl OwnerBridgeConfig {
         }
     }
     fn session_binding(&self) -> pr::Binding {
+        if self.wait_action {
+            return pr::Binding {
+                name: "native-wait-i4-session".into(),
+                version: 16,
+                artifact: [80; 32],
+            };
+        }
         if self.monster_ticks {
             return pr::Binding {
                 name: "native-monster-i3-session".into(),
@@ -2187,6 +2208,10 @@ fn restore_configuration(
 fn approved_profiles(config: &OwnerBridgeConfig) -> Vec<OwnerBridgeConfig> {
     let mut profiles = vec![config.clone()];
     let mut config = config.clone();
+    if config.wait_action {
+        config.wait_action = false;
+        profiles.push(config.clone());
+    }
     if config.monster_ticks {
         config.monster_ticks = false;
         profiles.push(config.clone());
@@ -2932,6 +2957,7 @@ impl OwnerBridge {
 
 #[cfg(test)]
 mod tests {
+    mod action_time;
     mod admission;
     mod default_commands;
     mod dressing_ticks;

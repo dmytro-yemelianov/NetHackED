@@ -773,9 +773,21 @@ impl OwnerBridge {
         &self,
         action: nethacked_core::ActionAst,
     ) -> Result<DefaultReply, OwnerBridgeError> {
-        if !matches!(action, nethacked_core::ActionAst::CancelZapSelection) {
-            return Err(owners::Error::Unsupported.into());
+        match action {
+            nethacked_core::ActionAst::CancelZapSelection => {
+                self.execute_default_cancel(self.prepare_default_cancel()?)
+            }
+            nethacked_core::ActionAst::Wait => {
+                if !self.config.wait_action {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply = self.step_wait()?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            _ => Err(owners::Error::Unsupported.into()),
         }
-        self.execute_default_cancel(self.prepare_default_cancel()?)
     }
 }
