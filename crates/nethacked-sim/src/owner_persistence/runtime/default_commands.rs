@@ -787,6 +787,60 @@ impl OwnerBridge {
                     error: None,
                 })
             }
+            nethacked_core::ActionAst::Move(dir) => {
+                if !self.config.movement_actions {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply =
+                    self.step_movement(super::movement_actions::MovementAction::Move(dir))?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::OpenDoor(coord) => {
+                if !self.config.movement_actions {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply =
+                    self.step_movement(super::movement_actions::MovementAction::OpenDoor(coord))?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::CloseDoor(coord) => {
+                if !self.config.movement_actions {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply =
+                    self.step_movement(super::movement_actions::MovementAction::CloseDoor(coord))?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::Search => {
+                if !self.config.movement_actions {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply = self.step_movement(super::movement_actions::MovementAction::Search)?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::Untrap(coord) => {
+                if !self.config.movement_actions {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply =
+                    self.step_movement(super::movement_actions::MovementAction::Untrap(coord))?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
             _ => Err(owners::Error::Unsupported.into()),
         }
     }

@@ -27,6 +27,7 @@ pub mod dressing_ticks;
 pub(crate) mod item_lifetime;
 pub mod metabolic_ticks;
 pub mod monster_ticks;
+pub mod movement_actions;
 pub mod passive_ticks;
 mod phase_support;
 pub mod regeneration_ticks;
@@ -101,6 +102,7 @@ pub struct OwnerBridgeConfig {
     pub(super) timer_ticks: bool,
     pub(super) monster_ticks: bool,
     pub(super) wait_action: bool,
+    pub(super) movement_actions: bool,
     pub(super) workflow_approval: Option<wand_workflows::WandWorkflowApproval>,
     pub(super) wand_extensions: bool,
     pub(super) extension_catalog: Vec<wand_extensions::WandGuest>,
@@ -134,6 +136,7 @@ impl OwnerBridgeConfig {
             timer_ticks: false,
             monster_ticks: false,
             wait_action: false,
+            movement_actions: false,
             workflow_approval: None,
             wand_extensions: false,
             extension_catalog: vec![],
@@ -261,7 +264,15 @@ impl OwnerBridgeConfig {
         c.wait_action = true;
         c
     }
+    pub fn with_movement_actions(self) -> Self {
+        let mut c = self.with_wait_action();
+        c.movement_actions = true;
+        c
+    }
     fn schema_tag(&self, tag: u8) -> u8 {
+        if self.movement_actions {
+            return tag + 70;
+        }
         if self.wait_action {
             return tag + 80;
         }
@@ -302,6 +313,9 @@ impl OwnerBridgeConfig {
         }
     }
     fn codec_identity(&self, name: &str, tag: u8) -> op::CodecIdentity {
+        if self.movement_actions {
+            return identity(&format!("{name}-movement-i5"), tag + 70);
+        }
         if self.wait_action {
             return identity(&format!("{name}-wait-i4"), tag + 80);
         }
@@ -360,6 +374,13 @@ impl OwnerBridgeConfig {
         }
     }
     fn session_binding(&self) -> pr::Binding {
+        if self.movement_actions {
+            return pr::Binding {
+                name: "native-movement-i5-session".into(),
+                version: 17,
+                artifact: [70; 32],
+            };
+        }
         if self.wait_action {
             return pr::Binding {
                 name: "native-wait-i4-session".into(),
@@ -2208,6 +2229,10 @@ fn restore_configuration(
 fn approved_profiles(config: &OwnerBridgeConfig) -> Vec<OwnerBridgeConfig> {
     let mut profiles = vec![config.clone()];
     let mut config = config.clone();
+    if config.movement_actions {
+        config.movement_actions = false;
+        profiles.push(config.clone());
+    }
     if config.wait_action {
         config.wait_action = false;
         profiles.push(config.clone());
@@ -2964,6 +2989,7 @@ mod tests {
     mod fresh_process;
     mod metabolic_ticks;
     mod monster_ticks;
+    mod movement_actions;
     mod passive_ticks;
     mod regeneration_ticks;
     mod timer_ticks;
