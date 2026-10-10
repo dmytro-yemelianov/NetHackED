@@ -59,14 +59,14 @@ pub(crate) fn roll_peace_minded(input: &PeaceMindedInput, rng: &mut impl Rng) ->
 
 /// Whether the monster is a temple priest (C `ispriest`): the sim creates the
 /// aligned cleric only as a temple priest (Minetown, Moloch's Sanctum).
-fn is_temple_priest(ruleset: &Ruleset, mon: &ActorRecord) -> bool {
+pub(crate) fn is_temple_priest(ruleset: &Ruleset, mon: &ActorRecord) -> bool {
     ruleset
         .monster_for_actor(mon)
         .is_some_and(|a| a.id == Some(MonsterSpeciesId::ALIGNED_CLERIC))
 }
 
 /// C `isshk`: the sim's shopkeepers are the `shopkeeper` species.
-fn is_shopkeeper(ruleset: &Ruleset, mon: &ActorRecord) -> bool {
+pub(crate) fn is_shopkeeper(ruleset: &Ruleset, mon: &ActorRecord) -> bool {
     ruleset
         .monster_for_actor(mon)
         .is_some_and(|a| a.id == Some(MonsterSpeciesId::SHOPKEEPER))

@@ -577,6 +577,7 @@ pub(super) fn capture_accounting(
     super::monster_ticks::capture(a, c)?;
     super::action_time::capture(a, c)?;
     super::movement_actions::capture(a, c)?;
+    super::inventory_actions::capture(a, c)?;
     super::item_lifetime::capture_accounting(a, c)?;
     Ok(())
 }
@@ -599,6 +600,7 @@ pub(super) fn restore_accounting(
     super::monster_ticks::restore(a, c)?;
     super::action_time::restore(a, c)?;
     super::movement_actions::restore(a, c)?;
+    super::inventory_actions::restore(a, c)?;
     super::item_lifetime::restore_accounting(a, c)?;
     Ok(())
 }

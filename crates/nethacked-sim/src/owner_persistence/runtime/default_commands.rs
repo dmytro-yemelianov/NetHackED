@@ -841,6 +841,119 @@ impl OwnerBridge {
                     error: None,
                 })
             }
+            nethacked_core::ActionAst::PickUp => {
+                if !self.config.inventory_actions {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply =
+                    self.step_inventory(super::inventory_actions::InventoryAction::PickUp)?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::Drop(idx) => {
+                if !self.config.inventory_actions {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply =
+                    self.step_inventory(super::inventory_actions::InventoryAction::Drop(idx))?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::Wield(idx) => {
+                if !self.config.inventory_actions {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply =
+                    self.step_inventory(super::inventory_actions::InventoryAction::Wield(idx))?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::Wear(idx) => {
+                if !self.config.inventory_actions {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply =
+                    self.step_inventory(super::inventory_actions::InventoryAction::Wear(idx))?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::Remove(idx) => {
+                if !self.config.inventory_actions {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply =
+                    self.step_inventory(super::inventory_actions::InventoryAction::Remove(idx))?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::PutInContainer {
+                item_index,
+                container_index,
+            } => {
+                if !self.config.inventory_actions {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply = self.step_inventory(
+                    super::inventory_actions::InventoryAction::PutInContainer {
+                        item_index,
+                        container_index,
+                    },
+                )?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::TakeFromContainer {
+                container_index,
+                item_index,
+            } => {
+                if !self.config.inventory_actions {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply = self.step_inventory(
+                    super::inventory_actions::InventoryAction::TakeFromContainer {
+                        container_index,
+                        item_index,
+                    },
+                )?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::Quiver(idx) => {
+                if !self.config.inventory_actions {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply =
+                    self.step_inventory(super::inventory_actions::InventoryAction::Quiver(idx))?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::Fire(dir) => {
+                if !self.config.inventory_actions {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply =
+                    self.step_inventory(super::inventory_actions::InventoryAction::Fire(dir))?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
             _ => Err(owners::Error::Unsupported.into()),
         }
     }
