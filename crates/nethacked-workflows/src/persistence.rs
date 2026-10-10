@@ -110,15 +110,15 @@ struct CaptureParticipant {
 /// participant Rc allocations. Every operation and participant needs one entry.
 pub struct CaptureCatalog {
     owner: Workflows,
-    programs: Vec<CaptureProgram>,
-    participants: Vec<CaptureParticipant>,
+    programs: RefCell<Vec<CaptureProgram>>,
+    participants: RefCell<Vec<CaptureParticipant>>,
 }
 impl CaptureCatalog {
     pub fn new(owner: &Workflows) -> Self {
         Self {
             owner: owner.clone(),
-            programs: vec![],
-            participants: vec![],
+            programs: RefCell::new(vec![]),
+            participants: RefCell::new(vec![]),
         }
     }
     pub fn program(
@@ -127,13 +127,25 @@ impl CaptureCatalog {
         identity: Identity,
         codec: Rc<dyn StateCodec>,
     ) -> Result<()> {
+        self.enroll_program(operation, identity, codec)
+    }
+    /// Enroll a live operation through an immutable session service handle.
+    pub fn enroll_program(
+        &self,
+        operation: OperationId,
+        identity: Identity,
+        codec: Rc<dyn StateCodec>,
+    ) -> Result<()> {
+        let _session = self.owner.1.enter().map_err(|_| Error::Busy)?;
         identity.check()?;
         codec.identity().check()?;
         self.owner.inspect(operation)?;
-        if self.programs.iter().any(|p| p.operation == operation) {
+        let mut programs = self.programs.try_borrow_mut().map_err(|_| Error::Busy)?;
+        if programs.iter().any(|p| p.operation == operation) {
             return Err(Error::Status);
         }
-        self.programs.push(CaptureProgram {
+        self.owner.1.changed().map_err(|_| Error::Busy)?;
+        programs.push(CaptureProgram {
             operation,
             identity,
             codec,
@@ -145,12 +157,20 @@ impl CaptureCatalog {
         build: Identity,
         value: Rc<dyn CleanupParticipant>,
     ) -> Result<()> {
+        self.enroll_participant(build, value)
+    }
+    pub fn enroll_participant(
+        &self,
+        build: Identity,
+        value: Rc<dyn CleanupParticipant>,
+    ) -> Result<()> {
+        let _session = self.owner.1.enter().map_err(|_| Error::Busy)?;
         build.check()?;
-        if self.participants.len() >= 65_536
-            || self
-                .participants
-                .iter()
-                .any(|p| Rc::ptr_eq(&p.value, &value))
+        let mut participants = self
+            .participants
+            .try_borrow_mut()
+            .map_err(|_| Error::Busy)?;
+        if participants.len() >= 65_536 || participants.iter().any(|p| Rc::ptr_eq(&p.value, &value))
         {
             return Err(Error::Bounds);
         }
@@ -162,7 +182,8 @@ impl CaptureCatalog {
         {
             return Err(Error::Unknown);
         }
-        self.participants.push(CaptureParticipant { build, value });
+        self.owner.1.changed().map_err(|_| Error::Busy)?;
+        participants.push(CaptureParticipant { build, value });
         Ok(())
     }
 }
@@ -267,15 +288,16 @@ impl Workflows {
             return Err(Error::Status);
         }
         let inner = self.0.try_borrow_mut().map_err(|_| Error::Busy)?;
-        if catalog.programs.len() != inner.frames.len() {
+        let programs = catalog.programs.try_borrow().map_err(|_| Error::Busy)?;
+        let catalog_participants = catalog.participants.try_borrow().map_err(|_| Error::Busy)?;
+        if programs.len() != inner.frames.len() {
             return Err(Error::Status);
         }
         let mut participants = vec![];
         let mut used = BTreeSet::new();
         let mut frames = vec![];
         for o in inner.frames.values() {
-            let registered = catalog
-                .programs
+            let registered = programs
                 .iter()
                 .find(|p| p.operation == o.frame.operation)
                 .ok_or(Error::Status)?;
@@ -305,8 +327,7 @@ impl Workflows {
             let mut enrollment = vec![];
             let mut identities = vec![];
             for participant in &o.participants {
-                let (i, entry) = catalog
-                    .participants
+                let (i, entry) = catalog_participants
                     .iter()
                     .enumerate()
                     .find(|(_, c)| Rc::ptr_eq(&c.value, participant))
@@ -344,7 +365,7 @@ impl Workflows {
                 cleaned: o.cleaned,
             });
         }
-        if used.len() != catalog.participants.len() {
+        if used.len() != catalog_participants.len() {
             return Err(Error::Status);
         }
         participants.sort_by_key(|p| p.id);
@@ -833,7 +854,7 @@ impl RestoreCatalog {
                 .find(|(p, _)| p == &f.program)
                 .ok_or(Error::Status)?
                 .1;
-            capture.programs.push(CaptureProgram {
+            capture.programs.get_mut().push(CaptureProgram {
                 operation: binding.operation(),
                 identity: f.program.identity.clone(),
                 codec: codec.clone(),
@@ -845,6 +866,7 @@ impl RestoreCatalog {
             for (index, participant) in owned.participants.iter().enumerate() {
                 if capture
                     .participants
+                    .get_mut()
                     .iter()
                     .any(|p| Rc::ptr_eq(&p.value, participant))
                 {
@@ -855,7 +877,7 @@ impl RestoreCatalog {
                     .iter()
                     .find(|p| p.id == f.participants[index])
                     .ok_or(Error::Status)?;
-                capture.participants.push(CaptureParticipant {
+                capture.participants.get_mut().push(CaptureParticipant {
                     build: row.build.clone(),
                     value: participant.clone(),
                 });

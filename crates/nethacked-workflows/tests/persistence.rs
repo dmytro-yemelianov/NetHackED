@@ -1123,3 +1123,48 @@ fn later_rebuild_catalog_refusal_precedes_remapping_and_rolls_back_enrollment() 
         .unwrap();
     assert!(stage.rebuild(&k, &mapped, &complete).is_ok());
 }
+
+#[test]
+fn shared_live_catalog_enrollment_captures_actual_frames_and_refuses_duplicates() {
+    let mut f = Fixture::new();
+    let cleanup = participant(None, false);
+    let program = f.program("one");
+    let id = f
+        .workflows
+        .start(
+            &mut f.kernel,
+            program,
+            b"live".to_vec(),
+            vec![cleanup.clone()],
+        )
+        .unwrap();
+    // The session exposes this catalog through an immutable service handle.
+    let catalog = &f.catalog;
+    catalog
+        .enroll_program(id, identity("live-program"), Rc::new(Opaque))
+        .unwrap();
+    catalog
+        .enroll_participant(identity("live-cleanup"), cleanup.clone())
+        .unwrap();
+    let (_, before) = f.save();
+    assert_eq!(before.frames.len(), 1);
+    assert_eq!(before.participants.len(), 1);
+    assert_eq!(before.frames[0].state, b"live");
+    assert_eq!(
+        f.catalog
+            .enroll_program(id, identity("duplicate"), Rc::new(Opaque)),
+        Err(WError::Status)
+    );
+    assert_eq!(
+        f.catalog.enroll_participant(identity("duplicate"), cleanup),
+        Err(WError::Bounds)
+    );
+    let (_, after) = f.save();
+    assert_eq!(after, before);
+    let other = Workflows::new(nethacked_workflows::Limits::default()).unwrap();
+    let alien = CaptureCatalog::new(&other);
+    assert_eq!(
+        alien.enroll_program(id, identity("alien"), Rc::new(Opaque)),
+        Err(WError::Unknown)
+    );
+}

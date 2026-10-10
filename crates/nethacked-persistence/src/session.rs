@@ -518,6 +518,11 @@ impl Handles {
             .clone())
     }
 }
+/// Detached native observations; saved input does not supply approval.
+pub struct LiveWorkflowEvidence {
+    pub contexts: Vec<nethacked_kernel::persistence::SavedOperationContext>,
+    pub checkpoint: workflows::Checkpoint,
+}
 /// One capture plan for the actual, separately allocated service instances.
 #[derive(Default)]
 pub struct Services {
@@ -640,11 +645,10 @@ impl HostBundle {
         }
         Ok(())
     }
-    fn save(&self, epoch: u64, limits: SaveLimits) -> Result<Vec<u8>, runtime::Error> {
-        let mut kernel = self
-            .kernel
-            .try_borrow_mut()
-            .map_err(|_| runtime::Error::Busy)?;
+    fn kernel_checkpoint(
+        &self,
+        kernel: &mut Kernel,
+    ) -> Result<nethacked_kernel::persistence::KernelSnapshot, runtime::Error> {
         let mut roots = owners::ExecutionRoots::default();
         for owner in &self.owners {
             owner.roots(&mut roots)?;
@@ -656,14 +660,14 @@ impl HostBundle {
             roots.inputs(s).map_err(refused)?;
         }
         roots.preflight(&self.host).map_err(refused)?;
-        let mut operations = roots.live_operations(&kernel).map_err(refused)?;
+        let mut operations = roots.live_operations(kernel).map_err(refused)?;
         let mut cleanup = vec![self.host.cleanup_identity().map_err(refused)?];
         let mut resources = vec![self.host.publication_resource()];
         if let Some((s, _)) = &self.services.workflows {
-            operations.extend(s.persistence_enrollment(&kernel).map_err(refused)?);
+            operations.extend(s.persistence_enrollment(kernel).map_err(refused)?);
         }
         if let Some(s) = &self.services.inputs {
-            operations.extend(s.persistence_operations_for(&kernel).map_err(refused)?);
+            operations.extend(s.persistence_operations_for(kernel).map_err(refused)?);
             cleanup.extend(s.persistence_cleanups().map_err(refused)?);
             resources.extend(s.persistence_resources().map_err(refused)?);
         }
@@ -674,7 +678,7 @@ impl HostBundle {
         }
         let mut history = Vec::new();
         if let Some((s, _)) = &self.services.resources {
-            operations.extend(s.persistence_enrollment(&kernel).map_err(refused)?);
+            operations.extend(s.persistence_enrollment(kernel).map_err(refused)?);
             history.extend(s.persistence_history().map_err(refused)?);
             let (c, r) = s.persistence_roots().map_err(refused)?;
             cleanup.push(c);
@@ -686,14 +690,21 @@ impl HostBundle {
                 unique.push(op);
             }
         }
-        let snapshot = kernel
+        kernel
             .kernel_snapshot_with_resource_roots(
                 &roots.enrollment(&unique),
                 &cleanup,
                 &resources,
                 &history,
             )
-            .map_err(refused)?;
+            .map_err(refused)
+    }
+    fn save(&self, epoch: u64, limits: SaveLimits) -> Result<Vec<u8>, runtime::Error> {
+        let mut kernel = self
+            .kernel
+            .try_borrow_mut()
+            .map_err(|_| runtime::Error::Busy)?;
+        let snapshot = self.kernel_checkpoint(&mut kernel)?;
         let index = kernel.execution_capture_index(&snapshot).map_err(refused)?;
         let mut execution = self.host.capture_execution(&index).map_err(refused)?;
         let mut adapter = self
@@ -1673,6 +1684,34 @@ impl Session {
     ) -> Result<Vec<u8>, runtime::Error> {
         self.slot
             .capture(key, |bundle| bundle.save(self.slot.capture_epoch(), limits))
+    }
+    /// Detached observations of actual enrolled live workflows. This does not
+    /// parse saved bytes or grant restore permission; the trusted application
+    /// explicitly decides whether to retain them as independent approval.
+    pub fn live_workflow_evidence(
+        &self,
+        key: &runtime::AuthorityKey,
+    ) -> Result<LiveWorkflowEvidence, runtime::Error> {
+        self.slot.capture(key, |bundle| {
+            let mut kernel = bundle
+                .kernel
+                .try_borrow_mut()
+                .map_err(|_| runtime::Error::Busy)?;
+            let snapshot = bundle.kernel_checkpoint(&mut kernel)?;
+            let (service, catalog) = bundle
+                .services
+                .workflows
+                .as_ref()
+                .ok_or(runtime::Error::MissingBinding)?;
+            let index = kernel.execution_capture_index(&snapshot).map_err(refused)?;
+            let checkpoint = service
+                .capture_local(&kernel, &index, catalog)
+                .map_err(refused)?;
+            Ok(LiveWorkflowEvidence {
+                contexts: snapshot.operation_contexts().map_err(refused)?,
+                checkpoint,
+            })
+        })
     }
     pub fn with_runtime<R>(
         &self,

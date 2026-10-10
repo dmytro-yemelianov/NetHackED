@@ -736,9 +736,11 @@ fn execute(
     c: &OwnerBridgeConfig,
 ) -> owners::Result<Vec<u8>> {
     if !c.item_lifetime
-        || view
-            .operation()
-            .is_none_or(|o| o.phase() != ENDPOINT && o.phase() != super::wand_gameplay::ENDPOINT)
+        || view.operation().is_none_or(|o| {
+            o.phase() != ENDPOINT
+                && o.phase() != super::wand_gameplay::ENDPOINT
+                && !super::wand_workflows::allows_gameplay_owner(c, view, o.phase())
+        })
     {
         return Err(owners::Error::Authority);
     }
@@ -810,7 +812,13 @@ impl OwnerBridge {
         let bytes = encode(&LifetimeAction { survivor }, MAX_REQUEST_BYTES)?;
         let response = self.session.with_runtime(&self.credential.borrow(), |b| {
             let caller = bridge_caller(b, &self.config)?;
-            if b.kernel()?.manifest(caller)? != &profile_caller(&self.config) {
+            if !approved_profiles(&self.config).iter().any(|profile| {
+                profile.item_lifetime
+                    && b.kernel().is_ok_and(|k| {
+                        k.manifest(caller)
+                            .is_ok_and(|m| m == &profile_caller(profile))
+                    })
+            }) {
                 return Err(owners::Error::Unsupported.into());
             }
             let cleanup = b.host().cleanup_identity()?;

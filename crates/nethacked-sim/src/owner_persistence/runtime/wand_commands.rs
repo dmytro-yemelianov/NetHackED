@@ -74,7 +74,9 @@ pub(super) fn read_routes(c: &OwnerBridgeConfig) -> Vec<(&'static str, &'static 
     routes
 }
 pub(super) fn random_id(c: &OwnerBridgeConfig) -> &'static [u8] {
-    if c.wand_gameplay {
+    if c.wand_workflows {
+        b"NetHackED workflow random owner adapter i4 v2"
+    } else if c.wand_gameplay {
         super::wand_gameplay::RANDOM_ID
     } else if c.wand_commands {
         RANDOM_ID
@@ -83,7 +85,11 @@ pub(super) fn random_id(c: &OwnerBridgeConfig) -> &'static [u8] {
     }
 }
 pub(super) fn caller_id(c: &OwnerBridgeConfig) -> &'static [u8] {
-    if c.item_lifetime {
+    if c.wand_workflows {
+        b"NetHackED workflow-capable wand caller i4 v2"
+    } else if c.wand_extensions {
+        super::wand_extensions::CALLER_ID
+    } else if c.item_lifetime {
         super::item_lifetime::CALLER_ID
     } else if c.wand_gameplay {
         super::wand_gameplay::CALLER_ID
@@ -179,6 +185,16 @@ pub(super) fn caller_manifest(mut m: Manifest, c: &OwnerBridgeConfig) -> Manifes
             m.exports
                 .insert(super::item_lifetime::ENDPOINT.into(), command_endpoint());
         }
+    }
+    if c.wand_extensions {
+        m.dependencies.push(kernel::Dependency {
+            capability: Capability {
+                provider: super::wand_extensions::POLICY_PROVIDER.into(),
+                endpoint: super::wand_extensions::POLICY_ENDPOINT.into(),
+                major: 1,
+            },
+            access: Access::Read,
+        });
     }
     m
 }
@@ -488,6 +504,7 @@ fn execute(
     let operation = view.operation().ok_or(owners::Error::Authority)?;
     if operation.phase() != endpoint
         && !(c.wand_gameplay && operation.phase() == super::wand_gameplay::ENDPOINT)
+        && !super::wand_workflows::allows_gameplay_owner(c, view, operation.phase())
     {
         return Err(owners::Error::Authority);
     }
@@ -654,34 +671,7 @@ pub(super) fn random_resources(
     }
     Ok(keys)
 }
-pub(super) fn approve_grant(
-    caller: &kp::SavedModule,
-    slot: usize,
-    target: &kp::SavedModule,
-    requested: &Authority,
-    c: &OwnerBridgeConfig,
-) -> kernel::Result<Authority> {
-    let manifest = profile_caller(c);
-    let dep = manifest
-        .dependencies
-        .get(slot)
-        .ok_or(kernel::Error::Authority)?;
-    let random = dep.capability.provider == random_capability(c).provider;
-    if caller.manifest != manifest
-        || target.manifest
-            != if random {
-                random_manifest(c)
-            } else {
-                profile_provider(c)
-            }
-        || requested.access != dep.access
-    {
-        return Err(kernel::Error::Authority);
-    }
-    let Scope::Keys(keys) = &requested.scope else {
-        return Err(kernel::Error::Authority);
-    };
-    let namespace = &keys.first().ok_or(kernel::Error::Authority)?.owner;
+pub(super) fn gameplay_grant_names(c: &OwnerBridgeConfig) -> BTreeSet<String> {
     let mut expected: BTreeSet<String> = [
         "publication",
         "2.query",
@@ -717,6 +707,50 @@ pub(super) fn approve_grant(
             ));
         }
     }
+    expected
+}
+pub(super) fn approve_grant(
+    caller: &kp::SavedModule,
+    slot: usize,
+    target: &kp::SavedModule,
+    requested: &Authority,
+    c: &OwnerBridgeConfig,
+) -> kernel::Result<Authority> {
+    let manifest = profile_caller(c);
+    let dep = manifest
+        .dependencies
+        .get(slot)
+        .ok_or(kernel::Error::Authority)?;
+    if c.wand_extensions && dep.capability.provider == super::wand_extensions::POLICY_PROVIDER {
+        if caller.manifest == manifest
+            && target.manifest == super::wand_extensions::policy_manifest()
+            && requested
+                == &(Authority {
+                    access: Access::Read,
+                    scope: Scope::Keys(BTreeSet::new()),
+                })
+        {
+            return Ok(requested.clone());
+        }
+        return Err(kernel::Error::Authority);
+    }
+    let random = dep.capability.provider == random_capability(c).provider;
+    if caller.manifest != manifest
+        || target.manifest
+            != if random {
+                random_manifest(c)
+            } else {
+                profile_provider(c)
+            }
+        || requested.access != dep.access
+    {
+        return Err(kernel::Error::Authority);
+    }
+    let Scope::Keys(keys) = &requested.scope else {
+        return Err(kernel::Error::Authority);
+    };
+    let namespace = &keys.first().ok_or(kernel::Error::Authority)?.owner;
+    let mut expected = gameplay_grant_names(c);
     if c.item_lifetime && dep.capability.endpoint == super::item_lifetime::COMMAND {
         expected = super::item_lifetime::grant_names();
     }
@@ -851,13 +885,41 @@ pub(super) fn admit_profile(
         return Ok(());
     }
     use sha2::{Digest, Sha256};
-    let expected = [
+    let mut expected = vec![
         (profile_provider(c), profile_native_id(c)),
         (random_manifest(c), random_id(c)),
         (profile_caller(c), caller_id(c)),
     ];
-    if registry.modules.len() != expected.len() {
+    if c.wand_extensions {
+        expected.push((
+            super::wand_extensions::policy_manifest(),
+            super::wand_extensions::POLICY_ID,
+        ));
+    }
+    if c.wand_workflows {
+        expected.push((
+            super::wand_workflows::manifest(c),
+            super::wand_workflows::CODE,
+        ));
+    }
+    let guests: Vec<_> = registry
+        .modules
+        .iter()
+        .filter(|m| m.executable == kp::Executable::WasmAbiV1)
+        .collect();
+    if registry.modules.len() != expected.len() + guests.len()
+        || (!c.wand_extensions && !guests.is_empty())
+    {
         return Err(owners::Error::Schema);
+    }
+    for guest in guests {
+        if !c
+            .extension_catalog
+            .iter()
+            .any(|g| g.manifest() == &guest.manifest)
+        {
+            return Err(owners::Error::Schema);
+        }
     }
     for (manifest, identity) in expected {
         let saved = registry

@@ -880,13 +880,34 @@ impl Kernel {
         Ok(())
     }
 
-    /// Detach affects future calls only. Retained chains continue to own code.
-    pub fn managed_detach(&mut self, extension: ModuleHandle) -> Result<()> {
-        let _session = self.session.enter().map_err(crate::kernel::session_error)?;
+    /// Read-only admission before a session opens its mutation boundary.
+    pub fn preflight_detach(&self, extension: ModuleHandle) -> Result<()> {
+        self.session
+            .check_live()
+            .map_err(crate::kernel::session_error)?;
         self.registration(extension)?;
         if !self.extensions.values().any(|(h, _)| *h == extension) {
             return Err(Error::MissingDependency);
         }
+        Ok(())
+    }
+    pub fn preflight_attach(&self, extension: ModuleHandle) -> Result<()> {
+        self.session
+            .check_live()
+            .map_err(crate::kernel::session_error)?;
+        let reg = self.registration(extension)?;
+        let (target, endpoint, _) = reg.attachment.as_ref().ok_or(Error::InvalidManifest)?;
+        self.registration(*target)?;
+        if self.extensions.contains_key(&(*target, endpoint.clone())) {
+            return Err(Error::Duplicate);
+        }
+        Ok(())
+    }
+
+    /// Detach affects future calls only. Retained chains continue to own code.
+    pub fn managed_detach(&mut self, extension: ModuleHandle) -> Result<()> {
+        let _session = self.session.enter().map_err(crate::kernel::session_error)?;
+        self.preflight_detach(extension)?;
         self.session
             .changed()
             .map_err(crate::kernel::session_error)?;
@@ -897,13 +918,10 @@ impl Kernel {
     /// Reattach only to the original, still installed target incarnation.
     pub fn managed_attach(&mut self, extension: ModuleHandle) -> Result<()> {
         let _session = self.session.enter().map_err(crate::kernel::session_error)?;
+        self.preflight_attach(extension)?;
         let reg = self.registration(extension)?;
         let (target, endpoint, export) = reg.attachment.clone().ok_or(Error::InvalidManifest)?;
-        self.registration(target)?;
         let key = (target, endpoint);
-        if self.extensions.contains_key(&key) {
-            return Err(Error::Duplicate);
-        }
         self.session
             .changed()
             .map_err(crate::kernel::session_error)?;

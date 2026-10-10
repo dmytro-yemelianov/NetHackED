@@ -250,11 +250,30 @@ pub(super) fn caller_ports(
         ports.insert(
             ENDPOINT.into(),
             Rc::new(move |bytes, view| {
-                let action: WandGameplayAction =
-                    decode(bytes, MAX_REQUEST_BYTES).map_err(native_refusal)?;
-                if view.operation().is_none_or(|o| o.phase() != ENDPOINT) {
+                if view.operation().is_none_or(|o| {
+                    o.phase() != ENDPOINT
+                        && !(c.wand_workflows
+                            && o.phase() == super::wand_workflows::EXECUTE
+                            && super::wand_workflows::artifact(&c)
+                                .ok()
+                                .is_some_and(|a| view.caller_artifact() == Some(a)))
+                }) {
                     return Err(kernel::Error::Authority);
                 }
+                let transformed;
+                let bytes = if c.wand_extensions {
+                    let slot = profile_caller(&c)
+                        .dependencies
+                        .len()
+                        .checked_sub(1)
+                        .ok_or(kernel::Error::MissingDependency)?;
+                    transformed = view.call_dependency(slot, bytes)?;
+                    transformed.as_slice()
+                } else {
+                    bytes
+                };
+                let action: WandGameplayAction =
+                    decode(bytes, MAX_REQUEST_BYTES).map_err(native_refusal)?;
                 let invocation = Invocation {
                     view,
                     config: &c,
@@ -443,15 +462,10 @@ impl OwnerBridge {
         let response = self.session.with_runtime(&self.credential.borrow(), |b| {
             let caller = bridge_caller(b, &self.config)?;
             let manifest = b.kernel()?.manifest(caller)?.clone();
-            let mut profile = self.config.clone();
-            if profile.item_lifetime {
-                let mut historical = profile.clone();
-                historical.item_lifetime = false;
-                if manifest == profile_caller(&historical) {
-                    profile = historical;
-                }
-            }
-            if manifest != profile_caller(&profile) {
+            if !approved_profiles(&self.config)
+                .iter()
+                .any(|profile| profile.wand_gameplay && manifest == profile_caller(profile))
+            {
                 return Err(owners::Error::Unsupported.into());
             }
             let cleanup = b.host().cleanup_identity()?;

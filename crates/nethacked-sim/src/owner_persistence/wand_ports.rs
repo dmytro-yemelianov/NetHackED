@@ -405,3 +405,7 @@ pub use super::runtime::wand_gameplay::{
     ActorQuery, FactQuery, FactValue, GameplayError, ObjectQuery, SemanticDraw, WandGameplayAction,
     WandGameplayReply,
 };
+
+pub use super::runtime::wand_extensions::WandGuest;
+
+pub use super::runtime::wand_workflows::WandWorkflowApproval;

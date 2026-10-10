@@ -23,7 +23,9 @@ use std::{
 
 pub(crate) mod item_lifetime;
 pub(crate) mod wand_commands;
+pub(crate) mod wand_extensions;
 pub(crate) mod wand_gameplay;
+pub(crate) mod wand_workflows;
 
 const PAYLOAD: usize = 4 * 1024 * 1024;
 const PROVIDER: &str = "native-owner-bridge-v1";
@@ -39,7 +41,14 @@ pub enum OwnerBridgeError {
     Kernel(kernel::Error),
     Session(pr::Error),
     Admission(session::LoadError),
+    Workflow(nethacked_persistence::workflows::Error),
+    WorkflowStatus(nethacked_persistence::workflows::Status),
     Migration(nethacked_persistence::migration::MigrationError<LoadError>),
+}
+impl From<nethacked_persistence::workflows::Error> for OwnerBridgeError {
+    fn from(e: nethacked_persistence::workflows::Error) -> Self {
+        Self::Workflow(e)
+    }
 }
 impl From<LoadError> for OwnerBridgeError {
     fn from(e: LoadError) -> Self {
@@ -72,6 +81,10 @@ pub struct OwnerBridgeConfig {
     pub(super) wand_commands: bool,
     pub(super) wand_gameplay: bool,
     pub(super) item_lifetime: bool,
+    pub(super) wand_workflows: bool,
+    pub(super) workflow_approval: Option<wand_workflows::WandWorkflowApproval>,
+    pub(super) wand_extensions: bool,
+    pub(super) extension_catalog: Vec<wand_extensions::WandGuest>,
     native_registry: NativeImportRegistry,
     native_import_explicit: bool,
     native_binding: nethacked_persistence::migration::MigrationBinding,
@@ -91,6 +104,10 @@ impl OwnerBridgeConfig {
             wand_commands: false,
             wand_gameplay: false,
             item_lifetime: false,
+            wand_workflows: false,
+            workflow_approval: None,
+            wand_extensions: false,
+            extension_catalog: vec![],
             native_registry: NativeImportRegistry::current(),
             native_import_explicit: false,
             native_binding: super::native_migration_binding(),
@@ -125,6 +142,34 @@ impl OwnerBridgeConfig {
         let mut config = self.with_wand_gameplay();
         config.item_lifetime = true;
         config
+    }
+    /// Approve bounded immutable guest artifacts for this extension-capable host.
+    pub fn with_wand_extensions(
+        self,
+        guests: Vec<wand_extensions::WandGuest>,
+    ) -> Result<Self, OwnerBridgeError> {
+        wand_extensions::validate_catalog(&guests)?;
+        let mut config = self.with_item_lifetime();
+        config.wand_extensions = true;
+        config.extension_catalog = guests;
+        Ok(config)
+    }
+    pub fn with_wand_workflows(mut self) -> Result<Self, OwnerBridgeError> {
+        if !self.wand_extensions {
+            return Err(owners::Error::Unsupported.into());
+        }
+        self.wand_workflows = true;
+        Ok(self)
+    }
+    pub fn with_wand_workflow_approval(
+        mut self,
+        approval: wand_workflows::WandWorkflowApproval,
+    ) -> Result<Self, OwnerBridgeError> {
+        if !self.wand_workflows {
+            return Err(owners::Error::Unsupported.into());
+        }
+        self.workflow_approval = Some(approval);
+        Ok(self)
     }
     fn admission_policy(&self) -> super::admission::AdmissionPolicy {
         if self.wand_gameplay {
@@ -178,7 +223,19 @@ impl OwnerBridgeConfig {
         }
     }
     fn session_binding(&self) -> pr::Binding {
-        if self.item_lifetime {
+        if self.wand_workflows {
+            pr::Binding {
+                name: "native-wand-workflows-i4-session".into(),
+                version: 6,
+                artifact: [242; 32],
+            }
+        } else if self.wand_extensions {
+            pr::Binding {
+                name: "native-wand-extensions-i4-session".into(),
+                version: 5,
+                artifact: [244; 32],
+            }
+        } else if self.item_lifetime {
             pr::Binding {
                 name: "native-owner-lifetime-i3-session".into(),
                 version: 4,
@@ -1060,7 +1117,9 @@ fn profile_limits(config: &OwnerBridgeConfig) -> kernel::Limits {
     limits
 }
 fn profile_native_id(config: &OwnerBridgeConfig) -> &'static [u8] {
-    if config.item_lifetime {
+    if config.wand_workflows {
+        b"NetHackED workflow owner adapters i4 v2"
+    } else if config.item_lifetime {
         item_lifetime::NATIVE_ID
     } else if config.wand_gameplay {
         wand_gameplay::NATIVE_ID
@@ -1515,6 +1574,35 @@ impl kp::RegistryAuthority for Resolver {
                 manifest: caller_manifest(),
                 bytes: caller_bytes()?,
             })
+        } else if self.config.wand_workflows
+            && saved.executable == kp::Executable::NativeV1
+            && saved.manifest == wand_workflows::manifest(&self.config)
+        {
+            Ok(kp::ArtifactMaterial::Native {
+                manifest: wand_workflows::manifest(&self.config),
+                identity: wand_workflows::CODE.to_vec(),
+                ports: wand_workflows::ports(),
+            })
+        } else if self.config.wand_extensions
+            && saved.executable == kp::Executable::NativeV1
+            && saved.manifest == wand_extensions::policy_manifest()
+        {
+            Ok(kp::ArtifactMaterial::Native {
+                manifest: wand_extensions::policy_manifest(),
+                identity: wand_extensions::POLICY_ID.to_vec(),
+                ports: wand_extensions::policy_ports(),
+            })
+        } else if self.config.wand_extensions && saved.executable == kp::Executable::WasmAbiV1 {
+            let guest = self
+                .config
+                .extension_catalog
+                .iter()
+                .find(|g| g.manifest() == &saved.manifest)
+                .ok_or(kernel::Error::Authority)?;
+            Ok(kp::ArtifactMaterial::Guest {
+                manifest: guest.manifest().clone(),
+                bytes: guest.bytes().to_vec(),
+            })
         } else {
             Err(kernel::Error::Authority)
         }
@@ -1529,6 +1617,9 @@ impl kp::RegistryAuthority for Resolver {
         target: &kp::SavedModule,
         requested: &Authority,
     ) -> kernel::Result<Authority> {
+        if self.config.wand_workflows && caller.manifest == wand_workflows::manifest(&self.config) {
+            return wand_workflows::approve_grant(&self.config, caller, slot, target, requested);
+        }
         if self.config.wand_ports {
             return approve_wand_grant(caller, slot, target, requested, &self.config);
         }
@@ -1581,8 +1672,8 @@ impl kp::RetainedAuthority for Resolver {
             Ok(())
         }
     }
-    fn approve_operation_context(&self, _: &kp::SavedOperationContext) -> kernel::Result<()> {
-        Err(kernel::Error::Authority)
+    fn approve_operation_context(&self, context: &kp::SavedOperationContext) -> kernel::Result<()> {
+        wand_workflows::approve_context(&self.config, context)
     }
 }
 fn limits() -> owners::Limits {
@@ -1642,7 +1733,7 @@ fn restore_authority(
         kernel: Rc::new(KernelFactory(config.clone())),
         owners: factories,
         accounting: Rc::new(accounting),
-        workflows: None,
+        workflows: wand_workflows::restore_approval(config),
         inputs: None,
         timers: None,
         adapters: None,
@@ -1757,7 +1848,37 @@ impl ProfileFactory {
 fn restore_configuration(
     config: &OwnerBridgeConfig,
 ) -> Result<pr::ApprovedConfiguration<session::HostBundle>, OwnerBridgeError> {
+    let profiles = approved_profiles(config);
+    let mut entries: Vec<(pr::Binding, Rc<dyn pr::TrustedFactory<session::HostBundle>>)> = vec![];
+    for profile in profiles {
+        entries.push((
+            profile.session_binding(),
+            Rc::new(ProfileFactory {
+                inner: session::SessionFactory::new(restore_authority(&profile)?),
+                config: profile,
+            }),
+        ));
+    }
+    Ok(pr::ApprovedConfiguration::new(
+        BTreeSet::new(),
+        entries.iter().map(|(binding, _)| binding.clone()).collect(),
+        entries,
+    )?)
+}
+
+fn approved_profiles(config: &OwnerBridgeConfig) -> Vec<OwnerBridgeConfig> {
     let mut profiles = vec![config.clone()];
+    let mut config = config.clone();
+    if config.wand_workflows {
+        config.wand_workflows = false;
+        config.workflow_approval = None;
+        profiles.push(config.clone());
+    }
+    if config.wand_extensions {
+        config.wand_extensions = false;
+        config.extension_catalog.clear();
+        profiles.push(config.clone());
+    }
     if config.item_lifetime {
         let mut v3 = config.clone();
         v3.item_lifetime = false;
@@ -1784,21 +1905,7 @@ fn restore_configuration(
         legacy.item_lifetime = false;
         profiles.push(legacy);
     }
-    let mut entries: Vec<(pr::Binding, Rc<dyn pr::TrustedFactory<session::HostBundle>>)> = vec![];
-    for profile in profiles {
-        entries.push((
-            profile.session_binding(),
-            Rc::new(ProfileFactory {
-                inner: session::SessionFactory::new(restore_authority(&profile)?),
-                config: profile,
-            }),
-        ));
-    }
-    Ok(pr::ApprovedConfiguration::new(
-        BTreeSet::new(),
-        entries.iter().map(|(binding, _)| binding.clone()).collect(),
-        entries,
-    )?)
+    profiles
 }
 
 /// Nine independently allocated typed owners in the accepted serial session.
@@ -1826,30 +1933,14 @@ fn bridge_caller(
     if !config.wand_ports {
         return Err(kernel::Error::Authority.into());
     }
-    let mut profile = config.clone();
-    if config.item_lifetime {
-        let mut v3 = config.clone();
-        v3.item_lifetime = false;
-        if k.registered_module(&profile_caller(&v3)).is_ok() {
-            profile.item_lifetime = false;
+    for profile in approved_profiles(config) {
+        if k.manifest(random.module.handle)? == &wand_commands::random_manifest(&profile) {
+            if let Ok(caller) = k.registered_module(&profile_caller(&profile)) {
+                return Ok(caller);
+            }
         }
     }
-    let mut v2 = config.clone();
-    v2.wand_gameplay = false;
-    v2.item_lifetime = false;
-    if k.manifest(random.module.handle)? == &wand_commands::random_manifest(&v2) {
-        profile.wand_gameplay = false;
-        profile.item_lifetime = false;
-    }
-    if k.manifest(random.module.handle)? == &random_manifest() {
-        profile.wand_gameplay = false;
-        profile.wand_commands = false;
-        profile.item_lifetime = false;
-    }
-    if k.manifest(random.module.handle)? != &wand_commands::random_manifest(&profile) {
-        return Err(kernel::Error::Authority.into());
-    }
-    Ok(k.registered_module(&profile_caller(&profile))?)
+    Err(kernel::Error::Authority.into())
 }
 impl OwnerBridge {
     pub fn import_native(
@@ -1909,6 +2000,13 @@ impl OwnerBridge {
         } else {
             None
         };
+        if config.wand_extensions {
+            kernel.register_native(
+                wand_extensions::policy_manifest(),
+                wand_extensions::POLICY_ID,
+                wand_extensions::policy_ports(),
+            )?;
+        }
         let caller = if config.wand_ports {
             kernel.register_native(
                 profile_caller(&config),
@@ -2149,18 +2247,27 @@ impl OwnerBridge {
                 slot,
                 Authority {
                     access: profile_caller(&config).dependencies[slot].access,
-                    scope: Scope::Keys(if random_slot {
-                        wand_commands::random_resources(&random_owner, &host, &config)?
-                    } else if config.item_lifetime
-                        && profile_caller(&config).dependencies[slot]
-                            .capability
-                            .endpoint
-                            == item_lifetime::COMMAND
-                    {
-                        item_lifetime::grant_keys(&keys)
-                    } else {
-                        keys.clone()
-                    }),
+                    scope: Scope::Keys(
+                        if config.wand_extensions
+                            && profile_caller(&config).dependencies[slot]
+                                .capability
+                                .provider
+                                == wand_extensions::POLICY_PROVIDER
+                        {
+                            BTreeSet::new()
+                        } else if random_slot {
+                            wand_commands::random_resources(&random_owner, &host, &config)?
+                        } else if config.item_lifetime
+                            && profile_caller(&config).dependencies[slot]
+                                .capability
+                                .endpoint
+                                == item_lifetime::COMMAND
+                        {
+                            item_lifetime::grant_keys(&keys)
+                        } else {
+                            keys.clone()
+                        },
+                    ),
                 },
             )?;
         }
@@ -2178,6 +2285,8 @@ impl OwnerBridge {
                 random: random_owner,
             }));
         }
+        wand_extensions::install_guests(&mut kernel, &config)?;
+        let services = wand_workflows::install(&mut kernel, &config, &keys)?;
         let mut accounting = op::AccountingCaptureCatalog::default();
         accounting.register(
             config.receipt_identity(),
@@ -2192,7 +2301,7 @@ impl OwnerBridge {
             allocations,
             vec![],
             accounting,
-            session::Services::default(),
+            services,
             configuration,
         )?;
         Ok(Self {
@@ -2228,80 +2337,28 @@ impl OwnerBridge {
     /// Atomically replace a nonempty facade after complete profile admission.
     /// Failure leaves the current session and its credential usable.
     pub fn restore(&self, bytes: &[u8]) -> Result<(), OwnerBridgeError> {
-        let prepared = self.session.prepare_restore_diagnosed(
+        let mut attempts = approved_profiles(&self.config).into_iter();
+        let primary = attempts.next().ok_or(owners::Error::Schema)?;
+        let mut stage = match self.session.prepare_restore_diagnosed(
             &self.key,
-            &self.config.session_binding(),
+            &primary.session_binding(),
             bytes,
-        );
-        let mut stage = match prepared {
+        ) {
             Ok(stage) => stage,
-            Err(original) if self.config.item_lifetime => {
-                let mut v3 = self.config.clone();
-                v3.item_lifetime = false;
-                let mut v2 = v3.clone();
-                v2.wand_gameplay = false;
-                let mut i1 = v2.clone();
-                i1.wand_commands = false;
-                self.session
-                    .prepare_restore_diagnosed(&self.key, &v3.session_binding(), bytes)
-                    .or_else(|_| {
-                        self.session.prepare_restore_diagnosed(
-                            &self.key,
-                            &v2.session_binding(),
-                            bytes,
-                        )
-                    })
-                    .or_else(|_| {
-                        self.session.prepare_restore_diagnosed(
-                            &self.key,
-                            &i1.session_binding(),
-                            bytes,
-                        )
-                    })
-                    .or_else(|_| {
-                        self.session
-                            .prepare_restore_diagnosed(&self.key, &binding(), bytes)
-                    })
-                    .map_err(|_| OwnerBridgeError::Admission(original))?
+            Err(original) => {
+                let mut admitted = None;
+                for profile in attempts {
+                    if let Ok(stage) = self.session.prepare_restore_diagnosed(
+                        &self.key,
+                        &profile.session_binding(),
+                        bytes,
+                    ) {
+                        admitted = Some(stage);
+                        break;
+                    }
+                }
+                admitted.ok_or(OwnerBridgeError::Admission(original))?
             }
-            Err(original) if self.config.wand_gameplay => {
-                let mut old = self.config.clone();
-                old.wand_gameplay = false;
-                let mut i1 = old.clone();
-                i1.wand_commands = false;
-                self.session
-                    .prepare_restore_diagnosed(&self.key, &old.session_binding(), bytes)
-                    .or_else(|_| {
-                        self.session.prepare_restore_diagnosed(
-                            &self.key,
-                            &i1.session_binding(),
-                            bytes,
-                        )
-                    })
-                    .or_else(|_| {
-                        self.session
-                            .prepare_restore_diagnosed(&self.key, &binding(), bytes)
-                    })
-                    .map_err(|_| OwnerBridgeError::Admission(original))?
-            }
-            Err(original) if self.config.wand_commands => {
-                let mut i1 = self.config.clone();
-                i1.wand_commands = false;
-                i1.wand_gameplay = false;
-                i1.item_lifetime = false;
-                self.session
-                    .prepare_restore_diagnosed(&self.key, &i1.session_binding(), bytes)
-                    .or_else(|_| {
-                        self.session
-                            .prepare_restore_diagnosed(&self.key, &binding(), bytes)
-                    })
-                    .map_err(|_| OwnerBridgeError::Admission(original))?
-            }
-            Err(original) if self.config.wand_ports => self
-                .session
-                .prepare_restore_diagnosed(&self.key, &binding(), bytes)
-                .map_err(|_| OwnerBridgeError::Admission(original))?,
-            Err(error) => return Err(OwnerBridgeError::Admission(error)),
         };
         self.session.activate(&mut stage)?;
         if self.config.wand_commands {

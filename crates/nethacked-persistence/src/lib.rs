@@ -6,6 +6,8 @@ pub mod migration;
 pub mod runtime;
 #[cfg(feature = "session")]
 pub mod session;
+#[cfg(feature = "session")]
+pub use nethacked_workflows as workflows;
 mod syntax;
 
 pub const MAGIC: &[u8; 8] = b"NHOWNR01";
