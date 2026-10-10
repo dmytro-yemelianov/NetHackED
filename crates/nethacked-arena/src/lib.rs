@@ -313,34 +313,51 @@ impl EntityArena {
 
     /// Calculate the recursive weight of an item or container in the arena.
     pub fn calculate_total_weight(&self, id: ItemId) -> u32 {
-        let Some(item) = self.items.get(id) else {
-            return 0;
-        };
-
-        if !item.is_container {
-            return item.weight;
-        }
-
-        let inner_weight: u32 = self
-            .items_in_container(id)
-            .into_iter()
-            .fold(0u32, |weight, child| {
-                weight.saturating_add(self.calculate_total_weight(child))
-            });
-
-        let effective_inner = if item.is_bag_of_holding {
-            // NetHack 5.0 rounding up: (cwt + 1) / 2 for uncursed default
-            match item.buc {
-                Buc::Blessed => inner_weight.div_ceil(4),
-                Buc::Uncursed => inner_weight.div_ceil(2),
-                Buc::Cursed => inner_weight.saturating_mul(2),
-            }
-        } else {
-            inner_weight
-        };
-
-        item.weight.saturating_add(effective_inner)
+        calculate_total_weight(&self.items, id)
     }
+}
+
+/// The same recursive weight law for an owned ItemStorage without an arena.
+pub fn calculate_total_weight(items: &ItemStorage, id: ItemId) -> u32 {
+    let Some(item) = items.get(id) else {
+        return 0;
+    };
+
+    if !item.is_container {
+        return item.weight;
+    }
+
+    let inner_weight: u32 = items
+        .iter()
+        .filter_map(|(child, record)| {
+            (record.location == ItemLocation::InContainer(id)).then_some(child)
+        })
+        .fold(0u32, |weight, child| {
+            weight.saturating_add(calculate_total_weight(items, child))
+        });
+
+    let effective_inner = if item.is_bag_of_holding {
+        // NetHack 5.0 rounding up: (cwt + 1) / 2 for uncursed default
+        match item.buc {
+            Buc::Blessed => inner_weight.div_ceil(4),
+            Buc::Uncursed => inner_weight.div_ceil(2),
+            Buc::Cursed => inner_weight.saturating_mul(2),
+        }
+    } else {
+        inner_weight
+    };
+
+    item.weight.saturating_add(effective_inner)
+}
+
+/// Sum every directly carried root using the recursive item weight law.
+pub fn carried_weight(items: &ItemStorage, actor: ActorId) -> u32 {
+    items
+        .iter()
+        .filter_map(|(id, item)| (item.location == ItemLocation::CarriedBy(actor)).then_some(id))
+        .fold(0u32, |sum, id| {
+            sum.saturating_add(calculate_total_weight(items, id))
+        })
 }
 
 #[cfg(test)]

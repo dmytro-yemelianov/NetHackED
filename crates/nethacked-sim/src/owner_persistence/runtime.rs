@@ -26,6 +26,7 @@ pub(crate) mod item_lifetime;
 pub mod metabolic_ticks;
 pub mod passive_ticks;
 mod phase_support;
+pub mod regeneration_ticks;
 pub(crate) mod wand_commands;
 pub(crate) mod wand_extensions;
 pub(crate) mod wand_gameplay;
@@ -91,6 +92,7 @@ pub struct OwnerBridgeConfig {
     pub(super) default_commands: bool,
     pub(super) passive_ticks: bool,
     pub(super) metabolic_ticks: bool,
+    pub(super) regeneration_ticks: bool,
     pub(super) workflow_approval: Option<wand_workflows::WandWorkflowApproval>,
     pub(super) wand_extensions: bool,
     pub(super) extension_catalog: Vec<wand_extensions::WandGuest>,
@@ -119,6 +121,7 @@ impl OwnerBridgeConfig {
             default_commands: false,
             passive_ticks: false,
             metabolic_ticks: false,
+            regeneration_ticks: false,
             workflow_approval: None,
             wand_extensions: false,
             extension_catalog: vec![],
@@ -221,7 +224,15 @@ impl OwnerBridgeConfig {
         c.metabolic_ticks = true;
         c
     }
+    pub fn with_natural_hp_regeneration(self) -> Self {
+        let mut c = self.with_passive_metabolic_ticks();
+        c.regeneration_ticks = true;
+        c
+    }
     fn schema_tag(&self, tag: u8) -> u8 {
+        if self.regeneration_ticks {
+            return tag + 120;
+        }
         if self.metabolic_ticks {
             return tag + 130;
         }
@@ -247,6 +258,9 @@ impl OwnerBridgeConfig {
         }
     }
     fn codec_identity(&self, name: &str, tag: u8) -> op::CodecIdentity {
+        if self.regeneration_ticks {
+            return identity(&format!("{name}-regeneration-i2c"), tag + 120);
+        }
         if self.metabolic_ticks {
             return identity(&format!("{name}-metabolic-i2b"), tag + 130);
         }
@@ -290,6 +304,13 @@ impl OwnerBridgeConfig {
         }
     }
     fn session_binding(&self) -> pr::Binding {
+        if self.regeneration_ticks {
+            return pr::Binding {
+                name: "native-regeneration-i2c-session".into(),
+                version: 12,
+                artifact: [120; 32],
+            };
+        }
         if self.metabolic_ticks {
             return pr::Binding {
                 name: "native-metabolic-i2b-session".into(),
@@ -529,6 +550,11 @@ macro_rules! codec {
                 request: &[u8],
                 obs: &[Observation],
             ) -> owners::Result<Vec<u8>> {
+                if self.0.regeneration_ticks && name.starts_with("regeneration_") {
+                    return regeneration_ticks::RegenerationDomain::regeneration_query(
+                        s, name, request, &self.0,
+                    );
+                }
                 if self.0.metabolic_ticks && name.starts_with("metabolic_") {
                     return metabolic_ticks::MetabolicDomain::metabolic_query(
                         s, name, request, &self.0,
@@ -557,6 +583,11 @@ macro_rules! codec {
                 request: &[u8],
                 obs: &[Observation],
             ) -> owners::Result<Proposal<$state>> {
+                if self.0.regeneration_ticks && name.starts_with("regeneration_") {
+                    return regeneration_ticks::RegenerationDomain::regeneration_prepare(
+                        s, name, request, obs, &self.0,
+                    );
+                }
                 if self.0.metabolic_ticks && name.starts_with("metabolic_") {
                     return metabolic_ticks::MetabolicDomain::metabolic_prepare(
                         s, name, request, obs, &self.0,
@@ -1172,13 +1203,18 @@ fn add_wand_ports(
             .collect::<owners::Result<Vec<_>>>()?;
         ports.insert((*query).into(), port(Access::Read, dependencies));
     }
-    metabolic_ticks::add_ports(
+    regeneration_ticks::add_ports(
         name,
-        passive_ticks::add_ports(
+        metabolic_ticks::add_ports(
             name,
-            default_commands::add_ports(
+            passive_ticks::add_ports(
                 name,
-                wand_commands::add_ports(name, ports, ids, config)?,
+                default_commands::add_ports(
+                    name,
+                    wand_commands::add_ports(name, ports, ids, config)?,
+                    ids,
+                    config,
+                )?,
                 ids,
                 config,
             )?,
@@ -1195,6 +1231,9 @@ fn validate_wand_ports(
     policy: &QueryPolicy,
     config: &OwnerBridgeConfig,
 ) -> owners::Result<()> {
+    regeneration_ticks::validate_ports(name, ports, config)?;
+    let regeneration_filtered = regeneration_ticks::filtered_ports(ports);
+    let ports = &regeneration_filtered;
     metabolic_ticks::validate_ports(name, ports, config)?;
     let metabolic_filtered = metabolic_ticks::filtered_ports(ports);
     let ports = &metabolic_filtered;
@@ -1273,6 +1312,9 @@ fn profile_limits(config: &OwnerBridgeConfig) -> kernel::Limits {
     limits
 }
 fn profile_native_id(config: &OwnerBridgeConfig) -> &'static [u8] {
+    if config.regeneration_ticks {
+        return b"NetHackED natural HP regeneration M6-I2c v1";
+    }
     if config.metabolic_ticks {
         return b"NetHackED raw metabolism M6-I2b v1";
     }
@@ -1331,7 +1373,7 @@ fn profile_provider(config: &OwnerBridgeConfig) -> Manifest {
     }
     .into();
     for (_, name) in wand_commands::read_routes(config) {
-        if name != "wand_random" || config.wand_charge_attempts {
+        if name != "wand_random" || config.wand_charge_attempts || config.regeneration_ticks {
             m.exports.insert(
                 name.into(),
                 Endpoint {
@@ -1342,9 +1384,12 @@ fn profile_provider(config: &OwnerBridgeConfig) -> Manifest {
             );
         }
     }
-    metabolic_ticks::provider(
-        passive_ticks::provider(
-            default_commands::provider(wand_commands::provider_manifest(m, config), config),
+    regeneration_ticks::provider(
+        metabolic_ticks::provider(
+            passive_ticks::provider(
+                default_commands::provider(wand_commands::provider_manifest(m, config), config),
+                config,
+            ),
             config,
         ),
         config,
@@ -1384,9 +1429,12 @@ fn profile_caller(config: &OwnerBridgeConfig) -> Manifest {
             ..endpoint(Access::Read)
         },
     );
-    metabolic_ticks::caller(
-        passive_ticks::caller(
-            default_commands::caller(wand_commands::caller_manifest(m, config), config),
+    regeneration_ticks::caller(
+        metabolic_ticks::caller(
+            passive_ticks::caller(
+                default_commands::caller(wand_commands::caller_manifest(m, config), config),
+                config,
+            ),
             config,
         ),
         config,
@@ -1624,7 +1672,7 @@ fn profile_native_ports(
         return ports;
     }
     for (_, name) in wand_commands::read_routes(&config) {
-        if name != "wand_random" || config.wand_charge_attempts {
+        if name != "wand_random" || config.wand_charge_attempts || config.regeneration_ticks {
             let routes = handles.clone();
             ports.insert(
                 name.into(),
@@ -1632,12 +1680,13 @@ fn profile_native_ports(
             );
         }
     }
-    if config.wand_charge_attempts {
+    if config.wand_charge_attempts || config.regeneration_ticks {
         ports = wand_commands::random_ports(ports, handles.clone(), config.clone());
     }
     let ports = default_commands::native(ports, handles.clone(), &config);
     let ports = passive_ticks::native(ports, handles.clone(), &config);
     let ports = metabolic_ticks::native(ports, handles.clone(), &config);
+    let ports = regeneration_ticks::native(ports, handles.clone(), &config);
     wand_commands::native_ports(ports, handles, config)
 }
 fn read_route(
@@ -1681,16 +1730,19 @@ fn caller_native_ports(config: OwnerBridgeConfig) -> BTreeMap<String, NativePort
             + 3;
         view.call_dependency(slot, request)
     });
-    metabolic_ticks::caller_ports(
-        passive_ticks::caller_ports(
-            default_commands::caller_ports(
-                wand_commands::caller_ports(
-                    [
-                        ("query".into(), query),
-                        ("run".into(), run),
-                        ("observe".into(), observe),
-                    ]
-                    .into(),
+    regeneration_ticks::caller_ports(
+        metabolic_ticks::caller_ports(
+            passive_ticks::caller_ports(
+                default_commands::caller_ports(
+                    wand_commands::caller_ports(
+                        [
+                            ("query".into(), query),
+                            ("run".into(), run),
+                            ("observe".into(), observe),
+                        ]
+                        .into(),
+                        &config,
+                    ),
                     &config,
                 ),
                 &config,
@@ -2066,6 +2118,10 @@ fn restore_configuration(
 fn approved_profiles(config: &OwnerBridgeConfig) -> Vec<OwnerBridgeConfig> {
     let mut profiles = vec![config.clone()];
     let mut config = config.clone();
+    if config.regeneration_ticks {
+        config.regeneration_ticks = false;
+        profiles.push(config.clone());
+    }
     if config.metabolic_ticks {
         config.metabolic_ticks = false;
         profiles.push(config.clone());
@@ -2152,7 +2208,7 @@ fn bridge_caller(
     }
     for profile in approved_profiles(config) {
         if k.manifest(random.module.handle)? == &wand_commands::random_manifest(&profile)
-            || (profile.wand_charge_attempts
+            || ((profile.wand_charge_attempts || profile.regeneration_ticks)
                 && k.manifest(random.module.handle)? == &profile_provider(&profile))
         {
             if let Ok(caller) = k.registered_module(&profile_caller(&profile)) {
@@ -2422,7 +2478,11 @@ impl OwnerBridge {
                 "Random",
                 8,
                 random,
-                random_module.unwrap_or(caller),
+                if config.regeneration_ticks {
+                    provider
+                } else {
+                    random_module.unwrap_or(caller)
+                },
                 basic_ports("Random")
             ),
         };
@@ -2496,6 +2556,9 @@ impl OwnerBridge {
                 if config.metabolic_ticks {
                     keys.extend(metabolic_ticks::resources(&r)?);
                 }
+                if config.regeneration_ticks {
+                    keys.extend(regeneration_ticks::resources(&r)?);
+                }
             }
             keys
         } else {
@@ -2503,6 +2566,7 @@ impl OwnerBridge {
         };
         for slot in 0..profile_caller(&config).dependencies.len() {
             let random_slot = !config.wand_charge_attempts
+                && !config.regeneration_ticks
                 && config.wand_ports
                 && profile_caller(&config).dependencies[slot]
                     .capability
@@ -2792,6 +2856,7 @@ mod tests {
     mod fresh_process;
     mod metabolic_ticks;
     mod passive_ticks;
+    mod regeneration_ticks;
     mod wand_aggregate;
     mod wand_charge_attempts;
     mod wand_commands;

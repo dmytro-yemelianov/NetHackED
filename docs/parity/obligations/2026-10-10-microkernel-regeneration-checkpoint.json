@@ -1,0 +1,37 @@
+{
+  "unit": "M6-I2c",
+  "status": "accepted_in_this_commit",
+  "parent": "1b8558a16d88b4323d6d70e27f3649990c7e4df8",
+  "scope": "Explicit raw current-Rust natural HP regeneration, stationary and moving with authenticated finite carried-tree weight; no full I2/Wait/C acceptance",
+  "focused_completion": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2c/writer-final-completion.json",
+  "focused_completion_sha256": "4e4a87cc30d301b5c5f45f2223be1410ad2171b6c6e8b420a878266d8e582fa0",
+  "workspace_passed": 1543,
+  "checks": 12,
+  "goldens": [
+    "golden_vanilla_event_logs_are_unchanged",
+    "golden_vanilla_bestiary_combat_is_unchanged",
+    "golden_vanilla_runs_are_unchanged"
+  ],
+  "non_documentation_inputs": 561,
+  "source_digest": "040a886874a0d3f0639c1dec77d8606e9914565271942a8bb28decf1a4f62dc3",
+  "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2c/review-assertion/answer.txt",
+  "review_sha256": "e342e0d0d6cd8282722c0f09c3407f0a404e34b2aefa1c97cc12aa2ac650b4f9",
+  "review_usage": "unknown",
+  "review_model": "gpt-6-sol/medium final additive assertion review; gpt-6-astra/medium sealed functional reviews",
+  "review_chain": [
+    "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2c/review/answer.txt",
+    "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2c/review-repair/answer.txt",
+    "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2c/review-final/answer.txt"
+  ],
+  "full_gate_acceptance": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2c/final-gates/accepted.json",
+  "full_gate_acceptance_sha256": "19ff2dfa908a7da6b6cc8148428b7b2f7d8d44e2618114a9889b1406f056df55",
+  "authority": "Existing authentic ActorFacts reused to fit manifest budget; exact approved provider manifest recognizes regeneration-pinned Random. Actual finite Hero/Actors/Objects/Random observations and exact atomic Actors+Random accounting preserve current RNG consumption and refusal/replay behavior.",
+  "limits": [
+    "Moving carried trees limited to32reachable nodes/depth32; unsupported tree refuses before RNG, legacy adapter remains unbounded",
+    "Authentic Objects before payload is subject to existing16384byte reply cap; oversized state refuses without trusting supplied aggregate",
+    "Eligible invocation draws once even guaranteed healing; no Clock scheduling/once-per-turn or Session publication added",
+    "Dressing, object/corpse timers, remaining M6 groups/M7 and separate53-family C backlog remain open"
+  ],
+  "attempt_history": "Initial manifest65>64 fixed through existing authenticated ActorFacts reuse; failed speculative Random-query diagnosis replaced by runtime boundary probe and exact bridge_caller provider recognition correction. Initial Astra command-limit diagnosis has no verdict; completed pipeline diagnostic is REQUEST_CHANGES/uncertain, distinct from final independent acceptance review.",
+  "implementation_usage": "collaboration/root telemetry unavailable"
+}

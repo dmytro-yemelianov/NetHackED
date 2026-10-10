@@ -684,6 +684,7 @@ impl OwnerBridge {
                         access: if name == PREVIEW
                             || name == super::passive_ticks::PREVIEW
                             || name == super::metabolic_ticks::PREVIEW
+                            || name == super::regeneration_ticks::PREVIEW
                         {
                             Access::Read
                         } else {
@@ -703,6 +704,7 @@ impl OwnerBridge {
                     access: if name == PREVIEW
                         || name == super::passive_ticks::PREVIEW
                         || name == super::metabolic_ticks::PREVIEW
+                        || name == super::regeneration_ticks::PREVIEW
                     {
                         Access::Read
                     } else {

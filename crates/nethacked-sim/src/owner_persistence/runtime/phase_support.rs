@@ -144,6 +144,8 @@ impl Metadata {
                         "Actors" => 5,
                         "Session" => 3,
                         "Clock" => 8,
+                        "Objects" => 4,
+                        "Random" => 9,
                         _ => 0,
                     }
                 )
@@ -158,6 +160,8 @@ impl Metadata {
                 "Actors" => r.actors.resource(n),
                 "Session" => r.session.resource(n),
                 "Clock" => r.clock.resource(n),
+                "Objects" => r.objects.resource(n),
+                "Random" => r.random.resource(n),
                 _ => Err(owners::Error::Schema),
             })
             .collect()

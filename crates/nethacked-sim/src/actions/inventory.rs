@@ -30,12 +30,7 @@ impl SimulationWorld {
     /// Owned arena roots include their recursively weighted contents exactly
     /// once. Item weights already include stack quantities.
     pub fn hero_carried_weight(&self) -> u32 {
-        self.arena
-            .items_carried_by(self.player_id)
-            .into_iter()
-            .fold(0u32, |weight, id| {
-                weight.saturating_add(self.arena.calculate_total_weight(id))
-            })
+        nethacked_arena::carried_weight(&self.arena.items, self.player_id)
     }
 
     /// C `near_capacity` for the ordinary-form contexts above. Tier slowdown

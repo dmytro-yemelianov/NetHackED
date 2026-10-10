@@ -5,7 +5,7 @@
   "plan_sha256": "51b6bfd5a1b077089cc38a2b10346f9e905d37e575e531be558f97ed9259ca06",
   "native_goal": "Complete NetRust microkernel architecture program; formal contracts, executable extensions, existing NetHack migration, integration audit",
   "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
-  "active_unit": "M6-I2c",
+  "active_unit": "M6-I2d",
   "live_handles": [],
   "acceptance": {
     "A1": "passed_generic_runtime_1fc3290",
@@ -874,12 +874,12 @@
         "M5"
       ],
       "plan": "docs/plans/2026-10-10-default-domain-migration.md",
-      "next_unit": "M6-I2c natural HP regeneration; object/corpse timers and dressing remain open",
-      "planning_status": "I1 and explicit I2a/I2b accepted; I2 remains partial",
+      "next_unit": "M6-I2d dressing, then object/corpse timer drain with authenticated spawn/retirement prerequisites",
+      "planning_status": "I1 and raw I2a/b/c accepted; full I2 remains partial",
       "implementation_packet": {
-        "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I1/writer-packet.md",
-        "sha256": "5bfefbed4b0bc8c470d81b6e4862f277a2ba02539cd5c5c361e57204aa2ce250",
-        "source_bindings": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I1/writer-source-bindings.json"
+        "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2c/writer-packet.md",
+        "sha256": "a867dd323ff15f35352e220a43b15a2b84acfd5dfa7af7bbe66ebf90bdeaf84e",
+        "source_bindings": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2c/writer-source-bindings.json"
       },
       "units": [
         {
@@ -913,6 +913,16 @@
           "remaining": [],
           "checkpoint": "docs/parity/obligations/2026-10-10-microkernel-passive-phases-checkpoint.json",
           "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2b/review/answer.txt"
+        },
+        {
+          "id": "M6-I2c",
+          "status": "accepted_in_this_commit",
+          "scope": "Complete raw natural HP regeneration for stationary/moving phases; authenticated carried weight and atomic Actors/Random consequences",
+          "packet": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2c/writer-packet.md",
+          "source_bindings": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2c/writer-source-bindings.json",
+          "remaining": [],
+          "checkpoint": "docs/parity/obligations/2026-10-10-microkernel-regeneration-checkpoint.json",
+          "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2c/review-assertion/answer.txt"
         }
       ]
     },
@@ -1165,8 +1175,8 @@
       "next_adjustment": "B2 Sol/medium wiring to checkpoint API map; no nine-owner/kernel/history audit; isolate concrete missing fallibility seam."
     },
     "native_goal_observed_status": "paused; manual continuation authorized, no full completion claim",
-    "latest_phase": "M6-I2a/I2b accepted; full I2 and M6 remain partial",
-    "next_action": "Bound natural HP regeneration packet; reuse accepted finite ports and private Session support, no architecture/history re-audit",
+    "latest_phase": "M6-I2c accepted; full I2/M6 remain partial",
+    "next_action": "Before next writer, count inherited provider exports and caller dependencies; reuse exact authenticated facts and diagnose runtime first rejecting boundary before static escalation",
     "i4_review_adjustment": "Actual output hard cap2000: required complementary final reviews with each sealed source chunk<=1500 tokens and one read per chunk. CORE8885/WIRING11178 source tokens; no full history/baseline reread. Completed uncached32647/35975 and output1110/886 respectively; root usage unknown.",
     "i5_review": {
       "model": "gpt-6-astra",
@@ -1247,7 +1257,8 @@
       },
       "commands": 1,
       "wall_seconds": 31.315
-    }
+    },
+    "routing": "Sol/medium sole11-path writer, Astra/medium bounded independent delta review after handoff; root integration, no overlapping Cargo"
   },
   "requested_interlude": {
     "after": "accepted M3a checkpoint",

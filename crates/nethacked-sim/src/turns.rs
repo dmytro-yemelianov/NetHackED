@@ -151,11 +151,25 @@ impl SimulationWorld {
     /// Sleepy sleeping bonus, prayer invulnerability, effective equipment CON
     /// and voluntary multi-turn interruption are separate contexts not
     /// represented by this path.
-    fn regenerate_natural_hero_hp(&mut self, moved: bool) {
+    pub(crate) fn regenerate_natural_hero_hp(&mut self, moved: bool) {
         let Some(hero) = self.arena.actors.get(self.player_id) else {
             return;
         };
-        if hero.is_dead || hero.hp == 0 || hero.hp >= hero.max_hp || self.hero.polymorph.is_some() {
+        let actor = crate::passive_regeneration::Actor {
+            hp: hero.hp,
+            max_hp: hero.max_hp,
+            level: hero.level,
+            dead: hero.is_dead,
+            levitating: hero.intrinsics.levitation,
+        };
+        if !crate::passive_regeneration::eligible(
+            Some(actor),
+            self.hero.polymorph.is_some(),
+            false,
+            0,
+            0,
+            None,
+        ) {
             return;
         }
         // C encumbrance_ok = wtcap < MOD_ENCUMBER || !u.umoved.
@@ -163,7 +177,7 @@ impl SimulationWorld {
         {
             return;
         }
-        let level = hero.level;
+        let level = actor.level;
         let con = self.hero_attr(crate::progress::A_CON);
         let heal = natural_hp_heal(level, con, |bound| self.rng.random_range(0..bound));
         let hero = self.arena.actors.get_mut(self.player_id).unwrap();
@@ -174,7 +188,7 @@ impl SimulationWorld {
 /// C `heal = (u.ulevel + ACURR(A_CON)) > rn2(100)`; the natural path
 /// always draws once when eligible, even when the sum guarantees healing.
 fn natural_hp_heal(level: u32, con: i32, mut rn2: impl FnMut(u32) -> u32) -> u32 {
-    u32::from(i64::from(level) + i64::from(con) > i64::from(rn2(100)))
+    crate::passive_regeneration::heal(level, con, rn2(100))
 }
 
 #[cfg(test)]

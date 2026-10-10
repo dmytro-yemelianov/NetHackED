@@ -76,6 +76,9 @@ pub(super) fn read_routes(c: &OwnerBridgeConfig) -> Vec<(&'static str, &'static 
     routes
 }
 pub(super) fn random_id(c: &OwnerBridgeConfig) -> &'static [u8] {
+    if c.regeneration_ticks {
+        return b"NetHackED regeneration random_id M6-I2c v1";
+    }
     if c.metabolic_ticks {
         return b"NetHackED metabolic random_id M6-I2b v1";
     }
@@ -101,6 +104,9 @@ pub(super) fn random_id(c: &OwnerBridgeConfig) -> &'static [u8] {
     }
 }
 pub(super) fn caller_id(c: &OwnerBridgeConfig) -> &'static [u8] {
+    if c.regeneration_ticks {
+        return b"NetHackED regeneration caller_id M6-I2c v1";
+    }
     if c.metabolic_ticks {
         return b"NetHackED metabolic caller_id M6-I2b v1";
     }
@@ -130,7 +136,7 @@ pub(super) fn caller_id(c: &OwnerBridgeConfig) -> &'static [u8] {
     }
 }
 pub(super) fn random_capability(c: &OwnerBridgeConfig) -> Capability {
-    if c.wand_charge_attempts {
+    if c.wand_charge_attempts || c.regeneration_ticks {
         return profile_capability(c, "wand_random");
     }
     if !c.wand_commands {
@@ -148,7 +154,7 @@ pub(super) fn random_capability(c: &OwnerBridgeConfig) -> Capability {
     }
 }
 fn command_capability(c: &OwnerBridgeConfig, endpoint: &str) -> Capability {
-    if c.wand_charge_attempts {
+    if c.wand_charge_attempts || c.regeneration_ticks {
         return profile_capability(c, endpoint);
     }
     if endpoint == COMMANDS[5].1 {
@@ -192,7 +198,7 @@ pub(super) fn provider_manifest(mut m: Manifest, c: &OwnerBridgeConfig) -> Manif
             m.exports.insert((*name).into(), command_endpoint());
         }
     }
-    if c.wand_charge_attempts {
+    if c.wand_charge_attempts || c.regeneration_ticks {
         m.exports
             .insert("wand_random".into(), endpoint(Access::Read));
         m.exports.insert(COMMANDS[5].1.into(), command_endpoint());
@@ -550,6 +556,7 @@ pub(super) fn capture_accounting(
     super::default_commands::capture(a, c)?;
     super::passive_ticks::capture(a, c)?;
     super::metabolic_ticks::capture(a, c)?;
+    super::regeneration_ticks::capture(a, c)?;
     super::item_lifetime::capture_accounting(a, c)?;
     Ok(())
 }
@@ -566,6 +573,7 @@ pub(super) fn restore_accounting(
     super::default_commands::restore(a, c)?;
     super::passive_ticks::restore(a, c)?;
     super::metabolic_ticks::restore(a, c)?;
+    super::regeneration_ticks::restore(a, c)?;
     super::item_lifetime::restore_accounting(a, c)?;
     Ok(())
 }
@@ -816,6 +824,7 @@ pub(super) fn gameplay_grant_names(c: &OwnerBridgeConfig) -> BTreeSet<String> {
     expected.extend(super::default_commands::grant_names(c));
     expected.extend(super::passive_ticks::grant_names(c));
     expected.extend(super::metabolic_ticks::grant_names(c));
+    expected.extend(super::regeneration_ticks::grant_names(c));
     charge_grant_names(expected, c)
 }
 pub(super) fn approve_grant(
@@ -843,8 +852,9 @@ pub(super) fn approve_grant(
         }
         return Err(kernel::Error::Authority);
     }
-    let random =
-        !c.wand_charge_attempts && dep.capability.provider == random_capability(c).provider;
+    let random = !c.wand_charge_attempts
+        && !c.regeneration_ticks
+        && dep.capability.provider == random_capability(c).provider;
     if caller.manifest != manifest
         || target.manifest
             != if random {

@@ -38,3 +38,4 @@ pub use nethacked_types::{
 mod passive_afflictions;
 
 mod passive_metabolism;
+mod passive_regeneration;
