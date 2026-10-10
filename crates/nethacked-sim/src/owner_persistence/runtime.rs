@@ -28,6 +28,7 @@ pub mod metabolic_ticks;
 pub mod passive_ticks;
 mod phase_support;
 pub mod regeneration_ticks;
+pub mod timer_ticks;
 pub(crate) mod wand_commands;
 pub(crate) mod wand_extensions;
 pub(crate) mod wand_gameplay;
@@ -95,6 +96,7 @@ pub struct OwnerBridgeConfig {
     pub(super) metabolic_ticks: bool,
     pub(super) regeneration_ticks: bool,
     pub(super) dressing_ticks: bool,
+    pub(super) timer_ticks: bool,
     pub(super) workflow_approval: Option<wand_workflows::WandWorkflowApproval>,
     pub(super) wand_extensions: bool,
     pub(super) extension_catalog: Vec<wand_extensions::WandGuest>,
@@ -125,6 +127,7 @@ impl OwnerBridgeConfig {
             metabolic_ticks: false,
             regeneration_ticks: false,
             dressing_ticks: false,
+            timer_ticks: false,
             workflow_approval: None,
             wand_extensions: false,
             extension_catalog: vec![],
@@ -237,7 +240,15 @@ impl OwnerBridgeConfig {
         c.dressing_ticks = true;
         c
     }
+    pub fn with_timer_ticks(self) -> Self {
+        let mut c = self.with_dressing_ticks();
+        c.timer_ticks = true;
+        c
+    }
     fn schema_tag(&self, tag: u8) -> u8 {
+        if self.timer_ticks {
+            return tag + 100;
+        }
         if self.dressing_ticks {
             return tag + 110;
         }
@@ -269,6 +280,9 @@ impl OwnerBridgeConfig {
         }
     }
     fn codec_identity(&self, name: &str, tag: u8) -> op::CodecIdentity {
+        if self.timer_ticks {
+            return identity(&format!("{name}-timer-i2e"), tag + 100);
+        }
         if self.dressing_ticks {
             return identity(&format!("{name}-dressing-i2d"), tag + 110);
         }
@@ -318,6 +332,13 @@ impl OwnerBridgeConfig {
         }
     }
     fn session_binding(&self) -> pr::Binding {
+        if self.timer_ticks {
+            return pr::Binding {
+                name: "native-timer-i2e-session".into(),
+                version: 14,
+                artifact: [100; 32],
+            };
+        }
         if self.dressing_ticks {
             return pr::Binding {
                 name: "native-dressing-i2d-session".into(),
@@ -1333,6 +1354,9 @@ fn profile_limits(config: &OwnerBridgeConfig) -> kernel::Limits {
     limits
 }
 fn profile_native_id(config: &OwnerBridgeConfig) -> &'static [u8] {
+    if config.timer_ticks {
+        return b"NetHackED object timer ticks M6-I2e v1";
+    }
     if config.dressing_ticks {
         return b"NetHackED raw dressing M6-I2d v1";
     }
@@ -2142,6 +2166,10 @@ fn restore_configuration(
 fn approved_profiles(config: &OwnerBridgeConfig) -> Vec<OwnerBridgeConfig> {
     let mut profiles = vec![config.clone()];
     let mut config = config.clone();
+    if config.timer_ticks {
+        config.timer_ticks = false;
+        profiles.push(config.clone());
+    }
     if config.dressing_ticks {
         config.dressing_ticks = false;
         profiles.push(config.clone());
@@ -2886,6 +2914,7 @@ mod tests {
     mod metabolic_ticks;
     mod passive_ticks;
     mod regeneration_ticks;
+    mod timer_ticks;
     mod timer_transport_prototype;
     mod wand_aggregate;
     mod wand_charge_attempts;

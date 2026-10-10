@@ -561,6 +561,7 @@ pub(super) fn capture_accounting(
     super::passive_ticks::capture(a, c)?;
     super::metabolic_ticks::capture(a, c)?;
     super::regeneration_ticks::capture(a, c)?;
+    super::timer_ticks::capture(a, c)?;
     super::item_lifetime::capture_accounting(a, c)?;
     Ok(())
 }
@@ -579,6 +580,7 @@ pub(super) fn restore_accounting(
     super::passive_ticks::restore(a, c)?;
     super::metabolic_ticks::restore(a, c)?;
     super::regeneration_ticks::restore(a, c)?;
+    super::timer_ticks::restore(a, c)?;
     super::item_lifetime::restore_accounting(a, c)?;
     Ok(())
 }
