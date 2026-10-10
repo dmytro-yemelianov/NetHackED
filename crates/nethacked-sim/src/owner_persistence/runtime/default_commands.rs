@@ -3,16 +3,16 @@ use super::*;
 use crate::actions::{command_frame as law, equipment::EquipmentState as Equipment};
 use nethacked_arena::{ActorId, ItemId};
 use wand::OwnerWitness;
-const MAX: usize = 32;
-const PREVIEW: &str = "frame_preview_i1";
-const RUN: &str = "frame_cancel_i1";
-const EQ: &str = "frame_equipment_i1";
-const ITEMS: &str = "frame_items_i1";
-const HERO: &str = "frame_hero_i1";
-const ACTOR: &str = "frame_actor_i1";
-const WRITE_EQ: &str = "frame_reconcile_i1";
-const WRITE_AC: &str = "frame_ac_i1";
-const RECORD: &str = "frame_record_i1";
+pub(super) const MAX: usize = 32;
+pub(super) const PREVIEW: &str = "frame_preview_i1";
+pub(super) const RUN: &str = "frame_cancel_i1";
+pub(super) const EQ: &str = "frame_equipment_i1";
+pub(super) const ITEMS: &str = "frame_items_i1";
+pub(super) const HERO: &str = "frame_hero_i1";
+pub(super) const ACTOR: &str = "frame_actor_i1";
+pub(super) const WRITE_EQ: &str = "frame_reconcile_i1";
+pub(super) const WRITE_AC: &str = "frame_ac_i1";
+pub(super) const RECORD: &str = "frame_record_i1";
 const POLICY: [u8; 32] = [181; 32];
 const ROUTES: [(&str, &str, Access); 7] = [
     ("Equipment", EQ, Access::Read),
@@ -35,7 +35,7 @@ pub struct DefaultReply {
     pub error: Option<String>,
 }
 #[derive(Clone, Serialize, Deserialize)]
-enum Facts {
+pub(super) enum Facts {
     Equipment(Equipment),
     Hero {
         player: ActorId,
@@ -45,7 +45,7 @@ enum Facts {
     Items(Vec<(ItemId, Option<law::ArmorItem>)>),
     Actor(Option<bool>),
 }
-struct Items(Vec<(ItemId, Option<law::ArmorItem>)>);
+pub(super) struct Items(Vec<(ItemId, Option<law::ArmorItem>)>);
 impl law::Objects for Items {
     fn armor(&self, id: ItemId) -> Option<law::ArmorItem> {
         self.0
@@ -54,10 +54,10 @@ impl law::Objects for Items {
             .and_then(|(_, x)| x.clone())
     }
 }
-fn fact(o: &Observation) -> owners::Result<Facts> {
+pub(super) fn fact(o: &Observation) -> owners::Result<Facts> {
     decode(o.bytes(), wand::MAX_RESPONSE_BYTES)
 }
-fn hero(o: &Observation) -> owners::Result<(ActorId, u32, u32)> {
+pub(super) fn hero(o: &Observation) -> owners::Result<(ActorId, u32, u32)> {
     match fact(o)? {
         Facts::Hero {
             player,
@@ -67,7 +67,7 @@ fn hero(o: &Observation) -> owners::Result<(ActorId, u32, u32)> {
         _ => Err(owners::Error::Schema),
     }
 }
-fn items(o: &Observation) -> owners::Result<Items> {
+pub(super) fn items(o: &Observation) -> owners::Result<Items> {
     match fact(o)? {
         Facts::Items(x) => Ok(Items(x)),
         _ => Err(owners::Error::Schema),
@@ -170,6 +170,9 @@ impl FrameDomain for EquipmentState {
         obs: &[Observation],
         _c: &OwnerBridgeConfig,
     ) -> owners::Result<Proposal<Self>> {
+        if _c.dressing_ticks && super::dressing_ticks::tagged(_request) {
+            return super::dressing_ticks::prepare_equipment(self, name, _request, obs);
+        }
         if name != WRITE_EQ {
             return Err(owners::Error::Unsupported);
         }
@@ -210,6 +213,9 @@ impl FrameDomain for ActorsState {
         obs: &[Observation],
         _c: &OwnerBridgeConfig,
     ) -> owners::Result<Proposal<Self>> {
+        if _c.dressing_ticks && super::dressing_ticks::tagged(request) {
+            return super::dressing_ticks::prepare_actors(self, name, request, obs);
+        }
         if name != WRITE_AC {
             return Err(owners::Error::Unsupported);
         }
@@ -240,6 +246,13 @@ impl FrameDomain for SessionState {
         _obs: &[Observation],
         _c: &OwnerBridgeConfig,
     ) -> owners::Result<Proposal<Self>> {
+        if _c.dressing_ticks
+            && serde_json::from_slice::<serde_json::Value>(_request)
+                .ok()
+                .is_some_and(|v| v.is_array())
+        {
+            return super::phase_support::prepare_record(self, _request, _obs);
+        }
         if name != RECORD {
             return Err(owners::Error::Unsupported);
         }
@@ -553,7 +566,11 @@ pub(super) fn native(
         let cc = c.clone();
         p.insert(
             PREVIEW.into(),
-            Rc::new(move |_, view| {
+            Rc::new(move |request, view| {
+                if cc.dressing_ticks && super::dressing_ticks::tagged(request) {
+                    return super::dressing_ticks::preview(&rr.get()?, view)
+                        .map_err(native_refusal);
+                }
                 let s = snapshot(&rr.get()?, view, &cc).map_err(native_refusal)?;
                 encode(
                     &DefaultRequest {
@@ -572,6 +589,10 @@ pub(super) fn native(
         p.insert(
             RUN.into(),
             Rc::new(move |request, view| {
+                if cc.dressing_ticks && super::dressing_ticks::tagged(request) {
+                    return super::dressing_ticks::execute(&routes.get()?, request, view, &cc)
+                        .map_err(native_refusal);
+                }
                 execute(&routes.get()?, request, view, &cc).map_err(native_refusal)
             }),
         );

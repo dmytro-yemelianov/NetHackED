@@ -22,6 +22,7 @@ use std::{
 };
 
 pub mod default_commands;
+pub mod dressing_ticks;
 pub(crate) mod item_lifetime;
 pub mod metabolic_ticks;
 pub mod passive_ticks;
@@ -93,6 +94,7 @@ pub struct OwnerBridgeConfig {
     pub(super) passive_ticks: bool,
     pub(super) metabolic_ticks: bool,
     pub(super) regeneration_ticks: bool,
+    pub(super) dressing_ticks: bool,
     pub(super) workflow_approval: Option<wand_workflows::WandWorkflowApproval>,
     pub(super) wand_extensions: bool,
     pub(super) extension_catalog: Vec<wand_extensions::WandGuest>,
@@ -122,6 +124,7 @@ impl OwnerBridgeConfig {
             passive_ticks: false,
             metabolic_ticks: false,
             regeneration_ticks: false,
+            dressing_ticks: false,
             workflow_approval: None,
             wand_extensions: false,
             extension_catalog: vec![],
@@ -229,7 +232,15 @@ impl OwnerBridgeConfig {
         c.regeneration_ticks = true;
         c
     }
+    pub fn with_dressing_ticks(self) -> Self {
+        let mut c = self.with_natural_hp_regeneration();
+        c.dressing_ticks = true;
+        c
+    }
     fn schema_tag(&self, tag: u8) -> u8 {
+        if self.dressing_ticks {
+            return tag + 110;
+        }
         if self.regeneration_ticks {
             return tag + 120;
         }
@@ -258,6 +269,9 @@ impl OwnerBridgeConfig {
         }
     }
     fn codec_identity(&self, name: &str, tag: u8) -> op::CodecIdentity {
+        if self.dressing_ticks {
+            return identity(&format!("{name}-dressing-i2d"), tag + 110);
+        }
         if self.regeneration_ticks {
             return identity(&format!("{name}-regeneration-i2c"), tag + 120);
         }
@@ -304,6 +318,13 @@ impl OwnerBridgeConfig {
         }
     }
     fn session_binding(&self) -> pr::Binding {
+        if self.dressing_ticks {
+            return pr::Binding {
+                name: "native-dressing-i2d-session".into(),
+                version: 13,
+                artifact: [110; 32],
+            };
+        }
         if self.regeneration_ticks {
             return pr::Binding {
                 name: "native-regeneration-i2c-session".into(),
@@ -1312,6 +1333,9 @@ fn profile_limits(config: &OwnerBridgeConfig) -> kernel::Limits {
     limits
 }
 fn profile_native_id(config: &OwnerBridgeConfig) -> &'static [u8] {
+    if config.dressing_ticks {
+        return b"NetHackED raw dressing M6-I2d v1";
+    }
     if config.regeneration_ticks {
         return b"NetHackED natural HP regeneration M6-I2c v1";
     }
@@ -2118,6 +2142,10 @@ fn restore_configuration(
 fn approved_profiles(config: &OwnerBridgeConfig) -> Vec<OwnerBridgeConfig> {
     let mut profiles = vec![config.clone()];
     let mut config = config.clone();
+    if config.dressing_ticks {
+        config.dressing_ticks = false;
+        profiles.push(config.clone());
+    }
     if config.regeneration_ticks {
         config.regeneration_ticks = false;
         profiles.push(config.clone());
@@ -2853,6 +2881,7 @@ impl OwnerBridge {
 mod tests {
     mod admission;
     mod default_commands;
+    mod dressing_ticks;
     mod fresh_process;
     mod metabolic_ticks;
     mod passive_ticks;

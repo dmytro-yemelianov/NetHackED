@@ -104,6 +104,9 @@ pub(super) fn random_id(c: &OwnerBridgeConfig) -> &'static [u8] {
     }
 }
 pub(super) fn caller_id(c: &OwnerBridgeConfig) -> &'static [u8] {
+    if c.dressing_ticks {
+        return b"NetHackED dressing caller M6-I2d v1";
+    }
     if c.regeneration_ticks {
         return b"NetHackED regeneration caller_id M6-I2c v1";
     }
@@ -554,6 +557,7 @@ pub(super) fn capture_accounting(
     }
     charge::capture(a, c)?;
     super::default_commands::capture(a, c)?;
+    super::dressing_ticks::capture(a, c)?;
     super::passive_ticks::capture(a, c)?;
     super::metabolic_ticks::capture(a, c)?;
     super::regeneration_ticks::capture(a, c)?;
@@ -571,6 +575,7 @@ pub(super) fn restore_accounting(
     }
     charge::restore(a, c)?;
     super::default_commands::restore(a, c)?;
+    super::dressing_ticks::restore(a, c)?;
     super::passive_ticks::restore(a, c)?;
     super::metabolic_ticks::restore(a, c)?;
     super::regeneration_ticks::restore(a, c)?;

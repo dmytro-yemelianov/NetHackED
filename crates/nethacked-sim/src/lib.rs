@@ -39,3 +39,5 @@ mod passive_afflictions;
 
 mod passive_metabolism;
 mod passive_regeneration;
+
+pub(crate) mod passive_dressing;

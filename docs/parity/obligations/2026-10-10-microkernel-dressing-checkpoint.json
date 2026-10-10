@@ -1,0 +1,58 @@
+{
+  "unit": "M6-I2d",
+  "status": "accepted_in_this_commit",
+  "parent": "2158e862fa200657a28fe24fa949348e073b3471",
+  "scope": "Explicit raw current-Rust dressing tick; reconciliation before countdown, completion-only AC, truthful receipt-derived Session state/event prefix; no full I2/Wait/C acceptance",
+  "focused_completion": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2d/writer-final-completion.json",
+  "focused_completion_sha256": "b21d18a4547a7b782846b1145b35a60a76211a016721496eb31eafec55a7a2e7",
+  "workspace_passed": 1552,
+  "checks": 12,
+  "goldens": [
+    "golden_vanilla_event_logs_are_unchanged",
+    "golden_vanilla_bestiary_combat_is_unchanged",
+    "golden_vanilla_runs_are_unchanged"
+  ],
+  "non_documentation_inputs": 564,
+  "source_digest": "c5f4956348c9e53da14fb4e4cfb1367e5d6f5ef6f25622fd0f39d44de92c732f",
+  "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2d/review-repair/answer.txt",
+  "review_sha256": "59d2aa02aa783262a908a1ad80af431f0eebf1ca4f4b0601d804ea58d4481041",
+  "review_usage": {
+    "cached_input_tokens": 135808,
+    "input_tokens": 168177,
+    "output_tokens": 1204,
+    "reasoning_output_tokens": 235,
+    "uncached_input_tokens": 32369
+  },
+  "review_usage_by_stage": {
+    "astra_production": {
+      "cached_input_tokens": 98816,
+      "input_tokens": 135702,
+      "output_tokens": 712,
+      "reasoning_output_tokens": 94,
+      "uncached_input_tokens": 36886
+    },
+    "sol_witness_repair": {
+      "cached_input_tokens": 135808,
+      "input_tokens": 168177,
+      "output_tokens": 1204,
+      "reasoning_output_tokens": 235,
+      "uncached_input_tokens": 32369
+    }
+  },
+  "review_model": "gpt-6-astra/medium sealed production review; gpt-6.1-sol/medium final witness repair review",
+  "review_chain": [
+    "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2d/review/answer.txt",
+    "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2d/review/runner.json"
+  ],
+  "full_gate_acceptance": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2d/final-gates/accepted.json",
+  "full_gate_acceptance_sha256": "d86c0a773b98fa12e0b0a6d8d4297af583b7ed5cfff4a8dca5af68d5727d1437",
+  "authority": "Tagged dressing dispatch reuses existing authenticated frame ports, preserving caller/provider64/64 and owner enrollment. Local private owner proposals plus mandatory exact cross-owner accounting rederive Equipment/Actors before synchronous receipt-derived Session publication.",
+  "limits": [
+    "Bounded existing armor/item facts; unsupported state refuses rather than truncates, legacy adapter remains unbounded",
+    "Initialzero dressing cancels during reconciliation without finish/AC; raw phase changes neither Clock nor Random",
+    "Committed prefix is reloadable; pending dynamic Session publication retry/persistence remains unsupported",
+    "Timer/revival migration, remaining M6/M7 and separate53-family C backlog remain open"
+  ],
+  "attempt_history": "Initial newprofile forward Equipment/Actors dependency lookup failed Owner(Schema); corrected using accepted cancellation provisional immutable request + mandatory authenticated accounting pattern, without owner enrollment/manifest limit changes.",
+  "implementation_usage": "collaboration/root telemetry unavailable"
+}

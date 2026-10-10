@@ -155,22 +155,24 @@ impl SimulationWorld {
     }
 
     pub(crate) fn tick_dressing(&mut self, events: &mut Vec<GameEvent>) {
-        self.reconcile_equipment();
-        if self
-            .arena
-            .actors
-            .get(self.player_id)
-            .is_none_or(|hero| hero.is_dead)
-        {
-            self.equipment.dressing = None;
-            return;
+        let result = crate::passive_dressing::tick(
+            &self.equipment,
+            &super::command_frame::BorrowedObjects {
+                items: &self.arena.items,
+                rules: &self.ruleset,
+            },
+            self.player_id,
+            self.arena
+                .actors
+                .get(self.player_id)
+                .is_some_and(|a| !a.is_dead),
+            self.divine_protection,
+        );
+        self.equipment = result.equipment;
+        if let Some(ac) = result.ac {
+            self.arena.actors[self.player_id].ac = ac;
         }
-        if let Some(dressing) = &mut self.equipment.dressing {
-            dressing.turns_left = dressing.turns_left.saturating_sub(1);
-            if dressing.turns_left == 0 {
-                self.finish_dressing(events);
-            }
-        }
+        events.extend(result.events);
     }
 
     /// C stop_donning (do_wear.c:1686-1724), called before a theft transfer.

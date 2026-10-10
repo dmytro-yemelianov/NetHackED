@@ -5,7 +5,7 @@
   "plan_sha256": "51b6bfd5a1b077089cc38a2b10346f9e905d37e575e531be558f97ed9259ca06",
   "native_goal": "Complete NetRust microkernel architecture program; formal contracts, executable extensions, existing NetHack migration, integration audit",
   "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
-  "active_unit": "M6-I2d",
+  "active_unit": "M6-I2e",
   "live_handles": [],
   "acceptance": {
     "A1": "passed_generic_runtime_1fc3290",
@@ -874,8 +874,8 @@
         "M5"
       ],
       "plan": "docs/plans/2026-10-10-default-domain-migration.md",
-      "next_unit": "M6-I2d dressing, then object/corpse timer drain with authenticated spawn/retirement prerequisites",
-      "planning_status": "I1 and raw I2a/b/c accepted; full I2 remains partial",
+      "next_unit": "M6-I2e object/corpse timer drain; authenticated revival/spawn/cleanup prerequisites must be bound first",
+      "planning_status": "I1 and raw I2a/b/c/d accepted; full I2 remains partial",
       "implementation_packet": {
         "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2c/writer-packet.md",
         "sha256": "a867dd323ff15f35352e220a43b15a2b84acfd5dfa7af7bbe66ebf90bdeaf84e",
@@ -923,6 +923,27 @@
           "remaining": [],
           "checkpoint": "docs/parity/obligations/2026-10-10-microkernel-regeneration-checkpoint.json",
           "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2c/review-assertion/answer.txt"
+        },
+        {
+          "id": "M6-I2d",
+          "status": "accepted_in_this_commit",
+          "scope": "Explicit raw dressing tick; reconcile before countdown, exact finish-only AC and receipt-derived event publication",
+          "packet": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2d/writer-packet.md",
+          "source_bindings": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2d/writer-source-bindings.json",
+          "remaining": [],
+          "checkpoint": "docs/parity/obligations/2026-10-10-microkernel-dressing-checkpoint.json",
+          "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2d/review-repair/answer.txt"
+        },
+        {
+          "id": "M6-I2e",
+          "status": "prerequisite_planning",
+          "scope": "Full raw Clock-owned object timer drain including actual ordinary Troll revival and reference cleanup",
+          "draft": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2e/contract-draft.md",
+          "remaining": [
+            "Bind manifest-safe module route and actual revival/spawn/variable-RNG prerequisites",
+            "Resolve timer and reference cleanup native continuation fixtures",
+            "Implementation/review/full gates; expiry-only cannot close this unit"
+          ]
         }
       ]
     },
@@ -1175,8 +1196,8 @@
       "next_adjustment": "B2 Sol/medium wiring to checkpoint API map; no nine-owner/kernel/history audit; isolate concrete missing fallibility seam."
     },
     "native_goal_observed_status": "paused; manual continuation authorized, no full completion claim",
-    "latest_phase": "M6-I2c accepted; full I2/M6 remain partial",
-    "next_action": "Before next writer, count inherited provider exports and caller dependencies; reuse exact authenticated facts and diagnose runtime first rejecting boundary before static escalation",
+    "latest_phase": "M6-I2d accepted; full I2/M6 remain partial",
+    "next_action": "Stopped at user request; resume only on explicit instruction. Bind I2e revival/spawn/cleanup prerequisites and manifest-safe routes before another writer",
     "i4_review_adjustment": "Actual output hard cap2000: required complementary final reviews with each sealed source chunk<=1500 tokens and one read per chunk. CORE8885/WIRING11178 source tokens; no full history/baseline reread. Completed uncached32647/35975 and output1110/886 respectively; root usage unknown.",
     "i5_review": {
       "model": "gpt-6-astra",
