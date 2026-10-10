@@ -76,6 +76,12 @@ pub(super) fn read_routes(c: &OwnerBridgeConfig) -> Vec<(&'static str, &'static 
     routes
 }
 pub(super) fn random_id(c: &OwnerBridgeConfig) -> &'static [u8] {
+    if c.metabolic_ticks {
+        return b"NetHackED metabolic random_id M6-I2b v1";
+    }
+    if c.passive_ticks {
+        return b"NetHackED passive random M6-I2a v1";
+    }
     if c.default_commands {
         return b"NetHackED default frame random identity M6-I1 v1";
     }
@@ -95,6 +101,12 @@ pub(super) fn random_id(c: &OwnerBridgeConfig) -> &'static [u8] {
     }
 }
 pub(super) fn caller_id(c: &OwnerBridgeConfig) -> &'static [u8] {
+    if c.metabolic_ticks {
+        return b"NetHackED metabolic caller_id M6-I2b v1";
+    }
+    if c.passive_ticks {
+        return b"NetHackED passive caller M6-I2a v1";
+    }
     if c.default_commands {
         return b"NetHackED default frame caller identity M6-I1 v1";
     }
@@ -536,6 +548,8 @@ pub(super) fn capture_accounting(
     }
     charge::capture(a, c)?;
     super::default_commands::capture(a, c)?;
+    super::passive_ticks::capture(a, c)?;
+    super::metabolic_ticks::capture(a, c)?;
     super::item_lifetime::capture_accounting(a, c)?;
     Ok(())
 }
@@ -550,6 +564,8 @@ pub(super) fn restore_accounting(
     }
     charge::restore(a, c)?;
     super::default_commands::restore(a, c)?;
+    super::passive_ticks::restore(a, c)?;
+    super::metabolic_ticks::restore(a, c)?;
     super::item_lifetime::restore_accounting(a, c)?;
     Ok(())
 }
@@ -798,6 +814,8 @@ pub(super) fn gameplay_grant_names(c: &OwnerBridgeConfig) -> BTreeSet<String> {
         }
     }
     expected.extend(super::default_commands::grant_names(c));
+    expected.extend(super::passive_ticks::grant_names(c));
+    expected.extend(super::metabolic_ticks::grant_names(c));
     charge_grant_names(expected, c)
 }
 pub(super) fn approve_grant(

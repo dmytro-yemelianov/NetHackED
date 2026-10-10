@@ -23,6 +23,9 @@ use std::{
 
 pub mod default_commands;
 pub(crate) mod item_lifetime;
+pub mod metabolic_ticks;
+pub mod passive_ticks;
+mod phase_support;
 pub(crate) mod wand_commands;
 pub(crate) mod wand_extensions;
 pub(crate) mod wand_gameplay;
@@ -86,6 +89,8 @@ pub struct OwnerBridgeConfig {
     pub(super) wand_workflow_replies: bool,
     pub(super) wand_charge_attempts: bool,
     pub(super) default_commands: bool,
+    pub(super) passive_ticks: bool,
+    pub(super) metabolic_ticks: bool,
     pub(super) workflow_approval: Option<wand_workflows::WandWorkflowApproval>,
     pub(super) wand_extensions: bool,
     pub(super) extension_catalog: Vec<wand_extensions::WandGuest>,
@@ -112,6 +117,8 @@ impl OwnerBridgeConfig {
             wand_workflow_replies: false,
             wand_charge_attempts: false,
             default_commands: false,
+            passive_ticks: false,
+            metabolic_ticks: false,
             workflow_approval: None,
             wand_extensions: false,
             extension_catalog: vec![],
@@ -204,7 +211,23 @@ impl OwnerBridgeConfig {
         c.default_commands = true;
         c
     }
+    pub fn with_passive_affliction_ticks(self) -> Self {
+        let mut c = self.with_default_commands();
+        c.passive_ticks = true;
+        c
+    }
+    pub fn with_passive_metabolic_ticks(self) -> Self {
+        let mut c = self.with_passive_affliction_ticks();
+        c.metabolic_ticks = true;
+        c
+    }
     fn schema_tag(&self, tag: u8) -> u8 {
+        if self.metabolic_ticks {
+            return tag + 130;
+        }
+        if self.passive_ticks {
+            return tag + 150;
+        }
         if self.default_commands {
             return tag + 180;
         }
@@ -224,6 +247,12 @@ impl OwnerBridgeConfig {
         }
     }
     fn codec_identity(&self, name: &str, tag: u8) -> op::CodecIdentity {
+        if self.metabolic_ticks {
+            return identity(&format!("{name}-metabolic-i2b"), tag + 130);
+        }
+        if self.passive_ticks {
+            return identity(&format!("{name}-passive-i2a"), tag + 150);
+        }
         if self.default_commands {
             return identity(&format!("{name}-default-frame-i1"), tag + 180);
         }
@@ -261,6 +290,20 @@ impl OwnerBridgeConfig {
         }
     }
     fn session_binding(&self) -> pr::Binding {
+        if self.metabolic_ticks {
+            return pr::Binding {
+                name: "native-metabolic-i2b-session".into(),
+                version: 11,
+                artifact: [130; 32],
+            };
+        }
+        if self.passive_ticks {
+            return pr::Binding {
+                name: "native-passive-i2a-session".into(),
+                version: 10,
+                artifact: [150; 32],
+            };
+        }
         if self.default_commands {
             return pr::Binding {
                 name: "native-default-frame-i1-session".into(),
@@ -486,6 +529,14 @@ macro_rules! codec {
                 request: &[u8],
                 obs: &[Observation],
             ) -> owners::Result<Vec<u8>> {
+                if self.0.metabolic_ticks && name.starts_with("metabolic_") {
+                    return metabolic_ticks::MetabolicDomain::metabolic_query(
+                        s, name, request, &self.0,
+                    );
+                }
+                if self.0.passive_ticks && name.starts_with("passive_") {
+                    return passive_ticks::PassiveDomain::passive_query(s, name, request, &self.0);
+                }
                 if self.0.default_commands && name.starts_with("frame_") {
                     return default_commands::FrameDomain::frame_query(s, name, request, &self.0);
                 }
@@ -506,6 +557,16 @@ macro_rules! codec {
                 request: &[u8],
                 obs: &[Observation],
             ) -> owners::Result<Proposal<$state>> {
+                if self.0.metabolic_ticks && name.starts_with("metabolic_") {
+                    return metabolic_ticks::MetabolicDomain::metabolic_prepare(
+                        s, name, request, obs, &self.0,
+                    );
+                }
+                if self.0.passive_ticks && name.starts_with("passive_") {
+                    return passive_ticks::PassiveDomain::passive_prepare(
+                        s, name, request, obs, &self.0,
+                    );
+                }
                 if self.0.default_commands && name.starts_with("frame_") {
                     return default_commands::FrameDomain::frame_prepare(
                         s, name, request, obs, &self.0,
@@ -1111,9 +1172,19 @@ fn add_wand_ports(
             .collect::<owners::Result<Vec<_>>>()?;
         ports.insert((*query).into(), port(Access::Read, dependencies));
     }
-    default_commands::add_ports(
+    metabolic_ticks::add_ports(
         name,
-        wand_commands::add_ports(name, ports, ids, config)?,
+        passive_ticks::add_ports(
+            name,
+            default_commands::add_ports(
+                name,
+                wand_commands::add_ports(name, ports, ids, config)?,
+                ids,
+                config,
+            )?,
+            ids,
+            config,
+        )?,
         ids,
         config,
     )
@@ -1124,6 +1195,12 @@ fn validate_wand_ports(
     policy: &QueryPolicy,
     config: &OwnerBridgeConfig,
 ) -> owners::Result<()> {
+    metabolic_ticks::validate_ports(name, ports, config)?;
+    let metabolic_filtered = metabolic_ticks::filtered_ports(ports);
+    let ports = &metabolic_filtered;
+    passive_ticks::validate_ports(name, ports, config)?;
+    let passive_filtered = passive_ticks::filtered_ports(ports);
+    let ports = &passive_filtered;
     default_commands::validate_ports(name, ports, config)?;
     let filtered;
     let ports = if config.default_commands {
@@ -1196,6 +1273,12 @@ fn profile_limits(config: &OwnerBridgeConfig) -> kernel::Limits {
     limits
 }
 fn profile_native_id(config: &OwnerBridgeConfig) -> &'static [u8] {
+    if config.metabolic_ticks {
+        return b"NetHackED raw metabolism M6-I2b v1";
+    }
+    if config.passive_ticks {
+        return b"NetHackED passive afflictions M6-I2a v1";
+    }
     if config.default_commands {
         return b"NetHackED bounded default frame M6-I1 v1";
     }
@@ -1259,7 +1342,13 @@ fn profile_provider(config: &OwnerBridgeConfig) -> Manifest {
             );
         }
     }
-    default_commands::provider(wand_commands::provider_manifest(m, config), config)
+    metabolic_ticks::provider(
+        passive_ticks::provider(
+            default_commands::provider(wand_commands::provider_manifest(m, config), config),
+            config,
+        ),
+        config,
+    )
 }
 fn profile_caller(config: &OwnerBridgeConfig) -> Manifest {
     if !config.wand_ports {
@@ -1295,7 +1384,13 @@ fn profile_caller(config: &OwnerBridgeConfig) -> Manifest {
             ..endpoint(Access::Read)
         },
     );
-    default_commands::caller(wand_commands::caller_manifest(m, config), config)
+    metabolic_ticks::caller(
+        passive_ticks::caller(
+            default_commands::caller(wand_commands::caller_manifest(m, config), config),
+            config,
+        ),
+        config,
+    )
 }
 fn random_capability() -> Capability {
     Capability {
@@ -1541,6 +1636,8 @@ fn profile_native_ports(
         ports = wand_commands::random_ports(ports, handles.clone(), config.clone());
     }
     let ports = default_commands::native(ports, handles.clone(), &config);
+    let ports = passive_ticks::native(ports, handles.clone(), &config);
+    let ports = metabolic_ticks::native(ports, handles.clone(), &config);
     wand_commands::native_ports(ports, handles, config)
 }
 fn read_route(
@@ -1584,14 +1681,20 @@ fn caller_native_ports(config: OwnerBridgeConfig) -> BTreeMap<String, NativePort
             + 3;
         view.call_dependency(slot, request)
     });
-    default_commands::caller_ports(
-        wand_commands::caller_ports(
-            [
-                ("query".into(), query),
-                ("run".into(), run),
-                ("observe".into(), observe),
-            ]
-            .into(),
+    metabolic_ticks::caller_ports(
+        passive_ticks::caller_ports(
+            default_commands::caller_ports(
+                wand_commands::caller_ports(
+                    [
+                        ("query".into(), query),
+                        ("run".into(), run),
+                        ("observe".into(), observe),
+                    ]
+                    .into(),
+                    &config,
+                ),
+                &config,
+            ),
             &config,
         ),
         &config,
@@ -1963,6 +2066,14 @@ fn restore_configuration(
 fn approved_profiles(config: &OwnerBridgeConfig) -> Vec<OwnerBridgeConfig> {
     let mut profiles = vec![config.clone()];
     let mut config = config.clone();
+    if config.metabolic_ticks {
+        config.metabolic_ticks = false;
+        profiles.push(config.clone());
+    }
+    if config.passive_ticks {
+        config.passive_ticks = false;
+        profiles.push(config.clone());
+    }
     if config.default_commands {
         config.default_commands = false;
         profiles.push(config.clone());
@@ -2380,6 +2491,12 @@ impl OwnerBridge {
                 random: random_owner.clone(),
             };
             keys.extend(default_commands::resources(&r)?);
+            if config.passive_ticks {
+                keys.extend(passive_ticks::resources(&r)?);
+                if config.metabolic_ticks {
+                    keys.extend(metabolic_ticks::resources(&r)?);
+                }
+            }
             keys
         } else {
             keys
@@ -2673,6 +2790,8 @@ mod tests {
     mod admission;
     mod default_commands;
     mod fresh_process;
+    mod metabolic_ticks;
+    mod passive_ticks;
     mod wand_aggregate;
     mod wand_charge_attempts;
     mod wand_commands;

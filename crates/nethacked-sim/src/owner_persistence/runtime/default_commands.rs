@@ -663,7 +663,7 @@ fn execute(
     )
 }
 impl OwnerBridge {
-    fn frame_call<T: Serialize>(
+    pub(super) fn frame_call<T: Serialize>(
         &self,
         name: &str,
         request: &T,
@@ -681,7 +681,10 @@ impl OwnerBridge {
                     caller,
                     name,
                     Authority {
-                        access: if name == PREVIEW {
+                        access: if name == PREVIEW
+                            || name == super::passive_ticks::PREVIEW
+                            || name == super::metabolic_ticks::PREVIEW
+                        {
                             Access::Read
                         } else {
                             Access::Write
@@ -697,7 +700,10 @@ impl OwnerBridge {
                 &operation,
                 &request,
                 Authority {
-                    access: if name == PREVIEW {
+                    access: if name == PREVIEW
+                        || name == super::passive_ticks::PREVIEW
+                        || name == super::metabolic_ticks::PREVIEW
+                    {
                         Access::Read
                     } else {
                         Access::Write

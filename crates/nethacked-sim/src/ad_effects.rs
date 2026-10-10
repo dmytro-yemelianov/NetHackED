@@ -573,32 +573,14 @@ impl SimulationWorld {
         &mut self,
         events: &mut Vec<GameEvent>,
     ) -> nethacked_core::afflictions::AfflictionTickResult {
-        let before = self.hero.afflictions.transient.clone();
-        let result = nethacked_core::afflictions::tick_afflictions(&mut self.hero);
-        let t = &self.hero.afflictions.transient;
-        let mut msgs: Vec<&str> = Vec::new();
-        if before.stunned > 0 && t.stunned == 0 {
-            msgs.push("You feel a bit steadier now.");
-        }
-        if before.confused > 0 && t.confused == 0 {
-            msgs.push("You feel less confused now.");
-        }
-        let cleared_blind = before.blinded > 0 && t.blinded == 0;
-        if cleared_blind {
-            msgs.push("You can see again.");
-        }
-        if before.helpless > 0 && t.helpless == 0 {
-            // hack.c:973 fall_asleep wakeup message
-            msgs.push("You wake up.");
-        }
+        let (result, cleared_blind, recovery) =
+            crate::passive_afflictions::recovery(&mut self.hero.afflictions);
         if cleared_blind {
             if let Some(h) = self.arena.actors.get_mut(self.player_id) {
                 h.intrinsics.blind = false;
             }
         }
-        for m in msgs {
-            say(events, m);
-        }
+        events.extend(recovery);
         result
     }
 

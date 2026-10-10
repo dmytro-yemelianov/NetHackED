@@ -4,7 +4,6 @@ use nethacked_core::energy::{hero_movement_gain, monster_movement_gain, NORMAL_S
 
 use crate::events::GameEvent;
 use crate::world::SimulationWorld;
-use nethacked_core::HungerState;
 use rand::Rng;
 
 impl SimulationWorld {
@@ -93,25 +92,13 @@ impl SimulationWorld {
 
             let affliction_result = self.tick_hero_afflictions(&mut events);
 
-            match affliction_result {
-                nethacked_core::afflictions::AfflictionTickResult::StoneDeath => {
-                    if let Some(p) = self.arena.actors.get_mut(self.player_id) {
-                        p.is_dead = true;
-                    }
-                    events.push(GameEvent::LogMessage {
-                        text: nethacked_i18n::Messages::petrification_death(self.locale)
-                            .to_string(),
-                    });
+            if let Some(message) =
+                crate::passive_afflictions::fatal_message(&affliction_result, self.locale)
+            {
+                if let Some(p) = self.arena.actors.get_mut(self.player_id) {
+                    p.is_dead = true;
                 }
-                nethacked_core::afflictions::AfflictionTickResult::SlimeDeath => {
-                    if let Some(p) = self.arena.actors.get_mut(self.player_id) {
-                        p.is_dead = true;
-                    }
-                    events.push(GameEvent::LogMessage {
-                        text: nethacked_i18n::Messages::sliming_death(self.locale).to_string(),
-                    });
-                }
-                _ => {}
+                events.push(message);
             }
 
             // C allmain.c: nh_timeout precedes regen_hp, which precedes
@@ -121,51 +108,7 @@ impl SimulationWorld {
             self.regenerate_natural_hero_hp(moved);
 
             // Passive metabolic consumption
-            let old_state = self.hunger_state();
-            self.player_nutrition =
-                nethacked_core::nutrition::metabolic_tick(self.player_nutrition);
-            let new_state = self.hunger_state();
-            if old_state != new_state && new_state == HungerState::Hungry {
-                events.push(GameEvent::LogMessage {
-                    text: nethacked_i18n::Messages::hunger_hungry(self.locale).into(),
-                });
-            } else if old_state != new_state && new_state == HungerState::Weak {
-                events.push(GameEvent::LogMessage {
-                    text: nethacked_i18n::Messages::hunger_weak(self.locale).into(),
-                });
-            } else if new_state == HungerState::Fainting && (self.scheduler.turn % 10 == 0) {
-                // NetHackED approximation: C faints (loses turns, `eat.c` newuhs);
-                // here the hero loses 1 HP and dies at 0 HP.
-                let mut died = false;
-                if let Some(p) = self.arena.actors.get_mut(self.player_id) {
-                    if !p.is_dead {
-                        p.hp = p.hp.saturating_sub(1);
-                        if p.hp == 0 {
-                            p.is_dead = true;
-                            died = true;
-                        }
-                    }
-                }
-                events.push(GameEvent::LogMessage {
-                    text: nethacked_i18n::Messages::hunger_fainting(self.locale).into(),
-                });
-                if died {
-                    events.push(GameEvent::LogMessage {
-                        text: nethacked_i18n::t("fainted_death", self.locale).into(),
-                    });
-                }
-            } else if new_state == HungerState::Starved {
-                // Kill and log once, on the transition only.
-                if let Some(p) = self.arena.actors.get_mut(self.player_id) {
-                    if !p.is_dead {
-                        p.hp = 0;
-                        p.is_dead = true;
-                        events.push(GameEvent::LogMessage {
-                            text: nethacked_i18n::t("starved", self.locale).into(),
-                        });
-                    }
-                }
-            }
+            self.tick_passive_metabolism(&mut events);
 
             // C allmain.c:379-387: negative multi advances after
             // timeout, regeneration and hunger, once per world turn.
@@ -178,6 +121,29 @@ impl SimulationWorld {
         }
 
         events
+    }
+
+    /// One raw current-Rust metabolic phase; caller owns turn scheduling.
+    pub(crate) fn tick_passive_metabolism(&mut self, events: &mut Vec<GameEvent>) {
+        use crate::passive_metabolism::{self as law, Actor};
+        let actor = self.arena.actors.get(self.player_id).map(|a| Actor {
+            hp: a.hp,
+            dead: a.is_dead,
+        });
+        let out = law::tick(
+            self.player_nutrition,
+            actor,
+            self.scheduler.turn,
+            self.locale,
+        );
+        self.player_nutrition = out.nutrition;
+        if let Some(next) = out.actor {
+            if let Some(a) = self.arena.actors.get_mut(self.player_id) {
+                a.hp = next.hp;
+                a.is_dead = next.dead;
+            }
+        }
+        events.extend(out.events);
     }
 
     /// NetHack-5.0.0_Released allmain.c:625-679, ordinary-form natural branch.

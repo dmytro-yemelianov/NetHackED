@@ -34,3 +34,7 @@ pub use nethacked_data::{CharacterConfig, Gender, ItemKindId, MonsterSpeciesId, 
 pub use nethacked_types::{
     Alignment, Buc, Coord, Direction, DoorState, Intrinsics, ItemClass, Tile, COLNO, ROWNO,
 };
+
+mod passive_afflictions;
+
+mod passive_metabolism;

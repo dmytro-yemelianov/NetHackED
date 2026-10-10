@@ -1,0 +1,62 @@
+{
+  "unit": "M6-I2a/I2b",
+  "status": "accepted_in_this_commit",
+  "parent": "7e2ff502a4de26227b8e945c0e151c1997317549",
+  "scope": "Explicit raw affliction and metabolic phases; existing Rust semantics shared with legacy adapters. Full I2 and Wait orchestration remain open.",
+  "focused_passed": 85,
+  "new_fixture_groups": 10,
+  "legacy_afflictions_passed": 4,
+  "workspace_passed": 1528,
+  "checks": 12,
+  "goldens": [
+    "golden_vanilla_event_logs_are_unchanged",
+    "golden_vanilla_bestiary_combat_is_unchanged",
+    "golden_vanilla_runs_are_unchanged"
+  ],
+  "non_documentation_inputs": 558,
+  "source_digest": "6cc3638a9d3a3a86d1b06ac77f51155c895d3384085b4e863739a209637439cc",
+  "reviews": [
+    {
+      "unit": "MICROKERNEL-M6-I2a",
+      "verdict": "PASS",
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2a/review/answer.txt",
+      "sha256": "8fdd0ff98749f57f5ca7ca54731b26413437700073683607bc280840ac7c44b7",
+      "usage": {
+        "cached_input_tokens": 257024,
+        "input_tokens": 297689,
+        "output_tokens": 1036,
+        "reasoning_output_tokens": 341,
+        "uncached_input_tokens": 40665
+      },
+      "commands": 5,
+      "wall_seconds": 51.994
+    },
+    {
+      "unit": "MICROKERNEL-M6-I2b",
+      "verdict": "PASS",
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2b/review/answer.txt",
+      "sha256": "f89780ba15faec93bcc2dbbbb824c4e9e5d4d49c3d5cf75f806a0dcbe04b0166",
+      "usage": {
+        "cached_input_tokens": 114944,
+        "input_tokens": 154644,
+        "output_tokens": 679,
+        "reasoning_output_tokens": 181,
+        "uncached_input_tokens": 39700
+      },
+      "commands": 1,
+      "wall_seconds": 31.315
+    }
+  ],
+  "review_chain": "I2a sealed reviewed-source copies verified against focused checkpoint; I2b independent delta review binds final 14-source integration tree and I2a verdict/checkpoint.",
+  "full_gate_acceptance": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2ab/final-gates/accepted.json",
+  "full_gate_acceptance_sha256": "b89e800942b6bd07e2886ac16db75c2559af17bb9e83b9110d79a3cb93a25f83",
+  "authority": "Authenticated finite Hero/Actors/Clock/Session facts; exact atomic state accounting; private Session publication derives from actual phase receipt. Bad provisional turn and authentic replay refused without state/history mutation.",
+  "late_refusal": "Real delegated Session exclusion preserves committed Hero/Actors prefix, unchanged Session and explicit error; native completed/prefix capture and reload witnessed.",
+  "limitations": [
+    "No full I2/Wait/once-per-turn orchestration or default dispatcher cutover",
+    "Current Rust default CON=10 and hunger approximation preserved; no new C parity claimed",
+    "Private synchronous Session accounting has no pending dynamic publication persistence/retry guarantee",
+    "Regeneration, object/corpse timers and dressing remain open; M6/M7 and separate 53-family C backlog remain open"
+  ],
+  "implementation_usage": "actual collaboration/root telemetry unavailable"
+}
