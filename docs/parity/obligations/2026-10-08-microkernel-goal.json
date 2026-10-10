@@ -874,8 +874,8 @@
         "M5"
       ],
       "plan": "docs/plans/2026-10-10-default-domain-migration.md",
-      "next_unit": "M6-I2e object/corpse timer drain; authenticated revival/spawn/cleanup prerequisites must be bound first",
-      "planning_status": "I1 and raw I2a/b/c/d accepted; full I2 remains partial",
+      "next_unit": "M6-I2e runtime contract: manifest-safe caller/provider and authenticated variable-RNG/accounting",
+      "planning_status": "I1/I2a/b/c/d accepted; I2e revival law accepted, owner timer drain remains open",
       "implementation_packet": {
         "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2c/writer-packet.md",
         "sha256": "a867dd323ff15f35352e220a43b15a2b84acfd5dfa7af7bbe66ebf90bdeaf84e",
@@ -936,14 +936,26 @@
         },
         {
           "id": "M6-I2e",
-          "status": "prerequisite_planning",
+          "status": "in_progress",
           "scope": "Full raw Clock-owned object timer drain including actual ordinary Troll revival and reference cleanup",
           "draft": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2e/contract-draft.md",
           "remaining": [
-            "Bind manifest-safe module route and actual revival/spawn/variable-RNG prerequisites",
-            "Resolve timer and reference cleanup native continuation fixtures",
-            "Implementation/review/full gates; expiry-only cannot close this unit"
+            "Concrete separate timer caller/provider install, grants and restore catalogs within unchanged64 limits",
+            "Authenticated finite nine-owner projections and exact variable-RNG preview/prepare/accounting",
+            "Clock-owned due drain, actor allocation/split, reference cleanup and deferred Billing evidence",
+            "Reloadable completed and refused Session prefixes, actual native timer tie ordering and full timer acceptance"
+          ],
+          "accepted_prerequisites": [
+            "M6-I2e-LAW1"
           ]
+        },
+        {
+          "id": "M6-I2e-LAW1",
+          "status": "accepted_in_this_commit",
+          "scope": "Private immutable current-Rust ordinary Troll revival attempt and placement extraction; no owner timer runtime migration",
+          "checkpoint": "docs/parity/obligations/2026-10-10-microkernel-revival-law-checkpoint.json",
+          "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2e/LAW1/review-retry/answer.txt",
+          "remaining": []
         }
       ]
     },
@@ -977,7 +989,7 @@
       26945,
       30480
     ],
-    "next_adjustment": "O4b high writer justified by concrete retained codec/policy versus kernel guest-route lifetime, authenticated input-observation and timer target composition gaps. Reuse accepted service APIs and O2-O4a tests; one integration unit, no new C fact extraction or whole-history audit. Root final gates only after fresh review; one writer/Cargo.",
+    "next_adjustment": "Use accepted guarded runner for every new model phase; when exact original/candidate/helper source is supplied, require final inline review without optional discovery tool rounds. Retain failed controller usage; no savings claim.",
     "authority_implementation": {
       "uncached_input": 59709,
       "output": 18592,
@@ -1196,8 +1208,8 @@
       "next_adjustment": "B2 Sol/medium wiring to checkpoint API map; no nine-owner/kernel/history audit; isolate concrete missing fallibility seam."
     },
     "native_goal_observed_status": "paused; manual continuation authorized, no full completion claim",
-    "latest_phase": "M6-I2d accepted; full I2/M6 remain partial",
-    "next_action": "Stopped at user request; resume only on explicit instruction. Bind I2e revival/spawn/cleanup prerequisites and manifest-safe routes before another writer",
+    "latest_phase": "M6-I2e-LAW1 accepted; full timer/I2/M6 remain partial",
+    "next_action": "Bind concrete separate timer module installation and Random-owned variable-RNG preview/prepare with exact accounting before runtime writer",
     "i4_review_adjustment": "Actual output hard cap2000: required complementary final reviews with each sealed source chunk<=1500 tokens and one read per chunk. CORE8885/WIRING11178 source tokens; no full history/baseline reread. Completed uncached32647/35975 and output1110/886 respectively; root usage unknown.",
     "i5_review": {
       "model": "gpt-6-astra",

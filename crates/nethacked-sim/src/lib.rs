@@ -14,6 +14,7 @@ pub mod object_timers;
 pub mod owner_persistence;
 pub mod peace;
 pub mod progress;
+mod revival_law;
 pub mod turns;
 pub mod world;
 

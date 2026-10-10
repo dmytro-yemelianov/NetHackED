@@ -1,0 +1,71 @@
+{
+  "unit": "M6-I2e-LAW1",
+  "status": "accepted_in_this_commit",
+  "parent": "c91085ec17c6e90a9fe4311b6d82b8d501fa9501",
+  "scope": "Private immutable current-Rust ordinary Troll revival attempt and placement extraction; no owner timer runtime migration",
+  "files": [
+    "crates/nethacked-sim/src/corpse_revival.rs",
+    "crates/nethacked-sim/src/lib.rs",
+    "crates/nethacked-sim/src/revival_law.rs",
+    "crates/nethacked-sim/src/revival_law/tests.rs"
+  ],
+  "focused_completion": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2e/LAW1/completion.json",
+  "focused_completion_sha256": "21e549dea09bc4ffb78854516f6cb4afe37a390b4dae1f33b5f3db7292d8668e",
+  "focused_counts": {
+    "baselineIndependentRevival": 8,
+    "baselineIndependentTimers": 14,
+    "finalIndependentRevival": 8,
+    "finalIndependentTimers": 14,
+    "privateDirectLaw": 3,
+    "finalSimLibraryIncludingPrivateLaw": 112
+  },
+  "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2e/LAW1/review-retry/answer.txt",
+  "review_sha256": "821fb9ef08ccf4483533c5c959d9af87c3a70776f3c101c3f5803b85692a047b",
+  "review_model": "gpt-6.1-sol/medium",
+  "review_control": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2e/LAW1/review-retry/control.json",
+  "review_usage": {
+    "cached_input_tokens": 0,
+    "input_tokens": 30829,
+    "output_tokens": 365,
+    "reasoning_output_tokens": 70,
+    "uncached_input_tokens": 30829
+  },
+  "review_retry_history": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2e/LAW1/review/control.json",
+      "stop_reason": "input_limit",
+      "usage": {
+        "cached_input_tokens": 30976,
+        "input_tokens": 94088,
+        "output_tokens": 611,
+        "reasoning_output_tokens": 191,
+        "uncached_input_tokens": 63112
+      },
+      "final_verdict": false
+    }
+  ],
+  "review_retry_adjustment": "Inline exact delegated helper bodies and zero tool rounds, same limits; sole changed-hypothesis retry completed PASS",
+  "writer_usage": "unknown; direct collaboration execution lacked live token telemetry; no quota-compliance or savings claim",
+  "full_gate_acceptance": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2e/LAW1/final-gates/accepted.json",
+  "full_gate_acceptance_sha256": "7285f5fb1546b5492995ba663de32b56d7b37435af80b37fea4fd541d97c46df",
+  "checks": 12,
+  "workspace_passed": 1555,
+  "goldens": [
+    "golden_vanilla_event_logs_are_unchanged",
+    "golden_vanilla_bestiary_combat_is_unchanged",
+    "golden_vanilla_runs_are_unchanged"
+  ],
+  "non_documentation_inputs": 566,
+  "source_digest": "7e8424efc1925b52d1f3070833f785cf1fce3b494faa6332b83de7fdaeba29ab",
+  "law_boundary": "Immutable Ruleset, Items, Actors, Geography and genocide facts plus explicit hero/role context and RNG; Unsupported, Failed rot delay, or Revived actual ActorRecord. No World, mutable mirror or captured World closure.",
+  "coverage_update": "Generated heuristic report now detects SACK referenced by new direct-law fixtures; not new game behavior or C parity. Initial stale report check failed, then regenerated documentation and coverage/doc-links checks passed with frozen source unchanged.",
+  "preserved": "Nested origin and bag guards; placement before norevive; ring shuffling/terrain early returns; factory/peace/malign/saved restoration; failed five-d50 even existing Rot. Adapter retains allocator normalization then insertion then split RNG/serials or cleanup.",
+  "packet_correction": "Removed three now-unused pub(crate) World placement wrappers after compiler confirmation and root direction; shared free placement laws remain. No actual public interface changes. First Clippy failure (dead wrappers and two question_mark suggestions) retained; fixed without warning allowances.",
+  "remaining": [
+    "Concrete separate timer caller/provider install, grants and restore catalogs within unchanged64 limits",
+    "Authenticated finite nine-owner projections and exact variable-RNG preview/prepare/accounting",
+    "Clock-owned due drain, actor allocation/split, reference cleanup and deferred Billing evidence",
+    "Reloadable completed and refused Session prefixes, actual native timer tie ordering and full timer acceptance",
+    "Full I2/Wait/M6/M7 and separate53-family C parity backlog"
+  ]
+}
