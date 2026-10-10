@@ -21,6 +21,7 @@ use std::{
     sync::Arc,
 };
 
+pub(crate) mod item_lifetime;
 pub(crate) mod wand_commands;
 pub(crate) mod wand_gameplay;
 
@@ -70,6 +71,7 @@ pub struct OwnerBridgeConfig {
     wand_ports: bool,
     pub(super) wand_commands: bool,
     pub(super) wand_gameplay: bool,
+    pub(super) item_lifetime: bool,
     native_registry: NativeImportRegistry,
     native_import_explicit: bool,
     native_binding: nethacked_persistence::migration::MigrationBinding,
@@ -88,6 +90,7 @@ impl OwnerBridgeConfig {
             wand_ports: false,
             wand_commands: false,
             wand_gameplay: false,
+            item_lifetime: false,
             native_registry: NativeImportRegistry::current(),
             native_import_explicit: false,
             native_binding: super::native_migration_binding(),
@@ -117,6 +120,12 @@ impl OwnerBridgeConfig {
         }
         self
     }
+    /// Approve the distinct I3 code, owner schemas and atomic lifetime ports.
+    pub fn with_item_lifetime(self) -> Self {
+        let mut config = self.with_wand_gameplay();
+        config.item_lifetime = true;
+        config
+    }
     fn admission_policy(&self) -> super::admission::AdmissionPolicy {
         if self.wand_gameplay {
             super::admission::AdmissionPolicy::WandGameplayV3
@@ -125,7 +134,9 @@ impl OwnerBridgeConfig {
         }
     }
     fn schema_tag(&self, tag: u8) -> u8 {
-        if self.wand_gameplay {
+        if self.item_lifetime {
+            tag + 230
+        } else if self.wand_gameplay {
             tag + 210
         } else if self.wand_commands {
             tag + 200
@@ -136,7 +147,9 @@ impl OwnerBridgeConfig {
         }
     }
     fn codec_identity(&self, name: &str, tag: u8) -> op::CodecIdentity {
-        if self.wand_gameplay {
+        if self.item_lifetime {
+            identity(&format!("{name}-lifetime-i3"), tag + 230)
+        } else if self.wand_gameplay {
             identity(&format!("{name}-wand-i2"), tag + 210)
         } else if self.wand_commands {
             identity(&format!("{name}-wand-i2b1"), tag + 200)
@@ -165,7 +178,13 @@ impl OwnerBridgeConfig {
         }
     }
     fn session_binding(&self) -> pr::Binding {
-        if self.wand_gameplay {
+        if self.item_lifetime {
+            pr::Binding {
+                name: "native-owner-lifetime-i3-session".into(),
+                version: 4,
+                artifact: [246; 32],
+            }
+        } else if self.wand_gameplay {
             pr::Binding {
                 name: "native-owner-wand-i2-session".into(),
                 version: 3,
@@ -565,6 +584,9 @@ impl NativeBehavior<BillingState> for BillingCodec {
         request: &[u8],
         obs: &[Observation],
     ) -> owners::Result<Proposal<BillingState>> {
+        if name == item_lifetime::COMMAND {
+            return wand_commands::prepare(s, name, request, obs, &self.0);
+        }
         if name != COMMAND {
             return Err(owners::Error::Unsupported);
         }
@@ -942,7 +964,12 @@ fn add_wand_ports(
         .iter()
         .filter(|(owner, _)| *owner == name)
     {
-        let declared = if *query == "wand_consumed" || *query == "wand_clock_gameplay_v3" {
+        let declared = if *query == item_lifetime::BILL_QUERY {
+            vec![
+                ("Objects", item_lifetime::OBJECT_QUERY, 102),
+                ("Geography", "wand_geography", 101),
+            ]
+        } else if *query == "wand_consumed" || *query == "wand_clock_gameplay_v3" {
             vec![]
         } else if *query == "wand_actor_genocide_gameplay_v3" {
             vec![("Hero", "wand_genocide_gameplay_v3", 104)]
@@ -983,7 +1010,12 @@ fn validate_wand_ports(
     }
     for (_, query) in expected {
         let p = ports.get(*query).ok_or(owners::Error::Schema)?;
-        let deps = if *query == "wand_consumed" || *query == "wand_clock_gameplay_v3" {
+        let deps = if *query == item_lifetime::BILL_QUERY {
+            vec![
+                ("Objects", item_lifetime::OBJECT_QUERY, 102),
+                ("Geography", "wand_geography", 101),
+            ]
+        } else if *query == "wand_consumed" || *query == "wand_clock_gameplay_v3" {
             vec![]
         } else if *query == "wand_actor_genocide_gameplay_v3" {
             vec![("Hero", "wand_genocide_gameplay_v3", 104)]
@@ -1028,7 +1060,9 @@ fn profile_limits(config: &OwnerBridgeConfig) -> kernel::Limits {
     limits
 }
 fn profile_native_id(config: &OwnerBridgeConfig) -> &'static [u8] {
-    if config.wand_gameplay {
+    if config.item_lifetime {
+        item_lifetime::NATIVE_ID
+    } else if config.wand_gameplay {
         wand_gameplay::NATIVE_ID
     } else if config.wand_commands {
         wand_commands::NATIVE_ID
@@ -1724,14 +1758,21 @@ fn restore_configuration(
     config: &OwnerBridgeConfig,
 ) -> Result<pr::ApprovedConfiguration<session::HostBundle>, OwnerBridgeError> {
     let mut profiles = vec![config.clone()];
+    if config.item_lifetime {
+        let mut v3 = config.clone();
+        v3.item_lifetime = false;
+        profiles.push(v3);
+    }
     if config.wand_gameplay {
         let mut v2 = config.clone();
         v2.wand_gameplay = false;
+        v2.item_lifetime = false;
         profiles.push(v2);
     }
     if config.wand_commands {
         let mut i1 = config.clone();
         i1.wand_gameplay = false;
+        i1.item_lifetime = false;
         i1.wand_commands = false;
         profiles.push(i1);
     }
@@ -1740,6 +1781,7 @@ fn restore_configuration(
         legacy.wand_ports = false;
         legacy.wand_commands = false;
         legacy.wand_gameplay = false;
+        legacy.item_lifetime = false;
         profiles.push(legacy);
     }
     let mut entries: Vec<(pr::Binding, Rc<dyn pr::TrustedFactory<session::HostBundle>>)> = vec![];
@@ -1785,14 +1827,24 @@ fn bridge_caller(
         return Err(kernel::Error::Authority.into());
     }
     let mut profile = config.clone();
+    if config.item_lifetime {
+        let mut v3 = config.clone();
+        v3.item_lifetime = false;
+        if k.registered_module(&profile_caller(&v3)).is_ok() {
+            profile.item_lifetime = false;
+        }
+    }
     let mut v2 = config.clone();
     v2.wand_gameplay = false;
+    v2.item_lifetime = false;
     if k.manifest(random.module.handle)? == &wand_commands::random_manifest(&v2) {
         profile.wand_gameplay = false;
+        profile.item_lifetime = false;
     }
     if k.manifest(random.module.handle)? == &random_manifest() {
         profile.wand_gameplay = false;
         profile.wand_commands = false;
+        profile.item_lifetime = false;
     }
     if k.manifest(random.module.handle)? != &wand_commands::random_manifest(&profile) {
         return Err(kernel::Error::Authority.into());
@@ -1916,6 +1968,7 @@ impl OwnerBridge {
         );
         // Objects' declared dependencies are enrolled below, so in I1 order
         // Hero and Session precede Objects. Legacy order stays byte-compatible.
+        wand_deps.insert("Geography", geography_owner.id());
         let early_hero = if config.wand_ports {
             Some(enroll!(
                 HeroCodec,
@@ -1931,7 +1984,6 @@ impl OwnerBridge {
         if let Some(h) = &early_hero {
             wand_deps.insert("Hero", h.id());
         }
-        wand_deps.insert("Geography", geography_owner.id());
         let early_session = if config.wand_ports {
             Some(enroll!(
                 SessionCodec,
@@ -2017,6 +2069,7 @@ impl OwnerBridge {
             ]
             .into()
         );
+        wand_deps.insert("Billing", billing.id());
         let clock_owner = enroll!(
             ClockCodec,
             "Clock",
@@ -2045,6 +2098,15 @@ impl OwnerBridge {
         ]);
         let keys = if config.wand_ports {
             let mut keys = keys;
+            if config.item_lifetime {
+                keys.extend([
+                    objects.resource(item_lifetime::COMMAND)?,
+                    equipment_owner.resource(item_lifetime::COMMAND)?,
+                    hero.resource(item_lifetime::COMMAND)?,
+                    billing.resource(item_lifetime::COMMAND)?,
+                    clock_owner.resource(item_lifetime::COMMAND)?,
+                ]);
+            }
             for (name, _) in wand_commands::read_routes(&config) {
                 for resource in wand_resources(
                     name,
@@ -2089,6 +2151,13 @@ impl OwnerBridge {
                     access: profile_caller(&config).dependencies[slot].access,
                     scope: Scope::Keys(if random_slot {
                         wand_commands::random_resources(&random_owner, &host, &config)?
+                    } else if config.item_lifetime
+                        && profile_caller(&config).dependencies[slot]
+                            .capability
+                            .endpoint
+                            == item_lifetime::COMMAND
+                    {
+                        item_lifetime::grant_keys(&keys)
                     } else {
                         keys.clone()
                     }),
@@ -2166,6 +2235,35 @@ impl OwnerBridge {
         );
         let mut stage = match prepared {
             Ok(stage) => stage,
+            Err(original) if self.config.item_lifetime => {
+                let mut v3 = self.config.clone();
+                v3.item_lifetime = false;
+                let mut v2 = v3.clone();
+                v2.wand_gameplay = false;
+                let mut i1 = v2.clone();
+                i1.wand_commands = false;
+                self.session
+                    .prepare_restore_diagnosed(&self.key, &v3.session_binding(), bytes)
+                    .or_else(|_| {
+                        self.session.prepare_restore_diagnosed(
+                            &self.key,
+                            &v2.session_binding(),
+                            bytes,
+                        )
+                    })
+                    .or_else(|_| {
+                        self.session.prepare_restore_diagnosed(
+                            &self.key,
+                            &i1.session_binding(),
+                            bytes,
+                        )
+                    })
+                    .or_else(|_| {
+                        self.session
+                            .prepare_restore_diagnosed(&self.key, &binding(), bytes)
+                    })
+                    .map_err(|_| OwnerBridgeError::Admission(original))?
+            }
             Err(original) if self.config.wand_gameplay => {
                 let mut old = self.config.clone();
                 old.wand_gameplay = false;
@@ -2190,6 +2288,7 @@ impl OwnerBridge {
                 let mut i1 = self.config.clone();
                 i1.wand_commands = false;
                 i1.wand_gameplay = false;
+                i1.item_lifetime = false;
                 self.session
                     .prepare_restore_diagnosed(&self.key, &i1.session_binding(), bytes)
                     .or_else(|_| {

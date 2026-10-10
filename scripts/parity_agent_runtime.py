@@ -133,7 +133,7 @@ def run_live(packet, run):
     control = packet["execution"]
     argv = ["codex", "-c", 'approval_policy="never"', "-c",
             f'model_reasoning_effort="{packet["effort"]}"', "-c",
-            f'model="{packet["model"]}"', "-c", "tool_output_limit=2000",
+            f'model="{packet["model"]}"', "-c", "tool_output_token_limit=2000",
             "app-server", "--stdio"]
     started = time.monotonic()
     process = None

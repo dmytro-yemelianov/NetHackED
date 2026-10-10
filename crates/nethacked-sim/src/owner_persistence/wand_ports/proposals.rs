@@ -123,6 +123,12 @@ pub enum RawWord {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum CommandQuery {
     Gameplay(super::super::runtime::wand_gameplay::FactQuery),
+    LifetimeObject {
+        target: ObjectRef,
+    },
+    LifetimeBilling {
+        target: ObjectRef,
+    },
     Object {
         target: ObjectRef,
     },
@@ -146,6 +152,8 @@ pub enum CommandQuery {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum CommandFacts {
     Gameplay(super::super::runtime::wand_gameplay::FactValue),
+    LifetimeObject(super::super::runtime::item_lifetime::ObjectFacts),
+    LifetimeBilling(super::super::runtime::item_lifetime::LedgerFacts),
     Object {
         target: ObjectRef,
         frozen: bool,

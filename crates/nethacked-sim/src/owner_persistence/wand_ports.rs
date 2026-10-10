@@ -398,6 +398,7 @@ pub(crate) fn query<T: Domain + super::runtime::wand_commands::CommandDomain>(
 }
 mod domains;
 mod proposals;
+pub use super::runtime::item_lifetime::{LifetimeAction, LifetimeError, LifetimeReply};
 pub use proposals::*;
 
 pub use super::runtime::wand_gameplay::{

@@ -2,10 +2,12 @@
 
 pub mod actions;
 mod ad_effects;
+pub mod billing;
 pub mod bones;
 pub mod combat;
 mod corpse_revival;
 pub mod events;
+mod item_lifetime;
 mod monster_generation;
 pub mod monsters;
 pub mod object_timers;

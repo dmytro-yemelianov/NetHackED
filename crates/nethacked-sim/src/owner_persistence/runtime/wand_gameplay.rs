@@ -129,6 +129,7 @@ pub enum GameplayError {
     Protocol,
     Budget,
     Timer(TimerFailure),
+    Lifetime(super::item_lifetime::LifetimeError),
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WandGameplayReply {
@@ -319,7 +320,7 @@ fn run(i: &Invocation<'_, '_>, action: WandGameplayAction) -> WandGameplayReply 
             branch: g.branch,
             depth: g.depth,
         };
-        algorithm::try_zap(
+        let outcome = algorithm::try_zap_with_survivor(
             index.map_or(algorithm::Selection::First, |index| {
                 algorithm::Selection::Selected { index, expected }
             }),
@@ -336,7 +337,40 @@ fn run(i: &Invocation<'_, '_>, action: WandGameplayAction) -> WandGameplayReply 
             &mut adapters::Clock(i),
             &mut adapters::Random(i),
             &session,
-        )
+        )?;
+        let mut events = outcome.events;
+        if i.config.item_lifetime && outcome.survivor.is_some() {
+            let action = super::item_lifetime::LifetimeAction {
+                survivor: outcome.survivor.map(|id| ObjectRef {
+                    id,
+                    residency: Residency::Active,
+                }),
+            };
+            let result: Result<
+                super::item_lifetime::LifetimeReply,
+                super::item_lifetime::LifetimeError,
+            > = i
+                .call(super::item_lifetime::dependency_slot(i.config), &action)
+                .map_err(|error| algorithm::WandFailure {
+                    error: algorithm::WandError::Authority(error),
+                    events: events.clone(),
+                })?;
+            match result {
+                Ok(super::item_lifetime::LifetimeReply::Unchanged) => {}
+                Ok(super::item_lifetime::LifetimeReply::Retired { .. }) => {
+                    events.push(crate::GameEvent::LogMessage {
+                        text: "Your wand turns to dust.".into(),
+                    })
+                }
+                Err(error) => {
+                    return Err(algorithm::WandFailure {
+                        error: algorithm::WandError::Authority(GameplayError::Lifetime(error)),
+                        events,
+                    })
+                }
+            }
+        }
+        Ok(events)
     })();
     let (events, error) = match result {
         Ok(e) => (e, None),
@@ -408,7 +442,16 @@ impl OwnerBridge {
         let bytes = encode(&action, MAX_REQUEST_BYTES)?;
         let response = self.session.with_runtime(&self.credential.borrow(), |b| {
             let caller = bridge_caller(b, &self.config)?;
-            if b.kernel()?.manifest(caller)? != &profile_caller(&self.config) {
+            let manifest = b.kernel()?.manifest(caller)?.clone();
+            let mut profile = self.config.clone();
+            if profile.item_lifetime {
+                let mut historical = profile.clone();
+                historical.item_lifetime = false;
+                if manifest == profile_caller(&historical) {
+                    profile = historical;
+                }
+            }
+            if manifest != profile_caller(&profile) {
                 return Err(owners::Error::Unsupported.into());
             }
             let cleanup = b.host().cleanup_identity()?;

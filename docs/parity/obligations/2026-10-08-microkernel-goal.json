@@ -5,7 +5,7 @@
   "plan_sha256": "51b6bfd5a1b077089cc38a2b10346f9e905d37e575e531be558f97ed9259ca06",
   "native_goal": "Complete NetRust microkernel architecture program; formal contracts, executable extensions, existing NetHack migration, integration audit",
   "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
-  "active_unit": "M5-I3",
+  "active_unit": "M5-I4",
   "live_handles": [],
   "acceptance": {
     "A1": "passed_generic_runtime_1fc3290",
@@ -642,12 +642,86 @@
         },
         {
           "id": "M5-I3",
-          "status": "planned",
+          "status": "accepted_in_this_commit",
           "depends_on": [
             "M5-I2"
           ],
           "scope": "Sealed lifetime/equipment/timer/shop publication with retained accounting prefixes",
-          "contract": "docs/plans/2026-10-09-nethack-module-integration-contract.md"
+          "contract": "docs/plans/2026-10-09-nethack-module-integration-contract.md",
+          "implementation_packet": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/implementation-packet/packet.json",
+          "root_checkpoint": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/root-native-checkpoint.json",
+          "review_packet": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/review-repair-packet/packet.json",
+          "failed_review_usage": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/review/usage.json",
+          "review_failures": [
+            {
+              "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/review/usage.json",
+              "stop_reason": "input_limit",
+              "observed_usage": {
+                "cached_input_tokens": 467840,
+                "input_tokens": 518752,
+                "output_tokens": 1290,
+                "reasoning_output_tokens": 143,
+                "uncached_input_tokens": 50912
+              },
+              "verdict": "none; execution failed"
+            },
+            {
+              "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/review-production/usage.json",
+              "stop_reason": "command_limit",
+              "observed_usage": {
+                "cached_input_tokens": 419200,
+                "input_tokens": 467294,
+                "output_tokens": 1509,
+                "reasoning_output_tokens": 215,
+                "uncached_input_tokens": 48094
+              },
+              "verdict": "none; execution failed"
+            },
+            {
+              "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/review-astra/usage.json",
+              "stop_reason": "input_limit",
+              "observed_usage": {
+                "cached_input_tokens": 532096,
+                "input_tokens": 583286,
+                "output_tokens": 1507,
+                "reasoning_output_tokens": 105,
+                "uncached_input_tokens": 51190
+              },
+              "verdict": "none; execution failed"
+            }
+          ],
+          "focused_passed": 106,
+          "independent_reviews": [
+            {
+              "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/review-core/answer.txt",
+              "sha256": "1381d5fc473fea4ca14c2a9cc028fe06140160fbc2f0dc8e827f71b360e8351c",
+              "verdict": "PASS",
+              "usage": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/review-core/usage.json"
+            },
+            {
+              "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/review-wiring/answer.txt",
+              "sha256": "e1c676c26a19d35342259301ac81b5703510f0698219dd0b57f7cd32aa70b715",
+              "verdict": "REQUEST_CHANGES",
+              "usage": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/review-wiring/usage.json"
+            },
+            {
+              "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/review-repair/answer.txt",
+              "sha256": "2536ff4c44ee36e401ed196344345784f8442138942c0cdc9e0321a4e29a65e2",
+              "verdict": "PASS",
+              "usage": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/review-repair/usage.json"
+            }
+          ],
+          "full_gates": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/final-gates",
+          "first_full_gate_attempt": {
+            "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/full-gates/results.json",
+            "status": "11/12 passed; static identifier false positive repaired",
+            "mechanical_rename": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/mechanical-owner-constant-rename.json"
+          },
+          "full_gate_acceptance": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/final-gates/accepted.json",
+          "full_gate_acceptance_sha256": "f978d898e26cdb57a3a2a8b5fc339d70b1b1cba3bcbb578e9cb1dc394564d7d3",
+          "workspace_passed": 1491,
+          "mechanical_rename": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/mechanical-owner-constant-rename.json",
+          "next": "M5-I4 executable extension/retained continuation integration"
         },
         {
           "id": "M5-I4",
@@ -924,9 +998,9 @@
       "root_usage": "unknown",
       "next_adjustment": "B2 Sol/medium wiring to checkpoint API map; no nine-owner/kernel/history audit; isolate concrete missing fallibility seam."
     },
-    "native_goal_observed_status": "active; goal continuation resumed and revalidated",
-    "latest_phase": "Controller source independentlyreviewed and verified:31Python tests,1480workspace tests,all12gates,all3unchangedgoldens;534non-docinputs digest a3ae2bb69208f57f23f83ab716de94657b458499c04dbda9b5647b170cf267bc. Delivered repairverdict before laterbudgetstop retained separately; noexecutionbudgetPASS/savingsclaim. Controllercommitnext, then coherentI3; no more optimizationreviewprogram.",
-    "next_action": "M5-I3 implementation after controller delivery. Existing validated proposal enums do not implement cross-owner lifetime; ready API map retained externally. M5-I4/I5,M6,M7 remain."
+    "native_goal_observed_status": "paused per runtime get_goal on 2026-10-10; current user-authorized continuation performed manually; runtime goal not marked complete",
+    "latest_phase": "M5-I3 accepted:bounded shared lifetime and five-owner native retirement; historical profiles and restored V3 gameplay verified; complete independent core/wiring+repair reviews; final12/all3 and1491workspace tests. Earlier incomplete reviews/static naming collision retained as failures. No full-goal completion claim.",
+    "next_action": "M5-I4 production executable extension and retained continuation, then I5/M6/M7. Finite entry map at MICROKERNEL-M5-I3/next-i4-api-map.json. Separate53-family C backlog unchanged."
   },
   "requested_interlude": {
     "after": "accepted M3a checkpoint",

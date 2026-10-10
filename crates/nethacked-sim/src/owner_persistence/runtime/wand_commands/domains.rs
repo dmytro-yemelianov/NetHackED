@@ -59,6 +59,10 @@ impl CommandDomain for ObjectsState {
         obs: &[Observation],
         c: &OwnerBridgeConfig,
     ) -> owners::Result<CommandFacts> {
+        if let CommandQuery::LifetimeObject { target } = q {
+            return super::super::item_lifetime::object_facts(self, *target, obs, c)
+                .map(CommandFacts::LifetimeObject);
+        }
         if let CommandQuery::Gameplay(q) = q {
             use super::super::wand_gameplay::{facts, FactQuery};
             if !c.wand_gameplay {
@@ -666,7 +670,20 @@ impl CommandDomain for SessionState {
     }
 }
 impl CommandDomain for EquipmentState {}
-impl CommandDomain for BillingState {}
+impl CommandDomain for BillingState {
+    fn command_facts(
+        &self,
+        q: &CommandQuery,
+        obs: &[Observation],
+        c: &OwnerBridgeConfig,
+    ) -> owners::Result<CommandFacts> {
+        let CommandQuery::LifetimeBilling { target } = q else {
+            return Err(owners::Error::Unsupported);
+        };
+        super::super::item_lifetime::billing_facts(self, *target, obs, c)
+            .map(CommandFacts::LifetimeBilling)
+    }
+}
 
 fn timer_target(target: ObjectRef) -> crate::ObjectTimerTarget {
     match target.residency {

@@ -35,6 +35,8 @@ const READS: [(&str, &str); 6] = [
 impl CommandQuery {
     pub(crate) fn route(&self) -> (&'static str, &'static str) {
         READS[match self {
+            Self::LifetimeObject { .. } => return ("Objects", super::item_lifetime::OBJECT_QUERY),
+            Self::LifetimeBilling { .. } => return ("Billing", super::item_lifetime::BILL_QUERY),
             Self::Object { .. } => 0,
             Self::Actor { .. } => 1,
             Self::Geography { .. } => 2,
@@ -65,6 +67,9 @@ pub(super) fn read_routes(c: &OwnerBridgeConfig) -> Vec<(&'static str, &'static 
         if c.wand_gameplay {
             routes.extend(super::wand_gameplay::READS);
         }
+        if c.item_lifetime {
+            routes.extend(super::item_lifetime::READS);
+        }
     }
     routes
 }
@@ -78,7 +83,9 @@ pub(super) fn random_id(c: &OwnerBridgeConfig) -> &'static [u8] {
     }
 }
 pub(super) fn caller_id(c: &OwnerBridgeConfig) -> &'static [u8] {
-    if c.wand_gameplay {
+    if c.item_lifetime {
+        super::item_lifetime::CALLER_ID
+    } else if c.wand_gameplay {
         super::wand_gameplay::CALLER_ID
     } else if c.wand_commands {
         CALLER_ID
@@ -143,6 +150,10 @@ pub(super) fn provider_manifest(mut m: Manifest, c: &OwnerBridgeConfig) -> Manif
             m.exports.insert((*name).into(), command_endpoint());
         }
     }
+    if c.item_lifetime {
+        m.exports
+            .insert(super::item_lifetime::COMMAND.into(), command_endpoint());
+    }
     m
 }
 pub(super) fn caller_manifest(mut m: Manifest, c: &OwnerBridgeConfig) -> Manifest {
@@ -160,12 +171,21 @@ pub(super) fn caller_manifest(mut m: Manifest, c: &OwnerBridgeConfig) -> Manifes
                 super::wand_gameplay::endpoint(),
             );
         }
+        if c.item_lifetime {
+            m.dependencies.push(kernel::Dependency {
+                capability: profile_capability(c, super::item_lifetime::COMMAND),
+                access: Access::Write,
+            });
+            m.exports
+                .insert(super::item_lifetime::ENDPOINT.into(), command_endpoint());
+        }
     }
     m
 }
 pub(super) fn command_count(name: &str, c: &OwnerBridgeConfig) -> usize {
     if c.wand_commands {
         COMMANDS.iter().filter(|r| r.0 == name).count()
+            + usize::from(c.item_lifetime && super::item_lifetime::LIFETIME_OWNERS.contains(&name))
     } else {
         0
     }
@@ -207,7 +227,7 @@ pub(super) fn add_ports(
             ports.insert((*command).into(), port(Access::Write, dependencies));
         }
     }
-    Ok(ports)
+    super::item_lifetime::add_ports(name, ports, ids, c)
 }
 pub(super) fn validate_ports(
     name: &str,
@@ -230,7 +250,7 @@ pub(super) fn validate_ports(
             return Err(owners::Error::Schema);
         }
     }
-    Ok(())
+    super::item_lifetime::validate_ports(name, ports, c)
 }
 pub(super) fn command_index(c: &WandOwnerCommand) -> Option<usize> {
     COMMANDS.iter().position(|r| *r == c.route())
@@ -253,9 +273,13 @@ pub(super) fn query_dependencies(q: &CommandQuery) -> Vec<WandQuery> {
         CommandQuery::Gameplay(super::wand_gameplay::FactQuery::Actors(_)) => {
             vec![geo(Residency::Active, vec![])]
         }
-        CommandQuery::Object { target } => vec![
+        CommandQuery::Object { target } | CommandQuery::LifetimeObject { target } => vec![
             WandQuery::Hero,
             WandQuery::Session,
+            geo(target.residency, vec![]),
+        ],
+        CommandQuery::LifetimeBilling { target } => vec![
+            WandQuery::Command(CommandQuery::LifetimeObject { target: *target }),
             geo(target.residency, vec![]),
         ],
         CommandQuery::Actor { .. } => vec![geo(Residency::Active, vec![])],
@@ -282,7 +306,9 @@ pub(super) fn query_owner(
 ) -> owners::Result<Observation> {
     match q {
         CommandQuery::Gameplay(super::wand_gameplay::FactQuery::Objects(_))
-        | CommandQuery::Object { .. } => r.objects.query(name, request, obs, view),
+        | CommandQuery::Object { .. }
+        | CommandQuery::LifetimeObject { .. } => r.objects.query(name, request, obs, view),
+        CommandQuery::LifetimeBilling { .. } => r.billing.query(name, request, obs, view),
         CommandQuery::Gameplay(super::wand_gameplay::FactQuery::Actors(_))
         | CommandQuery::Actor { .. } => r.actors.query(name, request, obs, view),
         CommandQuery::Gameplay(super::wand_gameplay::FactQuery::Genocide { .. }) => {
@@ -356,7 +382,7 @@ fn gather(
     Ok((immediate, provenance))
 }
 
-pub(crate) trait CommandDomain: Clone {
+pub(crate) trait CommandDomain: Clone + super::item_lifetime::LifetimeDomain {
     fn command_facts(
         &self,
         _: &CommandQuery,
@@ -373,6 +399,14 @@ pub(crate) trait CommandDomain: Clone {
     ) -> owners::Result<OperationResult> {
         Err(owners::Error::Unsupported)
     }
+    fn lifetime_prepare(
+        &self,
+        request: &super::item_lifetime::Retirement,
+        obs: &[Observation],
+        c: &OwnerBridgeConfig,
+    ) -> owners::Result<Proposal<Self>> {
+        self.prepare_lifetime(request, obs, c)
+    }
 }
 pub(super) fn prepare<T: CommandDomain>(
     s: &T,
@@ -383,6 +417,13 @@ pub(super) fn prepare<T: CommandDomain>(
 ) -> owners::Result<Proposal<T>> {
     if !c.wand_commands {
         return Err(owners::Error::Unsupported);
+    }
+    if name == super::item_lifetime::COMMAND {
+        if !c.item_lifetime {
+            return Err(owners::Error::Unsupported);
+        }
+        let request = decode(bytes, MAX_REQUEST_BYTES)?;
+        return s.lifetime_prepare(&request, obs, c);
     }
     let request: WandOperation = decode(bytes, MAX_REQUEST_BYTES)?;
     if request.command.route().1 != name {
@@ -422,6 +463,7 @@ pub(super) fn capture_accounting(
     if c.wand_commands {
         a.register(accounting_identity(), POLICY, Rc::new(CommandAccounting))?;
     }
+    super::item_lifetime::capture_accounting(a, c)?;
     Ok(())
 }
 pub(super) fn restore_accounting(
@@ -433,6 +475,7 @@ pub(super) fn restore_accounting(
             Ok(Rc::new(CommandAccounting))
         })?;
     }
+    super::item_lifetime::restore_accounting(a, c)?;
     Ok(())
 }
 fn execute(
@@ -537,7 +580,7 @@ pub(super) fn native_ports(
             );
         }
     }
-    ports
+    super::item_lifetime::native_ports(ports, routes, c)
 }
 pub(super) fn random_ports(
     mut ports: BTreeMap<String, NativePort>,
@@ -568,7 +611,7 @@ pub(super) fn caller_ports(
             }),
         );
     }
-    super::wand_gameplay::caller_ports(ports, c)
+    super::item_lifetime::caller_ports(super::wand_gameplay::caller_ports(ports, c), c)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -664,6 +707,18 @@ pub(super) fn approve_grant(
     };
     for (owner, name) in read_routes(c).into_iter().chain(COMMANDS) {
         expected.insert(format!("{}.{name}", number(owner)));
+    }
+    if c.item_lifetime {
+        for owner in super::item_lifetime::LIFETIME_OWNERS {
+            expected.insert(format!(
+                "{}.{}",
+                number(owner),
+                super::item_lifetime::COMMAND
+            ));
+        }
+    }
+    if c.item_lifetime && dep.capability.endpoint == super::item_lifetime::COMMAND {
+        expected = super::item_lifetime::grant_names();
     }
     if random {
         expected = [

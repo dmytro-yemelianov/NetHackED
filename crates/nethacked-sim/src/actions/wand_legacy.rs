@@ -357,7 +357,7 @@ pub(super) fn zap(
         power: &mut world.player_pw,
         max_power: &mut world.player_max_pw,
     };
-    wand::zap(
+    let mut outcome = wand::zap_with_survivor(
         selection,
         world.player_id,
         dir,
@@ -369,7 +369,17 @@ pub(super) fn zap(
         &mut clock,
         &mut world.rng,
         &session,
-    )
+    );
+    match super::item_lifetime_legacy::finalize(world, outcome.survivor) {
+        Ok(Some(_)) => outcome.events.push(GameEvent::LogMessage {
+            text: "Your wand turns to dust.".into(),
+        }),
+        Ok(None) => {}
+        Err(_) => outcome.events.push(GameEvent::LogMessage {
+            text: "The wand cannot be retired: its accounting is inconsistent.".into(),
+        }),
+    }
+    outcome.events
 }
 
 pub(crate) fn spawn_random_at(

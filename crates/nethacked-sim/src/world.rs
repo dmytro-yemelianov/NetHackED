@@ -20,95 +20,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::events::GameEvent;
 
-pub(crate) fn validate_bill_object<'a>(
-    id: ItemId,
-    items: &'a nethacked_arena::ItemStorage,
-    player_id: ActorId,
-    billing: &BillingState,
-    ruleset: &Ruleset,
-) -> Result<&'a nethacked_arena::ItemRecord, BillError> {
-    if billing.consumed.iter().any(|bill| bill.origin == id) {
-        return Err(BillError::AlreadyConsumed);
-    }
-    let object = items.get(id).ok_or(BillError::StaleItem)?;
-    if object.location != ItemLocation::CarriedBy(player_id) {
-        return Err(BillError::NotCarried);
-    }
-    let rs = ruleset;
-    let def = match &object.definition {
-        Some(identity) => rs.item_for_definition(identity),
-        None => rs.item(&object.name),
-    }
-    .ok_or(BillError::InvalidDefinition)?;
-    if def.class != object.class {
-        return Err(BillError::InvalidDefinition);
-    }
-    if object.class != ItemClass::Wand
-        || object.is_container
-        || items
-            .iter()
-            .any(|(_, item)| item.location == ItemLocation::InContainer(id))
-    {
-        return Err(BillError::UnsupportedBillingScope);
-    }
-    if object.quantity == 0 {
-        return Err(BillError::ZeroQuantity);
-    }
-    Ok(object)
-}
+pub(crate) use crate::billing::{bill_ledger, validate_bill_object};
 
-pub(crate) fn bill_ledger<'a>(
-    id: ItemId,
-    unpaid_items: &'a [(ItemId, u32)],
-    billing: &'a BillingState,
-    cached_unpaid: impl Iterator<Item = &'a (ItemId, u32)>,
-    cached_contains: bool,
-) -> Result<(Option<u32>, Option<&'a BillTerms>), BillError> {
-    let tuples: Vec<_> = unpaid_items
-        .iter()
-        .chain(cached_unpaid)
-        .filter(|(i, _)| *i == id)
-        .collect();
-    let receipts: Vec<_> = billing
-        .live_terms
-        .iter()
-        .filter(|(i, _)| *i == id)
-        .collect();
-    if tuples.len() > 1 || receipts.len() > 1 || cached_contains {
-        return Err(BillError::DuplicateLedger);
-    }
-    if !receipts.is_empty() && tuples.is_empty() {
-        return Err(BillError::InvalidReceipt);
-    }
-    // A carried item must belong to the active compatibility ledger.
-    if !tuples.is_empty() && !unpaid_items.iter().any(|(i, _)| *i == id) {
-        return Err(BillError::InvalidReceipt);
-    }
-    Ok((
-        tuples.first().map(|(_, base)| *base),
-        receipts.first().map(|(_, terms)| terms),
-    ))
-}
-
-pub(crate) fn validate_bill_terms(
-    terms: &BillTerms,
-    quantity: u32,
-    base: u32,
-) -> Result<(), BillError> {
-    if terms.legacy_base_cost != base {
-        return Err(BillError::InvalidReceipt);
-    }
-    let (Some(q), Some(price)) = (terms.billed_quantity, terms.unit_price) else {
-        return Err(BillError::InvalidReceipt);
-    };
-    if q == 0 || price == 0 || u64::from(q) * u64::from(price) > i64::MAX as u64 {
-        return Err(BillError::InvalidReceipt);
-    }
-    if q != quantity {
-        return Err(BillError::UnsupportedBillingScope);
-    }
-    Ok(())
-}
+pub(crate) use crate::billing::validate_bill_terms;
 
 /// Stored state of a dungeon level when player travels to other floors.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -119,86 +33,13 @@ pub struct StoredLevel {
     pub unpaid_items: Vec<(ItemId, u32)>,
 }
 
-/// Historical source receipt identity; never an active shopkeeper lookup.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct BillCreditor {
-    pub branch: nethacked_types::BranchId,
-    pub depth: usize,
-    pub shopkeeper: ActorId,
-}
+// Preserve the historical public paths while accounting belongs to its module.
+pub use crate::billing::{
+    BillCreditor, BillError, BillTerms, BillValuation, BillView, BillingState, ConsumedBillRecord,
+    WholeDisposal,
+};
 
-/// Source-provided historical facts. None means unavailable, never paid or zero.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct BillTerms {
-    pub billed_quantity: Option<u32>,
-    pub unit_price: Option<u32>,
-    pub creditor: Option<BillCreditor>,
-    pub legacy_base_cost: u32,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ConsumedBillRecord {
-    pub origin: ItemId,
-    pub object: nethacked_arena::ItemRecord,
-    pub terms: BillTerms,
-}
-
-#[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct BillingState {
-    pub live_terms: Vec<(ItemId, BillTerms)>,
-    pub consumed: Vec<ConsumedBillRecord>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub enum BillError {
-    AlreadyConsumed,
-    StaleItem,
-    NotCarried,
-    InvalidDefinition,
-    ZeroQuantity,
-    DuplicateLedger,
-    InvalidReceipt,
-    UnsupportedBillingScope,
-    LifecycleReferencesPresent,
-    ReceiptAlreadyRecorded,
-    SettlementDeferred,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum WholeDisposal {
-    Unbilled { origin: ItemId },
-    RetainedBilled { origin: ItemId },
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum BillValuation {
-    Known {
-        total: u64,
-    },
-    UnresolvedTerms {
-        base: u32,
-        current_consumed_quantity: Option<u32>,
-    },
-}
-
-/// Live ledger order followed by detached consumption order. Missing live
-/// objects remain visible as unresolved obligations rather than disappearing.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct BillView {
-    pub origin: ItemId,
-    pub object: Option<nethacked_arena::ItemRecord>,
-    pub terms: BillTerms,
-    pub outstanding: bool,
-    pub useup: bool,
-    pub valuation: BillValuation,
-}
-
-// Immutable preflight ticket; consumed immediately by the same exclusive call.
-struct PreparedWholeDisposal {
-    origin: ItemId,
-    object: nethacked_arena::ItemRecord,
-    terms: Option<BillTerms>,
-}
+use crate::item_lifetime::{prepare_disposal, PreparedWholeDisposal};
 
 fn default_ruleset() -> Arc<Ruleset> {
     Ruleset::vanilla()
@@ -1039,12 +880,7 @@ impl SimulationWorld {
     }
 
     fn unknown_bill_terms(base: u32) -> BillTerms {
-        BillTerms {
-            billed_quantity: None,
-            unit_price: None,
-            creditor: None,
-            legacy_base_cost: base,
-        }
+        crate::billing::unknown_bill_terms(base)
     }
 
     /// Read-only save preflight. Historical origins/creditors are not live lookups.
@@ -1110,13 +946,7 @@ impl SimulationWorld {
     fn prepare_whole_disposal(&self, id: ItemId) -> Result<PreparedWholeDisposal, BillError> {
         let object = self.validate_bill_object(id)?;
         let (base, receipt) = self.bill_ledger(id)?;
-        if let Some(terms) = receipt {
-            Self::validate_bill_terms(
-                terms,
-                object.quantity,
-                base.ok_or(BillError::InvalidReceipt)?,
-            )?;
-        }
+        let prepared = prepare_disposal(id, object, base, receipt)?;
         if self.wielded_item == Some(id)
             || self.hero.quivered_item == Some(id)
             || self.equipment.armor.iter().any(|(_, i)| *i == id)
@@ -1136,24 +966,13 @@ impl SimulationWorld {
         {
             return Err(BillError::LifecycleReferencesPresent);
         }
-        Ok(PreparedWholeDisposal {
-            origin: id,
-            object: object.clone(),
-            terms: receipt
-                .cloned()
-                .or_else(|| base.map(Self::unknown_bill_terms)),
-        })
+        Ok(prepared)
     }
 
-    fn commit_whole_disposal(&mut self, mut prepared: PreparedWholeDisposal) -> WholeDisposal {
+    fn commit_whole_disposal(&mut self, prepared: PreparedWholeDisposal) -> WholeDisposal {
         let origin = prepared.origin;
-        let result = if let Some(terms) = prepared.terms {
-            prepared.object.location = ItemLocation::Limbo;
-            self.billing.consumed.push(ConsumedBillRecord {
-                origin,
-                object: prepared.object,
-                terms,
-            });
+        let result = if let Some(record) = prepared.into_consumed() {
+            self.billing.consumed.push(record);
             WholeDisposal::RetainedBilled { origin }
         } else {
             WholeDisposal::Unbilled { origin }

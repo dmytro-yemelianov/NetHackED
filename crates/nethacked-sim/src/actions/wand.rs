@@ -55,7 +55,34 @@ pub fn try_zap<E>(
     rng: &mut impl Random<E>,
     session: &Session<'_>,
 ) -> Result<Vec<GameEvent>, WandFailure<E>> {
+    try_zap_with_survivor(
+        selection, player_id, dir, energy, objects, actors, geography, hero, clock, rng, session,
+    )
+    .map(|outcome| outcome.events)
+}
+
+#[derive(Debug)]
+pub struct WandOutcome {
+    pub events: Vec<GameEvent>,
+    pub survivor: Option<ItemId>,
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn try_zap_with_survivor<E>(
+    selection: Selection,
+    player_id: ActorId,
+    dir: Direction,
+    energy: u32,
+    objects: &mut impl TryObjects<E>,
+    actors: &mut impl TryActors<E>,
+    geography: &mut impl TryGeography<E>,
+    hero: &mut impl TryHero<E>,
+    clock: &mut impl TryClock<E>,
+    rng: &mut impl Random<E>,
+    session: &Session<'_>,
+) -> Result<WandOutcome, WandFailure<E>> {
     let mut events = Vec::new();
+    let mut survivor = None;
     let result = (|| -> Result<(), WandError<E>> {
         let wid = match selection {
             Selection::First => {
@@ -144,6 +171,7 @@ pub fn try_zap<E>(
                 return Ok(());
             };
             objects.spend_positive_charge(wid, spe)?;
+            survivor = Some(wid);
             effect_name.unwrap_or(wand.name)
         } else {
             events.extend(message(nethacked_i18n::Messages::wand_empty(
@@ -301,7 +329,7 @@ pub fn try_zap<E>(
         Ok(())
     })();
     match result {
-        Ok(()) => Ok(events),
+        Ok(()) => Ok(WandOutcome { events, survivor }),
         Err(error) => Err(WandFailure { error, events }),
     }
 }
@@ -321,7 +349,28 @@ pub fn zap(
     rng: &mut impl Rng,
     session: &Session<'_>,
 ) -> Vec<GameEvent> {
-    match try_zap(
+    zap_with_survivor(
+        selection, player_id, dir, energy, objects, actors, geography, hero, clock, rng, session,
+    )
+    .events
+}
+
+#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn zap_with_survivor(
+    selection: Selection,
+    player_id: ActorId,
+    dir: Direction,
+    energy: u32,
+    objects: &mut impl Objects,
+    actors: &mut impl Actors,
+    geography: &mut impl Geography,
+    hero: &mut impl Hero,
+    clock: &mut impl Clock,
+    rng: &mut impl Rng,
+    session: &Session<'_>,
+) -> WandOutcome {
+    match try_zap_with_survivor(
         selection,
         player_id,
         dir,
@@ -334,7 +383,7 @@ pub fn zap(
         &mut InfalliblePort(rng),
         session,
     ) {
-        Ok(events) => events,
+        Ok(outcome) => outcome,
         Err(WandFailure {
             error: WandError::Authority(error),
             ..
