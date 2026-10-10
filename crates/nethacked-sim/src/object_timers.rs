@@ -70,6 +70,14 @@ impl ObjectTimerQueue {
         Ok(())
     }
 
+    /// Remove the first active due entry, preserving cached entries and tie order.
+    pub(crate) fn pop_due_active(&mut self, turn: u64) -> Option<ObjectTimer> {
+        let index = self.entries.iter().position(|timer| {
+            timer.due <= turn && matches!(timer.target, ObjectTimerTarget::Active(_))
+        })?;
+        Some(self.entries.remove(index))
+    }
+
     pub fn entries(&self) -> &[ObjectTimer] {
         &self.entries
     }
@@ -581,10 +589,7 @@ impl SimulationWorld {
     pub(crate) fn run_object_timers(&mut self) -> Vec<GameEvent> {
         self.reconcile_object_timers();
         let mut events = Vec::new();
-        while let Some(index) = self.object_timers.entries.iter().position(|timer| {
-            timer.due <= self.scheduler.turn && matches!(timer.target, ObjectTimerTarget::Active(_))
-        }) {
-            let timer = self.object_timers.entries.remove(index);
+        while let Some(timer) = self.object_timers.pop_due_active(self.scheduler.turn) {
             events.push(GameEvent::ObjectTimerExpired { timer });
             if timer.kind == ObjectTimerKind::ReviveMonster {
                 let ObjectTimerTarget::Active(id) = timer.target else {

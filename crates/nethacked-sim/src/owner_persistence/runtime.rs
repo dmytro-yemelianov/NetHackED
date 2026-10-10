@@ -2886,6 +2886,7 @@ mod tests {
     mod metabolic_ticks;
     mod passive_ticks;
     mod regeneration_ticks;
+    mod timer_transport_prototype;
     mod wand_aggregate;
     mod wand_charge_attempts;
     mod wand_commands;
