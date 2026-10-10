@@ -2523,6 +2523,7 @@ impl OwnerBridge {
 mod tests {
     mod admission;
     mod fresh_process;
+    mod wand_aggregate;
     mod wand_commands;
     mod wand_gameplay;
     mod wand_ports;

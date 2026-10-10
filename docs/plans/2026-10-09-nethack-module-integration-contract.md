@@ -73,3 +73,39 @@ The integration witness pauses an ordinary charged wand, approves its actual liv
 I4 is accepted with executable guest activation on a populated owner host and a retained preattachment workflow that survives source-host destruction and fresh reconstruction through an independent live approval record. Six I4 native integration tests, seven historical I3 regressions, 31 workflow tests and 65 persistence tests pass. Completed complementary Astra reviews found no required changes. The original incomplete assembled review remains recorded as a packaging failure, never a PASS. The final frozen-source run passes all 12 gates, 1498 workspace tests and all three unchanged goldens on 542 non-documentation inputs. No dependencies, golden constants, existing owner formats or default limits changed.
 
 The next unit is I5, the combined production acceptance scenario. M6, M7 and the separate 53-family C parity inventory remain open. The runtime goal remains observed paused; the user-authorized continuation and review were performed manually without claiming full-goal completion.
+
+## I5 aggregate checkpoint and remaining acceptance
+
+I5a adds one populated production `OwnerBridge` suite in
+`runtime/tests/wand_aggregate.rs`. It combines a real selected effect with a
+borrowed legacy state/RNG oracle, independently approved retained execution after
+source drop and reconstruction, executable cancellation of future commands,
+stale ticket/request/read refusals, repeated bill-term refusal, and five-owner
+retirement of a separate negative object. It preserves unrelated equipment,
+filters matching timers, retains the complete consumed bill record, and checks
+both owner checkpoint restoration and legacy native import. Native import
+reinserts tied timers before equals; owner checkpoints preserve exact queue order.
+The suite compares each route with its own complete expected state and continues
+four authenticated raw draws on both routes.
+
+This is supported aggregate evidence, **not full I5 acceptance**. Astra's bounded
+independent review passed the added fixture and identified the following remaining
+requirements. Existing I1–I4 refusal fixtures remain required.
+
+| Ordered substep | Concrete delivery | Acceptance boundary |
+|---|---|---|
+| I5a | Aggregate supported-command fixture and compatibility checkpoint | Accept the fixture after full gates; keep I5/A6 open. |
+| I5b | Versioned retained completion reply/events, authentic stale observation/publication replay and consumed-shop-evidence replay | Compare retained ordered events with the borrowed handler. Reject actual replay inputs before new effects/draws. Preserve old boolean-only workflow artifacts/checkpoints; do not invent missing historical events. A public guarded request replay alone is insufficient. |
+| I5c | Source/RNG contract and explicitly opted-in executable charge-attempt module, then the same selected identity through effect and five-owner retirement | Current `PositiveCharge` cannot produce a negative survivor. Proposal vocabulary alone is insufficient. Use authenticated Objects/Random ports and existing lifetime publication; preserve default positive-only behavior and frozen goldens. Do not substitute a restored negative image or a custom non-C depletion rule for the promised legacy-compatible chain. |
+| I5d | Actual separate-process reconstruction witness and final combined positive/refusal suite | Persist separately trusted host approval independently of incoming game saves; no approval inferred from the save and no durable authenticated store claim without implementation. Run final gates once on frozen reviewed source before accepting I5. |
+
+I5b–I5d are narrow integration work, not a repeat audit of accepted modules or a
+kernel rewrite. Root owns the sole writer/Cargo lane. Each review receives only
+changed code and required contract excerpts, in chunks no larger than 1500 tokens,
+with one read per tool call. Preserve actual phase usage and incomplete verdicts;
+root usage remains unknown. Full architecture acceptance, M6/M7 and the separate
+C-parity inventory remain open.
+
+After the I5a checkpoint, implement I5b–I5d in dependency order with focused meaningful checks and bounded review packets. Batch their full workspace/golden verification at the final frozen integration boundary; avoid a complete workspace run between local substeps. Each commit still requires all mandatory gates.
+
+I5a checkpoint verification: 69 scoped tests, independent Astra change PASS, 1499 workspace tests, all 12 required gates and all three unchanged goldens. The first gate stopped before workspace on redundant borrows of Copy Scheduler; the exact reversible Clippy correction changes no assertions. Final frozen input digest `10ae2145b85aeed9d46818f229cb06dccc57e126e9d27043d58f9544fd38af8c` covers 543 non-documentation files. Strict I5 remains partial; this checkpoint does not advance M6.
