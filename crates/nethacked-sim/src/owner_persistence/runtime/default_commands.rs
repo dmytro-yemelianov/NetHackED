@@ -1075,6 +1075,98 @@ impl OwnerBridge {
                     error: None,
                 })
             }
+            nethacked_core::ActionAst::Cast { spell_index, dir } => {
+                if !self.config.services {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply =
+                    self.step_service(super::services::ServiceAction::Cast { spell_index, dir })?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::Pray => {
+                if !self.config.services {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply = self.step_service(super::services::ServiceAction::Pray)?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::Sacrifice(idx) => {
+                if !self.config.services {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply = self.step_service(super::services::ServiceAction::Sacrifice(idx))?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::Donate(amount) => {
+                if !self.config.services {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply = self.step_service(super::services::ServiceAction::Donate(amount))?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::Pay => {
+                if !self.config.services {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply = self.step_service(super::services::ServiceAction::Pay)?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::PriceCheck(item_index) => {
+                if !self.config.services {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply =
+                    self.step_service(super::services::ServiceAction::PriceCheck(item_index))?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::Wish(wish) => {
+                if !self.config.services {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply = self.step_service(super::services::ServiceAction::Wish(wish))?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::Mount(actor_id) => {
+                if !self.config.services {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply = self.step_service(super::services::ServiceAction::Mount(actor_id))?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::Dismount => {
+                if !self.config.services {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply = self.step_service(super::services::ServiceAction::Dismount)?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
             _ => Err(owners::Error::Unsupported.into()),
         }
     }

@@ -21,7 +21,7 @@ pub fn normalize_wish_name(query: &str) -> String {
     lower
 }
 
-const UNWISHABLE: &[ItemKindId] = &[
+pub(crate) const UNWISHABLE: &[ItemKindId] = &[
     ItemKindId::BELL_OF_OPENING,
     ItemKindId::CANDELABRUM_OF_INVOCATION,
     ItemKindId::SPE_BOOK_OF_THE_DEAD,

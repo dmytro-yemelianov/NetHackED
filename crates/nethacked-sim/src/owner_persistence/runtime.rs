@@ -33,6 +33,7 @@ pub mod movement_actions;
 pub mod passive_ticks;
 mod phase_support;
 pub mod regeneration_ticks;
+pub mod services;
 pub mod timer_ticks;
 pub(crate) mod wand_commands;
 pub(crate) mod wand_extensions;
@@ -107,6 +108,7 @@ pub struct OwnerBridgeConfig {
     pub(super) movement_actions: bool,
     pub(super) inventory_actions: bool,
     pub(super) item_effects: bool,
+    pub(super) services: bool,
     pub(super) workflow_approval: Option<wand_workflows::WandWorkflowApproval>,
     pub(super) wand_extensions: bool,
     pub(super) extension_catalog: Vec<wand_extensions::WandGuest>,
@@ -143,6 +145,7 @@ impl OwnerBridgeConfig {
             movement_actions: false,
             inventory_actions: false,
             item_effects: false,
+            services: false,
             workflow_approval: None,
             wand_extensions: false,
             extension_catalog: vec![],
@@ -285,7 +288,15 @@ impl OwnerBridgeConfig {
         c.item_effects = true;
         c
     }
+    pub fn with_services(self) -> Self {
+        let mut c = self.with_item_effects();
+        c.services = true;
+        c
+    }
     fn schema_tag(&self, tag: u8) -> u8 {
+        if self.services {
+            return tag + 40;
+        }
         if self.item_effects {
             return tag + 50;
         }
@@ -335,6 +346,9 @@ impl OwnerBridgeConfig {
         }
     }
     fn codec_identity(&self, name: &str, tag: u8) -> op::CodecIdentity {
+        if self.services {
+            return identity(&format!("{name}-services-i8"), tag + 40);
+        }
         if self.item_effects {
             return identity(&format!("{name}-item-effects-i7"), tag + 50);
         }
@@ -402,6 +416,13 @@ impl OwnerBridgeConfig {
         }
     }
     fn session_binding(&self) -> pr::Binding {
+        if self.services {
+            return pr::Binding {
+                name: "native-services-i8-session".into(),
+                version: 20,
+                artifact: [40; 32],
+            };
+        }
         if self.item_effects {
             return pr::Binding {
                 name: "native-item-effects-i7-session".into(),
@@ -2271,6 +2292,10 @@ fn restore_configuration(
 fn approved_profiles(config: &OwnerBridgeConfig) -> Vec<OwnerBridgeConfig> {
     let mut profiles = vec![config.clone()];
     let mut config = config.clone();
+    if config.services {
+        config.services = false;
+        profiles.push(config.clone());
+    }
     if config.item_effects {
         config.item_effects = false;
         profiles.push(config.clone());
@@ -3044,6 +3069,7 @@ mod tests {
     mod movement_actions;
     mod passive_ticks;
     mod regeneration_ticks;
+    mod services;
     mod timer_ticks;
     mod timer_transport_prototype;
     mod wand_aggregate;
