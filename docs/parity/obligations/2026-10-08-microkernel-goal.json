@@ -1070,10 +1070,10 @@
           "C5 optional: self-describing over-bound refusal error variant instead of Kernel(NativeRefusal)"
         ]
       },
-      "boundary": "Geography-payload boundary documented as an open follow-up: the 16 KiB transports carry the full DungeonLevel in GeographyFacts (15.4-17.4 KiB by seed, measured over seeds 1-200; 38 of 60 seeds over 16384 bytes); over-bound worlds refuse Wait/Move truthfully with the state untouched. Limits not raised inside the audit.",
+      "boundary": "Geography-payload boundary RESOLVED (review condition C1): the 16 KiB transports now encode GeographyFacts.level through the compact canonical nethacked_dungeon::compact_level codec (one byte per tile cell in a hex string, branch-stairs side table, sorted engravings/traps; lossless and byte-identical re-encode). Measured over seeds 1-200: natural GeographyFacts reached 15.4-17.4 KiB (max 17819 bytes; seeds 1/4/9 at 17027/17572/17041 refused Wait/Move truthfully); compact max 4093 bytes, a 4x margin under the 16384-byte bound. Kernel limits unchanged; traversal (I9, 8 MiB) unchanged. Acceptance tests in runtime/tests/geography_compact.rs (4 tests) plus the rewritten m7_audit boundary test; 1763 workspace tests, all 3 goldens bit-for-bit unchanged, all 12 gates pass. Checkpoint: docs/parity/obligations/2026-10-10-microkernel-geography-compact-checkpoint.json.",
       "remaining": [
-        "Compact geography facts (transport redesign) or architecture-approved payload bound raise for the 16 KiB transports",
-        "TUI/demo legacy-path consumer cutover or explicit tracked deferral",
+        "TUI/demo legacy-path consumer cutover or explicit tracked deferral (review condition C4): demo cutover in progress; TUI explicitly deferred - its skill-enhancement modal is a meta action with no ActionAst variant or owner transport, so a full cutover needs a new EnhanceSkill transport first (its gameplay actions and locale toggle already have facade routes and bit-for-bit parity evidence)",
+        "Optional self-describing over-bound refusal error variant instead of Kernel(NativeRefusal) (review condition C5)",
         "Full 53-family C parity backlog remains tracked separately"
       ]
     }

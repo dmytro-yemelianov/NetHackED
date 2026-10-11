@@ -110,6 +110,7 @@ struct HeroFacts {
 
 #[derive(Clone, Serialize, Deserialize)]
 struct GeographyFacts {
+    #[serde(with = "nethacked_dungeon::compact_level")]
     level: nethacked_dungeon::DungeonLevel,
     branch: BranchId,
     depth: usize,

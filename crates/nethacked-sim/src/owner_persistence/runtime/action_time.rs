@@ -128,6 +128,7 @@ pub struct BillingFacts;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct GeographyFacts {
+    #[serde(with = "nethacked_dungeon::compact_level")]
     pub level: DungeonLevel,
     pub branch: BranchId,
     pub depth: usize,

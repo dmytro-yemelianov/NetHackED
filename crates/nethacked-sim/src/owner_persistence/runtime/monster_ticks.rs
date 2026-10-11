@@ -161,6 +161,7 @@ pub(super) struct HeroFacts {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub(super) struct GeographyFacts {
+    #[serde(with = "nethacked_dungeon::compact_level")]
     pub(super) level: DungeonLevel,
     pub(super) branch: BranchId,
     pub(super) depth: usize,

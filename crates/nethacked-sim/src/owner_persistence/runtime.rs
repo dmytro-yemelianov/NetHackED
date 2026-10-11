@@ -3106,6 +3106,7 @@ mod tests {
     mod dressing_ticks;
     mod fresh_process;
     mod game_session;
+    mod geography_compact;
     mod inventory_actions;
     mod item_effects;
     mod m7_audit;
