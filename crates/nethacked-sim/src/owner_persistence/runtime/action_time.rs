@@ -714,6 +714,17 @@ fn proposed<T>(next: T, events: Vec<Vec<u8>>, result: &WaitOutcome) -> owners::R
     })
 }
 
+/// Non-random candidates publish a brief empty reply: the full outcome rides
+/// only on the Random candidate's reply (the accounting decodes it from
+/// there), so the commit's 16 KiB reply bound carries one outcome, not six.
+fn proposed_brief<T>(next: T, events: Vec<Vec<u8>>) -> owners::Result<Proposal<T>> {
+    Ok(Proposal {
+        next,
+        events,
+        reply: Vec::new(),
+    })
+}
+
 fn preview(obs: &[Observation]) -> owners::Result<WaitOutcome> {
     fact(obs, 6)
 }
@@ -742,7 +753,7 @@ impl Domain for ClockState {
             next.scheduler.turn = c.turn;
             next.object_timers = c.object_timers.clone();
         }
-        proposed(next, vec![], &req.outcome)
+        proposed_brief(next, vec![])
     }
 }
 
@@ -772,7 +783,7 @@ impl Domain for ObjectsState {
                 }
             }
         }
-        proposed(next, vec![], &req.outcome)
+        proposed_brief(next, vec![])
     }
 }
 
@@ -801,7 +812,7 @@ impl Domain for ActorsState {
             .iter()
             .map(|e| encode(e, PAYLOAD))
             .collect::<owners::Result<Vec<_>>>()?;
-        proposed(next, events, &req.outcome)
+        proposed_brief(next, events)
     }
 }
 
@@ -836,7 +847,7 @@ impl Domain for HeroState {
             next.player_luck = h.player_luck;
             next.divine_state.prayer_timeout = h.prayer_timeout;
         }
-        proposed(next, vec![], &req.outcome)
+        proposed_brief(next, vec![])
     }
 }
 
@@ -860,7 +871,7 @@ impl Domain for EquipmentState {
         if let Some(eq) = &req.outcome.equipment {
             next.equipment = eq.equipment.clone();
         }
-        proposed(next, vec![], &req.outcome)
+        proposed_brief(next, vec![])
     }
 }
 
@@ -871,10 +882,10 @@ impl Domain for BillingState {
     }
     fn prepare_intent(
         &self,
-        req: PrepareV1,
+        _req: PrepareV1,
         _: &OwnerBridgeConfig,
     ) -> owners::Result<Proposal<Self>> {
-        proposed(self.clone(), vec![], &req.outcome)
+        proposed_brief(self.clone(), vec![])
     }
 }
 

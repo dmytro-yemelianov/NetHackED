@@ -841,6 +841,28 @@ impl OwnerBridge {
                     error: None,
                 })
             }
+            nethacked_core::ActionAst::Kick(coord) => {
+                if !self.config.movement_actions {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply =
+                    self.step_movement(super::movement_actions::MovementAction::Kick(coord))?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::MeleeAttack(coord) => {
+                if !self.config.movement_actions {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply = self
+                    .step_movement(super::movement_actions::MovementAction::MeleeAttack(coord))?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
             nethacked_core::ActionAst::PickUp => {
                 if !self.config.inventory_actions {
                     return Err(owners::Error::Unsupported.into());
@@ -1187,7 +1209,6 @@ impl OwnerBridge {
                     error: None,
                 })
             }
-            _ => Err(owners::Error::Unsupported.into()),
         }
     }
 }

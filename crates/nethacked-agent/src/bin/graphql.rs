@@ -2,8 +2,6 @@
 
 use nethacked_agent::graphql::{create_router, create_schema, AppState};
 use nethacked_agent::netconfig::{resolve_bind_addr, token_from_env};
-use nethacked_agent::AgentSession;
-use std::sync::{Arc, Mutex};
 
 #[tokio::main]
 async fn main() {
@@ -15,9 +13,7 @@ async fn main() {
         &format!("127.0.0.1:{port}"),
     );
 
-    let state = AppState {
-        session: Arc::new(Mutex::new(AgentSession::new(42))),
-    };
+    let state = AppState::new(42).expect("owner runtime install");
     let app = create_router(create_schema(state), token_from_env());
 
     println!("🗡️ NetHackED GraphQL Server listening on http://{addr}");

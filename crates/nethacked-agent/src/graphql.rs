@@ -1,15 +1,160 @@
 //! GraphQL Schema and Resolvers for NetHackED remote agent swarms.
 
+use crate::observation::{GameObservation, TileInspection};
 use crate::{parse_action, parse_character, render_ascii_map, ActionArgs, AgentSession};
 use async_graphql::{Context, EmptySubscription, Object, Schema, SimpleObject};
+use nethacked_data::roles::CharacterConfig;
 use nethacked_data::ruleset::Ruleset;
+use nethacked_sim::{ActionAst, Coord};
 use std::sync::{Arc, Mutex};
+use tokio::sync::oneshot;
 
 pub type NetHackEDSchema = Schema<QueryRoot, MutationRoot, EmptySubscription>;
 
+/// Requests handled by the dedicated session actor thread.
+///
+/// The owner runtime is single-threaded (`OwnerBridge` is `!Send`), so the
+/// `AgentSession` lives on one dedicated thread and every resolver round-trips
+/// through this channel. All payloads are plain `Send` data.
+enum SessionRequest {
+    Observation(oneshot::Sender<GameObservation>),
+    AsciiMap(oneshot::Sender<String>),
+    InspectTile {
+        x: usize,
+        y: usize,
+        respond: oneshot::Sender<Result<TileInspection, String>>,
+    },
+    Ruleset(oneshot::Sender<Arc<Ruleset>>),
+    PlayerCoord(oneshot::Sender<Option<Coord>>),
+    Step {
+        action: ActionAst,
+        respond: oneshot::Sender<Result<(GameObservation, String), String>>,
+    },
+    Reset {
+        seed: u64,
+        respond: oneshot::Sender<Result<(), String>>,
+    },
+    ResetWithCharacter {
+        seed: u64,
+        config: CharacterConfig,
+        respond: oneshot::Sender<Result<(GameObservation, String), String>>,
+    },
+}
+
+/// Owns the single-threaded `AgentSession` on a dedicated OS thread.
+pub struct SessionActor {
+    tx: Mutex<std::sync::mpsc::Sender<SessionRequest>>,
+}
+
+impl SessionActor {
+    /// Spawn the session thread with a fresh game at `seed`.
+    ///
+    /// The `AgentSession` is constructed inside the thread: the owner runtime
+    /// is `!Send`, so it must never cross a thread boundary.
+    pub fn spawn(seed: u64) -> Result<Self, String> {
+        let (tx, rx) = std::sync::mpsc::channel::<SessionRequest>();
+        let (ready_tx, ready_rx) = std::sync::mpsc::channel::<Result<(), String>>();
+        std::thread::Builder::new()
+            .name("nethacked-graphql-session".to_string())
+            .spawn(move || {
+                let session = match AgentSession::new(seed) {
+                    Ok(session) => {
+                        let _ = ready_tx.send(Ok(()));
+                        session
+                    }
+                    Err(e) => {
+                        let _ = ready_tx.send(Err(e));
+                        return;
+                    }
+                };
+                run_session(session, rx)
+            })
+            .map_err(|e| format!("failed to spawn session actor thread: {e}"))?;
+        ready_rx
+            .recv()
+            .map_err(|_| "session actor terminated".to_string())??;
+        Ok(Self { tx: Mutex::new(tx) })
+    }
+
+    /// Round-trip one request to the session thread and await its reply.
+    async fn call<T: Send>(
+        &self,
+        build: impl FnOnce(oneshot::Sender<T>) -> SessionRequest,
+    ) -> Result<T, String> {
+        let (respond, rx) = oneshot::channel();
+        self.tx
+            .lock()
+            .unwrap()
+            .send(build(respond))
+            .map_err(|_| "session actor terminated".to_string())?;
+        rx.await.map_err(|_| "session actor terminated".to_string())
+    }
+}
+
+fn run_session(mut session: AgentSession, rx: std::sync::mpsc::Receiver<SessionRequest>) {
+    while let Ok(request) = rx.recv() {
+        match request {
+            SessionRequest::Observation(respond) => {
+                let _ = respond.send(session.get_observation());
+            }
+            SessionRequest::AsciiMap(respond) => {
+                let _ = respond.send(render_ascii_map(session.world()));
+            }
+            SessionRequest::InspectTile { x, y, respond } => {
+                let _ = respond.send(session.inspect_tile(x, y));
+            }
+            SessionRequest::Ruleset(respond) => {
+                let _ = respond.send(Arc::clone(&session.world().ruleset));
+            }
+            SessionRequest::PlayerCoord(respond) => {
+                let _ = respond.send(session.player_coord());
+            }
+            SessionRequest::Step { action, respond } => {
+                let result = session
+                    .step(action)
+                    .map(|obs| (obs, render_ascii_map(session.world())));
+                let _ = respond.send(result);
+            }
+            SessionRequest::Reset { seed, respond } => {
+                let result = match AgentSession::new(seed) {
+                    Ok(fresh) => {
+                        session = fresh;
+                        Ok(())
+                    }
+                    Err(e) => Err(e),
+                };
+                let _ = respond.send(result);
+            }
+            SessionRequest::ResetWithCharacter {
+                seed,
+                config,
+                respond,
+            } => {
+                let result = match AgentSession::new_with_character(seed, config) {
+                    Ok(fresh) => {
+                        session = fresh;
+                        Ok((session.get_observation(), render_ascii_map(session.world())))
+                    }
+                    Err(e) => Err(e),
+                };
+                let _ = respond.send(result);
+            }
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct AppState {
-    pub session: Arc<Mutex<AgentSession>>,
+    pub actor: Arc<SessionActor>,
+}
+
+impl AppState {
+    /// Create the schema state: spawns the dedicated session actor thread.
+    pub fn new(seed: u64) -> Result<Self, String> {
+        Ok(Self {
+            actor: Arc::new(SessionActor::spawn(seed)?),
+        })
+    }
 }
 
 #[derive(SimpleObject)]
@@ -79,11 +224,14 @@ pub struct QueryRoot;
 #[Object]
 impl QueryRoot {
     /// Returns current player stats and coordinates.
-    async fn player_state(&self, ctx: &Context<'_>) -> PlayerStateGql {
+    async fn player_state(&self, ctx: &Context<'_>) -> async_graphql::Result<PlayerStateGql> {
         let state = ctx.data_unchecked::<AppState>();
-        let session = state.session.lock().unwrap();
-        let obs = session.get_observation();
-        PlayerStateGql {
+        let obs = state
+            .actor
+            .call(SessionRequest::Observation)
+            .await
+            .map_err(async_graphql::Error::new)?;
+        Ok(PlayerStateGql {
             x: obs.player_coord.x,
             y: obs.player_coord.y,
             hp: obs.player_hp,
@@ -94,40 +242,47 @@ impl QueryRoot {
             pw: obs.player_pw,
             max_pw: obs.player_max_pw,
             gold: obs.player_gold,
-        }
+        })
     }
 
     /// Returns full JSON observation for autonomous agents.
-    async fn observation_json(&self, ctx: &Context<'_>) -> String {
+    async fn observation_json(&self, ctx: &Context<'_>) -> async_graphql::Result<String> {
         let state = ctx.data_unchecked::<AppState>();
-        let session = state.session.lock().unwrap();
-        let obs = session.get_observation();
-        serde_json::to_string_pretty(&obs).unwrap_or_default()
+        let obs = state
+            .actor
+            .call(SessionRequest::Observation)
+            .await
+            .map_err(async_graphql::Error::new)?;
+        Ok(serde_json::to_string_pretty(&obs).unwrap_or_default())
     }
 
     /// Renders classic 80x21 ASCII dungeon map.
-    async fn ascii_map(&self, ctx: &Context<'_>) -> String {
+    async fn ascii_map(&self, ctx: &Context<'_>) -> async_graphql::Result<String> {
         let state = ctx.data_unchecked::<AppState>();
-        let session = state.session.lock().unwrap();
-        render_ascii_map(&session.world)
+        state
+            .actor
+            .call(SessionRequest::AsciiMap)
+            .await
+            .map_err(async_graphql::Error::new)
     }
 
     /// Inspect a specific tile coordinate.
     async fn inspect_tile(&self, ctx: &Context<'_>, x: usize, y: usize) -> String {
         let state = ctx.data_unchecked::<AppState>();
-        let session = state.session.lock().unwrap();
-        match session.inspect_tile(x, y) {
-            Ok(info) => serde_json::to_string_pretty(&info).unwrap_or_default(),
-            Err(e) => e,
+        match state
+            .actor
+            .call(|respond| SessionRequest::InspectTile { x, y, respond })
+            .await
+        {
+            Ok(Ok(info)) => serde_json::to_string_pretty(&info).unwrap_or_default(),
+            Ok(Err(e)) => e,
+            Err(_) => "session actor terminated".to_string(),
         }
     }
 
     /// Returns the declarative bestiary.
     async fn bestiary(&self, ctx: &Context<'_>) -> Vec<BestiaryEntryGql> {
-        let rs = ctx
-            .data_opt::<AppState>()
-            .map(|s| std::sync::Arc::clone(&s.session.lock().unwrap().world.ruleset))
-            .unwrap_or_else(Ruleset::vanilla);
+        let rs = session_ruleset(ctx).await;
         rs.monsters
             .iter()
             .map(|m| BestiaryEntryGql {
@@ -143,10 +298,7 @@ impl QueryRoot {
 
     /// Returns the declarative item catalog.
     async fn item_catalog(&self, ctx: &Context<'_>) -> Vec<ItemEntryGql> {
-        let rs = ctx
-            .data_opt::<AppState>()
-            .map(|s| std::sync::Arc::clone(&s.session.lock().unwrap().world.ruleset))
-            .unwrap_or_else(Ruleset::vanilla);
+        let rs = session_ruleset(ctx).await;
         rs.items
             .iter()
             .map(|i| ItemEntryGql {
@@ -162,10 +314,7 @@ impl QueryRoot {
 
     /// Returns available classic player roles.
     async fn roles(&self, ctx: &Context<'_>) -> Vec<RoleEntryGql> {
-        let rs = ctx
-            .data_opt::<AppState>()
-            .map(|s| std::sync::Arc::clone(&s.session.lock().unwrap().world.ruleset))
-            .unwrap_or_else(Ruleset::vanilla);
+        let rs = session_ruleset(ctx).await;
         rs.roles
             .iter()
             .map(|r| RoleEntryGql {
@@ -186,10 +335,7 @@ impl QueryRoot {
 
     /// Returns available player races.
     async fn races(&self, ctx: &Context<'_>) -> Vec<RaceEntryGql> {
-        let rs = ctx
-            .data_opt::<AppState>()
-            .map(|s| std::sync::Arc::clone(&s.session.lock().unwrap().world.ruleset))
-            .unwrap_or_else(Ruleset::vanilla);
+        let rs = session_ruleset(ctx).await;
         rs.races
             .iter()
             .map(|r| RaceEntryGql {
@@ -197,6 +343,19 @@ impl QueryRoot {
                 name: r.name.to_string(),
             })
             .collect()
+    }
+}
+
+/// The session's active ruleset, falling back to the vanilla catalog when the
+/// actor is unavailable.
+async fn session_ruleset(ctx: &Context<'_>) -> Arc<Ruleset> {
+    match ctx.data_opt::<AppState>() {
+        Some(state) => state
+            .actor
+            .call(SessionRequest::Ruleset)
+            .await
+            .unwrap_or_else(|_| Ruleset::vanilla()),
+        None => Ruleset::vanilla(),
     }
 }
 
@@ -230,9 +389,12 @@ impl MutationRoot {
     ) -> async_graphql::Result<StepResultGql> {
         require_mutation_auth(ctx)?;
         let state = ctx.data_unchecked::<AppState>();
-        let mut session = state.session.lock().unwrap();
 
-        let player = session.player_coord();
+        let player = state
+            .actor
+            .call(SessionRequest::PlayerCoord)
+            .await
+            .map_err(async_graphql::Error::new)?;
         let args = ActionArgs {
             index,
             expected_item: None,
@@ -243,8 +405,15 @@ impl MutationRoot {
         };
         let action_ast = parse_action(&action, &args).map_err(async_graphql::Error::new)?;
 
-        let obs = session.step(action_ast);
-        let ascii_map = render_ascii_map(&session.world);
+        let (obs, ascii_map) = state
+            .actor
+            .call(|respond| SessionRequest::Step {
+                action: action_ast,
+                respond,
+            })
+            .await
+            .map_err(async_graphql::Error::new)?
+            .map_err(async_graphql::Error::new)?;
 
         Ok(StepResultGql {
             success: true,
@@ -269,8 +438,15 @@ impl MutationRoot {
     ) -> async_graphql::Result<bool> {
         require_mutation_auth(ctx)?;
         let state = ctx.data_unchecked::<AppState>();
-        let mut session = state.session.lock().unwrap();
-        *session = AgentSession::new(seed.unwrap_or(42));
+        state
+            .actor
+            .call(|respond| SessionRequest::Reset {
+                seed: seed.unwrap_or(42),
+                respond,
+            })
+            .await
+            .map_err(async_graphql::Error::new)?
+            .map_err(async_graphql::Error::new)?;
         Ok(true)
     }
 
@@ -288,7 +464,6 @@ impl MutationRoot {
     ) -> async_graphql::Result<StepResultGql> {
         require_mutation_auth(ctx)?;
         let state = ctx.data_unchecked::<AppState>();
-        let mut session = state.session.lock().unwrap();
 
         let config = parse_character(
             Some(name.as_deref().unwrap_or("Hero")),
@@ -299,9 +474,16 @@ impl MutationRoot {
         )
         .map_err(async_graphql::Error::new)?;
 
-        *session = AgentSession::new_with_character(seed.unwrap_or(42), config);
-        let obs = session.get_observation();
-        let ascii_map = render_ascii_map(&session.world);
+        let (obs, ascii_map) = state
+            .actor
+            .call(|respond| SessionRequest::ResetWithCharacter {
+                seed: seed.unwrap_or(42),
+                config,
+                respond,
+            })
+            .await
+            .map_err(async_graphql::Error::new)?
+            .map_err(async_graphql::Error::new)?;
 
         Ok(StepResultGql {
             success: true,
@@ -388,11 +570,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_graphql_query_player_state_and_bestiary() {
-        let session = AgentSession::new(42);
-        let state = AppState {
-            session: Arc::new(Mutex::new(session)),
-        };
-        let schema = create_schema(state);
+        let schema = create_schema(AppState::new(42).unwrap());
 
         let res = schema
             .execute("{ playerState { hp ac } bestiary { name } roles { name baseHp } }")
@@ -406,11 +584,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_graphql_races_and_item_catalog() {
-        let session = AgentSession::new(42);
-        let state = AppState {
-            session: Arc::new(Mutex::new(session)),
-        };
-        let schema = create_schema(state);
+        let schema = create_schema(AppState::new(42).unwrap());
 
         let res = schema
             .execute("{ races { name } itemCatalog { name } }")
@@ -423,11 +597,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_graphql_mutation_step_action() {
-        let session = AgentSession::new(42);
-        let state = AppState {
-            session: Arc::new(Mutex::new(session)),
-        };
-        let schema = create_schema(state);
+        let schema = create_schema(AppState::new(42).unwrap());
 
         let res = schema
             .execute(r#"mutation { stepAction(action: "wait") { success turn } }"#)
@@ -439,11 +609,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_graphql_mutation_reset_with_barbarian() {
-        let session = AgentSession::new(42);
-        let state = AppState {
-            session: Arc::new(Mutex::new(session)),
-        };
-        let schema = create_schema(state);
+        let schema = create_schema(AppState::new(42).unwrap());
 
         let res = schema
             .execute(
@@ -458,9 +624,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_graphql_unknown_action_is_error() {
-        let schema = create_schema(AppState {
-            session: Arc::new(Mutex::new(AgentSession::new(42))),
-        });
+        let schema = create_schema(AppState::new(42).unwrap());
         let res = schema
             .execute(r#"mutation { stepAction(action: "dance") { success } }"#)
             .await;

@@ -10,7 +10,7 @@ use serde_json::{json, Value};
 use std::io::{self, Write};
 
 fn main() -> io::Result<()> {
-    let mut session = AgentSession::new(42);
+    let mut session = AgentSession::new(42).map_err(io::Error::other)?;
     let stdin = io::stdin();
     let mut stdout = io::stdout();
 
@@ -37,7 +37,10 @@ fn main() -> io::Result<()> {
                 Err(e) => return Some(json!({ "error": e }).to_string()),
             };
             match parse_action(action_name, &args) {
-                Ok(action) => session.step(action),
+                Ok(action) => match session.step(action) {
+                    Ok(obs) => obs,
+                    Err(e) => return Some(json!({ "error": e }).to_string()),
+                },
                 Err(e) => return Some(json!({ "error": e }).to_string()),
             }
         };

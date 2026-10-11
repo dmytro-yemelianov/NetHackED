@@ -4,7 +4,8 @@ use serde_json::{json, Value};
 
 use crate::commands::{action_args_from_json, parse_action};
 use crate::rpc::{
-    self, error_response, result_response, RpcRequest, INVALID_PARAMS, METHOD_NOT_FOUND,
+    self, error_response, result_response, RpcRequest, INTERNAL_ERROR, INVALID_PARAMS,
+    METHOD_NOT_FOUND,
 };
 use crate::session::AgentSession;
 
@@ -35,7 +36,7 @@ fn dispatch(
     match method {
         "nethacked.getObservation" => Ok(json!(session.get_observation())),
         "nethacked.renderAscii" => {
-            Ok(json!({ "ascii": crate::ascii::render_ascii_map(&session.world) }))
+            Ok(json!({ "ascii": crate::ascii::render_ascii_map(session.world()) }))
         }
         "nethacked.step" => {
             let action_str = params
@@ -45,7 +46,8 @@ fn dispatch(
             let args = action_args_from_json(params, session.player_coord())
                 .map_err(|m| (INVALID_PARAMS, m))?;
             let action = parse_action(action_str, &args).map_err(|m| (INVALID_PARAMS, m))?;
-            Ok(json!(session.step(action)))
+            let obs = session.step(action).map_err(|m| (INTERNAL_ERROR, m))?;
+            Ok(json!(obs))
         }
         "nethacked.inspectTile" => {
             let x = params
@@ -69,7 +71,7 @@ fn dispatch(
 
 /// Run streaming JSON-RPC 2.0 loop over stdin/stdout.
 pub fn run_jsonrpc_server(seed: u64) -> std::io::Result<()> {
-    let mut session = AgentSession::new(seed);
+    let mut session = AgentSession::new(seed).map_err(std::io::Error::other)?;
     let stdin = std::io::stdin();
     crate::stdio::serve_lines(stdin.lock(), std::io::stdout(), |line| {
         handle_jsonrpc_line(&mut session, line).map(|v| v.to_string())

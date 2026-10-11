@@ -1,16 +1,12 @@
 //! HTTP-level tests for the GraphQL server: body cap, depth/complexity limits, mutation auth.
 
 use nethacked_agent::graphql::{create_router, create_schema, AppState};
-use nethacked_agent::AgentSession;
 use serde_json::json;
 use std::io::{Read, Write};
 use std::net::TcpStream;
-use std::sync::{Arc, Mutex};
 
 async fn spawn(token: Option<&str>) -> String {
-    let schema = create_schema(AppState {
-        session: Arc::new(Mutex::new(AgentSession::new(42))),
-    });
+    let schema = create_schema(AppState::new(42).unwrap());
     let app = create_router(schema, token.map(String::from));
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap().to_string();

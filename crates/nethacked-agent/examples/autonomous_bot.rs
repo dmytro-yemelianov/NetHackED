@@ -21,7 +21,8 @@ fn main() {
         alignment: Alignment::Neutral,
     };
 
-    let mut session = AgentSession::new_with_character(1337, config);
+    let mut session =
+        AgentSession::new_with_character(1337, config).expect("owner runtime install");
     println!("⚔️ Character initialized: Brunhilde the Valkyrie");
 
     // 2. Initial observation
@@ -79,7 +80,7 @@ fn main() {
         // Execute action
         let action = ActionAst::Move(dir);
         println!("  ⚡ Executing: Move({dir:?})");
-        obs = session.step(action);
+        obs = session.step(action).expect("owner dispatch");
 
         // Process game events / logs
         for event in &obs.last_events {

@@ -24,6 +24,7 @@ use std::{
 pub mod action_time;
 pub mod default_commands;
 pub mod dressing_ticks;
+pub mod game_session;
 pub mod inventory_actions;
 pub mod item_effects;
 pub(crate) mod item_lifetime;
@@ -40,6 +41,8 @@ pub(crate) mod wand_commands;
 pub(crate) mod wand_extensions;
 pub(crate) mod wand_gameplay;
 pub(crate) mod wand_workflows;
+
+pub use game_session::OwnerGameSession;
 
 const PAYLOAD: usize = 4 * 1024 * 1024;
 const PROVIDER: &str = "native-owner-bridge-v1";
@@ -84,6 +87,21 @@ impl From<pr::Error> for OwnerBridgeError {
         Self::Session(e)
     }
 }
+impl std::fmt::Display for OwnerBridgeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Native(e) => write!(f, "native: {e}"),
+            Self::Owner(e) => write!(f, "owner: {e}"),
+            Self::Kernel(e) => write!(f, "kernel: {e}"),
+            Self::Session(e) => write!(f, "session: {e}"),
+            Self::Admission(e) => write!(f, "admission: {:?}", e.error),
+            Self::Workflow(e) => write!(f, "workflow: {e:?}"),
+            Self::WorkflowStatus(s) => write!(f, "workflow status: {s:?}"),
+            Self::Migration(e) => write!(f, "migration: {e:?}"),
+        }
+    }
+}
+impl std::error::Error for OwnerBridgeError {}
 
 /// Host-approved immutable ruleset and current executable/codec configuration.
 /// It carries no source owners, World, closures over payloads, or mutable state.
@@ -3087,6 +3105,7 @@ mod tests {
     mod default_commands;
     mod dressing_ticks;
     mod fresh_process;
+    mod game_session;
     mod inventory_actions;
     mod item_effects;
     mod metabolic_ticks;

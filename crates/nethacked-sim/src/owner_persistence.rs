@@ -19,7 +19,7 @@ mod partitions;
 pub use partitions::NativePartitions;
 mod runtime;
 pub mod wand_ports;
-pub use runtime::{OwnerBridge, OwnerBridgeConfig, OwnerBridgeError};
+pub use runtime::{OwnerBridge, OwnerBridgeConfig, OwnerBridgeError, OwnerGameSession};
 
 use std::sync::Arc;
 

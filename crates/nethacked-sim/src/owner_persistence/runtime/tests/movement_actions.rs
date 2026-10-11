@@ -674,3 +674,227 @@ fn movement_oracle_door_search_untrap_match_legacy() {
     assert!(reply.spent_time);
     assert_eq!(legacy.level.traps[&trap_coord].state, TrapState::Disarmed);
 }
+
+// ---------------------------------------------------------------------------
+// M6-I10: Kick and MeleeAttack dispatch branches. Kick has no combat, so it
+// is bit-for-bit legacy parity; MeleeAttack reuses the accepted I5 simplified
+// hero-melee law (`compute_hero_melee_attack`), the same law the movement
+// transport applies to a melee bump — full `resolve_combat` parity (defender
+// AC, weapon skills, artifacts, vorpal) remains a documented follow-up.
+
+#[test]
+fn movement_oracle_kick_closed_door_breaks_matching_legacy() {
+    let mut w = clean_world(804);
+    let door = Coord::new_unchecked(10, 9);
+    w.level.set_tile(
+        door,
+        Tile::Door {
+            state: DoorState::Closed,
+            trapped: false,
+        },
+    );
+    let (reply, legacy) =
+        run_movement_oracle(&w, ActionAst::Kick(door), MovementAction::Kick(door));
+    assert!(reply.spent_time);
+    assert_eq!(
+        legacy.level.get_tile(door),
+        &Tile::Door {
+            state: DoorState::Broken,
+            trapped: false,
+        }
+    );
+    assert!(reply.events.iter().any(|e| matches!(
+        e,
+        GameEvent::DoorToggled { coord, new_state }
+            if *coord == door && *new_state == DoorState::Broken
+    )));
+    assert!(reply.events.iter().any(|e| matches!(
+        e,
+        GameEvent::LogMessage { text } if text.contains("shatters into splinters")
+    )));
+}
+
+#[test]
+fn movement_oracle_kick_wall_matching_legacy() {
+    let w = clean_world(804);
+    let wall = Coord::new_unchecked(10, 9);
+    let (reply, legacy) =
+        run_movement_oracle(&w, ActionAst::Kick(wall), MovementAction::Kick(wall));
+    assert!(reply.spent_time);
+    assert!(reply.events.iter().any(|e| matches!(
+        e,
+        GameEvent::LogMessage { text } if text.contains("kick the wall")
+    )));
+    // No tile changed and the hero did not move.
+    assert_eq!(legacy.level.get_tile(wall), &Tile::Room);
+    assert_eq!(
+        legacy.arena.actors[w.player_id].coord,
+        Coord::new_unchecked(10, 10)
+    );
+}
+
+#[test]
+fn movement_oracle_kick_broken_door_is_silent_noop_matching_legacy() {
+    let mut w = clean_world(804);
+    let door = Coord::new_unchecked(10, 9);
+    w.level.set_tile(
+        door,
+        Tile::Door {
+            state: DoorState::Broken,
+            trapped: false,
+        },
+    );
+    let (reply, legacy) =
+        run_movement_oracle(&w, ActionAst::Kick(door), MovementAction::Kick(door));
+    assert!(!reply.spent_time);
+    assert!(reply.events.is_empty());
+    assert_eq!(
+        legacy.level.get_tile(door),
+        &Tile::Door {
+            state: DoorState::Broken,
+            trapped: false,
+        }
+    );
+}
+
+#[test]
+fn movement_oracle_kick_non_adjacent_does_nothing_matching_legacy() {
+    let w = clean_world(804);
+    let far = Coord::new_unchecked(15, 15);
+    let (reply, legacy) = run_movement_oracle(&w, ActionAst::Kick(far), MovementAction::Kick(far));
+    assert!(!reply.spent_time);
+    assert!(reply.events.is_empty());
+    assert_eq!(
+        legacy.arena.actors[w.player_id].coord,
+        Coord::new_unchecked(10, 10)
+    );
+}
+
+#[test]
+fn movement_oracle_melee_empty_air_matching_legacy() {
+    let w = clean_world(804);
+    let empty = Coord::new_unchecked(10, 9);
+    let (reply, legacy) = run_movement_oracle(
+        &w,
+        ActionAst::MeleeAttack(empty),
+        MovementAction::MeleeAttack(empty),
+    );
+    assert!(reply.spent_time);
+    assert!(reply.events.iter().any(|e| matches!(
+        e,
+        GameEvent::LogMessage { text } if text.contains("empty air")
+    )));
+    assert_eq!(
+        legacy.arena.actors[w.player_id].coord,
+        Coord::new_unchecked(10, 10)
+    );
+}
+
+#[test]
+fn movement_oracle_melee_non_adjacent_does_nothing_matching_legacy() {
+    let w = clean_world(804);
+    let far = Coord::new_unchecked(15, 15);
+    let (reply, legacy) = run_movement_oracle(
+        &w,
+        ActionAst::MeleeAttack(far),
+        MovementAction::MeleeAttack(far),
+    );
+    assert!(!reply.spent_time);
+    assert!(reply.events.is_empty());
+    assert_eq!(
+        legacy.arena.actors[w.player_id].coord,
+        Coord::new_unchecked(10, 10)
+    );
+}
+
+#[test]
+fn movement_oracle_helpless_substitutes_wait_for_kick_and_melee_matching_legacy() {
+    // Helpless substitutes a stationary wait for any action, so a kick at a
+    // closed door must not break it and a melee attack must not swing.
+    let mut w = clean_world(804);
+    let door = Coord::new_unchecked(10, 9);
+    w.level.set_tile(
+        door,
+        Tile::Door {
+            state: DoorState::Closed,
+            trapped: false,
+        },
+    );
+    w.hero.afflictions.transient.helpless = 2;
+    let (reply, legacy) =
+        run_movement_oracle(&w, ActionAst::Kick(door), MovementAction::Kick(door));
+    assert!(reply.spent_time);
+    assert!(!reply.events.iter().any(|e| matches!(
+        e,
+        GameEvent::DoorToggled { .. } | GameEvent::LogMessage { .. }
+    )));
+    assert_eq!(
+        legacy.level.get_tile(door),
+        &Tile::Door {
+            state: DoorState::Closed,
+            trapped: false,
+        }
+    );
+
+    let mut w = clean_world(804);
+    w.hero.afflictions.transient.helpless = 2;
+    let empty = Coord::new_unchecked(10, 9);
+    let (reply, legacy) = run_movement_oracle(
+        &w,
+        ActionAst::MeleeAttack(empty),
+        MovementAction::MeleeAttack(empty),
+    );
+    assert!(reply.spent_time);
+    assert!(!reply.events.iter().any(|e| matches!(
+        e,
+        GameEvent::LogMessage { .. }
+            | GameEvent::AttackLanded { .. }
+            | GameEvent::AttackMissed { .. }
+    )));
+    assert_eq!(
+        legacy.arena.actors[w.player_id].coord,
+        Coord::new_unchecked(10, 10)
+    );
+}
+
+#[test]
+fn melee_attack_matches_move_bump_transport_consistency() {
+    // Transport-internal consistency (not legacy parity): MeleeAttack and a
+    // melee bump both resolve through the accepted simplified hero-melee law,
+    // so from identical worlds they must produce identical events and state.
+    let mut w = clean_world(804);
+    let goblin_coord = Coord::new_unchecked(11, 10);
+    let mut goblin = w
+        .ruleset
+        .create_monster_record("goblin", goblin_coord, &mut w.rng)
+        .unwrap();
+    goblin.movement = 0; // Don't let it act during turn ticks
+    let goblin_id = w.arena.spawn_actor(goblin);
+
+    let bridge_a = install_bridge(&w);
+    let reply_a = bridge_a
+        .step_movement(MovementAction::MeleeAttack(goblin_coord))
+        .unwrap();
+    let world_a = bridge_a.export_native().unwrap();
+
+    let bridge_b = install_bridge(&w);
+    let reply_b = bridge_b
+        .step_movement(MovementAction::Move(Direction::East))
+        .unwrap();
+    let world_b = bridge_b.export_native().unwrap();
+
+    assert!(reply_a.spent_time);
+    assert!(reply_b.spent_time);
+    let combat_happened = reply_a.events.iter().any(|e| match e {
+        GameEvent::AttackLanded {
+            attacker, target, ..
+        } => *attacker == w.player_id && *target == goblin_id,
+        GameEvent::AttackMissed { attacker, target } => {
+            *attacker == w.player_id && *target == goblin_id
+        }
+        _ => false,
+    });
+    assert!(combat_happened, "MeleeAttack should trigger combat");
+    assert_eq!(reply_a.events, reply_b.events);
+    assert_eq!(oracle_json(&world_a), oracle_json(&world_b));
+}

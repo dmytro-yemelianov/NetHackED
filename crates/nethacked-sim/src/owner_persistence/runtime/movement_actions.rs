@@ -82,6 +82,8 @@ pub enum MovementAction {
     CloseDoor(Coord),
     Search,
     Untrap(Coord),
+    Kick(Coord),
+    MeleeAttack(Coord),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -997,6 +999,94 @@ fn execute_untrap(
     events
 }
 
+/// C `dokick` (actions/doors.rs `handle_kick`): an adjacent door shatters
+/// (unless already broken, which is a silent no-op); any other adjacent tile
+/// is a wall kick. Both spend the action time; a non-adjacent kick does
+/// nothing at all.
+fn execute_kick(
+    coord: Coord,
+    clk: &mut ClockFacts,
+    a: &ActorsFacts,
+    h: &HeroFacts,
+    geo: &mut GeographyFacts,
+    delta: &mut GeographyDelta,
+) -> Vec<GameEvent> {
+    let mut events = Vec::new();
+    let Some(player) = a.actors.get(h.player_id).cloned() else {
+        return events;
+    };
+    if player.coord.is_adjacent(coord) {
+        let tile = geo.level.get_tile(coord).clone();
+        if let Tile::Door { state, .. } = tile {
+            if state != DoorState::Broken {
+                let new_tile = Tile::Door {
+                    state: DoorState::Broken,
+                    trapped: false,
+                };
+                geo.level.set_tile(coord, new_tile.clone());
+                delta.tiles.push((coord, new_tile));
+                events.push(GameEvent::DoorToggled {
+                    coord,
+                    new_state: DoorState::Broken,
+                });
+                events.push(GameEvent::LogMessage {
+                    text: "As you kick the door, it shatters into splinters!".into(),
+                });
+                clk.hero_energy = clk.hero_energy.saturating_sub(NORMAL_SPEED);
+            }
+        } else {
+            events.push(GameEvent::LogMessage {
+                text: "WHAMMM!!! You kick the wall!".into(),
+            });
+            clk.hero_energy = clk.hero_energy.saturating_sub(NORMAL_SPEED);
+        }
+    }
+    events
+}
+
+/// C `doattack` (actions/doors.rs `handle_melee_attack`): an adjacent occupied
+/// tile resolves hero melee combat through the same accepted owner law as a
+/// melee bump (`compute_hero_melee_attack`); an adjacent empty tile swings at
+/// empty air. Both spend the action time; a non-adjacent attack does nothing.
+#[allow(clippy::too_many_arguments)]
+fn execute_melee_attack(
+    coord: Coord,
+    clk: &mut ClockFacts,
+    obj: &ObjectsFacts,
+    a: &mut ActorsFacts,
+    h: &HeroFacts,
+    eq: &EquipmentFacts,
+    config: &OwnerBridgeConfig,
+    rng: &mut rand_chacha::ChaCha8Rng,
+) -> Vec<GameEvent> {
+    let mut events = Vec::new();
+    let Some(player) = a.actors.get(h.player_id).cloned() else {
+        return events;
+    };
+    if player.coord.is_adjacent(coord) {
+        if let Some(target_id) = actor_at(&a.actors, coord) {
+            events.extend(compute_hero_melee_attack(
+                &mut a.actors,
+                &obj.items,
+                eq.wielded_item,
+                h.player_id,
+                target_id,
+                &h.progress,
+                h.player_luck,
+                &config.ruleset,
+                rng,
+            ));
+            clk.hero_energy = clk.hero_energy.saturating_sub(NORMAL_SPEED);
+        } else {
+            events.push(GameEvent::LogMessage {
+                text: "You swing at empty air.".into(),
+            });
+            clk.hero_energy = clk.hero_energy.saturating_sub(NORMAL_SPEED);
+        }
+    }
+    events
+}
+
 pub(crate) fn outcome(
     action: &MovementAction,
     obs: &[Observation],
@@ -1111,6 +1201,17 @@ pub(crate) fn outcome(
         MovementAction::Untrap(coord) => {
             let untrap_events = execute_untrap(coord, &mut clk, &mut geo, &mut geo_delta, &sess);
             events.extend(untrap_events);
+            clk.hero_energy != energy_before
+        }
+        MovementAction::Kick(coord) => {
+            let kick_events = execute_kick(coord, &mut clk, &a, &h, &mut geo, &mut geo_delta);
+            events.extend(kick_events);
+            clk.hero_energy != energy_before
+        }
+        MovementAction::MeleeAttack(coord) => {
+            let melee_events =
+                execute_melee_attack(coord, &mut clk, &obj, &mut a, &h, &eq, config, rng);
+            events.extend(melee_events);
             clk.hero_energy != energy_before
         }
     };
@@ -1538,6 +1639,17 @@ fn proposed<T>(
     })
 }
 
+/// Non-random candidates publish a brief empty reply: the full outcome rides
+/// only on the Random candidate's reply (the accounting decodes it from
+/// there), so the commit's 16 KiB reply bound carries one outcome, not seven.
+fn proposed_brief<T>(next: T, events: Vec<Vec<u8>>) -> owners::Result<Proposal<T>> {
+    Ok(Proposal {
+        next,
+        events,
+        reply: Vec::new(),
+    })
+}
+
 fn preview(obs: &[Observation]) -> owners::Result<MovementOutcome> {
     fact(obs, 6)
 }
@@ -1567,7 +1679,7 @@ impl Domain for ClockState {
             next.scheduler.turn = c.turn;
             next.object_timers = c.object_timers.clone();
         }
-        proposed(next, vec![], &req.outcome)
+        proposed_brief(next, vec![])
     }
 }
 
@@ -1598,7 +1710,7 @@ impl Domain for ObjectsState {
                 }
             }
         }
-        proposed(next, vec![], &req.outcome)
+        proposed_brief(next, vec![])
     }
 }
 
@@ -1628,7 +1740,7 @@ impl Domain for ActorsState {
             .iter()
             .map(|e| encode(e, PAYLOAD))
             .collect::<owners::Result<Vec<_>>>()?;
-        proposed(next, events, &req.outcome)
+        proposed_brief(next, events)
     }
 }
 
@@ -1664,7 +1776,7 @@ impl Domain for HeroState {
             next.player_luck = h.player_luck;
             next.divine_state.prayer_timeout = h.prayer_timeout;
         }
-        proposed(next, vec![], &req.outcome)
+        proposed_brief(next, vec![])
     }
 }
 
@@ -1689,7 +1801,7 @@ impl Domain for EquipmentState {
         if let Some(eq) = &req.outcome.equipment {
             next.equipment = eq.equipment.clone();
         }
-        proposed(next, vec![], &req.outcome)
+        proposed_brief(next, vec![])
     }
 }
 
@@ -1753,7 +1865,7 @@ impl Domain for GeographyState {
         if let Some(g) = &req.outcome.geography {
             g.delta.apply(&mut next.level);
         }
-        proposed(next, vec![], &req.outcome)
+        proposed_brief(next, vec![])
     }
 }
 

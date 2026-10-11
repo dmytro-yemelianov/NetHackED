@@ -70,7 +70,9 @@ impl ExplorationTracker {
     }
 }
 
-#[pyclass]
+/// `unsendable`: the owner runtime is single-threaded (`!Send`), so the env
+/// is pinned to the Python thread that created it.
+#[pyclass(unsendable)]
 pub struct NetHackEDEnv {
     session: AgentSession,
     seed: u64,
@@ -84,11 +86,16 @@ pub struct NetHackEDEnv {
 impl NetHackEDEnv {
     #[new]
     #[pyo3(signature = (seed=None, max_steps=1000, conduct_masking=true))]
-    pub fn new(seed: Option<u64>, max_steps: Option<usize>, conduct_masking: Option<bool>) -> Self {
+    pub fn new(
+        seed: Option<u64>,
+        max_steps: Option<usize>,
+        conduct_masking: Option<bool>,
+    ) -> PyResult<Self> {
         let actual_seed = seed.unwrap_or(42);
         let max_s = max_steps.unwrap_or(1000);
         let mask = conduct_masking.unwrap_or(true);
-        let session = AgentSession::new(actual_seed);
+        let session =
+            AgentSession::new(actual_seed).map_err(pyo3::exceptions::PyRuntimeError::new_err)?;
         let mut env = Self {
             session,
             seed: actual_seed,
@@ -98,7 +105,7 @@ impl NetHackEDEnv {
             explored: ExplorationTracker::default(),
         };
         env.record_exploration();
-        env
+        Ok(env)
     }
 
     /// Reset environment to initial or given seed.
@@ -112,7 +119,8 @@ impl NetHackEDEnv {
         if let Some(s) = seed {
             self.seed = s;
         }
-        self.session = AgentSession::new(self.seed);
+        self.session =
+            AgentSession::new(self.seed).map_err(pyo3::exceptions::PyRuntimeError::new_err)?;
         self.step_count = 0;
         self.explored.clear();
         self.record_exploration();
@@ -120,8 +128,8 @@ impl NetHackEDEnv {
         let obs = self.build_observation(py)?;
         let info = PyDict::new(py);
         info.set_item("seed", self.seed)?;
-        info.set_item("turn", self.session.world.scheduler.turn)?;
-        info.set_item("depth", self.session.world.depth)?;
+        info.set_item("turn", self.session.world().scheduler.turn)?;
+        info.set_item("depth", self.session.world().depth)?;
 
         Ok((obs, info))
     }
@@ -156,15 +164,18 @@ impl NetHackEDEnv {
     /// Returns: (observation, reward, terminated, truncated, info)
     pub fn step<'py>(&mut self, py: Python<'py>, action: usize) -> PyResult<StepOutput<'py>> {
         self.step_count += 1;
-        let prev_depth = self.session.world.depth;
-        let prev_gold = self.session.world.player_gold;
-        let prev_pacifist = self.session.world.conducts.pacifist;
-        let prev_vegan = self.session.world.conducts.vegan;
-        let prev_illiterate = self.session.world.conducts.illiterate;
-        let prev_atheist = self.session.world.conducts.atheist;
+        let prev_depth = self.session.world().depth;
+        let prev_gold = self.session.world().player_gold;
+        let prev_pacifist = self.session.world().conducts.pacifist;
+        let prev_vegan = self.session.world().conducts.vegan;
+        let prev_illiterate = self.session.world().conducts.illiterate;
+        let prev_atheist = self.session.world().conducts.atheist;
 
         let action_ast = self.resolve_action(action);
-        let obs_state = self.session.step(action_ast);
+        let obs_state = self
+            .session
+            .step(action_ast)
+            .map_err(pyo3::exceptions::PyRuntimeError::new_err)?;
         let events = self.session.last_events.clone();
 
         let new_explored = self.record_exploration();
@@ -173,10 +184,10 @@ impl NetHackEDEnv {
         let mut reward = -0.01; // Step penalty to encourage efficiency
         let player = self
             .session
-            .world
+            .world()
             .arena
             .actors
-            .get(self.session.world.player_id)
+            .get(self.session.world().player_id)
             .cloned();
         let is_dead = player
             .as_ref()
@@ -190,27 +201,27 @@ impl NetHackEDEnv {
         if is_dead {
             reward -= 100.0;
         }
-        if self.session.world.depth > prev_depth {
-            reward += 50.0 * (self.session.world.depth - prev_depth) as f64;
+        if self.session.world().depth > prev_depth {
+            reward += 50.0 * (self.session.world().depth - prev_depth) as f64;
         }
-        if self.session.world.player_gold > prev_gold {
-            reward += (self.session.world.player_gold - prev_gold) as f64 * 0.1;
+        if self.session.world().player_gold > prev_gold {
+            reward += (self.session.world().player_gold - prev_gold) as f64 * 0.1;
         }
         if new_explored > 0 {
             reward += new_explored as f64 * 0.5;
         }
 
         // Conduct preservation bonus or violation penalty
-        if prev_pacifist && !self.session.world.conducts.pacifist {
+        if prev_pacifist && !self.session.world().conducts.pacifist {
             reward -= 50.0;
         }
-        if prev_vegan && !self.session.world.conducts.vegan {
+        if prev_vegan && !self.session.world().conducts.vegan {
             reward -= 20.0;
         }
-        if prev_illiterate && !self.session.world.conducts.illiterate {
+        if prev_illiterate && !self.session.world().conducts.illiterate {
             reward -= 20.0;
         }
-        if prev_atheist && !self.session.world.conducts.atheist {
+        if prev_atheist && !self.session.world().conducts.atheist {
             reward -= 20.0;
         }
 
@@ -229,24 +240,24 @@ impl NetHackEDEnv {
         let obs = self.obs_to_dict(py, &obs_state)?;
         let info = PyDict::new(py);
         info.set_item("step", self.step_count)?;
-        info.set_item("turn", self.session.world.scheduler.turn)?;
-        info.set_item("depth", self.session.world.depth)?;
+        info.set_item("turn", self.session.world().scheduler.turn)?;
+        info.set_item("depth", self.session.world().depth)?;
         info.set_item("won", won)?;
         info.set_item("is_dead", is_dead)?;
-        info.set_item("gold", self.session.world.player_gold)?;
+        info.set_item("gold", self.session.world().player_gold)?;
 
         Ok((obs, reward, terminated, truncated, info))
     }
 
     /// Render current dungeon floor as ASCII string.
     pub fn render(&self) -> String {
-        render_ascii_map(&self.session.world)
+        render_ascii_map(self.session.world())
     }
 
     /// Return active voluntary conducts as a Python dict.
     pub fn get_active_conducts<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
         let conducts = PyDict::new(py);
-        let c = &self.session.world.conducts;
+        let c = &self.session.world().conducts;
         conducts.set_item("pacifist", c.pacifist)?;
         conducts.set_item("vegan", c.vegan)?;
         conducts.set_item("vegetarian", c.vegetarian)?;
@@ -267,23 +278,23 @@ impl NetHackEDEnv {
 
 impl NetHackEDEnv {
     fn record_exploration(&mut self) -> usize {
-        let (visible_tiles, _) = self.session.world.compute_perception();
+        let (visible_tiles, _) = self.session.world().compute_perception();
         self.explored
-            .observe(self.session.world.depth as u32, visible_tiles)
+            .observe(self.session.world().depth as u32, visible_tiles)
     }
 
     fn resolve_action(&self, action: usize) -> ActionAst {
         let carried = self
             .session
-            .world
+            .world()
             .arena
-            .items_carried_by(self.session.world.player_id);
+            .items_carried_by(self.session.world().player_id);
         let player_coord = self
             .session
-            .world
+            .world()
             .arena
             .actors
-            .get(self.session.world.player_id)
+            .get(self.session.world().player_id)
             .map(|a| a.coord)
             .unwrap_or(nethacked_types::Coord::new_unchecked(0, 0));
 
@@ -306,7 +317,7 @@ impl NetHackEDEnv {
                 let trap_coord = player_coord
                     .neighbors()
                     .into_iter()
-                    .find(|c| self.session.world.level.traps.contains_key(c))
+                    .find(|c| self.session.world().level.traps.contains_key(c))
                     .unwrap_or(player_coord);
                 ActionAst::Untrap(trap_coord)
             }
@@ -319,7 +330,7 @@ impl NetHackEDEnv {
                 let item_to_quiver = carried
                     .iter()
                     .find(|&&id| {
-                        if let Some(item) = self.session.world.arena.items.get(id) {
+                        if let Some(item) = self.session.world().arena.items.get(id) {
                             item.class == ItemClass::Weapon
                                 || item.name.contains("arrow")
                                 || item.name.contains("dart")
@@ -341,7 +352,7 @@ impl NetHackEDEnv {
                 let food_idx = carried
                     .iter()
                     .position(|&id| {
-                        if let Some(item) = self.session.world.arena.items.get(id) {
+                        if let Some(item) = self.session.world().arena.items.get(id) {
                             item.class == ItemClass::Food
                                 || item.corpse_race.is_some()
                                 || item.name.contains("corpse")
@@ -358,7 +369,7 @@ impl NetHackEDEnv {
                     .iter()
                     .position(|&id| {
                         self.session
-                            .world
+                            .world()
                             .arena
                             .items
                             .get(id)
@@ -374,7 +385,7 @@ impl NetHackEDEnv {
                     .iter()
                     .position(|&id| {
                         self.session
-                            .world
+                            .world()
                             .arena
                             .items
                             .get(id)
@@ -400,7 +411,7 @@ impl NetHackEDEnv {
 
     fn compute_action_mask(&self) -> Vec<bool> {
         let mut mask = vec![true; ACTION_NAMES.len()];
-        let world = &self.session.world;
+        let world = self.session.world();
         let carried = world.arena.items_carried_by(world.player_id);
         let player = world.arena.actors.get(world.player_id);
         let player_coord = player
@@ -560,7 +571,7 @@ impl NetHackEDEnv {
         obs: &GameObservation,
     ) -> PyResult<Bound<'py, PyDict>> {
         let obs_dict = PyDict::new(py);
-        let world = &self.session.world;
+        let world = self.session.world();
 
         obs_dict.set_item("ascii_map", &obs.ascii_map)?;
 
