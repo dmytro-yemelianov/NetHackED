@@ -11,11 +11,11 @@ judged in the other parity tables.
 | Damage types (AD_*) | 47 | 47 | 100% |
 | Objects: wands | 25 | 12 | 48% |
 | Objects: potions | 26 | 3 | 11% |
-| Objects: scrolls | 23 | 3 | 13% |
+| Objects: scrolls | 23 | 4 | 17% |
 | Objects: spellbooks | 44 | 1 | 2% |
 | Objects: rings | 28 | 1 | 3% |
 | Objects: amulets | 13 | 4 | 30% |
-| Objects: tools | 50 | 10 | 20% |
+| Objects: tools | 50 | 11 | 22% |
 
 ## Attack types (AT_*)
 
@@ -160,7 +160,7 @@ judged in the other parity tables.
 | `SCR_DESTROY_ARMOR` | scroll of destroy armor | ❌ |
 | `SCR_CONFUSE_MONSTER` | scroll of confuse monster | ❌ |
 | `SCR_SCARE_MONSTER` | scroll of scare monster | ✅ |
-| `SCR_REMOVE_CURSE` | scroll of remove curse | ❌ |
+| `SCR_REMOVE_CURSE` | scroll of remove curse | ✅ |
 | `SCR_ENCHANT_WEAPON` | scroll of enchant weapon | ❌ |
 | `SCR_CREATE_MONSTER` | scroll of create monster | ❌ |
 | `SCR_TAMING` | scroll of taming | ❌ |
@@ -331,6 +331,6 @@ judged in the other parity tables.
 | `DRUM_OF_EARTHQUAKE` | drum of earthquake | ❌ |
 | `PICK_AXE` | pick-axe | ❌ |
 | `GRAPPLING_HOOK` | grappling hook | ❌ |
-| `UNICORN_HORN` | unicorn horn | ❌ |
+| `UNICORN_HORN` | unicorn horn | ✅ |
 | `CANDELABRUM_OF_INVOCATION` | Candelabrum of Invocation | ✅ |
 | `BELL_OF_OPENING` | Bell of Opening | ✅ |

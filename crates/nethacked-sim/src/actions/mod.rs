@@ -6,7 +6,7 @@ pub mod economy;
 pub mod engrave;
 pub mod equipment;
 pub mod inventory;
-mod item_lifetime_legacy;
+pub(crate) mod item_lifetime_legacy;
 pub mod items;
 pub mod movement;
 pub mod ranged;

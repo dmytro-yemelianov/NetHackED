@@ -77,27 +77,58 @@ impl LifetimePort for BorrowedLifetime<'_> {
     }
 }
 
+/// Partitioned entrypoint: owner execution supplies bounded facts and
+/// operations separately, so it never reconstructs a World.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn finalize_working<'a>(
+    player: ActorId,
+    ruleset: &Ruleset,
+    items: &mut ItemStorage,
+    equipment: &mut super::equipment::EquipmentState,
+    wielded: &mut Option<ItemId>,
+    quivered: &mut Option<ItemId>,
+    timers: &mut ObjectTimerQueue,
+    billing: &mut BillingState,
+    unpaid: &mut Vec<(ItemId, u32)>,
+    cached: Vec<CachedBilling<'a>>,
+    survivor: Option<ItemId>,
+) -> Result<Option<WholeDisposal>, BillError> {
+    let mut port = BorrowedLifetime {
+        player,
+        ruleset,
+        items,
+        equipment,
+        wielded,
+        quivered,
+        timers,
+        billing,
+        unpaid,
+        cached,
+    };
+    finalize_survivor(&mut port, survivor)
+}
+
 pub(crate) fn finalize(
     world: &mut SimulationWorld,
     survivor: Option<ItemId>,
 ) -> Result<Option<WholeDisposal>, BillError> {
-    let mut port = BorrowedLifetime {
-        player: world.player_id,
-        ruleset: &world.ruleset,
-        items: &mut world.arena.items,
-        equipment: &mut world.equipment,
-        wielded: &mut world.wielded_item,
-        quivered: &mut world.hero.quivered_item,
-        timers: &mut world.object_timers,
-        billing: &mut world.billing,
-        unpaid: &mut world.unpaid_items,
-        cached: world
+    finalize_working(
+        world.player_id,
+        &world.ruleset,
+        &mut world.arena.items,
+        &mut world.equipment,
+        &mut world.wielded_item,
+        &mut world.hero.quivered_item,
+        &mut world.object_timers,
+        &mut world.billing,
+        &mut world.unpaid_items,
+        world
             .stored_levels
             .iter()
             .map(|(_, l)| (l.items.as_slice(), l.unpaid_items.as_slice()))
             .collect(),
-    };
-    finalize_survivor(&mut port, survivor)
+        survivor,
+    )
 }
 
 #[cfg(test)]

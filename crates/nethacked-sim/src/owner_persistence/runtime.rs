@@ -25,6 +25,7 @@ pub mod action_time;
 pub mod default_commands;
 pub mod dressing_ticks;
 pub mod inventory_actions;
+pub mod item_effects;
 pub(crate) mod item_lifetime;
 pub mod metabolic_ticks;
 pub mod monster_ticks;
@@ -105,6 +106,7 @@ pub struct OwnerBridgeConfig {
     pub(super) wait_action: bool,
     pub(super) movement_actions: bool,
     pub(super) inventory_actions: bool,
+    pub(super) item_effects: bool,
     pub(super) workflow_approval: Option<wand_workflows::WandWorkflowApproval>,
     pub(super) wand_extensions: bool,
     pub(super) extension_catalog: Vec<wand_extensions::WandGuest>,
@@ -140,6 +142,7 @@ impl OwnerBridgeConfig {
             wait_action: false,
             movement_actions: false,
             inventory_actions: false,
+            item_effects: false,
             workflow_approval: None,
             wand_extensions: false,
             extension_catalog: vec![],
@@ -277,7 +280,15 @@ impl OwnerBridgeConfig {
         c.inventory_actions = true;
         c
     }
+    pub fn with_item_effects(self) -> Self {
+        let mut c = self.with_inventory_actions();
+        c.item_effects = true;
+        c
+    }
     fn schema_tag(&self, tag: u8) -> u8 {
+        if self.item_effects {
+            return tag + 50;
+        }
         if self.inventory_actions {
             return tag + 60;
         }
@@ -324,6 +335,9 @@ impl OwnerBridgeConfig {
         }
     }
     fn codec_identity(&self, name: &str, tag: u8) -> op::CodecIdentity {
+        if self.item_effects {
+            return identity(&format!("{name}-item-effects-i7"), tag + 50);
+        }
         if self.inventory_actions {
             return identity(&format!("{name}-inventory-i6"), tag + 60);
         }
@@ -388,6 +402,13 @@ impl OwnerBridgeConfig {
         }
     }
     fn session_binding(&self) -> pr::Binding {
+        if self.item_effects {
+            return pr::Binding {
+                name: "native-item-effects-i7-session".into(),
+                version: 19,
+                artifact: [50; 32],
+            };
+        }
         if self.inventory_actions {
             return pr::Binding {
                 name: "native-inventory-i6-session".into(),
@@ -2250,6 +2271,10 @@ fn restore_configuration(
 fn approved_profiles(config: &OwnerBridgeConfig) -> Vec<OwnerBridgeConfig> {
     let mut profiles = vec![config.clone()];
     let mut config = config.clone();
+    if config.item_effects {
+        config.item_effects = false;
+        profiles.push(config.clone());
+    }
     if config.inventory_actions {
         config.inventory_actions = false;
         profiles.push(config.clone());
@@ -3013,6 +3038,7 @@ mod tests {
     mod dressing_ticks;
     mod fresh_process;
     mod inventory_actions;
+    mod item_effects;
     mod metabolic_ticks;
     mod monster_ticks;
     mod movement_actions;

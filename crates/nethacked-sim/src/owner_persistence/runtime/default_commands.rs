@@ -954,6 +954,127 @@ impl OwnerBridge {
                     error: None,
                 })
             }
+            nethacked_core::ActionAst::Dip {
+                item_index,
+                into_water,
+            } => {
+                if !self.config.item_effects {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply = self.step_item_effect(super::item_effects::ItemEffectAction::Dip {
+                    item_index,
+                    into_water,
+                })?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::Quaff(idx) => {
+                if !self.config.item_effects {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply =
+                    self.step_item_effect(super::item_effects::ItemEffectAction::Quaff(idx))?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::Read(idx) => {
+                if !self.config.item_effects {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply =
+                    self.step_item_effect(super::item_effects::ItemEffectAction::Read(idx))?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::Eat(idx) => {
+                if !self.config.item_effects {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply =
+                    self.step_item_effect(super::item_effects::ItemEffectAction::Eat(idx))?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::Rub(idx) => {
+                if !self.config.item_effects {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply =
+                    self.step_item_effect(super::item_effects::ItemEffectAction::Rub(idx))?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::Apply(idx) => {
+                if !self.config.item_effects {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply =
+                    self.step_item_effect(super::item_effects::ItemEffectAction::Apply(idx))?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::Engrave { text, medium } => {
+                if !self.config.item_effects {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply =
+                    self.step_item_effect(super::item_effects::ItemEffectAction::Engrave {
+                        text,
+                        medium,
+                    })?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::ZapWand { dir, energy } => {
+                if !self.config.item_effects {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply =
+                    self.step_item_effect(super::item_effects::ItemEffectAction::ZapWand {
+                        dir,
+                        energy,
+                    })?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::ZapSelectedWand {
+                item_index,
+                expected_item,
+                dir,
+                energy,
+            } => {
+                if !self.config.item_effects {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply = self.step_item_effect(
+                    super::item_effects::ItemEffectAction::ZapSelectedWand {
+                        item_index,
+                        expected_item,
+                        dir,
+                        energy,
+                    },
+                )?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
             _ => Err(owners::Error::Unsupported.into()),
         }
     }

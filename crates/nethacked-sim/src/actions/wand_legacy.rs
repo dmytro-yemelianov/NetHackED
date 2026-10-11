@@ -14,7 +14,8 @@ use nethacked_data::{
     ItemKindId, RaceId, RoleId,
 };
 use nethacked_dungeon::DungeonLevel;
-use nethacked_types::{BranchId, ConductTracker, Coord, Direction, GenocideRegistry, Tile};
+use nethacked_types::{BranchId, ConductTracker, Coord, Direction, GenocideRegistry, Locale, Tile};
+use rand_chacha::ChaCha8Rng;
 use std::collections::BTreeSet;
 
 type CachedItems<'a> = ((BranchId, usize), &'a [(ItemId, ItemRecord)]);
@@ -312,63 +313,125 @@ impl Hero for LegacyHero<'_> {
     }
 }
 
+/// Partitioned entrypoint: authorities supply bounded facts and operations
+/// separately, so owner execution never reconstructs a World.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn zap_working<'a, G: Geography>(
+    player_id: ActorId,
+    selection: wand::Selection,
+    dir: Direction,
+    energy: u32,
+    items: &mut ItemStorage,
+    artifact_history: &mut BTreeSet<String>,
+    cached: Vec<CachedItems<'a>>,
+    actors: &mut ActorStorage,
+    genocide: &GenocideRegistry,
+    geography: &mut G,
+    scheduler: &mut SchedulerState,
+    timers: &mut ObjectTimerQueue,
+    hero_polymorphed: bool,
+    role_id: Option<RoleId>,
+    role_name: &str,
+    hero_race: RaceId,
+    alignment: &mut i32,
+    conducts: &mut ConductTracker,
+    quest: &mut QuestState,
+    favor: &mut i32,
+    luck: &mut i32,
+    protection: &mut u32,
+    progress: &mut HeroProgress,
+    power: &mut u32,
+    max_power: &mut u32,
+    rng: &mut ChaCha8Rng,
+    ruleset: &Ruleset,
+    locale: Locale,
+    branch: BranchId,
+    depth: usize,
+) -> wand::WandOutcome {
+    let session = Session {
+        ruleset,
+        locale,
+        branch,
+        depth,
+    };
+    let mut objects = LegacyObjects {
+        items,
+        artifact_history,
+        cached,
+    };
+    let mut actors = LegacyActors { actors, genocide };
+    let mut clock = LegacyClock { scheduler, timers };
+    let mut hero = LegacyHero {
+        polymorphed: hero_polymorphed,
+        role_id,
+        role_name,
+        race: hero_race,
+        alignment,
+        conducts,
+        quest,
+        favor,
+        luck,
+        protection,
+        progress,
+        power,
+        max_power,
+    };
+    wand::zap_with_survivor(
+        selection,
+        player_id,
+        dir,
+        energy,
+        &mut objects,
+        &mut actors,
+        geography,
+        &mut hero,
+        &mut clock,
+        rng,
+        &session,
+    )
+}
+
 pub(super) fn zap(
     world: &mut SimulationWorld,
     selection: wand::Selection,
     dir: Direction,
     energy: u32,
 ) -> Vec<GameEvent> {
-    let session = Session {
-        ruleset: &world.ruleset,
-        locale: world.locale,
-        branch: world.current_branch,
-        depth: world.depth,
-    };
-    let mut objects = LegacyObjects {
-        items: &mut world.arena.items,
-        artifact_history: &mut world.arena.artifact_history,
-        cached: world
+    let mut outcome = zap_working(
+        world.player_id,
+        selection,
+        dir,
+        energy,
+        &mut world.arena.items,
+        &mut world.arena.artifact_history,
+        world
             .stored_levels
             .iter()
             .map(|(key, stored)| (*key, stored.items.as_slice()))
             .collect(),
-    };
-    let mut actors = LegacyActors {
-        actors: &mut world.arena.actors,
-        genocide: &world.genocide_registry,
-    };
-    let mut geography = LegacyGeography(&mut world.level);
-    let mut clock = LegacyClock {
-        scheduler: &mut world.scheduler,
-        timers: &mut world.object_timers,
-    };
-    let mut hero = LegacyHero {
-        polymorphed: world.hero.polymorph.is_some(),
-        role_id: world.role_id,
-        role_name: &world.role_name,
-        race: world.hero_race,
-        alignment: &mut world.alignment_record,
-        conducts: &mut world.conducts,
-        quest: &mut world.quest_state,
-        favor: &mut world.divine_state.favor,
-        luck: &mut world.player_luck,
-        protection: &mut world.divine_protection,
-        progress: &mut world.progress,
-        power: &mut world.player_pw,
-        max_power: &mut world.player_max_pw,
-    };
-    let mut outcome = wand::zap_with_survivor(
-        selection,
-        world.player_id,
-        dir,
-        energy,
-        &mut objects,
-        &mut actors,
-        &mut geography,
-        &mut hero,
-        &mut clock,
+        &mut world.arena.actors,
+        &world.genocide_registry,
+        &mut LegacyGeography(&mut world.level),
+        &mut world.scheduler,
+        &mut world.object_timers,
+        world.hero.polymorph.is_some(),
+        world.role_id,
+        &world.role_name,
+        world.hero_race,
+        &mut world.alignment_record,
+        &mut world.conducts,
+        &mut world.quest_state,
+        &mut world.divine_state.favor,
+        &mut world.player_luck,
+        &mut world.divine_protection,
+        &mut world.progress,
+        &mut world.player_pw,
+        &mut world.player_max_pw,
         &mut world.rng,
-        &session,
+        &world.ruleset,
+        world.locale,
+        world.current_branch,
+        world.depth,
     );
     match super::item_lifetime_legacy::finalize(world, outcome.survivor) {
         Ok(Some(_)) => outcome.events.push(GameEvent::LogMessage {
