@@ -1167,6 +1167,26 @@ impl OwnerBridge {
                     error: None,
                 })
             }
+            nethacked_core::ActionAst::Ascend => {
+                if !self.config.traversal {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply = self.step_traversal(super::traversal::TraversalAction::Ascend)?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
+            nethacked_core::ActionAst::Descend => {
+                if !self.config.traversal {
+                    return Err(owners::Error::Unsupported.into());
+                }
+                let reply = self.step_traversal(super::traversal::TraversalAction::Descend)?;
+                Ok(DefaultReply {
+                    events: reply.events,
+                    error: None,
+                })
+            }
             _ => Err(owners::Error::Unsupported.into()),
         }
     }

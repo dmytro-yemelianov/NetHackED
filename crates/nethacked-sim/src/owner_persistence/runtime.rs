@@ -35,6 +35,7 @@ mod phase_support;
 pub mod regeneration_ticks;
 pub mod services;
 pub mod timer_ticks;
+pub mod traversal;
 pub(crate) mod wand_commands;
 pub(crate) mod wand_extensions;
 pub(crate) mod wand_gameplay;
@@ -109,6 +110,7 @@ pub struct OwnerBridgeConfig {
     pub(super) inventory_actions: bool,
     pub(super) item_effects: bool,
     pub(super) services: bool,
+    pub(super) traversal: bool,
     pub(super) workflow_approval: Option<wand_workflows::WandWorkflowApproval>,
     pub(super) wand_extensions: bool,
     pub(super) extension_catalog: Vec<wand_extensions::WandGuest>,
@@ -146,6 +148,7 @@ impl OwnerBridgeConfig {
             inventory_actions: false,
             item_effects: false,
             services: false,
+            traversal: false,
             workflow_approval: None,
             wand_extensions: false,
             extension_catalog: vec![],
@@ -293,7 +296,15 @@ impl OwnerBridgeConfig {
         c.services = true;
         c
     }
+    pub fn with_traversal(self) -> Self {
+        let mut c = self.with_services();
+        c.traversal = true;
+        c
+    }
     fn schema_tag(&self, tag: u8) -> u8 {
+        if self.traversal {
+            return tag + 30;
+        }
         if self.services {
             return tag + 40;
         }
@@ -346,6 +357,9 @@ impl OwnerBridgeConfig {
         }
     }
     fn codec_identity(&self, name: &str, tag: u8) -> op::CodecIdentity {
+        if self.traversal {
+            return identity(&format!("{name}-traversal-i9"), tag + 30);
+        }
         if self.services {
             return identity(&format!("{name}-services-i8"), tag + 40);
         }
@@ -416,6 +430,13 @@ impl OwnerBridgeConfig {
         }
     }
     fn session_binding(&self) -> pr::Binding {
+        if self.traversal {
+            return pr::Binding {
+                name: "native-traversal-i9-session".into(),
+                version: 21,
+                artifact: [30; 32],
+            };
+        }
         if self.services {
             return pr::Binding {
                 name: "native-services-i8-session".into(),
@@ -2292,6 +2313,10 @@ fn restore_configuration(
 fn approved_profiles(config: &OwnerBridgeConfig) -> Vec<OwnerBridgeConfig> {
     let mut profiles = vec![config.clone()];
     let mut config = config.clone();
+    if config.traversal {
+        config.traversal = false;
+        profiles.push(config.clone());
+    }
     if config.services {
         config.services = false;
         profiles.push(config.clone());
@@ -3072,6 +3097,7 @@ mod tests {
     mod services;
     mod timer_ticks;
     mod timer_transport_prototype;
+    mod traversal;
     mod wand_aggregate;
     mod wand_charge_attempts;
     mod wand_commands;

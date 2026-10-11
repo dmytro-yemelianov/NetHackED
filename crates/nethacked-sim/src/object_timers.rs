@@ -137,6 +137,73 @@ impl ObjectTimerQueue {
         self.entries.retain(|timer| timer.target != target);
         before - self.entries.len()
     }
+
+    /// Level residency: retarget active timers on items leaving the live
+    /// level to cached targets keyed by the stored level.
+    pub(crate) fn cache_active_targets(
+        &mut self,
+        branch: BranchId,
+        depth: usize,
+        items: &[ItemId],
+    ) {
+        for timer in &mut self.entries {
+            if let ObjectTimerTarget::Active(item) = timer.target {
+                if items.contains(&item) {
+                    timer.target = ObjectTimerTarget::Cached {
+                        branch,
+                        depth,
+                        item,
+                    };
+                }
+            }
+        }
+    }
+
+    /// Level residency: remap cached timers for a restored level back to
+    /// active targets via the stored-item handle lookup. C writes in queue
+    /// order and restores sequentially with insert-before equals, so local
+    /// restored ties precede preexisting globals.
+    pub(crate) fn restore_cached_targets(
+        &mut self,
+        branch: BranchId,
+        depth: usize,
+        lookup: impl Fn(ItemId) -> Option<ItemId>,
+    ) {
+        let saved = std::mem::take(&mut self.entries);
+        let mut restored = Vec::new();
+        for mut timer in saved {
+            if let ObjectTimerTarget::Cached {
+                branch: b,
+                depth: d,
+                item,
+            } = timer.target
+            {
+                if (b, d) == (branch, depth) {
+                    let Some(new) = lookup(item) else {
+                        continue;
+                    };
+                    timer.target = ObjectTimerTarget::Active(new);
+                    restored.push(timer);
+                    continue;
+                }
+            }
+            self.entries.push(timer);
+        }
+        for timer in restored {
+            self.insert(timer);
+        }
+    }
+
+    /// C splitobj copies each surviving callback onto the extracted unit,
+    /// then disposal cancels those copies. Only the insertion counter survives.
+    pub(crate) fn consume_split_timer_serials(&mut self, target: ObjectTimerTarget) {
+        let count = self.entries.iter().filter(|t| t.target == target).count();
+        self.next_serial = self
+            .next_serial
+            .checked_add(count as u64)
+            .expect("split timer serial fits");
+    }
+
     fn insert(&mut self, timer: ObjectTimer) {
         // C insert_timer stops at >=: every insertion precedes existing ties,
         // including restored records whose serial is older than live timers.
@@ -456,17 +523,7 @@ impl SimulationWorld {
     /// C splitobj copies each surviving callback onto the extracted unit,
     /// then disposal cancels those copies. Only the insertion counter survives.
     pub(crate) fn consume_split_timer_serials(&mut self, target: ObjectTimerTarget) {
-        let count = self
-            .object_timers
-            .entries
-            .iter()
-            .filter(|t| t.target == target)
-            .count();
-        self.object_timers.next_serial = self
-            .object_timers
-            .next_serial
-            .checked_add(count as u64)
-            .expect("split timer serial fits");
+        self.object_timers.consume_split_timer_serials(target);
     }
 
     /// Direct arena removals are supported: stale generations never dispatch.
@@ -491,17 +548,8 @@ impl SimulationWorld {
     }
 
     pub(crate) fn cache_object_timers(&mut self, branch: BranchId, depth: usize, items: &[ItemId]) {
-        for timer in &mut self.object_timers.entries {
-            if let ObjectTimerTarget::Active(item) = timer.target {
-                if items.contains(&item) {
-                    timer.target = ObjectTimerTarget::Cached {
-                        branch,
-                        depth,
-                        item,
-                    };
-                }
-            }
-        }
+        self.object_timers
+            .cache_active_targets(branch, depth, items);
     }
 
     pub(crate) fn restore_object_timers(
@@ -510,31 +558,8 @@ impl SimulationWorld {
         depth: usize,
         lookup: impl Fn(ItemId) -> Option<ItemId>,
     ) {
-        let saved = std::mem::take(&mut self.object_timers.entries);
-        let mut restored = Vec::new();
-        for mut timer in saved {
-            if let ObjectTimerTarget::Cached {
-                branch: b,
-                depth: d,
-                item,
-            } = timer.target
-            {
-                if (b, d) == (branch, depth) {
-                    let Some(new) = lookup(item) else {
-                        continue;
-                    };
-                    timer.target = ObjectTimerTarget::Active(new);
-                    restored.push(timer);
-                    continue;
-                }
-            }
-            self.object_timers.entries.push(timer);
-        }
-        // C writes in queue order and restores sequentially with insert-before
-        // equals. Local restored ties therefore precede preexisting globals.
-        for timer in restored {
-            self.object_timers.insert(timer);
-        }
+        self.object_timers
+            .restore_cached_targets(branch, depth, lookup);
     }
 
     /// C obj_is_local follows the outer container (timeout.c:2560-2580).

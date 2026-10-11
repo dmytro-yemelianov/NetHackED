@@ -1,6 +1,7 @@
 //! Shared implementation of the currently supported selected and legacy wands.
 //! Authorities expose bounded domain facts and legal wand operations separately.
 pub(super) mod creation;
+pub(crate) use creation::spawn_at;
 pub(crate) use creation::tile_placement;
 mod effects;
 pub mod ports;
