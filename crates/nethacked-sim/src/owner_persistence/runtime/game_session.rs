@@ -52,9 +52,12 @@ impl OwnerGameSession {
         Ok(())
     }
 
-    /// Dispatch one action through owner execution. A refused action returns
-    /// an error and leaves the session state untouched; a successful action
-    /// re-exports the native world and records the reply's events.
+    /// Dispatch one action through owner execution. A transport refusal
+    /// returns an error and leaves the session state untouched; a successful
+    /// action re-exports the native world and records the reply's events.
+    /// The frame's `reply.error` path (unreachable under the facade's full
+    /// authority) preserves the committed prefix before surfacing an
+    /// invariant error.
     pub fn step(&mut self, action: ActionAst) -> Result<Vec<GameEvent>, OwnerBridgeError> {
         let reply = self.bridge.dispatch_default_action(action)?;
         let mut world = self.bridge.export_native()?;

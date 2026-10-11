@@ -3108,6 +3108,7 @@ mod tests {
     mod game_session;
     mod inventory_actions;
     mod item_effects;
+    mod m7_audit;
     mod metabolic_ticks;
     mod monster_ticks;
     mod movement_actions;
