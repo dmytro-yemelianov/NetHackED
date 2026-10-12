@@ -3,7 +3,7 @@
 use nethacked_core::EngravingMedium;
 use nethacked_data::{CharacterConfig, Gender};
 use nethacked_sim::{ActionAst, Alignment, Coord, Direction};
-use nethacked_types::WaterType;
+use nethacked_types::{SlotId, WaterType};
 
 /// Energy used by the `zap` action.
 pub const ZAP_ENERGY: u32 = 6;
@@ -14,6 +14,7 @@ pub const MAX_WISH_LEN: usize = 128;
 #[derive(Debug, Default, Clone)]
 pub struct ActionArgs {
     pub index: Option<usize>,
+    pub expected_item: Option<SlotId>,
     pub direction: Option<String>,
     pub target: Option<(usize, usize)>,
     pub text: Option<String>,
@@ -114,6 +115,8 @@ pub fn parse_action(name: &str, args: &ActionArgs) -> Result<ActionAst, String> 
         "untrap" => Ok(ActionAst::Untrap(target_coord(args)?)),
         "drop" => Ok(ActionAst::Drop(idx)),
         "wield" => Ok(ActionAst::Wield(idx)),
+        "wear" => Ok(ActionAst::Wear(idx)),
+        "remove" | "takeoff" => Ok(ActionAst::Remove(idx)),
         "quaff" => Ok(ActionAst::Quaff(idx)),
         "read" => Ok(ActionAst::Read(idx)),
         "eat" => Ok(ActionAst::Eat(idx)),
@@ -130,6 +133,24 @@ pub fn parse_action(name: &str, args: &ActionArgs) -> Result<ActionAst, String> 
             dir: compass_or(args, Direction::East)?,
             energy: ZAP_ENERGY,
         }),
+        "zap_selected" => Ok(ActionAst::ZapSelectedWand {
+            item_index: u32::try_from(args.index.ok_or("zap_selected requires index")?)
+                .map_err(|_| "zap_selected index exceeds u32 range")?,
+            expected_item: args.expected_item,
+            dir: compass_or(args, Direction::East)?,
+            energy: ZAP_ENERGY,
+        }),
+        "cancel_zap_selection" => {
+            if args.index.is_some()
+                || args.expected_item.is_some()
+                || args.direction.is_some()
+                || args.target.is_some()
+                || args.text.is_some()
+            {
+                return Err("cancel_zap_selection takes no arguments".into());
+            }
+            Ok(ActionAst::CancelZapSelection)
+        }
         "fire" => Ok(ActionAst::Fire(required_dir(args)?)),
         "wish" => {
             let text = args
@@ -246,6 +267,63 @@ pub fn action_args_from_json(
     args: &serde_json::Value,
     player: Option<Coord>,
 ) -> Result<ActionArgs, String> {
+    let action = args
+        .get("action")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+    let has = |k: &str| args.get(k).is_some_and(|v| !v.is_null());
+    if action == "cancel_zap_selection"
+        && [
+            "index",
+            "expected_item",
+            "direction",
+            "target",
+            "x",
+            "y",
+            "target_x",
+            "target_y",
+            "text",
+        ]
+        .iter()
+        .any(|key| has(key))
+    {
+        return Err("cancel_zap_selection takes no arguments".into());
+    }
+    // Bound the new selector before narrowing, including on wasm32. Legacy
+    // actions retain their existing numeric conversion and extra-field behavior.
+    let (index, expected_item) = if action == "zap_selected" {
+        let value = args
+            .get("index")
+            .filter(|v| !v.is_null())
+            .ok_or("zap_selected requires index")?;
+        let index = value
+            .as_u64()
+            .ok_or("'index' must be a non-negative integer")?;
+        let index = u32::try_from(index).map_err(|_| "zap_selected index exceeds u32 range")?;
+        let expected_item = match args.get("expected_item") {
+            None | Some(serde_json::Value::Null) => None,
+            Some(token) => {
+                // SlotId's native serde representation contains two u32 fields.
+                // Reject malformed or normalized tokens instead of coercing them.
+                let item: SlotId = serde_json::from_value(token.clone())
+                    .map_err(|_| "'expected_item' must be an item token")?;
+                let canonical = serde_json::to_value(item)
+                    .map_err(|_| "'expected_item' must be an item token")?;
+                if token != &canonical {
+                    return Err("'expected_item' must be an item token".into());
+                }
+                Some(item)
+            }
+        };
+        (
+            Some(usize::try_from(index).map_err(|_| "zap_selected index exceeds u32 range")?),
+            expected_item,
+        )
+    } else {
+        (json_number(args, "index")?, None)
+    };
     // Pair targets: (x, y) if either is present, else (target_x, target_y).
     // Mixing the two spellings is an error; the unused pair is not validated.
     let has = |k: &str| args.get(k).is_some_and(|v| !v.is_null());
@@ -260,7 +338,8 @@ pub fn action_args_from_json(
     let x = json_number(args, xk)?;
     let y = json_number(args, yk)?;
     Ok(ActionArgs {
-        index: json_number(args, "index")?,
+        index,
+        expected_item,
         direction: json_string(args, "direction")?,
         target: x.zip(y),
         text: json_string(args, "text")?,
@@ -296,6 +375,166 @@ mod tests {
     }
 
     #[test]
+    fn selected_parser_bounds_defaults_tokens_and_legacy_compatibility() {
+        use serde_json::json;
+        let request = json!({"action":"zap_selected", "index":4294967295u32});
+        let args = action_args_from_json(&request, None).unwrap();
+        assert_eq!(
+            parse_action("zap_selected", &args).unwrap(),
+            ActionAst::ZapSelectedWand {
+                item_index: u32::MAX,
+                expected_item: None,
+                dir: Direction::East,
+                energy: 6,
+            }
+        );
+        for index in [
+            json!(null),
+            json!("0"),
+            json!(-1),
+            json!(1.5),
+            json!(true),
+            json!([]),
+            json!({}),
+            json!(4294967296u64),
+        ] {
+            let request = json!({"action":"zap_selected", "index": index});
+            let expected = if index.is_null() {
+                "zap_selected requires index"
+            } else if index == json!(4294967296u64) {
+                "zap_selected index exceeds u32 range"
+            } else {
+                "'index' must be a non-negative integer"
+            };
+            assert_eq!(action_args_from_json(&request, None).unwrap_err(), expected);
+        }
+        assert_eq!(
+            action_args_from_json(&json!({"action":"zap_selected"}), None).unwrap_err(),
+            "zap_selected requires index"
+        );
+        assert_eq!(
+            parse_action("zap_selected", &ActionArgs::default()).unwrap_err(),
+            "zap_selected requires index"
+        );
+        let token = json!({"idx": 4, "version": 3});
+        let args = action_args_from_json(&json!({"action":"zap_selected", "index":0, "expected_item":token, "direction":"south"}),None).unwrap();
+        let expected_item: SlotId = serde_json::from_value(token).unwrap();
+        assert_eq!(
+            parse_action("zap_selected", &args).unwrap(),
+            ActionAst::ZapSelectedWand {
+                item_index: 0,
+                expected_item: Some(expected_item),
+                dir: Direction::South,
+                energy: ZAP_ENERGY,
+            }
+        );
+        for token in [
+            json!(4),
+            json!("4"),
+            json!({}),
+            json!({"idx":4294967296u64,"version":3}),
+            json!({"idx":4,"version":4294967296u64}),
+            json!({"idx":-1,"version":3}),
+            json!({"idx":1.5,"version":3}),
+            json!({"idx":4,"version":2}),
+        ] {
+            assert_eq!(
+                action_args_from_json(
+                    &json!({"action":"zap_selected","index":0,"expected_item":token}),
+                    None
+                )
+                .unwrap_err(),
+                "'expected_item' must be an item token"
+            );
+        }
+        let null = action_args_from_json(
+            &json!({"action":"zap_selected","index":0,"expected_item":null}),
+            None,
+        )
+        .unwrap();
+        assert_eq!(null.expected_item, None);
+        let bad_dir = action_args_from_json(
+            &json!({"action":"zap_selected","index":0,"direction":"up"}),
+            None,
+        )
+        .unwrap();
+        assert_eq!(
+            parse_action("zap_selected", &bad_dir).unwrap_err(),
+            "invalid direction 'up'"
+        );
+        let legacy = action_args_from_json(
+            &json!({"action":"zap","index":99,"expected_item":"malformed"}),
+            None,
+        )
+        .unwrap();
+        assert_eq!(
+            parse_action("zap", &legacy).unwrap(),
+            ActionAst::ZapWand {
+                dir: Direction::East,
+                energy: 6
+            }
+        );
+    }
+
+    #[test]
+    fn explicit_cancel_rejects_all_nonnull_args_and_keeps_context_only() {
+        use serde_json::json;
+        let player = Coord::new(10, 10);
+        let request = json!({"action":"cancel_zap_selection", "index":null,"expected_item":null,"direction":null,"text":null});
+        let args = action_args_from_json(&request, player).unwrap();
+        assert_eq!(args.player, player);
+        assert_eq!(
+            parse_action("cancel_zap_selection", &args).unwrap(),
+            ActionAst::CancelZapSelection
+        );
+        for key in [
+            "index",
+            "expected_item",
+            "direction",
+            "target",
+            "x",
+            "y",
+            "target_x",
+            "target_y",
+            "text",
+        ] {
+            let mut request = json!({"action":"cancel_zap_selection"});
+            request[key] = json!(0);
+            assert_eq!(
+                action_args_from_json(&request, player).unwrap_err(),
+                "cancel_zap_selection takes no arguments"
+            );
+        }
+        for args in [
+            ActionArgs {
+                index: Some(0),
+                ..Default::default()
+            },
+            ActionArgs {
+                direction: Some("east".into()),
+                ..Default::default()
+            },
+            ActionArgs {
+                target: Some((1, 1)),
+                ..Default::default()
+            },
+            ActionArgs {
+                text: Some("".into()),
+                ..Default::default()
+            },
+            ActionArgs {
+                expected_item: Some(serde_json::from_value(json!({"idx":4,"version":3})).unwrap()),
+                ..Default::default()
+            },
+        ] {
+            assert_eq!(
+                parse_action("cancel_zap_selection", &args).unwrap_err(),
+                "cancel_zap_selection takes no arguments"
+            );
+        }
+    }
+
+    #[test]
     fn target_pair_selection_and_mixing() {
         use serde_json::json;
         // Malformed target_x is ignored when x/y are used.
@@ -318,6 +557,7 @@ mod tests {
             player: Coord::new(10, 10),
             direction: Some("north".into()),
             index: Some(0),
+            expected_item: None,
             target: Some((10, 9)),
             text: Some("x".into()),
         };

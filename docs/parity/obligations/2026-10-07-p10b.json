@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "batch": "P10b",
+  "checked_date": "2026-10-07",
+  "checked_head": "b912faf",
+  "source_tag": "NetHack-5.0.0_Released",
+  "source_commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+  "feature": "One owned SGROUP family through actual create-monster Zap",
+  "implemented_subsets": [
+    "Owned small-group gate and hero-level count divisor after leader insertion",
+    "First peacefulness check before selected-species placement; normal follower initialization and second peace before forced hostility/malign",
+    "Shared allocator normalization, complete native saves and zero-movement creation; room/fixed suppression retained"
+  ],
+  "tests": [
+    "crates/nethacked-sim/tests/monster_group_tests.rs"
+  ],
+  "review": "Fresh independent Sol/high PASS; /tmp/netrust-p10b/review.md and review-evidence.json verify selected source ordering, native/public tests, full input proof, setup-only fixture inverse and raw checks.",
+  "acceptance": "Independent review PASS; final root /tmp/netrust-p04-p10-final-gates:996 workspace tests pass; exactly three frozen-golden failures in sole target, all11 other gates pass. Complete342 inputs stable64ea29d3\u2026 and goldenHEAD unchanged. Otherwise verified, not accepted/committed. Focused35 and affected399/0/35targets retained. Final independent bounded completion audit verifies all required exits; no required feature findings.",
+  "remaining": [
+    "Scoped golden decision and green final integration acceptance/commit",
+    "Other groups, revenge state, special inventory/habitats/quests/levels and exact global next_ident wrap remain explicit broader gaps"
+  ],
+  "plan": "docs/plans/2026-10-07-group-creation.md",
+  "before_input_digest": "35347b85c9162ed0065a2f17b618826cebf492785fde33bd72030d3a342c0d52",
+  "input_digest": "64ea29d3bd5d2ce97d1d515501e07c424b5951e806cc7818d17f9690fcfffddc",
+  "evidence_directory": "/tmp/netrust-p10b",
+  "root_gate_directory": "/tmp/netrust-p04-p10-final-gates",
+  "completion_audit": "docs/parity/obligations/2026-10-07-p04-p10-completion.json",
+  "final_integration": {
+    "record": "2026-10-07-p04-p10-final-acceptance.json",
+    "status": "Original bounded exit reviewed/audited and final green integration verified; prior checkpoint fields are historical",
+    "tests": 999,
+    "gates": 12,
+    "goldens": 3,
+    "input_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+    "commit": "Containing commit; see final acceptance record"
+  }
+}

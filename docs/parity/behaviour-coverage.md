@@ -9,13 +9,13 @@ judged in the other parity tables.
 |---|---|---|---|
 | Attack types (AT_*) | 17 | 12 | 70% |
 | Damage types (AD_*) | 47 | 47 | 100% |
-| Objects: wands | 25 | 7 | 28% |
+| Objects: wands | 25 | 12 | 48% |
 | Objects: potions | 26 | 3 | 11% |
-| Objects: scrolls | 23 | 2 | 8% |
+| Objects: scrolls | 23 | 4 | 17% |
 | Objects: spellbooks | 44 | 1 | 2% |
 | Objects: rings | 28 | 1 | 3% |
 | Objects: amulets | 13 | 4 | 30% |
-| Objects: tools | 50 | 7 | 14% |
+| Objects: tools | 50 | 11 | 22% |
 
 ## Attack types (AT_*)
 
@@ -96,9 +96,9 @@ judged in the other parity tables.
 | C id | Name | Engine references it |
 |---|---|---|
 | `WAN_LIGHT` | wand of light | ❌ |
-| `WAN_SECRET_DOOR_DETECTION` | wand of secret door detection | ❌ |
+| `WAN_SECRET_DOOR_DETECTION` | wand of secret door detection | ✅ |
 | `WAN_ENLIGHTENMENT` | wand of enlightenment | ❌ |
-| `WAN_CREATE_MONSTER` | wand of create monster | ❌ |
+| `WAN_CREATE_MONSTER` | wand of create monster | ✅ |
 | `WAN_WISHING` | wand of wishing | ✅ |
 | `WAN_STASIS` | wand of stasis | ❌ |
 | `WAN_NOTHING` | wand of nothing | ✅ |
@@ -107,16 +107,16 @@ judged in the other parity tables.
 | `WAN_SLOW_MONSTER` | wand of slow monster | ❌ |
 | `WAN_SPEED_MONSTER` | wand of speed monster | ❌ |
 | `WAN_UNDEAD_TURNING` | wand of undead turning | ❌ |
-| `WAN_POLYMORPH` | wand of polymorph | ❌ |
+| `WAN_POLYMORPH` | wand of polymorph | ✅ |
 | `WAN_CANCELLATION` | wand of cancellation | ✅ |
-| `WAN_TELEPORTATION` | wand of teleportation | ❌ |
+| `WAN_TELEPORTATION` | wand of teleportation | ✅ |
 | `WAN_OPENING` | wand of opening | ❌ |
 | `WAN_LOCKING` | wand of locking | ❌ |
 | `WAN_PROBING` | wand of probing | ❌ |
 | `WAN_DIGGING` | wand of digging | ✅ |
 | `WAN_MAGIC_MISSILE` | wand of magic missile | ❌ |
 | `WAN_FIRE` | wand of fire | ✅ |
-| `WAN_COLD` | wand of cold | ❌ |
+| `WAN_COLD` | wand of cold | ✅ |
 | `WAN_SLEEP` | wand of sleep | ❌ |
 | `WAN_DEATH` | wand of death | ✅ |
 | `WAN_LIGHTNING` | wand of lightning | ❌ |
@@ -159,8 +159,8 @@ judged in the other parity tables.
 | `SCR_ENCHANT_ARMOR` | scroll of enchant armor | ✅ |
 | `SCR_DESTROY_ARMOR` | scroll of destroy armor | ❌ |
 | `SCR_CONFUSE_MONSTER` | scroll of confuse monster | ❌ |
-| `SCR_SCARE_MONSTER` | scroll of scare monster | ❌ |
-| `SCR_REMOVE_CURSE` | scroll of remove curse | ❌ |
+| `SCR_SCARE_MONSTER` | scroll of scare monster | ✅ |
+| `SCR_REMOVE_CURSE` | scroll of remove curse | ✅ |
 | `SCR_ENCHANT_WEAPON` | scroll of enchant weapon | ❌ |
 | `SCR_CREATE_MONSTER` | scroll of create monster | ❌ |
 | `SCR_TAMING` | scroll of taming | ❌ |
@@ -285,9 +285,9 @@ judged in the other parity tables.
 | C id | Name | Engine references it |
 |---|---|---|
 | `LARGE_BOX` | large box | ❌ |
-| `CHEST` | chest | ❌ |
-| `ICE_BOX` | ice box | ❌ |
-| `SACK` | sack | ❌ |
+| `CHEST` | chest | ✅ |
+| `ICE_BOX` | ice box | ✅ |
+| `SACK` | sack | ✅ |
 | `OILSKIN_SACK` | oilskin sack | ❌ |
 | `BAG_OF_HOLDING` | bag of holding | ✅ |
 | `BAG_OF_TRICKS` | bag of tricks | ✅ |
@@ -331,6 +331,6 @@ judged in the other parity tables.
 | `DRUM_OF_EARTHQUAKE` | drum of earthquake | ❌ |
 | `PICK_AXE` | pick-axe | ❌ |
 | `GRAPPLING_HOOK` | grappling hook | ❌ |
-| `UNICORN_HORN` | unicorn horn | ❌ |
+| `UNICORN_HORN` | unicorn horn | ✅ |
 | `CANDELABRUM_OF_INVOCATION` | Candelabrum of Invocation | ✅ |
 | `BELL_OF_OPENING` | Bell of Opening | ✅ |

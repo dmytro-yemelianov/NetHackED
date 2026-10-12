@@ -1,0 +1,103 @@
+{
+  "head": "b912fafe33c8cd6bff80522d5b7ca7ee1cae3d40",
+  "golden_source_sha256": "304a507d2968948f3c62a41ef217bac01e310d70f4bc47f076ce6c10664fc7f0",
+  "unit": "P04-P10",
+  "families": [
+    {
+      "constant": "EXPECTED_RUNS",
+      "test": "golden_vanilla_runs_are_unchanged",
+      "original": [
+        10590427399958928342,
+        16937266686257778869,
+        15901842928133995731,
+        3090803967773886248
+      ],
+      "proposed": [
+        2228682572056874257,
+        1092902970258507207,
+        13826362149808501255,
+        8647613173857399611
+      ],
+      "changed_indices": [
+        0,
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "constant": "EXPECTED_LOGS",
+      "test": "golden_vanilla_event_logs_are_unchanged",
+      "original": [
+        6084688683205385671,
+        15616401141373472836,
+        4899398478763589659,
+        16065937482197730413,
+        2131477169023326163,
+        14544001921339539876,
+        14894273454409416984,
+        13370509600343581488,
+        9102617103894820477
+      ],
+      "proposed": [
+        4505381605404160040,
+        16404326233539671115,
+        4854647680356389716,
+        5243846113459432278,
+        5728931081618051660,
+        15473132434245572347,
+        13037250685169951399,
+        10846450416020385359,
+        5002529615800054102
+      ],
+      "changed_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ]
+    },
+    {
+      "constant": "EXPECTED_COMBAT",
+      "test": "golden_vanilla_bestiary_combat_is_unchanged",
+      "original": [
+        17879615147181408734,
+        5566202075069252702,
+        1012340265263046192
+      ],
+      "proposed": [
+        5186754756734083792,
+        10326893795974258077,
+        1764914419651649729
+      ],
+      "changed_indices": [
+        0,
+        1,
+        2
+      ]
+    }
+  ],
+  "status": "Explicitly approved exact16 values applied; all999 tests/all3 golden tests/all12 gates pass.",
+  "input_digest": "64ea29d3bd5d2ce97d1d515501e07c424b5951e806cc7818d17f9690fcfffddc",
+  "evidence_directory": "/tmp/netrust-p04-p10-final-gates",
+  "verification": {
+    "workspace_passed": 996,
+    "failed_only_frozen_golden_tests": 3,
+    "other_gates_passed": 11,
+    "constants_equal_HEAD": true
+  },
+  "attribution": [
+    "Reviewed stored STR/DX hit/damage, capacity/live burden, selected natural HP and exact action-allocation changes alter gameplay fingerprints.",
+    "Ordinary random initialization adds source identity draw/adjusted HP; real corpse lifecycle and selected equipment/property changes are independently reviewed.",
+    "LOGS include the reviewed empty-Fire zero-time refusal, which changes turn/events; P06b source audit excludes enum-discriminant/serialization churn.",
+    "These are Rust determinism baselines for selected C-derived behavior, not proof of exact C replay or full NetHack parity."
+  ],
+  "authorization": "User: \u0442\u0430\u043a \u043e\u043d\u043e\u0432\u0438 (2026-10-07); scoped16 values in checked P04\u2013P10 proposal",
+  "approved_after_golden_sha256": "dff651d536548ca372addf88fec0ad6fc15a5c5e4a088870f25e8fc19e5c160b",
+  "final_acceptance": "2026-10-07-p04-p10-final-acceptance.json"
+}

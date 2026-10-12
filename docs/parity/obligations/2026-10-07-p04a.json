@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "batch": "P04a",
+  "checked_date": "2026-10-07",
+  "checked_head": "b912faf",
+  "feature": "Str/Dex to-hit and damage (abon/dbon)",
+  "table": "docs/parity/hero.md",
+  "status": "\ud83d\udfe1 PARTIAL",
+  "upstream": {
+    "tag": "NetHack-5.0.0_Released",
+    "execution": "Source inspected only; C not executed.",
+    "references": [
+      {
+        "path": "src/weapon.c",
+        "lines": "950-989",
+        "sha256": "75769f6a3113224ea20414f75fc8b1159b6712bc7154905443e4fc1a4912bc2d"
+      },
+      {
+        "path": "src/attrib.c",
+        "lines": "1200-1238",
+        "sha256": "4dfbf91f63855512406571d431e59ce1395a73bb5dc0050ca3710bf5c740ba79"
+      },
+      {
+        "path": "src/uhitm.c",
+        "lines": "365-378",
+        "sha256": "4cc2f8a0ffe0121801a777978a9a555a063db720e0fe972308fb6ab0e96feb12"
+      }
+    ]
+  },
+  "configuration": "Ordinary form; stored base attributes without equipment/temporary modifiers; C effective bounds STR3..125 DX3..25. No RNG or build-option dependency in ordinary abon.",
+  "implemented_subsets": [
+    "Ordinary-form stored-base STR/DX abon contribution, including encoded exceptional strength and effective-range clipping",
+    "C level-below-three bonus; existing separate experience-level term retained once",
+    "Public explicit melee and movement-bump routing with owned actor identity, fixed HP and save/RNG continuation"
+  ],
+  "tests": [
+    "crates/nethacked-core/tests/source_derived_attribute_hit.rs::ordinary_abon_source_derived_boundaries",
+    "crates/nethacked-core/tests/source_derived_attribute_hit.rs::abon_low_level_tuning_does_not_duplicate_experience_level",
+    "crates/nethacked-sim/tests/hero_attribute_hit_tests.rs::public_attack_and_bump_obey_literal_attribute_thresholds_and_draws"
+  ],
+  "evidence": "34 source-derived fixture cases, 144 public scenarios; disabling contribution fails and restoration passes. Fresh semantic review PASS. Full acceptance is recorded in the linked unit plan.",
+  "remaining": [
+    "dbon damage integration",
+    "Equipment/temporary effective attribute sources",
+    "C polymorphed adj_lev/form-level to-hit path",
+    "Burden/exercise/progression and unrelated combat bonuses"
+  ],
+  "plan": "docs/plans/2026-10-07-attribute-to-hit.md",
+  "final_integration": {
+    "record": "2026-10-07-p04-p10-final-acceptance.json",
+    "status": "Original bounded exit reviewed/audited and final green integration verified; prior checkpoint fields are historical",
+    "tests": 999,
+    "gates": 12,
+    "goldens": 3,
+    "input_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+    "commit": "Containing commit; see final acceptance record"
+  }
+}

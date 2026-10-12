@@ -1,6 +1,6 @@
 //! Item usage: Quaff potions, Read scrolls/spellbooks, Eat food, Cast spells, Zap wands, Dip in water.
 
-use nethacked_arena::ItemLocation;
+use nethacked_arena::{ItemId, ItemLocation};
 use nethacked_core::{buc::WaterType, energy::NORMAL_SPEED, SpellKind};
 use nethacked_data::ItemKindId;
 use nethacked_dungeon::trace_beam_path;
@@ -21,7 +21,7 @@ pub fn normalize_wish_name(query: &str) -> String {
     lower
 }
 
-const UNWISHABLE: &[ItemKindId] = &[
+pub(crate) const UNWISHABLE: &[ItemKindId] = &[
     ItemKindId::BELL_OF_OPENING,
     ItemKindId::CANDELABRUM_OF_INVOCATION,
     ItemKindId::SPE_BOOK_OF_THE_DEAD,
@@ -220,10 +220,14 @@ impl SimulationWorld {
                             .into_iter()
                             .find(|&c| self.level.is_passable(c) && self.actor_at(c).is_none())
                             .unwrap_or(player_c);
-                        if let Some(mut mon) = self.ruleset.create_monster_record_by_id(
-                            nethacked_data::MonsterSpeciesId::DJINNI,
-                            spawn_c,
-                        ) {
+                        if let Some(mut mon) =
+                            self.ruleset.create_monster_record_by_id_with_context(
+                                nethacked_data::MonsterSpeciesId::DJINNI,
+                                spawn_c,
+                                self.monster_spawn_context(),
+                                &mut self.rng,
+                            )
+                        {
                             mon.name = "hostile djinni".into();
                             mon.is_peaceful = false;
                             if let Some(def) = self
@@ -621,10 +625,14 @@ impl SimulationWorld {
                                             self.level.is_passable(c) && self.actor_at(c).is_none()
                                         })
                                         .unwrap_or(player_c);
-                                    if let Some(mut mon) = self.ruleset.create_monster_record_by_id(
-                                        nethacked_data::MonsterSpeciesId::GOBLIN,
-                                        spawn_c,
-                                    ) {
+                                    if let Some(mut mon) =
+                                        self.ruleset.create_monster_record_by_id_with_context(
+                                            nethacked_data::MonsterSpeciesId::GOBLIN,
+                                            spawn_c,
+                                            self.monster_spawn_context(),
+                                            &mut self.rng,
+                                        )
+                                    {
                                         mon.name = "hostile goblin".into();
                                         mon.is_peaceful = false;
                                         if let Some(def) = self
@@ -952,208 +960,25 @@ impl SimulationWorld {
     }
 
     pub(crate) fn handle_zap_wand(&mut self, dir: Direction, energy: u32) -> Vec<GameEvent> {
-        let mut events = Vec::new();
-        let Some(player) = self.arena.actors.get(self.player_id).cloned() else {
-            return events;
-        };
+        super::wand_legacy::zap(self, super::wand::Selection::First, dir, energy)
+    }
 
-        // Find carried wand (or default)
-        let wand_id = self
-            .arena
-            .items_carried_by(self.player_id)
-            .into_iter()
-            .find(|&id| {
-                self.arena
-                    .items
-                    .get(id)
-                    .map(|it| it.class == ItemClass::Wand)
-                    .unwrap_or(false)
-            });
-
-        let Some(wid) = wand_id else {
-            events.push(GameEvent::LogMessage {
-                text: "You have no wand to zap.".into(),
-            });
-            return events;
-        };
-        let Some(wand_item) = self.arena.items.get_mut(wid) else {
-            return events;
-        };
-        let current_charges = nethacked_types::WandCharges {
-            charges: wand_item.enchantment.max(0) as u32,
-            recharges: wand_item.recharged as u32,
-        };
-        let wand_name =
-            if let Some(new_charges) = nethacked_core::artifacts_wands::zap_wand(current_charges) {
-                wand_item.enchantment = new_charges.charges.min(i8::MAX as u32) as i8;
-                wand_item.name.clone()
-            } else {
-                events.push(GameEvent::LogMessage {
-                    text: nethacked_i18n::Messages::wand_empty(self.locale).into(),
-                });
-                self.scheduler.hero_act(NORMAL_SPEED);
-                return events;
-            };
-
-        // If Wand of Secret Door Detection: reveals secret doors in 5x5 radius
-        if wand_name.contains("secret door") {
-            let mut revealed = 0;
-            for dy in -3..=3 {
-                for dx in -3..=3 {
-                    let nx = player.coord.x as i32 + dx;
-                    let ny = player.coord.y as i32 + dy;
-                    if nx >= 0
-                        && nx < nethacked_types::COLNO as i32
-                        && ny >= 0
-                        && ny < nethacked_types::ROWNO as i32
-                    {
-                        let c = Coord::new_unchecked(nx as usize, ny as usize);
-                        let tile = self.level.get_tile_mut(c);
-                        if matches!(tile, nethacked_types::Tile::SecretDoor { .. }) {
-                            tile.reveal_secret_door();
-                            revealed += 1;
-                        }
-                    }
-                }
-            }
-            if revealed > 0 {
-                events.push(GameEvent::LogMessage {
-                    text: nethacked_i18n::Messages::secret_doors_found(revealed, self.locale),
-                });
-            } else {
-                events.push(GameEvent::LogMessage {
-                    text: "You feel a tingling sensation, but sense no hidden doors.".into(),
-                });
-            }
-            self.scheduler.hero_act(NORMAL_SPEED);
-            return events;
-        }
-
-        let path = trace_beam_path(&self.level, player.coord, dir, energy);
-        events.push(GameEvent::BeamPropagated { path: path.clone() });
-
-        let mut hit_coords = path;
-        let (dx, dy) = dir.delta();
-        if dx != 0 || dy != 0 {
-            let last_c = hit_coords.last().copied().unwrap_or(player.coord);
-            let tx = last_c.x as i32 + dx as i32;
-            let ty = last_c.y as i32 + dy as i32;
-            if tx >= 0
-                && tx < nethacked_types::COLNO as i32
-                && ty >= 0
-                && ty < nethacked_types::ROWNO as i32
-            {
-                hit_coords.push(Coord::new_unchecked(tx as usize, ty as usize));
-            }
-        }
-
-        for coord in hit_coords {
-            // Environment interactions along ray path
-            let current_tile = self.level.get_tile(coord).clone();
-            if wand_name.contains("striking") {
-                if matches!(current_tile, nethacked_types::Tile::Drawbridge { .. }) {
-                    let _ = nethacked_core::endgame::destroy_drawbridge();
-                    self.level.set_tile(coord, nethacked_types::Tile::Moat);
-                    events.push(GameEvent::LogMessage {
-                        text: nethacked_i18n::Messages::drawbridge_collapse(self.locale).into(),
-                    });
-                    break;
-                } else if matches!(current_tile, nethacked_types::Tile::Door { .. }) {
-                    self.level.get_tile_mut(coord).break_door();
-                    events.push(GameEvent::LogMessage {
-                        text: nethacked_i18n::Messages::door_splinters(self.locale).into(),
-                    });
-                }
-            } else if wand_name.contains("cold")
-                && matches!(current_tile, nethacked_types::Tile::Pool { .. })
-            {
-                self.level
-                    .set_tile(coord, nethacked_types::Tile::Pool { frozen: true });
-                events.push(GameEvent::LogMessage {
-                    text: nethacked_i18n::Messages::pool_frozen(self.locale).into(),
-                });
-            }
-
-            // Actor interaction
-            if let Some(target_id) = self.actor_at(coord) {
-                if target_id != self.player_id {
-                    let wand_damage = if wand_name.contains("death") {
-                        100u32
-                    } else if wand_name.contains("cold") {
-                        18u32
-                    } else {
-                        12u32
-                    };
-                    if let Some(target) = self.arena.actors.get_mut(target_id) {
-                        if wand_name.contains("digging") || wand_name.contains("teleport") {
-                            // C: zap_dig (zap.c:3459) never hurts monsters, and wand of
-                            // teleportation relocates them (u_teleport_mon, not modelled);
-                            // neither deals beam damage.
-                            events.push(GameEvent::LogMessage {
-                                text: format!(
-                                    "The {} has no effect on {}.",
-                                    wand_name, target.name
-                                ),
-                            });
-                        } else if wand_name.contains("polymorph") {
-                            if !target.is_unique && !target.is_player {
-                                // transform monster
-                                let new_species = nethacked_data::MonsterSpeciesId::GOBLIN; // simplified
-                                if let Some(new_arch) = self.ruleset.monster_by_id(new_species) {
-                                    target.name = new_arch.name.to_string();
-                                    target.hp = new_arch.base_hp;
-                                    target.max_hp = new_arch.max_hp;
-                                    target.ac = new_arch.ac;
-                                    target.speed = new_arch.speed;
-                                    target.level = new_arch.level;
-                                }
-                                events.push(GameEvent::LogMessage {
-                                    text: format!("The monster turns into a {}!", target.name),
-                                });
-                            } else {
-                                events.push(GameEvent::LogMessage {
-                                    text: "The monster shudders but is unaffected.".into(),
-                                });
-                            }
-                        } else {
-                            target.hp = target.hp.saturating_sub(wand_damage);
-                            if target.hp == 0 {
-                                target.is_dead = true;
-                            }
-                            events.push(GameEvent::AttackLanded {
-                                attacker: self.player_id,
-                                target: target_id,
-                                damage: wand_damage,
-                                lethal: target.is_dead,
-                            });
-                        }
-                    }
-                    if self.arena.actors.get(target_id).is_some_and(|t| t.is_dead) {
-                        let name = self
-                            .arena
-                            .actors
-                            .get(target_id)
-                            .map(|a| a.name.as_str())
-                            .unwrap_or("The monster");
-                        events.push(GameEvent::LogMessage {
-                            text: format!("{name} is destroyed by the wand beam!"),
-                        });
-                        self.on_actor_killed(self.player_id, target_id, &mut events);
-                    }
-                    // C bhitm (zap.c:552-554) / buzz (zap.c:4948): a surviving
-                    // target is woken with `wakeup(mon, TRUE)`; digging is
-                    // zap_dig and never touches monsters.
-                    if !wand_name.contains("digging")
-                        && self.arena.actors.get(target_id).is_some_and(|t| !t.is_dead)
-                    {
-                        self.setmangry(target_id, &mut events);
-                    }
-                    break;
-                }
-            }
-        }
-        self.scheduler.hero_act(NORMAL_SPEED);
-        events
+    pub(crate) fn handle_zap_selected_wand(
+        &mut self,
+        item_index: u32,
+        expected_item: Option<ItemId>,
+        dir: Direction,
+        energy: u32,
+    ) -> Vec<GameEvent> {
+        super::wand_legacy::zap(
+            self,
+            super::wand::Selection::Selected {
+                index: item_index,
+                expected: expected_item,
+            },
+            dir,
+            energy,
+        )
     }
 
     pub(crate) fn handle_wish(&mut self, wish_str: String) -> Vec<GameEvent> {
@@ -1234,6 +1059,35 @@ impl SimulationWorld {
                             arch.name
                         ),
                     });
+                }
+                Some(arch) if arch.id == Some(ItemKindId::CORPSE) => {
+                    let rs = std::sync::Arc::clone(&self.ruleset);
+                    let (ctx, monster_ctx) =
+                        self.item_birth_context(self.current_branch, self.depth, false);
+                    let registry = &self.genocide_registry;
+                    let location = ItemLocation::Floor(player.coord);
+                    if let Some(mut tree) = rs.create_random_item_tree_with_monsters(
+                        &arch.name,
+                        location.clone(),
+                        ctx,
+                        &monster_ctx,
+                        |d| nethacked_core::genocide::is_genocided(registry, &d.name, d.glyph),
+                        |n| self.rng.random_range(0..n),
+                    ) {
+                        tree.item.buc = buc;
+                        // C objnam.c:5148–5169: generic corpse wishes consume
+                        // initialization gender, then overwrite spe with zero.
+                        tree.item.enchantment = 0;
+                        let id = self
+                            .attach_generated_item(tree, location)
+                            .expect("wished corpse deadline fits the world clock");
+                        events.push(GameEvent::LogMessage {
+                            text: nethacked_i18n::Messages::wish_granted(
+                                &self.arena.items[id].name,
+                                self.locale,
+                            ),
+                        });
+                    }
                 }
                 Some(arch) => {
                     if let Some(mut record) = self.ruleset.create_item_record(

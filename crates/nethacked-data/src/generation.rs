@@ -5,8 +5,8 @@
 //! Not modelled yet: the quest's `qt_montype()` (1673), the rogue level's
 //! uppercase-only rule (1679) and the elemental planes' `wrong_elem_type()`.
 //!
-//! Item initialization (`mksobj_init`, mkobj.c:869) — BUC, spe, charges,
-//! container contents, artifact chance, erosion, poison.
+//! Supported BUC/spe and weapon stack/poison initialization lives in `item_init`.
+//! Represented container contents and corpse species live in `containers`/`corpses`. Other species payloads, corpse gender/timers, fuel, artifact chance and erosion remain gaps.
 
 use crate::items::{ItemKindId, BOXIPROBS, HELLPROBS, ITEM_CATALOG, MKOBJPROBS, ROGUEPROBS};
 use crate::monsters::MonsterSpeciesId;
@@ -99,6 +99,21 @@ pub fn rndmonst_adj<'a>(
     gone: impl Fn(&MonsterDef) -> bool,
     mut rn2: impl FnMut(u32) -> u32,
 ) -> Option<&'a MonsterDef> {
+    try_rndmonst_adj(ruleset, ctx, minadj, maxadj, gone, |n| {
+        Ok::<_, std::convert::Infallible>(rn2(n))
+    })
+    .unwrap()
+}
+
+/// Fallible reservoir sampling. Refusal stops at the requested bounded draw.
+pub fn try_rndmonst_adj<'a, E>(
+    ruleset: &'a Ruleset,
+    ctx: &MonsterGenContext,
+    minadj: i32,
+    maxadj: i32,
+    gone: impl Fn(&MonsterDef) -> bool,
+    mut rn2: impl FnMut(u32) -> Result<u32, E>,
+) -> Result<Option<&'a MonsterDef>, E> {
     let zlevel = ctx.level_difficulty;
     // monst.h:259-260 monmin_difficulty / monmax_difficulty
     let minmlev = zlevel / 6 + minadj;
@@ -126,12 +141,12 @@ pub fn rndmonst_adj<'a>(
             + temperature_shift(def, ctx.temperature);
         if weight > 0 {
             total += weight;
-            if (rn2(total as u32) as i32) < weight {
+            if (rn2(total as u32)? as i32) < weight {
                 selected = Some(def);
             }
         }
     }
-    selected
+    Ok(selected)
 }
 
 /// C `rndmonst()`: `rndmonst_adj(0, 0)`.
@@ -204,6 +219,60 @@ pub fn mkobj_kind(
         }
     }
     None
+}
+
+impl Ruleset {
+    /// Room selection uses owned classes and weights, canonical C ID order,
+    /// followed by stable custom definition (pack Vec) order. Empty/overflowing
+    /// class pools consume no kind draw and never retry a different class.
+    /// Omitted legacy weights inherit extracted C probabilities by ID; custom
+    /// definitions have no fallback. Explicit zero always disables a definition.
+    pub fn room_item_definition(
+        &self,
+        class: Option<ItemClass>,
+        table: ObjectTable,
+        mut rn2: impl FnMut(u32) -> u32,
+    ) -> Option<&crate::ItemDef> {
+        let class = match class {
+            Some(class) => class,
+            None => {
+                let probs = match table {
+                    ObjectTable::Dungeon => MKOBJPROBS,
+                    ObjectTable::Hell => HELLPROBS,
+                    ObjectTable::Rogue => ROGUEPROBS,
+                    ObjectTable::Box => BOXIPROBS,
+                };
+                let mut value = rn2(100).min(99);
+                let mut class = probs.last()?.1;
+                for &(weight, candidate) in probs {
+                    if value < weight {
+                        class = candidate;
+                        break;
+                    }
+                    value -= weight;
+                }
+                class
+            }
+        };
+        self.weighted_item_by(
+            |d| {
+                d.class == class
+                    && !d.id.is_some_and(|id| {
+                        crate::artifacts::canonical_artifact_id(id).is_some()
+                            || self.artifacts.iter().any(|a| a.item == id)
+                    })
+            },
+            |d| {
+                if d.generation_weight_missing && d.generation_weight == 0 {
+                    d.id.map(|id| crate::items::get_item_archetype(id).prob)
+                        .unwrap_or(0)
+                } else {
+                    d.generation_weight
+                }
+            },
+            &mut rn2,
+        )
+    }
 }
 
 #[cfg(test)]

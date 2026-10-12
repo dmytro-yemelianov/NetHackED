@@ -1,0 +1,8 @@
+{
+  "status": "PASS_exact_hashes_only_semantic_review_separate",
+  "c_anchors": 10,
+  "rust_anchors": 19,
+  "inventory_rows_exact": 9,
+  "c_source_bytes_retained": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/pinned-c",
+  "source_input_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c"
+}

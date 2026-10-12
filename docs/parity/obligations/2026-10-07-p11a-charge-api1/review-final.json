@@ -1,0 +1,82 @@
+{
+  "verdict": "PASS",
+  "review_markdown": "P11a-C1-API1 passes this narrow semantic review. The pure signed API matches every prescribed branch and input rejection rule. Native integration routes only positive charges through it, decrements the selected generation once, and preserves existing guards, effects, RNG, events and time. Public fixtures satisfy F01/F02 and API1 portions of F14; independent core literals cover F03/F04. No material findings. Full gates and root acceptance remain pending; this does not accept full C1 or close the family.",
+  "findings": [],
+  "bindings": [
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-core/src/artifacts_wands.rs",
+      "sha256": "9d60b22a360334915dba2511cb4a78316c7f217e5937deb08397b0d6908fb324"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-sim/src/actions/items.rs",
+      "sha256": "1b2b9a4f585154c0361854fd6ab101122edee6020425cc81b1ebe52990be92ea"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-sim/tests/selected_wand_tests.rs",
+      "sha256": "23a6edad28e183d4fc31d6a30f9b9abf28946eb2a95ccfa4e9b967694129ef04"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/implementation.diff",
+      "sha256": "53b35e27d02020cfe99415093559a066d915ca5b2b48ce565ac2fbdb9b9ac1c3"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/implementation-initial/handoff.json",
+      "sha256": "657c635badb69d8004d2000d0e07ea2e004e720021ec9fa25d9b07bddd56a40d"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/review-baseline.json",
+      "sha256": "4ba343050635c2c4e8cdb0f4f3a1424bbb440549f3fcfc7f8f22b49987e47e87"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "sha256": "0ae28364d9017ca8d71b753d64d58b4f18cd21c023dca202434376725a8341dc"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-07-p11a-charge-contract/review-final.json",
+      "sha256": "06157125e20ac4593f6aad7c527deb43a95036ab0ec5d90ba429cc3d2df4100d"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-07-p11a-charge-contract/unit.json",
+      "sha256": "106311dc09ca8d409ba2d2e5737f9c542f662885ceb749e0843c1801469266ca"
+    }
+  ],
+  "checks": [
+    {
+      "name": "Source binding",
+      "assessment": "PASS — direct hashes and diff; aggregate proof reused",
+      "evidence": "All three source hashes match handoff and review-baseline; handoff hash matches baseline. Current HEAD is aed5b78dc8ec0f9b2f0c82d38eec3f6208651762. Scoped HEAD diff exactly matches implementation.diff. Reused coordinator-verified 345-member archive binding to input_digest b7aebd3bc3c198fa6866d06a61a5e899bcf21ef61587bf7a09d72f4f9d5f40f3; unrelated inputs were not rescanned."
+    },
+    {
+      "name": "Signed primitive",
+      "assessment": "PASS — direct review",
+      "evidence": "Exact public typed Result API; nonzero rejects Some before resolution, zero rejects missing or >=121. Positive decrements once, negative remains unchanged, zero/0 yields Ready(-1,true), zero/1..120 yields Unzappable(0). No RNG or mutable state."
+    },
+    {
+      "name": "Native staging and compatibility",
+      "assessment": "PASS — direct review",
+      "evidence": "Only spe>0 invokes the primitive with None and writes the same ItemId once. Range/token/class/definition refusal order and surrounding effect/time owners are unchanged. Nonpositive empty-message/time behavior remains unchanged. Unsigned zap/recharge APIs remain intact; the exact diff changes only the permitted three files."
+    },
+    {
+      "name": "Public fixtures and persistence",
+      "assessment": "PASS — direct review",
+      "evidence": "F01 retains public chosen2->1/first-unchanged creation and handwritten cloned-RNG evidence. F02 checks exact refusals and whole-state equality except the owned event log. New public canonical/custom boundary fixtures assert literal charges, complete item records, exact beam/turn events, scheduler and unchanged RNG. Modern/old saves preserve active and cached signed boundaries, recharge3, whole canonical save equality, repeated public continuation and Wait; cached records remain equal."
+    },
+    {
+      "name": "Oracle and assertion integrity",
+      "assessment": "PASS — direct review",
+      "evidence": "Expected charge outcomes and beam coordinates are independent literals; expected RNG is cloned and modeled without the production charge helper. Core and selected-test changes are separate additions with zero removed lines; every original test/helper body remains unchanged. Canonical save comparisons retain every field."
+    },
+    {
+      "name": "Retained failures",
+      "assessment": "PASS — direct log review",
+      "evidence": "Two failed sim runs each retain two failed fixtures, consistent with counters: two event expectations, one cached recharge setup, one raw-save ordering failure. Failed source hashes show both production files unchanged. Independently parsed attempt2 left/right saves are semantically identical. Final fixtures initialize cached recharge3 and strengthen events to exact beam+TurnAdvanced; no hidden assertion weakening found."
+    },
+    {
+      "name": "Validation and accepted authority",
+      "assessment": "PASS — reused execution and source-audit evidence",
+      "evidence": "Retained logs show core287, sim26 on attempt3, golden3 and Clippy completed successfully; no tests were executed by this reviewer. Published contract/review hashes match unit metadata. Accepted C1 source audit is reused; handwritten branch rules govern this review. Root's fresh full12 gates remain pending."
+    }
+  ],
+  "handoff": "Root owns full12 gates, documentation, acceptance and commit. IN1/LIFE/P1, backfire, exercise, halfphys and frontend obligations remain held; no full C1 or family acceptance.",
+  "usage_note": "Read-only review; no edits, Cargo/build/source-C execution or agents. Authorized known-path fallback used. uv cache initialization was blocked; the absolute repository Python performed only JSON, hash and scoped diff checks."
+}

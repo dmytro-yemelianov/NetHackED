@@ -39,6 +39,24 @@ impl Report {
 /// Validates a Ruleset against all game constraints and invariants.
 pub fn validate(rs: &Ruleset) -> Report {
     let mut report = Report::new();
+    let mut artifact_ids = std::collections::BTreeSet::new();
+    let mut artifact_items = std::collections::BTreeSet::new();
+    for a in &rs.artifacts {
+        let valid = nethacked_data::artifacts::canonical_artifact_id(a.item) == Some(a.id.as_str())
+            && artifact_ids.insert(&a.id)
+            && artifact_items.insert(a.item)
+            && rs.item_by_id(a.base).is_some()
+            && rs.item_by_id(a.item).is_some()
+            && nethacked_data::artifacts::canonical_artifact_id(a.base).is_none();
+        if !valid {
+            report.errors.push(Diagnostic {
+                file: "ruleset".into(),
+                entry: a.id.clone(),
+                field: Some("artifacts".into()),
+                message: "invalid artifact identity, duplicate, base or item reference".into(),
+            });
+        }
+    }
 
     // 1. Monster unique names (case-insensitive)
     let mut seen_monsters = HashSet::new();
@@ -227,6 +245,28 @@ pub fn validate(rs: &Ruleset) -> Report {
     }
 
     for item in &rs.items {
+        let container_invalid = match item.initialization {
+            nethacked_data::item_init::ItemInitProfile::Container { container } => {
+                !item.is_container
+                    || item.is_bag_of_holding
+                        != (container == nethacked_data::item_init::ContainerInit::HoldingBag)
+            }
+            _ => false,
+        };
+        if container_invalid || item.generation_weight > 10000 {
+            report.errors.push(Diagnostic {
+                file: "items.toml".into(), entry: item.name.clone(), field: Some("initialization/generation_weight".into()),
+                message: "container profile requires coherent container/holding flags; generation_weight must be <=10000".into(),
+            });
+        }
+        if !item.initialization.matches_class(item.class) {
+            report.errors.push(Diagnostic {
+                file: "items.toml".into(),
+                entry: item.name.clone(),
+                field: Some("initialization".into()),
+                message: "initialization profile does not match item class".into(),
+            });
+        }
         if item.weight > 10000 {
             report.errors.push(Diagnostic {
                 file: "items.toml".into(),

@@ -359,6 +359,11 @@ pub fn spawn_player_character(
     let race = get_race(config.race);
 
     let actor = ActorRecord {
+        sex: Some(match config.gender {
+            Gender::Male => nethacked_arena::ActorSex::Male,
+            Gender::Female => nethacked_arena::ActorSex::Female,
+        }),
+        species: None,
         name: config.name.clone(),
         is_unique: true,
         coord,
@@ -367,6 +372,7 @@ pub fn spawn_player_character(
         ac: role.ac,
         level: 1,
         speed: role.speed,
+        movement: 0,
         alignment: config.alignment,
         intrinsics: race.intrinsics,
         is_player: true,
@@ -377,6 +383,8 @@ pub fn spawn_player_character(
         is_peaceful: false,
         mspec_used: 0,
         malign: 0,
+        is_fleeing: false,
+        is_cancelled: false,
     };
     let player_id = arena.spawn_actor(actor);
 
@@ -414,6 +422,7 @@ pub fn starting_item_spe(role: RoleId, kind: ItemKindId) -> Option<i8> {
 
 /// Spawns an initial companion pet (Little Dog or Kitten) adjacent to the hero.
 pub fn spawn_starting_pet(
+    rng: &mut impl rand::Rng,
     role: RoleId,
     hero_coord: Coord,
     arena: &mut EntityArena,
@@ -425,7 +434,7 @@ pub fn spawn_starting_pet(
     let pet_coord = hero_coord
         .step(nethacked_types::Direction::East)
         .unwrap_or(hero_coord);
-    let pet_record = crate::monsters::create_monster_record(species, pet_coord);
+    let pet_record = crate::monsters::create_monster_record(species, pet_coord, rng);
     Some(arena.spawn_actor(pet_record))
 }
 

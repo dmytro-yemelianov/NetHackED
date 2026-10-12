@@ -43,6 +43,7 @@ fn reset(sim: &mut SimulationWorld, mon: ActorId, at: Coord) {
     let m = sim.arena.actors.get_mut(mon).unwrap();
     m.coord = at;
     m.hp = m.max_hp;
+    m.movement = 12;
 }
 
 /// `(landed damage or None for a miss)` for every melee event by `attacker`.
@@ -67,7 +68,11 @@ fn hero_hp(sim: &SimulationWorld) -> i32 {
 }
 
 fn spawn(sim: &mut SimulationWorld, id: MonsterSpeciesId, at: Coord) -> ActorId {
-    sim.arena.spawn_actor(create_monster_record(id, at))
+    sim.arena.spawn_actor(create_monster_record(
+        id,
+        at,
+        &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
+    ))
 }
 
 fn east(n: usize) -> Coord {
@@ -101,6 +106,7 @@ fn red_dragon_adjacent_bites_and_claws_in_order() {
     let mut groups = 0;
     for _ in 0..60 {
         reset(&mut sim, dragon, east(1));
+        sim.scheduler.hero_energy = 24;
         let base_before = hero_hp(&sim);
         let events = sim.step_player_action(ActionAst::Wait);
         let atks = attack_events(&events, dragon);
@@ -176,6 +182,7 @@ fn cold_touch_is_zeroed_by_cold_resistance() {
     let mut landed = 0;
     for _ in 0..40 {
         reset(&mut sim, lich, east(1));
+        sim.scheduler.hero_energy = 24;
         let before = hero_hp(&sim);
         let events = sim.step_player_action(ActionAst::Wait);
         let hits: Vec<u32> = attack_events(&events, lich).into_iter().flatten().collect();
@@ -197,6 +204,7 @@ fn cold_touch_is_zeroed_by_cold_resistance() {
     let mut resisted_hits = 0;
     for _ in 0..40 {
         reset(&mut sim, lich, east(1));
+        sim.scheduler.hero_energy = 24;
         let events = sim.step_player_action(ActionAst::Wait);
         for h in attack_events(&events, lich).into_iter().flatten() {
             assert_eq!(h, 0, "resisted cold touch deals 0");
@@ -248,6 +256,8 @@ fn pet_uses_mhitm_to_hit_without_plus_ten() {
 
 fn named_monster(name: &str, at: Coord) -> ActorRecord {
     ActorRecord {
+        sex: None,
+        species: None,
         name: name.into(),
         coord: at,
         hp: 50,
@@ -255,6 +265,7 @@ fn named_monster(name: &str, at: Coord) -> ActorRecord {
         ac: 10,
         level: 0,
         speed: 12,
+        movement: 0,
         alignment: Alignment::Chaotic,
         intrinsics: Intrinsics::default(),
         is_player: false,
@@ -266,6 +277,8 @@ fn named_monster(name: &str, at: Coord) -> ActorRecord {
         is_peaceful: false,
         mspec_used: 0,
         malign: 0,
+        is_fleeing: false,
+        is_cancelled: false,
     }
 }
 
@@ -301,6 +314,9 @@ fn unknown_species_falls_back_to_one_d6_attack() {
 fn quaff_healing(sim: &mut SimulationWorld) {
     let pid = sim.player_id;
     let potion = sim.arena.spawn_item(ItemRecord {
+        definition: None,
+        saved_monster_traits: None,
+        artifact_id: None,
         name: "potion of healing".into(),
         class: ItemClass::Potion,
         weight: 20,
@@ -311,10 +327,18 @@ fn quaff_healing(sim: &mut SimulationWorld) {
         erosion: 0,
         proofed: false,
         location: ItemLocation::CarriedBy(pid),
+        corpse_no_revive: false,
+        corpse_species: None,
+        is_ice_box: false,
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 0,
         recharged: 0,
+        quantity: 1,
+        poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     });
     let idx = sim
         .arena
@@ -354,6 +378,9 @@ fn healing_persists_through_a_later_melee_hit() {
     // subtract from the healed value, not reset HP from a stale hero copy.
     let mut sim = arena_world(41);
     let pid = sim.player_id;
+    // Keep the natural-healing draw, with a zero threshold for this HP-owner test.
+    sim.arena.actors.get_mut(pid).unwrap().level = 0;
+    sim.progress.attr_base[4] = 0;
     sim.arena.actors.get_mut(pid).unwrap().hp = 100;
     quaff_healing(&mut sim);
     let healed = hero_hp(&sim);
@@ -612,7 +639,10 @@ fn magic_cancellation_3_mostly_negates_elec() {
             Buc::Uncursed,
         )
         .unwrap();
-    sim.arena.spawn_item(cloak);
+    let cloak_id = sim.arena.spawn_item(cloak);
+    sim.equipment
+        .armor
+        .push((nethacked_core::ac::ArmorSlot::Cloak, cloak_id));
     let bug = spawn(&mut sim, MonsterSpeciesId::GRID_BUG, east(1));
     let ev = fight(&mut sim, bug, 200);
     let avoided = ev

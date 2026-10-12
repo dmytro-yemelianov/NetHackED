@@ -1,0 +1,410 @@
+{
+  "schema": "netrust-p11a-s1-contract-repair-summary-v1",
+  "attempt": 1,
+  "status": "repairs drafted; independent re-review required; no PASS claim",
+  "changed_paths": [
+    "/tmp/netrust-p11a-s1-contract-repair1/contract.json",
+    "/tmp/netrust-p11a-s1-contract-repair1/contract.md",
+    "/tmp/netrust-p11a-s1-contract-repair1/ready-packet.md",
+    "/tmp/netrust-p11a-s1-contract-repair1/evidence.json",
+    "/tmp/netrust-p11a-s1-contract-repair1/repair-summary.json"
+  ],
+  "changed_json_pointers": {
+    "contract.json": [
+      "/allowed_existing_setup/ActionArgs_literals",
+      "/allowed_existing_setup/command_enum_test",
+      "/allowed_existing_setup/protocol_test",
+      "/allowed_existing_setup/stage_inventory",
+      "/children/0/setup_ownership",
+      "/children/1/file_restrictions",
+      "/children/1/files/0",
+      "/children/1/files/1",
+      "/children/1/files/10",
+      "/children/1/files/11",
+      "/children/1/files/12",
+      "/children/1/files/13",
+      "/children/1/files/2",
+      "/children/1/files/3",
+      "/children/1/files/4",
+      "/children/1/files/5",
+      "/children/1/files/6",
+      "/children/1/files/7",
+      "/children/1/files/8",
+      "/children/1/files/9",
+      "/children/1/outcome",
+      "/children/1/setup_ownership",
+      "/children/2/evidence_consumption",
+      "/children/2/outcome",
+      "/children/2/prerequisites/5",
+      "/children/2/ready_after",
+      "/children/3",
+      "/closure_update",
+      "/fixture_matrix/3/expect",
+      "/fixture_matrix/7/expect",
+      "/fixture_matrix/7/input",
+      "/frontends/0/required",
+      "/frontends/1/required",
+      "/frontends/2/required",
+      "/frontends/3/child",
+      "/frontends/3/required",
+      "/frontends/4/child",
+      "/frontends/4/current",
+      "/frontends/4/owner",
+      "/frontends/4/required",
+      "/frontends/4/subroutes",
+      "/frontends/5/child",
+      "/frontends/5/required",
+      "/frontends/6/child",
+      "/frontends/6/required",
+      "/frontends/7/child",
+      "/frontends/7/required",
+      "/frontends/8/child",
+      "/frontends/8/required",
+      "/frontends/9/child",
+      "/frontends/9/required",
+      "/mandatory_successors/4/depends/4",
+      "/mandatory_successors/4/depends/5",
+      "/mandatory_successors/4/depends/6",
+      "/mandatory_successors/4/interface",
+      "/parser/jsonrpc_subroutes",
+      "/parser/transport_errors",
+      "/unresolved_interfaces/0",
+      "/unresolved_interfaces/1"
+    ],
+    "evidence.json": [
+      "/contract_repair",
+      "/discovery/repair1_bounded_fallback"
+    ]
+  },
+  "changed_markdown": {
+    "contract.md": [
+      "Acyclic delivery stage/dependency paragraph",
+      "D1/MC adapter and fixture ownership paragraph",
+      "new independent JSON-RPC subroute paragraph",
+      "stage-specific ActionArgs/enum setup paragraph",
+      "schema advertisement stage sentence",
+      "all-ten adapter fixture sentence"
+    ],
+    "ready-packet.md": [
+      "rewritten dispatch packet with exact S1 setup boundaries, M/MC/F/A1 successor ownership, separate JSON-RPC errors/evidence, unchanged baseline/53/ten-surface obligations and pending re-review"
+    ]
+  },
+  "artifact_hashes": {
+    "contract.json": {
+      "before_sha256": "ee39c9e7fb9cf5c687c981b27ee718efa7e5443c3230f74e1ae2a096b778cc55",
+      "after_sha256": "7facd2e6522cc0b3f0b1dfda181a660f02921ad3f107841beb5debc80f59998a"
+    },
+    "contract.md": {
+      "before_sha256": "efed9729d1f9c05427d5fe3465de4cb6adaed1b570e1f3fdc509f96cb5c4e062",
+      "after_sha256": "c6e4a5a4f0e7ebf984b3d1b59ae2e52a6b44bafccfc81a3f60f4820186d2f9fa"
+    },
+    "ready-packet.md": {
+      "before_sha256": "a492d206ad49ac903299418e2fcef8d1cf9079ac22e652179e6e1ec906c2fce3",
+      "after_sha256": "e977ebcc3f0d59d891534c60ac1728c020c2d54503a1a4e362adabf87d37e352"
+    },
+    "evidence.json": {
+      "before_sha256": "d0ab56a6a21c053b095ccd9e37bdd849fe58dd7a997ba6b274c18476b4d74864",
+      "after_sha256": "136b526c8c74211b236efa85024504cb9a9b56dc2ebc6ff8d580ce6fad58b122"
+    }
+  },
+  "finding_repairs": [
+    {
+      "finding_id": "P11S1-R1",
+      "repair": "S1 owns exactly three full optional-field initializations within unchanged six-file allowance. M owns both enum input adaptations when STEP_ACTIONS changes; commands.rs is explicitly M-owned for this setup. Preserve old full p/action-only requests, loops/assertions and separate selected missing-index rejection evidence.",
+      "owners": [
+        "P11a-S1",
+        "P11a-S1-M"
+      ],
+      "changed_artifact_files": [
+        "contract.json",
+        "contract.md",
+        "ready-packet.md",
+        "evidence.json"
+      ],
+      "affected_json_pointer_roots": {
+        "contract.json": [
+          "/allowed_existing_setup",
+          "/children/0/setup_ownership",
+          "/children/1/files",
+          "/children/1/file_restrictions",
+          "/children/1/setup_ownership"
+        ],
+        "evidence.json": [
+          "/contract_repair/setup_ownership",
+          "/contract_repair/finding_repairs/0",
+          "/discovery/repair1_bounded_fallback"
+        ]
+      }
+    },
+    {
+      "finding_id": "P11S1-R2",
+      "repair": "New existing-family child P11a-S1-MC owns post-D1 charged machine adapters and exact test files, explicitly depends on accepted M/D1/P1, and supplies per-route transcripts consumed by F/A1. Existing C1/P1/B1/D1 order, backend independence, original53 and all ten mandatory surfaces remain.",
+      "owners": [
+        "P11a-D1",
+        "P11a-S1-MC",
+        "P11a-S1-F",
+        "P11a-A1"
+      ],
+      "changed_artifact_files": [
+        "contract.json",
+        "contract.md",
+        "ready-packet.md",
+        "evidence.json"
+      ],
+      "affected_json_pointer_roots": {
+        "contract.json": [
+          "/children/3",
+          "/children/2/prerequisites/5",
+          "/children/2/evidence_consumption",
+          "/children/2/outcome",
+          "/children/2/ready_after",
+          "/frontends",
+          "/mandatory_successors/4",
+          "/closure_update",
+          "/fixture_matrix/7",
+          "/unresolved_interfaces/0"
+        ],
+        "evidence.json": [
+          "/contract_repair/successor_ownership",
+          "/contract_repair/finding_repairs/1"
+        ]
+      }
+    },
+    {
+      "finding_id": "P11S1-R3",
+      "repair": "Library -32602 and independent binary flat {error: message} remain separate before session.step. M explicitly owns binary inventory/selection and regressions; MC owns binary continuation with actual process stdio evidence, required alongside separate library evidence by F/A1.",
+      "owners": [
+        "P11a-S1-M",
+        "P11a-S1-MC",
+        "P11a-S1-F",
+        "P11a-A1"
+      ],
+      "changed_artifact_files": [
+        "contract.json",
+        "contract.md",
+        "ready-packet.md",
+        "evidence.json"
+      ],
+      "affected_json_pointer_roots": {
+        "contract.json": [
+          "/parser/transport_errors",
+          "/parser/jsonrpc_subroutes",
+          "/frontends/4",
+          "/children/1/files",
+          "/children/1/file_restrictions",
+          "/children/3/adapter_evidence/1",
+          "/children/3/adapter_evidence/2",
+          "/fixture_matrix/3/expect",
+          "/unresolved_interfaces/1"
+        ],
+        "evidence.json": [
+          "/contract_repair/jsonrpc_subroutes",
+          "/contract_repair/adapter_reads",
+          "/contract_repair/finding_repairs/2",
+          "/discovery/repair1_bounded_fallback"
+        ]
+      }
+    }
+  ],
+  "successor_ownership": {
+    "P11a-S1-M": {
+      "depends": [
+        "P11a-S1"
+      ],
+      "files": [
+        "crates/nethacked-agent/src/commands.rs",
+        "crates/nethacked-agent/src/session.rs",
+        "crates/nethacked-agent/src/observation.rs",
+        "crates/nethacked-agent/src/mcp.rs",
+        "crates/nethacked-agent/src/jsonrpc.rs",
+        "crates/nethacked-agent/src/bin/jsonrpc.rs",
+        "crates/nethacked-agent/src/graphql.rs",
+        "crates/nethacked-wasm/src/lib.rs",
+        "crates/nethacked-py/src/lib.rs",
+        "crates/nethacked-agent/tests/protocol_tests.rs",
+        "crates/nethacked-agent/tests/graphql_http_test.rs",
+        "crates/nethacked-agent/tests/selected_wand_actions.rs",
+        "python/nethacked_gym/env.py",
+        "python/tests/test_rl.py"
+      ],
+      "scope": "machine APIs common selector/cancel, carried inventory index+opaque token queries and explicit numeric/string arguments, including both independent JSON-RPC library/bin routes; no charged prompt continuation claim (owned by S1-MC after D1)",
+      "setup": "When mcp.rs STEP_ACTIONS advertises the new names, S1-M adapts both enum tests in commands.rs and protocol_tests.rs in the same stage. All old-action inputs, loops and assertions remain; missing-index rejection is a separate new test."
+    },
+    "P11a-S1-MC": {
+      "id": "P11a-S1-MC",
+      "parent": "P11a",
+      "cross_refs": [
+        "UI01"
+      ],
+      "prerequisites": [
+        "P11a-S1-M",
+        "P11a-D1",
+        "P11a-P1"
+      ],
+      "ready_after": "accepted S1-M adapters and accepted D1 native prepare/AwaitDirection/continue/pending-save contract plus P1 preflight; narrow per-route adapter audit and independent review before implementation",
+      "files": [
+        "crates/nethacked-agent/src/commands.rs",
+        "crates/nethacked-agent/src/session.rs",
+        "crates/nethacked-agent/src/observation.rs",
+        "crates/nethacked-agent/src/mcp.rs",
+        "crates/nethacked-agent/src/jsonrpc.rs",
+        "crates/nethacked-agent/src/bin/jsonrpc.rs",
+        "crates/nethacked-agent/src/graphql.rs",
+        "crates/nethacked-wasm/src/lib.rs",
+        "crates/nethacked-py/src/lib.rs",
+        "crates/nethacked-agent/tests/protocol_tests.rs",
+        "crates/nethacked-agent/tests/graphql_http_test.rs",
+        "crates/nethacked-agent/tests/selected_wand_actions.rs",
+        "python/nethacked_gym/env.py",
+        "python/tests/test_rl.py"
+      ],
+      "outcome": "post-D1 charged machine continuation adapters, schemas and per-route transcripts, including the separate JSON-RPC binary; accepted evidence is mandatory for S1-F and A1 all-ten exit",
+      "interface": "Expose the reviewed D1 native prepare result, opaque pending continuation identity and continue result through each owned adapter; carry AwaitDirection/terminal boundaries and explicit direction cancellation distinctly from pre-selection CancelZapSelection. Exact transport method/field names and Python bookkeeping timing are fixed in this child audit against accepted D1, never guessed in S1. Implement adapter tests in the owned files below; do not precollect direction or replay a complete S1 selected action as continuation.",
+      "file_restrictions": {
+        "crates/nethacked-agent/src/commands.rs": "Only reviewed new prepare/continuation argument helpers and direction validation; preserve S1 complete-action defaults and all legacy parsing.",
+        "crates/nethacked-agent/src/bin/jsonrpc.rs": "Add native charged prepare/continue line-protocol routes while preserving flat parser errors and existing startup/get_state/success behavior; binary transcript must exercise the actual executable, not the library dispatcher.",
+        "crates/nethacked-wasm/src/lib.rs": "Own structured prepare/continue exports and inline adapter regression fixtures; validate emitted wasm-bindgen JS/TS declarations as external artifacts, never hand-edit tracked generated files."
+      },
+      "required_transcript": "carried index/token selection; prepare consumes signed charge/backfire before AwaitDirection; owned NoDir completes without prompt; explicit self/up/down/compass continuation and direction cancellation retain D1 charge/time cleanup; backfire/death/dust terminal exits; duplicate/stale continuation rejection; pending save/load/oldload evidence through reviewed D1 API; exact native events/RNG/charge/time boundaries, no second charge or duplicated effects",
+      "adapter_evidence": [
+        {
+          "surface": "MCP",
+          "adapter_files": [
+            "crates/nethacked-agent/src/mcp.rs"
+          ],
+          "test_files": [
+            "crates/nethacked-agent/tests/protocol_tests.rs"
+          ],
+          "required": "tools/schema and real prepare/continue tool-call transcripts; existing MCP error envelope and pre-step invalid-argument boundary; carried index/token selection; prepare consumes signed charge/backfire before AwaitDirection; owned NoDir completes without prompt; explicit self/up/down/compass continuation and direction cancellation retain D1 charge/time cleanup; backfire/death/dust terminal exits; duplicate/stale continuation rejection; pending save/load/oldload evidence through reviewed D1 API; exact native events/RNG/charge/time boundaries, no second charge or duplicated effects"
+        },
+        {
+          "surface": "JSON-RPC library",
+          "adapter_files": [
+            "crates/nethacked-agent/src/jsonrpc.rs"
+          ],
+          "test_files": [
+            "crates/nethacked-agent/tests/protocol_tests.rs"
+          ],
+          "required": "library request/response transcript with INVALID_PARAMS -32602 for malformed new arguments before session.step; carried index/token selection; prepare consumes signed charge/backfire before AwaitDirection; owned NoDir completes without prompt; explicit self/up/down/compass continuation and direction cancellation retain D1 charge/time cleanup; backfire/death/dust terminal exits; duplicate/stale continuation rejection; pending save/load/oldload evidence through reviewed D1 API; exact native events/RNG/charge/time boundaries, no second charge or duplicated effects"
+        },
+        {
+          "surface": "JSON-RPC binary",
+          "adapter_files": [
+            "crates/nethacked-agent/src/bin/jsonrpc.rs"
+          ],
+          "test_files": [
+            "crates/nethacked-agent/tests/protocol_tests.rs"
+          ],
+          "required": "process-level stdio transcript of actual jsonrpc binary, including initial observation/get_state, carried query, selection, flat {error: message} malformed argument responses before session.step, and independent prepare/continue routes; never substitute the library transcript; carried index/token selection; prepare consumes signed charge/backfire before AwaitDirection; owned NoDir completes without prompt; explicit self/up/down/compass continuation and direction cancellation retain D1 charge/time cleanup; backfire/death/dust terminal exits; duplicate/stale continuation rejection; pending save/load/oldload evidence through reviewed D1 API; exact native events/RNG/charge/time boundaries, no second charge or duplicated effects"
+        },
+        {
+          "surface": "GraphQL",
+          "adapter_files": [
+            "crates/nethacked-agent/src/graphql.rs"
+          ],
+          "test_files": [
+            "crates/nethacked-agent/tests/graphql_http_test.rs"
+          ],
+          "required": "HTTP mutation/query/schema and GraphQL Error transcript; carried index/token selection; prepare consumes signed charge/backfire before AwaitDirection; owned NoDir completes without prompt; explicit self/up/down/compass continuation and direction cancellation retain D1 charge/time cleanup; backfire/death/dust terminal exits; duplicate/stale continuation rejection; pending save/load/oldload evidence through reviewed D1 API; exact native events/RNG/charge/time boundaries, no second charge or duplicated effects"
+        },
+        {
+          "surface": "WASM",
+          "adapter_files": [
+            "crates/nethacked-wasm/src/lib.rs"
+          ],
+          "test_files": [
+            "crates/nethacked-wasm/src/lib.rs"
+          ],
+          "required": "inline structured-export regression fixtures plus actual exported JSON transcript, {error} responses and emitted wasm-bindgen declarations as external evidence; carried index/token selection; prepare consumes signed charge/backfire before AwaitDirection; owned NoDir completes without prompt; explicit self/up/down/compass continuation and direction cancellation retain D1 charge/time cleanup; backfire/death/dust terminal exits; duplicate/stale continuation rejection; pending save/load/oldload evidence through reviewed D1 API; exact native events/RNG/charge/time boundaries, no second charge or duplicated effects"
+        },
+        {
+          "surface": "AgentSession shared commands",
+          "adapter_files": [
+            "crates/nethacked-agent/src/commands.rs",
+            "crates/nethacked-agent/src/session.rs",
+            "crates/nethacked-agent/src/observation.rs"
+          ],
+          "test_files": [
+            "crates/nethacked-agent/tests/selected_wand_actions.rs"
+          ],
+          "required": "transport-free public prepare/continue and pending snapshot/save restoration transcript; carried index/token selection; prepare consumes signed charge/backfire before AwaitDirection; owned NoDir completes without prompt; explicit self/up/down/compass continuation and direction cancellation retain D1 charge/time cleanup; backfire/death/dust terminal exits; duplicate/stale continuation rejection; pending save/load/oldload evidence through reviewed D1 API; exact native events/RNG/charge/time boundaries, no second charge or duplicated effects"
+        },
+        {
+          "surface": "Python string actions",
+          "adapter_files": [
+            "crates/nethacked-py/src/lib.rs",
+            "python/nethacked_gym/env.py"
+          ],
+          "test_files": [
+            "python/tests/test_rl.py"
+          ],
+          "required": "string/structured prepare/continue/cancel transcript, ValueError before world or RL bookkeeping, reviewed reward/step_count timing without double bookkeeping; carried index/token selection; prepare consumes signed charge/backfire before AwaitDirection; owned NoDir completes without prompt; explicit self/up/down/compass continuation and direction cancellation retain D1 charge/time cleanup; backfire/death/dust terminal exits; duplicate/stale continuation rejection; pending save/load/oldload evidence through reviewed D1 API; exact native events/RNG/charge/time boundaries, no second charge or duplicated effects"
+        },
+        {
+          "surface": "Python numeric/RL action22",
+          "adapter_files": [
+            "crates/nethacked-py/src/lib.rs",
+            "python/nethacked_gym/env.py"
+          ],
+          "test_files": [
+            "python/tests/test_rl.py"
+          ],
+          "required": "explicit selected22 argument/dedicated-method prepare/continue transcript and default22 East6/Discrete26 regression; ValueError before bookkeeping; distinct selection and charged direction cancellation; carried index/token selection; prepare consumes signed charge/backfire before AwaitDirection; owned NoDir completes without prompt; explicit self/up/down/compass continuation and direction cancellation retain D1 charge/time cleanup; backfire/death/dust terminal exits; duplicate/stale continuation rejection; pending save/load/oldload evidence through reviewed D1 API; exact native events/RNG/charge/time boundaries, no second charge or duplicated effects"
+        }
+      ]
+    },
+    "P11a-S1-F": {
+      "depends": [
+        "P11a-S1-M",
+        "P11a-C1",
+        "P11a-B1",
+        "P11a-D1",
+        "P11a-P1",
+        "P11a-S1-MC"
+      ],
+      "files": [
+        "crates/nethacked-tui/src/main.rs",
+        "crates/nethacked-tui/src/keys.rs",
+        "web/js/game.js",
+        "web/play/play.js",
+        "web/index.html",
+        "web/css/app.css"
+      ],
+      "consumes": {
+        "interactive_owner": "S1-F owns TUI and both browser implementations/transcripts in its six files.",
+        "machine_owner": "S1-MC owns MCP, JSON-RPC library and binary separately, GraphQL, WASM, AgentSession shared commands and both Python routes, with explicit adapter/test files below.",
+        "exit": "Accept every frontends entry separately. Require both JSON-RPC subroute transcripts within the single declared surface, S1-M index/token/schema/selection evidence, S1-MC charged prepare/AwaitDirection/continue/cancel/save evidence and S1-F interactive/menu evidence. No representative-surface or broad parity substitution."
+      }
+    },
+    "P11a-A1": {
+      "depends": [
+        "P11a-C1",
+        "P11a-B1",
+        "P11a-D1",
+        "P11a-P1",
+        "P11a-S1-M",
+        "P11a-S1-MC",
+        "P11a-S1-F"
+      ],
+      "consumes": "aggregate all P11a branch/frontend/save review; consume accepted S1-M inventory/selection, S1-MC post-D1 per-machine adapter/transcript evidence (JSON-RPC library and actual binary separately), and S1-F interactive/menu evidence for all ten mandatory surfaces; no representative-route or broad parity shortcut; global unresolved configuration prevents false conformance acceptance"
+    }
+  },
+  "verification": {
+    "kind": "artifact consistency only",
+    "backend_six_files_unchanged": true,
+    "original53_families_unchanged": true,
+    "ten_surface_names_unchanged": true,
+    "c1_p1_b1_d1_objects_unchanged": true,
+    "dependency_graph_acyclic": true,
+    "setup_and_continuation_evidence_files_owned": true,
+    "prior_evidence_bindings_and_packets_unchanged": true,
+    "unrelated_contract_fields_unchanged": true,
+    "implementation_tests_or_builds_run": false,
+    "review_PASS_claimed": false
+  },
+  "unresolved": [
+    "Independent re-review pending.",
+    "D1 native continuation and M/MC adapter API choices remain explicit narrow successor audit obligations; this repair assigns ownership and dependencies without implementing or accepting those interfaces."
+  ],
+  "usage": "unknown; no accounting exposed"
+}

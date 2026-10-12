@@ -1,0 +1,12 @@
+{
+  "verdict": "PASS_CONTRACT_ONLY",
+  "review_bindings_verified": 13,
+  "source_input_count": 345,
+  "source_digest": "7b691c6e14d0449c37776f29b851ff7866bb2e41551b1c883458e5d0de416e79",
+  "family_count": 53,
+  "child_count": 28,
+  "all_dependency_ids_resolved": true,
+  "acyclic": true,
+  "full_gates_reused": true,
+  "implementation_accepted": false
+}

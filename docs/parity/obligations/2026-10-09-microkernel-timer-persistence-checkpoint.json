@@ -1,0 +1,145 @@
+{
+  "schema": 1,
+  "status": "reviewed_and_verified_in_containing_commit",
+  "baseline_head": "d86900848bc8f7378b105924a107a7669062c1c4",
+  "milestone": "M4d-D4b",
+  "scope": "Timer-local persistence and typed owner-service callback graph reconstruction; whole-session capture/activation remains D4e",
+  "contract": {
+    "path": "/Users/dmytro/github/NetRust/docs/plans/2026-10-08-owner-persistence-contract.md",
+    "sha256": "7f04e7118c33245a6aa0da16352eaa022d7753dc191bddaeb4963a9ddf55b569"
+  },
+  "prerequisite": {
+    "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-09-microkernel-workflow-persistence-checkpoint.json",
+    "sha256": "244b552d8fe421d7badfc78ae0bf7e3bb7e8b6704f6efc525cbc89f51e02c87d"
+  },
+  "runtime": "Optional nethacked-timers and nethacked-owner-services persistence features, with bounded sealed kernel/owner/workflow metadata bridges",
+  "review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-TIMER-PERSISTENCE/review-evidence/REVIEW.md",
+    "sha256": "15957cca2057f4640b9131bc495fff5d0a43227f5c163cca0b34d5f80b2ff9a5"
+  },
+  "readback": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-TIMER-PERSISTENCE/readback-evidence/HANDOFF.md",
+    "sha256": "6c582dfacf445878f220d124b6313f7d5ca57b0f0317c9b5f885a76efd6b9e30"
+  },
+  "readback_verification": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-TIMER-PERSISTENCE/readback-root-verification.json",
+    "sha256": "17bf21393ec8d7251ae029d6143dc5b5796324d4523df4144ca6ad0251fbb301"
+  },
+  "implementation_handoff": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-TIMER-PERSISTENCE/implementation-evidence/HANDOFF.md",
+    "sha256": "a2d430b06772183b24fb5c6112cd4f8bd3454e06e8719ec227d09a1a620a7762"
+  },
+  "repair_handoff": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-TIMER-PERSISTENCE/repair-evidence/HANDOFF.md",
+    "sha256": "1ff4e6b31f200f47169c9f191a63cc02138422cf89ee81d5ad5f12399863a230"
+  },
+  "repair_delta": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-TIMER-PERSISTENCE/repair-evidence/repair.diff",
+    "sha256": "ad5fd3a14190a4f7aed7cee22f83656b676ff2f597ffd5e7c7b815f68a29d148"
+  },
+  "source_bindings": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-TIMER-PERSISTENCE/readback-source.json",
+    "sha256": "e15d793df413454fc7d2c81fa12cfce01d22517d76da45702ed10f4f9e45420a"
+  },
+  "full_gates": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-TIMER-PERSISTENCE/final-gates/accepted.json",
+    "sha256": "ec81de0975a2ea423dfb889d6421ef73c9bb8595db9d81e1ed7c1deac03862a6"
+  },
+  "gate_result": {
+    "head": "d86900848bc8f7378b105924a107a7669062c1c4",
+    "tests": 1228,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "digest": "0ddeb836bf36bdfb51735d3f1ae75940a7ddf6661520c163bf6f2b652bb72478",
+    "checks": 12
+  },
+  "source_input_count": 474,
+  "focused_checks": {
+    "timer_adapter_default": 28,
+    "timer_adapter_persistence": 40,
+    "additional_subprocess_child_executions": 6,
+    "kernel_owners_workflows_all_features": 159,
+    "independent_readback": "Actual-byte repeated subprocess test, allocator boundaries, three external public API probes including malformed ordering, failed-stage capture and concurrent exhaustion",
+    "scoped_fmt_clippy": "pass",
+    "actual_timer_adapter_persistence_wasm32": "pass",
+    "repair_checks": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-TIMER-PERSISTENCE/repair-evidence/verification-summary.json",
+      "sha256": "5efe8b92780b54eeff0928dc3a965e92119df286754b5a7838411e02f3b1c503"
+    },
+    "readback_checks": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-TIMER-PERSISTENCE/readback-evidence/verification-summary.json",
+      "sha256": "4069fe59a33aaa625f7330fa19d6ec9c13fadc999f2f46baacf17dbab562764f"
+    }
+  },
+  "verified_behavior": [
+    "Bounded canonical checkpoints preserve pending, cancelled, completed, rejected, faulted and terminal Busy tasks, deadlines, payloads, residency, tie order, serial counters and provenance.",
+    "Capture is observational and refuses active delivery or held guards; reconstruction executes no select/ready/delivery/callback/discard transition.",
+    "Typed weak target routes, old behavior scopes and shared callback bundles reconstruct through independently approved catalogs and fresh destination-bound identities; old native/Wasm callbacks retain exact code while future dispatch differs.",
+    "Terminal Busy cleanup preserves committed owner state and historical publication prefix, retrying discard without redelivery. Ordered aliases share reconstructed allocations and preserve lifetimes.",
+    "Snapshot-only cleanup/resource roots retain cancelled/empty queue history without creating executable authority; sealed metadata access remains bound to actual capture/rebuild contexts.",
+    "V2 timer checkpoints carry namespace high-water history; fresh allocation reserves above saved and current-process history atomically, including ordinary/disposed queues and failed builds known at capture.",
+    "Five generation processes across four reloads reject every earlier held TaskId with exact InvalidHandle and unchanged tasks; fresh cancellation succeeds. Concurrent exhaustion returns Limit without wrap or reuse.",
+    "Malformed graphs, catalog identities, current grants, target scopes and counters refuse before avoidable semantic work; failed staging preserves destinations and permits valid retry."
+  ],
+  "findings_resolved": [
+    "R1 process-local namespace reset previously accepted old pre-save TaskId in a freshly authorized Cancel after reload; persistent history and actual subprocess regression resolve it."
+  ],
+  "failure_history": {
+    "original_writer": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-TIMER-PERSISTENCE/implementation-evidence/failure-ledger.json",
+      "sha256": "30d1aec5e1b46355dc07caa1c7515f6a75683c13d129e13d77fb7e8723d8fc0e"
+    },
+    "independent_audit": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-TIMER-PERSISTENCE/review-evidence/failure-audit.json",
+      "sha256": "4021d7d716a0e13f144603ddbfd39a56552a191f179bafe7dc0caaab880e482e"
+    },
+    "repair": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-TIMER-PERSISTENCE/repair-evidence/failure-ledger.json",
+      "sha256": "6e711a6d8e05bcc900f7dfdd645cb349598bfd2a5b46e0598a399115ffdbe8c6"
+    },
+    "readback": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-TIMER-PERSISTENCE/readback-evidence/failure-ledger.json",
+      "sha256": "0539649d7b0169a53aead49810f39213fa4083901ee5ee93603d08a7897e19c5"
+    },
+    "note": "Original writer17 failed commands lack reliable per-cause counters, so historical retry-limit compliance cannot be certified. History retained without resets. Repair fixture ABI-observation and diagnostic path causes each one failed attempt; readback zero-test filter corrected and diagnostic miss retained. Requested models recorded; actual backend model unknown."
+  },
+  "trust_premises": [
+    "Native codec/factory identity, fidelity, purity, bounded execution, private allocation, no escaped aliases and effect-free drops remain host premises.",
+    "Namespace nonreuse covers history carried in the checkpoint and receiving-process allocations; unrelated-host global uniqueness and history absent from saved bytes are not claimed.",
+    "Local service reconstruction is not whole HostBundle capture, authority-epoch exclusion, crash atomicity or a Lean-to-Rust refinement proof."
+  ],
+  "usage": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-TIMER-PERSISTENCE/implementation/usage.json",
+      "sha256": "231b0c999c612e64d82bfa3c2e60ffc6471542231e69b0093f6b5b305ddb088d"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-TIMER-PERSISTENCE/review/usage.json",
+      "sha256": "6a792dcd7afeed130d08a05510e1993001604ce48be74b4aff2c63e7c4e2142a"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-TIMER-PERSISTENCE/repair/usage.json",
+      "sha256": "76971908ebb6eae94434633a136bbd0a6b12bbc6b167b27aea9969de158ffba1"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-TIMER-PERSISTENCE/readback/usage.json",
+      "sha256": "7724743207c3b2f6e15b1ffc11cabe9d0257f1613e08dc23a96f976c4a1a9b51"
+    }
+  ],
+  "meter_note": "All four model phases exceeded their soft thresholds; root usage unknown. Narrowed repair/readback reused unrelated prior review, but no savings claim.",
+  "A5_accepted": false,
+  "aggregate_D4_accepted": false,
+  "goldens_changed": false,
+  "existing_committed_tests_changed": false,
+  "parity_families_closed": 0,
+  "residuals": [
+    "D4c historical/disposed recorded-input source and ledger persistence without resampling.",
+    "D4d optional resource-service state, policies, history and cleanup when enrolled.",
+    "D4e coherent capture/hidden HostBundle and atomic authority-epoch activation with all original combined cases.",
+    "D5 legacy save compatibility, nine independent NetHack state owners and public owner-native billing continuation; D6 fresh-process full A5.",
+    "M5 populated-session extension slice, M6 all production-domain migration, M7 final acceptance; separate53-family behavior parity backlog remains open."
+  ]
+}

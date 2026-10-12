@@ -1,0 +1,66 @@
+{
+  "schema": "netrust-audit-contract-checkpoint-v1",
+  "status": "local_contract_review_pass_global_pin_unresolved_docs_pass",
+  "source_conformance_accepted": false,
+  "implementation_started": false,
+  "family_closed": false,
+  "scope": "configuration bootstrap partial and locally audited P11a branch contracts; all53family/fullgoal obligations remain",
+  "baseline": {
+    "head": "2700ec46ec699481f6e8972fef1d866f172c3fbb",
+    "branch": "feat/monster-hp-d8",
+    "input_count": 342,
+    "input_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c"
+  },
+  "review_final": "docs/parity/obligations/2026-10-07-bootstrap-p11a/review-final.json",
+  "initial_review": "docs/parity/obligations/2026-10-07-bootstrap-p11a/review.json",
+  "repair_proof": "docs/parity/obligations/2026-10-07-bootstrap-p11a/repair-proof.json",
+  "durable_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/contract-reviewed",
+  "artifact_sha256": {
+    "configuration.md": "0d52a97079f89b651b8bd325fe68bd8d2789e60f9a030940f4a2060cee608570",
+    "configuration.json": "09bf86737e2fac5be2abae54a7a5ff896ca3b50c07093923e93cd5dfd975c48f",
+    "p11a-contract.md": "daf26469fa86e8e2b8bf657e58d3229b612b9531333eae0eb5b8808a7dc96c22",
+    "p11a-contract.json": "515f264382ae29e878a353969715480d19b488e2f8283a68768828b56d2b212e",
+    "ready-packet.md": "c43ba50a03200d6f1671fa157bfccbef2e4f2aa584a6de17d5ec87fbda48215f",
+    "review-final.md": "61da02b3435e9cddaca1ef2eacc256ac9e00098d36716e57eb1bf40e08318f27",
+    "review-final.json": "f63799f0821294995faa52132370ee7f9fb82604a47328e5c1cbbf7ac4846f4a",
+    "review.md": "de2564974309cc26b94d061c83a347875a74469abd9c3ecfb0a273afca68d974",
+    "review.json": "60ae5f3b930c69f9eb32b5956b30b6bb85aacde3bee4f062da1c89ff6040bfec",
+    "repair-proof.json": "f6d1a0b049a811bfe7eb3b484dfb29d1eea4a1ff33da2035d6f0f043f200fa23",
+    "root-anchor-proof.json": "b0e349f9f793d9bf751cd9064927b9116ccac1192be76e132af14131dea6bb63"
+  },
+  "root_verified_rust_anchors": 26,
+  "affected_inventory_rows": 9,
+  "inventory_status_changes": false,
+  "next_unit": "BOOTSTRAP-C-CONDITIONALS",
+  "verification_policy": "same-source999/3gold/12 evidence reusable for this documentation-only checkpoint; fresh docs/parity before commit",
+  "verification": {
+    "review": "PASS_LOCAL_CONTRACT_REPAIRS",
+    "source_inputs": 342,
+    "source_input_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+    "source_hashes_all_unchanged": true,
+    "source_acceptance_reused": {
+      "tests": 999,
+      "goldens": 3,
+      "gates": 12
+    },
+    "fresh_documentation_gates": [
+      {
+        "check": "parity",
+        "exit": 0,
+        "seconds": 0.02,
+        "log": "/tmp/netrust-parity-bootstrap/doc-gates/parity.log"
+      },
+      {
+        "check": "docs",
+        "exit": 0,
+        "seconds": 0.3,
+        "log": "/tmp/netrust-parity-bootstrap/doc-gates/docs.log"
+      }
+    ],
+    "family_count": 53,
+    "children_registered": 12,
+    "source_conformance_accepted": false,
+    "closed_families": 0,
+    "next_unit": "BOOTSTRAP-C-CONDITIONALS"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "unit": "M6-I1",
+  "status": "accepted_in_this_commit",
+  "parent": "418fb3ca92d956c3521ac5281e6c2ae1395a176a",
+  "scope": "Existing cancellation frame, equipment reconciliation and derived hero AC; default dispatcher cutover/full Wait and full C parity remain open",
+  "focused_passed": 75,
+  "new_frame_tests": 8,
+  "workspace_passed": 1518,
+  "checks": 12,
+  "goldens": [
+    "golden_vanilla_event_logs_are_unchanged",
+    "golden_vanilla_bestiary_combat_is_unchanged",
+    "golden_vanilla_runs_are_unchanged"
+  ],
+  "non_documentation_inputs": 551,
+  "source_digest": "547451139d20015e09ca1c85be5c3c575b67a32e719dfae101c56d415871ea1e",
+  "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I1/review/answer.txt",
+  "review_sha256": "443fb26722a837ae5e6020686ae288982def9ad8d47b6be9265bf891d8b24d9a",
+  "full_gate_acceptance": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I1/final-gates/accepted.json",
+  "full_gate_acceptance_sha256": "da7d799d370433c0a1a1d8220a66d5e5d3188e44e430a9ba79c238df0652d677",
+  "late_refusal": "Real delegated Scope excludes Session record; Equipment/Actors published prefix, unchanged Session, explicit Authority error, full native equality and capture/reload verified",
+  "limits": "At most32 deduplicated frame armor/dressing facts; legacy adapter remains unbounded; unsupported actions/time contexts refuse before publication",
+  "review_usage": {
+    "cached_input_tokens": 101376,
+    "input_tokens": 136651,
+    "output_tokens": 767,
+    "reasoning_output_tokens": 388,
+    "uncached_input_tokens": 35275
+  },
+  "implementation_usage": "actual collaboration and root telemetry unavailable"
+}

@@ -22,6 +22,10 @@ pub enum ActionAst {
     PickUp,
     Drop(usize),
     Wield(usize),
+    /// Put on an owned suit of armor; subsequent actions wait while dressing.
+    Wear(usize),
+    /// Take off the selected worn suit of armor.
+    Remove(usize),
     Dip {
         item_index: usize,
         into_water: WaterType,
@@ -44,6 +48,15 @@ pub enum ActionAst {
         dir: Direction,
         energy: u32,
     },
+    /// Select an index in the complete directly carried inventory snapshot.
+    ZapSelectedWand {
+        item_index: u32,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        expected_item: Option<SlotId>,
+        dir: Direction,
+        energy: u32,
+    },
+    CancelZapSelection,
     Wait,
     Pray,
     Pay,

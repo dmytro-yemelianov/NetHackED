@@ -1,0 +1,74 @@
+{
+  "schema": 1,
+  "status": "verified_for_containing_commit",
+  "baseline_head": "66c65b750b3864f2f101b3f9871825e25ede188c",
+  "milestone": "M3a",
+  "scope": "Generic world-independent kernel/guest loader; M3 remains incomplete",
+  "backend": "wasmi =2.0.0; pinned interpreter; actual wasm32 build PASS",
+  "new_tests": 16,
+  "reviews": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RUNTIME/review/answer.txt",
+      "sha256": "764eb8a0162cf7a76bca6c62ae1b4bf1afeb51c7d5014efb0cd6a0fc16daeca6"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RUNTIME/repair-review/answer.txt",
+      "sha256": "a3afe11994f2ce77aa3963c98e3d5115b44747a2878e214db267a96d15bd7fdb"
+    }
+  ],
+  "review_inputs": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RUNTIME/repair-binding.json",
+    "sha256": "f9d93d09c22fbab9c02cbd9279d854ac02aacba621e95e1b194c7b1aefdfd1d3"
+  },
+  "full_gates": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RUNTIME/full-gates/accepted.json",
+    "sha256": "3db5e6560d219ec315608acfba5ce046f0e45d0cd6165c5bd0d478b023eb7306"
+  },
+  "gate_result": {
+    "head": "66c65b750b3864f2f101b3f9871825e25ede188c",
+    "tests": 1060,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "digest": "be060ee5b5c1122b49ee318900830374f48a8b25ce682df97b3583e576ce153d",
+    "checks": 12
+  },
+  "focused_checks": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RUNTIME/root-focused/results.json",
+    "sha256": "0f88b7bcd7f0aef72d7c41f509455f15303fc32639ccc46ff0926a1ac4a47f1d"
+  },
+  "failed_attempts_retained": [
+    "writer DNS failures; uncompiled terminal draft",
+    "initial ABI fixture finding",
+    "first start mutation survived due zero instantiation fuel; second isolated parser mutation correctly fails"
+  ],
+  "production_repair": false,
+  "test_repair": "ABI-complete forbidden imports/starts and typed refusals/control; private-engine parser policy test",
+  "usage": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RUNTIME/implementation/usage.json",
+      "sha256": "dc433a186e957db589b2ce31125b66ec8efc88d17a6cad76c77be55f795cb5ac"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RUNTIME/review/usage.json",
+      "sha256": "23617cf5142d71965d563f9075fad3b3b13cb5b9b3fc4dad631d8404ff4b1af9"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RUNTIME/repair-review/usage.json",
+      "sha256": "2f06d4922e5063ff80afb8f2d722eb8f056294fec16d52c59c16ad79688b2fd8"
+    }
+  ],
+  "meter_note": "Writer74863uncached/32302output and initialreview59827uncached exceed soft thresholds. Narrowrepair26326uncached/1253output; guard triggers on total input. Root usage unknown, no savings/compliance claim.",
+  "old_rust_tests_helpers_goldens_changed": false,
+  "native_goal_status": "pause requested after containing checkpoint for separate Astra cross-layer review",
+  "parity_families_closed": 0,
+  "residuals": [
+    "M3b optional resource coordinator/full atomic A3",
+    "M4 actual workflow/codec/service/lifecycle persistence",
+    "M5 populated NetHack integration/full selected-wand",
+    "M6 all existing-domain module migrations/M7 composed integration audit",
+    "Native callbacks trusted, guest memory ephemeral, committed prefixes retained; no composed Rust/Lean refinement"
+  ]
+}

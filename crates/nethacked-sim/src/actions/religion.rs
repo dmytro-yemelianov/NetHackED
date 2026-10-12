@@ -164,6 +164,12 @@ impl SimulationWorld {
                         }
                         SacrificeResult::DivineGift(artifact_name) => {
                             let gift_record = ItemRecord {
+                                definition: None,
+                                saved_monster_traits: None,
+                                artifact_id: self
+                                    .ruleset
+                                    .artifact_id_for_item(&artifact_name)
+                                    .map(str::to_owned),
                                 name: artifact_name.clone(),
                                 class: ItemClass::Weapon,
                                 weight: 30,
@@ -174,10 +180,18 @@ impl SimulationWorld {
                                 erosion: 0,
                                 proofed: true,
                                 location: ItemLocation::CarriedBy(self.player_id),
+                                corpse_no_revive: false,
+                                corpse_species: None,
+                                is_ice_box: false,
                                 corpse_race: None,
                                 corpse_age: 0,
                                 rot_threshold: 50,
                                 recharged: 0,
+                                quantity: 1,
+                                poisoned: false,
+                                locked: false,
+                                trapped: false,
+                                trap_known: false,
                             };
                             self.arena.spawn_item(gift_record);
                             events.push(GameEvent::LogMessage {

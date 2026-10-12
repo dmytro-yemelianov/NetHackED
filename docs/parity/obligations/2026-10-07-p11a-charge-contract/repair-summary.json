@@ -1,0 +1,285 @@
+{
+  "schema": "netrust.p11a-c1.contract-repair-summary.v1",
+  "status": "repair proposal awaiting independent rereview; no PASS or runtime acceptance claim",
+  "changed_paths": [
+    "contract.json",
+    "contract.md",
+    "ready-packet.md",
+    "evidence.json",
+    "repair-summary.json"
+  ],
+  "changed_json_pointers": {
+    "contract.json": [
+      "/api/native",
+      "/children/0/depends/0",
+      "/children/0/restrictions",
+      "/children/0/status",
+      "/children/1/depends/0",
+      "/children/1/depends/1",
+      "/children/1/outcome",
+      "/children/1/status",
+      "/children/2/depends/1",
+      "/children/2/depends/2",
+      "/children/2/depends/3",
+      "/children/2/outcome",
+      "/children/3/depends/3",
+      "/children/4",
+      "/children/5",
+      "/children/6",
+      "/children/7",
+      "/dependency_policy",
+      "/fixtures/0/draw_prefix",
+      "/fixtures/0/draws",
+      "/fixtures/4/draw_prefix",
+      "/fixtures/4/draws",
+      "/fixtures/5/draw_prefix",
+      "/fixtures/5/draws",
+      "/fixtures/6/draw_prefix",
+      "/fixtures/6/draws",
+      "/fixtures/7/draw_prefix",
+      "/fixtures/7/draws",
+      "/fixtures/8/draw_prefix",
+      "/fixtures/8/draws",
+      "/fixtures/8/exercise_obligation",
+      "/fixtures/8/expect",
+      "/fixtures/9/draw_prefix",
+      "/fixtures/9/draws",
+      "/fixtures/9/exercise_obligation",
+      "/mandatory_successors/2/depends/1",
+      "/mandatory_successors/2/depends/2",
+      "/mandatory_successors/2/exit",
+      "/mandatory_successors/3/depends",
+      "/mandatory_successors/7/cross_refs",
+      "/mandatory_successors/7/depends",
+      "/mandatory_successors/7/family",
+      "/mandatory_successors/8/cross_refs",
+      "/mandatory_successors/8/depends",
+      "/mandatory_successors/10",
+      "/ordering/0",
+      "/ordering/4",
+      "/proof/backend",
+      "/rng_contract",
+      "/status",
+      "/unresolved/1"
+    ],
+    "evidence.json": [
+      "/artifact_hashes/contract.json",
+      "/artifact_hashes/contract.md",
+      "/artifact_hashes/ready-packet.md",
+      "/c_sources/0/snippets/3",
+      "/c_sources/0/snippets/4",
+      "/c_sources/9",
+      "/family_id_verification",
+      "/packet_bounds/code_anchor_entries",
+      "/repair_review_binding",
+      "/repair_scope",
+      "/repair_source_proof",
+      "/rust_sources/4/snippets/1",
+      "/verification/repair_document_checks"
+    ]
+  },
+  "markdown_changes": {
+    "contract.md": [
+      "opening status/historical-result wording",
+      "Source law and order: RNG prefixes/conditional exercise/order/no-draw/events",
+      "Lifetime boundary: accepted narrow billing gate",
+      "Coherent prerequisites: exact acyclic accepted dependencies and ownership",
+      "Compatibility and acceptance: separate P11b/OB07 obligations"
+    ],
+    "ready-packet.md": [
+      "rereview status",
+      "S1-only API1 and accepted narrow child gates",
+      "prefix/exercise/source/family/scope handoff",
+      "remaining acceptance requirements"
+    ]
+  },
+  "source_proof": [
+    {
+      "path": "/Users/dmytro/github/NetHack::16ff59115315917b93185d026aeefea06db9b0f4:src/attrib.c",
+      "git_blob": "aaad2dbd0f333bf258dd0d43aed96863ee2db21f",
+      "sha256": "4dfbf91f63855512406571d431e59ce1395a73bb5dc0050ca3710bf5c740ba79",
+      "added_ranges": [
+        [
+          486,
+          517
+        ]
+      ]
+    },
+    {
+      "path": "/Users/dmytro/github/NetHack::16ff59115315917b93185d026aeefea06db9b0f4:src/zap.c",
+      "git_blob": "8aefcb1ea3c64cb4bac71f7149d5795ec106786c",
+      "sha256": "8ee02bd7aa29b026d6b5a2e0017ddf402fcfc6fc81037e35ceda2d86467547cb",
+      "added_ranges": [
+        [
+          2605,
+          2615
+        ],
+        [
+          2649,
+          2656
+        ]
+      ]
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-sim/src/world.rs",
+      "sha256": "9e4cd1aedb4b455e5df5fb949dd908b2f9a9017a2fce067856a1d7d5e7caf7ad",
+      "added_ranges": [
+        [
+          1203,
+          1233
+        ]
+      ],
+      "conclusion": "exercise_attr only logs; no AEXE state/RNG mutation"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-07-autonomous-parity-run.json",
+      "sha256": "b2dbd694363a90e94926ba8dbb0ca2f653db349d5bc15abdbd9ee37ed3d5d55b",
+      "read_scope": "families IDs only; no scope closure/status/history audit",
+      "existing_family_count": 53,
+      "verified_existing_ids": [
+        "DG06",
+        "EQ03",
+        "EQ04",
+        "HE02",
+        "HE07",
+        "OB07",
+        "P11a",
+        "P11b",
+        "UI01",
+        "UI04"
+      ],
+      "distinct_ids": [
+        "P11b",
+        "OB07"
+      ]
+    }
+  ],
+  "review_binding": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/review-initial/review-initial.json",
+    "sha256": "5dc19f8c1f8bc2b1d85d062f6a3b7e5d332a64b8ebca59b38d707694c861dd7b",
+    "repair_basis": "C1-R1/R2/R3 findings and checks only; no other reviews/profile/baseline content used for repair",
+    "verdict_consumed": "NEEDS_CHANGES",
+    "acceptance_claim": false
+  },
+  "finding_repairs": {
+    "C1-R1": {
+      "pointers": [
+        "/rng_contract",
+        "/fixtures/8/draw_prefix",
+        "/fixtures/8/exercise_obligation",
+        "/fixtures/9/draw_prefix",
+        "/fixtures/9/exercise_obligation",
+        "/children/2/depends",
+        "/children/6",
+        "/children/7"
+      ],
+      "repair": "Prefixes, conditional STR AEXE bound2/state/order/no-draw/events, current message-only mismatch, explicit accepted HE02 exercise/EQ03 halfphys gates, pinned source proof; later concrete seeds/next RNG evidence mandatory."
+    },
+    "C1-R2": {
+      "pointers": [
+        "/api/native",
+        "/children/0/depends",
+        "/children/1/depends",
+        "/children/2/depends",
+        "/children/3/depends",
+        "/children/4",
+        "/children/5",
+        "/mandatory_successors/2/depends",
+        "/mandatory_successors/3/depends",
+        "/dependency_policy"
+      ],
+      "repair": "S1-only exact-three-file positive API1; accepted P1-BILL gates LIFE, accepted LIFE/API1/exercise/halfphys gates B1-PRE, accepted P1 plus prior seams gates IN1; concrete acyclic P1/C1/B1/D1/M/MC/F/A1 dependencies and separate later reviewed minimal allowlists. Naming/timers stay bounded LIFE."
+    },
+    "C1-R3": {
+      "pointers": [
+        "/mandatory_successors/7/family",
+        "/mandatory_successors/7/cross_refs",
+        "/mandatory_successors/8/cross_refs",
+        "/mandatory_successors/10"
+      ],
+      "repair": "P11b uses existing family P11b, cross-ref OB07; separate context/object OB07 obligations retained. Names verified in small ledger; no family closure."
+    }
+  },
+  "artifact_hashes": {
+    "contract.json": {
+      "before": "9253258089d462361b9d36fe9f17aa52c516bad8c59ed165cc5bbfa3a45f4658",
+      "after": "0ae28364d9017ca8d71b753d64d58b4f18cd21c023dca202434376725a8341dc"
+    },
+    "contract.md": {
+      "before": "b5b007da8b991a4777a2b178729b7f7a94707fbabaf641fff03588b9e361dcb2",
+      "after": "48bceb10fe82cee4c88e89b83354a8568fd3a61001d2f8ec5d9fe62e7fe31fe1"
+    },
+    "ready-packet.md": {
+      "before": "1b6e2fe646cfb0f085093c2bbba1c85ebb7d87daeced342f647c35040a1f5369",
+      "after": "898091484183332acb319fd04123f33f6f09a61964065cc33624983dc0a4f9e7"
+    },
+    "evidence.json": {
+      "before": "d2bc2a8fbc267881742c63a70259fa713511cff99add5f3db26a71480d612eb7",
+      "after": "74a6ffdd09f9e2ea34f6dede481542019b7d0a3cbd4cfca1b45031b6389e14ef"
+    }
+  },
+  "document_checks": {
+    "json_parsed": true,
+    "dag_topological_order": [
+      "P11a-S1",
+      "P11a-C1-API1",
+      "P11a-P1-BILL",
+      "P11a-C1-LIFE",
+      "HE02-zap-exercise",
+      "EQ03-zap-halfphys",
+      "P11a-B1-PRE",
+      "P11a-P1-PRE",
+      "P11a-P1",
+      "P11a-C1-IN1",
+      "P11a-B1",
+      "P11a-C1",
+      "P11a-D1",
+      "P11a-S1-M",
+      "P11a-S1-MC",
+      "P11a-S1-F",
+      "P11a-A1",
+      "P11b",
+      "OB07-zap-context",
+      "UI04-zap-messages",
+      "OB07-zap-objects"
+    ],
+    "all_dependency_ids_resolved": true,
+    "API1_exact3_files_preserved": true,
+    "IN1_exact2_files_preserved": true,
+    "fixture_ids_preserved": true,
+    "protected_contract_sections_unchanged": [
+      "binding",
+      "accepted_consumption",
+      "storage",
+      "compatibility_proposal",
+      "allowed_existing_setup",
+      "validation"
+    ],
+    "family_ids_verified": [
+      "DG06",
+      "EQ03",
+      "EQ04",
+      "HE02",
+      "HE07",
+      "OB07",
+      "P11a",
+      "P11b",
+      "UI01",
+      "UI04"
+    ],
+    "existing_family_count": 53,
+    "runtime_tests_or_gates_run": false,
+    "packet_artifact_hash_links_match": true,
+    "untouched_draft_files_sha256": {
+      "baseline.json": "5ae4bd47a42a44755d6c913a26ff0c989a33f849b21060232c4aafcf8b815ebe",
+      "graph-discovery.json": "55fde161f1d9f96f1db041a0639310f8a718d931265595c7d80dd33b95ea0cd1",
+      "review-inputs.json": "383374c958523c37664fb81f0fbbf0bb738b3410eb46cb2a1a1c0d147738b4f1"
+    }
+  },
+  "unresolved": [
+    "Fresh independent review of API1/API names, exact empty-wand proposal and DAG required before implementation readiness.",
+    "Accepted P1-BILL contract/P1-PRE and P1 evidence, LIFE retirement/naming/timer/reference seam, HE02-zap-exercise, EQ03-zap-halfphys and B1-PRE public backfire evidence remain mandatory before IN1 activation.",
+    "Exact root accepted12 harness invocation and later concrete fixture native seeds/output evidence remain implementation handoff requirements.",
+    "Any observed golden impact needs exact proposal plus explicit user decision; no permission inferred."
+  ]
+}

@@ -1,0 +1,94 @@
+{
+  "schema": 1,
+  "status": "verified_for_containing_commit",
+  "baseline_head": "81d684a07e001345e139c1a62fbff70bfe4e2710",
+  "milestone": "M4c-timer-capture",
+  "scope": "Bounded authenticated callback capture during native invocation, frozen executable/live authority retention and safe fresh-operation adoption",
+  "new_tests": 14,
+  "review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-CONTINUATIONS/review/answer.txt",
+    "sha256": "cee28ec01954352f1b7c8c31a205c1f5aaed0d09fb9a5dcd72fe0eb3fb9b4f98"
+  },
+  "repair_review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-CONTINUATIONS/repair-review/answer.txt",
+    "sha256": "906b281c3023d41b51c61ac182f5eb2affa453fcde4fd31d91f3893403b98c84"
+  },
+  "final_review_inputs": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-CONTINUATIONS/post-repair-source.json",
+    "sha256": "b1a580b27de221aa9ddc9ee8550471f2c3cdc5d947a964f9d390631574688f98"
+  },
+  "full_gates": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-CONTINUATIONS/full-gates-final/accepted.json",
+    "sha256": "176bc64210125cafff9480a7fa88cf9fa82de2d819fe9de086d0c47eeec31abb"
+  },
+  "gate_result": {
+    "head": "81d684a07e001345e139c1a62fbff70bfe4e2710",
+    "tests": 1120,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "digest": "0cb47a8bf4855f65f617a22f5d3bf79b856e8c134a65d4d4eba0e4abc27fd082",
+    "checks": 12
+  },
+  "focused_checks": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-CONTINUATIONS/writer-evidence/root-verification.json",
+    "sha256": "17e09145f31ca5df0e8db321a7587747f4a9dfe98562a7da604c44cf0f9cb4e4"
+  },
+  "writer_summary": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-CONTINUATIONS/writer-evidence/summary.json",
+    "sha256": "c60647abda3073a4b0987f6dd1c1a760880cbca469e3f6feb93266664eab1735"
+  },
+  "focused_tests": 42,
+  "actual_wasm32": "nethacked-kernel; reviewed production bytes unchanged after test-only repair",
+  "repair_history": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-CONTINUATIONS/writer-evidence/failure-history.md",
+      "sha256": "41ee06d40d455c74df268df60b440c51f320741f8e812cc03fcc64a2ff9fe93d"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-CONTINUATIONS/compatibility-repair3/repair.json",
+      "sha256": "307e68993ed9ebd0ae450f908f8df3b7ec546214668c778c59fea6e68cd4fce5"
+    }
+  ],
+  "repair_checks": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-CONTINUATIONS/compatibility-repair3/results.json",
+    "sha256": "8e9838fe57351e624787270a00e7a0e0f4c85bd6a1c0380282b64f4a5e734994"
+  },
+  "production_reuse": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-CONTINUATIONS/compatibility-repair3/comparison.json",
+    "sha256": "ee5603d714304985aa08af8d3dccf77a3ca4718230c7105de392d6b5bfbb231a"
+  },
+  "first_failed_gate": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-CONTINUATIONS/full-gates/clippy.log",
+    "sha256": "3e9f42233af960a60a4e46e3f4025c3e2b6a7cf1ef1a52f841da4ec24ccac596"
+  },
+  "source_unchanged_since_final_review": true,
+  "usage": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-CONTINUATIONS/implementation/usage.json",
+      "sha256": "24e6de00ffb155b5965b5171a20a9ed94621a31b151e9b2fd32a4155fc4cc667"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-CONTINUATIONS/review/usage.json",
+      "sha256": "68682f0eabc8da5a90ca3e9e73a5f7905054b729074c8203b76202217b2f62cb"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-CONTINUATIONS/repair-review/usage.json",
+      "sha256": "6f077a2222b1e3955aa5899b1dcf4f0391a05e8326309a6d5eeb1368b1df521a"
+    }
+  ],
+  "meter_note": "Writer109693uncached/40851output; review89185/6467; narrowreadback53048/4595. All exceeded soft input threshold, rootunknown; no savings/compliance claim. Next timer queue reuses accepted capture/adoption and contracts, without kernel lifetime redesign or broad audit.",
+  "existing_test_change": "Only boundary_tests::fixture return-type setup in resources/src/lib.rs: two explicit CallerView static lifetime annotations. Body/assertions/production resource bytes unchanged; independently reviewed under global setup-change allowance.",
+  "goldens_changed": false,
+  "acceptance": "All five callback fixture groups passed with retired source, frozen old/new executable routing, current authority, shared capture/adoption release and actual resource composition. This is timer infrastructure, not once-only queue delivery.",
+  "native_goal_status": "active; M4c-timer-queue next",
+  "parity_families_closed": 0,
+  "residuals": [
+    "Optional timer queue, target/profile admission and once-only callback failure/cleanup policy",
+    "Concrete persistence/schema/executable validation and supported legacy saves",
+    "Vanilla RNG/input adapter and full existing NetHack domain migration/integration audit",
+    "Native ports remain trusted bounded code; clone detaches capture authority; process-local IDs; no composed Rust/Lean refinement proof"
+  ]
+}

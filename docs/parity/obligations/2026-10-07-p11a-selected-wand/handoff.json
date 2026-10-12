@@ -1,0 +1,248 @@
+{
+  "task": "P11a-S1",
+  "head": "60b6075870bc9b7ca3a38027a97637156ccf7be7",
+  "branch_authorization": "feat/monster-hp-d8",
+  "changed_files": [
+    {
+      "path": "crates/nethacked-core/src/ast.rs",
+      "sha256": "6c33f84711ec83cbac41b2f16c5ed6de61c59a7c73a44d913531675707d6ab3f"
+    },
+    {
+      "path": "crates/nethacked-sim/src/actions/mod.rs",
+      "sha256": "84bca7417cef8124fe6f9c5311412133c0d9dac873fdfd2593659f769c880a16"
+    },
+    {
+      "path": "crates/nethacked-sim/src/actions/items.rs",
+      "sha256": "247f7f2363f17023668612ab971351adf7530137880abc4a9f80bc7e8cc8c19a"
+    },
+    {
+      "path": "crates/nethacked-agent/src/commands.rs",
+      "sha256": "2dadbb2116c6809fb81cfa5de8c3f5db91b4b9af75c19ca7afbf657762bd123f"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/selected_wand_tests.rs",
+      "sha256": "0391429f28e7b56e1cefdea7d5821de79660deb15ef0238bdcba4b7b736329e1"
+    },
+    {
+      "path": "crates/nethacked-agent/src/graphql.rs",
+      "sha256": "ca673a53c40817f68562cd6f26730a2987b562ffd2b8145fc1110ce9626feabb"
+    }
+  ],
+  "discovery": "Graph MCP tools unavailable in isolated CLI; bounded known-path reads only. Read reviewed ready-packet and requested contract fields, USER.md and global constraints. No C/config/identity re-audit, MEMORY/history/registry/profile dump.",
+  "fixture_coverage": {
+    "S01": [
+      "selected_create_count_one_two_eight_preserves_native_draw_and_scheduler_order: complete snapshot rearranged using captured IDs to nonwand0/fire1/create2; selected2\u21921, fire7 untouched; independent accepted bound23/optional7, placement, HP, allocation RNG oracle; native saves and Wait continuation"
+    ],
+    "S02": [
+      "cancellation_two_charged_wands_has_only_exact_log: living/ready/reconciled whole canonical save and native RNG unchanged except event_log; exact Never mind."
+    ],
+    "S03": [
+      "range_token_class_and_identity_refusals_are_ordered_and_no_time: index3/u32max, token before class, class before identity",
+      "indirect_floor_moved_deleted_recycled_and_reordered_tokens_never_choose_first_wand: container/floor/Limbo/deleted/recycled generation/moved earlier item",
+      "index_only_uses_current_snapshot_without_stale_detection_claim"
+    ],
+    "S04": [
+      "commands::selected_parser_bounds_defaults_tokens_and_legacy_compatibility: missing/null/noninteger/negative/>u32 index; token component u32 bounds and malformed/noncanonical tokens; invalid direction; East6 defaults and legacy zap index-ignore",
+      "commands::explicit_cancel_rejects_all_nonnull_args_and_keeps_context_only: every declared JSON arg including half target and typed fields; nulls allowed; player context retained",
+      "Transport envelope/session/RL fixtures belong S1-M, including separate JSON-RPC library/bin; no all-route claim"
+    ],
+    "S05": [
+      "canonical_and_custom_display_renames_keep_owned_effects_and_witnesses: custom fragments ignored, canonical owned HP71/max83 candidate, witness record unchanged",
+      "range_token_class_and_identity_refusals_are_ordered_and_no_time: missing canonical/custom/resolved definition exact refusal; witness/terrain/state unchanged",
+      "legacy_definition_oldload_and_selected_cancel_json_transcripts_continue_canonically: None legacy exact owned name and positive creation retained"
+    ],
+    "S06": [
+      "legacy_definition_oldload_and_selected_cancel_json_transcripts_continue_canonically: old omitted definitions, captured selected token and index-only transcript, repeated selected/cancel, same ruleset, load RNG and canonical whole state, next Wait events",
+      "old_action_json_and_new_optional_token_omission_are_canonical: old literal canonical bytes, new missing expected_item omission roundtrip, cancel own variant",
+      "S01 pre/post-action native saves and continuation"
+    ],
+    "S07": [
+      "existing_charge_behavior_matches_legacy_for_empty_negative_zero_cursed_blessed: -1/0/2 \u00d7 uncursed/cursed/blessed selected vs single-record legacy exact events/whole save/native RNG; empty inventory refusal",
+      "helpless_and_dressing_still_replace_selection_actions_with_wait: cancel/invalid-selected vs Wait entire state equality",
+      "Compatibility evidence only; C1/B1/D1/P1 source-conformance unresolved"
+    ],
+    "S08": [
+      "Entire adapter/interactive matrix deferred to M/MC/F. No STEP_ACTIONS/frontend/schema adapter changes or claim of all-ten completion."
+    ]
+  },
+  "checks": [
+    {
+      "command": "cargo test -p nethacked-sim --test selected_wand_tests --test monster_creation_wand_tests --test item_definition_identity_tests --locked",
+      "log": "/tmp/netrust-p11a-s1-implementation-cli/01-sim-repair2.log",
+      "exit_code": 0,
+      "test_results": [
+        "test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s",
+        "test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s",
+        "test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s"
+      ],
+      "status": "passed"
+    },
+    {
+      "command": "cargo test -p nethacked-agent --locked",
+      "log": "/tmp/netrust-p11a-s1-implementation-cli/02-agent.log",
+      "exit_code": 101,
+      "test_results": [
+        "test result: ok. 34 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s",
+        "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: FAILED. 1 passed; 5 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ],
+      "status": "blocked by socket-bind sandbox"
+    },
+    {
+      "command": "cargo test -p nethacked-core -p nethacked-arena -p nethacked-data --locked",
+      "log": "/tmp/netrust-p11a-s1-implementation-cli/03-core-arena-data-sequential.log",
+      "exit_code": 0,
+      "test_results": [
+        "test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: ok. 168 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: ok. 107 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s",
+        "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s",
+        "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s",
+        "test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s",
+        "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s",
+        "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s",
+        "test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s",
+        "test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s",
+        "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+        "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ],
+      "status": "passed"
+    },
+    {
+      "command": "cargo test -p nethacked-wasm --locked",
+      "log": "/tmp/netrust-p11a-s1-implementation-cli/04-wasm-sequential.log",
+      "exit_code": 0,
+      "test_results": [
+        "test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.24s",
+        "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ],
+      "status": "passed"
+    },
+    {
+      "command": "cargo check -p nethacked-py",
+      "log": "/tmp/netrust-p11a-s1-implementation-cli/05-py.log",
+      "exit_code": 0,
+      "test_results": [],
+      "status": "passed"
+    },
+    {
+      "command": "cargo test -p nethacked-pack --test pack_lib --test pack_files --test cli --locked",
+      "log": "/tmp/netrust-p11a-s1-implementation-cli/06-pack.log",
+      "exit_code": 0,
+      "test_results": [
+        "test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.67s",
+        "test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.40s",
+        "test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.64s"
+      ],
+      "status": "passed"
+    },
+    {
+      "command": "cargo test -p nethacked-agent --test golden_determinism --locked",
+      "log": "/tmp/netrust-p11a-s1-implementation-cli/07-golden.log",
+      "exit_code": 0,
+      "test_results": [
+        "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 204.23s"
+      ],
+      "status": "passed"
+    },
+    {
+      "command": "rustfmt --edition 2021 --check <six allowed files> --config skip_children=true",
+      "exit_code": 0,
+      "log": "/tmp/netrust-p11a-s1-implementation-cli/08-format.log",
+      "status": "passed"
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "log": "/tmp/netrust-p11a-s1-implementation-cli/09-diff-check.log",
+      "status": "passed"
+    }
+  ],
+  "exact_three_existing_setups": [
+    "commands.rs::action_args_from_json full literal initializes index context and new expected_item validated only for zap_selected, None otherwise",
+    "commands.rs::tests::every_mcp_step_action_parses full p adds expected_item:None only; old input, loop and assertion unchanged",
+    "graphql.rs::step full literal adds expected_item:None only"
+  ],
+  "constraints_preserved": [
+    "Exactly six authorized repository files edited; new regression file untracked for coordinator staging",
+    "Existing old assertions and ZapWand constructors unchanged; legacy default East6 and index-ignore preserved",
+    "None identity and owned resolver/effect pipeline shared; no builtin fallback",
+    "No dependencies, factory/ItemRecord/ItemDef/pack edits, source C/CPP/compiler/Lua/custom C evaluator, nested agents, commits, goldens edits, STEP_ACTIONS/frontends or root ledger/progress/docs edits",
+    "Existing dirty autonomous ledger is coordinator-owned and untouched by worker",
+    "Coordinator owns independent review, full12 gates, digest and commit"
+  ],
+  "failures_and_repairs": [
+    {
+      "log": "01-sim.log",
+      "exit_code": 101,
+      "evidence": "New fixture insertion-order assumptions failed: actual IDs [9v3,10v3,11v5] vs [11v5,10v3,9v3]; reorder fixture selected index remained same",
+      "repair": "Reassigned fixture records to captured actual snapshot IDs, preserving nonwand/fire/create order and expected game values"
+    },
+    {
+      "log": "01-sim-repair1.log",
+      "exit_code": 101,
+      "evidence": "S01 passed; reorder replacement reused lower slot: left/right chosen ItemId(11v3)",
+      "repair": "Moved earlier item to Limbo without inserting replacement; assert actual snapshot [chosen] before replay of captured index1"
+    },
+    {
+      "log": "01-sim-repair2.log",
+      "exit_code": 0,
+      "evidence": "All 10 new tests and existing identity6/creation14 passed"
+    },
+    {
+      "log": "02-agent.log",
+      "exit_code": 101,
+      "evidence": "34 agent unit tests pass; five bones_hardening tests fail at tests/bones_hardening_test.rs:13:71 binding TCP listener: Os code1 PermissionDenied Operation not permitted; package stops before later integration binaries",
+      "repair": "No edits/retry to unrelated HTTP path; coordinator rerun outside socket-restricted sandbox"
+    },
+    {
+      "logs": [
+        "03-core-arena-data.log",
+        "04-wasm.log"
+      ],
+      "evidence": "WASM Cargo started before prior core process exit was confirmed; both succeeded; worker violated sequential-launch requirement",
+      "repair": "Waited for both exit0, then reran exact core and WASM commands individually with explicit exit confirmation; sequential logs supplied"
+    },
+    {
+      "evidence": "Initial uv invocation could not access ~/.cache/uv; no source writes occurred",
+      "repair": "Every subsequent Python invocation used UV_CACHE_DIR=/tmp/netrust-p11a-s1-implementation-cli/uv-cache and required uv run --no-sync absolute local interpreter"
+    },
+    {
+      "evidence": "ps process inventory denied by sandbox",
+      "repair": "Track and await all tool-launched sessions instead; do not claim inspection of unrelated host processes"
+    }
+  ],
+  "successors": [
+    "M: carried-index/token queries and selection schemas on every adapter; both JSON-RPC subroutes/envelopes and enum test adaptation; Python explicit args/RL timing",
+    "MC after M/D1/P1: all machine charged continuation transcripts including independent actual JSON-RPC binary",
+    "F after M/MC/C1/B1/D1/P1: TUI/both browsers interactive UI01/UI04 and all-ten exit",
+    "D1 native charged continuation/pending save/oldload; C1 charge/wrest/dust; B1 backfire; P1 nohands/capacity/unpaid preflight"
+  ],
+  "live_processes": "None of the worker-launched Cargo/tool sessions remain live; all completion results received. Host process inventory unavailable (ps denied); no subprocess intentionally detached.",
+  "blockers": [
+    "Exact agent package command needs coordinator socket-enabled environment; fresh independent implementation review/full12 coordinator gates pending"
+  ]
+}

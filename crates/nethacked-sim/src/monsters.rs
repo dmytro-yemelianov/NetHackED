@@ -67,10 +67,62 @@ impl SimulationWorld {
                 .collect();
 
             for mon_id in mon_ids {
-                let Some(mon) = self.arena.actors.get(mon_id).cloned() else {
+                if self
+                    .arena
+                    .actors
+                    .get(self.player_id)
+                    .is_none_or(|hero| hero.is_dead || hero.hp == 0)
+                {
+                    break;
+                }
+                let Some(actor) = self.arena.actors.get_mut(mon_id) else {
+                    continue;
+                };
+                if actor.is_dead
+                    || actor.hp == 0
+                    || actor.movement < nethacked_core::energy::NORMAL_SPEED
+                {
+                    continue;
+                }
+                // Spend before every AI branch, including stationary/fleeing actors.
+                actor.movement -= nethacked_core::energy::NORMAL_SPEED;
+                let Some(mut mon) = self.arena.actors.get(mon_id).cloned() else {
                     continue;
                 };
                 if mon.is_dead {
+                    continue;
+                }
+
+                // C monmove.c:744-749: every fleeing monster draws rn2(40)
+                // before teleport eligibility/restrictions, even when injured.
+                if mon.is_fleeing
+                    && self.rng.random_range(0..40u32) == 0
+                    && self.ruleset.monster_for_actor(&mon).is_some_and(|def| {
+                        def.has_flag("tport") && def.id != Some(MonsterSpeciesId::WIZARD_OF_YENDOR)
+                    })
+                    && !self.level.no_teleport
+                {
+                    self.teleport_theft_attacker(mon_id, &mut events);
+                    continue; // teleportation consumes the monster's turn
+                }
+
+                // C monmove.c:757-760: untimed fleeing can regain courage at
+                // full HP; the new state otherwise drives the existing retreat AI.
+                if mon.is_fleeing && mon.hp == mon.max_hp && self.rng.random_range(0..25u32) == 0 {
+                    mon.is_fleeing = false;
+                    self.arena.actors.get_mut(mon_id).unwrap().is_fleeing = false;
+                }
+                if mon.is_fleeing {
+                    if let Some(to) = dijkstra.steepest_ascent(mon.coord) {
+                        if self.level.is_passable(to) && self.actor_at(to).is_none() {
+                            self.arena.actors.get_mut(mon_id).unwrap().coord = to;
+                            events.push(GameEvent::ActorMoved {
+                                actor: mon_id,
+                                from: mon.coord,
+                                to,
+                            });
+                        }
+                    }
                     continue;
                 }
 
@@ -215,7 +267,7 @@ impl SimulationWorld {
                 }
 
                 let rs = std::sync::Arc::clone(&self.ruleset);
-                let archetype = rs.monster(&mon.name);
+                let archetype = rs.monster_for_actor(&mon);
 
                 if mon.is_peaceful {
                     // Peaceful monsters do not attack or approach the hero.
@@ -346,7 +398,8 @@ impl SimulationWorld {
                         }
                     } else {
                         // Monster is adjacent to player -> Melee Attack
-                        let combat_events = self.resolve_combat(mon_id, self.player_id);
+                        let (combat_events, attacker_done) =
+                            self.resolve_monster_attacks(mon_id, self.player_id);
                         events.extend(combat_events);
                         // Then the AT_MAGC slot(s) of the same round (castmu).
                         let hero_alive = self
@@ -354,7 +407,7 @@ impl SimulationWorld {
                             .actors
                             .get(self.player_id)
                             .is_some_and(|p| !p.is_dead);
-                        if hero_alive {
+                        if hero_alive && !attacker_done {
                             for spell in melee_spells {
                                 if self.cast_monster_spell(&mon, spell, &mut events) {
                                     break;
@@ -522,9 +575,12 @@ impl SimulationWorld {
                                 &arch.name,
                                 arch.glyph,
                             ) {
-                                if let Some(mut skeleton) =
-                                    rs.create_monster_record(&arch.name, neighbor)
-                                {
+                                if let Some(mut skeleton) = rs.create_monster_record_with_context(
+                                    &arch.name,
+                                    neighbor,
+                                    self.monster_spawn_context(),
+                                    &mut self.rng,
+                                ) {
                                     self.set_monster_malign(&mut skeleton, arch);
                                     self.arena.spawn_actor(skeleton);
                                     spawned += 1;
@@ -614,8 +670,11 @@ impl SimulationWorld {
             .collect();
         let raw_damage =
             nethacked_core::combat::monster_attack_damage(&Attack { d: 6, ..*attack }, &rolls);
-        let (dmg, _) =
-            nethacked_core::resolve_breath_damage(raw_damage, breath, &player.intrinsics);
+        let (dmg, _) = nethacked_core::resolve_breath_damage(
+            raw_damage,
+            breath,
+            &self.effective_hero_intrinsics(),
+        );
         if dmg == 0 {
             events.push(GameEvent::LogMessage {
                 text: Messages::breath_absorbed(&format!("{breath:?}"), self.locale),
@@ -670,7 +729,7 @@ impl SimulationWorld {
         let new_level = pet.level + exp_gain;
         pet.level = new_level;
 
-        let cur_tier = match pet.name.to_lowercase().as_str() {
+        let tier_by_name = |name: &str| match name.to_lowercase().as_str() {
             "little dog" => Some(nethacked_core::PetSpeciesTier::LittleDog),
             "dog" => Some(nethacked_core::PetSpeciesTier::Dog),
             "large dog" => Some(nethacked_core::PetSpeciesTier::LargeDog),
@@ -679,18 +738,60 @@ impl SimulationWorld {
             "large cat" => Some(nethacked_core::PetSpeciesTier::LargeCat),
             _ => None,
         };
+        let cur_tier = self
+            .ruleset
+            .monster_for_actor(pet)
+            .and_then(|def| match def.id {
+                Some(nethacked_data::MonsterSpeciesId::LITTLE_DOG) => {
+                    Some(nethacked_core::PetSpeciesTier::LittleDog)
+                }
+                Some(nethacked_data::MonsterSpeciesId::DOG) => {
+                    Some(nethacked_core::PetSpeciesTier::Dog)
+                }
+                Some(nethacked_data::MonsterSpeciesId::LARGE_DOG) => {
+                    Some(nethacked_core::PetSpeciesTier::LargeDog)
+                }
+                Some(nethacked_data::MonsterSpeciesId::KITTEN) => {
+                    Some(nethacked_core::PetSpeciesTier::Kitten)
+                }
+                Some(nethacked_data::MonsterSpeciesId::HOUSECAT) => {
+                    Some(nethacked_core::PetSpeciesTier::Housecat)
+                }
+                Some(nethacked_data::MonsterSpeciesId::LARGE_CAT) => {
+                    Some(nethacked_core::PetSpeciesTier::LargeCat)
+                }
+                None => tier_by_name(&def.name),
+                _ => None,
+            })
+            .or_else(|| {
+                pet.species
+                    .is_none()
+                    .then(|| tier_by_name(&pet.name))
+                    .flatten()
+            });
 
         if let Some(tier) = cur_tier {
             let promoted = nethacked_core::promote_pet(tier, pet.level);
             if promoted != tier {
                 let old_name = pet.name.clone();
-                let (new_name, new_max_hp) = match promoted {
-                    nethacked_core::PetSpeciesTier::Dog => ("dog", 24),
-                    nethacked_core::PetSpeciesTier::LargeDog => ("large dog", 45),
-                    nethacked_core::PetSpeciesTier::Housecat => ("housecat", 20),
-                    nethacked_core::PetSpeciesTier::LargeCat => ("large cat", 40),
-                    _ => (old_name.as_str(), pet.max_hp),
+                let (new_name, new_max_hp, new_id) = match promoted {
+                    nethacked_core::PetSpeciesTier::Dog => {
+                        ("dog", 24, nethacked_data::MonsterSpeciesId::DOG)
+                    }
+                    nethacked_core::PetSpeciesTier::LargeDog => {
+                        ("large dog", 45, nethacked_data::MonsterSpeciesId::LARGE_DOG)
+                    }
+                    nethacked_core::PetSpeciesTier::Housecat => {
+                        ("housecat", 20, nethacked_data::MonsterSpeciesId::HOUSECAT)
+                    }
+                    nethacked_core::PetSpeciesTier::LargeCat => {
+                        ("large cat", 40, nethacked_data::MonsterSpeciesId::LARGE_CAT)
+                    }
+                    _ => unreachable!("promotion only advances to an adult tier"),
                 };
+                pet.species = Some(nethacked_arena::ActorSpecies::Vanilla(
+                    new_id.c_name().into(),
+                ));
                 pet.name = new_name.into();
                 pet.max_hp = new_max_hp;
                 pet.hp = new_max_hp;
@@ -727,7 +828,11 @@ mod tests {
         sim.arena.actors.get_mut(pid).unwrap().coord = hero;
         let mut rec = sim
             .ruleset
-            .create_monster_record_by_id(MonsterSpeciesId::RED_DRAGON, Coord::new_unchecked(13, 10))
+            .create_monster_record_by_id(
+                MonsterSpeciesId::RED_DRAGON,
+                Coord::new_unchecked(13, 10),
+                &mut sim.rng,
+            )
             .unwrap();
         rec.mspec_used = 5;
         let id = sim.arena.spawn_actor(rec);

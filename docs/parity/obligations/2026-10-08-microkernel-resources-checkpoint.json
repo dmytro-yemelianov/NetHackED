@@ -1,0 +1,81 @@
+{
+  "schema": 1,
+  "status": "verified_for_containing_commit",
+  "baseline_head": "498ca0760b7bf462e7528ccf36278df45a923e8e",
+  "milestone": "M3b",
+  "scope": "Optional world-independent atomic resource service and bounded immutable caller permission inspection",
+  "new_tests": 13,
+  "reviews": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCES/review/answer.txt",
+      "sha256": "09d95da6933ca5c12b8617dcc9d9bfcf4e59d9138d2edf7a7a8569be2de1bc04"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCES/repair-review/answer.txt",
+      "sha256": "3d6878c1b35bbc09d9234fc5e87c8da7edbcbdeff7ec9df1496e49f7defc599c"
+    }
+  ],
+  "review_inputs": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCES/repair-binding.json",
+    "sha256": "5de7a5db9130cb49320785d06ce3a1620db233f5bfb36e76fbcef2e99be9112f"
+  },
+  "full_gates": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCES/full-gates/accepted.json",
+    "sha256": "965013c9b80eb19c354428fab9b3b4dc238cabd20d143a783660818b3664183c"
+  },
+  "gate_result": {
+    "head": "498ca0760b7bf462e7528ccf36278df45a923e8e",
+    "tests": 1073,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "digest": "0305b784277f630a51bb98589e6740f5db6c795517cf5f6d58cdbf1231ffdc74",
+    "checks": 12
+  },
+  "focused_checks": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCES/focused-evidence/unit-evidence.json",
+    "sha256": "43021889ca71678f738823da3b1a2c2b4871539611ba81f8912f545f1e1400b4"
+  },
+  "mutation_evidence": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCES/repair-evidence/results.json",
+    "sha256": "cf03ada07166d2821881be435c6713e095f9d539defd0a64fb170dd2cdc3f248"
+  },
+  "failed_attempts_retained": [
+    "writer uv sandbox cache failure then changed cache path",
+    "two writer README patch-context failures",
+    "initial negative fixtures used consumed transaction ID; rootrepair1 uses live pending plan; both mutants fail intended assertion"
+  ],
+  "production_repair": false,
+  "test_repair": "Wrongnamespace/substitutedcommit attempts use valid live pending identity; exactstate retained and originalID subsequently succeeds",
+  "usage": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCES/implementation/usage.json",
+      "sha256": "bd12f92d690e49105f03153e3c4f8f49ae5a4eeceddfff5f0c33b1deeef5f25d"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCES/review/usage.json",
+      "sha256": "ed2f58014cc558e305d5ea67c5870463fa1f3c27ca02adc51f4d76e1e7daadbc"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-RESOURCES/repair-review/usage.json",
+      "sha256": "386e64ea07537985936710f71e86e0892431550b9dab249e1a55757cd0a13f9a"
+    }
+  ],
+  "meter_note": "Writer88485uncached/34840output, fullreview59322uncached/4315output exceed softthresholds; repairreview22621uncached/1086output. Guard compares totalinput; rootunknown. No savings/compliance claim. NextM4 split by actual interface ownership; no repeated architecture audit.",
+  "old_tests_helpers_goldens_changed": false,
+  "acceptance": [
+    "A1/A2 genericentity-free/liveexecutablehost accepted in1fc3290",
+    "A3 generic atomicresource/authority boundary accepted in containingcommit"
+  ],
+  "native_goal_status": "active; M3 complete; M4 next; A4-A8 pending",
+  "parity_families_closed": 0,
+  "residuals": [
+    "Concrete composed workflow ownership/pinning with transactions/input/timers",
+    "Real codecs/schema migrations and supported legacy NetHack compatibility",
+    "Native-to-native collaboration and extension composition beforeNetHack migration",
+    "Full selected-wand/newNetHack-host extension and existingdomain migration",
+    "Trusted native validators/artifact fidelity, processlocal namespace only; no composed Rust/Lean refinement"
+  ]
+}

@@ -1,0 +1,163 @@
+{
+  "schema": 1,
+  "status": "reviewed_and_verified_in_containing_commit",
+  "baseline_head": "ce698c5d363e4775007bc50b0c97d7a89e875aaf",
+  "milestone": "M4d-D3c",
+  "scope": "Owner retained execution and sealed prepared publication; completes aggregate D3 with accepted D3a/D3b",
+  "contract": {
+    "path": "/Users/dmytro/github/NetRust/docs/plans/2026-10-08-owner-persistence-contract.md",
+    "sha256": "7f04e7118c33245a6aa0da16352eaa022d7753dc191bddaeb4963a9ddf55b569"
+  },
+  "runtime": "nethacked-owners persistence, input-owned local ledger persistence and sealed kernel mapping bridges",
+  "prerequisites": [
+    {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-08-microkernel-owner-state-checkpoint.json",
+      "sha256": "5b25b46cd1476fe0e9f442d9b73bf71bf083e843217d2a7885462aca1d3527e7"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-09-microkernel-kernel-registry-checkpoint.json",
+      "sha256": "a7e006a14a7c54bd8c085345d8f262d5da8e05d47fcce8bec8c4fba0079b7baf"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-09-microkernel-kernel-retained-checkpoint.json",
+      "sha256": "613b36202c9f1464b2a32f3edeaf1f882f4f074046fe513c9055b09de48bf95a"
+    }
+  ],
+  "review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-EXECUTION/review-evidence/report.md",
+    "sha256": "792a6ba1f229c83309ec953508cf7c0f5996847874074e345882a3e98668c676"
+  },
+  "readback": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-EXECUTION/readback-evidence/report.md",
+    "sha256": "8587407647faf6779cf0893e1ae7396779d1a3316e934beebbb95c1248c412ea"
+  },
+  "readback_verification": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-EXECUTION/readback-evidence/root-verification.json",
+    "sha256": "0f75d379b4535d6989e8355ecc1ce5cbd9b4f1e43b2f4e88241a8e5ee24c302f"
+  },
+  "writer_evidence": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-EXECUTION/implementation1-evidence/final-binding.json",
+      "sha256": "1b94a48261307c64b79b7f019c6c346cb488299e2a44ddd867dae505fc05e6c9"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-EXECUTION/implementation2-evidence/final-binding.json",
+      "sha256": "e4e5cfc02a6cbb7c832151718cd0e78c2271a5b99e52e59f48732c0171a397a5"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-EXECUTION/implementation3-evidence/final-binding.json",
+      "sha256": "cabf868ef475a76a705ee57119b4d5e6bee75b8d0496a0d7ca31ba55500a9b66"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-EXECUTION/repair1-evidence/final-binding.json",
+      "sha256": "a7223868fc4231b666e6d4e0f2b1fc2889a1f9732becb9c835cd9a6f4f292dff"
+    }
+  ],
+  "repair_delta": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-EXECUTION/repair1-evidence/repair.diff",
+    "sha256": "b89423b4fb9f76bcf0522adae401ce5f6969d2841df628f96bfad72f27883f42"
+  },
+  "repair_ledger": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-EXECUTION/repair1-evidence/defect-attempts.json",
+    "sha256": "4039c4b0a7e90d2cd882920eb2bca0e53c84ee57cf0064440e5253fc20fb3c9c"
+  },
+  "source_bindings": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-EXECUTION/readback-source.json",
+    "sha256": "47d3a3459c5abe493ce6f4ccd1015e7b14e974fde2e224ea03ef25a1b76dfac6"
+  },
+  "full_gates": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-EXECUTION/final-gates/accepted.json",
+    "sha256": "ae8cecc6718c4eb8c4addbe02708148a6d52e1caff7c833d00c30cf71430f596"
+  },
+  "gate_result": {
+    "head": "ce698c5d363e4775007bc50b0c97d7a89e875aaf",
+    "tests": 1227,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "digest": "28bf0a393a3f98dfcd92e1479ca200b2ca1ddab8919077349ff7c71bcd10961d",
+    "checks": 12
+  },
+  "source_input_count": 464,
+  "focused_checks": {
+    "owners_default": 37,
+    "owners_persistence": 51,
+    "owners_all_features": 66,
+    "kernel_inputs_owner_services_all_features": 86,
+    "inputs_default": 9,
+    "execution_tests_included_in_owners": 17,
+    "independent_readback_tests": 19,
+    "later_authority_variants_included": 24,
+    "scoped_fmt_clippy": "pass",
+    "actual_owners_kernel_inputs_wasm": "pass",
+    "final_source_evidence": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-EXECUTION/repair1-evidence/root-verification.json",
+      "sha256": "82267efcac32ecd107d433b43a6fa45e4c638acec3225ee891a51d76d23e7917"
+    }
+  },
+  "verified_behavior": [
+    "Separately allocated owners and sealed hidden fresh identity reservation bind remapped kernel cleanup/resources; derived caches discarded.",
+    "Exact current and retained old native codec/policy/full guest helper/callback scope rebuild independently, with shared reservation and lifetime semantics.",
+    "Already prepared native and guest-backed states, recursive readonly and recorded observations, events/replies, accounting/profile and live batches reconstruct without domain preparation/query/sampling/publication/scheduling.",
+    "Native prepared live owner references validate in saved namespace before fresh decode, digest and capacity rebinding; atomic single consumption and second restart preserve valid values.",
+    "Complete ordered declared dependency closure and provenance validate; missing/extra/duplicate/reordered edges refuse.",
+    "Input-owned ledger/source state/counters/pins rebuild with fresh approved policy; sealed runtime destination identity rejects a foreign identical-byte ledger.",
+    "Current required grants and routes recheck before owner/candidate/batch domain decoding; early and later revocation/narrowing refuses with zero avoidable calls.",
+    "Consumed and abandoned candidate/ticket retirement, shared capacities/pins/unload and coherent publication history survive repeated restart; incomplete stages quarantine and failed admission preserves populated destination.",
+    "D2 state-only refusal and O3 allocation/drop/callback-free critical publication swap preserved."
+  ],
+  "findings_resolved": [
+    "F1 recursive readonly declaration closure",
+    "F2 legitimate remapped prepared reference digest",
+    "F3 foreign-kernel same-checkpoint ledger attachment",
+    "F4 current grant admission before domain decoding"
+  ],
+  "repair_history": "F1/F3/F4 each one repair attempt, zero unsuccessful; F2 two attempts, one unsuccessful. Cumulative38 cause ledger retains prior and distinct setup/fixture failures; readback confirms no resets.",
+  "metadata_correction": "Implementation3 preservation count97 means96exactHEAD files plus1extended execution fixture with exact prior prefix. Repair retains96exactHEAD files and entire prior execution prefix. Raw reports and root correction retained.",
+  "trust_premises": [
+    "Native codec/factory identity, fidelity, purity, bounded work, private allocation, no aliases and effect-free construction/drop remain host premises.",
+    "Local execution reconstruction is not whole HostBundle activation; D4 supplies coherent cross-service capture and authority epoch exclusion.",
+    "No composed Lean-to-Rust refinement, crash journal or external exactly-once guarantee claimed."
+  ],
+  "usage": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-EXECUTION/implementation1/usage.json",
+      "sha256": "3bc1c60008e38bd0456c155cdff4d296f2ed6382ba8a46de02d473b873c5e33a"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-EXECUTION/implementation2/usage.json",
+      "sha256": "c53d68e87965e85cdcdd2b56f9be6214bc3fe80f9e1667fb555583edb7a36721"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-EXECUTION/implementation3/usage.json",
+      "sha256": "04952dd43d262fc23fd834ff77dcbcba993e2ebd6c00a402701e51b7acfc8728"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-EXECUTION/review/usage.json",
+      "sha256": "fd74b0175a996b2b93656d987152b2e52acd4940ad0ec8f15c097f61ba7a93de"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-EXECUTION/repair1/usage.json",
+      "sha256": "14b3b4c2d94ecbfdd25dba14e86263936c889c9d39f439deec5b72146f956b24"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-EXECUTION/readback/usage.json",
+      "sha256": "65b57a9da17f31da53253d0662639da7b9fe0781d52ac7615621509bab6a5792"
+    }
+  ],
+  "meter_note": "All six phases exceeded difficult soft thresholds; partial input prerequisite and continued owner implementation retained. Narrowing/evidence reuse decisions recorded; root usage unknown, no savings claim.",
+  "A5_accepted": false,
+  "aggregate_D3_accepted": true,
+  "goldens_changed": false,
+  "existing_committed_tests_changed": false,
+  "parity_families_closed": 0,
+  "residuals": [
+    "D4 coherent workflow/input/timer/owner-services snapshot and full hidden HostBundle activation with authority identity/epoch exclusion, including historical/disposed input orchestration.",
+    "D5 real legacy save compatibility, nine independent state owners, approved old validation/migration and public owner-native billing receipt continuation.",
+    "D6 full fresh-process A5 integration and refusal suite.",
+    "M5 selected populated NetHack extension slice, M6 complete production-domain migration and M7 final acceptance.",
+    "Separate53-family missing-behavior parity backlog remains open."
+  ]
+}

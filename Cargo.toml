@@ -1,5 +1,13 @@
 [workspace]
 members = [
+    "crates/nethacked-persistence",
+    "crates/nethacked-owner-services",
+    "crates/nethacked-owners",
+    "crates/nethacked-timers",
+    "crates/nethacked-inputs",
+    "crates/nethacked-workflows",
+    "crates/nethacked-kernel",
+    "crates/nethacked-resources",
     "crates/nethacked-types",
     "crates/nethacked-arena",
     "crates/nethacked-dungeon",

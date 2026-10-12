@@ -1,0 +1,83 @@
+{
+  "schema": "netrust-lifetime-contract-v1",
+  "unit": "P11a-C1-LIFE",
+  "status": "accepted_contract_only",
+  "implementation_authorized": "Only registered LIFE-API1 after this contract checkpoint; exact2files, no broaderpath permission.",
+  "source_conformance_accepted": false,
+  "families_closed": [],
+  "binding": {
+    "head": "77adc90c190b5f6c70dda83f8471e19f82745052",
+    "input_count": 348,
+    "input_digest": "fd67c893f5270cef8a7689c2f3d1b23c8ba2e9e87f23ce1fe96763f1f38265db",
+    "reused_full_gates": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-GUARDS/full-gates/accepted.json",
+    "gate_sha256": "3315ab128f88590bd947d4ed1a7b43dc8293a448775071af11196a63319e6351",
+    "tests": 1044,
+    "checks": 12,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "reason": "Read-only contract work; complete348inputset/bytes equal to reviewed guard fullgate. Fresh changeddoc/parity checks required."
+  },
+  "contract": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/final-review-packet/contract-candidate.json",
+    "sha256": "e7095c7738a0ef16467ee764e15a972e66b023f96cb5825ebd6118bbaae6ee4d"
+  },
+  "review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/final-review/answer.txt",
+    "sha256": "a367d9608a97eda5683222e33e14a35b536d2dfafc0af3014274ffd7d86519f0"
+  },
+  "semantic_review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/rereview/answer.txt",
+    "sha256": "14ae95880670e8d9aa3d58bdde046362530d91f9a487240e5de94f0758024b88"
+  },
+  "initial_review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/review/answer.txt",
+    "sha256": "1a8f0b9d991dafb5b8ceb550f997d0ba1f630a62b479098b060399a558566794"
+  },
+  "repair_history": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/findings.json",
+    "sha256": "8e86ec07fdb575fe858cd6528af8cb30782d8e0dc16ee5da7e70499f7540ddf0"
+  },
+  "evidence_copy_proof": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/bound-copy-proof.json",
+    "sha256": "b0a160a0779a6094ffc42a89f7ebb01bea362c428b62acf2b27b892de4a79b0d"
+  },
+  "implementation_child": "P11a-C1-LIFE-API1",
+  "allowed_files": [
+    "crates/nethacked-sim/src/world.rs",
+    "crates/nethacked-sim/tests/wand_lifetime_tests.rs"
+  ],
+  "required_successors": [
+    "P11a-C1-IN1",
+    "P11a-D1",
+    "UI04-zap-messages",
+    "OB04-object-retirement",
+    "DG06-bill-merge-partial",
+    "DG06-bill-settlement"
+  ],
+  "acceptance_limits": "Production finalizer contract for represented wand lifetime; actual effects/continuations, broader naming/identification, corpse/nonwand/general references and partial billing stay required. No source implementation/family acceptance or golden approval.",
+  "usage_records": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/audit/usage.json",
+      "sha256": "cc1f17f87254e68b745e82fec7a6381de1f66b4e414a8385960a06ddc1286c9d"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/review/usage.json",
+      "sha256": "a35a970af359aeeda041032fdbadf3e5c69c96b354aebb7d547065a2497cbcd6"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/repair/usage.json",
+      "sha256": "0733c5e4ba91c698345a05d46e3656ef5fc50820288cfc2e9782fc2d89b80a6a"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/rereview/usage.json",
+      "sha256": "c164d617976f85327f043b2b8201b6bda1d6b14711736d95eeec0b5b9d43fd9a"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/final-review/usage.json",
+      "sha256": "9b8a2999b55933bceb05e0c3317c977af11e1508c102540d4170876f9124b09a"
+    }
+  ]
+}

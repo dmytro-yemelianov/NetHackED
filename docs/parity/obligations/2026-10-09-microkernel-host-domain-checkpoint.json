@@ -1,0 +1,146 @@
+{
+  "schema": 1,
+  "status": "reviewed_and_verified_in_containing_commit",
+  "baseline_head": "235a1f33138ab453dad97d7109755a96e0b04105",
+  "milestone": "M4d-D4e-1",
+  "scope": "Serialized host-domain exclusion, immutable authority epochs, hidden stages and whole-bundle activation mechanism; concrete service enrollment and combined session persistence remain D4e-2",
+  "contract": {
+    "path": "/Users/dmytro/github/NetRust/docs/plans/2026-10-08-owner-persistence-contract.md",
+    "sha256": "7f04e7118c33245a6aa0da16352eaa022d7753dc191bddaeb4963a9ddf55b569"
+  },
+  "prerequisite": {
+    "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-09-microkernel-resource-persistence-checkpoint.json",
+    "sha256": "321052ef54f5d14a5ff48953846c1ce0b6a34a41f278a49f8c74eabbc1d7a64e"
+  },
+  "runtime": "nethacked-persistence::runtime; no kernel/World/entity dependency or new domain store",
+  "review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-HOST-DOMAIN/review-evidence/REVIEW.md",
+    "sha256": "1eea188e4cab4c3ec4682347fa4b05dd6b3fa41790e3cad5bc8e8142bf42103e"
+  },
+  "readback": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-HOST-DOMAIN/readback-evidence/REVIEW.md",
+    "sha256": "40f73d781de9dee553dee8ad41bbc391f67ac0aa6084287b6d71d1ba65362c78"
+  },
+  "readback_verification": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-HOST-DOMAIN/readback-root-verification.json",
+    "sha256": "cec845b2dce324c0756f0950bedc63101e3e5c0377a1ac18290b3bda52c6e641"
+  },
+  "implementation_handoff": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-HOST-DOMAIN/implementation-evidence/HANDOFF.md",
+    "sha256": "042b94130a99391e156c911186ce3aba7aa8fe0bb4fe9f9f26b29ed373912954"
+  },
+  "repair_handoff": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-HOST-DOMAIN/repair-evidence/HANDOFF.md",
+    "sha256": "7a29b45a8b2fcb3f3e768f9e02a087b3c57513193cd5a34e98723b1d36e3429e"
+  },
+  "repair_delta": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-HOST-DOMAIN/repair.diff",
+    "sha256": "a054ecebe26032c97c42b1930f584c77e08400e450178701ec19c69f3cb77916"
+  },
+  "source_bindings": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-HOST-DOMAIN/readback-source.json",
+    "sha256": "67a72e8f1f52a83aef41766e9b3d97599583b4f039cc4de52ecaeac8540c8d68"
+  },
+  "full_gates": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-HOST-DOMAIN/full-gates/accepted.json",
+    "sha256": "8d91fae6e41a5ae5707f5a77461f3331f0839d91ddb7c1f4c0d3a7f87eecf35f"
+  },
+  "gate_result": {
+    "head": "235a1f33138ab453dad97d7109755a96e0b04105",
+    "tests": 1270,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "digest": "d5dac5a566e997db669214f0fd80b5c31d01f13c9583aed60dd298a1ef7be7b3",
+    "checks": 12
+  },
+  "source_input_count": 484,
+  "focused_checks": {
+    "persistence_default_non_doc": 38,
+    "persistence_all_features_non_doc": 38,
+    "compile_fail_each": 2,
+    "independent_initial_runtime_boundary_tests": 14,
+    "independent_initial_adverse_probes": 5,
+    "independent_repair_executions": 7,
+    "scoped_fmt_clippy": "pass",
+    "actual_persistence_wasm32": "pass",
+    "repair_verification": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-HOST-DOMAIN/repair-evidence/verification.json",
+      "sha256": "24302158080fdd1268aa9bfb836518682c7021766c5d597a9d3559cce1cb935d"
+    },
+    "readback_commands": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-HOST-DOMAIN/readback-evidence/commands.json",
+      "sha256": "ec213ad8388f3ea64debb075dd2c643e98719eeb730722ab0100d46bc3c31751"
+    }
+  },
+  "verified_behavior": [
+    "One serialized domain exclusion covers enrolled runtime access, complete capture callback, hidden construction, authority replacement and whole-bundle activation. Reentry refuses Busy.",
+    "Private domain/authority/configuration identities, checked epochs and bundle generations bind stages and credentials; success consumes stages and invalidates old generation credentials.",
+    "Immutable approved configurations enroll exact factories, permissions and bindings. Requirement failures are sticky. Revocation, narrowing and resolver/configuration changes invalidate staged work; safe restaging preserves current authority.",
+    "Activation checks precomputed proofs and exchanges one bundle under the same guard with no production callback or factory between final check and exchange; result storage is reserved first.",
+    "Hidden construction and encoder refusal/panic preserve the nonempty destination and release the guard. Epoch/generation exhaustion refuses without wrapping.",
+    "Committed retirement and mutable runtime panic fail-stop instead of claiming rollback. Detached owned factory references contain destructor panic payloads; duplicate-validation cleanup protects displaced, enrolled and unprocessed references individually.",
+    "Caller-retained naked Rc references remain outside configuration-owned destructor containment. Shared reference lifetime and immutable factory invocation are preserved.",
+    "D1 transport format and API remain unchanged. Entity-free heterogeneous bundle fixtures exercise the mechanism; concrete service adapters are not yet enrolled."
+  ],
+  "findings_resolved": [
+    "R1: detached ApprovedConfiguration could allow its owned factory destructor to unwind despite documented containment. Each owned reference is now protected before validation; supplied repro and six durable regressions pass."
+  ],
+  "failure_history": {
+    "implementation": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-HOST-DOMAIN/implementation-evidence/failure-ledger.json",
+      "sha256": "7d1fc432103dca6505a51a22975c1fc0d304db7b252ad9574bb988b2451639b5"
+    },
+    "review": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-HOST-DOMAIN/review-evidence/failure-ledger.json",
+      "sha256": "eb502ea75d6b66d26c21cb1d1ab494e56bbd7d704b5b5a681a24ff39cf7014a6"
+    },
+    "repair": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-HOST-DOMAIN/repair-evidence/cumulative-counters.json",
+      "sha256": "ee3f2a4baf22b07b6fa60bfcfffade936cc3f907cbb42e4b7afa0b0b32201d05"
+    },
+    "readback": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-HOST-DOMAIN/readback-evidence/cumulative-counters.json",
+      "sha256": "584a501bf0f0ff97cf9e45fc54c3a73f1ee24eaf8f8250462930e2d981b25fb5"
+    },
+    "note": "Original Cargo argument failure, reviewer fixture compilation and R1 failing repro retained; one successful repair/zero unsuccessful repairs. Repair packaging and readback scratch-path failures retained without resets."
+  },
+  "trust_premises": [
+    "Native purity, fidelity, bounded work, immutable factory/resolver configuration, complete semantic/reference/permission proof enrollment, private allocation, alias exclusion and effect-free construction/drop remain host premises.",
+    "Host runtime adapter callbacks are not a guest capability sandbox. Retained service aliases must be concretely enrolled in D4e-2; wrapping a slot does not gate unenrolled aliases.",
+    "Threaded execution is Unsupported; there is no threaded exclusion proof. Wasm checks compilation, not native unwinding.",
+    "Nested destructor panic during unwind, allocator abort and panic=abort remain process fail-stop. No crash rollback, external IO exactly-once or composed Lean-to-Rust refinement claim."
+  ],
+  "usage": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-HOST-DOMAIN/implementation/usage.json",
+      "sha256": "4020728041d0f740909595803de58067e11d9585062c0030631cf5308a91429a"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-HOST-DOMAIN/review/usage.json",
+      "sha256": "7a2f7e37f96aec84c5929161f8de7702b2469fb9d6f4635810ba4c3fb1f33094"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-HOST-DOMAIN/repair/usage.json",
+      "sha256": "6ce4eb245c5861597675f27544e84409896e253503bb1195e7c9937160482138"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-HOST-DOMAIN/readback/usage.json",
+      "sha256": "84be49095e901bf94f565f89270be51f8ee102363970052f3ef86f2fc5627019"
+    }
+  ],
+  "meter_note": "All four model phases exceeded soft uncached-input thresholds; root usage unknown. No savings claim.",
+  "A5_accepted": false,
+  "aggregate_D4_accepted": false,
+  "aggregate_D4e_accepted": false,
+  "goldens_changed": false,
+  "existing_committed_tests_changed": false,
+  "parity_families_closed": 0,
+  "residuals": [
+    "D4e-2: bind every kernel/owner/workflow/input/timer/adapter/optional-resource mutation and retained alias to the domain; coherent strict-byte capture and hidden reconstruction with all original combined continuation/refusal witnesses.",
+    "D5 legacy migration and nine independent NetHack owners; D6 full fresh-process A5.",
+    "M5 populated-session extension slice, M6 all existing production-domain migration, M7 final acceptance; separate53-family behavior parity backlog remains open."
+  ]
+}

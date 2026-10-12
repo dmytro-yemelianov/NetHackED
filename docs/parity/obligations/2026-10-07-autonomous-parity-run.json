@@ -1,0 +1,1950 @@
+{
+  "schema": "netrust-autonomous-parity-run-v1",
+  "run_state": "running",
+  "goal_activation": "retained_parity_backlog; architecture_goal_now_active",
+  "contract": "docs/plans/2026-10-07-autonomous-parity-run.md",
+  "scope_registry": "docs/parity/obligations/2026-10-07-remaining-parity-scope.json",
+  "scope_registry_sha256": "ef0c220796234250d4d8e532f66ffbd113503d8db78bc40c002368f90719a5e9",
+  "baseline": {
+    "head": "5edce533c58349aebbeb010a70da87e91ffd44e9",
+    "source_inputs": 342,
+    "source_input_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+    "c_commit": "16ff59115315917b93185d026aeefea06db9b0f4"
+  },
+  "configuration": {
+    "status": "reviewed_selected_configuration_pinned",
+    "record": "docs/parity/obligations/2026-10-07-configuration-profile/pin.json",
+    "profile": "docs/parity/obligations/2026-10-07-configuration-profile/configuration-profile.json",
+    "review": "docs/parity/obligations/2026-10-07-configuration-profile/review-final.json",
+    "acceptance_hold": null,
+    "accepted_commit": "8f4902eed5c2710e838faf172e45b047eb7520c8",
+    "delivery_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/configuration-profile/delivery.json"
+  },
+  "completion_policy": "contract_final_completion_audit_all_requirements_with_evidence",
+  "first_action": "Read-only pinned configuration audit, then independently reviewed P11a contract",
+  "active_unit": null,
+  "live_handles": [],
+  "families": [
+    {
+      "id": "EQ01",
+      "stream": "EQ",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "EQ02",
+      "stream": "EQ",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "EQ03",
+      "stream": "EQ",
+      "state": "audit_needed",
+      "child_ids": [
+        "EQ03-zap-halfphys"
+      ],
+      "coverage_record": null
+    },
+    {
+      "id": "EQ04",
+      "stream": "EQ",
+      "state": "audit_needed",
+      "child_ids": [
+        "P11a-P1-PRE"
+      ],
+      "coverage_record": null
+    },
+    {
+      "id": "EQ05",
+      "stream": "EQ",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "P11a",
+      "stream": "CB",
+      "state": "auditing",
+      "child_ids": [
+        "P11a-S1",
+        "P11a-C1",
+        "P11a-B1",
+        "P11a-D1",
+        "P11a-P1",
+        "P11a-A1",
+        "P11a-S1-M",
+        "P11a-S1-F",
+        "P11a-S1-MC",
+        "P11a-C1-API1",
+        "P11a-C1-LIFE",
+        "P11a-B1-PRE",
+        "P11a-C1-IN1",
+        "P11a-P1-BILL",
+        "P11a-P1-PRE",
+        "P11a-P1-BILL-API1",
+        "P11a-P1-BILL-SAVE1"
+      ],
+      "coverage_record": null
+    },
+    {
+      "id": "P11b",
+      "stream": "CB",
+      "state": "audit_needed",
+      "child_ids": [
+        "P11b",
+        "OB07-zap-context",
+        "OB07-zap-objects"
+      ],
+      "coverage_record": null
+    },
+    {
+      "id": "P11c",
+      "stream": "CB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "P11d",
+      "stream": "CB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "CB01",
+      "stream": "CB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "CB02",
+      "stream": "CB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "CB03",
+      "stream": "CB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "CB04",
+      "stream": "CB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "CB05",
+      "stream": "CB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "AI01",
+      "stream": "AI",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "AI02",
+      "stream": "AI",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "AI03",
+      "stream": "AI",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "AI04",
+      "stream": "AI",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "AI05",
+      "stream": "AI",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "OB01",
+      "stream": "OB",
+      "state": "auditing",
+      "child_ids": [
+        "OB01-WAND-ID1"
+      ],
+      "coverage_record": null
+    },
+    {
+      "id": "OB02",
+      "stream": "OB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "OB03",
+      "stream": "OB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "OB04",
+      "stream": "OB",
+      "state": "audit_needed",
+      "child_ids": [
+        "OB04-object-retirement"
+      ],
+      "coverage_record": null
+    },
+    {
+      "id": "OB05",
+      "stream": "OB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "OB06",
+      "stream": "OB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "OB07",
+      "stream": "OB",
+      "state": "audit_needed",
+      "child_ids": [
+        "P11b",
+        "OB07-zap-context",
+        "OB07-zap-objects"
+      ],
+      "coverage_record": null
+    },
+    {
+      "id": "OB08",
+      "stream": "OB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "OB09",
+      "stream": "OB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "OB10",
+      "stream": "OB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "OB11",
+      "stream": "OB",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "HE01",
+      "stream": "HE",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "HE02",
+      "stream": "HE",
+      "state": "audit_needed",
+      "child_ids": [
+        "HE02-zap-exercise"
+      ],
+      "coverage_record": null
+    },
+    {
+      "id": "HE03",
+      "stream": "HE",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "HE04",
+      "stream": "HE",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "HE05",
+      "stream": "HE",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "HE06",
+      "stream": "HE",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "HE07",
+      "stream": "HE",
+      "state": "audit_needed",
+      "child_ids": [
+        "P11a-P1-PRE"
+      ],
+      "coverage_record": null
+    },
+    {
+      "id": "HE08",
+      "stream": "HE",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "HE09",
+      "stream": "HE",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "HE10",
+      "stream": "HE",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "DG01",
+      "stream": "DG",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "DG02",
+      "stream": "DG",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "DG03",
+      "stream": "DG",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "DG04",
+      "stream": "DG",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "DG05",
+      "stream": "DG",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "DG06",
+      "stream": "DG",
+      "state": "audit_needed",
+      "child_ids": [
+        "P11a-P1-BILL",
+        "P11a-P1-PRE",
+        "DG06-bill-merge-partial",
+        "DG06-bill-account",
+        "DG06-bill-history",
+        "DG06-bill-settlement",
+        "DG06-bill-nonwand"
+      ],
+      "coverage_record": null
+    },
+    {
+      "id": "DG07",
+      "stream": "DG",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "DG08",
+      "stream": "DG",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "UI01",
+      "stream": "UI",
+      "state": "audit_needed",
+      "child_ids": [
+        "P11a-S1-M",
+        "P11a-S1-F",
+        "P11a-S1-MC",
+        "UI01-CONFIG-COMMANDS"
+      ],
+      "coverage_record": null
+    },
+    {
+      "id": "UI02",
+      "stream": "UI",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "UI03",
+      "stream": "UI",
+      "state": "audit_needed",
+      "child_ids": [],
+      "coverage_record": null
+    },
+    {
+      "id": "UI04",
+      "stream": "UI",
+      "state": "audit_needed",
+      "child_ids": [
+        "UI04-CONFIG-INPUTS",
+        "P11a-S1-F",
+        "UI04-zap-messages"
+      ],
+      "coverage_record": null
+    },
+    {
+      "id": "UI05",
+      "stream": "UI",
+      "state": "audit_needed",
+      "child_ids": [
+        "UI05-BONES-INPUTS"
+      ],
+      "coverage_record": null
+    }
+  ],
+  "children": [
+    {
+      "id": "BOOTSTRAP-C-CONFIG",
+      "parent": "run_configuration",
+      "state": "accepted",
+      "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/configuration.json",
+      "accepted_prerequisites": [],
+      "findings": [],
+      "repair_counters": {},
+      "evidence": "docs/parity/obligations/2026-10-07-bootstrap-p11a/review-final.json",
+      "selected_profile_successor": "BOOTSTRAP-C-CONDITIONALS",
+      "accepted_commit": "8f4902eed5c2710e838faf172e45b047eb7520c8",
+      "acceptance_kind": "reviewed_selected_configuration_input_pin_not_behavior",
+      "accepted_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/configuration-profile/delivery.json"
+    },
+    {
+      "id": "BOOTSTRAP-C-CONDITIONALS",
+      "parent": "run_configuration",
+      "state": "accepted",
+      "contract": "docs/parity/obligations/2026-10-07-configuration-profile/configuration-profile.json",
+      "outcome": "Complete reviewed transitive headers/build-defined symbol valuations and enabled/disabled conditional gameplay branch manifest, source-only",
+      "accepted_prerequisites": [],
+      "evidence": "docs/parity/obligations/2026-10-07-configuration-profile/pin.json",
+      "repair_counters": {
+        "CFG-R1": {
+          "attempts_started": 1,
+          "unsuccessful_same_model": 0,
+          "unsuccessful_total": 0,
+          "model": "gpt-6.1-sol/high",
+          "outcome": "resolved_first_attempt"
+        },
+        "CFG-R2": {
+          "attempts_started": 1,
+          "unsuccessful_same_model": 0,
+          "unsuccessful_total": 0,
+          "model": "gpt-6.1-sol/high",
+          "outcome": "resolved_first_attempt"
+        },
+        "CFG-R3": {
+          "attempts_started": 1,
+          "unsuccessful_same_model": 0,
+          "unsuccessful_total": 0,
+          "model": "gpt-6.1-sol/high",
+          "outcome": "resolved_first_attempt"
+        }
+      },
+      "draft_evidence": {
+        "path": "/tmp/netrust-configuration-profile",
+        "manifest": "/tmp/netrust-configuration-profile/review-inputs.json",
+        "durable_initial_copy": {
+          "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/configuration-profile/initial-copy-proof.json",
+          "sha256": "ff0e71bff058b80287fa482d6c7236a90e86e8bf2b216c18b1a56dcec5e4f102",
+          "status": "474 file copy/readback PASS; draft only"
+        },
+        "gate_reuse_candidate": {
+          "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/configuration-profile/gate-reuse-candidate.json",
+          "sha256": "2e79fcbbb70022e5a55c9a9a3e0d8d946ea4df565c863b5299cb1d699bc4eea3",
+          "status": "stored999/3gold/12 logs verified; docs-only reuse conditional on reviewed pin and fresh doc/parity gates"
+        },
+        "repair_proof": {
+          "path": "/tmp/netrust-configuration-profile/repair-proof.json",
+          "sha256": "d541c708cf63079bba8b021d340301032ef992e8c72419e7ab3fa6f928f3c1bc",
+          "attempt": 1
+        }
+      },
+      "review": {
+        "decision": "PASS_SELECTED_CONFIGURATION_PIN",
+        "path": "docs/parity/obligations/2026-10-07-configuration-profile/review-final.json",
+        "sha256": "f3397076b21a31019a0804e718ae28b3ed69c7ddb38dc57aa6bea89261d5396d"
+      },
+      "accepted_commit": "8f4902eed5c2710e838faf172e45b047eb7520c8",
+      "acceptance_kind": "reviewed_selected_configuration_input_pin_not_behavior",
+      "accepted_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/configuration-profile/delivery.json"
+    },
+    {
+      "id": "UI04-CONFIG-INPUTS",
+      "parent": "UI04",
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/configuration.json",
+      "outcome": "Complete supported options/calendar/environment deterministic-input/persistence contract; every variant remains in scope",
+      "accepted_prerequisites": [],
+      "evidence": null,
+      "repair_counters": {}
+    },
+    {
+      "id": "UI05-BONES-INPUTS",
+      "parent": "UI05",
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/configuration.json",
+      "outcome": "Bones/external persistence input and compatibility audit; ID1 supplies narrow item-definition identity payload evidence",
+      "accepted_prerequisites": [],
+      "evidence": null,
+      "repair_counters": {}
+    },
+    {
+      "id": "BOOTSTRAP-C-BRANCH-MANIFEST",
+      "parent": "run_configuration",
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/configuration.json",
+      "outcome": "Complete conditional content/level/catalog source branch manifest reconciled to all seven streams; local counts never prove completeness",
+      "accepted_prerequisites": [],
+      "evidence": null,
+      "repair_counters": {}
+    },
+    {
+      "id": "OB01-WAND-ID1",
+      "parent": "OB01",
+      "state": "accepted",
+      "engineering_ready": true,
+      "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/p11a-contract.json",
+      "evidence": "docs/parity/obligations/2026-10-07-ob01-wand-id1/unit.json",
+      "accepted_prerequisites": [
+        "P10a2",
+        "P10b"
+      ],
+      "acceptance_hold": null,
+      "implementation_started": true,
+      "repair_counters": {
+        "OB01-ID1-E1": {
+          "attempts_started": 1,
+          "unsuccessful_same_model": 0,
+          "unsuccessful_total": 0,
+          "repair_actor": "coordinator metadata only",
+          "state": "resolved_first_attempt"
+        }
+      },
+      "configuration_prerequisite": {
+        "id": "BOOTSTRAP-C-CONDITIONALS",
+        "accepted_commit": "8f4902eed5c2710e838faf172e45b047eb7520c8",
+        "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/configuration-profile/delivery.json"
+      },
+      "draft_evidence": {
+        "handoff": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1/implementation-initial/handoff.json",
+        "review_input_binding": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1/implementation-initial/review-inputs.json",
+        "source_reviewed_archive": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1/implementation-initial/source-reviewed.tar.gz",
+        "source_reviewed_archive_sha256": "c680060b3140d97b20946716286aa993a3dac3d4943e6a7b1575a9783457e2b5"
+      },
+      "review": {
+        "status": "PASS",
+        "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1/reviewed/review-final.json",
+        "sha256": "57da53a468e949aeefd99d25ef4732165a71cde8ad22f2e2d47f0be7c6e9fd06"
+      },
+      "full_gates": {
+        "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1/full-gates/accepted.json",
+        "sha256": "fbad8f39409283db9d02e9c462d8042ce54a278386d0222506af009d54f48ad7",
+        "status": "PASS1009/all3gold/all12 final344inputs"
+      },
+      "accepted_commit": "6fb4aeee7441ffc0fd64e5c015697c4cdd656491",
+      "accepted_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1/delivery.json",
+      "source_conformance_accepted": true,
+      "acceptance_scope": "reviewed identity prerequisite only; no parent-family closure",
+      "consumed_P10_interface_regressions": "all14 existing public creation fixtures unchanged assertions plus complete current344 full1009/3gold/12 acceptance"
+    },
+    {
+      "id": "P11a-S1",
+      "parent": "P11a",
+      "state": "accepted",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-selection-contract/contract.json",
+      "accepted_prerequisites": [
+        "OB01-WAND-ID1"
+      ],
+      "dependencies": [
+        "OB01-WAND-ID1"
+      ],
+      "evidence": "docs/parity/obligations/2026-10-07-p11a-selected-wand/unit.json",
+      "repair_counters": {
+        "P11S1-R1": {
+          "attempts_started": 1,
+          "unsuccessful_attempts": 0,
+          "model": "gpt-6.1-sol",
+          "resolved": true
+        },
+        "P11S1-R2": {
+          "attempts_started": 1,
+          "unsuccessful_attempts": 0,
+          "model": "gpt-6.1-sol",
+          "resolved": true
+        },
+        "P11S1-R3": {
+          "attempts_started": 1,
+          "unsuccessful_attempts": 0,
+          "model": "gpt-6.1-sol",
+          "resolved": true
+        },
+        "S1-new-fixture-inventory-order": {
+          "attempts_started": 2,
+          "unsuccessful_attempts": 1,
+          "final_focused_pass": true,
+          "model": "gpt-6.1-sol"
+        },
+        "S1-unused-engraving-import": {
+          "attempts_started": 1,
+          "unsuccessful_attempts": 0,
+          "model": "gpt-6.1-sol",
+          "resolved": true
+        }
+      },
+      "prerequisite_binding": {
+        "id": "OB01-WAND-ID1",
+        "commit": "6fb4aeee7441ffc0fd64e5c015697c4cdd656491",
+        "source_input_digest": "567aed72fc97273ac4209afe92decbd5175e8e576ec7b5933bdb14c871e4e707",
+        "delivery": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1/delivery.json"
+      },
+      "draft_evidence": {
+        "directory": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/contract-initial",
+        "review_input_manifest": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/contract-initial/review-inputs.json",
+        "sha256": "8af5b26743d320a1376291d8c3e1517f3aa014af1a28d9c3f9e7337f550de236"
+      },
+      "independent_review": {
+        "verdict": "PASS",
+        "initial": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/review-initial/review-initial.json",
+        "final": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/review-final/review-final.json",
+        "resolved_findings": [
+          "P11S1-R1",
+          "P11S1-R2",
+          "P11S1-R3"
+        ],
+        "scope": "contract only; initial source checks reused after repair-only PASS"
+      },
+      "repair1": {
+        "draft": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/repair1/draft",
+        "proof": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/repair1/runner/coordinator-repair-proof.json",
+        "cli_usage": {
+          "input_tokens": 370826,
+          "cached_input_tokens": 308352,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 15485,
+          "reasoning_output_tokens": 3317
+        }
+      },
+      "ready_evidence": "docs/parity/obligations/2026-10-07-p11a-selection-contract/unit.json",
+      "contract_checkpoint_commit": "60b6075870bc9b7ca3a38027a97637156ccf7be7",
+      "implementation_baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/implementation-baseline.json",
+      "implementation_initial": {
+        "directory": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/implementation-initial",
+        "source_baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/implementation-initial/review-baseline.json",
+        "source_input_digest": "393e9faa1987cf0047f18b48df27ff5d61ddc426aa95cc6f2acc113ca364bf36",
+        "fixture_repairs": "two actual repair attempts for new fixture inventory-order assumptions; final focused pass; preserve original failures",
+        "cargo_overlap": "worker admitted; both affected checks rerun sequentially; no conformance/compliance waiver"
+      },
+      "implementation_cli_usage": {
+        "input_tokens": 2875009,
+        "cached_input_tokens": 2767616,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 19643,
+        "reasoning_output_tokens": 2524,
+        "source": "actual CLI turn.completed; cumulative context processed not unique prompt or price"
+      },
+      "coordinator_focused_agent_result": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/coordinator-agent-rerun/result.json",
+      "implementation_review": {
+        "verdict": "PASS",
+        "report": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/implementation-review/review-initial.json",
+        "usage": {
+          "input_tokens": 743178,
+          "cached_input_tokens": 577152,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 11945,
+          "reasoning_output_tokens": 3674
+        },
+        "scope": "backend/native/shared parser S1 only; no full family or frontend closure"
+      },
+      "initial_full_gate_failure": {
+        "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/full-gates-initial-failed/results.json",
+        "check": "clippy",
+        "exit": 101,
+        "reason": "unused Engraving/EngravingMedium test imports; no full-suite execution yet"
+      },
+      "lint_review": {
+        "verdict": "PASS",
+        "report": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/lint-review/review-final.json",
+        "scope": "exactone-line import deletion; preceding full semantic review reused"
+      },
+      "final_full_gates": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/full-gates/accepted.json",
+      "final_source_input_digest": "7b691c6e14d0449c37776f29b851ff7866bb2e41551b1c883458e5d0de416e79",
+      "accepted_commit": "aadce228c9d00b573ae8ab4773352798418a6d4b",
+      "delivery": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/delivery.json",
+      "source_conformance_scope": "backend/native/shared-parser selection/cancel only"
+    },
+    {
+      "id": "P11a-C1",
+      "parent": "P11a",
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "accepted_prerequisites": [
+        "P11a-S1"
+      ],
+      "evidence": null,
+      "repair_counters": {
+        "C1-R1": {
+          "attempts_started": 1,
+          "unsuccessful_attempts": 0,
+          "model": "gpt-6.1-sol",
+          "resolved": true
+        },
+        "C1-R2": {
+          "attempts_started": 1,
+          "unsuccessful_attempts": 0,
+          "model": "gpt-6.1-sol",
+          "resolved": true
+        },
+        "C1-R3": {
+          "attempts_started": 1,
+          "unsuccessful_attempts": 0,
+          "model": "gpt-6.1-sol",
+          "resolved": true
+        }
+      },
+      "dependencies": [
+        "P11a-C1-API1",
+        "P11a-C1-LIFE",
+        "P11a-C1-IN1"
+      ],
+      "prerequisite_binding": {
+        "id": "P11a-S1",
+        "commit": "aadce228c9d00b573ae8ab4773352798418a6d4b",
+        "source_input_digest": "7b691c6e14d0449c37776f29b851ff7866bb2e41551b1c883458e5d0de416e79",
+        "delivery": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/delivery.json"
+      },
+      "baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/baseline.json",
+      "draft_evidence": {
+        "directory": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/contract-initial",
+        "review_inputs": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/contract-initial/draft/review-inputs.json",
+        "manifest_sha256": "383374c958523c37664fb81f0fbbf0bb738b3410eb46cb2a1a1c0d147738b4f1",
+        "status": "review pending"
+      },
+      "contract_audit_cli_usage": {
+        "input_tokens": 1442332,
+        "cached_input_tokens": 1341952,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 21019,
+        "reasoning_output_tokens": 4655
+      },
+      "interrupted_review": {
+        "directory": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/review-interrupted-runtime-paused",
+        "reason": "native goal reports paused",
+        "verdict": null,
+        "repair_attempt_counted": false
+      },
+      "independent_review": {
+        "verdict": "NEEDS_CHANGES",
+        "report": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/review-initial/review-initial.json",
+        "findings": [
+          "C1-R1",
+          "C1-R2",
+          "C1-R3"
+        ]
+      },
+      "repair1": {
+        "directory": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/repair1",
+        "review_input_manifest": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/repair1/draft/review-inputs.json",
+        "manifest_sha256": "7b555eedbfdbeff220deeb78320dd098b4c7b9748c906611dd941fec2728855c",
+        "scope": "fourartifact contract repair only"
+      },
+      "contract_review_cli_usage": {
+        "input_tokens": 1232794,
+        "cached_input_tokens": 1146624,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 12999,
+        "reasoning_output_tokens": 4232,
+        "source": "actual turn.completed; cumulative processed context not unique prompt or price"
+      },
+      "repair1_cli_usage": {
+        "input_tokens": 487987,
+        "cached_input_tokens": 402944,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 13037,
+        "reasoning_output_tokens": 1687,
+        "source": "actual turn.completed; cumulative processed context not unique prompt or price"
+      },
+      "reviewed_contract": {
+        "initial": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/review-initial/review-initial.json",
+        "final": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/review-final/review-final.json",
+        "verdict": "PASS",
+        "implementation_accepted": false
+      },
+      "contract_checkpoint_commit": "aed5b78dc8ec0f9b2f0c82d38eec3f6208651762",
+      "contract_delivery": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/contract-delivery.json"
+    },
+    {
+      "id": "P11a-B1",
+      "parent": "P11a",
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/p11a-contract.json",
+      "accepted_prerequisites": [],
+      "evidence": null,
+      "repair_counters": {},
+      "dependencies": [
+        "P11a-B1-PRE",
+        "P11a-C1-IN1"
+      ]
+    },
+    {
+      "id": "P11a-D1",
+      "parent": "P11a",
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/p11a-contract.json",
+      "accepted_prerequisites": [],
+      "evidence": null,
+      "repair_counters": {},
+      "dependencies": [
+        "P11a-C1",
+        "P11a-B1"
+      ]
+    },
+    {
+      "id": "P11a-P1",
+      "parent": "P11a",
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/p11a-contract.json",
+      "accepted_prerequisites": [],
+      "evidence": null,
+      "repair_counters": {},
+      "dependencies": [
+        "P11a-S1",
+        "P11a-P1-BILL",
+        "P11a-P1-PRE"
+      ]
+    },
+    {
+      "id": "P11a-A1",
+      "parent": "P11a",
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-bootstrap-p11a/p11a-contract.json",
+      "accepted_prerequisites": [],
+      "evidence": null,
+      "repair_counters": {},
+      "dependencies": [
+        "P11a-C1",
+        "P11a-B1",
+        "P11a-D1",
+        "P11a-P1",
+        "P11a-S1-M",
+        "P11a-S1-MC",
+        "P11a-S1-F"
+      ]
+    },
+    {
+      "id": "UI01-CONFIG-COMMANDS",
+      "parent": "UI01",
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-configuration-profile/pin.json",
+      "outcome": "DEBUG/explore/shell/suspend public input/repeat/cancel/turn contracts under pinned configuration",
+      "accepted_prerequisites": [],
+      "evidence": null,
+      "repair_counters": {}
+    },
+    {
+      "id": "P11a-S1-M",
+      "parent": "P11a",
+      "cross_refs": [
+        "UI01"
+      ],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-selection-contract/contract.json",
+      "dependencies": [
+        "P11a-S1"
+      ],
+      "allowed_files": [
+        "crates/nethacked-agent/src/commands.rs",
+        "crates/nethacked-agent/src/session.rs",
+        "crates/nethacked-agent/src/observation.rs",
+        "crates/nethacked-agent/src/mcp.rs",
+        "crates/nethacked-agent/src/jsonrpc.rs",
+        "crates/nethacked-agent/src/bin/jsonrpc.rs",
+        "crates/nethacked-agent/src/graphql.rs",
+        "crates/nethacked-wasm/src/lib.rs",
+        "crates/nethacked-py/src/lib.rs",
+        "crates/nethacked-agent/tests/protocol_tests.rs",
+        "crates/nethacked-agent/tests/graphql_http_test.rs",
+        "crates/nethacked-agent/tests/selected_wand_actions.rs",
+        "python/nethacked_gym/env.py",
+        "python/tests/test_rl.py"
+      ],
+      "evidence": null,
+      "repair_counters": {}
+    },
+    {
+      "id": "P11a-S1-F",
+      "parent": "P11a",
+      "cross_refs": [
+        "UI01",
+        "UI04"
+      ],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-selection-contract/contract.json",
+      "dependencies": [
+        "P11a-S1-MC",
+        "P11a-C1",
+        "P11a-B1",
+        "P11a-D1",
+        "P11a-P1"
+      ],
+      "allowed_files": [
+        "crates/nethacked-tui/src/main.rs",
+        "crates/nethacked-tui/src/keys.rs",
+        "web/js/game.js",
+        "web/play/play.js",
+        "web/index.html",
+        "web/css/app.css"
+      ],
+      "evidence": null,
+      "repair_counters": {}
+    },
+    {
+      "id": "P11a-S1-MC",
+      "parent": "P11a",
+      "cross_refs": [
+        "UI01"
+      ],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-selection-contract/contract.json",
+      "dependencies": [
+        "P11a-S1-M",
+        "P11a-D1",
+        "P11a-P1"
+      ],
+      "allowed_files": [
+        "crates/nethacked-agent/src/commands.rs",
+        "crates/nethacked-agent/src/session.rs",
+        "crates/nethacked-agent/src/observation.rs",
+        "crates/nethacked-agent/src/mcp.rs",
+        "crates/nethacked-agent/src/jsonrpc.rs",
+        "crates/nethacked-agent/src/bin/jsonrpc.rs",
+        "crates/nethacked-agent/src/graphql.rs",
+        "crates/nethacked-wasm/src/lib.rs",
+        "crates/nethacked-py/src/lib.rs",
+        "crates/nethacked-agent/tests/protocol_tests.rs",
+        "crates/nethacked-agent/tests/graphql_http_test.rs",
+        "crates/nethacked-agent/tests/selected_wand_actions.rs",
+        "python/nethacked_gym/env.py",
+        "python/tests/test_rl.py"
+      ],
+      "evidence": null,
+      "repair_counters": {}
+    },
+    {
+      "id": "P11a-C1-API1",
+      "parent": "P11a",
+      "cross_refs": [],
+      "state": "accepted",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "dependencies": [
+        "P11a-S1"
+      ],
+      "outcome": "Signed prescribed-draw charge prerequisite and positive native selected path; no newly reachable zero/negative runtime branch",
+      "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/implementation-initial/handoff.json",
+      "repair_counters": {
+        "unexpected_fixture_event": 2,
+        "cached_recharge_setup": 1,
+        "raw_save_order": 1,
+        "production_defects": 0,
+        "total_failed_cargo_runs": 2,
+        "total_sim_attempts": 3
+      },
+      "allowed_files": [
+        "crates/nethacked-core/src/artifacts_wands.rs",
+        "crates/nethacked-sim/src/actions/items.rs",
+        "crates/nethacked-sim/tests/selected_wand_tests.rs"
+      ],
+      "baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/baseline.json",
+      "contract_checkpoint_commit": "aed5b78dc8ec0f9b2f0c82d38eec3f6208651762",
+      "accepted_prerequisites": [
+        "P11a-S1"
+      ],
+      "review_baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/review-baseline.json",
+      "independent_review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/implementation-review/review-final.json",
+      "unit_record": "docs/parity/obligations/2026-10-07-p11a-charge-api1/unit.json",
+      "full_gate_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/full-gates/accepted.json",
+      "delivery_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/delivery.json",
+      "accepted_commit": "8f44a7a9f7a1536e2c5a21ec47596777ac705fc0"
+    },
+    {
+      "id": "P11a-C1-LIFE",
+      "parent": "P11a",
+      "cross_refs": [],
+      "state": "accepted_contract_only",
+      "contract": "docs/parity/obligations/2026-10-08-p11a-lifetime-contract/unit.json",
+      "dependencies": [
+        "P11a-S1",
+        "P11a-P1-BILL"
+      ],
+      "outcome": "Review represented whole-item retirement, wield/quiver/equipment/timers and absent-generation finalization; consume P1 bill retention contract rather than erase unpaid ledger; explicitly cleared current-wand after partial stack destruction must suppress dust, not just arena-missing checks; naming/article/plural and attached timer/reference retirement stay bounded within LIFE, with explicit represented limits",
+      "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/audit/answer.txt",
+      "repair_counters": {
+        "F1": {
+          "attempts": 1,
+          "unsuccessful": 0,
+          "state": "resolved_contract_scope"
+        },
+        "F2": {
+          "attempts": 1,
+          "unsuccessful": 0,
+          "state": "resolved_contract_scope"
+        },
+        "F3": {
+          "attempts": 2,
+          "unsuccessful": 1,
+          "state": "resolved_contract_scope"
+        },
+        "F4": {
+          "attempts": 1,
+          "unsuccessful": 0,
+          "state": "resolved_contract_scope"
+        },
+        "F5": {
+          "attempts": 2,
+          "unsuccessful": 1,
+          "state": "resolved_contract_scope"
+        }
+      },
+      "audit_paths": [
+        "crates/nethacked-sim/src/world.rs",
+        "crates/nethacked-sim/src/actions/equipment.rs",
+        "crates/nethacked-sim/src/object_timers.rs",
+        "crates/nethacked-arena/src/lib.rs"
+      ],
+      "implementation_files": "none authorized by this packet; child review must fix exact minimal allowlist if needed",
+      "audit_dependencies": [
+        "P11a-S1",
+        "P11a-P1-BILL"
+      ],
+      "activation_dependencies": [
+        "P11a-P1-BILL-API1",
+        "P11a-P1-BILL-SAVE1"
+      ],
+      "billing_acceptance_contract": "docs/parity/obligations/2026-10-07-p11a-billing-contract/contract.json",
+      "audit_status": "accepted_contract_only_delivery_verified",
+      "baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/baseline.json",
+      "guard_packet": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/audit-packet/packet.json",
+      "model": "gpt-6-luna/medium",
+      "audit_usage": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/audit/usage.json",
+      "source_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/review-packet/source-bindings.json",
+      "review_guard_packet": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/review-packet/packet.json",
+      "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/review/answer.txt",
+      "findings": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/findings.json",
+      "repair_guard_packet": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/repair-packet/packet.json",
+      "repaired_proposal": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/repair/answer.txt",
+      "rereview_guard_packet": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/rereview-packet/packet.json",
+      "contract_candidate": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/final-review-packet/contract-candidate.json",
+      "final_review_guard_packet": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/final-review-packet/packet.json",
+      "previous_contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "final_contract": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/final-review-packet/contract-candidate.json",
+      "final_review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/final-review/answer.txt",
+      "source_conformance_accepted": false,
+      "implementation_children": [
+        "P11a-C1-LIFE-API1"
+      ],
+      "accepted_commit": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
+      "delivery_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/delivery.json"
+    },
+    {
+      "id": "P11a-B1-PRE",
+      "parent": "P11a",
+      "cross_refs": [],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "dependencies": [
+        "P11a-C1-API1",
+        "P11a-C1-LIFE",
+        "HE02-zap-exercise",
+        "EQ03-zap-halfphys"
+      ],
+      "outcome": "Cursed bound100 after charge; explosion -> d(post-spe+2,6) -> reviewed halfphys/damage/death -> accepted LIFE whole retirement -> conditional HE02 exercise -> TIME. Public positive cursed/backfire proof; zero-success composition in IN1. Requires accepted implementations/evidence for API1/LIFE/exercise/halfphys before activation; no direction or dust. Current message-only exercise helper is not an accepted seam.",
+      "evidence": null,
+      "repair_counters": {},
+      "implementation_files": "determined only by independent B1 contract; this C1 audit authorizes none",
+      "activation_dependencies": [
+        "P11a-C1-LIFE-API1"
+      ]
+    },
+    {
+      "id": "P11a-C1-IN1",
+      "parent": "P11a",
+      "cross_refs": [],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "dependencies": [
+        "P11a-C1-API1",
+        "P11a-C1-LIFE",
+        "P11a-B1-PRE",
+        "P11a-P1"
+      ],
+      "outcome": "Activate signed gate for all valid selected and legacy wands, failed attempt messages/time, zero wrest and surviving negative terminal dust; consume B1 seam before effects. No complete zap-effects port.",
+      "evidence": null,
+      "repair_counters": {},
+      "allowed_files": [
+        "crates/nethacked-sim/src/actions/items.rs",
+        "crates/nethacked-sim/tests/selected_wand_tests.rs"
+      ],
+      "activation_dependencies": [
+        "P11a-C1-LIFE-API1"
+      ]
+    },
+    {
+      "id": "P11a-P1-BILL",
+      "parent": "P11a",
+      "cross_refs": [
+        "DG06"
+      ],
+      "state": "accepted_contract_only",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-billing-contract/contract.json",
+      "dependencies": [
+        "P11a-S1"
+      ],
+      "outcome": "Narrow accepted P1 billing contract for selected-wand whole retirement: C obfree used-up bill-object retention versus unbilled deallocation; preserve unpaid liability/identity without corpse remove_unpaid erasure. Specify represented ledger seam and public billed/unbilled quantity1/3, save and stale-generation obligations. This is the concrete contract gate for LIFE, independent of C1/B1/IN1; implementation belongs to its reviewed child if required.",
+      "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/contract-initial/draft/evidence.json",
+      "repair_counters": {
+        "F1": {
+          "attempts": 1,
+          "unsuccessful": 0,
+          "status": "resolved_at_contract_scope",
+          "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/rereview1/review.json"
+        },
+        "F2": {
+          "attempts": 1,
+          "unsuccessful": 0,
+          "status": "resolved_at_contract_scope",
+          "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/rereview1/review.json"
+        },
+        "F3": {
+          "attempts": 2,
+          "unsuccessful": 1,
+          "status": "resolved_contract_scope",
+          "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/review-final/review-final.json",
+          "historical_diagnosis_correction": "Originalsuffix realnewline; historicalnonPASS kept, explicitJSONreadback accepted"
+        }
+      },
+      "audit_paths": [
+        "crates/nethacked-sim/src/world.rs",
+        "crates/nethacked-arena/src/lib.rs"
+      ],
+      "implementation_files": "none authorized here; separate independent child review must fix a minimal allowlist, exact seam, evidence and acceptance before use",
+      "baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/baseline.json",
+      "audit_status": "terminal_packet_verified",
+      "contract_draft": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/contract-initial/draft/contract.json",
+      "coordinator_review_inputs": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/coordinator-review-inputs.json",
+      "usage_records": [
+        "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/contract-initial/actual-usage.json",
+        "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/review-initial/actual-usage.json",
+        "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/repair1/actual-usage.json",
+        "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/rereview1/actual-usage.json",
+        "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/repair2/actual-usage.json",
+        "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/review-final/actual-usage.json"
+      ],
+      "execution_quality": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/execution-quality.json",
+      "independent_review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/review-initial/review-initial.json",
+      "repair_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/repair1/draft/repair-summary.json",
+      "repaired_contract": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/repair2/draft/contract.json",
+      "rereview1": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/rereview1/review.json",
+      "repair2_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/repair2/draft/repair-summary.json",
+      "repair2_verification": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/repair2/verification.json",
+      "final_review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/review-final/review-final.json",
+      "final_contract": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/repair2/draft/contract.json",
+      "unit_record": "docs/parity/obligations/2026-10-07-p11a-billing-contract/unit.json",
+      "source_conformance_accepted": false,
+      "implementation_children": [
+        "P11a-P1-BILL-API1",
+        "P11a-P1-BILL-SAVE1"
+      ],
+      "accepted_commit": "76b2fa266387e012d9aa21b4c90133932ea2ac33",
+      "delivery_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/contract-delivery.json"
+    },
+    {
+      "id": "P11a-P1-PRE",
+      "parent": "P11a",
+      "cross_refs": [
+        "HE07",
+        "EQ04",
+        "DG06"
+      ],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "dependencies": [
+        "P11a-S1",
+        "P11a-P1-BILL"
+      ],
+      "outcome": "Review bounded HE07 zap-form/nohands, EQ04 zap-capacity and DG06 zap-unpaid/check_unpaid-before-charge seams; prescribe public guard order, no charge/RNG/time on preselection refusal and exact billing effects on valid selection. Consume P1-BILL; no requirement on C1/IN1/B1. Own preflight only; naming/timer retirement remains LIFE.",
+      "evidence": null,
+      "repair_counters": {},
+      "audit_paths": [
+        "crates/nethacked-sim/src/actions/items.rs",
+        "crates/nethacked-sim/src/world.rs"
+      ],
+      "implementation_files": "none authorized here; separate independent child review must fix a minimal allowlist, exact seam, evidence and acceptance before use"
+    },
+    {
+      "id": "HE02-zap-exercise",
+      "parent": "HE02",
+      "cross_refs": [],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "dependencies": [
+        "P11a-S1"
+      ],
+      "outcome": "Narrow STR exercise(FALSE) state/RNG/event seam exactly as rng_contract.exercise, including representable persisted AEXE, polymorph/no-draw, saturation/moves encumbrance and post-backfire ordering. Bind pinned attrib.c and current message-only world mismatch. Accepted minimal implementation/public state+next-RNG evidence mandatory before B1-PRE; no all-attribute/Famine rewrite or HE02 closure.",
+      "evidence": null,
+      "repair_counters": {},
+      "audit_paths": [
+        "crates/nethacked-sim/src/world.rs",
+        "crates/nethacked-types/src/lib.rs"
+      ],
+      "implementation_files": "none authorized here; separate independent child review must fix a minimal allowlist, exact seam, evidence and acceptance before use"
+    },
+    {
+      "id": "EQ03-zap-halfphys",
+      "parent": "EQ03",
+      "cross_refs": [],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "dependencies": [
+        "P11a-S1"
+      ],
+      "outcome": "Narrow reviewed backfire Maybe_Half_Phys damage seam, active half-physical applicability, rounding, HP/death and returning lifesave order. Bind exact source/native seam in its later packet and require accepted public evidence before B1-PRE; no accepted seam is inferred here and no EQ03 equipment family closure.",
+      "evidence": null,
+      "repair_counters": {},
+      "audit_paths": [
+        "crates/nethacked-sim/src/world.rs",
+        "crates/nethacked-sim/src/actions/equipment.rs"
+      ],
+      "implementation_files": "none authorized here; separate independent child review must fix a minimal allowlist, exact seam, evidence and acceptance before use"
+    },
+    {
+      "id": "P11b",
+      "parent": "P11b",
+      "cross_refs": [
+        "OB07"
+      ],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "outcome": "remaining wand effect dispatch and ray/object destruction; source C current_wand survivor tracking; custom effect metadata applicability reviewed, not inferred from name",
+      "evidence": null,
+      "repair_counters": {},
+      "dependencies": [
+        "P11a-D1"
+      ]
+    },
+    {
+      "id": "OB07-zap-context",
+      "parent": "OB07",
+      "cross_refs": [
+        "P11b"
+      ],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "outcome": "create-monster BUC/blind/discovery/XP/polymorph/underwater/stasis/wishing and other NoDir effects outside accepted ordinary P10; audit exact children before implementation",
+      "evidence": null,
+      "repair_counters": {},
+      "dependencies": [
+        "P11a-D1"
+      ]
+    },
+    {
+      "id": "UI04-zap-messages",
+      "parent": "UI04",
+      "cross_refs": [],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "outcome": "option/locale/known-object article/plural dust rendering and verbose direction-cancel; C1 English literal fixtures do not close localization",
+      "evidence": null,
+      "repair_counters": {}
+    },
+    {
+      "id": "OB07-zap-objects",
+      "parent": "OB07",
+      "cross_refs": [
+        "P11b"
+      ],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "outcome": "Separate OB07 object obligations: remaining zap ray/object destruction and wand breaking outside C1 retirement; bind current-wand clear/survivor behavior and bounded exact children before implementation. No OB07 or P11b closure inferred from cross-reference.",
+      "evidence": null,
+      "repair_counters": {},
+      "dependencies": [
+        "P11a-D1"
+      ]
+    },
+    {
+      "id": "P11a-P1-BILL-API1",
+      "parent": "P11a",
+      "cross_refs": [
+        "DG06"
+      ],
+      "state": "accepted",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-billing-contract/contract.json",
+      "dependencies": [
+        "P11a-P1-BILL",
+        "P11a-S1"
+      ],
+      "outcome": "Public billing receipt admission, atomic whole-carried disposal and deterministic outstanding-bill views; quantity1/3 known-receipt and legacy-unknown conservation; no wand activation",
+      "evidence": null,
+      "repair_counters": {},
+      "allowed_files": [
+        "crates/nethacked-sim/src/world.rs",
+        "crates/nethacked-sim/src/actions/economy.rs",
+        "crates/nethacked-sim/src/actions/mod.rs",
+        "crates/nethacked-sim/tests/wand_billing_tests.rs"
+      ],
+      "acceptance_exits": [
+        "Literal source-derived 4-case known receipt transfer plus canonical/custom renamed identities, generational repeat/replacement and no mutation/error/draw/time evidence through public API.",
+        "Legacy absent receipt retention demonstrates base/object liability conservation only; unknown source terms explicit in output/save.",
+        "Lifecycle references rejected; no public wand runtime body activated. Independently reviewed minimal implementation allowlist and tests required.",
+        "F1 identical/changed admission ReceiptAlreadyRecorded, complete-state/events/RNG/time atomicity; F2 typed/direct clearing and public Pay refusal, views and disposal conservation, empty-owner original behavior."
+      ],
+      "contract_review": "docs/parity/obligations/2026-10-07-p11a-billing-contract/review-final.json",
+      "activation_requires": "Accepted implementation/source evidence; contract review alone closes no public wand feature.",
+      "baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/baseline.json",
+      "launch": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/launch-readback.json",
+      "implementation_handoff": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-initial/handoff.json",
+      "review_baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/review-baseline.json",
+      "source_input_digest": "195391958ea6e35e80482b9dbe76995a6f4801b769f534a2d8d66ada715849cc",
+      "source_input_count": 346,
+      "usage_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-initial/actual-usage.json",
+      "independent_review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-review/review-final.json",
+      "review_binding_proof": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-review/readback-verification.json",
+      "unit_record": "docs/parity/obligations/2026-10-07-p11a-billing-api1/unit.json",
+      "full_gate_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/full-gates/accepted.json",
+      "full_gate_tests": 1035,
+      "family_closed": false,
+      "accepted_commit": "009930559c5b7375705151b8298e5a9f3d480f54",
+      "delivery_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/delivery.json",
+      "source_conformance_accepted": true
+    },
+    {
+      "id": "P11a-P1-BILL-SAVE1",
+      "parent": "P11a",
+      "cross_refs": [
+        "DG06"
+      ],
+      "state": "accepted",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-billing-contract/contract.json",
+      "dependencies": [
+        "P11a-P1-BILL-API1"
+      ],
+      "outcome": "Modern/absent-owner oldsave active/cached continuation; global live receipt handle remap at cached restoration; native/pack/hash/WASM compatibility evidence",
+      "evidence": null,
+      "repair_counters": {},
+      "allowed_files": [
+        "crates/nethacked-sim/src/world.rs",
+        "crates/nethacked-sim/src/actions/stairs.rs",
+        "crates/nethacked-sim/tests/wand_billing_tests.rs"
+      ],
+      "acceptance_exits": [
+        "Active/cached live global receipt remap and globally retained q1/3 liability, modern/absent/explicit-empty owners; complete state/events/next RNG/allocation+Wait continuation equivalence.",
+        "API admission->save->load->disposal and consumed->save->load->repeat; malformed modern/legacy input fails before timer catchup.",
+        "Oldpack/schema/canonical hash unchanged scratch equality, WASM target no forbidden dependency and native package tests; all missing outputs/errors recorded.",
+        "Legacy exact historical amount/account not accepted: preserve explicit unknown; source reconstruction remains DG06-bill-history.",
+        "F2 admitted/refused clearing/Pay active+cached save/load/disposal chains; F3 exact scratch manifest below with all outputs and failing exits."
+      ],
+      "contract_review": "docs/parity/obligations/2026-10-07-p11a-billing-contract/review-final.json",
+      "activation_requires": "Accepted implementation/source evidence; contract review alone closes no public wand feature.",
+      "accepted_prerequisite_delivery": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/delivery.json",
+      "baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/baseline.json",
+      "launch": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/launch-readback.json",
+      "graph_discovery": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/graph-discovery.json",
+      "implementation_handoff": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/implementation-initial/handoff.json",
+      "review_baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/review-baseline.json",
+      "source_input_count": 346,
+      "source_input_digest": "8bacdc8c97845110876c9226b847df68f4c08a5b38df45c9ea8920faba3be169",
+      "usage_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/implementation-initial/actual-usage.json",
+      "scratch_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/scratch-readback-verification.json",
+      "independent_review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/implementation-review/review-final.json",
+      "review_binding_proof": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/implementation-review/readback-verification.json",
+      "native_byte_evidence_limit": "New fixtures empty skill maps; general populated-skill native byte determinism remains NATIVE-SAVE-SKILL-ORDER",
+      "unit_record": "docs/parity/obligations/2026-10-07-p11a-billing-save1/unit.json",
+      "full_gate_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/full-gates/accepted.json",
+      "full_gate_tests": 1044,
+      "family_closed": false,
+      "accepted_commit": "a6c12aa75d78aec0bd58e0c376a3cf15c5370c91",
+      "delivery_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/delivery.json",
+      "source_conformance_accepted": true
+    },
+    {
+      "id": "DG06-bill-merge-partial",
+      "parent": "DG06",
+      "cross_refs": [],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-billing-contract/contract.json",
+      "dependencies": [],
+      "outcome": "obfree merge!=NULL: billed quantity aggregation, absent merge bill, unbilled oid price adjustment; useup partial-stack liability",
+      "required_exit": "Bound exact merge/split/partial bill identities and quantities; public/save evidence; no reuse of whole-only seam",
+      "evidence": null,
+      "repair_counters": {},
+      "implementation_files": "none; source/API audit and independent minimal ownership review required"
+    },
+    {
+      "id": "DG06-bill-account",
+      "parent": "DG06",
+      "cross_refs": [],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-billing-contract/contract.json",
+      "dependencies": [],
+      "outcome": "obfree unpaid/no owner or paid-on-bill sanity; next_shkp/shop_keeper location fallback; creditor identity and source administration",
+      "required_exit": "Persistent creditor/account lookup across active/cached shops, missing-owner diagnostics and no silent settlement; exact source bill administration",
+      "evidence": null,
+      "repair_counters": {},
+      "implementation_files": "none; source/API audit and independent minimal ownership review required"
+    },
+    {
+      "id": "DG06-bill-history",
+      "parent": "DG06",
+      "cross_refs": [],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-billing-contract/contract.json",
+      "dependencies": [],
+      "outcome": "get_cost historic price, identification/oid/charisma/artifact/angry-shop rules; legacy missing bquan/price; billing admission/BILLSZ/full/free/dummy",
+      "required_exit": "Source receipt formation and historical pricing/quantity/account uncertainty reconciliation; accepted reconstruction only from sufficient source-backed inputs",
+      "evidence": null,
+      "repair_counters": {},
+      "implementation_files": "none; source/API audit and independent minimal ownership review required"
+    },
+    {
+      "id": "DG06-bill-settlement",
+      "parent": "DG06",
+      "cross_refs": [],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-billing-contract/contract.json",
+      "dependencies": [],
+      "outcome": "doinvbill presentation, pay/credit/debit/settlement/robbery/shop death; retained bill clearing",
+      "required_exit": "Payment and account exits find consumed records without live inventory and settle once; legacy unresolved terms never priced as zero",
+      "evidence": null,
+      "repair_counters": {},
+      "implementation_files": "none; source/API audit and independent minimal ownership review required"
+    },
+    {
+      "id": "DG06-bill-nonwand",
+      "parent": "DG06",
+      "cross_refs": [
+        "OB02",
+        "OB04"
+      ],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-billing-contract/contract.json",
+      "dependencies": [],
+      "outcome": "delete_contents/container pick; leash/food/book/boulder/globby weight restoration",
+      "required_exit": "Source class/contents cleanup and glob valuation; rejected by whole-wand billing seam until reviewed",
+      "evidence": null,
+      "repair_counters": {},
+      "implementation_files": "none; source/API audit and independent minimal ownership review required"
+    },
+    {
+      "id": "OB04-object-retirement",
+      "parent": "OB04",
+      "cross_refs": [],
+      "state": "audit_needed",
+      "contract": "docs/parity/obligations/2026-10-07-p11a-billing-contract/contract.json",
+      "dependencies": [],
+      "outcome": "dealloc_obj Lua refs -> OBJ_LUAFREE, staged OBJ_DELETED vs freeingdata immediate; thrown/kicked/tin/split refs",
+      "required_exit": "Audit nonrepresented reference/storage branches under pinned Lua548 comparator; no Lua execution or equivalence of immediate Rust freeing inferred",
+      "evidence": null,
+      "repair_counters": {},
+      "implementation_files": "none; source/API audit and independent minimal ownership review required"
+    },
+    {
+      "id": "NATIVE-SAVE-SKILL-ORDER",
+      "parent": "UI03",
+      "state": "audit_needed",
+      "dependencies": [],
+      "outcome": "Audit deterministic native serialization and populated-skill save/load/continuation for unchanged SkillTree HashMap. Preserve all fields/values and old assertions; independent narrow allowlist/contract before repair. Empty-skill SAVE1 bytes do not close this obligation.",
+      "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/implementation-review/review-final.json",
+      "trigger": "Equivalent populated Basic Dagger/LongSword worlds serialize different skill-key order after restoration.",
+      "source_owners": [
+        "crates/nethacked-types/src/lib.rs::SkillTree",
+        "crates/nethacked-sim/src/world.rs::SimulationWorld::to_save_json"
+      ],
+      "allowed_files": "none until independent contract",
+      "repair_counters": {},
+      "dispatch_hold": "PROCESS-OPTIMIZATION must complete first"
+    },
+    {
+      "id": "P11a-C1-LIFE-API1",
+      "parent": "P11a",
+      "state": "implementing",
+      "contract": "docs/parity/obligations/2026-10-08-p11a-lifetime-contract/unit.json",
+      "dependencies": [
+        "P11a-C1-LIFE",
+        "P11a-S1",
+        "P11a-P1-BILL-API1",
+        "P11a-P1-BILL-SAVE1"
+      ],
+      "allowed_files": [
+        "crates/nethacked-sim/src/world.rs",
+        "crates/nethacked-sim/tests/wand_lifetime_tests.rs"
+      ],
+      "outcome": "Production-compiled World finalizer callable by later IN1/D1 integration, with public fixtures exercising that implementation taking Option<ItemId> and an event buffer, returning Result<Option<WholeDisposal>, BillError>. None, absent/reused generation or already-retired identity returns Ok(None), with no dust or mutation. A valid surviving nonnegative-charge wand also returns Ok(None), unchanged. Only an explicitly surviving same-generation, negative-charge, hero-carried, non-container wand is eligible for whole disposal. Ineligible live objects or invalid ownership/billing fail atomically using the reviewed validation contract. Ordering: (1) immutable generation/object/definition/quantity/ledger/terms preflight; (2) immutable validation of every represented reference and exact matching cleanup plan, rejecting cached ambiguity; (3) stage exact bounded dust text and private ticket; (4) append dust; (5) clear matching wield/quiver/armor/dressing, recompute affected AC and cancel Active(id) timers; (6) immediately commit the ticket, when billed retaining exactly one consumed billing object with original quantity and terms and unchanged liability; remove the arena generation, then remove matching live unpaid_items and live_terms. When unbilled, retain no bill. No callbacks, RNG or turn spending; all recoverable errors precede dust and cleanup.",
+      "required_successors": [
+        "P11a-C1-IN1",
+        "P11a-D1",
+        "UI04-zap-messages",
+        "OB04-object-retirement",
+        "DG06-bill-merge-partial",
+        "DG06-bill-settlement"
+      ],
+      "evidence": null,
+      "repair_counters": {},
+      "baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE-API1/baseline.json",
+      "guard_packet": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE-API1/implementation-packet/packet.json",
+      "before_snapshot": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE-API1/implementation-packet/world.before.rs",
+      "status": "interrupted_for_architecture_revision"
+    }
+  ],
+  "inventory_coverage": {
+    "baseline_rows": 543,
+    "record": null,
+    "status": "unreconciled_by_this_run"
+  },
+  "catalog_coverage": {
+    "enumeration_records": [],
+    "context_records": [],
+    "status": "audit_needed_including_declared_tags_flags_properties_levels"
+  },
+  "decisions": [],
+  "findings": [
+    {
+      "id": "R1",
+      "unit": "BOOTSTRAP-C-CONFIG/P11a-contract",
+      "status": "resolved_in_local_contract_review",
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/review-initial/review.json",
+      "resolution": "docs/parity/obligations/2026-10-07-bootstrap-p11a/review-final.json"
+    },
+    {
+      "id": "R2",
+      "unit": "BOOTSTRAP-C-CONFIG/P11a-contract",
+      "status": "resolved_in_local_contract_review",
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/review-initial/review.json",
+      "resolution": "docs/parity/obligations/2026-10-07-bootstrap-p11a/review-final.json"
+    },
+    {
+      "id": "R3",
+      "unit": "BOOTSTRAP-C-CONFIG/P11a-contract",
+      "status": "resolved_in_local_contract_review",
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/review-initial/review.json",
+      "resolution": "docs/parity/obligations/2026-10-07-bootstrap-p11a/review-final.json"
+    },
+    {
+      "id": "R4",
+      "unit": "BOOTSTRAP-C-CONFIG/P11a-contract",
+      "status": "resolved_in_local_contract_review",
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/review-initial/review.json",
+      "resolution": "docs/parity/obligations/2026-10-07-bootstrap-p11a/review-final.json"
+    },
+    {
+      "id": "R5",
+      "unit": "BOOTSTRAP-C-CONFIG/P11a-contract",
+      "status": "resolved_in_local_contract_review",
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/review-initial/review.json",
+      "resolution": "docs/parity/obligations/2026-10-07-bootstrap-p11a/review-final.json"
+    },
+    {
+      "id": "R6",
+      "unit": "BOOTSTRAP-C-CONFIG/P11a-contract",
+      "status": "resolved_in_local_contract_review",
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/review-initial/review.json",
+      "resolution": "docs/parity/obligations/2026-10-07-bootstrap-p11a/review-final.json"
+    },
+    {
+      "id": "CFG-R1",
+      "unit": "BOOTSTRAP-C-CONDITIONALS",
+      "title": "Linux CRASHREPORT enables DUMPLOG_CORE",
+      "state": "resolved",
+      "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/configuration-profile/review-initial/review-initial.json",
+      "resolution_review": "docs/parity/obligations/2026-10-07-configuration-profile/review-final.json"
+    },
+    {
+      "id": "CFG-R2",
+      "unit": "BOOTSTRAP-C-CONDITIONALS",
+      "title": "Mail input recipe must distinguish turn polling from mailbox timestamps",
+      "state": "resolved",
+      "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/configuration-profile/review-initial/review-initial.json",
+      "resolution_review": "docs/parity/obligations/2026-10-07-configuration-profile/review-final.json"
+    },
+    {
+      "id": "CFG-R3",
+      "unit": "BOOTSTRAP-C-CONDITIONALS",
+      "title": "Initial absence does not resolve imported external-header conditions",
+      "state": "resolved",
+      "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/configuration-profile/review-initial/review-initial.json",
+      "resolution_review": "docs/parity/obligations/2026-10-07-configuration-profile/review-final.json"
+    },
+    {
+      "id": "OB01-ID1-E1",
+      "unit": "OB01-WAND-ID1",
+      "state": "resolved",
+      "title": "Historical failed focused passing-test count3=>8",
+      "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1/review-initial/review-initial.json",
+      "resolution_review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1/reviewed/review-final.json"
+    },
+    {
+      "id": "BILL-F1",
+      "unit": "P11a-P1-BILL",
+      "status": "resolved_contract_scope",
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/review-initial/review-initial.json",
+      "resolution": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/rereview1/review.json"
+    },
+    {
+      "id": "BILL-F2",
+      "unit": "P11a-P1-BILL",
+      "status": "resolved_contract_scope",
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/review-initial/review-initial.json",
+      "resolution": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/rereview1/review.json"
+    },
+    {
+      "id": "BILL-F3",
+      "unit": "P11a-P1-BILL",
+      "status": "resolved_contract_scope_with_diagnosis_correction",
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/review-initial/review-initial.json",
+      "resolution": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/review-final/review-final.json"
+    },
+    {
+      "id": "NATIVE-SAVE-SKILL-ORDER",
+      "unit": "P11a-P1-BILL-SAVE1",
+      "status": "open_existing_successor_not_SAVE1_blocker",
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/implementation-review/review-final.json",
+      "scope": "Full-goal native save output determinism; no general native byte closure",
+      "requires_registration": false,
+      "successor": "NATIVE-SAVE-SKILL-ORDER"
+    }
+  ],
+  "accepted_checkpoints": [
+    {
+      "kind": "audit_contract_checkpoint",
+      "unit": "BOOTSTRAP-C-CONFIG/P11a-contract",
+      "status": "local_contract_review_pass_global_pin_unresolved",
+      "source_conformance_accepted": false,
+      "record": "docs/parity/obligations/2026-10-07-bootstrap-p11a/audit-checkpoint.json",
+      "commit": "c0e92125f393db01ee385d81cc2dbe5135299c09",
+      "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/contract-reviewed"
+    },
+    {
+      "kind": "selected_configuration_pin",
+      "unit": "BOOTSTRAP-C-CONDITIONALS",
+      "status": "accepted_selected_configuration_pin",
+      "source_conformance_accepted": false,
+      "record": "docs/parity/obligations/2026-10-07-configuration-profile/pin.json",
+      "commit": "8f4902eed5c2710e838faf172e45b047eb7520c8",
+      "delivery_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/configuration-profile/delivery.json",
+      "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/configuration-profile/reviewed"
+    },
+    {
+      "kind": "implementation_checkpoint",
+      "unit": "OB01-WAND-ID1",
+      "status": "accepted_reviewed_implementation_child",
+      "source_conformance_accepted": true,
+      "record": "docs/parity/obligations/2026-10-07-ob01-wand-id1/unit.json",
+      "commit": "6fb4aeee7441ffc0fd64e5c015697c4cdd656491",
+      "delivery_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1/delivery.json",
+      "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1"
+    },
+    {
+      "id": "P11a-S1-CONTRACT",
+      "commit": "60b6075870bc9b7ca3a38027a97637156ccf7be7",
+      "kind": "reviewed contract only",
+      "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/contract-delivery.json",
+      "source_digest": "567aed72fc97273ac4209afe92decbd5175e8e576ec7b5933bdb14c871e4e707",
+      "implementation_accepted": false
+    },
+    {
+      "id": "P11a-S1",
+      "commit": "aadce228c9d00b573ae8ab4773352798418a6d4b",
+      "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/delivery.json",
+      "source_digest": "7b691c6e14d0449c37776f29b851ff7866bb2e41551b1c883458e5d0de416e79",
+      "family_closed": false
+    },
+    {
+      "id": "P11a-C1-CONTRACT",
+      "commit": "aed5b78dc8ec0f9b2f0c82d38eec3f6208651762",
+      "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1/contract-delivery.json",
+      "source_digest": "7b691c6e14d0449c37776f29b851ff7866bb2e41551b1c883458e5d0de416e79",
+      "implementation_accepted": false
+    },
+    {
+      "kind": "implementation_prerequisite_checkpoint",
+      "unit": "P11a-C1-API1",
+      "status": "accepted_positive_only_signed_api",
+      "commit": "8f44a7a9f7a1536e2c5a21ec47596777ac705fc0",
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/delivery.json",
+      "source_conformance_accepted": true,
+      "family_closed": false
+    },
+    {
+      "kind": "source_api_contract_checkpoint",
+      "unit": "P11a-P1-BILL",
+      "status": "accepted_contract_only",
+      "commit": "76b2fa266387e012d9aa21b4c90133932ea2ac33",
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/contract-delivery.json",
+      "source_conformance_accepted": false,
+      "family_closed": false
+    },
+    {
+      "kind": "implementation_prerequisite_checkpoint",
+      "unit": "P11a-P1-BILL-API1",
+      "status": "accepted",
+      "commit": "009930559c5b7375705151b8298e5a9f3d480f54",
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/delivery.json",
+      "source_conformance_accepted": true,
+      "family_closed": false
+    },
+    {
+      "kind": "implementation_prerequisite_checkpoint",
+      "unit": "P11a-P1-BILL-SAVE1",
+      "status": "accepted",
+      "commit": "a6c12aa75d78aec0bd58e0c376a3cf15c5370c91",
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-SAVE1/delivery.json",
+      "source_conformance_accepted": true,
+      "family_closed": false
+    }
+  ],
+  "integration_audit": null,
+  "final_gate_evidence": null,
+  "final_delivery": null,
+  "runtime_budget": "unspecified_by_user",
+  "token_usage": "unknown",
+  "golden_policy": "frozen_until_exact_task_specific_explicit_user_authorization; no_new_blanket_permission",
+  "launch_head": "2700ec46ec699481f6e8972fef1d866f172c3fbb",
+  "goal_objective": "Complete all seven remaining parity streams following docs/plans/2026-10-07-autonomous-parity-run.md. Continue across all 53 families until its completion audit passes. Start with configuration bootstrap and P11a.",
+  "evidence_root": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity",
+  "launch_source_evidence": {
+    "baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/baseline.json",
+    "before_archive": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/source-before.tar.gz",
+    "sha256": "e1939877f1318552e92033cd9b8ca504017f3232621b7292e13e7aa4275740d4",
+    "readback_full_342_verified": true,
+    "accepted_gate_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/baseline-accepted-gates"
+  },
+  "next_action": "Next Lean architecture contract: capability authority and cross-owner prepare/commit with revision checks; use retained item-retirement/bill facts. No Rust migration or wand completion until architecture contracts are established.",
+  "external_accepted_interfaces": {
+    "P10a2": {
+      "record": "docs/parity/obligations/2026-10-07-p04-p10-final-acceptance.json",
+      "sha256": "11150ff22af01783ed34fe34c0b20f13d08610a4a81574028f6442e38523ff61",
+      "source_input_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+      "interface": "owned original-role by-hero placement and positive uncursed ordinary create-monster Zap/native save continuation"
+    },
+    "P10b": {
+      "record": "docs/parity/obligations/2026-10-07-p04-p10-final-acceptance.json",
+      "sha256": "11150ff22af01783ed34fe34c0b20f13d08610a4a81574028f6442e38523ff61",
+      "source_input_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+      "interface": "owned SGROUP insertion/order through ordinary public create-monster Zap/native continuation"
+    }
+  },
+  "runtime_recovery": {
+    "native_review_launch": "agent thread limit reached",
+    "changed_hypothesis_followup": "agent thread limit reached",
+    "fallback": "one independent local Codex CLI reviewer",
+    "prompt": "/tmp/netrust-p11a-s1-review-cli/prompt.txt",
+    "model": "gpt-6.1-sol",
+    "reasoning_effort": "high",
+    "persistent_configuration_changed": false,
+    "review_result": "NEEDS_CHANGES",
+    "review_thread_id": "01a11634-68d8-7841-84e4-3c3ad64cfc49",
+    "cli_usage": {
+      "input_tokens": 1079779,
+      "cached_input_tokens": 958720,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 15068,
+      "reasoning_output_tokens": 3305,
+      "source": "actual turn.completed CLI event; cumulative processed context, not unique prompt size or billed cost"
+    }
+  },
+  "goal_runtime_observation": {
+    "status": "historical observation only; see architecture queue for current native goal",
+    "source": "new native microkernel goal explicitly created 2026-10-08"
+  },
+  "controller_efficiency_adjustment": {
+    "trigger": "User asks why progress takes so long; optimize process without reducing full parity or mandatory checks.",
+    "effective_from": "next worker dispatch",
+    "rules": [
+      "Reuse accepted source/API/configuration audits through exact bindings; no repeat audit without changed inputs or new finding.",
+      "During implementation run the narrow changed-test target until final fixtures/source stabilize; execute the required focused compatibility/regression allocation once on final inputs.",
+      "After test-only repairs, rerun affected tests and retain unchanged production/schema/hash evidence with explicit byte equality rather than repeating all unrelated checks.",
+      "Root runs mandatory fresh full12/all3 after independent semantic PASS and before code commit.",
+      "Compact worker handoff and fixture index; root owns complete-input/archive/copy proofs. Avoid duplicate narrative evidence.",
+      "Retain all failures and exact per-defect repair counters; no waiver or scope shrink."
+    ],
+    "documentation_policy": "Publish only compact unit/evidence record and readable summary; reference full immutable external handoffs/reviews/logs by path/hash instead of duplicating their text in repo. Required truthful spec/parity/progress updates remain.",
+    "user_cost_concern": "User reports at least10%weekly allowance spent; exact weekly percentage unavailable locally. No invented savings or pricing. All53 scope retained.",
+    "worker_output_policy": "Handoff<=250words; findings<=300words; per-response2000token ceiling; rawlogs external; amendment authoritative.",
+    "process": "docs/plans/2026-10-07-parity-process-optimization.md",
+    "status": "local_guard_accepted",
+    "dispatch_hold": "Released only for bounded guarded paritypilot; each launch requires actualpreflight/reportbindings and cumulativeusage adjustment.",
+    "guard": "scripts/parity-agent-guard.py"
+  },
+  "user_execution_directive": {
+    "instruction": "Finish current SAVE1 through review, required fixes, full gates and commit. Then formalize and perform multi-level cycle optimization before launching further parity implementations.",
+    "next_coordination_task": "PROCESS-OPTIMIZATION",
+    "further_parity_dispatch_hold": "until reviewed process optimization is written and checked",
+    "scope": "Full seven-stream/53-family objective retained; sequencing change, no completion claim or automatic pause."
+  },
+  "active_coordination_task": {
+    "id": "PROCESS-OPTIMIZATION",
+    "state": "accepted",
+    "scope": "Formalize and check multi-level optimization of scope decomposition, model routing, context/tool outputs, validation/reuse, documentation and usage controls. Preserve all53 parity families and mandatory gates.",
+    "user_directive": "Finish current unit first; process must be written properly before further parity work.",
+    "plan": "docs/plans/2026-10-07-parity-process-optimization.md",
+    "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-OPTIMIZATION/review-repair/answer.json",
+    "review_sha256": "fad1feff74e4eb1fdf34ea49637036e4c85c8f666e916aab23cc3aa43467be4c",
+    "source_reuse": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-OPTIMIZATION/source-reuse.json",
+    "metrics": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-OPTIMIZATION/metrics.json",
+    "usage_adjustment": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-OPTIMIZATION/review-adjustment.json",
+    "terminal_usage_decision": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-OPTIMIZATION/terminal-usage-decision.json",
+    "commit": "9f33ddcdd3399ca844fc0361a5ffaa01f95145ca"
+  },
+  "active_process_guard_task": {
+    "state": "accepted",
+    "contract": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-GUARDS/contract.txt",
+    "contract_sha256": "aaa8c5fd0b5c56ae878ddc8ad0cc3b5150667f029b780e7c0132ab987b5bcfed",
+    "allowlist": [
+      "scripts/parity-agent-guard.py",
+      "scripts/tests/test_parity_agent_guard.py"
+    ],
+    "parent": "9f33ddcdd3399ca844fc0361a5ffaa01f95145ca",
+    "prior_usage_adjustment": "One coherent two-file helper; no broad process/source re-audit; bounded prompt/test/output.",
+    "source_baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-GUARDS/review-baseline.json",
+    "focused_tests": 20,
+    "phase_usage_decision": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-GUARDS/phase-adjustment.json",
+    "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-GUARDS/acceptance-review/answer.txt",
+    "findings": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-GUARDS/findings.json",
+    "repair_attempt": 2,
+    "unsuccessful_repairs": 1,
+    "final_source_baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-GUARDS/acceptance-review-baseline.json",
+    "guard_packet": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-GUARDS/acceptance-review-packet/packet.json",
+    "review_sha256": "e15a91adf61adf60dafe1bb665aa19ee3f118957a056ce7be01b597151a3a9c5",
+    "independent_negative_probes": 155,
+    "usage": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-GUARDS/acceptance-review/usage.json",
+    "usage_status": "exceeded; source and review accepted semantically, no new model call before narrowed next-phase decision",
+    "gate_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-GUARDS/full-gates/accepted.json",
+    "gate_sha256": "3315ab128f88590bd947d4ed1a7b43dc8293a448775071af11196a63319e6351",
+    "source_copy_proof": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-GUARDS/source-copy-proof.json",
+    "commit": "77adc90c190b5f6c70dda83f8471e19f82745052",
+    "delivery": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-GUARDS/delivery.json"
+  },
+  "pilot_process": {
+    "unit": "P11a-C1-LIFE",
+    "phase": "facts_inventory",
+    "prior_adjustment": "Narrow to one represented wand-lifetime inventory with knownowners; reduce context/output, reuse accepted billing/config/save/source gates; no whole repo/catalog audit.",
+    "comparison_baseline": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/PROCESS-OPTIMIZATION/metrics.json",
+    "savings_claim": false,
+    "state": "contract_accepted_delivery_verified",
+    "observation": "Allphases exceededsoftthreshold; source unchanged. Known symbol futureunit should skip redundant facts explorer, use reviewedcontract directly; no savingsclaim.",
+    "unit_evidence": "docs/parity/obligations/2026-10-08-p11a-lifetime-contract/unit.json"
+  },
+  "graph_discovery": {
+    "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-LIFE/graph-refresh.json",
+    "indexed_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
+    "method_query": "Omit label or use Method for Rust impl owners; Function-only filter gave false0.",
+    "verified_owner_methods": 4
+  },
+  "architecture_design": {
+    "status": "checked_first_formal_model",
+    "priority": "User-requested prerequisite before further parity work",
+    "lean": "NetMechanics/Architecture.lean",
+    "design": "docs/plans/2026-10-08-microkernel-architecture.md",
+    "fact_mapping": "docs/parity/obligations/2026-10-08-architecture-family-map.json",
+    "rust_migration": false,
+    "parity_scope_changed": false,
+    "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-DESIGN/first-model-evidence.json",
+    "review_verdict": "PASS_FOR_FIRST_MODEL_qualified",
+    "review_limit": "Six bounded read commands; no writes, subagents, tests or source re-audit. Root lake build accepted as supplied. The design document\u2019s middle section was truncated by the output cap, so this is a qualified first-model verdict; implementation authority, binding and runtime guarantees remain unverified.",
+    "family_mapping": "53/53 structural only; no 543-row re-audit",
+    "workflow": {
+      "status": "checked_first_formal_protocol_only",
+      "lean": "NetMechanics/Workflow.lean",
+      "doc": "docs/plans/2026-10-08-workflow-contract.md",
+      "theorems": 18,
+      "runtime_implementation": false,
+      "review_verdict": "PASS_FIRST_PROTOCOL",
+      "evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-WORKFLOW/first-protocol-evidence.json",
+      "persistence": "conditional codec interface; no verified serializer"
+    },
+    "remaining_contracts": [
+      "capability-authority-and-code-binding",
+      "cross-owner-atomic-mutation",
+      "rng-and-external-input",
+      "timer-ownership",
+      "concrete-persistence-and-migrations",
+      "attachment-replacement-and-unload-lifecycle"
+    ]
+  },
+  "historical_parity_goal": {
+    "activation": "explicit_user_goal_active",
+    "objective": "Complete all seven remaining parity streams following docs/plans/2026-10-07-autonomous-parity-run.md. Continue across all 53 families until its completion audit passes. Start with configuration bootstrap and P11a.",
+    "last_runtime_observation": {
+      "status": "active",
+      "source": "actual get_goal on resumed goal continuation",
+      "tokens_used": 1475214,
+      "time_used_seconds": 6772
+    },
+    "last_active_unit": "P11a-C1-LIFE-API1"
+  },
+  "architecture_goal": {
+    "status": "active",
+    "queue": "docs/parity/obligations/2026-10-08-microkernel-goal.json",
+    "plan": "docs/plans/2026-10-08-microkernel-goal.md",
+    "parity_families_closed_by_architecture": 0,
+    "interrupted_wand_draft": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M0/interrupted-wand-draft/manifest.json"
+  }
+}

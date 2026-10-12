@@ -1,0 +1,1 @@
+API1 is a useful, coherent three-file prerequisite: the prescribed-draw API, unchanged unsigned API, public positive/rejection tests, and deferred nonpositive activation are sound. The complete packet needs the three corrections below. Aggregate C1 remains held; no implementation or family closure is accepted.

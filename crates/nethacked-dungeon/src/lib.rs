@@ -1,5 +1,6 @@
 //! Dungeon Grid, Field of View (FOV), and Procedural Generation for NetHackED.
 
+pub mod compact;
 pub mod endgame;
 pub mod fov;
 pub mod gehennom;
@@ -12,6 +13,7 @@ pub mod reach;
 pub mod room;
 pub mod sokoban;
 
+pub use compact::compact_level;
 pub use endgame::{generate_astral_plane, generate_castle_level};
 pub use fov::{compute_fov, compute_illumination};
 pub use gehennom::{

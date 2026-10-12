@@ -1,0 +1,84 @@
+{
+  "schema": "netrust-p11a-selection-contract-checkpoint-v1",
+  "id": "P11a-S1",
+  "parent": "P11a",
+  "state": "ready",
+  "checkpoint_kind": "reviewed source/API contract only",
+  "implementation_accepted": false,
+  "source_conformance_accepted": false,
+  "family_closed": false,
+  "baseline_head": "6fb4aeee7441ffc0fd64e5c015697c4cdd656491",
+  "source_input_count": 344,
+  "source_input_digest": "567aed72fc97273ac4209afe92decbd5175e8e576ec7b5933bdb14c871e4e707",
+  "contract": "contract.json",
+  "allowed_backend_files": [
+    "crates/nethacked-core/src/ast.rs",
+    "crates/nethacked-sim/src/actions/mod.rs",
+    "crates/nethacked-sim/src/actions/items.rs",
+    "crates/nethacked-agent/src/commands.rs",
+    "crates/nethacked-sim/tests/selected_wand_tests.rs",
+    "crates/nethacked-agent/src/graphql.rs"
+  ],
+  "independent_review": {
+    "initial": "review-initial.json",
+    "final": "review-final.json",
+    "initial_findings": [
+      "P11S1-R1",
+      "P11S1-R2",
+      "P11S1-R3"
+    ],
+    "repair_attempt": 1,
+    "repair_review": "PASS",
+    "source_semantics_and_legacy": "initial independent checks reused; no implementation validation"
+  },
+  "published_hashes": {
+    "contract.md": "c6e4a5a4f0e7ebf984b3d1b59ae2e52a6b44bafccfc81a3f60f4820186d2f9fa",
+    "contract.json": "7facd2e6522cc0b3f0b1dfda181a660f02921ad3f107841beb5debc80f59998a",
+    "ready-packet.md": "e977ebcc3f0d59d891534c60ac1728c020c2d54503a1a4e362adabf87d37e352",
+    "evidence.json": "136b526c8c74211b236efa85024504cb9a9b56dc2ebc6ff8d580ce6fad58b122",
+    "baseline.json": "399c546adc12d3337c3934f2be0b101c7fb4da009f3dd32b9ff60c1f18e6d8c2",
+    "review-inputs.json": "85d9ef1deeb8291bee6da82287de50c7e1b52459e8be5a0238f0b693d023b479",
+    "repair-summary.json": "cfcdc49313c4da3474a4d63d2234cea787195ab350244a48ac715646d10e74f9",
+    "review-initial.md": "b37ce318b8ad5b52022464110c75430b283c73964e824fc0c14e9cf7fda2d25a",
+    "review-initial.json": "a9cddd91f59b511fd58127c3b3ef7f36c568586c78bbb201df7f309ed4f8f444",
+    "review-final.md": "2849e3c371fc48fe1ddee5d0826255bf3acb895348ccd39e5d55126c3dbabb70",
+    "review-final.json": "12a2461ba619d8afa720626941bc6a25e81a4e11ff214fce45c550aaa79006cf"
+  },
+  "durable_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1",
+  "validation": {
+    "mode": "pure documentation checkpoint; complete same-source full validation reused; changed documentation checks must be fresh",
+    "reused_from_commit": "6fb4aeee7441ffc0fd64e5c015697c4cdd656491",
+    "full_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1/full-gates/accepted.json",
+    "full_record_sha256": "fbad8f39409283db9d02e9c462d8042ce54a278386d0222506af009d54f48ad7",
+    "results_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1/full-gates/results.json",
+    "results_sha256": "4fe36769b1e2ef52c47ecc4847713ce78eb9f2db8bf557c0a1d3342681da2b0c",
+    "tests": 1009,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "gates": 12,
+    "fresh_full_execution": false,
+    "source_binding": "567aed72fc97273ac4209afe92decbd5175e8e576ec7b5933bdb14c871e4e707",
+    "changed_documentation_checks": {
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-S1/contract-doc-gates/results.json",
+      "sha256": "9d5d707e617f84005e9dbda03cd81db18ad26ace8e1a3da54d3984629b045682",
+      "parity": 0,
+      "docs": 0,
+      "fresh_execution": true
+    }
+  },
+  "mandatory_successors": [
+    "P11a-S1-M",
+    "P11a-C1",
+    "P11a-B1",
+    "P11a-D1",
+    "P11a-P1",
+    "P11a-S1-MC",
+    "P11a-S1-F",
+    "P11a-A1"
+  ],
+  "runtime_recovery": "native capacity exhausted after original launch and one changed-hypothesis retry; independent local CLI workers, one at a time; no persistent config changes",
+  "broader_scope": "All53 original families/543 historic rows remain; contract readiness closes no implementation or family."
+}

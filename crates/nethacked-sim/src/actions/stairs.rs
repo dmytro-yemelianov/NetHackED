@@ -15,6 +15,69 @@ use crate::world::{SimulationWorld, StoredLevel};
 
 pub const SANCTUM_DEPTH: usize = 6;
 
+/// C `NetHack-5.0.0/src/mklev.c:1158-1168` and `src/mkobj.c:270,869`:
+/// kind selection, supported initialization, then the room continuation draw.
+/// Rejected placement still consumes initialization for the selected object.
+#[cfg(test)]
+fn roll_room_object(
+    rules: &nethacked_data::Ruleset,
+    level: &nethacked_dungeon::DungeonLevel,
+    coord: Option<Coord>,
+    table: nethacked_data::generation::ObjectTable,
+    ctx: nethacked_data::containers::ContainerContext,
+    monsters: Option<(
+        &nethacked_data::generation::MonsterGenContext,
+        &nethacked_types::GenocideRegistry,
+    )>,
+    mut rn2: impl FnMut(u32) -> u32,
+) -> (Option<nethacked_data::containers::GeneratedItem>, bool) {
+    roll_room_object_with_artifacts(rules, level, coord, table, ctx, monsters, None, &mut rn2)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn roll_room_object_with_artifacts(
+    rules: &nethacked_data::Ruleset,
+    level: &nethacked_dungeon::DungeonLevel,
+    coord: Option<Coord>,
+    table: nethacked_data::generation::ObjectTable,
+    ctx: nethacked_data::containers::ContainerContext,
+    monsters: Option<(
+        &nethacked_data::generation::MonsterGenContext,
+        &nethacked_types::GenocideRegistry,
+    )>,
+    mut artifacts: Option<(&str, &mut std::collections::BTreeSet<String>)>,
+    mut rn2: impl FnMut(u32) -> u32,
+) -> (Option<nethacked_data::containers::GeneratedItem>, bool) {
+    let selected = rules.room_item_definition(None, table, &mut rn2);
+    let kind = selected.and_then(|d| d.id);
+    let spot = coord.filter(|&c| level.is_passable(c));
+    let item = selected.and_then(|def| {
+        let name = &def.name;
+        let location = spot.map_or(ItemLocation::Limbo, ItemLocation::Floor);
+        if let Some((monster_ctx, registry)) = monsters {
+            rules.create_random_item_tree_with_monsters(
+                name,
+                location,
+                ctx,
+                monster_ctx,
+                |d| nethacked_core::genocide::is_genocided(registry, &d.name, d.glyph),
+                &mut rn2,
+            )
+        } else {
+            rules.create_random_item_tree(name, location, ctx, &mut rn2)
+        }
+    });
+    let item = item.map(|mut tree| {
+        if let (Some(kind), Some((role, history))) = (kind, artifacts.as_mut()) {
+            rules.random_existing_artifact(&mut tree.item, kind, role, history, &mut rn2);
+        }
+        tree
+    });
+    let item = item.filter(|_| spot.is_some());
+    let keep_generating = rn2(5) == 0;
+    (item, keep_generating)
+}
+
 /// Without the completed invocation, the push can never land on Moloch's Sanctum.
 pub fn clamp_mysterious_force(pushed: usize, sanctum_open: bool) -> usize {
     if sanctum_open {
@@ -85,7 +148,12 @@ impl SimulationWorld {
                         && c != self.level.stairs_down
                         && self.actor_at(c).is_none()
                     {
-                        let mut rec = rs.create_monster_record(name, c)?;
+                        let mut rec = rs.create_monster_record_with_context(
+                            name,
+                            c,
+                            self.monster_spawn_context(),
+                            &mut self.rng,
+                        )?;
                         if let Some(species) = def.id {
                             rec.is_peaceful = self.roll_spawn_peaceful(species);
                         } else {
@@ -120,6 +188,7 @@ impl SimulationWorld {
     /// those containers (cycle-safe), plus their unpaid-ledger entries. Items the hero carries
     /// stay in the arena; stale quiver/wield references are cleared first.
     pub(crate) fn pack_current_level(&mut self) {
+        self.register_existing_artifacts();
         let from_key = (self.current_branch, self.depth);
         let steed_id = self.hero.mount.as_ref().map(|m| m.steed_id);
 
@@ -189,6 +258,7 @@ impl SimulationWorld {
             }
         }
         let mut items = Vec::with_capacity(item_ids.len());
+        self.cache_object_timers(from_key.0, from_key.1, &item_ids);
         for iid in &item_ids {
             if let Some(item) = self.arena.destroy_item(*iid) {
                 items.push((*iid, item));
@@ -231,6 +301,7 @@ impl SimulationWorld {
 
     /// Restore an existing cached level or procedurally generate a new level.
     pub fn unpack_or_generate_level(&mut self, branch: BranchId, depth: usize) -> Vec<GameEvent> {
+        self.register_existing_artifacts();
         let mut events = Vec::new();
         let target_key = (branch, depth);
 
@@ -241,6 +312,20 @@ impl SimulationWorld {
         {
             let (_, stored) = self.stored_levels.remove(pos);
             self.level = stored.level;
+
+            // slotmap 1.1.1 serializes slots/versions but rebuilds its private
+            // freelist on deserialize (basic.rs:1357-1397). Normalize both live
+            // allocators to that same order before reminting cached handles,
+            // so a mid-cache save cannot change subsequent IDs or events.
+            // Existing occupied handles, records and slot versions are intact.
+            self.arena.actors = serde_json::from_value(
+                serde_json::to_value(&self.arena.actors).expect("actor arena serializes"),
+            )
+            .expect("serialized actor arena restores");
+            self.arena.items = serde_json::from_value(
+                serde_json::to_value(&self.arena.items).expect("item arena serializes"),
+            )
+            .expect("serialized item arena restores");
 
             let mut actor_map = std::collections::HashMap::new();
             for (old, m) in stored.monsters {
@@ -274,6 +359,14 @@ impl SimulationWorld {
                     self.unpaid_items.push((*new, cost));
                 }
             }
+            // Only restored live handles move. Detached origins and creditor
+            // identities remain immutable historical traces, in Vec order.
+            for (id, _) in &mut self.billing.live_terms {
+                if let Some(new) = item_map.get(id) {
+                    *id = *new;
+                }
+            }
+            self.restore_object_timers(branch, depth, |old| item_map.get(&old).copied());
         } else {
             match (branch, depth) {
                 (BranchId::Sokoban, _) => {
@@ -641,7 +734,7 @@ impl SimulationWorld {
                         let rs = std::sync::Arc::clone(&self.ruleset);
                         if let Some(mut a) = self.arena.actors.get(id).cloned() {
                             a.is_peaceful = false;
-                            if let Some(def) = rs.monster(&a.name) {
+                            if let Some(def) = rs.monster_for_actor(&a) {
                                 self.set_monster_malign(&mut a, def);
                             }
                             if let Some(slot) = self.arena.actors.get_mut(id) {
@@ -719,22 +812,7 @@ impl SimulationWorld {
                     // random monster with probability 1/3 (always while carrying
                     // the Amulet), chosen by makemon.c rndmonst() from the data.
                     // The arrival room (first) and the last room stay empty here.
-                    let rs = std::sync::Arc::clone(&self.ruleset);
-                    let ctx = nethacked_data::generation::MonsterGenContext {
-                        level_difficulty: depth as i32,
-                        hero_level: self
-                            .arena
-                            .actors
-                            .get(self.player_id)
-                            .map_or(1, |p| p.level as i32),
-                        in_hell: branch == BranchId::Gehennom,
-                        align: if branch == BranchId::GnomishMines {
-                            nethacked_data::generation::DungeonAlign::Lawful
-                        } else {
-                            nethacked_data::generation::DungeonAlign::None
-                        },
-                        temperature: 0,
-                    };
+                    let (item_ctx, ctx) = self.item_birth_context(branch, depth, true);
                     let has_amulet = self.hero_has_amulet();
                     let centers: Vec<Coord> = self.level.rooms.iter().map(|r| r.center()).collect();
                     for (i, &center) in centers.iter().enumerate() {
@@ -744,25 +822,17 @@ impl SimulationWorld {
                         if !has_amulet && self.rng.random_range(0..3u32) != 0 {
                             continue;
                         }
-                        let registry = &self.genocide_registry;
-                        let rng = &mut self.rng;
-                        let picked = nethacked_data::generation::rndmonst(
-                            &rs,
-                            &ctx,
-                            |d| nethacked_core::genocide::is_genocided(registry, &d.name, d.glyph),
-                            |n| rng.random_range(0..n),
-                        )
-                        .and_then(|d| d.id);
-                        if let Some(species) = picked {
-                            self.spawn_monster_near(species, center);
-                        }
+                        // Released C mklev.c:975 explicitly sets MM_NOGRP.
+                        // Selection and initialization share the public owned
+                        // fixed-coordinate owner; groups stay suppressed.
+                        self.spawn_random_monster_at_on_level(center, branch, depth);
                     }
 
                     // C mklev.c fill_ordinary_room (1157-1170): with probability
                     // 1/3 a room gets a random object, then more while !rn2(5);
                     // kinds come from mkobj() over the C class/prob data.
-                    // mksobj()'s per-kind init (BUC, charges, enchantment) is not
-                    // ported yet: objects are uncursed with catalog defaults.
+                    // C mkobj.c:869: supported BUC/spe and weapon stack/poison
+                    // fields. Species/fuel/erosion remain gaps; containers and existing-object artifacts are supported.
                     let table = if branch == BranchId::Gehennom {
                         nethacked_data::generation::ObjectTable::Hell
                     } else {
@@ -781,22 +851,23 @@ impl SimulationWorld {
                         loop {
                             let x = self.rng.random_range(x1..=x2);
                             let y = self.rng.random_range(y1..=y2);
-                            let rng = &mut self.rng;
-                            let kind = nethacked_data::generation::mkobj_kind(None, table, |n| {
-                                rng.random_range(0..n)
-                            });
-                            // somexyspace(): only an open floor square
-                            let spot = Coord::new(x, y).filter(|&c| self.level.is_passable(c));
-                            if let (Some(kind), Some(c)) = (kind, spot) {
-                                if let Some(item) = self.ruleset.create_item_record_by_id(
-                                    kind,
-                                    ItemLocation::Floor(c),
-                                    Buc::Uncursed,
-                                ) {
-                                    self.arena.spawn_item(item);
-                                }
+                            self.register_existing_artifacts();
+                            let (item, keep_generating) = roll_room_object_with_artifacts(
+                                &self.ruleset,
+                                &self.level,
+                                Coord::new(x, y),
+                                table,
+                                item_ctx,
+                                Some((&ctx, &self.genocide_registry)),
+                                Some((&self.role_name, &mut self.arena.artifact_history)),
+                                |n| self.rng.random_range(0..n),
+                            );
+                            if let Some(item) = item {
+                                let location = item.item.location.clone();
+                                self.attach_generated_item(item, location)
+                                    .expect("generated item deadline fits the world clock");
                             }
-                            if self.rng.random_range(0..5u32) != 0 {
+                            if !keep_generating {
                                 break;
                             }
                         }
@@ -822,6 +893,8 @@ impl SimulationWorld {
             }
         }
 
+        // C do.c:1816-1823: catch up after delivery and reference restoration.
+        events.extend(self.run_object_timers());
         events
     }
 
@@ -1204,5 +1277,424 @@ impl SimulationWorld {
         }
 
         events
+    }
+}
+
+#[cfg(test)]
+mod room_item_tests {
+    use super::*;
+    use nethacked_data::generation::ObjectTable;
+    use rand::{RngCore, SeedableRng};
+    use rand_chacha::ChaCha8Rng;
+
+    use nethacked_data::ITEM_CATALOG as catalog; // static-ok: independent test oracle
+
+    #[test]
+    fn rejected_room_object_initializes_before_continuation_draw() {
+        let rules = nethacked_data::Ruleset::vanilla();
+        // Independent C class total; selecting zero gives the first kind, arrow.
+        let total: u32 = catalog
+            .iter() // static-ok: test oracle
+            .filter(|a| a.class == nethacked_types::ItemClass::Weapon && !a.artifact)
+            .map(|a| a.prob)
+            .sum();
+        let trace = [
+            (100, 0),   // mkobj class: weapon
+            (total, 0), // kind: arrow
+            (6, 0),     // multigen quantity: 6
+            (11, 0),    // positive enchantment branch
+            (3, 1),     // rne(3): +1
+            (2, 1),     // blessed
+            (100, 0),   // poisoned
+            (5, 1),     // room continuation: stop
+        ];
+        for passable in [false, true] {
+            let level = nethacked_dungeon::DungeonLevel::new_solid(if passable {
+                Tile::Room
+            } else {
+                Tile::Stone
+            });
+            let coord = Coord::new(3, 4).unwrap();
+            assert_eq!(level.is_passable(coord), passable);
+            let mut rng = ChaCha8Rng::seed_from_u64(918);
+            let mut expected_rng = rng.clone();
+            // This state oracle is independent of both the helper and replay:
+            // one consumed word for each of the eight prescribed C draws.
+            for _ in 0..8 {
+                expected_rng.next_u64();
+            }
+            let mut draws = trace.iter();
+            let (item, keep_generating) = roll_room_object(
+                &rules,
+                &level,
+                Some(coord),
+                ObjectTable::Dungeon,
+                nethacked_data::containers::ContainerContext {
+                    hero_level: 1,
+                    level_difficulty: 1,
+                    moves: 1,
+                    in_mklev: true,
+                },
+                None,
+                |n| {
+                    let &(bound, value) = draws.next().expect("unexpected draw");
+                    assert_eq!(
+                        n, bound,
+                        "initializer must precede continuation, including rejected placement"
+                    );
+                    rng.next_u64();
+                    value
+                },
+            );
+            assert_eq!(draws.len(), 0);
+            assert_eq!(rng.next_u64(), expected_rng.next_u64());
+            assert!(!keep_generating);
+            if passable {
+                let item = item.unwrap().item;
+                assert_eq!(item.name, rules.item_by_id(ItemKindId::ARROW).unwrap().name);
+                assert_eq!(item.location, ItemLocation::Floor(coord));
+                assert_eq!(
+                    (item.quantity, item.enchantment, item.buc, item.poisoned),
+                    (6, 1, Buc::Blessed, true)
+                );
+            } else {
+                assert!(
+                    item.is_none(),
+                    "walled room rejects the fully initialized object"
+                );
+            }
+        }
+    }
+    #[test]
+    fn rejected_room_container_finishes_contents_before_continuation() {
+        let rules = nethacked_data::Ruleset::vanilla();
+        let tool_total: u32 = catalog
+            .iter()
+            .filter(|a| a.class == nethacked_types::ItemClass::Tool && !a.artifact)
+            .map(|a| a.prob)
+            .sum(); // static-ok: test oracle
+        let chest_roll: u32 = catalog
+            .iter()
+            .filter(|a| {
+                a.class == nethacked_types::ItemClass::Tool
+                    && !a.artifact
+                    && a.id < ItemKindId::CHEST
+            })
+            .map(|a| a.prob)
+            .sum(); // static-ok: test oracle
+        let trace = [
+            (100, 41),
+            (tool_total, chest_roll),
+            (5, 1),
+            (10, 0),
+            (100, 0),
+            (8, 1),
+            (100, 81),
+            (1000, 0),
+            (3, 2),
+            (75, 74),
+            (5, 1),
+        ];
+        for passable in [false, true] {
+            let level = nethacked_dungeon::DungeonLevel::new_solid(if passable {
+                Tile::Room
+            } else {
+                Tile::Stone
+            });
+            let mut draws = trace.iter();
+            let (tree, keep) = roll_room_object(
+                &rules,
+                &level,
+                Coord::new(3, 4),
+                ObjectTable::Dungeon,
+                nethacked_data::containers::ContainerContext {
+                    hero_level: 1,
+                    level_difficulty: 1,
+                    moves: 1,
+                    in_mklev: true,
+                },
+                None,
+                |n| {
+                    let &(bound, value) = draws.next().expect("unexpected room-container draw");
+                    assert_eq!(n, bound);
+                    value
+                },
+            );
+            assert_eq!(draws.len(), 0);
+            assert!(!keep);
+            assert_eq!(tree.is_some(), passable);
+            if let Some(tree) = tree {
+                assert!(tree.item.locked && tree.item.trapped && tree.item.trap_known);
+                assert_eq!(tree.contents[0].item.quantity, 225);
+            }
+        }
+    }
+    #[test]
+    fn ice_box_room_uses_actual_species_context_registry_and_draws_before_continuation() {
+        let mut rules = (*nethacked_data::Ruleset::vanilla()).clone();
+        for def in &mut rules.monsters {
+            def.frequency = u32::from(def.id == Some(MonsterSpeciesId::JACKAL));
+            def.maligntyp = 0;
+        }
+        let jackal = rules
+            .monster_by_id(MonsterSpeciesId::JACKAL)
+            .unwrap()
+            .name
+            .clone();
+        let tool_total: u32 = catalog
+            .iter()
+            .filter(|a| a.class == nethacked_types::ItemClass::Tool && !a.artifact)
+            .map(|a| a.prob)
+            .sum(); // static-ok: independent test oracle
+        let ice_roll: u32 = catalog
+            .iter()
+            .filter(|a| {
+                a.class == nethacked_types::ItemClass::Tool
+                    && !a.artifact
+                    && a.id < ItemKindId::ICE_BOX
+            })
+            .map(|a| a.prob)
+            .sum(); // static-ok: independent test oracle
+                    // Lawful alignment adds weight 2 to frequency 1, unlike convenience context.
+        let context = nethacked_data::generation::MonsterGenContext {
+            hero_level: 1,
+            level_difficulty: 1,
+            in_hell: false,
+            align: nethacked_data::generation::DungeonAlign::Lawful,
+            temperature: 0,
+        };
+        // Eliminate alignment bonuses on the other definitions: uncommon flag.
+        for def in &mut rules.monsters {
+            if def.id != Some(MonsterSpeciesId::JACKAL) {
+                def.gen_flags.push("nogen".into());
+            }
+        }
+        for genocided in [false, true] {
+            let mut registry = nethacked_types::GenocideRegistry::default();
+            if genocided {
+                registry.genocided_species.insert(jackal.clone());
+            }
+            let selection = if genocided {
+                (
+                    MonsterSpeciesId::LONG_WORM_TAIL.index() as u32,
+                    MonsterSpeciesId::JACKAL.index() as u32,
+                )
+            } else {
+                (3, 0)
+            };
+            let trace = [
+                (100, 41),
+                (tool_total, ice_roll),
+                (21, 1),
+                selection,
+                (2, 0), // C mksobj corpse gender, before timeout sampling.
+                // mkobj.c start_corpse_timeout's rnz(25), before ice cancellation.
+                (1000, 0),
+                (4, 1),
+                (2, 1),
+                (5, 1),
+            ];
+            for passable in [false, true] {
+                let level = nethacked_dungeon::DungeonLevel::new_solid(if passable {
+                    Tile::Room
+                } else {
+                    Tile::Stone
+                });
+                let mut rng = ChaCha8Rng::seed_from_u64(811);
+                let mut expected_rng = rng.clone();
+                for _ in &trace {
+                    expected_rng.next_u64();
+                }
+                let mut draws = trace.iter();
+                let (tree, keep) = roll_room_object(
+                    &rules,
+                    &level,
+                    Coord::new(3, 4),
+                    ObjectTable::Dungeon,
+                    nethacked_data::containers::ContainerContext {
+                        hero_level: 1,
+                        level_difficulty: 1,
+                        moves: 1,
+                        in_mklev: true,
+                    },
+                    Some((&context, &registry)),
+                    |n| {
+                        let &(bound, value) = draws.next().expect("unexpected ice-box room draw");
+                        assert_eq!(n, bound);
+                        rng.next_u64();
+                        value
+                    },
+                );
+                assert_eq!(draws.len(), 0);
+                assert_eq!(rng.next_u64(), expected_rng.next_u64());
+                assert!(!keep);
+                assert_eq!(tree.is_some(), passable);
+                if let Some(tree) = tree {
+                    assert!(tree.item.is_ice_box);
+                    assert_eq!(tree.contents.len(), 1);
+                    assert_eq!(
+                        tree.contents[0].item.corpse_species,
+                        Some(nethacked_arena::CorpseSpecies::Vanilla("JACKAL".into()))
+                    );
+                    assert_eq!(tree.contents[0].item.corpse_age, 0);
+                }
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod artifact_room_tests {
+    use super::*;
+    use nethacked_data::generation::ObjectTable;
+    use std::collections::BTreeSet;
+
+    #[test]
+    fn accepted_and_rejected_rooms_consume_artifact_draw_before_continuation() {
+        let rules = nethacked_data::Ruleset::vanilla();
+        let weapons: Vec<_> = rules
+            .items
+            .iter()
+            .filter(|a| a.class == nethacked_types::ItemClass::Weapon && a.generation_weight > 0)
+            .collect();
+        let total: u32 = weapons.iter().map(|a| a.generation_weight).sum();
+        let offset: u32 = weapons
+            .iter()
+            .take_while(|a| a.id != Some(ItemKindId::LONG_SWORD))
+            .map(|a| a.generation_weight)
+            .sum();
+        for passable in [true, false] {
+            let level = nethacked_dungeon::DungeonLevel::new_solid(if passable {
+                Tile::Room
+            } else {
+                Tile::Stone
+            });
+            let mut history = BTreeSet::new();
+            let mut trace = [
+                (100, 0),
+                (total, offset),
+                (11, 1),
+                (10, 1),
+                (10, 1),
+                (20, 0),
+                (5, 1),
+                (5, 1),
+            ]
+            .into_iter();
+            let (tree, keep) = roll_room_object_with_artifacts(
+                &rules,
+                &level,
+                Coord::new(3, 4),
+                ObjectTable::Dungeon,
+                nethacked_data::containers::ContainerContext {
+                    hero_level: 1,
+                    level_difficulty: 1,
+                    moves: 1,
+                    in_mklev: true,
+                },
+                None,
+                Some(("Wizard", &mut history)),
+                |n| {
+                    let (bound, roll) = trace.next().expect("unexpected draw");
+                    assert_eq!(n, bound);
+                    roll
+                },
+            );
+            assert!(trace.next().is_none());
+            assert!(!keep);
+            assert_eq!(history, BTreeSet::from(["ART_FIRE_BRAND".to_owned()]));
+            assert_eq!(tree.is_some(), passable);
+            if let Some(tree) = tree {
+                assert_eq!(tree.item.artifact_id.as_deref(), Some("ART_FIRE_BRAND"));
+            }
+        }
+    }
+
+    #[test]
+    fn poison_draw_precedes_artifact_chance_even_without_candidates() {
+        let rules = nethacked_data::Ruleset::vanilla();
+        let total: u32 = rules
+            .items
+            .iter()
+            .filter(|a| a.class == nethacked_types::ItemClass::Weapon && a.generation_weight > 0)
+            .map(|a| a.generation_weight)
+            .sum();
+        let mut trace = [
+            (100, 0),
+            (total, 0),
+            (6, 0),
+            (11, 0),
+            (3, 1),
+            (2, 1),
+            (100, 0),
+            (20, 0),
+            (5, 1),
+        ]
+        .into_iter();
+        let mut history = BTreeSet::new();
+        let level = nethacked_dungeon::DungeonLevel::new_solid(Tile::Room);
+        let (tree, _) = roll_room_object_with_artifacts(
+            &rules,
+            &level,
+            Coord::new(3, 4),
+            ObjectTable::Dungeon,
+            nethacked_data::containers::ContainerContext {
+                hero_level: 1,
+                level_difficulty: 1,
+                moves: 1,
+                in_mklev: true,
+            },
+            None,
+            Some(("Wizard", &mut history)),
+            |n| {
+                let (bound, roll) = trace.next().expect("extra draw");
+                assert_eq!(n, bound);
+                roll
+            },
+        );
+        assert!(trace.next().is_none());
+        assert!(history.is_empty());
+        let item = tree.unwrap().item;
+        assert!(item.poisoned);
+        assert_eq!(item.quantity, 6);
+        assert!(item.artifact_id.is_none());
+    }
+}
+
+#[cfg(test)]
+mod artifact_cache_tests {
+    use super::*;
+    #[test]
+    fn packing_registers_mutated_legacy_artifacts_and_restores_stable_identity() {
+        let mut world = SimulationWorld::new_with_seed(7);
+        let mut item = world
+            .ruleset
+            .create_item_record_by_id(
+                ItemKindId::ART_EXCALIBUR,
+                ItemLocation::Floor(Coord::new(3, 4).unwrap()),
+                Buc::Blessed,
+            )
+            .unwrap();
+        item.artifact_id = None;
+        let id = world.arena.spawn_item(item);
+        assert!(!world.arena.artifact_history.contains("ART_EXCALIBUR"));
+        world.pack_current_level();
+        assert!(!world.arena.items.contains_key(id));
+        assert!(world.arena.artifact_history.contains("ART_EXCALIBUR"));
+        assert!(world
+            .stored_levels
+            .iter()
+            .flat_map(|(_, l)| l.items.iter())
+            .any(|(_, i)| i.artifact_id.as_deref() == Some("ART_EXCALIBUR")));
+        let save = world.to_save_json().unwrap();
+        let mut loaded =
+            SimulationWorld::from_save_json(&save, world.ruleset.clone(), &world.ruleset_ref)
+                .unwrap();
+        loaded.unpack_or_generate_level(world.current_branch, world.depth);
+        assert!(loaded
+            .arena
+            .items
+            .iter()
+            .any(|(_, i)| i.artifact_id.as_deref() == Some("ART_EXCALIBUR")));
     }
 }

@@ -1,0 +1,204 @@
+{
+  "schema": "netrust-autonomous-contract-planning-review-v1",
+  "status": "accepted_planning_review_fresh_docs_pass_source_gates_reused",
+  "initial_review": {
+    "blocking_issues": [
+      {
+        "id": "B1",
+        "issue": "The contract directs checkpoint commits to feat/monster-hp-d8, matching current HEAD and MEMORY, while the exact AGENTS/global-constraints instruction names feat/rule-packs-p1. The planning contract does not state which directive governs or record a scoped exception. This blocks unattended checkpoint commits until the authoritative branch is reconciled.",
+        "severity": "blocking"
+      }
+    ],
+    "checks": {
+      "artifact_sha256": {
+        "agentic_loops": "facd0df0ff3e09265744ab1289813e3505a372a14e95a54d477db32f74811cc4",
+        "contract": "90fff8190c35dd6d0e58aa1adeb5780b517bf9ec075631a56e5a970d07fc32b5",
+        "global_constraints": "2f145ed0e69a7079d23b60682a6533bcaf3f885cae31d6c9595ce60eb026254e",
+        "memory": "62f7c26a3aed99defd14f31f5f7e67c8417a86c9426234a772846df8fc50af90",
+        "run_ledger": "5ea77f1ba74e679d85b8cfa32d0d630662c27c1142f1676de41089627fa91360",
+        "scope_plan": "ba440d3fb70e21de11443b23c566625f172a9e62fcc335cfb60aa849f193f474",
+        "scope_registry": "ef0c220796234250d4d8e532f66ffbd113503d8db78bc40c002368f90719a5e9",
+        "user": "f2d7b217ebccad923b03b5193ce7c6ca5b2397ca3c7b62e79d8c85982db65557"
+      },
+      "baseline_bindings": {
+        "c_commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+        "head": "5edce533c58349aebbeb010a70da87e91ffd44e9",
+        "registry_sha256_matches": true,
+        "source_input_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+        "source_inputs": 342
+      },
+      "branch_policy_review": {
+        "MEMORY_says": "feat/monster-hp-d8 current authorized repair branch",
+        "classification": "unresolved directive conflict; explicit project instruction sets feat/rule-packs-p1 while current durable decision/workspace is feat/monster-hp-d8",
+        "contract_says": "feat/monster-hp-d8",
+        "global_constraints_says": "feat/rule-packs-p1"
+      },
+      "current_HEAD": "5edce533c58349aebbeb010a70da87e91ffd44e9",
+      "current_branch": "feat/monster-hp-d8",
+      "prepared_state": {
+        "accepted_checkpoints": 0,
+        "all_family_states": [
+          "audit_needed"
+        ],
+        "children": 0,
+        "configuration": "audit_needed",
+        "golden_policy": "frozen_until_exact_task_specific_explicit_user_authorization; no_new_blanket_permission",
+        "live_handles": 0,
+        "run_state": "prepared_not_started",
+        "runtime_budget": "unspecified_by_user"
+      },
+      "registry_to_run_ledger": {
+        "extra_ids": [],
+        "families_ledger": 53,
+        "families_registry": 53,
+        "ledger_baseline_rows": 543,
+        "missing_ids": [],
+        "registry_rows": 543,
+        "stream_counts": {
+          "AI": 5,
+          "CB": 9,
+          "DG": 8,
+          "EQ": 5,
+          "HE": 10,
+          "OB": 11,
+          "UI": 5
+        }
+      },
+      "review_scope": "planning-only; no implementation/C audit/runtime goal/config activation",
+      "worktree": [
+        "## feat/monster-hp-d8",
+        "?? docs/parity/obligations/2026-10-07-autonomous-parity-run.json",
+        "?? docs/plans/2026-10-07-autonomous-parity-run.md"
+      ]
+    },
+    "result": "BLOCKED_PENDING_BRANCH_POLICY_RECONCILIATION"
+  },
+  "repair": {
+    "correction": "Explicitly reconcile original global P1 branch rule with persisted existing user-authorized repair-branch exception; no new authority or other constraints change",
+    "file": "docs/plans/2026-10-07-autonomous-parity-run.md",
+    "sha256": "dd43548c52ee85ff42344e77463765a90716eb938a49e62c4e93debf520167ae"
+  },
+  "final_review": {
+    "checks": {
+      "artifact_sha256": {
+        "contract": "dd43548c52ee85ff42344e77463765a90716eb938a49e62c4e93debf520167ae",
+        "global_constraints": "2f145ed0e69a7079d23b60682a6533bcaf3f885cae31d6c9595ce60eb026254e",
+        "memory": "62f7c26a3aed99defd14f31f5f7e67c8417a86c9426234a772846df8fc50af90",
+        "run_ledger": "5ea77f1ba74e679d85b8cfa32d0d630662c27c1142f1676de41089627fa91360",
+        "scope_registry": "ef0c220796234250d4d8e532f66ffbd113503d8db78bc40c002368f90719a5e9"
+      },
+      "branch_authority_clause": "quotes the recorded MEMORY original/current branch distinction, states existing user-authorized feat/monster-hp-d8 overrides only original feat/rule-packs-p1 branch line, revalidates newer user directives, and explicitly says no main or other-constraint override and no new authorization",
+      "contract_sha256": "dd43548c52ee85ff42344e77463765a90716eb938a49e62c4e93debf520167ae",
+      "current_HEAD": "5edce533c58349aebbeb010a70da87e91ffd44e9",
+      "current_branch": "feat/monster-hp-d8",
+      "expected_amended_contract_sha256_matches": true,
+      "narrow_rereview_scope": "branch-authority amendment only; no broader plan review, repo changes, Cargo, C audit, goal/runtime changes",
+      "run_ledger_unchanged_sha256": "5ea77f1ba74e679d85b8cfa32d0d630662c27c1142f1676de41089627fa91360",
+      "scope_registry_sha256": "ef0c220796234250d4d8e532f66ffbd113503d8db78bc40c002368f90719a5e9",
+      "worktree": [
+        "## feat/monster-hp-d8",
+        "?? docs/parity/obligations/2026-10-07-autonomous-parity-run.json",
+        "?? docs/plans/2026-10-07-autonomous-parity-run.md"
+      ]
+    },
+    "residual_blockers": [],
+    "result": "PASS"
+  },
+  "seed_validation": {
+    "status": "PASS",
+    "families": 53,
+    "streams": 7,
+    "scope_registry_hash_bound": true,
+    "family_ids_streams_exact": true,
+    "zero_fabricated_acceptance": true,
+    "prepared_not_started": true,
+    "configuration_unresolved_explicit": true,
+    "runtime_source_untouched": true
+  },
+  "goal_activated": false,
+  "production_changed": false,
+  "artifact_sha256": {
+    "docs/plans/2026-10-07-autonomous-parity-run.md": "dd43548c52ee85ff42344e77463765a90716eb938a49e62c4e93debf520167ae",
+    "docs/parity/obligations/2026-10-07-autonomous-parity-run.json": "5ea77f1ba74e679d85b8cfa32d0d630662c27c1142f1676de41089627fa91360"
+  },
+  "verification": {
+    "source_head": "5edce533c58349aebbeb010a70da87e91ffd44e9",
+    "source_input_count": 342,
+    "source_input_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+    "full_source_path_set_equal": true,
+    "source_acceptance": "2026-10-07-p04-p10-final-acceptance.json",
+    "source_gates_reused": 12,
+    "tests_reused": 999,
+    "goldens_reused": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "original_gate_exits": [
+      {
+        "check": "fmt",
+        "exit": 0
+      },
+      {
+        "check": "clippy",
+        "exit": 0
+      },
+      {
+        "check": "workspace",
+        "exit": 0
+      },
+      {
+        "check": "wasm",
+        "exit": 0
+      },
+      {
+        "check": "python",
+        "exit": 0
+      },
+      {
+        "check": "static",
+        "exit": 0
+      },
+      {
+        "check": "extract",
+        "exit": 0
+      },
+      {
+        "check": "generated",
+        "exit": 0
+      },
+      {
+        "check": "coverage",
+        "exit": 0
+      },
+      {
+        "check": "parity",
+        "exit": 0
+      },
+      {
+        "check": "docs",
+        "exit": 0
+      },
+      {
+        "check": "lean",
+        "exit": 0
+      }
+    ],
+    "fresh_documentation_gates": [
+      {
+        "check": "parity",
+        "exit": 0,
+        "seconds": 0.02,
+        "log": "/tmp/netrust-auto-contract/doc-gates/parity.log"
+      },
+      {
+        "check": "docs",
+        "exit": 0,
+        "seconds": 0.27,
+        "log": "/tmp/netrust-auto-contract/doc-gates/docs.log"
+      }
+    ],
+    "production_changes": false,
+    "goal_activated": false
+  }
+}

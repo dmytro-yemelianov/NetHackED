@@ -1,0 +1,238 @@
+{
+  "acceptance_boundary": "A corrected reviewed complete selected input profile may be pinned before unrelated first child conformance. UI04/UI05/UI01 implementation and final full family/member/context reconciliation remain open successors; this review does not demand all 53 families implemented before ID1. ID1 engineering-ready only; P11a-S1 still requires accepted ID1. Inventories and goldens cannot prove semantic closure.",
+  "baseline": {
+    "branch": "feat/monster-hp-d8",
+    "head": "c0e92125f393db01ee385d81cc2dbe5135299c09",
+    "input_count": 342,
+    "input_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c"
+  },
+  "baseline_json_sha256": "3b12641774b42d43ad09aaecce97ee2fcc1c1339a89e735a33c9eded65ed4f75",
+  "decision": "NEEDS_REPAIR",
+  "findings": [
+    {
+      "consequence": "The declared branch table incorrectly suppresses the core message/prompt history and crash-report consumers. DUMPLOG remaining undefined does not disable DUMPLOG_CORE. The lexical inventory retaining these arms cannot repair their false valuation.",
+      "evidence": [
+        "configuration-profile.json manually_derived_symbol_values.DUMPLOG_CORE.value=false; package.py disabled list also contains DUMPLOG_CORE",
+        "Released include/config.h:247-252 selects /usr/bin/xdg-open; :268-270 defines DUMPLOG_CORE whenever CRASHREPORT exists; :735-738 then defines DUMPLOG_MSG_COUNT=50",
+        "Released src/pline.c:18-44,228-235; src/cmd.c:5479-5483,5545-5553; src/pager.c:1924-1938; src/report.c:380,562,573 are consumers"
+      ],
+      "id": "CFG-R1",
+      "repair": "Move DUMPLOG_CORE to the source-derived enabled values, explicitly record DUMPLOG_MSG_COUNT=50, correct the disabling rationale, and retain consumer mappings under existing UI01/UI02/UI03/UI04/run_configuration owners. Regenerate profile/evidence/review hashes and obtain fresh review; no implementation required for this repair.",
+      "severity": "required",
+      "title": "Linux CRASHREPORT enables DUMPLOG_CORE",
+      "trigger": "Selected __linux__ input and unedited config.h define CRASHREPORT; no NOCRASHREPORT override is selected."
+    },
+    {
+      "consequence": "A clock-keyed mailbox recipe alone leaves the actual query ordering and poll boundary ambiguous. Source mailbox modification timestamps are external values; the polling cadence is game turns. This is an applicable deterministic input scheduling gap, even with an initially empty mailbox.",
+      "evidence": [
+        "configuration-profile.json runtime_inputs.external_io.mail keys changes/stat results to an injected real-time snapshot and names MAILCKFREQ50 without specifying its turn unit or poll guards",
+        "Released src/mail.c:554-559 returns when mailbox absent, swallowed, biff off, or svm.moves < laststattime + MAILCKFREQ; :561 sets laststattime=svm.moves; :569 compares mailbox st_mtime",
+        "Released include/unixconf.h:202-205 selects MAILCKFREQ=50; source optlist.h retains biff option"
+      ],
+      "id": "CFG-R2",
+      "repair": "Declare the exact turn-gated polling recipe and ordered stat responses, separate st_mtime from calendar snapshots, state the default mailbox/stat baseline and biff/laststattime basis, and preserve 49/50/100-turn, swallowed/biff-off, delivery/error and resume variants in UI04. Implementing those variants remains a successor; pinning their source schedule is the present repair.",
+      "severity": "required",
+      "title": "Mail input recipe must distinguish turn polling from mailbox timestamps",
+      "trigger": "A fixture advances svm.moves while its real-time snapshot is fixed, or changes its clock/mailbox without advancing turns."
+    },
+    {
+      "consequence": "The initial namespace is not the namespace at consumers after external includes. The packet supplies neither imported definitions nor a clear post-include declaration for these names. Treating initial absence as permanent would select the public no-SIGTSTP refusal despite the declared Linux/glibc suspend profile, and change hangup/input and Lua information branches. General per-fixture signal/window capability promises do not resolve compile-time reachability.",
+      "evidence": [
+        "configuration-profile.json compile_input_declarations.project_conditional_namespace_initial assigns SIGTSTP, SIGWINCH, SIGXCPU, SA_RESTART, TIOCGWINSZ, VSUSP, TAB3, VDSUSP, VREPRINT, VDISCARD, VWERASE, VLNEXT, LUA_RELEASE, LUA_VERSION and LUA_COPYRIGHT initial undefined; system_and_lua_inputs does not declare their post-include outcomes",
+        "Released include/cstd.h:57 imports signal.h; sys/share/ioctl.c:41-49 imports termios.h/sys/ioctl.h; :72-75 derives USE_WIN_IOCTL; :171-198 chooses suspend behavior using SIGTSTP",
+        "Released sys/unix/unixmain.c:591-611 branches on SA_RESTART/SIGXCPU for hangup handling; sys/share/unixtty.c:279-298 tests imported control-character macros; include/extern.h:3667 tests SIGWINCH",
+        "Released src/nhlua.c:2435-2445,2458-2460 tests Lua text/version macros after nhlua.h imports"
+      ],
+      "id": "CFG-R3",
+      "repair": "Perform a bounded external-input declaration audit for these active-header consumers: explicitly pin post-include definedness and consumed values/text under the selected Linux/glibc/Lua target, and derive affected source-local values such as USE_WIN_IOCTL. These may be chosen target declarations, clearly distinguished from measured headers; no compiler/preprocessor/header-byte certification is required. Record deliberately inactive or optional presentation branches without changing required command/state/save semantics. Keep new unidentified imported inputs as run_configuration audits, not implicit false branches.",
+      "severity": "required",
+      "title": "Initial absence does not resolve imported external-header conditions",
+      "trigger": "Active UNIX/TTY translation units consume macro conditions after the declared external signal.h, termios.h, sys/ioctl.h and Lua header includes."
+    }
+  ],
+  "hold_decision": "Retain the existing strict global first-source-conformance HOLD. Required configuration/input corrections CFG-R1..CFG-R3, fresh independent review, and coordinator pinning remain. No waiver or implementation acceptance.",
+  "profile_complete_enough_to_pin_before_first_source_conformance": false,
+  "resolved_facts": [
+    "Released DEBUG is defined independently of NH_DEVEL_STATUS=RELEASED; wizard/explore/debug commands retained",
+    "UNIX/TTY/SYSV/SVR4/Linux default chains, SAFERHANGUP survival, Linux CRASHREPORT/PANICTRACE/NOSTATICFN, and Lua548 NHL_SANDBOX survival are otherwise coherent",
+    "No backend means sndprocs.h undefines SND_LIB_INTEGRATED; magical music/text/gameplay retained",
+    "Selected calendar tm/epoch yields phase7, no Friday13/night/midnight; allmain recalculates phase/Friday Luck for new game and resume",
+    "Raw option alternatives, aliases, boolean initval and source initialization recipe retain supported variants; P11 consumed normal/number-pad/menu/autopickup/verbose defaults are supported by source",
+    "Closed environment dictionary accounts for dynamic NETHACKOPTIONS/HACKOPTIONS and THEMERM/FILL; no host leakage authorized",
+    "Empty baseline bones/mail does not exclude retained variants; all ten frontend contracts remain in scope",
+    "All four successors map to UI04, UI05, UI01 or run_configuration and all 53 families/543 historic rows remain open"
+  ],
+  "review": "initial",
+  "review_inputs_sha256": "1e1ac3535734a40cd6256d824291bfeb95559f15c1e3f6028fed8ed297503e73",
+  "reviewed_artifact_hashes": {
+    "configuration-profile.json": "8efbacb690e15bbe538ca3d49300b07bddd7358d30d4e688092133a954f046a1",
+    "configuration-profile.md": "64be9ff360d936f64caa7bf299173f13f11a015f1700a20ea50ed363d1562bcf",
+    "evidence.json": "edc0bbfa817d02d7b2f9f02ddeb7a62af4a06f94f85fa148d4febf93832f5439",
+    "inventory.json": "44a783ca96dd57a98bb4200a43e62ffa7700425e6761e6101f842f2ea256f347",
+    "inventory.py": "a059f2e86b21c343dc01146f48d239497062497fbf7312b54174d4c1cadff165",
+    "nethackrc.fixture": "248df4874e2fafbdf7485be1e928fb872bec7ae78613a19fd154213b7624afc2",
+    "package.py": "19027d158ef9f8843dbf15c9b6309516244531bea5f1c9aea2091e8d87e31666",
+    "ready-packet.md": "8e3c05b71bd9b771ef6dd75ac00a63744fcec1ec90e00700ee85ad589e5e2528",
+    "sysconf.fixture": "597c4d31465ba48eeac298536e085a9b4410fa7bfdf077f39a0ea335d0e4ca44"
+  },
+  "reviewed_current_authority_hashes": {
+    ".superpowers/sdd/2026-10-04-rule-packs-p1/global-constraints.md": "2f145ed0e69a7079d23b60682a6533bcaf3f885cae31d6c9595ce60eb026254e",
+    "AGENTS.md": "cbaec9617cc45a100da770734f39df0f565286fadc9c496d9ef34861ac893310",
+    "MEMORY.md": "08ea6808cec3528de6125f3770ea7d45be1d91b8d81d123f5fb60ff89bbe40aa",
+    "USER.md": "f2d7b217ebccad923b03b5193ce7c6ca5b2397ca3c7b62e79d8c85982db65557",
+    "docs/parity/obligations/2026-10-07-bootstrap-p11a/configuration.json": "09bf86737e2fac5be2abae54a7a5ff896ca3b50c07093923e93cd5dfd975c48f",
+    "docs/parity/obligations/2026-10-07-bootstrap-p11a/configuration.md": "0d52a97079f89b651b8bd325fe68bd8d2789e60f9a030940f4a2060cee608570",
+    "docs/parity/obligations/2026-10-07-bootstrap-p11a/review-final.json": "f63799f0821294995faa52132370ee7f9fb82604a47328e5c1cbbf7ac4846f4a",
+    "docs/parity/obligations/2026-10-07-bootstrap-p11a/review-final.md": "61da02b3435e9cddaca1ef2eacc256ac9e00098d36716e57eb1bf40e08318f27",
+    "docs/parity/obligations/2026-10-07-remaining-parity-scope.json": "ef0c220796234250d4d8e532f66ffbd113503d8db78bc40c002368f90719a5e9",
+    "docs/plans/2026-10-07-autonomous-parity-run.md": "dd43548c52ee85ff42344e77463765a90716eb938a49e62c4e93debf520167ae",
+    "docs/plans/2026-10-07-full-parity-agentic-loops.md": "7d9f2263796fb1e33cb028f5810a6b58289410cdfe63faa5aca771ac7d1031b6",
+    "scripts/extract/c_tables.py": "2da726e9ecb2598dc6899e1be3d0af7634c7c961e41417ec9952e1801931e439"
+  },
+  "schema": "netrust-configuration-profile-independent-review-v1",
+  "source_evidence_hashes": {
+    "include/config.h": {
+      "bytes": 26334,
+      "git_blob": "e266ad09208e3b497aa2e08c64dcb8cd9de0da91",
+      "sha256": "cc39455c748d1d73640606d98e847b55cb09d82338edc95f4fbc8acecedc9385"
+    },
+    "include/config1.h": {
+      "bytes": 5470,
+      "git_blob": "190c47f97a0c6d4bb8adc8c60ff5d4bbb796934c",
+      "sha256": "b9e97cefc8fcfe4f36a1145ebfb655099f2afd2591227fa5f93b3f4dc0071042"
+    },
+    "include/cstd.h": {
+      "bytes": 2731,
+      "git_blob": "7b7a71497cba06e334e1f33813f8977f5a2d8977",
+      "sha256": "ef5e61d5eb7d1a5194c4a4544745a45893ccbea4c1cf083792235f562e173fc2"
+    },
+    "include/extern.h": {
+      "bytes": 175496,
+      "git_blob": "ec5173c125f1b100d4285b67dad8598b9cb6a5e8",
+      "sha256": "f7e0008bf1d5d5d7a3b7b14ea04a6e14f78ce054444a2d53f06da31802ce6cbe"
+    },
+    "include/global.h": {
+      "bytes": 19826,
+      "git_blob": "d5e3981c8f4cb3e983062748e172287ae32df437",
+      "sha256": "97bcc4fdd9c1f880dacaf1fffe0043f78874f9fc7e9d84f57aa1a1d4be811e88"
+    },
+    "include/optlist.h": {
+      "bytes": 46241,
+      "git_blob": "9cba2107cb3042a9a9f608b312ab69b41a65dcc5",
+      "sha256": "23dafb109132dd63bbfe704b39fac8cccaaeee31a0dbd895c7ba928bd92af9b8"
+    },
+    "include/patchlevel.h": {
+      "bytes": 25704,
+      "git_blob": "599e7270d56bab3da1f73f93af6d6f6331ddb0b7",
+      "sha256": "4389b12b496c9611fb392ee509d0ebaad2f10449ff3ef697f1ad416a207b0a97"
+    },
+    "include/sndprocs.h": {
+      "bytes": 11111,
+      "git_blob": "d09e4e1e764592b1ac93df3f5a08990cc720af88",
+      "sha256": "4d105334e499c3fb4af00fcd1acf48802a8db5ccf799bd31bfafc2afaa286654"
+    },
+    "include/unixconf.h": {
+      "bytes": 14530,
+      "git_blob": "e7ee915659b4b791ca286494514a7795d2a82f88",
+      "sha256": "45a16d6359d913c9bffaedc6225b7a9b24a665a2e5e9ce660c43b8f189955dfe"
+    },
+    "src/allmain.c": {
+      "bytes": 33124,
+      "git_blob": "280beb39a8c2540a3328833bc915ceb63d156fa9",
+      "sha256": "6ce44a662ad3d180b9dcbf7660a1899b8d1356c8ef83e7787b21b39c6b2a35e4"
+    },
+    "src/calendar.c": {
+      "bytes": 5566,
+      "git_blob": "deea28daf8c8bd872daf5a393394456a91f42928",
+      "sha256": "10ad3481a740259064cb28998d11832f3fb54630a7af9df5fc969dadeaa5d517"
+    },
+    "src/cmd.c": {
+      "bytes": 191110,
+      "git_blob": "73b6c4c6346fecf04c2cf57833dcee263ae168ed",
+      "sha256": "a14c0fc8706bd9957f8f4aab7f9e2abbd30eb5f4e43166b90a8bfeb25094a7ce"
+    },
+    "src/mail.c": {
+      "bytes": 23821,
+      "git_blob": "2f95281887ff8e913037a90c54c5cbd096010712",
+      "sha256": "0d86390373abfbb64c21e69d5a2e0e917365c0039f9445848b87a5793d296d61"
+    },
+    "src/nhlua.c": {
+      "bytes": 87753,
+      "git_blob": "314e51f073f43ae9835e6aaa45893a3d61316257",
+      "sha256": "cf161f30beb1147102cb9a137997acea715bdec9d7b16dc44082518d5ec257e1"
+    },
+    "src/options.c": {
+      "bytes": 329769,
+      "git_blob": "05f4979ef29e04f9a14a551a538ba616d6a3b5c4",
+      "sha256": "494772974500aa9b42df179b4e090def15fd0bc8148f09a9c392bbadd05dd940"
+    },
+    "src/pager.c": {
+      "bytes": 115472,
+      "git_blob": "6f9cd22e83ec773e7eb5f4a463df8925dc8b6f54",
+      "sha256": "92d078a4c4e0f81bf91c07b91383e848427eeed37b9877fa34d8564774b8952b"
+    },
+    "src/pline.c": {
+      "bytes": 19664,
+      "git_blob": "49c29319568a86dd03a2e6ef648e82d7415d4ba0",
+      "sha256": "394d4d33f3ecfa66005a0df96cacf582782c79437f34daeaaa9bf25238d857ff"
+    },
+    "src/report.c": {
+      "bytes": 19187,
+      "git_blob": "e5f701287ba6395168868f9184dca21fb7635fc8",
+      "sha256": "816c57e507cf128fc7f5313c7f0c50a2183c9101764a9494704ec425bbef55a2"
+    },
+    "src/sys.c": {
+      "bytes": 5495,
+      "git_blob": "758a936678201fe6a2d31f9941948975a3b7f045",
+      "sha256": "b25c85a88371128521c1432c025abd89edb541e085de099e065d9d2ab03a40ef"
+    },
+    "sys/share/ioctl.c": {
+      "bytes": 4770,
+      "git_blob": "ec76ec740b3cb68b910c00fb449b4afe95637dda",
+      "sha256": "fdbffc60327dfcf3d1ed4c1673a9e85829b9d7996e3615413219cd76862a2142"
+    },
+    "sys/share/unixtty.c": {
+      "bytes": 11642,
+      "git_blob": "aa62a477d821922cb5fb649eb1e2badbdf6ec1e9",
+      "sha256": "ef43f3172ffb736f748ae817934fc031dde4c6edf0d1ca7a9cf10a4d8deffe8c"
+    },
+    "sys/unix/unixmain.c": {
+      "bytes": 25882,
+      "git_blob": "eca90d46392ad6cc34dbd40dd8b8aad5a41a58dd",
+      "sha256": "9c8a9a498acaffee6ce62d44a5e07977d2ec4852f29a77a1fbabdea0fd9f2165"
+    }
+  },
+  "source_identity": {
+    "commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+    "tree": "ba5925b4e59b9c88c31fa74cbd21446d06dcdb84"
+  },
+  "traceability_notes": [
+    "Use sys_early_init (src/sys.c:20-112), not nonexistent sysopt_init; option initialization also invokes allopt_array_init and its do_init callbacks at src/options.c:7405-7429",
+    "Correct stale prose line references: DEBUG patchlevel.h:35-37; _GNU_SOURCE config1.h:147-150; MAIL_STRUCTURES global.h:430; option_phases global.h:592-600. Lexical provenance already has the correct lines. These reference corrections are not an additional semantic acceptance prerequisite."
+  ],
+  "unit": "BOOTSTRAP-C-CONDITIONALS",
+  "usage": "unknown",
+  "verification": {
+    "artifact_hashes": "all 9 match review-inputs.json",
+    "authority_anchors": "all 12 match evidence.json",
+    "methods": [
+      "read-only Git metadata and source byte comparisons",
+      "uv run --no-sync .venv/bin/python metadata scripts",
+      "manual source reading; no custom C evaluator"
+    ],
+    "not_run": [
+      "C",
+      "compiler",
+      "preprocessor",
+      "Lua",
+      "Cargo",
+      "goldens",
+      "source edits",
+      "repository document edits",
+      "commits",
+      "nested agents"
+    ],
+    "production": "all 342 individual hashes and complete path list match baseline.json; aggregate SHA256(path bytes then raw file bytes, sorted paths, no separators) reproduces a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+    "source": "all 460 Git source bytes/lengths/blob IDs and source snapshots match evidence.json; selected released tree matches; content manifest source bytes retained"
+  }
+}

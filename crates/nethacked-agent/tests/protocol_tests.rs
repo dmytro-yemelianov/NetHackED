@@ -13,7 +13,7 @@ use std::io::Cursor;
 
 #[test]
 fn inspect_tile_out_of_bounds_is_error_not_panic() {
-    let session = AgentSession::new(42);
+    let session = AgentSession::new(42).unwrap();
     assert!(session.inspect_tile(1000, 0).is_err());
     assert!(session.inspect_tile(0, 21).is_err());
     assert!(session.inspect_tile(5, 5).is_ok());
@@ -72,7 +72,7 @@ fn mcp(session: &mut AgentSession, v: serde_json::Value) -> Option<serde_json::V
 
 #[test]
 fn mcp_malformed_input_gets_errors() {
-    let mut s = AgentSession::new(42);
+    let mut s = AgentSession::new(42).unwrap();
     let r = handle_mcp_request(&mut s, "{oops").unwrap();
     assert_eq!(r["error"]["code"], PARSE_ERROR);
     let r = handle_mcp_line(&mut s, Err(())).unwrap();
@@ -84,7 +84,7 @@ fn mcp_malformed_input_gets_errors() {
 
 #[test]
 fn mcp_notifications_never_answered() {
-    let mut s = AgentSession::new(42);
+    let mut s = AgentSession::new(42).unwrap();
     assert!(mcp(
         &mut s,
         json!({"jsonrpc":"2.0","method":"notifications/cancelled","params":{}})
@@ -95,7 +95,7 @@ fn mcp_notifications_never_answered() {
 
 #[test]
 fn mcp_ping_and_unknown_method() {
-    let mut s = AgentSession::new(42);
+    let mut s = AgentSession::new(42).unwrap();
     let r = mcp(&mut s, json!({"jsonrpc":"2.0","id":0,"method":"ping"})).unwrap();
     assert_eq!(r["id"], 0);
     assert_eq!(r["result"], json!({}));
@@ -105,7 +105,7 @@ fn mcp_ping_and_unknown_method() {
 
 #[test]
 fn mcp_invalid_params_paths() {
-    let mut s = AgentSession::new(42);
+    let mut s = AgentSession::new(42).unwrap();
     let call = |name: &str, args: serde_json::Value| json!({"jsonrpc":"2.0","id":9,"method":"tools/call","params":{"name":name,"arguments":args}});
     let r = mcp(
         &mut s,
@@ -131,16 +131,17 @@ fn mcp_invalid_params_paths() {
 
 #[test]
 fn mcp_kick_off_map_is_invalid_params() {
-    let mut s = AgentSession::new(42);
-    let pid = s.world.player_id;
-    s.world.arena.actors.get_mut(pid).unwrap().coord = nethacked_sim::Coord::new(79, 20).unwrap();
+    let mut world = nethacked_sim::SimulationWorld::new_with_seed(42);
+    let pid = world.player_id;
+    world.arena.actors.get_mut(pid).unwrap().coord = nethacked_sim::Coord::new(79, 20).unwrap();
+    let mut s = AgentSession::new_with_world(world).unwrap();
     let r = mcp(&mut s, json!({"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"nethacked_step","arguments":{"action":"kick_east"}}})).unwrap();
     assert_eq!(r["error"]["code"], INVALID_PARAMS);
 }
 
 #[test]
 fn mcp_step_enum_matches_accepted_actions() {
-    let mut s = AgentSession::new(42);
+    let mut s = AgentSession::new(42).unwrap();
     let r = mcp(
         &mut s,
         json!({"jsonrpc":"2.0","id":2,"method":"tools/list"}),
@@ -161,7 +162,7 @@ fn mcp_step_enum_matches_accepted_actions() {
         assert!(actions.contains(&a.to_string()), "enum missing {a}");
     }
     for a in &actions {
-        let mut fresh = AgentSession::new(42);
+        let mut fresh = AgentSession::new(42).unwrap();
         let r = mcp(&mut fresh, json!({"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"nethacked_step","arguments":{"action":a}}})).unwrap();
         assert!(r.get("result").is_some(), "enum action {a} rejected: {r}");
     }
@@ -169,7 +170,7 @@ fn mcp_step_enum_matches_accepted_actions() {
 
 #[test]
 fn mcp_null_id_is_a_request_and_errors_carry_jsonrpc() {
-    let mut s = AgentSession::new(42);
+    let mut s = AgentSession::new(42).unwrap();
     let r = mcp(&mut s, json!({"jsonrpc":"2.0","id":null,"method":"ping"})).unwrap();
     assert!(r["id"].is_null());
     assert_eq!(r["result"], json!({}));
@@ -185,7 +186,7 @@ fn mcp_null_id_is_a_request_and_errors_carry_jsonrpc() {
 
 #[test]
 fn mcp_step_schema_declares_index_and_direction() {
-    let mut s = AgentSession::new(42);
+    let mut s = AgentSession::new(42).unwrap();
     let r = mcp(
         &mut s,
         json!({"jsonrpc":"2.0","id":2,"method":"tools/list"}),
@@ -209,7 +210,7 @@ fn mcp_step_schema_declares_index_and_direction() {
 
 #[test]
 fn jsonrpc_robustness() {
-    let mut s = AgentSession::new(42);
+    let mut s = AgentSession::new(42).unwrap();
     let r = handle_jsonrpc_request(&mut s, "nope").unwrap();
     assert_eq!(r["error"]["code"], PARSE_ERROR);
     let r = handle_jsonrpc_line(&mut s, Err(())).unwrap();
@@ -241,14 +242,14 @@ fn jsonrpc_robustness() {
 
 #[test]
 fn mcp_index_must_be_a_number() {
-    let mut s = AgentSession::new(42);
+    let mut s = AgentSession::new(42).unwrap();
     let r = mcp(&mut s, json!({"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"nethacked_step","arguments":{"action":"eat","index":"3"}}})).unwrap();
     assert_eq!(r["error"]["code"], INVALID_PARAMS);
 }
 
 #[test]
 fn mcp_cast_accepts_diagonal_and_rejects_garbage() {
-    let mut s = AgentSession::new(42);
+    let mut s = AgentSession::new(42).unwrap();
     let ok = mcp(&mut s, json!({"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"nethacked_step","arguments":{"action":"cast","direction":"northwest"}}})).unwrap();
     assert!(ok.get("result").is_some());
     let bad = mcp(&mut s, json!({"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"nethacked_step","arguments":{"action":"cast","direction":"sideways"}}})).unwrap();
@@ -257,14 +258,14 @@ fn mcp_cast_accepts_diagonal_and_rejects_garbage() {
 
 #[test]
 fn mcp_reset_with_unknown_role_is_invalid_params() {
-    let mut s = AgentSession::new(42);
+    let mut s = AgentSession::new(42).unwrap();
     let r = mcp(&mut s, json!({"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"nethacked_reset_with_character","arguments":{"role":"samurai"}}})).unwrap();
     assert_eq!(r["error"]["code"], INVALID_PARAMS);
 }
 
 #[test]
 fn jsonrpc_accepts_move_prefixed_names() {
-    let mut s = AgentSession::new(42);
+    let mut s = AgentSession::new(42).unwrap();
     let r = handle_jsonrpc_request(
         &mut s,
         r#"{"jsonrpc":"2.0","id":1,"method":"nethacked.step","params":{"action":"move_north"}}"#,
@@ -275,7 +276,7 @@ fn jsonrpc_accepts_move_prefixed_names() {
 
 #[test]
 fn mcp_get_roles_returns_nine_roles_and_five_races() {
-    let mut s = AgentSession::new(42);
+    let mut s = AgentSession::new(42).unwrap();
     let r = mcp(
         &mut s,
         json!({"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"nethacked_get_roles","arguments":{}}}),

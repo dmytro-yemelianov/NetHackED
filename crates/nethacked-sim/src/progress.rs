@@ -430,7 +430,7 @@ impl SimulationWorld {
         events: &mut Vec<GameEvent>,
     ) {
         let rs = std::sync::Arc::clone(&self.ruleset);
-        let Some(def) = rs.monster(&victim.name) else {
+        let Some(def) = rs.monster_for_actor(victim) else {
             return;
         };
         let exp = experience(

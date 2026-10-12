@@ -177,7 +177,7 @@ fn call_tool(session: &mut AgentSession, name: &str, args: &Value) -> Result<Str
                 .ok_or("missing 'action'")?;
             let a = action_args_from_json(args, session.player_coord())?;
             let action = parse_action(act_str, &a)?;
-            let obs = session.step(action);
+            let obs = session.step(action)?;
             Ok(serde_json::to_string_pretty(&obs).unwrap_or_default())
         }
         "nethacked_inspect_tile" => {
@@ -192,15 +192,15 @@ fn call_tool(session: &mut AgentSession, name: &str, args: &Value) -> Result<Str
             let insp = session.inspect_tile(x, y)?;
             Ok(serde_json::to_string_pretty(&insp).unwrap_or_default())
         }
-        "nethacked_render_map" => Ok(crate::ascii::render_ascii_map(&session.world)),
+        "nethacked_render_map" => Ok(crate::ascii::render_ascii_map(session.world())),
         "nethacked_reset_game" => {
             let seed = args.get("seed").and_then(|v| v.as_u64()).unwrap_or(42);
-            *session = AgentSession::new(seed);
+            *session = AgentSession::new(seed)?;
             let obs = session.get_observation();
             Ok(serde_json::to_string_pretty(&obs).unwrap_or_default())
         }
         "nethacked_get_roles" => {
-            let rs = std::sync::Arc::clone(&session.world.ruleset);
+            let rs = std::sync::Arc::clone(&session.world().ruleset);
             let data = json!({
                 "roles": rs.roles.iter().map(|r| json!({
                     "id": format!("{:?}", r.id),
@@ -233,8 +233,7 @@ fn call_tool(session: &mut AgentSession, name: &str, args: &Value) -> Result<Str
                 field("alignment"),
             )?;
 
-            session.world = SimulationWorld::new_with_character(seed, config);
-            session.last_events.clear();
+            session.reset(SimulationWorld::new_with_character(seed, config))?;
             let obs = session.get_observation();
             Ok(serde_json::to_string_pretty(&obs).unwrap_or_default())
         }
@@ -244,7 +243,7 @@ fn call_tool(session: &mut AgentSession, name: &str, args: &Value) -> Result<Str
 
 /// Run Model Context Protocol server over standard I/O.
 pub fn run_mcp_server(seed: u64) -> std::io::Result<()> {
-    let mut session = AgentSession::new(seed);
+    let mut session = AgentSession::new(seed).map_err(std::io::Error::other)?;
     let stdin = std::io::stdin();
     crate::stdio::serve_lines(stdin.lock(), std::io::stdout(), |line| {
         handle_mcp_line(&mut session, line).map(|v| v.to_string())

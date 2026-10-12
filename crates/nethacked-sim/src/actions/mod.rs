@@ -1,14 +1,19 @@
 //! Action execution and dispatch across modular domain handlers.
 
+pub mod command_frame;
 pub mod doors;
 pub mod economy;
 pub mod engrave;
+pub mod equipment;
 pub mod inventory;
+pub(crate) mod item_lifetime_legacy;
 pub mod items;
 pub mod movement;
 pub mod ranged;
 pub mod religion;
 pub mod stairs;
+pub mod wand;
+pub(crate) mod wand_legacy;
 
 use nethacked_core::{energy::NORMAL_SPEED, ActionAst};
 use rand::Rng;
@@ -19,6 +24,9 @@ use crate::world::SimulationWorld;
 impl SimulationWorld {
     /// Step the simulation with a player action, processing subsequent monster turns.
     pub fn step_player_action(&mut self, action: ActionAst) -> Vec<GameEvent> {
+        if matches!(action, ActionAst::Pay) && self.billing_settlement_deferred() {
+            return Vec::new();
+        }
         let mut events = Vec::new();
 
         let Some(player) = self.arena.actors.get(self.player_id).cloned() else {
@@ -29,18 +37,25 @@ impl SimulationWorld {
             return events;
         }
 
+        self.reconcile_equipment();
         let energy_before = self.scheduler.hero_energy;
         let turn_before = self.scheduler.turn;
 
         // C multi < 0 (fall_asleep, paralysis): the hero cannot act this turn.
-        let action = if self.hero.afflictions.transient.helpless > 0 {
-            ActionAst::Wait
-        } else {
-            action
-        };
-        // C domove (hack.c:2420-2435): u_maybe_impaired() -> confdir().
+        let action =
+            if self.hero.afflictions.transient.helpless > 0 || self.equipment.dressing.is_some() {
+                ActionAst::Wait
+            } else {
+                action
+            };
+        // Released C domove refuses overload before impaired_movement
+        // (hack.c:2730,2747); a refused move must not draw a direction.
         let action = match action {
-            ActionAst::Move(_) if self.hero_moves_at_random() => {
+            ActionAst::Move(_)
+                if self.hero_encumbrance()
+                    != nethacked_core::inventory::EncumbranceTier::Overloaded
+                    && self.hero_moves_at_random() =>
+            {
                 use nethacked_types::Direction as D;
                 const DIRS: [D; 8] = [
                     D::North,
@@ -57,6 +72,7 @@ impl SimulationWorld {
             other => other,
         };
 
+        let movement_action = matches!(action, ActionAst::Move(_));
         match action {
             ActionAst::Move(dir) => events.extend(self.handle_move(dir)),
             ActionAst::OpenDoor(coord) => events.extend(self.handle_open_door(coord)),
@@ -68,6 +84,8 @@ impl SimulationWorld {
             ActionAst::PickUp => events.extend(self.handle_pickup()),
             ActionAst::Drop(idx) => events.extend(self.handle_drop(idx)),
             ActionAst::Wield(idx) => events.extend(self.handle_wield(idx)),
+            ActionAst::Wear(idx) => events.extend(self.handle_dressing(idx, true)),
+            ActionAst::Remove(idx) => events.extend(self.handle_dressing(idx, false)),
             ActionAst::PutInContainer {
                 item_index,
                 container_index,
@@ -87,6 +105,17 @@ impl SimulationWorld {
                 events.extend(self.handle_cast(spell_index, dir))
             }
             ActionAst::ZapWand { dir, energy } => events.extend(self.handle_zap_wand(dir, energy)),
+            ActionAst::ZapSelectedWand {
+                item_index,
+                expected_item,
+                dir,
+                energy,
+            } => {
+                events.extend(self.handle_zap_selected_wand(item_index, expected_item, dir, energy))
+            }
+            ActionAst::CancelZapSelection => events.push(GameEvent::LogMessage {
+                text: "Never mind.".into(),
+            }),
             ActionAst::Wish(wish_str) => events.extend(self.handle_wish(wish_str)),
             ActionAst::Pray => events.extend(self.handle_pray()),
             ActionAst::Sacrifice(idx) => events.extend(self.handle_sacrifice(idx)),
@@ -158,10 +187,18 @@ impl SimulationWorld {
         // Hero AC is derived state (C `find_ac`, `do_wear.c:2473-2507`): refresh it
         // once after any action so monster attacks this turn see the current worn
         // armor, enchantment and divine protection.
+        self.reconcile_equipment();
         self.recompute_hero_ac();
 
         // Process monster actions and turn scheduler ticks
-        let sim_events = self.process_turn_ticks();
+        // C u.umoved reflects actual walking, including a peaceful swap, rather
+        // than a refused move, melee bump, teleport, or stair traversal.
+        let moved = movement_action
+            && events.iter().any(|event| {
+                matches!(event, GameEvent::ActorMoved { actor, from, to }
+                    if *actor == self.player_id && from != to)
+            });
+        let sim_events = self.process_turn_ticks(spent_time, moved);
         events.extend(sim_events);
 
         if spent_time {
@@ -178,6 +215,7 @@ impl SimulationWorld {
 
         // Monster turns can also change worn armor (theft, erosion); refresh again
         // so `ActorRecord::ac` is never stale between steps.
+        self.reconcile_equipment();
         self.recompute_hero_ac();
 
         self.record_events(&events);

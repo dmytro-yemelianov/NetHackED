@@ -1,0 +1,1 @@
+C1-R1/R2/R3 repairs pass this independent narrow contract rereview. No open findings. Prior passed charge/lifetime/fixture/legacy/source coverage is explicitly reused. C1 remains open; implementation, seeds and runtime parity remain unproven. Relative artifact paths below use C1 root `/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1`.

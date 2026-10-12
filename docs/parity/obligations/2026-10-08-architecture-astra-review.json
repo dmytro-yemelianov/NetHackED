@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "status": "completed_for_containing_commit",
+  "reviewed_head": "1fc32901920ca093c55ea1bef80fd0e174156428",
+  "model": "gpt-6-astra",
+  "effort": "medium",
+  "scope": "Cross-layer architecture audit M0-M3a; specified formal interfaces and complete runtime/specs; prior proof/fixture verification reused",
+  "review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/ARCHITECTURE-ASTRA-AUDIT/review/answer.txt",
+    "sha256": "56d4e89d60b8dc5b31f7d4f8f3a1a7e132ded92a1c656f349e308341a722a206"
+  },
+  "packet": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/ARCHITECTURE-ASTRA-AUDIT/packet/packet.json",
+    "sha256": "def713c47df88bcda1fed96ffe68c6d094307e06502e3f405d6c56c68c4ca9ee"
+  },
+  "source_binding": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/ARCHITECTURE-ASTRA-AUDIT/source-binding.json",
+    "sha256": "8166b39f62f1392fbcca0e8b5f4f4ec0d162c03e23ba523867203d4e8bd0ecfe"
+  },
+  "inputs_unchanged": true,
+  "result": {
+    "verdict": "PASS_ARCHITECTURE_DIRECTION",
+    "checked": [
+      "Completed all 11 required documents/runtime files and every specified Lean range; recovered truncated required passages.",
+      "Compared M0\u2013M3a across authority, execution, workflows, services and retained NetHack adequacy tables."
+    ],
+    "findings": [
+      "No fatal design contradiction or missing present-M3a guarantee identified. The kernel imposes no world/entity schema; module-owned native state and bounded byte ports support existing entity-free hosts. Loaded Wasm changes algorithms and adds exports without rebuilding.",
+      "Authority is structurally credible: private incarnation-bound handles, artifact binding, revocable grants, intersected scopes/access ceilings and bounded ABI execution. Native code remains trusted: opaque payload ownership, atomic refusal and captured state require adapter enforcement.",
+      "The principal composition gap is explicit: invocation-time dispatch is not a pinned workflow. Base artifact identity does not identify the resolved extension/provider chain; unregister does not enforce pending-work retention. These are M4 obligations, not M3a regressions.",
+      "Committed call prefixes fit wand cancellation, but do not supply atomic retirement/equipment/timer/debt effects. M3b must provide that boundary. Optional relational input policies accommodate nondeterminism; vanilla draw order remains a profile obligation."
+    ],
+    "next_steps": [
+      "1. Resume with M3b: bind immutable plans to authenticated callers/effective grants; revalidate stamps and publish all owner changes/events atomically. Specify the Lean-to-Rust capability/identity mapping.",
+      "2. M4: bind transactions, input keys and timer admission to authoritative workflow checkpoints; retain resolved executable pipelines; define callback failure/retry, lifecycle indexes, codec validation and schema compatibility. Persistent extension state must live outside ephemeral guest RAM.",
+      "3. Before M5 migration, define bounded native-to-native collaboration and extension composition contracts. Preserve wand survivor identities, conditional RNG, cancellation costs and billing-before-catch-up restoration. Then complete M6 migrations and M7 integration."
+    ],
+    "limits": [
+      "Reused supplied proof/build/test/review evidence; no composed Rust refinement or historical parity recertification.",
+      "Repository untouched; no tests, proof reruns, subagents or commits. M3b\u2013M7 and the separate 53-family backlog remain open."
+    ]
+  },
+  "usage": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/ARCHITECTURE-ASTRA-AUDIT/review/usage.json",
+    "sha256": "c5e234f2977df0c07b8bb6d565c7b6d45ad560f37899524dce9cc00753b2971a"
+  },
+  "meter_note": "59067 uncached input,2742output; difficult50000 soft threshold exceeded; root telemetry unknown. No whole-unit compliance/savings claim. Subsequent work narrows to M3b transaction contract and explicit mapping only.",
+  "native_goal_status": "paused; runtime exposes no programmatic resume; user Resume control required",
+  "parity_families_closed": 0
+}

@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "batch": "P08b1.6",
+  "checked_date": "2026-10-07",
+  "checked_head": "b912faf",
+  "source_tag": "NetHack-5.0.0_Released",
+  "source_commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+  "feature": "Source-derived ordinary Troll initial timeout sampling",
+  "implemented_subsets": [
+    "One initial rot-noise sample precedes up to 49 bound-37 trials for ages 2 through 50",
+    "First successful trial replaces delay with its age; complete failure retains signed rot delay",
+    "Owned class and policy select the recipe; no-revive state does not suppress initial trials",
+    "Transient Rot/Revive recipes attach once through existing persisted timer kinds",
+    "Frozen attachment starts and cancels the selected kind while retaining insertion identity",
+    "Public generation, full save/native RNG continuation and cached handle remapping"
+  ],
+  "tests": [
+    "crates/nethacked-core/tests/corpse_timeout_sampling.rs",
+    "crates/nethacked-data/tests/corpse_timeout_recipes.rs",
+    "crates/nethacked-sim/tests/corpse_recipe_attachment.rs"
+  ],
+  "remaining": [
+    "Persisted actor sex and saved traits for selected ordinary Troll death",
+    "Production corpse birth initializer/gender/override RNG adapter",
+    "Actual rot, recursive transfer freeze/thaw and legacy timer migration",
+    "Ordinary Troll revival and placement/failure-to-rot handling",
+    "Rider replacement RNG, zombie context, saved monster traits and broader Ice Troll/floor-ice behaviors"
+  ],
+  "review": "PASS fresh Sol/high, no semantic defects; all 327 current input hashes and prior snapshot independently checked; 72 unique logged passes verified",
+  "acceptance": "895 workspace tests and 11 other gates pass; all 327 inputs stable; exactly three frozen golden failures, source unchanged; callbacks remain neutral; final golden policy and commit pending",
+  "plan": "docs/plans/2026-10-07-corpse-lifecycle.md",
+  "final_integration": {
+    "record": "2026-10-07-p04-p10-final-acceptance.json",
+    "status": "Original bounded exit reviewed/audited and final green integration verified; prior checkpoint fields are historical",
+    "tests": 999,
+    "gates": 12,
+    "goldens": 3,
+    "input_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+    "commit": "Containing commit; see final acceptance record"
+  }
+}

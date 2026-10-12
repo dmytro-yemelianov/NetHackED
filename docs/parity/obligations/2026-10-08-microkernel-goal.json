@@ -1,0 +1,1429 @@
+{
+  "schema": 1,
+  "status": "active",
+  "plan": "docs/plans/2026-10-08-microkernel-goal.md",
+  "plan_sha256": "51b6bfd5a1b077089cc38a2b10346f9e905d37e575e531be558f97ed9259ca06",
+  "native_goal": "Complete NetRust microkernel architecture program; formal contracts, executable extensions, existing NetHack migration, integration audit",
+  "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
+  "active_unit": "M7",
+  "live_handles": [],
+  "acceptance": {
+    "A1": "passed_generic_runtime_1fc3290",
+    "A2": "passed_generic_entityfree_host_and_live_populated_NetHack_extension_M5_I5",
+    "A3": "passed_generic_runtime_resources_checkpoint;passed_autonomous_owner_runtime_owner_services_checkpoint",
+    "A4": "passed_authoritative_workflow_and_actual_separate_process_NetHack_retained_execution_M5_I5",
+    "A5": "passed_fresh_process_combined_native_heterogeneous_pending_legacy_checkpoint",
+    "A6": "passed_scoped_native_module_integration_M5_I5; full_C_parity_separate",
+    "A7": "passed_default_domain_migration_M6_I1_I10_18ea159",
+    "A8": "passed_m7_audit_checkpoint"
+  },
+  "milestones": [
+    {
+      "id": "M0",
+      "status": "complete",
+      "depends_on": [],
+      "evidence": {
+        "draft_archive": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M0/interrupted-wand-draft/manifest.json",
+        "inventory": "docs/parity/obligations/2026-10-08-microkernel-migration-inventory.json",
+        "inventory_sha256": "069042ff0466fc1e03d8247d20bd56dacb4c2527d52f6343cc0746545e832bf6"
+      }
+    },
+    {
+      "id": "M1",
+      "status": "complete",
+      "depends_on": [
+        "M0"
+      ],
+      "implementation": {
+        "status": "accepted_in_50e1ca8",
+        "run": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-AUTHORITY/implementation",
+        "theorem_declarations": 48,
+        "failure": "prepare_refusal conditional hypothesis simplification",
+        "unsuccessful_repairs": 2,
+        "total_repair_limit": 3,
+        "next_action": "completed: third repair, review, full gates and commit",
+        "final_repair_attempt": 3,
+        "build_jobs": 94
+      },
+      "review": {
+        "verdict": "PASS_FORMAL_CONTRACT",
+        "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-AUTHORITY/review/answer.txt",
+        "sha256": "b16430504bae0a1b923baff959e63095947ced036077ed4fe9afb168a9fd4224"
+      },
+      "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-foundation-checkpoint.json"
+    },
+    {
+      "id": "M2",
+      "status": "complete",
+      "depends_on": [
+        "M1"
+      ],
+      "implementation": {
+        "writer": "root Executing Plans",
+        "scope": "S4-S7 compact service contracts; runtime obligations explicit",
+        "prerequisite_commit": "50e1ca84e001868242ecc58b7141c7582df4d1f0"
+      },
+      "review": {
+        "verdict": "PASS_SERVICE_CONTRACT",
+        "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-SERVICES/review/answer.txt",
+        "sha256": "e3de07152d39c25682e6dbdffef571f642c9b928040dbaca9017005a6dec5f96"
+      },
+      "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-services-checkpoint.json"
+    },
+    {
+      "id": "M3",
+      "status": "complete",
+      "depends_on": [
+        "M2"
+      ],
+      "implementation": {
+        "phase": "M3a/M3b verified",
+        "scope": "A1/A2/A3 only; M4 persistence/workflows and M5 NetHack follow",
+        "prerequisite_commit": "66c65b750b3864f2f101b3f9871825e25ede188c"
+      },
+      "units": [
+        {
+          "id": "M3a",
+          "status": "complete",
+          "scope": "Generic kernel/ABI/native+guest providers/live extension/grant budgets; no resource coordinator",
+          "depends_on": [
+            "M2"
+          ],
+          "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-runtime-checkpoint.json"
+        },
+        {
+          "id": "M3b",
+          "status": "complete",
+          "scope": "Optional resource coordinator and fullA3 atomicity through accepted ports",
+          "depends_on": [
+            "M3a"
+          ],
+          "audit_requirements": [
+            "Map Lean identities/capabilities to actual authenticated runtime views",
+            "Bind exact immutable plans to caller/artifact/effective grants",
+            "Revalidate stamps/permissions then atomic owner changes/events"
+          ],
+          "contract": "docs/plans/2026-10-08-resource-service-contract.md",
+          "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-resources-checkpoint.json"
+        }
+      ]
+    },
+    {
+      "id": "M4",
+      "status": "accepted",
+      "depends_on": [
+        "M3"
+      ],
+      "audit_requirements": [
+        "Bind transactions/input keys/timer admission to authoritative workflow checkpoints",
+        "Pin resolved executable provider/extension chains; protect pending-work retention on unload",
+        "Define callback failure/retry, lifecycle indexes, concrete codecs/schema compatibility",
+        "Store persistent extension state outside ephemeral guest RAM"
+      ],
+      "units": [
+        {
+          "id": "M4a",
+          "status": "complete",
+          "depends_on": [
+            "M3"
+          ],
+          "scope": "Retained executable routing and lifecycle references; A4 checkpoint integration remains M4b",
+          "contract": "docs/plans/2026-10-08-pinned-execution-contract.md",
+          "repair": {
+            "defect": "Retainednestedfuel smallinputcontrol Trap",
+            "failed_repairs": 2,
+            "maximum_total": 3,
+            "next": "Astra low advice thenroot finalrepair",
+            "status": "F1smallcontrolresolvedonattempt3; distinctF2ignoredABIrefusalfixturecorrectedfirstrepair; full41testsPASS",
+            "history": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-PINNING/repair-decision.json"
+          },
+          "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-pinning-checkpoint.json"
+        },
+        {
+          "id": "M4b",
+          "status": "complete",
+          "depends_on": [
+            "M4a"
+          ],
+          "scope": "Authoritative workflows/tickets and resource-operation binding",
+          "contract": "docs/plans/2026-10-08-runtime-workflow-contract.md",
+          "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-workflow-checkpoint.json"
+        },
+        {
+          "id": "M4c",
+          "status": "complete",
+          "depends_on": [
+            "M4b"
+          ],
+          "scope": "Recorded input/timer services, checkpoint ownership and callback failure policy",
+          "units": [
+            {
+              "id": "M4c-input",
+              "status": "complete",
+              "depends_on": [
+                "M4b"
+              ],
+              "scope": "Recorded input ownership/replay over authoritative checkpoints; optional policy/provider interface",
+              "contract": "docs/plans/2026-10-08-recorded-input-runtime-contract.md",
+              "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-input-checkpoint.json"
+            },
+            {
+              "id": "M4c-timers",
+              "status": "complete",
+              "depends_on": [
+                "M4c-input"
+              ],
+              "scope": "Optional timer admission, continuation retention and callback failure policy",
+              "units": [
+                {
+                  "id": "M4c-timer-capture",
+                  "status": "complete",
+                  "depends_on": [
+                    "M4c-input"
+                  ],
+                  "contract": "docs/plans/2026-10-08-callback-continuation-contract.md",
+                  "scope": "Bounded callback capture from authenticated invocation, retained code/authority and safe-boundary operation adoption",
+                  "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-callback-checkpoint.json"
+                },
+                {
+                  "id": "M4c-timer-queue",
+                  "status": "complete",
+                  "depends_on": [
+                    "M4c-timer-capture"
+                  ],
+                  "scope": "Optional timer queue, target validation/profile admission, once-only callback/failure/cleanup policy",
+                  "contract": "docs/plans/2026-10-08-timer-runtime-contract.md",
+                  "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-timer-checkpoint.json"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "M4-ownership-design",
+          "status": "complete",
+          "depends_on": [
+            "M4c"
+          ],
+          "scope": "Reviewed autonomous ownership design only; Lean and runtime acceptance remain pending",
+          "contract": "docs/plans/2026-10-08-autonomous-ownership-contract.md",
+          "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-ownership-checkpoint.json"
+        },
+        {
+          "id": "M4-O1",
+          "status": "complete",
+          "depends_on": [
+            "M4-ownership-design"
+          ],
+          "contract": "docs/plans/2026-10-08-autonomous-ownership-contract.md",
+          "scope": "formal ownership and publication transition model, separation/observation/authority proofs with explicit runtime trust boundaries",
+          "proof_map": "docs/ownership-proof-map.md",
+          "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-ownership-formal-checkpoint.json"
+        },
+        {
+          "id": "M4-O2",
+          "status": "complete",
+          "depends_on": [
+            "M4-O1"
+          ],
+          "contract": "docs/plans/2026-10-08-autonomous-ownership-contract.md",
+          "scope": "Independent typed/blob owner slots and routes, domain command/query ports and pure native/Wasm preparation",
+          "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-runtime-checkpoint.json",
+          "runtime": "crates/nethacked-owners/README.md"
+        },
+        {
+          "id": "M4-O3",
+          "status": "complete",
+          "depends_on": [
+            "M4-O2"
+          ],
+          "contract": "docs/plans/2026-10-08-autonomous-ownership-contract.md",
+          "scope": "Sealed tokens, preflight, guarded atomic publication and visibility/refusal/prefix/cleanup fixtures",
+          "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-publication-checkpoint.json",
+          "runtime": "crates/nethacked-owners/README.md"
+        },
+        {
+          "id": "M4-O4",
+          "status": "complete",
+          "depends_on": [
+            "M4-O3"
+          ],
+          "contract": "docs/plans/2026-10-08-autonomous-ownership-contract.md",
+          "scope": "Live executable behavior/extensions, derived properties, retained services, heterogeneous/entity-free owner runtime acceptance",
+          "units": [
+            {
+              "id": "M4-O4a",
+              "status": "complete",
+              "depends_on": [
+                "M4-O3"
+              ],
+              "scope": "Compatible live Wasm owner behavior and authenticated versioned derived queries/caches",
+              "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-live-queries-checkpoint.json",
+              "runtime": "crates/nethacked-owners/LIVE_QUERIES.md"
+            },
+            {
+              "id": "M4-O4b",
+              "status": "complete",
+              "depends_on": [
+                "M4-O4a"
+              ],
+              "scope": "Actual input/timer/workflow composition, heterogeneous/entity-free and equipment/lifecycle witnesses; aggregate O2-O4 acceptance",
+              "audit_requirements": [
+                "Resume an old retained workflow/timer through owner query and preparation after compatible behavior admission, not only commit a pre-existing sealed candidate",
+                "Compose real recorded inputs, timer targets/cleanup and independent owner commands without a central authoritative property service",
+                "Verify equipment/item dependencies, lifecycle references and scalar/device/field hosts before aggregate O4 acceptance"
+              ],
+              "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-services-checkpoint.json",
+              "resolved_implementation_gaps": [
+                "Owner compatible behavior stores only current codec/binding: query/preparation after replacement must select bounded retained native codec/policy as well as retained guest routes",
+                "Recorded choices must become authenticated declared immutable observations before pure owner preparation, not unchecked guest request values",
+                "Timer target validation and lifecycle cleanup must reach independently owned state through metadata/weak routes, without resource-payload mirroring"
+              ],
+              "runtime": "crates/nethacked-owner-services/README.md"
+            }
+          ],
+          "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-services-checkpoint.json"
+        },
+        {
+          "id": "M4d",
+          "status": "accepted",
+          "depends_on": [
+            "M4c",
+            "M4-O4"
+          ],
+          "scope": "Concrete autonomous-owner codecs/restoration and executable/schema validation; full A5 including supported legacy compatibility",
+          "current_phase": "D4e_complete_D5_legacy_compatibility_next",
+          "contract": "docs/plans/2026-10-08-owner-persistence-contract.md",
+          "design_checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-persistence-contract-checkpoint.json",
+          "units": [
+            {
+              "id": "M4d-contract",
+              "status": "complete",
+              "depends_on": [
+                "M4-O4"
+              ],
+              "scope": "Reviewed concrete persistence/restoration design only; no byte codec or restored host acceptance",
+              "contract": "docs/plans/2026-10-08-owner-persistence-contract.md",
+              "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-persistence-contract-checkpoint.json"
+            },
+            {
+              "id": "M4d-D1",
+              "status": "complete",
+              "depends_on": [
+                "M4d-contract"
+              ],
+              "title": "Wire/catalog",
+              "scope": "New nethacked-persistence strict versioned bounded canonical envelope, typed tables/IDs and artifact/catalog declarations; no runtime authority",
+              "contract": "docs/plans/2026-10-08-owner-persistence-contract.md",
+              "acceptance_requirements": [
+                "Canonical exact byte fixtures and structural bounds",
+                "Malformed/truncated/oversized/noncanonical/duplicate-key or ID/counter refusal"
+              ],
+              "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-wire-checkpoint.json",
+              "runtime": "crates/nethacked-persistence/README.md"
+            },
+            {
+              "id": "M4d-D2",
+              "status": "complete",
+              "depends_on": [
+                "M4d-D1"
+              ],
+              "title": "Independent state",
+              "scope": "Owner-local native/blob/field persistence codecs, identity remapping, reference enumeration and publication history; no composed services",
+              "contract": "docs/plans/2026-10-08-owner-persistence-contract.md",
+              "acceptance_requirements": [
+                "Fresh independent native/blob/field roundtrip and supported schema migration",
+                "Changed schema/codecs, stale credentials, invalid references/history/counters refuse"
+              ],
+              "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-state-checkpoint.json",
+              "runtime": "crates/nethacked-owners/README.md"
+            },
+            {
+              "id": "M4d-D3",
+              "status": "accepted",
+              "depends_on": [
+                "M4d-D2"
+              ],
+              "title": "Retained kernel",
+              "scope": "Sealed registration/grant/code/lease/callback reconstruction and owner retained behavior/prepared state",
+              "contract": "docs/plans/2026-10-08-owner-persistence-contract.md",
+              "acceptance_requirements": [
+                "Old complete guest/import/native codec retained while current dispatch differs",
+                "Missing artifacts, changed ABI/grants, forged origins and consumed prepared batch replay refuse"
+              ],
+              "units": [
+                {
+                  "id": "M4d-D3a",
+                  "status": "complete",
+                  "depends_on": [
+                    "M4d-D2"
+                  ],
+                  "scope": "Bounded module registry/artifact/current-dispatch capture and hidden reconstruction with host-approved grants, fresh identities and counter preservation; live retention unsupported until D3b",
+                  "acceptance_requirements": [
+                    "Fresh native/Wasm registry roundtrip with current and detached extension state, dependency slots and independently approved grant remaps",
+                    "Missing/changed artifact, manifest/ABI/grants, stale handles, invalid counters and unsupported live retention refuse without domain effects"
+                  ],
+                  "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-kernel-registry-checkpoint.json",
+                  "runtime": "crates/nethacked-kernel/README.md"
+                },
+                {
+                  "id": "M4d-D3b",
+                  "status": "complete",
+                  "depends_on": [
+                    "M4d-D3a"
+                  ],
+                  "scope": "Complete retained kernel graph reconstruction: exact old routing versus current dispatch, operations/leases/cleanup bindings, shared owner refs/pins/callbacks/pure captures",
+                  "acceptance_requirements": [
+                    "Old complete guest/import chain still executes while new calls use current dispatch after fresh reconstruction",
+                    "Missing code, forged origins, incomplete aliases and insufficient destination authority refuse; remap all namespaces and protect unload until references release"
+                  ],
+                  "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-kernel-retained-checkpoint.json",
+                  "runtime": "crates/nethacked-kernel/README.md"
+                },
+                {
+                  "id": "M4d-D3c",
+                  "status": "accepted",
+                  "depends_on": [
+                    "M4d-D3b"
+                  ],
+                  "scope": "Owner retained behavior and private prepared-state codecs, sealed batch reconstruction and aggregate D3 acceptance",
+                  "acceptance_requirements": [
+                    "Restore exact retained native codec/policy/helper and independent next-state candidates without domain re-preparation",
+                    "Pending batch commits once under fresh authoritative views; replay, missing old codecs/grants, mismatched observations/receipts/aliases refuse",
+                    "Combined D3a-D3c review accepts every original D3 requirement before D4"
+                  ],
+                  "execution_passes": [
+                    {
+                      "id": "pass1",
+                      "status": "accepted_in_aggregate_D3c",
+                      "scope": "Hidden identity reservation and exact current/retained owner behavior capture/rebuild; focused checks only, no partial acceptance"
+                    },
+                    {
+                      "id": "pass2",
+                      "status": "accepted_in_aggregate_D3c",
+                      "scope": "Sealed prepared candidates/observations/batches/accounting and consumption; combined D3a-D3c review/full gates/commit",
+                      "checkpoint": "Input ledger plus owner prepared candidate/batch integration; implementation3 complete",
+                      "continuation": "implementation3"
+                    }
+                  ],
+                  "review_checkpoint": {
+                    "verdict": "PASS_D3_OWNER_EXECUTION_REPAIRS",
+                    "original_review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-EXECUTION/review-evidence/report.md",
+                    "readback": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-EXECUTION/readback-evidence/report.md",
+                    "findings_closed": [
+                      "F1",
+                      "F2",
+                      "F3",
+                      "F4"
+                    ],
+                    "full_gates_pending": false
+                  },
+                  "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-owner-execution-checkpoint.json",
+                  "checkpoint_sha256": "fe79f9bb8cc1d3583646e19f3d82c465154469137c7f01ea12f131a410662dd2",
+                  "aggregate_D3_accepted": true
+                }
+              ],
+              "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-owner-execution-checkpoint.json",
+              "checkpoint_sha256": "fe79f9bb8cc1d3583646e19f3d82c465154469137c7f01ea12f131a410662dd2",
+              "aggregate_D3_accepted": true
+            },
+            {
+              "id": "M4d-D4",
+              "status": "accepted",
+              "depends_on": [
+                "M4d-D3"
+              ],
+              "title": "Coherent services",
+              "scope": "Workflow/input/timer/owner-services snapshots and hidden complete host reconstruction, authority-epoch activation",
+              "contract": "docs/plans/2026-10-08-owner-persistence-contract.md",
+              "acceptance_requirements": [
+                "Paused charge/input, first preparation under old code, source-disposed callback, Busy cleanup and exact accepted prefixes",
+                "Bad targets/records/cleanup/replay and barrier failures refuse",
+                "Grant narrowing/revocation and resolver change after staging or at final exchange; safe restaging positive and nonempty destination preserved"
+              ],
+              "units": [
+                {
+                  "id": "M4d-D4a",
+                  "status": "accepted",
+                  "depends_on": [
+                    "M4d-D3"
+                  ],
+                  "title": "Workflow local persistence",
+                  "scope": "Frozen programs, frame state codec, running/suspended/terminal status, tickets and exact cleanup participants/context; fresh kernel mappings, no step/resume/discard on load.",
+                  "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-workflow-persistence-checkpoint.json",
+                  "checkpoint_sha256": "244b552d8fe421d7badfc78ae0bf7e3bb7e8b6704f6efc525cbc89f51e02c87d"
+                },
+                {
+                  "id": "M4d-D4b",
+                  "status": "accepted",
+                  "depends_on": [
+                    "M4d-D4a"
+                  ],
+                  "title": "Timer and owner adapter persistence",
+                  "scope": "Pending/cancelled/terminal tasks, profiles and target validation, shared old callback bundles/weak routes, disposed source and Busy cleanup without automatic delivery.",
+                  "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-timer-persistence-checkpoint.json",
+                  "checkpoint_sha256": "0aa4b0cd46d8f7ff86af4035ce35fd3c58ed185e8787a4ba2d01d8f15a755ccd"
+                },
+                {
+                  "id": "M4d-D4c",
+                  "status": "accepted",
+                  "depends_on": [
+                    "M4d-D4b"
+                  ],
+                  "title": "Historical recorded inputs",
+                  "scope": "Complete source and ledger provenance across disposed/historical operations; fresh observations/counters and replay with no sampling.",
+                  "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-input-history-checkpoint.json",
+                  "checkpoint_sha256": "3980c9ae7c7d2a71ce31655a94198d4bf7942bb9baa54b7c6f7645100b303c09"
+                },
+                {
+                  "id": "M4d-D4d",
+                  "status": "accepted",
+                  "depends_on": [
+                    "M4d-D4c"
+                  ],
+                  "title": "Optional resource participant persistence",
+                  "scope": "Preserve enabled resource-service cells, policies, accepted event/transaction history, pending plans and cleanup ownership via approved local codec/factories; no new NetHack domain storage here.",
+                  "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-resource-persistence-checkpoint.json",
+                  "checkpoint_sha256": "321052ef54f5d14a5ff48953846c1ce0b6a34a41f278a49f8c74eabbc1d7a64e"
+                },
+                {
+                  "id": "M4d-D4e",
+                  "status": "accepted",
+                  "depends_on": [
+                    "M4d-D4d"
+                  ],
+                  "title": "Coherent session activation",
+                  "scope": "Whole-domain capture barrier, hidden HostBundle graph, authority identity/epoch exclusion through atomic exchange and every original D4 positive/refusal integration witness.",
+                  "units": [
+                    {
+                      "id": "M4d-D4e-1",
+                      "status": "accepted",
+                      "title": "Serialized host domain and authority-bound atomic activation",
+                      "depends_on": [
+                        "M4d-D4d"
+                      ],
+                      "scope": "Reusable sealed exclusion/authority epoch/hidden stage/atomic bundle exchange mechanism with interleaving, reentrancy, panic and stale-stage tests; no whole-service capture/reconstruction acceptance.",
+                      "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-host-domain-checkpoint.json",
+                      "checkpoint_sha256": "604c81f68579f9fabce1822c31b415b495aadc4dc0cf632818b1020de876e14e"
+                    },
+                    {
+                      "id": "M4d-D4e-2",
+                      "status": "accepted",
+                      "title": "Coherent runtime composition and combined continuation witnesses",
+                      "depends_on": [
+                        "M4d-D4e-1"
+                      ],
+                      "scope": "Wire every participating kernel/owner/workflow/input/timer/adapter/optional-resource mutation and capture seam into the domain; strict bytes, hidden complete reconstruction, all original combined positive/refusal cases and no bypass through retained aliases. Full D4e requires this child.",
+                      "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-session-composition-checkpoint.json",
+                      "checkpoint_sha256": "d889c3c3cd9aa5ec0f6306477c370da72ac21cb3cc49eac0cc89e7b4ab317e3d"
+                    }
+                  ],
+                  "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-session-composition-checkpoint.json",
+                  "checkpoint_sha256": "d889c3c3cd9aa5ec0f6306477c370da72ac21cb3cc49eac0cc89e7b4ab317e3d"
+                }
+              ],
+              "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-session-composition-checkpoint.json",
+              "checkpoint_sha256": "d889c3c3cd9aa5ec0f6306477c370da72ac21cb3cc49eac0cc89e7b4ab317e3d"
+            },
+            {
+              "id": "M4d-D5",
+              "status": "accepted",
+              "depends_on": [
+                "M4d-D4"
+              ],
+              "title": "Legacy compatibility",
+              "scope": "Nine independent native-save owner partitions, old-validator/no-catchup import and boundary-only native export, owner-native public record_bill_terms prerequisite",
+              "contract": "docs/plans/2026-10-08-owner-persistence-contract.md",
+              "acceptance_requirements": [
+                "Real supported native legacy import to separate owner bytes, fresh restored facade, state-changing receipt command, native export/reload equivalence",
+                "Preserve RNG/timer/event ordering, active/cached live identity remap and consumed historical origins",
+                "Malformed old state invokes available migrator zero times; missing validator/migration/hash/schema/receipt/ref failures preserve destination"
+              ],
+              "implementation_step": "Independent PASS_D5; 56 focused tests, full12/all3 and containing commit deliver the complete D5 bridge. D6 aggregate acceptance remains.",
+              "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-legacy-bridge-checkpoint.json",
+              "checkpoint_sha256": "e8eef60b2f8fa8521b95ee746099e09e2a5dbc16b1dc390829e914442daa7e01"
+            },
+            {
+              "id": "M4d-D6",
+              "status": "accepted",
+              "depends_on": [
+                "M4d-D5"
+              ],
+              "title": "A5 acceptance",
+              "scope": "Fresh-process combined heterogeneous/pending/legacy conformance and obligation reconciliation; no reduction of M5-M7",
+              "contract": "docs/plans/2026-10-08-owner-persistence-contract.md",
+              "acceptance_requirements": [
+                "Every mandatory state/refusal from contract end-to-end",
+                "All D1-D5 accepted, fresh review, complete gates and unchanged scoped goldens before A5 acceptance"
+              ],
+              "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-a5-checkpoint.json",
+              "checkpoint_sha256": "12052883f3379d7191e42a7609f52bbf614fd4c66f78e4038c20fb533b6fe4e2",
+              "implementation_step": "Independent PASS_A5; 35 focused parent tests, twelve producer/consumer subprocesses, full12/all3 unchanged goldens."
+            }
+          ],
+          "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-a5-checkpoint.json",
+          "checkpoint_sha256": "12052883f3379d7191e42a7609f52bbf614fd4c66f78e4038c20fb533b6fe4e2"
+        }
+      ],
+      "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-a5-checkpoint.json",
+      "checkpoint_sha256": "12052883f3379d7191e42a7609f52bbf614fd4c66f78e4038c20fb533b6fe4e2"
+    },
+    {
+      "id": "M5",
+      "status": "accepted",
+      "depends_on": [
+        "M4"
+      ],
+      "audit_requirements": [
+        "Define bounded native-to-native collaboration and extension composition before migration",
+        "Preserve wand survivor identity/conditional RNG/cancellation costs",
+        "Preserve billing validation before timer catch-up on restoration"
+      ],
+      "contract": "docs/plans/2026-10-09-nethack-module-integration-contract.md",
+      "checkpoint": "docs/parity/obligations/2026-10-09-nethack-module-integration-contract-checkpoint.json",
+      "checkpoint_sha256": "cbf31423ead512eaaaf883663a5f8a0e69c32f437775da04e13a0755ec8a6dca",
+      "implementation_units": [
+        {
+          "id": "M5-CONTRACT",
+          "status": "accepted_contract_only",
+          "checkpoint": "docs/parity/obligations/2026-10-09-nethack-module-integration-contract-checkpoint.json"
+        },
+        {
+          "id": "M5-I1",
+          "status": "accepted",
+          "depends_on": [
+            "M5-CONTRACT"
+          ],
+          "scope": "Typed command-specific observations, proposals, owner registrations and bounds",
+          "contract": "docs/plans/2026-10-09-nethack-module-integration-contract.md",
+          "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I1/review/answer.txt",
+          "checkpoint": "docs/parity/obligations/2026-10-09-microkernel-m5-i1-checkpoint.json",
+          "checkpoint_sha256": "8603399af2b9892bf554326aeca19273bd91fe3fde548fdaf4819244d64ad344"
+        },
+        {
+          "id": "M5-I2",
+          "status": "accepted",
+          "depends_on": [
+            "M5-I1"
+          ],
+          "scope": "Actual wand caller, shared algorithms, bounded legacy adapters and both public dispatchers",
+          "contract": "docs/plans/2026-10-09-nethack-module-integration-contract.md",
+          "phases": [
+            {
+              "id": "M5-I2A",
+              "status": "accepted_in_assembled_I2",
+              "scope": "Shared existing wand algorithms and narrow legacy borrowed adapters",
+              "checkpoint": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I2A/implementation-checkpoint.json"
+            },
+            {
+              "id": "M5-I2B",
+              "status": "accepted_in_assembled_I2",
+              "scope": "Production owner wand caller and public command dispatcher using shared algorithms; assembled I2 review and full acceptance",
+              "steps": [
+                {
+                  "id": "M5-I2B1",
+                  "status": "accepted_in_assembled_I2",
+                  "scope": "Legal authenticated native domain operations and exact RNG preparation/publication",
+                  "checkpoint": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I2B1/implementation-checkpoint.json"
+                },
+                {
+                  "id": "M5-I2B2",
+                  "status": "accepted_in_assembled_I2",
+                  "scope": "Actual shared algorithm native wand caller/public dispatcher; assembled I2 acceptance",
+                  "checkpoint": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I2B2/missing-fallibility-checkpoint.json",
+                  "factory_checkpoint": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I2B2/factory-implementation-checkpoint.json",
+                  "shared_checkpoint": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I2B2/shared-fallible-checkpoint.json"
+                }
+              ]
+            }
+          ],
+          "checkpoint": "docs/parity/obligations/2026-10-10-microkernel-m5-i2-checkpoint.json",
+          "checkpoint_sha256": "f8625b00f00f6f20e6d24faefaeccb2c784085623fb54660768fbc8b6336cd88"
+        },
+        {
+          "id": "M5-I3",
+          "status": "accepted",
+          "depends_on": [
+            "M5-I2"
+          ],
+          "scope": "Sealed lifetime/equipment/timer/shop publication with retained accounting prefixes",
+          "contract": "docs/plans/2026-10-09-nethack-module-integration-contract.md",
+          "implementation_packet": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/implementation-packet/packet.json",
+          "root_checkpoint": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/root-native-checkpoint.json",
+          "review_packet": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/review-repair-packet/packet.json",
+          "failed_review_usage": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/review/usage.json",
+          "review_failures": [
+            {
+              "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/review/usage.json",
+              "stop_reason": "input_limit",
+              "observed_usage": {
+                "cached_input_tokens": 467840,
+                "input_tokens": 518752,
+                "output_tokens": 1290,
+                "reasoning_output_tokens": 143,
+                "uncached_input_tokens": 50912
+              },
+              "verdict": "none; execution failed"
+            },
+            {
+              "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/review-production/usage.json",
+              "stop_reason": "command_limit",
+              "observed_usage": {
+                "cached_input_tokens": 419200,
+                "input_tokens": 467294,
+                "output_tokens": 1509,
+                "reasoning_output_tokens": 215,
+                "uncached_input_tokens": 48094
+              },
+              "verdict": "none; execution failed"
+            },
+            {
+              "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/review-astra/usage.json",
+              "stop_reason": "input_limit",
+              "observed_usage": {
+                "cached_input_tokens": 532096,
+                "input_tokens": 583286,
+                "output_tokens": 1507,
+                "reasoning_output_tokens": 105,
+                "uncached_input_tokens": 51190
+              },
+              "verdict": "none; execution failed"
+            }
+          ],
+          "focused_passed": 106,
+          "independent_reviews": [
+            {
+              "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/review-core/answer.txt",
+              "sha256": "1381d5fc473fea4ca14c2a9cc028fe06140160fbc2f0dc8e827f71b360e8351c",
+              "verdict": "PASS",
+              "usage": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/review-core/usage.json"
+            },
+            {
+              "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/review-wiring/answer.txt",
+              "sha256": "e1c676c26a19d35342259301ac81b5703510f0698219dd0b57f7cd32aa70b715",
+              "verdict": "REQUEST_CHANGES",
+              "usage": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/review-wiring/usage.json"
+            },
+            {
+              "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/review-repair/answer.txt",
+              "sha256": "2536ff4c44ee36e401ed196344345784f8442138942c0cdc9e0321a4e29a65e2",
+              "verdict": "PASS",
+              "usage": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/review-repair/usage.json"
+            }
+          ],
+          "full_gates": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/final-gates",
+          "first_full_gate_attempt": {
+            "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/full-gates/results.json",
+            "status": "11/12 passed; static identifier false positive repaired",
+            "mechanical_rename": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/mechanical-owner-constant-rename.json"
+          },
+          "full_gate_acceptance": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/final-gates/accepted.json",
+          "full_gate_acceptance_sha256": "f978d898e26cdb57a3a2a8b5fc339d70b1b1cba3bcbb578e9cb1dc394564d7d3",
+          "workspace_passed": 1491,
+          "mechanical_rename": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I3/mechanical-owner-constant-rename.json",
+          "next": "M5-I4 executable extension/retained continuation integration",
+          "accepted_commit": "154b803ace20b3c0970e809a02b90d75ad175811"
+        },
+        {
+          "id": "M5-I4",
+          "status": "accepted_in_9b13ef8",
+          "depends_on": [
+            "M5-I3"
+          ],
+          "scope": "Live executable NetHack extension, retained paused operation and fresh-process persistence",
+          "contract": "docs/plans/2026-10-09-nethack-module-integration-contract.md",
+          "source_digest": "a29d2f0ed373340d2f22dad14147dcc465207e80d2a16b7671d041b94a91ac42",
+          "non_documentation_inputs": 542,
+          "workspace_passed": 1498,
+          "goldens": [
+            "golden_vanilla_event_logs_are_unchanged",
+            "golden_vanilla_bestiary_combat_is_unchanged",
+            "golden_vanilla_runs_are_unchanged"
+          ],
+          "full_gate_acceptance": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I4/final-gates/accepted.json",
+          "full_gate_acceptance_sha256": "1f0ec28574a0a7d4e418e7fb2c18fbb0481a3abecf45f9ce036d4bd818dc450e",
+          "independent_reviews": [
+            {
+              "part": "core",
+              "verdict": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I4/core-review/answer.txt",
+              "sha256": "a0897365e1ffef5adaf40d55741f5735a8284457a70830863f909c0d378fa112",
+              "usage": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I4/core-review/usage.json"
+            },
+            {
+              "part": "wiring",
+              "verdict": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I4/wiring-review/answer.txt",
+              "sha256": "f4ce8fb1146ebf3cb63d72aa1cbdb0e8c22d1cf2f10b70d8d542d3354dc63ad7",
+              "usage": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I4/wiring-review/usage.json"
+            }
+          ],
+          "delivery_source": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I4/delivery-source.json",
+          "next": "M5-I5 combined production A2/A4/A6 acceptance",
+          "approval_boundary": "Separately trusted detached native live record; never inferred from incoming save; no durable authenticated approval store implemented.",
+          "failed_phases_retained": [
+            "extension-implementation input quota stop without edits/verdict",
+            "final-review incomplete due tool-output truncation, no source finding or PASS"
+          ],
+          "accepted_commit": "9b13ef811b5473623e345c4cb31cdbb185b638a4"
+        },
+        {
+          "id": "M5-I5",
+          "status": "accepted_in_this_commit",
+          "depends_on": [
+            "M5-I4"
+          ],
+          "scope": "Combined production A2/A4/A6 and native compatibility acceptance",
+          "contract": "docs/plans/2026-10-09-nethack-module-integration-contract.md",
+          "aggregate_checkpoint": {
+            "stage": "I5a",
+            "source": "crates/nethacked-sim/src/owner_persistence/runtime/tests/wand_aggregate.rs",
+            "focused_passed": 69,
+            "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I5/aggregate-review/answer.txt",
+            "review_sha256": "c7b1bb38e73ea5147b55e83b620dfe06ad1dfd502875cacdb4ce188607eb9eb4",
+            "review_usage": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I5/aggregate-review/usage.json",
+            "change_verdict": "PASS",
+            "strict_I5_acceptance": "partial",
+            "mechanical_clippy_proof": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I5/mechanical-clippy-proof.json",
+            "gates": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I5/final-gates",
+            "next": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I5/next-i5b.json",
+            "status": "accepted_in_f8a03f1",
+            "workspace_passed": 1499,
+            "source_digest": "10ae2145b85aeed9d46818f229cb06dccc57e126e9d27043d58f9544fd38af8c",
+            "non_documentation_inputs": 543,
+            "full_gate_acceptance": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I5/final-gates/accepted.json",
+            "full_gate_acceptance_sha256": "a66a2c760072110c980b463979b74801a9c7d1c78f1c69c3c4b44dbbd4599b57",
+            "goldens": [
+              "golden_vanilla_event_logs_are_unchanged",
+              "golden_vanilla_bestiary_combat_is_unchanged",
+              "golden_vanilla_runs_are_unchanged"
+            ],
+            "delivery_source": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I5/delivery-source.json"
+          },
+          "remaining": [],
+          "i5b_checkpoint": {
+            "stage": "I5b",
+            "status": "accepted_with_I5_final_integration",
+            "parent": "f8a03f101420b7d30de7082e0545c5a76df47816",
+            "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I5b/review/answer.txt",
+            "review_sha256": "2c9d0121d3246206a7b85666440a924809fd33ebfe10037493149f07d4259d9e",
+            "review_usage": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I5b/review/usage.json",
+            "focused_passed": 74,
+            "focused_log": "/private/tmp/netrust-i5b-scoped.log",
+            "clippy_log": "/private/tmp/netrust-i5b-clippy.log",
+            "strict_I5_acceptance": "partial",
+            "replay_boundary": "Actual consumed Batch, authenticated stale billing observations, and original complete consumed-shop retirement proposal against fresh facts. Does not separately prove duplicate billing after successful object admission.",
+            "limits": "No default bounds, dependencies or golden changes. Historical boolean-only workflow artifacts remain supported.",
+            "next": [
+              "I5c atomic opt-in signed charge/effect/same-object retirement",
+              "I5d separate OS process, independent trusted approval transport, final aggregate gates"
+            ],
+            "source_bindings": [
+              {
+                "path": "crates/nethacked-sim/src/owner_persistence/runtime.rs",
+                "sha256": "23c474b07c686cdfcba8e0a39c26e5e2055eda39b4ddb2b7aa348c8d51dc8592"
+              },
+              {
+                "path": "crates/nethacked-sim/src/owner_persistence/runtime/item_lifetime.rs",
+                "sha256": "39bedbfc8f4301116660a6ee55cdbb619c821399f8aef259d3103253c716d76b"
+              },
+              {
+                "path": "crates/nethacked-sim/src/owner_persistence/runtime/wand_commands.rs",
+                "sha256": "c5d8b70e774d0cfd781320efda0ecd7c492b1d22fdea8659536b4ffc7db04ebe"
+              },
+              {
+                "path": "crates/nethacked-sim/src/owner_persistence/runtime/wand_workflows.rs",
+                "sha256": "4bcb089453b9a502f7378e1856903c39cbe4a24de07f3ea182af369a7312394c"
+              },
+              {
+                "path": "crates/nethacked-sim/src/owner_persistence/runtime/tests/wand_workflow_replies.rs",
+                "sha256": "c76028d6393ce3db15588a8828f58e83eb30429582b3c2765236a8e9117fdf08"
+              }
+            ]
+          },
+          "integration_checkpoint": {
+            "stage": "I5b-I5d",
+            "status": "accepted_in_this_commit",
+            "parent": "f8a03f101420b7d30de7082e0545c5a76df47816",
+            "focused_passed": 80,
+            "runner_passed": 33,
+            "workspace_passed": 1510,
+            "checks": 12,
+            "source_digest": "f1697e983d91e85ef536404e361a125182b9ccbf2fc1b873d0058dd38157df00",
+            "non_documentation_inputs": 548,
+            "goldens": [
+              "golden_vanilla_event_logs_are_unchanged",
+              "golden_vanilla_bestiary_combat_is_unchanged",
+              "golden_vanilla_runs_are_unchanged"
+            ],
+            "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I5cd/review/answer.txt",
+            "review_sha256": "605bcf8d3885034269dead0ea5114a3e7c26698b363a1e1f331b91cde7b778a1",
+            "review_usage": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I5cd/review/usage.json",
+            "full_gate_acceptance": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I5cd/final-gates/accepted.json",
+            "full_gate_acceptance_sha256": "8aeca34e175903a1da6386a668760537b5f6789035f5c199c9034701955ab7bb",
+            "delivery_source": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I5cd/delivery-source.json",
+            "scope": "Native module architecture acceptance, optional ordinary uncursed hero-carried horizontal canonical fire charge/effect/retirement; full C/P11a parity and general naming remain open.",
+            "trust_boundary": "Separate explicit trusted host approval record; canonical format is not authentication and no durable authenticated store is claimed."
+          }
+        }
+      ],
+      "integration_checkpoint": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M5-I5cd/architecture-checkpoint.json"
+    },
+    {
+      "id": "M6",
+      "status": "accepted",
+      "depends_on": [
+        "M5"
+      ],
+      "plan": "docs/plans/2026-10-10-default-domain-migration.md",
+      "next_unit": "M7 integration and completion audit",
+      "planning_status": "I1-I10 accepted; default dispatcher and consumer cutover complete; A7 satisfied",
+      "implementation_packet": {
+        "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2c/writer-packet.md",
+        "sha256": "a867dd323ff15f35352e220a43b15a2b84acfd5dfa7af7bbe66ebf90bdeaf84e",
+        "source_bindings": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2c/writer-source-bindings.json"
+      },
+      "units": [
+        {
+          "id": "M6-I1",
+          "status": "accepted_in_this_commit",
+          "scope": "Cancellation frame/equipment reconciliation/derived AC only",
+          "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I1/review/answer.txt",
+          "focused_checkpoint": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I1/focused-checkpoint.json",
+          "remaining": [],
+          "checkpoint": "docs/parity/obligations/2026-10-10-microkernel-default-frame-checkpoint.json"
+        },
+        {
+          "id": "M6-I2a",
+          "status": "accepted_in_this_commit",
+          "scope": "Explicit raw passive affliction phase only; no full I2/Wait acceptance",
+          "packet": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2a/writer-packet.md",
+          "packet_sha256": "d7c6aceb0a486bff171eba47b95bc67aa5fdafd78a102b6754d4b5cddd3e5404",
+          "source_bindings": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2a/writer-source-bindings.json",
+          "remaining": [],
+          "focused_checkpoint": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2a/focused-checkpoint.json",
+          "checkpoint": "docs/parity/obligations/2026-10-10-microkernel-passive-phases-checkpoint.json",
+          "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2a/review/answer.txt"
+        },
+        {
+          "id": "M6-I2b",
+          "status": "accepted_in_this_commit",
+          "scope": "Explicit raw metabolic/hunger phase only",
+          "packet": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2b/writer-packet.md",
+          "packet_sha256": "719b5a7cddc58b4eec6a57eaff08ca97dcee6d3780fade7f9d5f397f8b790fbe",
+          "source_bindings": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2b/writer-source-bindings.json",
+          "remaining": [],
+          "checkpoint": "docs/parity/obligations/2026-10-10-microkernel-passive-phases-checkpoint.json",
+          "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2b/review/answer.txt"
+        },
+        {
+          "id": "M6-I2c",
+          "status": "accepted_in_this_commit",
+          "scope": "Complete raw natural HP regeneration for stationary/moving phases; authenticated carried weight and atomic Actors/Random consequences",
+          "packet": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2c/writer-packet.md",
+          "source_bindings": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2c/writer-source-bindings.json",
+          "remaining": [],
+          "checkpoint": "docs/parity/obligations/2026-10-10-microkernel-regeneration-checkpoint.json",
+          "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2c/review-assertion/answer.txt"
+        },
+        {
+          "id": "M6-I2d",
+          "status": "accepted_in_this_commit",
+          "scope": "Explicit raw dressing tick; reconcile before countdown, exact finish-only AC and receipt-derived event publication",
+          "packet": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2d/writer-packet.md",
+          "source_bindings": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2d/writer-source-bindings.json",
+          "remaining": [],
+          "checkpoint": "docs/parity/obligations/2026-10-10-microkernel-dressing-checkpoint.json",
+          "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2d/review-repair/answer.txt"
+        },
+        {
+          "id": "M6-I2e",
+          "status": "accepted",
+          "scope": "Full raw Clock-owned object timer drain including actual ordinary Troll revival and reference cleanup",
+          "commit": "80ceaa0",
+          "accepted_prerequisites": [
+            "M6-I2e-LAW1"
+          ],
+          "remaining": []
+        },
+        {
+          "id": "M6-I2e-LAW1",
+          "status": "accepted_in_this_commit",
+          "scope": "Private immutable current-Rust ordinary Troll revival attempt and placement extraction; no owner timer runtime migration",
+          "checkpoint": "docs/parity/obligations/2026-10-10-microkernel-revival-law-checkpoint.json",
+          "review": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2e/LAW1/review-retry/answer.txt",
+          "remaining": []
+        },
+        {
+          "id": "M6-I3",
+          "status": "accepted",
+          "depends_on": [
+            "M6-I2"
+          ],
+          "scope": "monsters.rs::step_monsters and existing combat collaborators behind dedicated microkernel transport; snapshot order, movement budgets, effects, death and RNG; bounded resumption without repeating attacks",
+          "commit": "b33de5e",
+          "remaining": []
+        },
+        {
+          "id": "M6-I4",
+          "status": "accepted",
+          "depends_on": [
+            "M6-I2",
+            "M6-I3"
+          ],
+          "scope": "Full default Wait and action-time orchestration behind dedicated microkernel transport; zero/one/multiple rounds, exactly-once prefixes, pending continuation and native reload",
+          "commit": "06ecfa5",
+          "remaining": []
+        },
+        {
+          "id": "M6-I5",
+          "status": "accepted",
+          "depends_on": [
+            "M6-I1",
+            "M6-I4"
+          ],
+          "scope": "Movement, doors, traps and inline Search/Untrap dispatch branches behind dedicated microkernel transport; existing overload/refusal and impaired-direction RNG order; moved flag, traps and time match",
+          "commit": "3290e34",
+          "remaining": []
+        },
+        {
+          "id": "M6-I6",
+          "status": "accepted",
+          "depends_on": [
+            "M6-I1",
+            "M6-I4"
+          ],
+          "scope": "Inventory, equipment, containers, quiver and ranged actions behind dedicated microkernel transport; generations, quantities, references, debt, timers and occupations; reuse accepted lifetime accounting",
+          "commit": "eefdd62",
+          "remaining": []
+        },
+        {
+          "id": "M6-I7",
+          "status": "accepted",
+          "depends_on": [
+            "M6-I6"
+          ],
+          "scope": "Existing item effects, engraving and remaining wand entry paths behind dedicated microkernel transport; each existing dispatch branch has positive/refusal and continuation coverage; no new C mechanics",
+          "commit": "8c35f67",
+          "remaining": []
+        },
+        {
+          "id": "M6-I8",
+          "status": "accepted",
+          "depends_on": [
+            "M6-I3",
+            "M6-I6",
+            "M6-I7"
+          ],
+          "scope": "Cast, prayer, sacrifice, economy and riding behind dedicated microkernel transport; existing actor/hero consequences, billing and ordered time/RNG prefixes through owners",
+          "commit": "7f5846b",
+          "remaining": []
+        },
+        {
+          "id": "M6-I9",
+          "status": "accepted",
+          "depends_on": [
+            "M6-I4",
+            "M6-I5",
+            "M6-I6",
+            "M6-I7",
+            "M6-I8"
+          ],
+          "scope": "Stairs and active/cached residency traversal behind dedicated microkernel transport; identity, timer, billing, admission and pending-work preservation across reload",
+          "commit": "feafe4b",
+          "remaining": []
+        },
+        {
+          "id": "M6-I10",
+          "status": "accepted",
+          "depends_on": [
+            "M6-I1",
+            "M6-I2",
+            "M6-I3",
+            "M6-I4",
+            "M6-I5",
+            "M6-I6",
+            "M6-I7",
+            "M6-I8",
+            "M6-I9"
+          ],
+          "scope": "Default dispatcher and consumer cutover; every existing ActionAst branch reaches owner execution; initialize/import once, no gameplay World reconstruction fallback",
+          "commit": "18ea159",
+          "remaining": []
+        }
+      ]
+    },
+    {
+      "id": "M7",
+      "status": "accepted",
+      "depends_on": [
+        "M6"
+      ],
+      "scope": "Combined live-extension, retained-continuation, native compatibility and refusal evidence across the complete default cutover; unchanged goldens; final independent architecture review and obligation reconciliation",
+      "checkpoint": "docs/parity/obligations/2026-10-10-microkernel-m7-audit-checkpoint.json",
+      "review": {
+        "verdict": "ACCEPT_WITH_CONDITIONS",
+        "reviewer": "independent read-only architecture review (m7-arch-review subagent)",
+        "conditions": [
+          "C1 required: schedule the geography-payload boundary fix (compact geography facts preferred, or architecture-approved bound raise) before the facade is the unconditional default; on ~63% of fresh seeds every time-advancing and inventory action refuses truthfully",
+          "C2 required for M7 close: complete the obligation reconciliation (M7 checkpoint artifact, M7 milestone entry, committed m7_audit evidence)",
+          "C3 minor: doc-comment corrections (facade step contract, m7_audit measured ranges) applied in this commit",
+          "C4 tracked: TUI and demo remain legacy-path gameplay consumers; cut over or explicitly defer as a tracked item",
+          "C5 optional: self-describing over-bound refusal error variant instead of Kernel(NativeRefusal)"
+        ]
+      },
+      "boundary": "Geography-payload boundary RESOLVED (review condition C1): the 16 KiB transports now encode GeographyFacts.level through the compact canonical nethacked_dungeon::compact_level codec (one byte per tile cell in a hex string, branch-stairs side table, sorted engravings/traps; lossless and byte-identical re-encode). Measured over seeds 1-200: natural GeographyFacts reached 15.4-17.4 KiB (max 17819 bytes; seeds 1/4/9 at 17027/17572/17041 refused Wait/Move truthfully); compact max 4093 bytes, a 4x margin under the 16384-byte bound. Kernel limits unchanged; traversal (I9, 8 MiB) unchanged. Acceptance tests in runtime/tests/geography_compact.rs (4 tests) plus the rewritten m7_audit boundary test; 1763 workspace tests, all 3 goldens bit-for-bit unchanged, all 12 gates pass. Checkpoint: docs/parity/obligations/2026-10-10-microkernel-geography-compact-checkpoint.json.",
+      "remaining": [
+        "TUI/demo legacy-path consumer cutover or explicit tracked deferral (review condition C4) RESOLVED by explicit tracked deferral of both consumers: the demo exercises full legacy resolve_combat (a +5 Vorpal Blade artifact against quest nemesis Lord Surtur, with artifact detection, weapon skill bonuses, computed defender AC, and quest-nemesis death processing with artifact drop and quest advancement), while the facade melee bump and MeleeAttack law is the accepted I5 simplified compute_hero_melee_attack - full resolve_combat parity (defender AC, weapon skills, artifacts, vorpal) remains a documented follow-up, so a facade cutover would change the demo frozen output (verified: damage 18 vs 12, divergent death processing and quest state, cascading to the turn counter and level layouts); the TUI is explicitly deferred - its skill-enhancement modal is a meta action with no ActionAst variant or owner transport, so a full cutover needs a new EnhanceSkill transport first (its gameplay actions and locale toggle already have facade routes and bit-for-bit parity evidence)",
+        "Self-describing over-bound refusal error variant instead of Kernel(NativeRefusal) (review condition C5) RESOLVED: new owners::Error::OverBound and kernel::Error::OverBound variants (appended last, so existing abi codes are unchanged); the owners bound() helper, the sim encode/decode/decode_owner codec helpers and the wand_ports bound() return OverBound for over-limit payloads while structural count/overflow limits keep Error::Limit; runtime.rs native_refusal plus the seven transport-local native_refusal/native_refusal_step pairs (action_time, movement_actions, monster_ticks, inventory_actions, item_effects, services, traversal) map OverBound to kernel::Error::OverBound and every other refusal stays NativeRefusal; an over-bound facade refusal now surfaces as OwnerBridgeError::Kernel(kernel::Error::OverBound) (display \"kernel: OverBound\") instead of Kernel(NativeRefusal); pinned by unit tests in nethacked-owners, nethacked-kernel and nethacked-sim, updated owners fixtures, and an end-to-end facade test in runtime/tests/geography_compact.rs (20 KiB engraving over the 16 KiB reply bound; Wait dispatch refuses with Kernel(OverBound)); kernel limits unchanged; 1767 workspace tests, all 3 goldens bit-for-bit unchanged, all 12 gates pass. Checkpoint: docs/parity/obligations/2026-10-10-microkernel-c5-overbound-checkpoint.json.",
+        "Full 53-family C parity backlog remains tracked separately"
+      ]
+    }
+  ],
+  "formal_foundations": {
+    "S1": "reviewed_formal_authority_and_generic_runtime;native_artifact_fidelity_trusted",
+    "S2": "reviewed formal protocol and generic authoritative runtime; domain integration pending",
+    "S3": "reviewed formal atomic protocol and generic runtime with authenticated phase-operation binding/cleanup",
+    "S4": "reviewed formal contract and generic authenticated recorded-input runtime; vanilla stream adapter and durable input continuation pending",
+    "S5": "reviewed formal admission and generic timer runtime/callback failure-cleanup policy; vanilla scheduling/residency adapters and durable continuation pending",
+    "S6": "reviewed_checked_restore_contract;codec_law_assumed_real_codec_pending",
+    "S7": "generic retained routing, workflow lifecycle and authenticated callback capture/adoption verified; timer queue/schema/persistence pending"
+  },
+  "separate_parity_scope": {
+    "families": 53,
+    "historical_rows": 543,
+    "closed_by_architecture": 0
+  },
+  "efficiency": {
+    "one_writer": true,
+    "nested_agents": false,
+    "root_usage": "unknown",
+    "previous_review_uncached": [
+      26945,
+      30480
+    ],
+    "next_adjustment": "Use accepted guarded runner for every new model phase; when exact original/candidate/helper source is supplied, require final inline review without optional discovery tool rounds. Retain failed controller usage; no savings claim.",
+    "authority_implementation": {
+      "uncached_input": 59709,
+      "output": 18592,
+      "status": "exceeded",
+      "adjustment": "Advice packet contains only failing proof and local definitions; root applies one bounded repair, then one fresh semantic review. No additional implementation agent or broad design reread."
+    },
+    "authority_review": {
+      "uncached_input": 68360,
+      "output": 1937,
+      "status": "exceeded",
+      "adjustment": "Finish checkpoint with local checks. Next coherent contract smaller; no repeated architecture/history review."
+    },
+    "services_review": {
+      "input_total": 96452,
+      "cached_input": 67968,
+      "uncached_input": 28484,
+      "output": 1830,
+      "guard_status": "exceeded; guard compares total input with packet ceiling",
+      "routing_threshold": "child uncached28484 below difficult50000; whole-unit compliance unknown because root telemetry unavailable",
+      "adjustment": "Finish with local full gates/hash/doc checks. M3 bounded generic kernel/backend and A1-A3; no NetHack migration, no repeated formal/source-fact audit.",
+      "guard_meter_discrepancy": "scripts/parity-agent-guard.py report compares total input at line307, whereas process table defines uncached soft threshold; no unrelated helper changes in this architecture unit."
+    },
+    "runtime_implementation": {
+      "uncached_input": 74863,
+      "output": 32302,
+      "status": "exceeded",
+      "adjustment": "Narrow follow-up to actual compiler diagnostics after root resolves dependency access; do not redispatch architecture or re-read prior contracts."
+    },
+    "runtime_review": {
+      "uncached_input": 59827,
+      "output": 5448,
+      "status": "exceeded",
+      "adjustment": "Reduce repair review to two changed test ranges; preserve all production bindings."
+    },
+    "runtime_repair_review": {
+      "uncached_input": 26326,
+      "output": 1253,
+      "guard_status": "exceeded from total input; uncached below difficult threshold; root unknown",
+      "adjustment": "Requested Astra audit focuses cross-layer boundaries and reuses accepted fixture/proof results, no repeated test execution."
+    },
+    "astra_architecture_audit": {
+      "uncached_input": 59067,
+      "output": 2742,
+      "status": "exceeded",
+      "adjustment": "Narrow next implementation to optional atomic resource coordinator/M3b plus concrete Lean-to-Rust identity/capability mapping; reuse architecture audit and accepted runtime, no broad reread."
+    },
+    "resources_implementation": {
+      "uncached_input": 88485,
+      "output": 34840,
+      "status": "exceeded",
+      "adjustment": "Narrow fresh review to new resource service/fixtures, kernel delta and actual mapping; no repeated original architecture/proof/history audit."
+    },
+    "resources_review": {
+      "uncached_input": 59322,
+      "output": 4315,
+      "status": "exceeded",
+      "adjustment": "Narrow repairreview to changed fixture and mutation evidence, no production reread."
+    },
+    "resources_repair_review": {
+      "uncached_input": 22621,
+      "output": 1086,
+      "guard_status": "exceeded from totalinput; uncachedbelowdifficultthreshold; rootunknown",
+      "adjustment": "NextM4 split first lifecycle/pinned executable identity before workflow+codec/services; bounded native collaboration contract needed beforeNetHack migration."
+    },
+    "pinning_implementation": {
+      "uncached_input": 90160,
+      "output": 34257,
+      "status": "exceeded",
+      "adjustment": "Narrow advice to one failed fixture, rootfinalrepair3; no new writer or broad sourceaudit."
+    },
+    "pinning_review": {
+      "uncached_input": 71213,
+      "output": 5096,
+      "status": "exceeded",
+      "adjustment": "Finish local fullgates/commit. NextM4b packet only authoritativeworkflow/transactionoperationbinding over acceptedpinning; no repeated kernel source or architectureaudit."
+    },
+    "runtime_routing_reassessment": {
+      "after_units": [
+        "M3a",
+        "M3b",
+        "M4a"
+      ],
+      "observed_writer_uncached": [
+        74863,
+        88485,
+        90160
+      ],
+      "observed_writer_output": [
+        32302,
+        34840,
+        34257
+      ],
+      "decision": "Return to accepted medium-first implementation default for concrete existing-contract mappings. M4b writer starts Solmedium when packet resolves scope/authority semantics; usehigh only for a demonstrated new ownership/atomicity ambiguity. Freshsemanticreview staysSolhigh. No additional planning agent or repeated kernel/history audit.",
+      "limits": "No empirical medium/high comparison or claimed savings; rootunknown; softceilings and all acceptance/gates unchanged."
+    },
+    "workflow_implementation": {
+      "uncached_input": 99624,
+      "output": 39364,
+      "status": "exceeded",
+      "adjustment": "Narrow review to workflow implementation/new fixtures and existing-crate diff; reuse prior accepted architecture, Lean and routing. No repeated historical audit or tests."
+    },
+    "workflow_review": {
+      "uncached_input": 82305,
+      "output": 5182,
+      "status": "exceeded",
+      "adjustment": "Complete local gates/commit. Split M4c into recorded-input and timer units; reuse accepted workflow and authority contracts, no repeated architecture audit."
+    },
+    "input_implementation": {
+      "uncached_input": 79765,
+      "output": 27781,
+      "status": "exceeded",
+      "adjustment": "Narrow review to new input service/fixtures and Cargo diff; accepted kernel/workflow interfaces and previous formal review reused. No broad architecture/history audit or duplicate tests."
+    },
+    "input_review": {
+      "uncached_input": 72382,
+      "output": 5589,
+      "status": "exceeded",
+      "adjustment": "Finish gates/commit locally. Next timer unit reuses accepted operation/pinning/input interfaces; review new timer delta only, no architecture history."
+    },
+    "callback_implementation": {
+      "uncached_input": 109693,
+      "output": 40851,
+      "status": "exceeded",
+      "adjustment": "Narrow review to new callback capture/adoption delta and fixtures; source hashes and prior accepted architecture reused. Review clone compatibility explicitly without a broad kernel re-audit."
+    },
+    "callback_review": {
+      "uncached_input": 89185,
+      "output": 6467,
+      "status": "exceeded",
+      "adjustment": "Finish local gates/commit; next timer queue uses accepted callback capture/adoption directly, no kernel lifetime redesign or repeated architecture audit."
+    },
+    "callback_repair_review": {
+      "uncached_input": 53048,
+      "output": 4595,
+      "status": "exceeded",
+      "adjustment": "No further model calls for this checkpoint; local final gates/commit. Timer queue reuses accepted capture/adoption with a compact concrete contract."
+    },
+    "timer_implementation": {
+      "uncached_input": 118017,
+      "output": 43081,
+      "status": "exceeded",
+      "adjustment": "Narrow review to timer service/fixtures and preflight delta; reuse accepted callbacks, resource/input/workflow implementations and formal history. No duplicate tests or broad architecture audit."
+    },
+    "timer_review": {
+      "uncached_input": 89289,
+      "output": 6464,
+      "status": "exceeded",
+      "adjustment": "Finish local gates/commit. Next evaluate autonomous owner-state contract using accepted kernel/typed services, no repeated timer or original source audit."
+    },
+    "publication_implementation": {
+      "uncached_input": 160794,
+      "output": 79739,
+      "status": "exceeded",
+      "adjustment": "Narrow fresh review to owner publication/cleanup and exact fixture deltas; no kernel/Lean/history re-audit."
+    },
+    "publication_review": {
+      "uncached_input": 93553,
+      "output": 8422,
+      "status": "exceeded",
+      "adjustment": "Reduce follow-up to F1 test-only probe endpoint and old/fixed suffix-allocation mutant evidence; medium readback."
+    },
+    "publication_readback": {
+      "uncached_input": 30922,
+      "output": 1816,
+      "status": "exceeded",
+      "adjustment": "Finish local full gates/commit. Next O4 reuses accepted owner/kernel/input/timer/workflow APIs; one focused integration witness, no repeated protocol or source-fact audit."
+    },
+    "live_queries_implementation": {
+      "uncached_input": 89182,
+      "output": 27589,
+      "status": "exceeded",
+      "adjustment": "Narrow review to six changed source/doc files and actual cached/code/authority behavior; accepted O2/O3 reused."
+    },
+    "live_queries_review": {
+      "uncached_input": 76987,
+      "output": 7451,
+      "status": "exceeded",
+      "adjustment": "Reduce repair to F1 retained-vs-current observation distinction and F2 real guest descendant fixtures."
+    },
+    "live_queries_repair": {
+      "uncached_input": 130021,
+      "output": 20861,
+      "status": "exceeded",
+      "adjustment": "Narrow readback to exact repair diff and new tests; unchanged kernel and old fixtures reuse full review."
+    },
+    "live_queries_readback": {
+      "uncached_input": 68276,
+      "output": 7172,
+      "status": "exceeded",
+      "adjustment": "Finish full gates/commit locally. Next O4b explicit integrated workflow/timer/input witness over accepted APIs; no repeated formal/history audit."
+    },
+    "m5_i1": {
+      "writer_uncached": 150995,
+      "writer_output": 51379,
+      "finisher_uncached": 174271,
+      "finisher_output": 36883,
+      "review_uncached": 110571,
+      "review_output": 6353,
+      "root_usage": "unknown",
+      "status": "soft thresholds exceeded; finisher guard extraction failed; raw telemetry retained",
+      "next_adjustment": "Split I2 into bounded algorithm/legacy-adapter and owner-caller integration phases, reuse accepted I1 semantics. Review only actual changed algorithm and direct call seams; no repeated eight-owner or historical audit."
+    },
+    "m5_i2_implementation": {
+      "a_uncached": [
+        66360,
+        157804
+      ],
+      "a_output": [
+        5017,
+        40897
+      ],
+      "b1_uncached": 171171,
+      "b1_output": 70149,
+      "status": "soft thresholds exceeded",
+      "root_usage": "unknown",
+      "next_adjustment": "B2 Sol/medium wiring to checkpoint API map; no nine-owner/kernel/history audit; isolate concrete missing fallibility seam."
+    },
+    "native_goal_observed_status": "paused; manual continuation authorized, no full completion claim",
+    "latest_phase": "M6-I2e-LAW1 accepted; full timer/I2/M6 remain partial",
+    "next_action": "Bind concrete separate timer module installation and Random-owned variable-RNG preview/prepare with exact accounting before runtime writer",
+    "i4_review_adjustment": "Actual output hard cap2000: required complementary final reviews with each sealed source chunk<=1500 tokens and one read per chunk. CORE8885/WIRING11178 source tokens; no full history/baseline reread. Completed uncached32647/35975 and output1110/886 respectively; root usage unknown.",
+    "i5_review": {
+      "model": "gpt-6-astra",
+      "effort": "medium",
+      "source_tokens": 3554,
+      "chunks": 3,
+      "uncached_input": 23562,
+      "output": 949,
+      "commands": 3,
+      "wall_seconds": 37.84,
+      "verdict": "PASS_added_fixture; strictI5partial",
+      "root_usage": "unknown"
+    },
+    "i5b_review": {
+      "model": "gpt-6-astra",
+      "effort": "medium",
+      "source_tokens": 10505,
+      "chunks": 8,
+      "uncached_input": 43044,
+      "cached_input": 439680,
+      "output": 1725,
+      "commands": 14,
+      "wall_seconds": 78.244,
+      "verdict": "PASS_I5b_only",
+      "root_usage": "unknown"
+    },
+    "i5cd_review": {
+      "model": "gpt-6-astra",
+      "effort": "medium",
+      "source_tokens": 20433,
+      "inline_context_tokens": 21300,
+      "instruction_tokens": 536,
+      "uncached_input": 43323,
+      "cached_input": 41984,
+      "output": 1192,
+      "commands": 1,
+      "wall_seconds": 49.28,
+      "verdict": "I5c PASS; I5d PASS; source_packet runner PASS",
+      "root_usage": "unknown"
+    },
+    "m6_i1_review": {
+      "model": "gpt-6-astra",
+      "effort": "medium",
+      "source_tokens": 14900,
+      "instruction_tokens": 293,
+      "uncached_input": 35275,
+      "output": 767,
+      "commands": 1,
+      "wall_seconds": 37.63,
+      "verdict": "PASS_M6_I1_only",
+      "root_usage": "unknown",
+      "implementation_usage": "collaboration telemetry unavailable; no enforced quota claim"
+    },
+    "m6_i2a_review": {
+      "model": "gpt-6-astra",
+      "effort": "medium",
+      "source_tokens": 14785,
+      "instruction_tokens": 375,
+      "uncached_input": 40665,
+      "output": 1036,
+      "commands": 5,
+      "wall_seconds": 51.994,
+      "verdict": "PASS_raw_affliction_phase_only",
+      "root_usage": "unknown",
+      "implementation_usage": "collaboration telemetry unavailable"
+    },
+    "m6_i2b_review": {
+      "unit": "MICROKERNEL-M6-I2b",
+      "verdict": "PASS",
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M6-I2b/review/answer.txt",
+      "sha256": "f89780ba15faec93bcc2dbbbb824c4e9e5d4d49c3d5cf75f806a0dcbe04b0166",
+      "usage": {
+        "cached_input_tokens": 114944,
+        "input_tokens": 154644,
+        "output_tokens": 679,
+        "reasoning_output_tokens": 181,
+        "uncached_input_tokens": 39700
+      },
+      "commands": 1,
+      "wall_seconds": 31.315
+    },
+    "routing": "Sol/medium sole11-path writer, Astra/medium bounded independent delta review after handoff; root integration, no overlapping Cargo"
+  },
+  "requested_interlude": {
+    "after": "accepted M3a checkpoint",
+    "action": "pause native goal; fresh gpt-6-astra review of completed architecture; then resume",
+    "status": "complete: M3a committed, native goal paused, Astra PASS_ARCHITECTURE_DIRECTION",
+    "review": "docs/parity/obligations/2026-10-08-architecture-astra-review.json",
+    "resume": "Native goal verified active on user continuation after audit."
+  },
+  "ownership_followup": {
+    "status": "generic_autonomous_owner_runtime_reviewed_verified",
+    "user_proposal": "Autonomous objects own and maintain their properties, instead of item rows in a shared authoritative database.",
+    "direction_discussed": "In-process object/actor ownership behind bounded commands/events; registry locates stable IDs; modules define behavior, extensions change capabilities. Separate network microservices are not required.",
+    "must_resolve_before": [
+      "concrete owner-state persistence contract",
+      "NetHack domain migration"
+    ],
+    "current_limit": "D1-D6/A5 persistence and scoped M5 module integration accepted. M6 default domain migration and M7 final architecture audit remain.",
+    "implementation_claim": true,
+    "contract": "docs/plans/2026-10-08-autonomous-ownership-contract.md",
+    "checkpoint": "docs/parity/obligations/2026-10-08-microkernel-owner-services-checkpoint.json",
+    "implemented_scope": "Independent owner storage, pure preparation, sealed atomic publication, compatible live executable behavior, derived caches, retained workflow/timer/input composition and entity-free/equipment witnesses",
+    "persistence_contract": "docs/plans/2026-10-08-owner-persistence-contract.md"
+  }
+}

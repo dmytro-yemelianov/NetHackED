@@ -858,9 +858,22 @@ pub enum MonsterAbility {
     },
 }
 
+/// Stable owned item definition identity, independent of display and artifact names.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ItemDefinition {
+    /// Canonical C object symbol.
+    Vanilla(String),
+    /// Case-normalized exact key for a pack-added definition.
+    Custom(String),
+}
+
 /// An item preserved in a graveyard bones file.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BonesItem {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub definition: Option<ItemDefinition>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub artifact_id: Option<String>,
     pub name: String,
     pub class: ItemClass,
     pub weight: u32,

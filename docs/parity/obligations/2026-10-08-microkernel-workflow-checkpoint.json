@@ -1,0 +1,75 @@
+{
+  "schema": 1,
+  "status": "verified_for_containing_commit",
+  "baseline_head": "ec51c66d7434ee947c9658b40456442309778260",
+  "milestone": "M4b",
+  "scope": "Authoritative optional workflows, exact resume tickets, frozen executable programs and operation-owned phase transactions/cleanup",
+  "new_tests": 12,
+  "review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-WORKFLOW-RUNTIME/review/answer.txt",
+    "sha256": "14c105a76c16f19931daed06d9632ef65567a8e8ec100d29cb95416979d32bde"
+  },
+  "review_inputs": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-WORKFLOW-RUNTIME/review-source.json",
+    "sha256": "7479fa1b50dfa963b6fb19ae96765f7cfd8f96a11fa61554c0d1ea72ce034cef"
+  },
+  "full_gates": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-WORKFLOW-RUNTIME/full-gates/accepted.json",
+    "sha256": "c64ac95cfaed6d2f301c1345f28a774cf54b756174d8c56650971a5b14e88f50"
+  },
+  "gate_result": {
+    "head": "ec51c66d7434ee947c9658b40456442309778260",
+    "tests": 1097,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "digest": "5971eda08c3fdea493925b74193e0f687e6864c8e3091d7617431492ad590e88",
+    "checks": 12
+  },
+  "focused_checks": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-WORKFLOW-RUNTIME/writer-evidence/summary.json",
+    "sha256": "aeb212503559e23833d91a1f79c1b8104efcd1580fc78e27e361a9268f8fd78f"
+  },
+  "focused_test_count": 53,
+  "actual_wasm32": [
+    "nethacked-kernel",
+    "nethacked-resources",
+    "nethacked-workflows"
+  ],
+  "source_hashes": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-WORKFLOW-RUNTIME/writer-evidence/source-hashes.sha256",
+    "sha256": "a80502eaa78a89e88ab28c5947797e7048e724512bf040abb89d1177d85c7f23"
+  },
+  "wasm_artifact_hashes": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-WORKFLOW-RUNTIME/writer-evidence/wasm-artifact-hashes.sha256",
+    "sha256": "d7559103d99ab7611ab6dcd26c90133a639c7f1692daf040b7f86f1cbbd94206"
+  },
+  "repair_history": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-WORKFLOW-RUNTIME/writer-evidence/failure-history.json",
+    "sha256": "340d2d0e32744b03ee22f35a3d126422d04ec37b2bbc978e4f1556b9924a2802"
+  },
+  "source_unchanged": true,
+  "usage": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-WORKFLOW-RUNTIME/implementation/usage.json",
+      "sha256": "8d10af642b7357353f28b6e6161bddba7f71d3868b5d400921ad390eed4a3f34"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-WORKFLOW-RUNTIME/review/usage.json",
+      "sha256": "6d1f94801409590374b2fdbf1be8f26161f57d63d64371b8917253757ab6dc38"
+    }
+  ],
+  "meter_note": "Writer99624uncached/39364output; review82305uncached/5182output exceeded soft thresholds. Root usage unknown. Medium-first did not establish savings. Split next M4c into separately testable input and timer services; reuse accepted workflow/authority and audit only each delta.",
+  "old_tests_helpers_goldens_changed": false,
+  "acceptance": "Generic A4 passed: old/new suspended Wasm operations retain different resolved code and frozen graphs, replay/replacement/refusal controls preserve authoritative state. A5 and NetHack integration remain pending.",
+  "native_goal_status": "active; M4c next",
+  "parity_families_closed": 0,
+  "residuals": [
+    "Recorded input and timer services with checkpoint ownership/callback failure policy",
+    "Concrete durable codec, executable/schema validation and supported legacy NetHack saves",
+    "Populated NetHack live extension, selected wand and all existing-domain migrations",
+    "Native callbacks/cleanup are trusted bounded non-panicking code; runtime identities process-local; no composed Rust/Lean refinement proof"
+  ]
+}

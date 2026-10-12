@@ -1,0 +1,792 @@
+{
+  "schema": "netrust-p11a-p1-bill-evidence-v1",
+  "unit": "P11a-P1-BILL",
+  "binding": {
+    "rust_repository": "/Users/dmytro/github/NetRust",
+    "rust_head": "8f44a7a9f7a1536e2c5a21ec47596777ac705fc0",
+    "source_input_count": 345,
+    "source_input_digest": "b7aebd3bc3c198fa6866d06a61a5e899bcf21ef61587bf7a09d72f4f9d5f40f3",
+    "c_repository": "/Users/dmytro/github/NetHack",
+    "c_authority": "16ff59115315917b93185d026aeefea06db9b0f4",
+    "c_read_policy": "git show pinned commit only; checkout HEAD not authority",
+    "comparator": {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-07-configuration-profile/pin.json",
+      "sha256": "8cd4931d03972cef4a5a1ae8c7fa7344ac41612fb3cc29b971cf17e213ac3db9"
+    },
+    "profile_name": "released-5.0-linux-gcc-c99-header-defaults-lua548-v1"
+  },
+  "copied_inputs": [
+    {
+      "path": "/tmp/netrust-p11a-p1-bill-repair1-cli/draft/baseline.json",
+      "sha256": "738e5d04a68b962d4655941c2def10a7a87bee719ab314e353b0e2cac3db042b"
+    },
+    {
+      "path": "/tmp/netrust-p11a-p1-bill-repair1-cli/draft/graph-discovery.json",
+      "sha256": "86ddec116f5acd30328736fb4180cb7afba7b18a6cabaf23898740012ca0147d"
+    }
+  ],
+  "discovery": {
+    "graph_tools_currently_callable": false,
+    "stored_graph_assessment": "Nine results all stale netrust Rust paths or Lean; no current native billing/retirement owner. Bounded known-path fallback authorized for world.rs and arena/lib.rs; audit additional call owners only if evidence requires.",
+    "fallback": "User-authorized world.rs/arena lib known paths. Read stairs.rs narrowly because active/cached unpaid owner remints IDs; economy.rs narrowly because get_unpaid_cost delegates price and Pay only visits carried items. items.rs identity/positive staging read only to bind owned-definition seam, no repeat charge audit. No repository-wide code search or graph acceptance inferred. Owner-local symbol queries established exact constructor/cache names. ItemDefinition/item_for_definition declarations checked as narrowly necessary identity owner anchors; their accepted behavior is reused, not reaudited. Final bounded sim StoredLevel/SimulationWorld literal reference check discovered constructor obligations; proposal avoids all existing test body changes by keeping live receipts global.",
+    "repair_fallback": "No graph tools callable in repair session. Root compat-discovery returned0; bounded known pack CLI/hash/tests/config fallback authorized. Native F2 known world/economy owners plus actual inbound actions/mod dispatcher required for pre-mutation atomicity; bounded sim remove_unpaid caller check finds only world rot cleanup and economy Pay (standalone EconomyLedger owns clone only). No wider shop/charge audit."
+  },
+  "configuration": {
+    "pin": {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-07-configuration-profile/pin.json",
+      "sha256": "8cd4931d03972cef4a5a1ae8c7fa7344ac41612fb3cc29b971cf17e213ac3db9"
+    },
+    "profile": {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-07-configuration-profile/configuration-profile.json",
+      "sha256": "9771384704ac2e5473ceeac87718a569658125f529bd9205beaf947d8b93fa82"
+    },
+    "source_only": true,
+    "profile_name": "released-5.0-linux-gcc-c99-header-defaults-lua548-v1",
+    "local_predicates": "onbill/obfree/add_to_billobjs/bp_to_obj/useupall/dealloc_obj have no local compile #if guards in bound ranges; mextra.h under include guard MEXTRA_H. Selected source branches runtime predicates retained; Lua548 declaration does not exclude lua_ref_cnt branch. No compiler/Lua/external headers executed or measured.",
+    "selected_symbols": {
+      "UNIX": true,
+      "TTY_GRAPHICS": true,
+      "DEBUG": true,
+      "DUMPLOG": false,
+      "MAIL": true
+    },
+    "external_import_contract": "Consume reviewed profile staged imports; undeclared new conditional import cannot support conformance and returns to run_configuration."
+  },
+  "reuse_C1": {
+    "contract": {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "sha256": "0ae28364d9017ca8d71b753d64d58b4f18cd21c023dca202434376725a8341dc"
+    },
+    "evidence": {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-07-p11a-charge-contract/evidence.json",
+      "sha256": "74a6ffdd09f9e2ea34f6dede481542019b7d0a3cbd4cfca1b45031b6389e14ef"
+    },
+    "review": {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-07-p11a-charge-contract/review-final.json",
+      "sha256": "06157125e20ac4593f6aad7c527deb43a95036ab0ec5d90ba429cc3d2df4100d"
+    },
+    "review_verdict": "PASS",
+    "consumed_sections": [
+      "lifetime",
+      "ordering (billing/retirement boundaries only)",
+      "children: BILL/PRE/LIFE/IN1",
+      "dependency_policy"
+    ],
+    "authority_snippet_refs": [
+      {
+        "path": "src/invent.c",
+        "git_blob": "446859540299c0fd36ac5d0eff213a9478ffbab3",
+        "ranges": [
+          {
+            "start": 1309,
+            "end": 1334,
+            "sha256": "f5c59fe2803c553cbaff62d8451cb5bb6988c1a307efbb2c179b5c8e6e85710b"
+          }
+        ]
+      },
+      {
+        "path": "src/shk.c",
+        "git_blob": "bd87b884910116ad48a393df14609bb275bb3e1d",
+        "ranges": [
+          {
+            "start": 1220,
+            "end": 1246,
+            "sha256": "1018983bfe419e3373e1563a4ccc68f8f56ed44ccedc501e319681aa29867612"
+          }
+        ]
+      },
+      {
+        "path": "src/mkobj.c",
+        "git_blob": "93f047d142880cdd688bfbd70a2b2c1f4a46a712",
+        "ranges": [
+          {
+            "start": 2745,
+            "end": 2810,
+            "sha256": "9c5999f8f53e1a9f4c803c83da1d08aa803e663d79560bce4364062f96735b7b"
+          }
+        ]
+      }
+    ]
+  },
+  "accepted_API1": {
+    "delivery": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/delivery.json",
+      "sha256": "7c68531dd23e407e1e5bb8d3b63e56a62089eadb99983ce2e8e476efad39e00b"
+    },
+    "full_baseline": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/full-gates/accepted.json",
+      "sha256": "b9925b0ccfec6fdef3db4102997ed72a133c8ecb2d9fecc1c6b40470651697c6"
+    },
+    "results": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/full-gates/results.json",
+      "sha256": "ebb19e883ab1c0f2233a4b757de1e5968d17dda20eb11ef4979ec24bc2f632eb"
+    },
+    "tests": 1026,
+    "gates": 12,
+    "goldens": 3,
+    "baseline_only": true
+  },
+  "c_sources": [
+    {
+      "path": "src/shk.c",
+      "commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+      "git_blob": "bd87b884910116ad48a393df14609bb275bb3e1d",
+      "sha256": "b2b5b82934b15c1a4a3c9474a650ff5800a83f0b9634696fdf080d0458f16e1b",
+      "snippets": [
+        {
+          "symbol": "onbill",
+          "start": 1135,
+          "end": 1159,
+          "sha256": "5f4198dee97898f28a3411b3848b778fbed3c8193ffb68067a205c09db503615",
+          "text": "staticfn struct bill_x *\nonbill(struct obj *obj, struct monst *shkp, boolean silent)\n{\n    if (shkp) {\n        struct bill_x *bp;\n        int ct;\n\n        for (ct = ESHK(shkp)->billct, bp = ESHK(shkp)->bill_p;\n             ct > 0; --ct, ++bp) {\n            if (bp->bo_id == obj->o_id) {\n                if (!obj->unpaid)\n                    impossible(\"onbill: paid obj on bill?\");\n                return bp;\n            }\n        }\n    }\n    if (obj->unpaid && !silent)\n        impossible(\"onbill: unpaid obj %s?\",\n                   !shkp ? \"without shopkeeper\" : \"not on shk's bill\");\n    return (struct bill_x *) 0;\n}\n\n/* used outside of shk.c when caller wants to know whether item is on bill\n   but doesn't need to know any details about the bill itself */\nboolean\n"
+        },
+        {
+          "symbol": "obfree ownership search",
+          "start": 1194,
+          "end": 1217,
+          "sha256": "2a103dbb6bc6fd410b6d42d9b5db9d5ccaf859aeb1873c0e1102afb03f3ae6a6",
+          "text": "        o_unleash(obj);\n    if (obj->oclass == FOOD_CLASS)\n        food_disappears(obj);\n    if (obj->oclass == SPBOOK_CLASS)\n        book_disappears(obj);\n    if (Has_contents(obj))\n        delete_contents(obj);\n    if (Is_container(obj))\n        maybe_reset_pick(obj);\n    if (obj->otyp == BOULDER)\n        obj->next_boulder = 0;\n\n    shkp = 0;\n    if (obj->unpaid) {\n        /* look for a shopkeeper who owns this object */\n        for (shkp = next_shkp(fmon, TRUE); shkp;\n             shkp = next_shkp(shkp->nmon, TRUE))\n            if (onbill(obj, shkp, TRUE))\n                break;\n    }\n    /* sanity check, in case obj is on bill but not marked 'unpaid' */\n    if (!shkp)\n        shkp = shop_keeper(*u.ushops);\n    /*\n"
+        },
+        {
+          "symbol": "obfree retained branch",
+          "start": 1224,
+          "end": 1236,
+          "sha256": "ac49488ba1448536341bc015a1eb17a0fa21f0e0fd0915141a855af03ef147e0",
+          "text": "    if ((bp = onbill(obj, shkp, FALSE)) != 0) {\n        if (!merge) {\n            bp->useup = TRUE;\n            obj->unpaid = 0; /* only for doinvbill */\n            /* for used up glob, put back original weight in case it gets\n               formatted ('I x' or itemized billing) with 'wizweight' On */\n            if (obj->globby && !obj->owt && has_omid(obj))\n                obj->owt = OMID(obj);\n            add_to_billobjs(obj);\n            return;\n        }\n        bpm = onbill(merge, shkp, FALSE);\n        if (!bpm) {\n"
+        },
+        {
+          "symbol": "obfree merge/unbilled/dealloc exits",
+          "start": 1246,
+          "end": 1275,
+          "sha256": "5bdf00e5398c82ab7b4a5c1896d60fecc5a82b2881768d8ff19f2b65520c2a21",
+          "access": "git show 16ff59115315917b93185d026aeefea06db9b0f4:src/shk.c; take UTF-8 lines 1246..1275 inclusive with LF; sha256 bound here (C1 lifetime proof reused)"
+        },
+        {
+          "symbol": "bp_to_obj/find_oid",
+          "start": 2757,
+          "end": 2775,
+          "sha256": "5f3816038ea7f978663a6f05e1037c0fe2da132e6d836f783d197b8344fee1c5",
+          "text": "/* find obj on one of the lists */\nstaticfn struct obj *\nbp_to_obj(struct bill_x *bp)\n{\n    struct obj *obj;\n    unsigned int id = bp->bo_id;\n\n    if (bp->useup)\n        obj = o_on(id, gb.billobjs);\n    else\n        obj = find_oid(id);\n    return obj;\n}\n\n/*\n * Look for o_id on all lists but billobj.  Return obj or NULL if not found.\n * Its OK for restore_timers() to call this function, there should not\n * be any timeouts on the gb.billobjs chain.\n */\n"
+        },
+        {
+          "symbol": "bill admission terms",
+          "start": 3343,
+          "end": 3354,
+          "sha256": "d1832c1aede73b50b7be71e664c66c5c9459cebf9fb12a56db718aa4b98dd860",
+          "text": "    bp = &eshkp->bill_p[bct];\n    bp->bo_id = obj->o_id;\n    bp->bquan = obj->quan;\n    if (dummy) {              /* a dummy object must be inserted into  */\n        bp->useup = TRUE;     /* the gb.billobjs chain here.  crucial for */\n        add_to_billobjs(obj); /* eating floorfood in shop.  see eat.c  */\n    } else\n        bp->useup = FALSE;\n    bp->price = get_cost(obj, shkp);\n    if (obj->globby) {\n        /* for globs, the amt charged for quan 1 depends on owt */\n        bp->price *= get_pricing_units(obj);\n"
+        },
+        {
+          "symbol": "add_to_billobjs",
+          "start": 3365,
+          "end": 3383,
+          "sha256": "9059255364418282958b1aeb8e6d7ad633b2c23ca06b383df0cebda784ad9b09",
+          "text": "staticfn void\nadd_to_billobjs(struct obj *obj)\n{\n    if (obj->where != OBJ_FREE)\n        panic(\"add_to_billobjs: obj not free\");\n    if (obj->timed)\n        obj_stop_timers(obj);\n\n    obj->nobj = gb.billobjs;\n    gb.billobjs = obj;\n    obj->where = OBJ_ONBILL;\n\n    /* if hero drinks a shop-owned potion, it will have been flagged\n       in_use by dodrink/dopotion but isn't being used up yet because\n       it stays on the bill; only object sanity checking actually cares */\n    obj->in_use = 0;\n    /* ... same for bypass by destroy_items */\n    obj->bypass = 0;\n}\n"
+        },
+        {
+          "symbol": "used-up liability product",
+          "start": 4240,
+          "end": 4248,
+          "sha256": "d0b138e7fe1c234f88d50686e38aceafc4d98bd4d57f9248867f78219f274348",
+          "text": "        }\n        if (bp->useup || bp->bquan > obj->quan) {\n            long oquan, uquan, thisused;\n\n            oquan = obj->quan;\n            uquan = (bp->useup ? bp->bquan : bp->bquan - oquan);\n            thisused = bp->price * uquan;\n            totused += thisused;\n            iflags.suppress_price++; /* suppress \"(unpaid)\" suffix */\n"
+        }
+      ]
+    },
+    {
+      "path": "include/mextra.h",
+      "commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+      "git_blob": "546c94c715f42edb58a3fe023fc920a4854fdc68",
+      "sha256": "e78bdfa21d4fd7718f1a25ed8f1ef466c96c2bd49f2069af7d1ab346148a1229",
+      "snippets": [
+        {
+          "symbol": "bill_x/eshk",
+          "start": 114,
+          "end": 141,
+          "sha256": "32f9440b3a43d1b9840113b0733a3a1c03a22e34385789c595e54215b165358f",
+          "text": "#define BILLSZ 200\n\nstruct bill_x {\n    unsigned bo_id;\n    boolean useup;\n    long price; /* price per unit */\n    long bquan; /* amount used up */\n};\n\nstruct eshk {\n    unsigned parentmid;   /* make clobber-detection possible */\n    long robbed;          /* amount stolen by most recent customer */\n    long credit;          /* amount credited to customer */\n    long debit;           /* amount of debt for using unpaid items */\n    long loan;            /* shop-gold picked (part of debit) */\n    int shoptype;         /* the value of svr.rooms[shoproom].rtype */\n    schar shoproom;       /* index in svr.rooms; set by inshop() */\n    schar unused;         /* to force alignment for stupid compilers */\n    boolean following;    /* following customer since he owes us sth */\n    boolean surcharge;    /* angry shk inflates prices */\n    boolean dismiss_kops; /* pacified shk sends kops away */\n    coord shk;            /* usual position shopkeeper */\n    coord shd;            /* position shop door */\n    d_level shoplevel;    /* level (& dungeon) of his shop */\n    int billct;           /* no. of entries of bill[] in use */\n    struct bill_x bill[BILLSZ];\n    struct bill_x *bill_p;  /* &(ESHK(shkp)->bill[0]) */\n    long break_seq;         /* hero_seq value at time of object breakage */\n"
+        }
+      ]
+    },
+    {
+      "path": "include/obj.h",
+      "commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+      "git_blob": "8d95bb0072b11c04a130871da4f3347c96b09af2",
+      "sha256": "a4d1b994c5acd6fe04d411485d84491553d6df02dfbd7480181a15a7a05456e2",
+      "snippets": [
+        {
+          "symbol": "o_id/quan",
+          "start": 37,
+          "end": 48,
+          "sha256": "8e7ccf109c38c99fab3f0e9e5691c6b9690f564e00f46b09b22f12fb0b541a1b",
+          "text": "    union vptrs v;\n#define nexthere v.v_nexthere\n#define ocontainer v.v_ocontainer\n#define ocarry v.v_ocarry\n\n    struct obj *cobj; /* contents list for containers */\n    unsigned o_id;\n    coordxy ox, oy;\n    short otyp; /* object class number */\n    unsigned owt;\n    long quan; /* number of items */\n\n"
+        },
+        {
+          "symbol": "where states",
+          "start": 72,
+          "end": 85,
+          "sha256": "eb63dddcacf0f01281617d1f0e9706f8ea1337c7b34319062265cd56fbb6975e",
+          "text": "    char oartifact; /* artifact array index */\n\n    xint8 where;        /* where the object thinks it is */\n#define OBJ_FREE 0      /* object not attached to anything */\n#define OBJ_FLOOR 1     /* object on floor */\n#define OBJ_CONTAINED 2 /* object in a container */\n#define OBJ_INVENT 3    /* object in the hero's inventory */\n#define OBJ_MINVENT 4   /* object in a monster inventory */\n#define OBJ_MIGRATING 5 /* object sent off to another level */\n#define OBJ_BURIED 6    /* object buried */\n#define OBJ_ONBILL 7    /* object on shk bill */\n#define OBJ_LUAFREE 8   /* object has been dealloc'd, but is ref'd by lua */\n#define OBJ_DELETED 9   /* object is marked for deletion by dobjsfree() */\n    /* note: OBJ_xxx values are used in obj_state_names[] in mkobj.c\n"
+        }
+      ]
+    },
+    {
+      "path": "src/invent.c",
+      "commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+      "git_blob": "446859540299c0fd36ac5d0eff213a9478ffbab3",
+      "sha256": "0b93d6ce1abb5b63ed7ea07c26a57e1016c6cef0fc2ef0e4016e6622054524b5",
+      "snippets": [
+        {
+          "symbol": "useupall/useup; C1 lifetime reuse",
+          "start": 1309,
+          "end": 1334,
+          "sha256": "f5c59fe2803c553cbaff62d8451cb5bb6988c1a307efbb2c179b5c8e6e85710b",
+          "text": "\n/* useup() all of an item regardless of its quantity */\nvoid\nuseupall(struct obj *obj)\n{\n    setnotworn(obj);\n    freeinv(obj);\n    obfree(obj, (struct obj *) 0); /* deletes contents also */\n}\n\n/* an item in inventory is going away after being used */\nvoid\nuseup(struct obj *obj)\n{\n    /* Note:  This works correctly for containers because they (containers)\n       don't merge. */\n    if (obj->quan > 1L) {\n        obj->in_use = FALSE; /* no longer in use */\n        obj->quan--;\n        obj->owt = weight(obj);\n        update_inventory();\n    } else {\n        useupall(obj);\n    }\n}\n\n"
+        }
+      ]
+    },
+    {
+      "path": "src/mkobj.c",
+      "commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+      "git_blob": "93f047d142880cdd688bfbd70a2b2c1f4a46a712",
+      "sha256": "49c2de3bcf1125be55f11c17ffc4f614956f5288a5edfb56b2248b7fcaa3b488",
+      "snippets": [
+        {
+          "symbol": "dealloc preconditions",
+          "start": 2745,
+          "end": 2761,
+          "sha256": "59c5c8ee9ac230f28e82ab9d2388dd6bb8d1401fec4828150d61b3d026ba18be",
+          "access": "git show 16ff59115315917b93185d026aeefea06db9b0f4:src/mkobj.c; take UTF-8 lines 2745..2761 inclusive with LF; sha256 bound here (C1 lifetime proof reused)"
+        },
+        {
+          "symbol": "light/transient refs",
+          "start": 2773,
+          "end": 2784,
+          "sha256": "05cc79350409a17b181be061eef76257b08183a347e06296e9ea37b75f90930e",
+          "access": "git show 16ff59115315917b93185d026aeefea06db9b0f4:src/mkobj.c; take UTF-8 lines 2773..2784 inclusive with LF; sha256 bound here (C1 lifetime proof reused)"
+        },
+        {
+          "symbol": "split/Lua/staged/immediate exits",
+          "start": 2791,
+          "end": 2813,
+          "sha256": "1a2d8a64c051ebee31e85982b43bd41b9a77e583164c223671dc048da8145263",
+          "access": "git show 16ff59115315917b93185d026aeefea06db9b0f4:src/mkobj.c; take UTF-8 lines 2791..2813 inclusive with LF; sha256 bound here (C1 lifetime proof reused)"
+        }
+      ]
+    }
+  ],
+  "rust_sources": [
+    {
+      "path": "crates/nethacked-sim/src/world.rs",
+      "sha256": "9e4cd1aedb4b455e5df5fb949dd908b2f9a9017a2fce067856a1d7d5e7caf7ad",
+      "baseline_sha256": "9e4cd1aedb4b455e5df5fb949dd908b2f9a9017a2fce067856a1d7d5e7caf7ad",
+      "git_blob_at_head": "5740eae98063a992ad1ba0d5ebe5f913f96aecdd",
+      "snippets": [
+        {
+          "symbol": "StoredLevel",
+          "start": 22,
+          "end": 29,
+          "sha256": "467787351aa9ee42ea3a10c6d8de2d666ed23579d4ddb042e05d799ebef52154",
+          "text": "\n/// Stored state of a dungeon level when player travels to other floors.\n#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct StoredLevel {\n    pub level: DungeonLevel,\n    pub monsters: Vec<(nethacked_arena::ActorId, nethacked_arena::ActorRecord)>,\n    pub items: Vec<(ItemId, nethacked_arena::ItemRecord)>,\n    pub unpaid_items: Vec<(ItemId, u32)>,\n"
+        },
+        {
+          "symbol": "Arc ruleset/save owner",
+          "start": 68,
+          "end": 75,
+          "sha256": "7670fc941427239eaf65cf2659eb461d008047eebd877e0b003ed2ff2cacc34a",
+          "text": "pub struct SimulationWorld {\n    #[serde(skip, default = \"default_ruleset\")]\n    pub ruleset: Arc<Ruleset>,\n    #[serde(default = \"default_ruleset_ref\")]\n    pub ruleset_ref: RulesetRef,\n    pub level: DungeonLevel,\n    pub levels: Vec<DungeonLevel>,\n    pub current_branch: nethacked_types::BranchId,\n"
+        },
+        {
+          "symbol": "unpaid tuple owner",
+          "start": 85,
+          "end": 91,
+          "sha256": "0ee6ddcf017341977b4f5e910457299839e3e5e980cd6ab66fd3535733f5c3fe",
+          "text": "    /// Modern saves always emit the owner, including explicit empty/cancelled\n    /// queues. Absent legacy scheduling migration remains a separate step.\n    #[serde(default)]\n    pub object_timers: crate::object_timers::ObjectTimerQueue,\n    /// Unpaid shop merchandise as `(item, base cost)`; see [`Self::get_unpaid_cost`].\n    pub unpaid_items: Vec<(ItemId, u32)>,\n    pub player_gold: u32,\n"
+        },
+        {
+          "symbol": "constructor initialization",
+          "start": 409,
+          "end": 414,
+          "sha256": "d2e6ae2784444bfe3ce6b2d5fec9e2848aa821b7596adeae8fa5352de9860e9d",
+          "text": "            equipment: crate::actions::equipment::EquipmentState::default(),\n            scheduler: SchedulerState::new(12, 0),\n            object_timers: crate::object_timers::ObjectTimerQueue::default(),\n            unpaid_items,\n            player_gold,\n            player_nutrition,\n"
+        },
+        {
+          "symbol": "load ruleset validation",
+          "start": 493,
+          "end": 511,
+          "sha256": "3f7243706e8fef3f97399050ad9b9059127aad22c346aec31b6ae76672f3eb21",
+          "text": "    pub fn from_save_json(\n        json: &str,\n        rs: Arc<Ruleset>,\n        rref: &RulesetRef,\n    ) -> Result<Self, LoadError> {\n        let value: serde_json::Value =\n            serde_json::from_str(json).map_err(|e| LoadError::Json(e.to_string()))?;\n        let legacy_equipment = value.get(\"equipment\").is_none();\n        let legacy_object_timers = value.get(\"object_timers\").is_none();\n        let mut world: SimulationWorld =\n            serde_json::from_value(value).map_err(|e| LoadError::Json(e.to_string()))?;\n        if &world.ruleset_ref != rref {\n            return Err(LoadError::RulesetMismatch {\n                expected: Box::new(rref.clone()),\n                found: Box::new(world.ruleset_ref),\n            });\n        }\n        world.ruleset = rs;\n        // Old saves lack these optional tags. Resolve through the owned\n"
+        },
+        {
+          "symbol": "billing and corpse cleanup",
+          "start": 665,
+          "end": 699,
+          "sha256": "ea1fdf8a9b2b17d58ee1484758c13154aa01a89b46af9142db53a279c0b6a9e0",
+          "text": "    /// Retrieve the price owed for an unpaid shop item, if any: the ledger holds the base\n    /// cost (`oc_cost`), priced through C `get_cost` (`shk.c:2877`) for the current hero.\n    pub fn get_unpaid_cost(&self, id: ItemId) -> Option<u32> {\n        self.unpaid_items\n            .iter()\n            .find(|(i, _)| *i == id)\n            .map(|(_, base)| self.shop_buy_price(*base))\n    }\n\n    /// Check if an item is unpaid store merchandise.\n    pub fn is_unpaid(&self, id: ItemId) -> bool {\n        self.unpaid_items.iter().any(|(i, _)| *i == id)\n    }\n\n    /// Clear unpaid status after purchase.\n    pub fn remove_unpaid(&mut self, id: ItemId) {\n        self.unpaid_items.retain(|(i, _)| *i != id);\n    }\n\n    /// Clear represented references after the rot callback removes an item.\n    /// Full shop bills/mextra and unowned C object references remain separate.\n    pub(crate) fn forget_rot_corpse_references(&mut self, id: ItemId) {\n        if self.wielded_item == Some(id) {\n            self.wielded_item = None;\n        }\n        if self.hero.quivered_item == Some(id) {\n            self.hero.quivered_item = None;\n        }\n        self.remove_unpaid(id);\n        self.remove_destroyed_item_equipment(id);\n    }\n\n    /// Retrieve an EconomyLedger snapshot of current unpaid store items.\n    pub fn economy_ledger(&self) -> crate::actions::economy::EconomyLedger {\n        crate::actions::economy::EconomyLedger::with_items(self.unpaid_items.clone())\n"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-arena/src/lib.rs",
+      "sha256": "099cf75465706208f388a83acebdb30b15321e2ae1755fd9206cc54e6669dc9e",
+      "baseline_sha256": "099cf75465706208f388a83acebdb30b15321e2ae1755fd9206cc54e6669dc9e",
+      "git_blob_at_head": "505071215bea5c2f4b366f6cc01df9a50112e59a",
+      "snippets": [
+        {
+          "symbol": "owned object identity",
+          "start": 31,
+          "end": 48,
+          "sha256": "f47eca35c0370facbb1094af9fbdf09ffeb188ce10cc5a78ed6e8dc1caf870d3",
+          "text": "pub struct ItemRecord {\n    /// Owned archetype identity; absence retains legacy exact-name lookup.\n    #[serde(default, skip_serializing_if = \"Option::is_none\")]\n    pub definition: Option<ItemDefinition>,\n    /// Detached supported monster state (C oextra->omonst), never a live actor.\n    #[serde(default, skip_serializing_if = \"Option::is_none\")]\n    pub saved_monster_traits: Option<Box<SavedMonsterTraits>>,\n    /// Canonical C ART_* symbol; independent of display name.\n    #[serde(default, skip_serializing_if = \"Option::is_none\")]\n    pub artifact_id: Option<String>,\n    pub name: String,\n    pub class: ItemClass,\n    pub weight: u32,\n    pub buc: Buc,\n    pub is_container: bool,\n    pub is_bag_of_holding: bool,\n    pub enchantment: i8,\n    pub erosion: u8,\n"
+        },
+        {
+          "symbol": "recharged/quantity",
+          "start": 60,
+          "end": 69,
+          "sha256": "961207fc7b8f3d598871d61389cea93aff0e38150206c9d05f6d6221473bd941",
+          "text": "    pub corpse_age: u32,\n    pub rot_threshold: u32,\n    /// Times recharged (C `obj->recharged`, read.c:729); distinct from `erosion`.\n    #[serde(default)]\n    pub recharged: u8,\n    /// Stack size; weight stores the total stack weight (C obj->owt).\n    #[serde(default = \"one\", skip_serializing_if = \"is_one\")]\n    pub quantity: u32,\n    #[serde(default, skip_serializing_if = \"std::ops::Not::not\")]\n    pub poisoned: bool,\n"
+        },
+        {
+          "symbol": "arena removal",
+          "start": 218,
+          "end": 223,
+          "sha256": "1d80eac7f07867e571f5163eec03b6064271c2ec01cde5850dfca76d04011ce4",
+          "text": "    /// Safely remove an item.\n    pub fn destroy_item(&mut self, id: ItemId) -> Option<ItemRecord> {\n        let item = self.items.remove(id)?;\n        self.register_artifact(&item);\n        Some(item)\n    }\n"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-sim/src/actions/stairs.rs",
+      "sha256": "b21fd5f0c0a13522051972a90c801ed0369dad8559de4d0afa2b3f90e4dcdaaf",
+      "baseline_sha256": "b21fd5f0c0a13522051972a90c801ed0369dad8559de4d0afa2b3f90e4dcdaaf",
+      "git_blob_at_head": "ac44c530f30b13a3cefbf7c02e940b5aac3c15bd",
+      "snippets": [
+        {
+          "symbol": "cache removal+ledger partition",
+          "start": 261,
+          "end": 280,
+          "sha256": "f3a51f6652f72a17e7e74523a2d5b36b523fcf7c3b0857b991d8186750170126",
+          "text": "        self.cache_object_timers(from_key.0, from_key.1, &item_ids);\n        for iid in &item_ids {\n            if let Some(item) = self.arena.destroy_item(*iid) {\n                items.push((*iid, item));\n            }\n        }\n\n        let (level_unpaid, hero_unpaid): (Vec<_>, Vec<_>) = std::mem::take(&mut self.unpaid_items)\n            .into_iter()\n            .partition(|(iid, _)| item_set.contains(iid));\n        self.unpaid_items = hero_unpaid;\n\n        let stored_current = StoredLevel {\n            level: self.level.clone(),\n            monsters,\n            items,\n            unpaid_items: level_unpaid,\n        };\n\n        if let Some(pos) = self.stored_levels.iter().position(|(k, _)| *k == from_key) {\n"
+        },
+        {
+          "symbol": "item remint",
+          "start": 325,
+          "end": 342,
+          "sha256": "5e904e3dee3de3fab62f1d7550bb8dcb6b8bc4168a9a0d3bba02317a01f322bd",
+          "text": "            self.arena.items = serde_json::from_value(\n                serde_json::to_value(&self.arena.items).expect(\"item arena serializes\"),\n            )\n            .expect(\"serialized item arena restores\");\n\n            let mut actor_map = std::collections::HashMap::new();\n            for (old, m) in stored.monsters {\n                actor_map.insert(old, self.arena.spawn_actor(m));\n            }\n            let mut item_map = std::collections::HashMap::new();\n            let mut spawned = Vec::with_capacity(stored.items.len());\n            for (old, it) in stored.items {\n                let new = self.arena.spawn_item(it);\n                item_map.insert(old, new);\n                spawned.push(new);\n            }\n            let fallback = ItemLocation::Floor(self.level.stairs_up);\n            for new in spawned {\n"
+        },
+        {
+          "symbol": "ledger remap",
+          "start": 357,
+          "end": 364,
+          "sha256": "cb810981392de29e58b9f63f2b898475da236d5abf181f0446aa2a289839d743",
+          "text": "            for (old, cost) in stored.unpaid_items {\n                if let Some(new) = item_map.get(&old) {\n                    self.unpaid_items.push((*new, cost));\n                }\n            }\n            self.restore_object_timers(branch, depth, |old| item_map.get(&old).copied());\n        } else {\n            match (branch, depth) {\n"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-sim/src/actions/economy.rs",
+      "sha256": "28478f5c9a6960c5d5936f81c338f6a9b1feb7306f6c42d82cad2a32003f8b41",
+      "baseline_sha256": "28478f5c9a6960c5d5936f81c338f6a9b1feb7306f6c42d82cad2a32003f8b41",
+      "git_blob_at_head": "4ba04df33f2a9a00c8e6deb26c1d54ac0c76b456",
+      "snippets": [
+        {
+          "symbol": "projected price",
+          "start": 96,
+          "end": 107,
+          "sha256": "784978b0f2330a1563e17e4d038e1c2e0501d9aa11e1ac98faab69bdb3d21b38",
+          "text": "    pub(crate) fn shop_buy_price(&self, base: u32) -> u32 {\n        nethacked_core::buy_price(\n            base,\n            DEFAULT_CHARISMA,\n            self.hero_dunce_or_tourist(),\n            false,\n            false,\n            false,\n        )\n    }\n\n    /// Price the shopkeeper offers for an item of base cost `base` (C `shk.c:3148`\n"
+        },
+        {
+          "symbol": "carried-only Pay",
+          "start": 113,
+          "end": 143,
+          "sha256": "e510e200e4661c0bbccabb325c4e44f3ca3ef0c5f12208bbbb642cc537bd14a3",
+          "text": "    pub(crate) fn handle_pay(&mut self) -> Vec<GameEvent> {\n        let mut events = Vec::new();\n        let carried = self.arena.items_carried_by(self.player_id);\n        let mut total_due = 0u32;\n        let mut to_pay = Vec::new();\n\n        for &item_id in &carried {\n            if let Some(cost) = self.get_unpaid_cost(item_id) {\n                total_due += cost;\n                to_pay.push(item_id);\n            }\n        }\n\n        if to_pay.is_empty() {\n            events.push(GameEvent::LogMessage {\n                text: nethacked_i18n::Messages::no_unpaid_items(self.locale).into(),\n            });\n        } else if self.player_gold < total_due {\n            events.push(GameEvent::LogMessage {\n                text: nethacked_i18n::Messages::not_enough_gold(\n                    total_due,\n                    self.player_gold,\n                    self.locale,\n                ),\n            });\n        } else {\n            self.player_gold -= total_due;\n            for id in to_pay {\n                self.remove_unpaid(id);\n            }\n            events.push(GameEvent::LogMessage {\n"
+        }
+      ]
+    }
+  ],
+  "oracles": {
+    "status": "source-derived expected states only; not executed",
+    "C": "Known bill_x bo_id/bquan/price -> obfree(NULL) useup/OBJ_ONBILL, unchanged terms -> doinvbill product; unbilled -> dealloc. q1/3 whole branch derives from useupall, not Rust expected output.",
+    "literal_receipts": [
+      {
+        "price": 40,
+        "bquan": 1,
+        "total_used": 40
+      },
+      {
+        "price": 40,
+        "bquan": 3,
+        "total_used": 120
+      }
+    ],
+    "legacy": "No historical bquan/price field exists in source snapshot of Rust tuple owner. Unknown terms are lossless native compatibility, not a claimed C oracle."
+  },
+  "verification": {
+    "Cargo_build_C_Lua_executed": false,
+    "agents": false,
+    "publication_commit_golden_edits": false,
+    "repository_edits": false,
+    "independent_review_performed": false,
+    "allowed_write_directory": "/tmp/netrust-p11a-p1-bill-repair1-cli/draft",
+    "artifact_json_parse_and_hash_checks": "performed by source-only author; not semantic acceptance",
+    "observed_external_dirty_path": "docs/parity/obligations/2026-10-07-autonomous-parity-run.json; observed at final read-only status; not modified by this author",
+    "repair": "JSON, new source range/full-file hashes, pinned native blob equality, review input hashes and copied baseline/graph equality checked mechanically. Initial pinned-C/config semantic/binding PASS reused; unchanged C not reread. No test/build/generation/gate execution."
+  },
+  "packet_bounds": {
+    "c_owner_files": 5,
+    "rust_owner_files": 4,
+    "c_symbol_ranges": 15,
+    "rust_symbol_ranges": 14,
+    "historical_rows_reaudited": 0,
+    "scope": "one billing transfer slice; C1 billing/lifetime/order proof reused; no charge/exercise reaudit",
+    "soft_envelope_tokens": 16000,
+    "actual_token_usage": "not exposed; no estimate claimed",
+    "count_note": "Short source ranges are excerpts of listed owner files, not independent discovery packets; no family/catalog inventory enumeration or historical rows reaudit.",
+    "snapshot_policy": "Decisive billing retention/admission/value and native gaps are inline; deferred C storage/merge exits retain exact blob+line+excerpt hash retrieval, and accepted C1 evidence binds full source snapshots.",
+    "repair_soft_envelope_tokens": 8000
+  },
+  "unresolved": {
+    "normative_location": "contract.json#/unresolved",
+    "ids": [
+      "U1",
+      "U2",
+      "U4",
+      "U5"
+    ],
+    "acceptance": "U3 resolved by bound coordinator manifest. Other facts/implementation exits remain unaccepted."
+  },
+  "artifact_hashes": {
+    "contract.json": "0bf62292df757442402698a4f19559ba1f05f0913d6507bd7655026e7a1ba5ef",
+    "contract.md": "1b04f35c7fb333740e87f0281ea380bff0b68ae016e6c3809781d251371de19c",
+    "ready-packet.md": "680442a6d1c3d8348adba6dbb8a0d64da947f6e3e20d25aad98cd96896ed733e",
+    "baseline.json": "738e5d04a68b962d4655941c2def10a7a87bee719ab314e353b0e2cac3db042b",
+    "graph-discovery.json": "86ddec116f5acd30328736fb4180cb7afba7b18a6cabaf23898740012ca0147d"
+  },
+  "identity_owner_hashes": {
+    "crates/nethacked-data/src/ruleset.rs": "fc3cad8e54a047a3ec35a6b8ecf8bcbee6ddeeeba93a21af3f4b5e115fdd0a6f",
+    "crates/nethacked-types/src/lib.rs": "93c63df3e963993cde2029e5cf8e3e1daca047878cc5e87d07c4d03141d6f1c5",
+    "crates/nethacked-sim/src/actions/items.rs": "1b2b9a4f585154c0361854fd6ab101122edee6020425cc81b1ebe52990be92ea"
+  },
+  "constructor_check": {
+    "reason": "Avoid breaking existing StoredLevel public struct literals. Bounded sim owner-reference fallback required to make the minimal allowlist concrete, no test assertion reaudit.",
+    "decision": "No StoredLevel field; global live_terms keyed by active/cached full ItemId, targeted remap at restore only.",
+    "existing_literals": {
+      "crates/nethacked-sim/tests/saved_monster_traits_tests.rs": [
+        162,
+        229
+      ],
+      "crates/nethacked-sim/tests/actor_sex_tests.rs": [
+        80,
+        151
+      ],
+      "crates/nethacked-sim/tests/item_initialization_tests.rs": [
+        115
+      ],
+      "crates/nethacked-sim/tests/corpse_birth_tests.rs": [
+        151
+      ],
+      "crates/nethacked-sim/tests/selected_wand_tests.rs": [
+        87
+      ],
+      "crates/nethacked-sim/tests/corpse_transfer_tests.rs": [
+        249,
+        591
+      ]
+    },
+    "hashes": {
+      "crates/nethacked-sim/tests/saved_monster_traits_tests.rs": "59dd7ed010c5e98900d7a54dc7b9af1362fee68b7cea3021fb3f44d5193959cf",
+      "crates/nethacked-sim/tests/actor_sex_tests.rs": "921b5cd11d01b09835d12a11db0da6cfd938d5b50b921b2257bc5fa21da52780",
+      "crates/nethacked-sim/tests/item_initialization_tests.rs": "3346b8b034253eac385478776f3dcdfbbcb3cf0fbf9db86c64657bb2c223b867",
+      "crates/nethacked-sim/tests/corpse_birth_tests.rs": "97d07d3091ef23972e1b2c749fe53ac9566779b471f9a4615ebf6732494ad8d5",
+      "crates/nethacked-sim/tests/selected_wand_tests.rs": "23a6edad28e183d4fc31d6a30f9b9abf28946eb2a95ccfa4e9b967694129ef04",
+      "crates/nethacked-sim/tests/corpse_transfer_tests.rs": "076254ac417e0ef5655805fc48f9a478aab8c76fe3eb72a51d23ed437e219127"
+    }
+  },
+  "repair_bindings": [
+    {
+      "path": "crates/nethacked-sim/src/world.rs",
+      "sha256": "9e4cd1aedb4b455e5df5fb949dd908b2f9a9017a2fce067856a1d7d5e7caf7ad",
+      "git_blob_at_head": "5740eae98063a992ad1ba0d5ebe5f913f96aecdd",
+      "ranges": [
+        {
+          "start": 666,
+          "end": 700,
+          "symbol": "clearing and rot inbound",
+          "sha256": "2c11916cbf4197defdeba0030f07522cf5f8033d1173908246fd8ba66363b637"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-sim/src/actions/economy.rs",
+      "sha256": "28478f5c9a6960c5d5936f81c338f6a9b1feb7306f6c42d82cad2a32003f8b41",
+      "git_blob_at_head": "4ba04df33f2a9a00c8e6deb26c1d54ac0c76b456",
+      "ranges": [
+        {
+          "start": 117,
+          "end": 153,
+          "symbol": "Pay owner",
+          "sha256": "17309047f7947544ffd0eec4096b53b6b032485a0d493274587611520a973344"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-sim/src/actions/mod.rs",
+      "sha256": "84bca7417cef8124fe6f9c5311412133c0d9dac873fdfd2593659f769c880a16",
+      "git_blob_at_head": "425ad1683d61beebc38794b12bba7b20078b1c9d",
+      "ranges": [
+        {
+          "start": 20,
+          "end": 47,
+          "symbol": "public Pay pre-mutation entry",
+          "sha256": "f7eafc917e28f271335051388e91d989f706a5a20d166aad816f4b3ed041df24"
+        },
+        {
+          "start": 108,
+          "end": 116,
+          "symbol": "Pay dispatch",
+          "sha256": "9d2c75c7e721871845fb521b918735d47d168842635ea9da12858a5f4be8c075"
+        },
+        {
+          "start": 178,
+          "end": 215,
+          "symbol": "post-dispatch mutations",
+          "sha256": "118d6e4e1e39e1e8165db64a29021ebf8f0c3c5de6635c508e94b3d867dd23a3"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-pack/src/main.rs",
+      "sha256": "2f400c6f7965be187b19883515f3e9a6dc8583f6531865c64dc181fcdf4cea25",
+      "git_blob_at_head": "3bf979ca622b6e9ce30b4330eef65d019c3b7f95",
+      "ranges": [
+        {
+          "start": 32,
+          "end": 55,
+          "symbol": "CLI generation options",
+          "sha256": "7b1cfeff7a6d703d57fe28ba6d89be7874c14557c7a62eef806e3e73dfd20bff"
+        },
+        {
+          "start": 340,
+          "end": 373,
+          "symbol": "build hash output",
+          "sha256": "038ea36d7ae11149e4181cc66abb953eb258e9ed1bf2662a63b92c03bc88be13"
+        },
+        {
+          "start": 519,
+          "end": 562,
+          "symbol": "schema generation/exits",
+          "sha256": "96c5a51cd443c67507d2a629513a28726041efa9a570af551bfd613306a674d8"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-pack/src/nhpack.rs",
+      "sha256": "283aed0596cf0fb5a4699511e51072a0eceda141a05796fa45c07f23ad93f79c",
+      "git_blob_at_head": "318145bebf7392cec6e4737076cde3d4a60a564c",
+      "ranges": [
+        {
+          "start": 31,
+          "end": 39,
+          "symbol": "canonical hash",
+          "sha256": "5aef952549fc74a9842e4ca23e933df112f0449d7ab65103e65136b8ea52bab4"
+        },
+        {
+          "start": 118,
+          "end": 154,
+          "symbol": "native typed/hash validation",
+          "sha256": "e7610a30822a7fb1d8fff8f186dacf406a6a86b0b6e0562db6873c263bf4ac1b"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-pack/src/files.rs",
+      "sha256": "2d5d157b9175bcba4bae1fc1f5bd96b24c49b56205a7398a0a6db256e260846d",
+      "git_blob_at_head": "d95ba48134ab2e616b0b471f417ddc5582d211a9",
+      "ranges": [
+        {
+          "start": 202,
+          "end": 215,
+          "symbol": "vanilla export fixture manifest",
+          "sha256": "4f23dc00f694e98aa043bbd8e72c328b413fc74939b5bbcfc8cf3a245747a612"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-pack/tests/pack_lib.rs",
+      "sha256": "a5e1279661904cf386d41c1df56dfd14158caa2eddd0939fde007b53900b466f",
+      "git_blob_at_head": "d4eb9c8f760feaaeb626db96db6050e29b4e5378",
+      "ranges": [
+        {
+          "start": 626,
+          "end": 651,
+          "symbol": "old item profile fixture",
+          "sha256": "cddccaec609a54b5ef6c491a032244d80cd579f7e2b70ee8d9e4858ea7a118c4"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-pack/tests/pack_files.rs",
+      "sha256": "b637161469312a5b91d2945ee236572c74c631a407cd3e2e04304d963404cc47",
+      "git_blob_at_head": "824ffb340077d14e6cf93baf381a2e2baf896595",
+      "ranges": [
+        {
+          "start": 105,
+          "end": 112,
+          "symbol": "vanilla hash test",
+          "sha256": "aacba771bd6c746eb993efaec95fe9f3a13e9e29a3f8f1423a65de7c25629e70"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-pack/tests/cli.rs",
+      "sha256": "1c7af57dee952b92a6d947707ad81600c90c76b5778c7fc805362b267db97c67",
+      "git_blob_at_head": "15aa2b48b0fa97707b18e9c1b9c6b60772295922",
+      "ranges": [
+        {
+          "start": 255,
+          "end": 282,
+          "symbol": "schema test/options",
+          "sha256": "3c615cf39145740fd9d4ccc873cbbd74ead4e179375e88456917561b883db969"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-pack/tests/example_pack.rs",
+      "sha256": "e9885423a0042a86683f8d771ffc1fc638267db63ea7741d4be956a8d1e0e78c",
+      "git_blob_at_head": "dc0823dcf8a08ad40ffc023ee5da645d34188ac6",
+      "ranges": [
+        {
+          "start": 7,
+          "end": 20,
+          "symbol": "custom example fixture",
+          "sha256": "ceabb8bac78f4d668680571ec4870bbcd2b36f1b129a1e811e28544eb46cb263"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-data/src/ruleset.rs",
+      "sha256": "fc3cad8e54a047a3ec35a6b8ecf8bcbee6ddeeeba93a21af3f4b5e115fdd0a6f",
+      "git_blob_at_head": "187f86373ddf709f233fd51fba07ea33883dc559",
+      "ranges": [
+        {
+          "start": 291,
+          "end": 308,
+          "symbol": "old item wire defaults",
+          "sha256": "2aac7a7a9e5273211078a30b004993dedc86da15fcd3851a3fa65bd4e0138eb2"
+        }
+      ]
+    },
+    {
+      "path": "crates/nethacked-pack/Cargo.toml",
+      "sha256": "ed631fbb7cb5ab565f3e1e2792397771e944ce705c1f25ee724a4ebad80024c3",
+      "git_blob_at_head": "6b5c2307a82a24a225fff4a8b28a8ff4158d5d6a",
+      "ranges": [
+        {
+          "start": 1,
+          "end": 39,
+          "symbol": "existing cli/schema features",
+          "sha256": "ed631fbb7cb5ab565f3e1e2792397771e944ce705c1f25ee724a4ebad80024c3"
+        }
+      ]
+    },
+    {
+      "path": "packs/examples/hard-mode/i18n/uk.toml",
+      "sha256": "d25a9caaf2930d4c3f71961d62f067b4590424c01f6db1b4ff2e604f96ae3ffb"
+    },
+    {
+      "path": "packs/examples/hard-mode/items.toml",
+      "sha256": "b946a7fca43a65ebac8adad81148df075b041f72949b68aebcc74ad1447cbf4e"
+    },
+    {
+      "path": "packs/examples/hard-mode/monsters.toml",
+      "sha256": "61a56834b28a8d2853880549a185128d06dd77f6be21d728edcd594bf93017ef"
+    },
+    {
+      "path": "packs/examples/hard-mode/pack.toml",
+      "sha256": "b7ef816514ad00e68dc1c9798cfa423107de33c07b80f86bdd2fbd426637f55c"
+    },
+    {
+      "path": "packs/examples/hard-mode/roles.toml",
+      "sha256": "f90adcea6e0b3395bd194e5a860ac724a849d93f35cbc2598200a229fb1a02ec"
+    },
+    {
+      "path": "scripts/extract/gen_rust.py",
+      "sha256": "c95f73103f4658d815afc21b215ab5a91bd3f5fad39d802b4140f4d67c90b124",
+      "purpose": "non-code command/output-path discovery only; no execution",
+      "ranges": [
+        {
+          "start": 19,
+          "end": 19,
+          "sha256": "928fd07ea2c173fcb87bc94dc045fc40f947048f7919a7bd7dc8f95198890374"
+        },
+        {
+          "start": 20,
+          "end": 20,
+          "sha256": "afe91ccc7b7067a43142e9e4a857b7bcfcad875f4683578d77ae6ac080039917"
+        }
+      ]
+    },
+    {
+      "path": "scripts/extract/c_tables.py",
+      "sha256": "2da726e9ecb2598dc6899e1be3d0af7634c7c961e41417ec9952e1801931e439",
+      "purpose": "non-code command/output-path discovery only; no execution",
+      "ranges": [
+        {
+          "start": 20,
+          "end": 20,
+          "sha256": "d472ed1bba95ac6bfdc533b8720aee9561258f2720c2859d8e89c52639a06b07"
+        }
+      ]
+    }
+  ],
+  "review_inputs": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/review-initial/review-initial.json",
+      "sha256": "aa24a1d7d66df740f3b87dc2cce82893aece8358a440306c7058636416ba55e3"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/coordinator-review-inputs.json",
+      "sha256": "36b214047e7e48dc6320a500f9b555c425a9accdc933586ddcd85e27ae95046d"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/compat-discovery.json",
+      "sha256": "8a46e8ef818e635dd100ac04b3e05ea6803490011855039550d4f7bc1975561d"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/gate-harness.py",
+      "sha256": "a4dced7d1da1d806febff96354ebc9bd15a35e9078ebc86cae163c9ee8a8b117"
+    }
+  ],
+  "repair_attempts": [
+    {
+      "finding": "F1",
+      "attempt": 1,
+      "unsuccessful_attempts": 0,
+      "status": "authored pending independent rereview"
+    },
+    {
+      "finding": "F2",
+      "attempt": 1,
+      "unsuccessful_attempts": 0,
+      "status": "authored pending independent rereview"
+    },
+    {
+      "finding": "F3",
+      "attempt": 2,
+      "unsuccessful_attempts": 1,
+      "status": "authored F3-only repair pending fresh independent delta rereview"
+    }
+  ],
+  "repair_metadata": {
+    "finding": "F3",
+    "attempt": 2,
+    "previous_unsuccessful_attempts": 1,
+    "review_input": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/rereview1/review.json",
+      "sha256": "6ec1b2ef724fe7f9cd9c0594649f21d604e2c91f9249d35722a1ba143b0e4293"
+    },
+    "delta": "omit serialization suffix; parse actual written comparison.json",
+    "status": "fresh independent F3 delta rereview next; no self-approval"
+  }
+}

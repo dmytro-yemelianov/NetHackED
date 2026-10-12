@@ -2,12 +2,19 @@
 
 pub mod actions;
 mod ad_effects;
+pub mod billing;
 pub mod bones;
 pub mod combat;
+mod corpse_revival;
 pub mod events;
+mod item_lifetime;
+mod monster_generation;
 pub mod monsters;
+pub mod object_timers;
+pub mod owner_persistence;
 pub mod peace;
 pub mod progress;
+mod revival_law;
 pub mod turns;
 pub mod world;
 
@@ -15,6 +22,9 @@ pub use actions::economy::EconomyLedger;
 pub use actions::items::{is_real_amulet, normalize_wish_name};
 pub use actions::stairs::{clamp_mysterious_force, SANCTUM_DEPTH};
 pub use events::GameEvent;
+pub use object_timers::{
+    ObjectTimer, ObjectTimerError, ObjectTimerKind, ObjectTimerQueue, ObjectTimerTarget,
+};
 pub use world::{default_rng, LoadError, SimulationWorld, StoredLevel, DEFAULT_PLAYER_CON};
 
 // Re-exports from related crates for convenient downstream consumption
@@ -25,3 +35,10 @@ pub use nethacked_data::{CharacterConfig, Gender, ItemKindId, MonsterSpeciesId, 
 pub use nethacked_types::{
     Alignment, Buc, Coord, Direction, DoorState, Intrinsics, ItemClass, Tile, COLNO, ROWNO,
 };
+
+mod passive_afflictions;
+
+mod passive_metabolism;
+mod passive_regeneration;
+
+pub(crate) mod passive_dressing;

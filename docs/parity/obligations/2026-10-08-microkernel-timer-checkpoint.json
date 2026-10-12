@@ -1,0 +1,74 @@
+{
+  "schema": 1,
+  "status": "verified_for_containing_commit",
+  "baseline_head": "ca4c753b3bc049dca94afd3f51dcf6e58e1bd1ca",
+  "milestone": "M4c-timer-queue",
+  "scope": "Optional profile timer queue with authenticated retained callbacks, target admission, same-queue successor scheduling and terminal committed-prefix/cleanup policy",
+  "new_tests": 18,
+  "review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-TIMERS/review/answer.txt",
+    "sha256": "9b526b334315b4391cefe31836e57bde0cbe512e9ac1472409813950e5951903"
+  },
+  "review_inputs": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-TIMERS/review-source.json",
+    "sha256": "8e6d51dd46566ab1cc77118716c59614b7f61430111337133be4bcc008fd5bdc"
+  },
+  "full_gates": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-TIMERS/full-gates/accepted.json",
+    "sha256": "dfbd7292fbfcfe28c2a5e3134411d22ba7dcb205ed1f6250c0c8bd62e6f41299"
+  },
+  "gate_result": {
+    "head": "ca4c753b3bc049dca94afd3f51dcf6e58e1bd1ca",
+    "tests": 1138,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "digest": "f251d3bbbd5af7b299a54469d6557f7b6ace707f268c889e896d98c0f8e24f35",
+    "checks": 12
+  },
+  "focused_checks": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-TIMERS/writer-evidence/root-verification.json",
+    "sha256": "73e1bb07a878de66d1c34faf030420fa62b3cd1f4c5bc6a165914fe48e37a954"
+  },
+  "focused_tests": 94,
+  "actual_wasm32": [
+    "nethacked-timers",
+    "nethacked-kernel"
+  ],
+  "wasm_artifact_hashes": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-TIMERS/writer-evidence/wasm-artifacts.sha256",
+    "sha256": "30f2cc77e6dadf60244f3b31d31b4ab05906e02fd0940893f3131eea8bba7410"
+  },
+  "source_manifest": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-TIMERS/writer-evidence/stable-focused-binding.sources",
+    "sha256": "1898573b8457be80ace325b3212acd1a5fe3dd6164abb4a79d8ab7211e26787a"
+  },
+  "repair_history": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-TIMERS/writer-evidence/failure-history.txt",
+    "sha256": "fe0c86699142d43df2a4e8174bf268d6462f142cd8aa8620eee3310424244294"
+  },
+  "source_unchanged": true,
+  "usage": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-TIMERS/implementation/usage.json",
+      "sha256": "e522806f8d53aa05e98c2466d68f32cf5d87c959086e18066bc055a8c41adaf0"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-TIMERS/review/usage.json",
+      "sha256": "8f97a257677e8a16d4e3a4b9ecf50e4fd84b52f9d5c0be4b48b93e7685de69ea"
+    }
+  ],
+  "meter_note": "Writer118017uncached/43081output and review89289uncached/6464output exceed soft thresholds, rootunknown. No savings/compliance claim. Next ownership-spec evaluation reuses accepted infrastructure and addresses the user autonomous-object proposal before durable owner codec/domain migration.",
+  "old_tests_helpers_goldens_changed": false,
+  "acceptance": "All five timer evidence groups passed through real guest/native/resource/input paths; current targets/authority gate once-only admission, successors can schedule during execution, failures preserve prefixes and only cleanup retries. Generic M4c input/timer runtime complete; no durable exactly-once or vanilla scheduler claim.",
+  "native_goal_status": "active; autonomous owner-state contract evaluation before M4d",
+  "parity_families_closed": 0,
+  "residuals": [
+    "Autonomous object/actor ownership evaluation and concrete owner-state boundaries; existing shared resource backend is not proof of this model",
+    "Durable codec/schema/executable validation and supported legacy saves",
+    "Vanilla scheduling/RNG adapters, populated NetHack live extension and existing-domain migration",
+    "Bounded non-panicking side-effect-free profile/target validators are trusted; process-local identities; no composed Rust/Lean refinement proof"
+  ]
+}

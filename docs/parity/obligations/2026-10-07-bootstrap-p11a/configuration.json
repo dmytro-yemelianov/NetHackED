@@ -1,0 +1,131 @@
+{
+  "schema": "netrust-source-configuration-draft-v1",
+  "status": "contract_review; global enumeration unresolved; no conformance acceptance",
+  "baseline": {
+    "head": "2700ec46ec699481f6e8972fef1d866f172c3fbb",
+    "branch": "feat/monster-hp-d8",
+    "input_count": 342,
+    "input_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+    "snapshot": "/tmp/netrust-parity-bootstrap/baseline.json",
+    "durable_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap"
+  },
+  "c_commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+  "c_tree": "ba5925b4e59b9c88c31fa74cbd21446d06dcdb84",
+  "c_repository": "/Users/dmytro/github/NetHack",
+  "anchors": {
+    "include/config.h": {
+      "sha256": "cc39455c748d1d73640606d98e847b55cb09d82338edc95f4fbc8acecedc9385",
+      "git_blob": "e266ad09208e3b497aa2e08c64dcb8cd9de0da91"
+    },
+    "include/config1.h": {
+      "sha256": "b9e97cefc8fcfe4f36a1145ebfb655099f2afd2591227fa5f93b3f4dc0071042",
+      "git_blob": "190c47f97a0c6d4bb8adc8c60ff5d4bbb796934c"
+    },
+    "include/global.h": {
+      "sha256": "97bcc4fdd9c1f880dacaf1fffe0043f78874f9fc7e9d84f57aa1a1d4be811e88",
+      "git_blob": "d5e3981c8f4cb3e983062748e172287ae32df437"
+    },
+    "include/hack.h": {
+      "sha256": "2840a9bd41fb0c09384839fafdbd427a5d8705ad8d3eb5e2a0308cccea36813b",
+      "git_blob": "acf93509b49ecfc3e1520bc3731fbd5e5e94162c"
+    },
+    "include/obj.h": {
+      "sha256": "a4d1b994c5acd6fe04d411485d84491553d6df02dfbd7480181a15a7a05456e2",
+      "git_blob": "8d95bb0072b11c04a130871da4f3347c96b09af2"
+    },
+    "src/zap.c": {
+      "sha256": "8ee02bd7aa29b026d6b5a2e0017ddf402fcfc6fc81037e35ceda2d86467547cb",
+      "git_blob": "8aefcb1ea3c64cb4bac71f7149d5795ec106786c"
+    },
+    "src/invent.c": {
+      "sha256": "0b93d6ce1abb5b63ed7ea07c26a57e1016c6cef0fc2ef0e4016e6622054524b5",
+      "git_blob": "446859540299c0fd36ac5d0eff213a9478ffbab3"
+    },
+    "src/calendar.c": {
+      "sha256": "10ad3481a740259064cb28998d11832f3fb54630a7af9df5fc969dadeaa5d517",
+      "git_blob": "deea28daf8c8bd872daf5a393394456a91f42928"
+    },
+    "src/allmain.c": {
+      "sha256": "6ce44a662ad3d180b9dcbf7660a1899b8d1356c8ef83e7787b21b39c6b2a35e4",
+      "git_blob": "280beb39a8c2540a3328833bc915ceb63d156fa9"
+    },
+    "src/options.c": {
+      "sha256": "494772974500aa9b42df179b4e090def15fd0bc8148f09a9c392bbadd05dd940",
+      "git_blob": "05f4979ef29e04f9a14a551a538ba616d6a3b5c4"
+    }
+  },
+  "source_only_reproduction": "git show <commit>:<path>; SHA-256 of exact bytes. No preprocessor/compiler/C/Lua execution. Resolve only literally evidenced local constants; do not infer all transitive macros.",
+  "canonical_profile": {
+    "name": "released-5.0-canonical-gameplay-v1-draft",
+    "operating_system": "Observed raw #define UNIX config.h:18 before config1.h include:40; proposed source baseline, NOT a resolved global platform/build valuation",
+    "presentation": "Observed conditional TTY_GRAPHICS definition config.h:54-56 only if !defined(NOTTYGRAPHICS); proposed TTY baseline unresolved until transitive/build symbol audit. Intended Rust frontends are independent applicability.",
+    "randomness": "Observed raw #define USE_ISAAC64 config.h:671; global final valuation unresolved. Native Rust RNG remains authoritative for deterministic Rust continuation; exact C RNG replay separate scope.",
+    "normal_play": "normal non-debug ordinary fixtures; debug/explore command/options branches remain in mandatory UI04/UI01 audits, not excluded",
+    "features": "All unconditional released gameplay branches retained. All conditional gameplay features enabled/disabled only after transitive source-only audit. No absent Rust feature is a source exclusion.",
+    "status": "Proposed/unresolved canonical profile; no complete global macro valuation or enabled/disabled feature exclusions pinned"
+  },
+  "local_p11_resolution": {
+    "interval": "src/zap.c:2514-2522,2605-2697",
+    "preprocessor_conditions": "no #if/#ifdef inside these symbols",
+    "WAND_WREST_CHANCE": {
+      "value": 121,
+      "source": "include/hack.h:1411"
+    },
+    "WAND_BACKFIRE_CHANCE": {
+      "value": 100,
+      "source": "include/hack.h:1410"
+    },
+    "ECMD_OK": 0,
+    "ECMD_TIME": 1,
+    "ECMD_CANCEL": 2,
+    "return_source": "include/hack.h:1456-1458",
+    "conditions": "selected carried WAND_CLASS; nohands false; check_capacity false; BUC/charge/direction/Blind/half-physical state explicit per fixture. These are runtime contexts, not global exclusions."
+  },
+  "external_inputs": {
+    "calendar": "Pin persisted/injected local calendar and timezone per gameplay test, not host current date. src/calendar.c getnow/getlt/phase_of_the_moon/friday_13th/night/midnight; allmain.c:57-69 adjusts Luck on every moveloop preamble. Canonical default proposal 2000-01-02 12:00:00 UTC; C formula phase=7, Friday13=false, night=false. Other phases/Friday/night mandatory UI04 successors. Default proposal requires review and runtime input audit before implementation.",
+    "options": "normal play plus explicit per-fixture options; full supported option inventory unresolved. number_pad, menu/force_invmenu and verbose affect selection/cancel/repeat; autopickup/pickup_burden and playmode affect gameplay. No option silently excluded.",
+    "environment": "seed/native RNG state, Ruleset bytes/hash, role/race/gender/alignment, difficulty/level, calendar/timezone, option state, bones/load/user config/environment remain external inputs. getenv and config include chains need exhaustive audit; no network or host-env effects allowed to substitute deterministic fixtures."
+  },
+  "frontends": [
+    "browser web/js/game.js and web/play/play.js",
+    "TUI",
+    "MCP",
+    "JSON-RPC lib/bin",
+    "GraphQL",
+    "WASM",
+    "AgentSession shared commands",
+    "Python string action and numeric/RL action 22"
+  ],
+  "mandatory_successors": [
+    {
+      "id": "BOOTSTRAP-C-CONDITIONALS",
+      "parent": "run_configuration",
+      "families": "Every discovered gameplay branch mapped to applicable existing scope-registry family; debug routes UI01, text/options UI04, bones UI05; no new family",
+      "interface": "Complete reviewed transitive headers/build-defined symbol valuations and enabled/disabled conditional gameplay branch manifest, source-only"
+    },
+    {
+      "id": "UI04-CONFIG-INPUTS",
+      "parent_family": "UI04",
+      "interface": "Complete supported options/calendar/environment deterministic-input/persistence contract; every variant remains in scope"
+    },
+    {
+      "id": "UI05-BONES-INPUTS",
+      "parent_family": "UI05",
+      "interface": "Bones/external persistence input and compatibility audit; ID1 supplies narrow item-definition identity payload evidence"
+    },
+    {
+      "id": "BOOTSTRAP-C-BRANCH-MANIFEST",
+      "parent": "run_configuration",
+      "families": "Content/object branches OB01/OB02/OB07 etc.; species AI01/AI03; level/quest DG families and role HE families, each discovery mapped to exact existing family at enumeration",
+      "interface": "Complete conditional content/level/catalog source branch manifest reconciled to all seven streams; local counts never prove completeness"
+    }
+  ],
+  "unresolved": [
+    "Complete transitive macro valuation / command-line defines / platform header branches",
+    "All supported gameplay options and debug/explore branches",
+    "All getenv/calendar/load/bones input ownership and saved state",
+    "All content generation conditional branches / Lua source variants"
+  ],
+  "audit_complete": "Pinned identity and local P11 literal conditions only. Global bootstrap remains partial; unrelated locally unconditional audits can proceed with explicit conditions.",
+  "first_source_conformance_acceptance_hold": "Before FIRST source-conformance acceptance: complete reviewed global configuration valuations, supported options/calendar/environment contracts, intended frontend applicability and content/conditional branch manifest must be pinned. Current bootstrap unresolved. Local reviewed engineering implementation readiness is distinct; focused tests/full gates do not discharge this hold."
+}

@@ -1,0 +1,563 @@
+{
+  "schema": "netrust.p11a-c1.source-api-contract.v1",
+  "unit": "P11a-C1",
+  "status": "contract-only C1-R1/R2/R3 repair proposal; fresh independent rereview required; aggregate held",
+  "binding": {
+    "rust_head": "aadce228c9d00b573ae8ab4773352798418a6d4b",
+    "branch": "feat/monster-hp-d8",
+    "source_input_count": 345,
+    "source_input_digest": "7b691c6e14d0449c37776f29b851ff7866bb2e41551b1c883458e5d0de416e79",
+    "baseline_sha256": "5ae4bd47a42a44755d6c913a26ff0c989a33f849b21060232c4aafcf8b815ebe",
+    "c_authority": "16ff59115315917b93185d026aeefea06db9b0f4",
+    "s1_delivery_sha256": "2a1482a25b808ff1bd4986b097ed139961d6ee705ba3d96abb4b1e83ccfa980e",
+    "selection_contract_sha256": "7facd2e6522cc0b3f0b1dfda181a660f02921ad3f107841beb5debc80f59998a",
+    "bootstrap_sha256": "515f264382ae29e878a353969715480d19b488e2f8283a68768828b56d2b212e",
+    "profile_sha256": "9771384704ac2e5473ceeac87718a569658125f529bd9205beaf947d8b93fa82",
+    "pin_sha256": "8cd4931d03972cef4a5a1ae8c7fa7344ac41612fb3cc29b971cf17e213ac3db9"
+  },
+  "accepted_consumption": {
+    "s1": "accepted backend/native/shared-parser selection/cancel only; no fresh re-audit of ID/config/P10/source345",
+    "profile": {
+      "name": "released-5.0-linux-gcc-c99-header-defaults-lua548-v1",
+      "verbose": true,
+      "rng": "native seeded/persisted ChaCha8; no C exact RNG comparison",
+      "stale_pin_note": "pin.json retains precheckpoint hold text; explicit user authority and accepted S1 delivery establish accepted profile, not this audit editing pin"
+    }
+  },
+  "storage": {
+    "field": "ItemRecord.enchantment: i8",
+    "c": "schar spe, wand charges >=-1, SPE_LIM99; stored byte range -128..127",
+    "choice": "Reuse signed existing field; no new persisted charge field, wrapper serialization or schema; source zappable is safe for every stored i8. Preserve oldload out-of-normal-range bytes, apply exact sign branch, no saturation/clamp. recharged unchanged. Unsigned WandCharges/recharge/zap_wand APIs retained for compatibility; no ecosystem signed migration here."
+  },
+  "api": {
+    "owner": "crates/nethacked-core/src/artifacts_wands.rs",
+    "proposal": "wand_charge_attempt(spe: i8, wrest_draw: Option<u32>) -> Result<WandChargeAttempt, WandChargeInputError>",
+    "outcome": "WandChargeAttempt::{Unzappable { spe: i8 }, Ready { spe: i8, wrested: bool }}",
+    "input_rules": "None for nonzero; Some(0..120) required for zero; reject supplied nonzero draw, missing zero draw and >=121 before state mutation. Primitive does not sample, log, spend time or remove items. Exact names fixed by review, not an instruction to implement during audit.",
+    "native": "API1 consumes only accepted S1 ready/live/index/token/class/owned-identity guards and existing positive behavior; no new P1 preflight or billing dependency. Route spe>0 only, decrement once and dispatch the same ItemId generation. Nonpositive activation belongs to IN1, after accepted P1 preflight, LIFE and B1-PRE: sample random_range(0..121_u32) exactly when spe==0, never for other signs. Native saved RNG proof is separate from primitive tests.",
+    "time": "native whole attempt owns exactly one hero_act(NORMAL_SPEED); effects/backfire/finalizer cannot each charge time. Step processes normal ticks once; return mapping ECMD_OK=0, CANCEL=2, TIME=1 is semantic, no new public command flags necessary."
+  },
+  "branches": [
+    {
+      "id": "positive",
+      "condition": "spe > 0",
+      "charge_draws": [],
+      "post_charge": "spe - 1",
+      "zappable": true,
+      "message": null,
+      "next": "B1 cursed gate before D1 direction/effect; terminal finalizer"
+    },
+    {
+      "id": "negative",
+      "condition": "spe < 0",
+      "charge_draws": [],
+      "post_charge": "unchanged until whole item removed",
+      "zappable": false,
+      "message": "Nothing happens.",
+      "next": "dust if still live; no backfire/direction/effect; ECMD_TIME"
+    },
+    {
+      "id": "zero-fail",
+      "condition": "spe == 0, rn2(121) in 1..120",
+      "charge_draws": [
+        121
+      ],
+      "post_charge": 0,
+      "zappable": false,
+      "message": "Nothing happens.",
+      "next": "retain item, inventory update, ECMD_TIME; no backfire/direction/effect"
+    },
+    {
+      "id": "zero-wrest",
+      "condition": "spe == 0, rn2(121) == 0",
+      "charge_draws": [
+        121
+      ],
+      "post_charge": -1,
+      "zappable": true,
+      "message": "You wrest one last charge from the worn-out wand.",
+      "next": "B1 cursed gate before D1 direction/effect; surviving item dust at terminal exit, ECMD_TIME"
+    }
+  ],
+  "ordering": [
+    "API1 staging: existing accepted S1 public guards and positive behavior only; the remaining full source order is an IN1/downstream obligation, not an API1 dependency",
+    "P1 nohands then capacity before selection; S1 index/token/class/owned identity resolution; selected false identity no charge/time",
+    "check_unpaid selected object before charge (P1), compute need_dir without a draw",
+    "signed zappable; failure Nothing happens.; wrest success message before storing decrement",
+    "successful cursed only: B1 rn2(100) after charge, then backfire explosion -> d(post-spe+2,6) -> Maybe_Half_Phys/losehp -> useupall -> exercise(A_STR,FALSE) if control returns -> TIME; no direction/dust",
+    "D1 NoDir effect or direction cancel/self/up/down/engulfed/normal effect; direction cancel retains charge/time",
+    "if surviving same selected generation has negative spe: dust message then useupall equivalent; absent survivor: no dust/removal; else inventory refresh",
+    "single time exit and normal native turn ticks"
+  ],
+  "lifetime": {
+    "c": "useupall -> setnotworn -> freeinv/update_inventory -> obfree -> bill-object retention or dealloc_obj; whole quantity, never useup decrement-one. dealloc_obj stops timers/light, clears represented transient references and stages deletion; Lua ref storage is not executed/audited here.",
+    "native_gap": "Arena.destroy_item removes only slot and registers artifact; armor reconcile does not clear wield/quiver. world forget_rot_corpse_references clears wield/quiver but removes unpaid: cannot silently reuse for billed wand. Existing remove_destroyed_item_equipment covers armor/dressing. LIFE/P1 must review exact retirement seam.",
+    "survivor": "Effect result must explicitly retain or clear the current-wand identity, equivalent to Option<ItemId>. Only an explicitly surviving same generation can be reborrowed and dusted. C destroy_items clears current_wand before its useup loop even when a stack may remain: arena existence alone is insufficient. A cleared survivor suppresses dust even if same item remains in inventory. D1 pending continuation owns the generation; duplicate/stale continuation cannot charge or remove replacement.",
+    "native_terminal_seam": "Proposed finalizer receives Option<ItemId> (live current-wand identity or cleared by effect/backfire), performs generation-checked reborrow, emits dust before whole-item retirement, never spends time itself. LIFE fixes exact naming/reference/timer/bill API under independent review; IN1 must not call forget_rot_corpse_references or unconditional arena deletion."
+  },
+  "children": [
+    {
+      "id": "P11a-C1-API1",
+      "family": "P11a",
+      "depends": [
+        "P11a-S1"
+      ],
+      "status": "proposed exact-three-file prerequisite; fresh independent rereview required before readiness",
+      "outcome": "Signed prescribed-draw charge prerequisite and positive native selected path; no newly reachable zero/negative runtime branch",
+      "allowed_files": [
+        "crates/nethacked-core/src/artifacts_wands.rs",
+        "crates/nethacked-sim/src/actions/items.rs",
+        "crates/nethacked-sim/tests/selected_wand_tests.rs"
+      ],
+      "restrictions": "Add new signed charge API alongside existing unsigned zap_wand/recharge API. Route only spe>0 through it in shared handler; leave currently unaccepted nonpositive runtime behavior explicitly unchanged until IN1. Positive backend and rejection evidence must use step_player_action(ZapSelectedWand), never private handle helper. Consume existing S1 guards only; no dependency on any unresolved P1 child, LIFE, exercise or halfphys, and no new cursed/backfire behavior in API1."
+    },
+    {
+      "id": "P11a-C1-LIFE",
+      "family": "P11a",
+      "depends": [
+        "P11a-S1",
+        "P11a-P1-BILL"
+      ],
+      "status": "held: requires accepted narrow P1 billing contract and independent LIFE review before any retirement activation",
+      "outcome": "Review represented whole-item retirement, wield/quiver/equipment/timers and absent-generation finalization; consume P1 bill retention contract rather than erase unpaid ledger; explicitly cleared current-wand after partial stack destruction must suppress dust, not just arena-missing checks; naming/article/plural and attached timer/reference retirement stay bounded within LIFE, with explicit represented limits",
+      "audit_paths": [
+        "crates/nethacked-sim/src/world.rs",
+        "crates/nethacked-sim/src/actions/equipment.rs",
+        "crates/nethacked-sim/src/object_timers.rs",
+        "crates/nethacked-arena/src/lib.rs"
+      ],
+      "implementation_files": "none authorized by this packet; child review must fix exact minimal allowlist if needed"
+    },
+    {
+      "id": "P11a-B1-PRE",
+      "family": "P11a",
+      "depends": [
+        "P11a-C1-API1",
+        "P11a-C1-LIFE",
+        "HE02-zap-exercise",
+        "EQ03-zap-halfphys"
+      ],
+      "status": "mandatory narrow B1 source/API audit and accepted prerequisite implementation before IN1 activation",
+      "outcome": "Cursed bound100 after charge; explosion -> d(post-spe+2,6) -> reviewed halfphys/damage/death -> accepted LIFE whole retirement -> conditional HE02 exercise -> TIME. Public positive cursed/backfire proof; zero-success composition in IN1. Requires accepted implementations/evidence for API1/LIFE/exercise/halfphys before activation; no direction or dust. Current message-only exercise helper is not an accepted seam.",
+      "implementation_files": "determined only by independent B1 contract; this C1 audit authorizes none"
+    },
+    {
+      "id": "P11a-C1-IN1",
+      "family": "P11a",
+      "depends": [
+        "P11a-C1-API1",
+        "P11a-C1-LIFE",
+        "P11a-B1-PRE",
+        "P11a-P1"
+      ],
+      "status": "held until accepted seams; empty-wand behavior proposal below requires exact independent review",
+      "outcome": "Activate signed gate for all valid selected and legacy wands, failed attempt messages/time, zero wrest and surviving negative terminal dust; consume B1 seam before effects. No complete zap-effects port.",
+      "allowed_files": [
+        "crates/nethacked-sim/src/actions/items.rs",
+        "crates/nethacked-sim/tests/selected_wand_tests.rs"
+      ],
+      "restrictions": "Reuse accepted S1 identity validation and existing normal effect owners; ordinary uncursed canonical NoDir creation must accept successful wrest even though pre/post charges are not positive. Retain P10 creation sampler and event ordering. No blanket all-wand NoDir/effect fixes."
+    },
+    {
+      "id": "P11a-P1-BILL",
+      "family": "P11a",
+      "depends": [
+        "P11a-S1"
+      ],
+      "status": "proposed narrow source/API audit; acceptance absent; no implementation authorization",
+      "outcome": "Narrow accepted P1 billing contract for selected-wand whole retirement: C obfree used-up bill-object retention versus unbilled deallocation; preserve unpaid liability/identity without corpse remove_unpaid erasure. Specify represented ledger seam and public billed/unbilled quantity1/3, save and stale-generation obligations. This is the concrete contract gate for LIFE, independent of C1/B1/IN1; implementation belongs to its reviewed child if required.",
+      "audit_paths": [
+        "crates/nethacked-sim/src/world.rs",
+        "crates/nethacked-arena/src/lib.rs"
+      ],
+      "implementation_files": "none authorized here; separate independent child review must fix a minimal allowlist, exact seam, evidence and acceptance before use",
+      "cross_refs": [
+        "DG06"
+      ]
+    },
+    {
+      "id": "P11a-P1-PRE",
+      "family": "P11a",
+      "depends": [
+        "P11a-S1",
+        "P11a-P1-BILL"
+      ],
+      "status": "proposed narrow source/API audit; acceptance absent; no implementation authorization",
+      "outcome": "Review bounded HE07 zap-form/nohands, EQ04 zap-capacity and DG06 zap-unpaid/check_unpaid-before-charge seams; prescribe public guard order, no charge/RNG/time on preselection refusal and exact billing effects on valid selection. Consume P1-BILL; no requirement on C1/IN1/B1. Own preflight only; naming/timer retirement remains LIFE.",
+      "audit_paths": [
+        "crates/nethacked-sim/src/actions/items.rs",
+        "crates/nethacked-sim/src/world.rs"
+      ],
+      "implementation_files": "none authorized here; separate independent child review must fix a minimal allowlist, exact seam, evidence and acceptance before use",
+      "cross_refs": [
+        "HE07",
+        "EQ04",
+        "DG06"
+      ]
+    },
+    {
+      "id": "HE02-zap-exercise",
+      "family": "HE02",
+      "depends": [
+        "P11a-S1"
+      ],
+      "status": "proposed narrow source/API audit; acceptance absent; no implementation authorization",
+      "outcome": "Narrow STR exercise(FALSE) state/RNG/event seam exactly as rng_contract.exercise, including representable persisted AEXE, polymorph/no-draw, saturation/moves encumbrance and post-backfire ordering. Bind pinned attrib.c and current message-only world mismatch. Accepted minimal implementation/public state+next-RNG evidence mandatory before B1-PRE; no all-attribute/Famine rewrite or HE02 closure.",
+      "audit_paths": [
+        "crates/nethacked-sim/src/world.rs",
+        "crates/nethacked-types/src/lib.rs"
+      ],
+      "implementation_files": "none authorized here; separate independent child review must fix a minimal allowlist, exact seam, evidence and acceptance before use"
+    },
+    {
+      "id": "EQ03-zap-halfphys",
+      "family": "EQ03",
+      "depends": [
+        "P11a-S1"
+      ],
+      "status": "proposed narrow source/API audit; acceptance absent; no implementation authorization",
+      "outcome": "Narrow reviewed backfire Maybe_Half_Phys damage seam, active half-physical applicability, rounding, HP/death and returning lifesave order. Bind exact source/native seam in its later packet and require accepted public evidence before B1-PRE; no accepted seam is inferred here and no EQ03 equipment family closure.",
+      "audit_paths": [
+        "crates/nethacked-sim/src/world.rs",
+        "crates/nethacked-sim/src/actions/equipment.rs"
+      ],
+      "implementation_files": "none authorized here; separate independent child review must fix a minimal allowlist, exact seam, evidence and acceptance before use"
+    }
+  ],
+  "aggregate_depends": [
+    "P11a-C1-API1",
+    "P11a-C1-LIFE",
+    "P11a-C1-IN1"
+  ],
+  "mandatory_successors": [
+    {
+      "id": "P11a-B1",
+      "family": "P11a",
+      "depends": [
+        "P11a-B1-PRE",
+        "P11a-C1-IN1"
+      ],
+      "exit": "all positive/zero cursed success/failure, fatal/half-physical/STR and whole-item backfire lifecycle public evidence"
+    },
+    {
+      "id": "P11a-D1",
+      "family": "P11a",
+      "depends": [
+        "P11a-C1",
+        "P11a-B1"
+      ],
+      "exit": "owned NODIR/IMMEDIATE/RAY, self/up/down/engulfed and native prepare/AwaitDirection/continue/cancel/pending saves; source lifetime guard through every effect exit"
+    },
+    {
+      "id": "P11a-P1",
+      "family": "P11a",
+      "depends": [
+        "P11a-S1",
+        "P11a-P1-BILL",
+        "P11a-P1-PRE"
+      ],
+      "exit": "form/nohands, capacity, unpaid before charge; narrow HE07-zap-form/EQ04-zap-capacity/DG06-zap-unpaid and bill retention at deletion; no wholefamily closure; accepted narrow BILL contract and PRE implementation/public evidence mandatory before IN1; aggregate P1 does not depend on C1/B1/D1"
+    },
+    {
+      "id": "P11a-S1-M",
+      "family": "P11a",
+      "cross_refs": [
+        "UI01"
+      ],
+      "exit": "inventory index/token and selected/cancel schemas for each machine adapter; accepted S1 no-time refusals preserved",
+      "depends": [
+        "P11a-S1"
+      ]
+    },
+    {
+      "id": "P11a-S1-MC",
+      "family": "P11a",
+      "depends": [
+        "P11a-S1-M",
+        "P11a-D1",
+        "P11a-P1"
+      ],
+      "cross_refs": [
+        "UI01"
+      ],
+      "exit": "each machine prepare/continue terminal/RNG/time/save transcript; JSON-RPC library/bin separate; no replay of complete selected action as continuation"
+    },
+    {
+      "id": "P11a-S1-F",
+      "family": "P11a",
+      "depends": [
+        "P11a-S1-MC",
+        "P11a-C1",
+        "P11a-B1",
+        "P11a-D1",
+        "P11a-P1"
+      ],
+      "cross_refs": [
+        "UI01",
+        "UI04"
+      ],
+      "exit": "TUI/both browsers prompt order/menu/options; consume per-machine evidence; all ten surfaces, no representative shortcut"
+    },
+    {
+      "id": "P11a-A1",
+      "family": "P11a",
+      "depends": [
+        "P11a-C1",
+        "P11a-B1",
+        "P11a-D1",
+        "P11a-P1",
+        "P11a-S1-M",
+        "P11a-S1-MC",
+        "P11a-S1-F"
+      ],
+      "exit": "aggregate source/frontend/native save acceptance without global configuration or family waiver"
+    },
+    {
+      "id": "P11b",
+      "family": "P11b",
+      "exit": "remaining wand effect dispatch and ray/object destruction; source C current_wand survivor tracking; custom effect metadata applicability reviewed, not inferred from name",
+      "cross_refs": [
+        "OB07"
+      ],
+      "depends": [
+        "P11a-D1"
+      ]
+    },
+    {
+      "id": "OB07-zap-context",
+      "family": "OB07",
+      "exit": "create-monster BUC/blind/discovery/XP/polymorph/underwater/stasis/wishing and other NoDir effects outside accepted ordinary P10; audit exact children before implementation",
+      "cross_refs": [
+        "P11b"
+      ],
+      "depends": [
+        "P11a-D1"
+      ]
+    },
+    {
+      "id": "UI04-zap-messages",
+      "family": "UI04",
+      "exit": "option/locale/known-object article/plural dust rendering and verbose direction-cancel; C1 English literal fixtures do not close localization"
+    },
+    {
+      "id": "OB07-zap-objects",
+      "family": "OB07",
+      "cross_refs": [
+        "P11b"
+      ],
+      "depends": [
+        "P11a-D1"
+      ],
+      "exit": "Separate OB07 object obligations: remaining zap ray/object destruction and wand breaking outside C1 retirement; bind current-wand clear/survivor behavior and bounded exact children before implementation. No OB07 or P11b closure inferred from cross-reference."
+    }
+  ],
+  "compatibility_proposal": {
+    "selected_and_legacy": "Shared validated charge routine for both. Legacy first-carried selection and old externally-tagged action decoding unchanged, gameplay charge semantics corrected equally. No hidden legacy exemption.",
+    "exact_empty_change": "Current negative/zero: clamp to0, old Nothing happens. The wand is empty!, retain item, no wrest RNG. IN1 replaces with exact source Nothing happens.; negative dust+whole deletion; zero failure consumes bound121 but retains0; zero success decrements to-1 and calls B1/effect before dust. Native next RNG/actions and saves can differ for those actions.",
+    "intentional_mismatch": "none proposed; existing unaccepted B1/D1/P1/effect debt explicitly remains until named exits. API1 nonpositive runtime unchanged is a prerequisite stage, not C1 source acceptance.",
+    "goldens": "All present and future fingerprints frozen including EXPECTED_RUNS/LOGS/COMBAT. Scripts for event-log golden contain no zap; arena run route absence not proven. No assurance of allgold pass inferred from count or static subset. If corrected shared behavior changes gold, root supplies exact before/after/RNG/source cause and seeks explicit user decision; no migration/rebaseline/exemption authorized here."
+  },
+  "fixtures": [
+    {
+      "id": "F01",
+      "stage": "API1",
+      "public": "selected canonical uncursed charge2 ->1",
+      "expect": "chosen item decremented exactly once; first wand unchanged; accepted native creation events/time/order unchanged",
+      "draw_prefix": []
+    },
+    {
+      "id": "F02",
+      "stage": "API1",
+      "public": "selected with invalid index, stale token, nonwand, unknown explicit canonical/custom identity",
+      "expect": "existing S1 exact refusal messages in range/token/class/identity order; no charge/RNG/beam/creation/time; first wand unchanged"
+    },
+    {
+      "id": "F03",
+      "stage": "API1",
+      "primitive": {
+        "spe": 0,
+        "draw": 0,
+        "post": -1,
+        "zappable": true
+      },
+      "expect": "independent literal; no runtime zero activation in API1"
+    },
+    {
+      "id": "F04",
+      "stage": "API1",
+      "primitive": {
+        "spe": 0,
+        "draws": [
+          1,
+          120
+        ],
+        "post": 0,
+        "zappable": false
+      },
+      "expect": "121 rejected; absent required draw rejected; supplied draw for nonzero rejected without mutation"
+    },
+    {
+      "id": "F05",
+      "stage": "IN1",
+      "public": "negative -1 and -128, each uncursed/blessed/cursed; quantity1 and3",
+      "expect": "Nothing happens. then singular/plural dust log; whole item gone; no effect/backfire/direction; one NORMAL_SPEED cost",
+      "draw_prefix": []
+    },
+    {
+      "id": "F06",
+      "stage": "IN1",
+      "public": "zero charge uncursed/cursed, prescribed/native draw1 or120",
+      "expect": "charge0 retained, exactly Nothing happens.; no backfire draw/effect; one NORMAL_SPEED cost",
+      "draw_prefix": [
+        121
+      ]
+    },
+    {
+      "id": "F07",
+      "stage": "IN1",
+      "public": "zero uncursed canonical create-monster, draw0 then count23 nonzero",
+      "expect": "wrest log before accepted ordinary creation events; dust after effects before ticks; chosen removed; first unaffected; no BeamPropagated",
+      "draw_prefix": [
+        121,
+        23
+      ]
+    },
+    {
+      "id": "F08",
+      "stage": "IN1",
+      "public": "zero uncursed canonical create-monster, draws0,0,0 or6",
+      "expect": "2 or8 creation attempts followed by existing P10 native placement/HP/group order; dust; one turn",
+      "draw_prefix": [
+        121,
+        23,
+        7
+      ]
+    },
+    {
+      "id": "F09",
+      "stage": "IN1+B1",
+      "public": "zero cursed, wrest0 backfire0 d6 roll5",
+      "expect": "wrest then explosion; raw damage6 before half physical; remove whole item; no direction/effect/dust double-removal; B1 fatal/STR evidence mandatory; exercise conditional state/order/no-draw obligations apply after returning backfire",
+      "draw_prefix": [
+        121,
+        100,
+        6
+      ],
+      "exercise_obligation": "After returning backfire and LIFE retirement, append conditional bound2 at exercise call per rng_contract.exercise; roll0/1 must assert AEXE state, no unconditional exercise message; polymorph/saturation/nonreturning fatal cases skip it. Prefix is not a terminal native stream; downstream callbacks/ticks and concrete next RNG bytes need later proof."
+    },
+    {
+      "id": "F10",
+      "stage": "IN1+B1",
+      "public": "positive2 cursed backfire0, d6 rolls0,1,5; zero cursed wrest0/backfire99",
+      "expect": "B1 gate uses post-decrement dice count; surviving -1 finalized once; no second charge",
+      "draw_prefix": {
+        "positive2_backfire": [
+          100,
+          6,
+          6,
+          6
+        ],
+        "zero_wrest_gate_no_backfire": [
+          121,
+          100
+        ],
+        "raw_positive2_damage": 9,
+        "note": "No-backfire branch proceeds to separately owned effects. Conditional exercise bound2 is at its later call, not part of these prefixes."
+      },
+      "exercise_obligation": "After returning backfire and LIFE retirement, append conditional bound2 at exercise call per rng_contract.exercise; roll0/1 must assert AEXE state, no unconditional exercise message; polymorph/saturation/nonreturning fatal cases skip it. Prefix is not a terminal native stream; downstream callbacks/ticks and concrete next RNG bytes need later proof."
+    },
+    {
+      "id": "F11",
+      "stage": "D1+MC",
+      "public": "positive1 direction cancel; zero wrest direction cancel; blind/nonblind",
+      "expect": "positive keeps0; wrest removes-1; glow/fade only nonblind; time retained; prepare/continue never charge twice"
+    },
+    {
+      "id": "F12",
+      "stage": "IN1",
+      "public": "canonical renamed display, accepted custom key, definition=None exact owned-name oldload, legacy ZapWand first-wand selection",
+      "expect": "same signed charge law for every valid resolved wand; custom effects retain explicit D1/P11b debts; unknown explicit identity never falls back"
+    },
+    {
+      "id": "F13",
+      "stage": "IN1+LIFE",
+      "public": "dust while wielded/quivered; effect has already removed or replaced selected slot",
+      "expect": "wield/quiver and owned equipment references cleared on true whole deletion; same-generation explicitly cleared current-wand suppresses dust even if partial stack survives; first wand/recycled replacement survives; no stale dereference/duplicate removal or ticks"
+    },
+    {
+      "id": "F14",
+      "stage": "API1+IN1",
+      "public": "positive1,99,127; zero/negative across native active and cached saves",
+      "expect": "1->0 retained,99->98,127->126; recharge counter unchanged; old signed i8 values preserve, no clamp or layout change; continuation RNG/state equality"
+    },
+    {
+      "id": "F15",
+      "stage": "M+MC+F+A1",
+      "public": "pack/schema/hash/WASM+all-ten routes including JSON-RPC library and actual binary separately",
+      "expect": "existing pack hashes/schemas unchanged; typed action old JSON roundtrip; generated wasm declarations compile; individual adapter transcripts after native acceptance"
+    }
+  ],
+  "proof": {
+    "backend": "positive and rejection via public step_player_action(ZapSelectedWand); primitive literals only supplementary. Multiwand chosen second with nonwand first; preserve first/other records. Native independent expected draw stream from cloned pre-action RNG and handwritten bounds; choose and pin concrete seeds during implementation, bounded search then record, never calculate expectations via production sampler. Separate zero/failure/effect/tick draw ownership. All listed draws are prefixes; exercise/death/lifesave/encumbrance/effect/tick suffixes and saved next RNG bytes must be independently evidenced under rng_contract.",
+    "save": "native active and cached-level records with signed charges -1,0,1,99; save/load before/after public action under same RulesetRef; whole canonical gameplay/scheduler/events and next action/RNG bytes compare; cached items cannot be selected, survive unrelated active zap. Oldsave omitted optional definition uses owned exact-name lookup, no new fields or integer format. Out-of-normal i8 boundaries preserved.",
+    "pack": "no ItemDef/direction/pack table/schema/hash fields changed; existing pack oldload/four-schema/hash fixtures rerun, unknown canonical/custom refuse before draw; custom charges governed by class+identity not display text.",
+    "wasm": "native API primitive does not change wasm exports; existing wasm test and wasm32 build via accepted harness mandatory; no generated JS/TS edits; D1/MC exports/declarations separate acceptance.",
+    "no_time": "isolate reconciled hero/armor/live guards; assert semantic whole-state/RNG/time equality except exactly owned existing LogMessage/event log records. Do not blanket-ignore equipment, RNG, scheduler or events."
+  },
+  "allowed_existing_setup": {
+    "API1": [
+      "selected_wand_tests.rs::rules",
+      "selected_wand_tests.rs::world",
+      "selected_wand_tests.rs::identity_rules",
+      "selected_wand_tests.rs::identity_world",
+      "selected_wand_tests.rs::spawn",
+      "selected_wand_tests.rs::selected",
+      "selected_wand_tests.rs::ready"
+    ],
+    "permission": "reuse these helpers unchanged; add separate fixtures only. No existing test literal/assertion change authorized, including monster_creation_wand_tests, simulation_tests::carried_wand, artifacts_wands::tests::test_wand_charge_depletion, command/protocol enum loops or S1 ActionArgs literals. If old empty-wand expectation fails, list exact function/assertion and source-correct proposed replacement for fresh review; freeze it until that review.",
+    "global": "no new dependencies/static tables/source/gold/registry edits by author; no broad constructor/setup rewrites, drops, ignores or weakened assertions"
+  },
+  "validation": {
+    "executed_here": false,
+    "focused_API1": [
+      "cargo test -p nethacked-core --locked",
+      "cargo test -p nethacked-sim --test selected_wand_tests --test monster_creation_wand_tests --locked",
+      "cargo test -p nethacked-agent --test golden_determinism --locked"
+    ],
+    "focused_IN1": [
+      "cargo test -p nethacked-sim --test selected_wand_tests --test monster_creation_wand_tests --test save_load_tests --test level_persistence_tests --test item_definition_identity_tests --locked",
+      "cargo test -p nethacked-arena -p nethacked-data --locked",
+      "cargo test -p nethacked-pack --test pack_lib --test pack_files --test cli --locked",
+      "cargo test -p nethacked-wasm --locked"
+    ],
+    "full": "Root reuses exact accepted S1 12-gate harness/invocations, including external scratch extract/generated comparison; all3 frozen gold, fresh changed-input digest and independent semantic review. No commands executed by this audit; prior1021/12/3 is consumed baseline only. Exact harness executable/arguments retrieval is root-owned, not inferred from results checks."
+  },
+  "unresolved": [
+    "Fresh independent review of API1/API names, exact empty-wand proposal and DAG required before implementation readiness.",
+    "Accepted P1-BILL contract/P1-PRE and P1 evidence, LIFE retirement/naming/timer/reference seam, HE02-zap-exercise, EQ03-zap-halfphys and B1-PRE public backfire evidence remain mandatory before IN1 activation.",
+    "Exact root accepted12 harness invocation and later concrete fixture native seeds/output evidence remain implementation handoff requirements.",
+    "Any observed golden impact needs exact proposal plus explicit user decision; no permission inferred."
+  ],
+  "rng_contract": {
+    "list_semantics": "Every fixture draw_prefix is a source-owned prefix, not terminal native RNG or saved-next-RNG evidence. branches.charge_draws describes only the charge component. Effect, damage/death/lifesaving callbacks, exercise and ordinary native turn ticks have separate owners; do not concatenate unknown draws into an invented terminal stream.",
+    "exercise": {
+      "source": "pinned src/zap.c:2605-2615,2649-2654; src/attrib.c:486-517",
+      "order": "After backfire returns from explosion, damage/half-physical/losehp and whole-item retirement, dozap calls exercise(A_STR,FALSE) before ECMD_TIME. If fatal losehp terminates rather than returning, exercise is not reached; returning lifesaving paths require their own B1 evidence.",
+      "conditional_draw": "For STR, if unpolymorphed and abs(AEXE(STR))<50, consume exactly rn2(2); AEXE_after = AEXE_before - roll (roll0 unchanged, roll1 minus1), using state at the exercise call. ACURR/base strength is not directly decremented by exercise.",
+      "no_draw": "Polymorphed physical STR returns without draw/state change or exercise encumbrance callback. Unpolymorphed abs(AEXE(STR))>=50 skips draw/state change but still reaches encumber_msg if moves>0. No call/draw for uncursed, failed wrest, negative, non-backfire cursed or nonreturning fatal exits.",
+      "events": "No unconditional STR exercise gameplay message is specified by pinned exercise; debugpline is not a gameplay log. For unpolymorphed STR, moves>0 invokes encumber_msg after the update/skip; its possible state-dependent event must be bounded by the HE02 seam. Never reuse current world.exercise_attr as-is: it emits You feel weaker! without AEXE/RNG changes.",
+      "prerequisite": "HE02-zap-exercise"
+    },
+    "halfphys_prerequisite": "EQ03-zap-halfphys: named narrow reviewed prerequisite, not a claim that an accepted EQ03 seam exists",
+    "later_evidence": "Pin concrete native seeds, initial polymorph/AEXE/moves/halfphys/HP/billing state, branch rolls, AEXE_after, whole-item retirement, exact events/time and post-action next RNG bytes. Include exercise rolls0/1, polymorph, abs(AEXE)=49/50 and negative boundary, fatal/nonfatal/returning lifesave and halfphys cases. Separate action draws from callbacks/effects/ticks using independent cloned RNG; no complete stream or seed proof produced here."
+  },
+  "dependency_policy": {
+    "accepted_external": [
+      "P11a-S1"
+    ],
+    "edges": "depends entries are exact child/aggregate IDs; every prerequisite must have independent acceptance of the consumed contract and required implementation/evidence before activation. Audit-only rows confer no file permission. P1-BILL accepted contract gates LIFE review/activation; any billing implementation needed by LIFE must be accepted before use.",
+    "aggregate_id": "P11a-C1",
+    "ownership": "API1 exact three files and IN1 exact two files only after review. BILL/PRE/LIFE/B1-PRE/HE02/EQ03 and other successor implementation ownership require later reviewed minimal allowlists; never borrow API1 permission. Naming/timers remain LIFE bounded audit. Root owns registration/manifests/progress/publication and acceptance records; this proposal modifies none.",
+    "closure": "All existing 53 families/543 rows remain in scope; narrow children and cross_refs close no whole family. P11b and OB07 are separate existing IDs."
+  }
+}

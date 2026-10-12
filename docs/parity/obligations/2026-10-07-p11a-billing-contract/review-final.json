@@ -1,0 +1,63 @@
+{
+  "verdict": "PASS",
+  "review_markdown": "F3 attempt 2 is resolved at contract scope. No material findings remain.\n\nThe prior newline diagnosis is incorrect: independent AST inspection confirms the original suffix constant contains exactly codepoint 10 (U+000A), not literal backslash+n. That newline is valid JSON whitespace. The historical NEEDS_CHANGES review remains preserved; the recorded unsuccessful-attempt count remains 1 without a silent reset.\n\nExactly one contract command changed. Its terminal delta removes the suffix and adds json.loads((s/'comparison.json').read_text()) after writing json.dumps(results, indent=2). Successful completion therefore requires parsing the actual written file. All preceding AST nodes and every other contract semantic field are identical.\n\nF1/F2 remain resolved. Passed initial semantics and root’s unchanged-source/artifact/binding proofs are reused. All53 scope and future-gold freeze remain preserved. This is contract readiness only, with no implementation or family acceptance.",
+  "findings": [],
+  "bindings": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/repair2/draft/contract.json",
+      "sha256": "0bf62292df757442402698a4f19559ba1f05f0913d6507bd7655026e7a1ba5ef"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/repair2/draft/evidence.json",
+      "sha256": "e076234524f49601f1fc09c2db75efb2f5da199a994145899a7d9ee855626300"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/repair2/draft/repair-summary.json",
+      "sha256": "6a3ee7312e298e79441a85ff18d4c549a6cb3a419ece2ed097efc9f1559c5f6e"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/repair2/command.before.py",
+      "sha256": "08d18809e689dca214d4964456d19abdf4b581cb8eedcea3632aa547b5933c60"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/repair2/command.after.py",
+      "sha256": "f95a803fda6db3eb5e5fa801d18a82bb629b14c78c322724f809309f7679d28c"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/repair2/verification.json",
+      "sha256": "947b1fe00cd56ab7e72e34dd6c0c08d29b795fc8766f80cf11604806cf525ab7"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/repair2/copy-proof.json",
+      "sha256": "99bc11485960d9a045ffad76ee42f444cb8ba85d1f6a2ddf3fbb5151a6c6f3c4"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/rereview1/review.json",
+      "sha256": "6ec1b2ef724fe7f9cd9c0594649f21d604e2c91f9249d35722a1ba143b0e4293"
+    }
+  ],
+  "checks": [
+    {
+      "name": "Exact F3 delta",
+      "assessment": "PASS",
+      "evidence": "Both command files exactly match their contract argv strings. Only compatibility/SAVE1_exact_manifest/steps/18/argv/2 changed; preceding AST is identical."
+    },
+    {
+      "name": "Dummy JSON witness",
+      "assessment": "PASS",
+      "evidence": "Bound isolated-file witness reused. Independent in-memory reconstruction confirms roundtrip equality and SHA256 e7f48bfd6dbcb12d0802043cb587a742bcc43f95616985f6756d2f659450fbf7. Original real-newline suffix parses; literal backslash+n raises JSONDecodeError."
+    },
+    {
+      "name": "Evidence and history",
+      "assessment": "PASS",
+      "evidence": "Evidence changes are confined to the affected contract hash and F3 repair metadata/counters. Summary artifact hashes match consumed bytes; prior-review binding matches."
+    },
+    {
+      "name": "Preservation",
+      "assessment": "PASS by reuse",
+      "evidence": "Root’s 345-source, other four artifact, and C/native 19-binding proofs reused. Fixtures, assertions, provenance and production protections retain identical preceding AST."
+    }
+  ],
+  "handoff": "Root owns publication, registry/docs, gates and commit. Preserve the historical non-PASS verdict with the explicit newline-diagnosis correction.",
+  "usage_note": "Read-only; local /Users/dmytro/github/NetRust/.venv/bin/python -B used. AST inspection plus bound root witness and in-memory JSON checks; neither terminal command nodes nor full future comparison were executed. No edits, Cargo/build/generation, C/Lua or agents."
+}

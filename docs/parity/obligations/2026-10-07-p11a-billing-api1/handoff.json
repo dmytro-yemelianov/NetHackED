@@ -1,0 +1,54 @@
+{
+  "unit": "P11a-P1-BILL-API1",
+  "status": "implemented; pending root independent review and acceptance",
+  "accepted_parent_contract": "76b2fa266387e012d9aa21b4c90133932ea2ac33",
+  "changed_paths": [
+    "crates/nethacked-sim/src/world.rs",
+    "crates/nethacked-sim/src/actions/economy.rs",
+    "crates/nethacked-sim/src/actions/mod.rs",
+    "crates/nethacked-sim/tests/wand_billing_tests.rs"
+  ],
+  "body_changes": {
+    "crates/nethacked-sim/src/world.rs": "New billing types at34, serde(default) owner at173, empty constructor initialization, new read-only validation/prepared disposal/commit and public admission/views/typed clearing methods; existing remove_unpaid delegates preserving unit signature. Other old bodies byte-identical after subtracting additions.",
+    "crates/nethacked-sim/src/actions/economy.rs": "handle_pay entry global receipt/consumed guard only at114.",
+    "crates/nethacked-sim/src/actions/mod.rs": "step_player_action requested-Pay guard FIRST executable statement at23.",
+    "crates/nethacked-sim/tests/wand_billing_tests.rs": "New separate 9-test fixture suite only."
+  },
+  "old_test_changes": "NONE",
+  "golden_changes": "NONE",
+  "validation": {
+    "billing_tests": 9,
+    "existing_focused_sim_tests": 42,
+    "arena_data_tests": 111,
+    "final_scoped_clippy_exit": 0,
+    "scoped_rustfmt_exit": 0,
+    "full12_and_all3": "Not run; root owns fresh validation."
+  },
+  "fixture_results": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-initial/fixture-results.json",
+  "focused_results": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-initial/focused-results.json",
+  "failure_evidence": [
+    "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-initial/uv-launch-failure.json",
+    "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-initial/billing-attempt-1.json",
+    "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-initial/billing-attempt-1.log",
+    "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-initial/scoped-clippy.json",
+    "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-initial/scoped-clippy.log",
+    "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-initial/failed-attempt-analysis.json"
+  ],
+  "preservation_proof": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-initial/body-preservation.json",
+  "source_diff": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-initial/source.diff",
+  "remaining_gaps": [
+    "SAVE1 load validation of malformed/duplicate/dangling billing owners before timer catchup and ruleset mismatch precedence remains unimplemented.",
+    "SAVE1 cached live receipt stair remapping, active/cached/consumed continuation chains remain separate; no stair remap or SAVE1 broad acceptance claimed.",
+    "LIFE equipment/timer/current-operation cleanup and IN1 activation remain unimplemented; public API rejects represented references.",
+    "DG06 source receipt formation/history/account, merge/partial/nonwand and payment settlement remain deferred. Unknown legacy facts are never reconstructed.",
+    "D1 genuine mid-zap pending continuation and OB04 nonrepresented lifecycle/Lua references remain separate."
+  ],
+  "blockers": [],
+  "delivery": "No commit/push; root controls delivery. Preexisting dirty root ledger left untouched.",
+  "notes": [
+    "Initial context read exceeded bounded output and was truncated; no baseline replay, graph rebuild, C/compiler/Lua execution, dependency edits, full workspace gates, old test edits, or agents were performed.",
+    "All Python invocations used uv with the local .venv interpreter; writable UV_CACHE_DIR used after preserved launcher failure.",
+    "Production errors/refusals draw no RNG and emit no events/time; raw state comparisons serialize the whole world directly via sorted serde_json Value without save reconciliation.",
+    "Progress commentary initially miscounted arena/data as121; parsed log counters total111 and final handoff uses111."
+  ]
+}

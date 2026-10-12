@@ -1,0 +1,595 @@
+{
+  "schema": "netrust-parity-planning-acceptance-v1",
+  "status": "accepted_planning_review_and_docs_pass_source_gates_reused",
+  "scope": "Seven remaining parity streams; planning only; no historical status promotion or source-ready claim",
+  "source_baseline": {
+    "HEAD": "2f97135ec4c5620ad132bfe0971bf3aff60ff7bf",
+    "files": 342,
+    "digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+    "inputs": "342 exact input paths are bound in the existing P04–P10 final acceptance record; independent planning validation checks the full set",
+    "source_gate_reused": {
+      "tests": 999,
+      "goldens": 3,
+      "gates": 12,
+      "directory": "/tmp/netrust-p04-p10-green-gates"
+    },
+    "code_changed": false
+  },
+  "source_acceptance": "2026-10-07-p04-p10-final-acceptance.json",
+  "initial_review": {
+    "status": "REPAIR_REQUIRED",
+    "scope": "Independent planning relevance review; no full543 semantic port audit, Cargo/C/Lua execution or repo edits",
+    "artifact_sha256": {
+      "plan.md": "e918c3a227231d4cd6d3bf67480b36c19ad8306e06c37c5b13c400b0efd606b8",
+      "registry.json": "357e6581ef5d4311fb280bc7941b8aba5ace8b92b5d0ecd09c67c4a6d85565b8",
+      "plan.md.initial": "c1f01cc928a68af8d317d1b027f1394e5bbca6320a69c949088b1931693f9d9e",
+      "registry.json.initial": "6e73b00e02a8fbdec9287f020d9c8b6242b7ccfe0043736646fd8f19693891ed",
+      "normalization-proof.json": "69f6f6d1d4484f32181925624617558aa4e82cac8d48dfd54223cbf201024c25",
+      "root-row-index.json": "9949b24c29019a4a92b0bcb41ca7db931d1555d546e5ff3e153ae4c997804b00",
+      "root-catalogs.json": "36e684cefc33d3ac8d4b132490bac2ed1ea4a1589a19df18012d8b1a531620a2",
+      "baseline.json": "f6c10b4f68f44a3243722445bea39f20d558ea94330b21b68c13a727a85a0b5f"
+    },
+    "checks": {
+      "exact_actual_inventory_rows_raw_sha_status_refs": 543,
+      "unique_cards": 1129,
+      "families": 53,
+      "inventory_packets": 53,
+      "catalog_instances": 1023,
+      "packet_rows_max": 20,
+      "every_row_exactly_one_packet": true,
+      "known_refs_acyclic_dependencies": true,
+      "all_effective_cards_planned_audit_needed": true,
+      "effective_initial_semantics_equal_except_kind": true,
+      "streams": 7,
+      "current_TOML_exact_ids_names_classes_src": {
+        "objects": 440,
+        "artifacts": 33,
+        "monsters": 383,
+        "roles": 13,
+        "races": 5
+      },
+      "exact_appearance_ids_names_classes": 23,
+      "exact_historic_commands": 85,
+      "exact_used_AT": 17,
+      "exact_used_AD": 47,
+      "mandatory_declared_tag_flag_property_level_extraction_pending": true,
+      "current_baseline_inputs": 342,
+      "current_baseline_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+      "current_normalization_proof_hashes_match": true
+    },
+    "semantic_review": {
+      "all543_primary_routes_read_with_crossdomain_examples": true,
+      "all9_P04a_P04b_P04c_P05_P06_P07_P08_P09_P10_successions": true,
+      "earlier_HP_items_P03_retained": true,
+      "hero_special_text_calendar_options_bones_retained": true,
+      "independent_literal_prescribed_draw_public_native_save_oldsave_custom_override_fullgate_frozen_future_goldens_retained": true,
+      "intended_frontend_applicability_and_config_exclusion_audits": true,
+      "M1_M8_groups_retained": true
+    },
+    "findings": [
+      {
+        "id": "R1",
+        "severity": "medium",
+        "kind": "semantic",
+        "affected": "Family prerequisite edges, 53 inventory packets and 1023 catalog templates",
+        "examples": [
+          "CAT-ARTIFACTS-EXCALIBUR -> OB10",
+          "CAT-OBJECTS-ARROW -> EQ05",
+          "EQ01-R01 -> EQ01"
+        ],
+        "problem": "No explicit dependency satisfaction semantics separates narrow source-contract/foundation readiness from full broad-family closure. Member/template work can appear blocked by the same closure it must establish.",
+        "correction": "Family IDs route to reviewed named audit/foundation children; broad closure never gates own members/packets. Bind exact accepted narrow child prerequisites before ready. Closure separately aggregates all mandatory branches/members/contexts."
+      },
+      {
+        "id": "R2",
+        "severity": "medium",
+        "kind": "semantic",
+        "affected": [
+          "OB04",
+          "OB04-R01"
+        ],
+        "problem": "revive.c does not exist in pinned released src tree.",
+        "source": "Pinned src/zap.c:884 defines revive(struct obj *corpse, boolean by_hero).",
+        "correction": "Replace revive.c with zap.c revive in both cards and plan table; retain audited timeout/mkobj/mon crossownership."
+      },
+      {
+        "id": "R3",
+        "severity": "medium",
+        "kind": "semantic",
+        "affected": [
+          "DG03",
+          "DG03-R01",
+          "objects-dungeon:0055",
+          "objects-dungeon:0056",
+          "objects-dungeon:0057"
+        ],
+        "problem": "Kicking rows route to DG03, but its source/selected branch scope omits dokick.c and ordinary Kick effects.",
+        "correction": "Add dokick.c and explicit narrow public Kick successors for door roll/failure, object/monster/container/terrain effects and hurt-self damage. Audit per-context EQ01/CB01/OB01/DG01/DG06 crossownership and preserve CMD-0034 frontend target selection."
+      },
+      {
+        "id": "R4",
+        "severity": "medium",
+        "kind": "acceptance",
+        "affected": [
+          "contract_defaults.exit",
+          "plan execution acceptance"
+        ],
+        "problem": "Explicit old-pack load and changed definition/action schema freshness/canonical schema/hash checks are omitted; earlier item-init contract requires canonical schema/hash checks.",
+        "correction": "Add applicable old-pack/canonical hash and changed schema/generated public surface checks; record unaffected-schema applicability."
+      }
+    ],
+    "nonblocking": [
+      {
+        "kind": "typography",
+        "examples": [
+          "no fresh543",
+          "not383 copied handlers"
+        ],
+        "correction": "Normalize spacing during delivery."
+      }
+    ],
+    "source_authority": {
+      "repo": "/Users/dmytro/github/NetHack",
+      "commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+      "blob_SHA256": {
+        "src/zap.c": "8ee02bd7aa29b026d6b5a2e0017ddf402fcfc6fc81037e35ceda2d86467547cb",
+        "src/timeout.c": "779540f647749e0da11109f18a90e11c9e7bc36af44ed6455440b40fc6910596",
+        "src/mkobj.c": "49c2de3bcf1125be55f11c17ffc4f614956f5288a5edfb56b2248b7fcaa3b488"
+      },
+      "graph_first": "search_graph(project=NetHack,name_pattern=^revive.*$) -> not indexed; bounded git-show fallback"
+    },
+    "reproduction": {
+      "structural_checker": "uv run --python .venv/bin/python --no-project python /tmp/netrust-all-stream-scope/validate.py",
+      "independent_method": "Compare every actual historical line and UTF8 SHA256, feature=CELL[status_column-2], Cref=CELL[status_column-1]; exact TOML tuples (id,name or noun,class,src), unnamed objects appearance field; DAG DFS; effective=dict(contract_defaults, **card) excluding kind against immutable initial; aggregate update(path UTF8), update(file bytes) for342 baseline inputs. All independently executed in reviewer tool calls.",
+      "source_tree": "git -C /Users/dmytro/github/NetHack ls-tree --name-only 16ff59115315917b93185d026aeefea06db9b0f4:src",
+      "source_blob": "git -C /Users/dmytro/github/NetHack show 16ff59115315917b93185d026aeefea06db9b0f4:src/zap.c",
+      "semantic_examples": [
+        {
+          "id": "OB04",
+          "stream": "OB",
+          "title": "Timers/corpse lifecycle",
+          "source_family": "timeout.c; mkobj.c; revive.c; mon.c make_corpse",
+          "owner_candidate": "crates/nethacked-sim/src/corpse_lifecycle.rs/turns.rs/arena; birth/death/tick",
+          "selected_branches": "Rider/Ice execution, buried contents, mextra/shop/quest/special identities; hatching/fuel/figurines/globs; active/cache/icebox and id wrap",
+          "dependencies": [
+            "OB02",
+            "AI01"
+          ],
+          "successor_policy": "Other/new branches stay mandatory family-audit obligations; dispatch named branch/context child before family closure.",
+          "kind": "family"
+        },
+        {
+          "id": "OB04-R01",
+          "stream": "OB",
+          "title": "Timers/corpse lifecycle inventory discovery packet",
+          "source_family": "timeout.c; mkobj.c; revive.c; mon.c make_corpse",
+          "owner_candidate": "crates/nethacked-sim/src/corpse_lifecycle.rs/turns.rs/arena; birth/death/tick",
+          "selected_branches": "Rider/Ice execution, buried contents, mextra/shop/quest/special identities; hatching/fuel/figurines/globs; active/cache/icebox and id wrap",
+          "dependencies": [
+            "OB04"
+          ],
+          "successor_policy": "Other/new branches stay mandatory family-audit obligations; dispatch named branch/context child before family closure.",
+          "row_keys": [
+            "monsters-combat:0016",
+            "objects-dungeon:0021"
+          ],
+          "packet_role": "read-only row evidence reconciliation after family source-contract audit",
+          "kind": "inventory_packet"
+        },
+        {
+          "id": "DG03",
+          "stream": "DG",
+          "title": "Traps/dig/teleport/regions",
+          "source_family": "trap.c; teleport.c; dig.c; region.c",
+          "owner_candidate": "crates/nethacked-sim/src/actions/movement.rs/stairs.rs; Move/Untrap/Dig/Teleport",
+          "selected_branches": "all trap types/gen/effects/mintrap, escape/search, controls/no-teleport/level teleport; gas/regions",
+          "dependencies": [
+            "DG01",
+            "EQ03"
+          ],
+          "successor_policy": "Other/new branches stay mandatory family-audit obligations; dispatch named branch/context child before family closure.",
+          "kind": "family"
+        },
+        {
+          "id": "DG03-R01",
+          "stream": "DG",
+          "title": "Traps/dig/teleport/regions inventory discovery packet",
+          "source_family": "trap.c; teleport.c; dig.c; region.c",
+          "owner_candidate": "crates/nethacked-sim/src/actions/movement.rs/stairs.rs; Move/Untrap/Dig/Teleport",
+          "selected_branches": "all trap types/gen/effects/mintrap, escape/search, controls/no-teleport/level teleport; gas/regions",
+          "dependencies": [
+            "DG03"
+          ],
+          "successor_policy": "Other/new branches stay mandatory family-audit obligations; dispatch named branch/context child before family closure.",
+          "row_keys": [
+            "objects-dungeon:0054",
+            "objects-dungeon:0055",
+            "objects-dungeon:0056",
+            "objects-dungeon:0057",
+            "objects-dungeon:0065",
+            "objects-dungeon:0066",
+            "objects-dungeon:0067",
+            "objects-dungeon:0068",
+            "objects-dungeon:0069",
+            "objects-dungeon:0070",
+            "objects-dungeon:0071",
+            "objects-dungeon:0073",
+            "objects-dungeon:0074",
+            "objects-dungeon:0075",
+            "objects-dungeon:0076",
+            "objects-dungeon:0118"
+          ],
+          "packet_role": "read-only row evidence reconciliation after family source-contract audit",
+          "kind": "inventory_packet"
+        },
+        {
+          "id": "CAT-ARTIFACTS-EXCALIBUR",
+          "stream": "OB",
+          "title": "artifacts member: Excalibur",
+          "source_family": "artifact.c; objnam.c readobjnam; pray.c; fountain.c",
+          "owner_candidate": "crates/nethacked-sim/src/artifacts_wands.rs/combat.rs; Wish/Invoke/Touch/Dip",
+          "selected_branches": "all artifact hit/target bonuses, Magicbane/behead/touch/blast, carried/invoked/light/speak, gifts/history; complete wish parser/restrictions",
+          "dependencies": [
+            "OB10"
+          ],
+          "successor_policy": "Other/new branches stay mandatory family-audit obligations; dispatch named branch/context child before family closure.",
+          "catalog_member": "EXCALIBUR",
+          "catalog_class": null,
+          "packet_role": "per-member expansion template; source contract chooses one coherent context; split BUC/action/attack contexts if needed",
+          "source_member": "include/artilist.h:88",
+          "exclusions_successors": "Remaining member contexts get stable CAT-ARTIFACTS-EXCALIBUR-<context> child IDs; no member closure from data presence alone",
+          "kind": "catalog_instance"
+        },
+        {
+          "id": "CAT-OBJECTS-ARROW",
+          "stream": "EQ",
+          "title": "objects member: arrow",
+          "source_family": "weapon.c; uhitm.c",
+          "owner_candidate": "crates/nethacked-sim/src/combat.rs; Attack/Fire/Wield",
+          "selected_branches": "twohand/dual/rings, launcher/ammo/multishot eligibility",
+          "dependencies": [
+            "EQ05"
+          ],
+          "successor_policy": "Other/new branches stay mandatory family-audit obligations; dispatch named branch/context child before family closure.",
+          "catalog_member": "ARROW",
+          "catalog_class": "weapon",
+          "packet_role": "per-member expansion template; source contract chooses one coherent context; split BUC/action/attack contexts if needed",
+          "source_member": "include/objects.h:104",
+          "exclusions_successors": "Remaining member contexts get stable CAT-OBJECTS-ARROW-<context> child IDs; no member closure from data presence alone",
+          "kind": "catalog_instance"
+        },
+        {
+          "id": "EQ01-R01",
+          "stream": "EQ",
+          "title": "Effective attributes inventory discovery packet",
+          "source_family": "attrib.c acurr, acurrstr; worn.c property masks",
+          "owner_candidate": "crates/nethacked-sim/src/progress.rs/combat.rs; Wear/Remove",
+          "selected_branches": "gear/temporary STR DEX CON and clipping",
+          "dependencies": [
+            "EQ01"
+          ],
+          "successor_policy": "Other/new branches stay mandatory family-audit obligations; dispatch named branch/context child before family closure.",
+          "row_keys": [
+            "hero:0008",
+            "hero:0009",
+            "hero:0010",
+            "hero:0011",
+            "hero:0012",
+            "hero:0013",
+            "hero:0014",
+            "hero:0015"
+          ],
+          "packet_role": "read-only row evidence reconciliation after family source-contract audit",
+          "kind": "inventory_packet"
+        }
+      ]
+    }
+  },
+  "final_review": {
+    "status": "REVIEW_PASS",
+    "review_scope": "Narrow rereview of four required planning repairs and exact change boundary; prior broader review preserved. No renewed543-row semantic implementation audit.",
+    "artifact_sha256": {
+      "plan.md": "ba440d3fb70e21de11443b23c566625f172a9e62fcc335cfb60aa849f193f474",
+      "registry.json": "ef0c220796234250d4d8e532f66ffbd113503d8db78bc40c002368f90719a5e9",
+      "plan.md.pre-review-repair": "e918c3a227231d4cd6d3bf67480b36c19ad8306e06c37c5b13c400b0efd606b8",
+      "registry.json.pre-review-repair": "357e6581ef5d4311fb280bc7941b8aba5ace8b92b5d0ecd09c67c4a6d85565b8",
+      "repair-proof.json": "8636321dbf6d0e17265f2822a88d39be669637bdbfc5837d84fb643a297a765e",
+      "repair.py": "a2b231244299ff32377de6a24d02d3f5bbdadecc95a53b9aaec06c940c4fb597",
+      "root-validation.json": "32012bf0bdeed4c55d0dbccec6af1e043c13b451a3560b576699c865cea21202",
+      "review.md": "2fed3abc164c18cac6c497b7c3845d8e5521cf5d3c9bcfb4e5411581715d41c2",
+      "review-evidence.json": "5a6be1a2e1ae1b54d6885332db3cdf18bd95d44afbadb9b625c5c1d9a2574059"
+    },
+    "findings": [],
+    "resolved_findings": [
+      {
+        "id": "R1",
+        "status": "RESOLVED",
+        "evidence": "dependency_semantics and plan prerequisite section require exact accepted narrow child/evidence/interface bindings before readiness; prohibit parent closure as member prerequisite; require expanded concrete child graph check."
+      },
+      {
+        "id": "R2",
+        "status": "RESOLVED",
+        "evidence": "OB04/OB04-R01 and plan table point to released zap.c revive; source ref src/zap.c:884 retained on cards."
+      },
+      {
+        "id": "R3",
+        "status": "RESOLVED",
+        "evidence": "DG03/DG03-R01 name dokick.c and Kick branches; four reserved audit-needed public successor contracts specify relevant ownership and CMD-0034, failures/hurt-self/turn costs."
+      },
+      {
+        "id": "R4",
+        "status": "RESOLVED",
+        "evidence": "Shared fifth exit explicitly requires applicable old-pack/old-save compatibility, schema/generated-binding freshness, canonical schema/hash and wire checks; plan repeats conditional applicability."
+      }
+    ],
+    "independent_repair_diff_checks": {
+      "top_level_unchanged_except": [
+        "dependency_semantics",
+        "contract_defaults.exit",
+        "units scoped fields"
+      ],
+      "all_initial_defaults_unchanged_except_single_exit_append": true,
+      "exact_unit_changes": [
+        [
+          "OB04",
+          "source_family"
+        ],
+        [
+          "DG03",
+          "selected_branches"
+        ],
+        [
+          "DG03",
+          "successor_policy"
+        ],
+        [
+          "DG03",
+          "source_family"
+        ],
+        [
+          "OB04-R01",
+          "source_family"
+        ],
+        [
+          "DG03-R01",
+          "source_family"
+        ],
+        [
+          "DG03-R01",
+          "selected_branches"
+        ],
+        [
+          "DG03-R01",
+          "successor_policy"
+        ]
+      ],
+      "all_effective_changed_fields": {
+        "exit": 1129,
+        "source_family": 4,
+        "successor_policy": 2,
+        "selected_branches": 2
+      },
+      "prior_normalization_equal_except_kind": true,
+      "original_review_artifacts_preserved": true,
+      "repair_proof_current_hashes_match": true
+    },
+    "repeated_structural_checker": {
+      "command": "uv run --python .venv/bin/python --no-project python /tmp/netrust-all-stream-scope/validate.py",
+      "exit": 0,
+      "results": {
+        "status": "PASS_structural_and_source_binding_semantic_review_separate",
+        "head": "2f97135ec4c5620ad132bfe0971bf3aff60ff7bf",
+        "source_inputs": 342,
+        "source_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+        "rows": 543,
+        "card_counts": {
+          "family": 53,
+          "inventory_packet": 53,
+          "catalog_instance": 1023
+        },
+        "catalog_counts": {
+          "object_appearance_metadata": 23,
+          "objects": 440,
+          "monsters": 383,
+          "artifacts": 33,
+          "roles": 13,
+          "races": 5,
+          "used_AT": 17,
+          "used_AD": 47,
+          "commands": 85
+        },
+        "max_packet_rows": 20,
+        "normalization_differences": {
+          "field": "repair_limit",
+          "cards": 0,
+          "interpretation": "existing Astra effort wording; independent reviewer verifies unchanged policy"
+        },
+        "review_repair_differences": {
+          "exit": 1129,
+          "source_family": 4,
+          "successor_policy": 2,
+          "selected_branches": 2
+        },
+        "unique_ids_exact_rows_raw_hashes_statuses_packets_refs_dag_catalogs": true,
+        "unextracted_catalogs": [
+          "AT_AD_flags",
+          "properties",
+          "levels"
+        ],
+        "reused_acceptance": {
+          "tests": 999,
+          "goldens": 3,
+          "gates": 12,
+          "directory": "/tmp/netrust-p04-p10-green-gates"
+        },
+        "hashes": {
+          "plan.md": "ba440d3fb70e21de11443b23c566625f172a9e62fcc335cfb60aa849f193f474",
+          "registry.json": "ef0c220796234250d4d8e532f66ffbd113503d8db78bc40c002368f90719a5e9",
+          "plan.md.initial": "c1f01cc928a68af8d317d1b027f1394e5bbca6320a69c949088b1931693f9d9e",
+          "registry.json.initial": "6e73b00e02a8fbdec9287f020d9c8b6242b7ccfe0043736646fd8f19693891ed"
+        }
+      }
+    },
+    "remaining_scope": "All cards remain planned_audit_needed; source contracts/declared catalog extraction and implementation remain pending. The review does not authorize future golden rebaselines or claim source-ready tasks.",
+    "limitations": "Same-source999-test/3-golden/12-gate evidence reused with unchanged342-input digest. No Cargo/C/Lua, repo edits or delegation; actual token usage not exposed."
+  },
+  "root_validation": {
+    "status": "PASS_structural_and_source_binding_semantic_review_separate",
+    "head": "2f97135ec4c5620ad132bfe0971bf3aff60ff7bf",
+    "source_inputs": 342,
+    "source_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+    "rows": 543,
+    "card_counts": {
+      "family": 53,
+      "inventory_packet": 53,
+      "catalog_instance": 1023
+    },
+    "catalog_counts": {
+      "object_appearance_metadata": 23,
+      "objects": 440,
+      "monsters": 383,
+      "artifacts": 33,
+      "roles": 13,
+      "races": 5,
+      "used_AT": 17,
+      "used_AD": 47,
+      "commands": 85
+    },
+    "max_packet_rows": 20,
+    "normalization_differences": {
+      "field": "repair_limit",
+      "cards": 0,
+      "interpretation": "existing Astra effort wording; independent reviewer verifies unchanged policy"
+    },
+    "review_repair_differences": {
+      "exit": 1129,
+      "source_family": 4,
+      "successor_policy": 2,
+      "selected_branches": 2
+    },
+    "unique_ids_exact_rows_raw_hashes_statuses_packets_refs_dag_catalogs": true,
+    "unextracted_catalogs": [
+      "AT_AD_flags",
+      "properties",
+      "levels"
+    ],
+    "reused_acceptance": {
+      "tests": 999,
+      "goldens": 3,
+      "gates": 12,
+      "directory": "/tmp/netrust-p04-p10-green-gates"
+    },
+    "hashes": {
+      "plan.md": "ba440d3fb70e21de11443b23c566625f172a9e62fcc335cfb60aa849f193f474",
+      "registry.json": "ef0c220796234250d4d8e532f66ffbd113503d8db78bc40c002368f90719a5e9",
+      "plan.md.initial": "c1f01cc928a68af8d317d1b027f1394e5bbca6320a69c949088b1931693f9d9e",
+      "registry.json.initial": "6e73b00e02a8fbdec9287f020d9c8b6242b7ccfe0043736646fd8f19693891ed"
+    }
+  },
+  "repair": {
+    "corrections": [
+      "R1 narrow accepted prerequisites separate from family closure",
+      "R2 released zap.c revival owner",
+      "R3 explicit public Kick successors and contexts",
+      "R4 conditional old-pack/schema/hash/public binding exits"
+    ],
+    "code_changed": false,
+    "hashes": {
+      "plan.md": "ba440d3fb70e21de11443b23c566625f172a9e62fcc335cfb60aa849f193f474",
+      "registry.json": "ef0c220796234250d4d8e532f66ffbd113503d8db78bc40c002368f90719a5e9",
+      "plan.md.pre-review-repair": "e918c3a227231d4cd6d3bf67480b36c19ad8306e06c37c5b13c400b0efd606b8",
+      "registry.json.pre-review-repair": "357e6581ef5d4311fb280bc7941b8aba5ace8b92b5d0ecd09c67c4a6d85565b8"
+    }
+  },
+  "verification_policy": "Reuse accepted full-gate and three-golden results only after exact full source-input equality; rerun changed documentation gates. No new Cargo execution claimed.",
+  "verification": {
+    "source_gates_reused": {
+      "head": "b912fafe33c8cd6bff80522d5b7ca7ee1cae3d40",
+      "tests": 999,
+      "goldens": [
+        "golden_vanilla_event_logs_are_unchanged",
+        "golden_vanilla_bestiary_combat_is_unchanged",
+        "golden_vanilla_runs_are_unchanged"
+      ],
+      "digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+      "checks": 12
+    },
+    "reused_gate_exits": [
+      {
+        "check": "fmt",
+        "exit": 0
+      },
+      {
+        "check": "clippy",
+        "exit": 0
+      },
+      {
+        "check": "workspace",
+        "exit": 0
+      },
+      {
+        "check": "wasm",
+        "exit": 0
+      },
+      {
+        "check": "python",
+        "exit": 0
+      },
+      {
+        "check": "static",
+        "exit": 0
+      },
+      {
+        "check": "extract",
+        "exit": 0
+      },
+      {
+        "check": "generated",
+        "exit": 0
+      },
+      {
+        "check": "coverage",
+        "exit": 0
+      },
+      {
+        "check": "parity",
+        "exit": 0
+      },
+      {
+        "check": "docs",
+        "exit": 0
+      },
+      {
+        "check": "lean",
+        "exit": 0
+      }
+    ],
+    "current_source_binding": {
+      "head": "2f97135ec4c5620ad132bfe0971bf3aff60ff7bf",
+      "input_count": 342,
+      "digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+      "full_input_path_set_equal": true
+    },
+    "goldens_verified_in_original_workspace_log": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "fresh_documentation_gates": [
+      {
+        "check": "parity",
+        "exit": 0,
+        "seconds": 0.03,
+        "log": "/tmp/netrust-all-stream-scope/doc-gates/parity.log"
+      },
+      {
+        "check": "docs",
+        "exit": 0,
+        "seconds": 0.34,
+        "log": "/tmp/netrust-all-stream-scope/doc-gates/docs.log"
+      }
+    ],
+    "code_changed": false,
+    "historical_statuses_changed": false
+  }
+}

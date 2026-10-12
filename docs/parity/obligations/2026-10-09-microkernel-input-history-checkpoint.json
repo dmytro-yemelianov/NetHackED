@@ -1,0 +1,157 @@
+{
+  "schema": 1,
+  "status": "reviewed_and_verified_in_containing_commit",
+  "baseline_head": "e6ad64e8bc73900940bd73a7f0ed3822ca55dc8f",
+  "milestone": "M4d-D4c",
+  "scope": "Input-owned historical/disposed ledger persistence, identity nonreuse and inert provenance; whole-service activation remains D4e",
+  "contract": {
+    "path": "/Users/dmytro/github/NetRust/docs/plans/2026-10-08-owner-persistence-contract.md",
+    "sha256": "7f04e7118c33245a6aa0da16352eaa022d7753dc191bddaeb4963a9ddf55b569"
+  },
+  "prerequisite": {
+    "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-09-microkernel-timer-persistence-checkpoint.json",
+    "sha256": "0aa4b0cd46d8f7ff86af4035ce35fd3c58ed185e8787a4ba2d01d8f15a755ccd"
+  },
+  "runtime": "nethacked-inputs optional persistence and minimal sealed kernel historical-source/route bridges",
+  "review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-INPUT-HISTORY/review-evidence/REVIEW.md",
+    "sha256": "47b31f79b125a669b7cc701f9e0de99d09b41403cf12ffc1cc114874da4af552"
+  },
+  "readback": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-INPUT-HISTORY/readback-evidence/READBACK.md",
+    "sha256": "2f21d91c7c7d656e88ec736f696ba539e989afb6c8ef817280039297b4c81256"
+  },
+  "readback_verification": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-INPUT-HISTORY/readback-root-verification.json",
+    "sha256": "4a1d9fe2693a34ca1c8bcd72644e4bae8e5ff34b9a441972b31d381473c24628"
+  },
+  "implementation_handoff": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-INPUT-HISTORY/implementation2-evidence/HANDOFF.md",
+    "sha256": "e47818326422dbd9d72a2fbf3dd04859e5c9ddd05151df54a26c20cfbf2a7b80"
+  },
+  "repair_handoff": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-INPUT-HISTORY/repair-evidence/HANDOFF.md",
+    "sha256": "4a60bbb4f460e8d00e8c9a1e4e8a3b9e94470d8af3d79af44ad639a1c1785107"
+  },
+  "repair_delta": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-INPUT-HISTORY/repair.diff",
+    "sha256": "9057905cd6ed3c527c2e44f6ab3b30faa5c3362c68410ecacdcf19e5a9b701f5"
+  },
+  "source_bindings": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-INPUT-HISTORY/readback-source.json",
+    "sha256": "895efcd76767260978f6c9c2bf5fc3bf760914f74d9645d6595ad3a86ddbc083"
+  },
+  "full_gates": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-INPUT-HISTORY/final-gates/accepted.json",
+    "sha256": "fb3eabb3f11a8b70218f3291837d52b7bf67010a62ddd24074f9ed8b48e7af2f"
+  },
+  "gate_result": {
+    "head": "e6ad64e8bc73900940bd73a7f0ed3822ca55dc8f",
+    "tests": 1228,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "digest": "014dea84155db2e5e96c24692d028b7c89c182670b1efc54a52374b9a48b3614",
+    "checks": 12
+  },
+  "source_input_count": 475,
+  "focused_checks": {
+    "inputs_default": 9,
+    "inputs_persistence": 28,
+    "kernel_owners_owner_services_all_features": 142,
+    "supplied_independent_probes": 9,
+    "independent_repaired_regressions": 6,
+    "independent_additional_readback_probes": 3,
+    "subprocess_witness": "Save plus four fresh reloads and32 subsequent ordinary services; stale IDs refused under fresh authorized replay, fresh replay succeeds",
+    "scoped_fmt_clippy": "pass",
+    "actual_input_persistence_wasm32": "pass",
+    "repair_checks": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-INPUT-HISTORY/repair-evidence/checks.json",
+      "sha256": "fddf360725ee1d5b78a8ab71c7b499b587e29bbf7526753c3b69ed06d8cdc5c2"
+    },
+    "readback_checks": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-INPUT-HISTORY/readback-evidence/checks.json",
+      "sha256": "8ab085e76d86f7fd2280deb81e8fe9a1e491543f481034b9b45d5f3b9c68f415"
+    }
+  },
+  "verified_behavior": [
+    "Completed, cancelled, trapped, rejected, disposed and unloaded operation receipts persist as inert namespace-zero provenance without live historical code or grants.",
+    "Live records and retained observations continue to require actual kernel destination/context/pin mappings and current grants; missing live enrollment refuses rather than silently retiring executable records.",
+    "Mixed live/historical and empty services preserve exact source cursor, ordered ledger, requests/values, policy/version, caller/provider/artifact/route and operation/checkpoint/phase provenance, serial and per-operation ordinal high-water.",
+    "Capture is observational and Busy during policy invocation; load and replay do not execute policy or resample. A subsequent fresh sample advances the saved cursor once.",
+    "Shared atomic namespace allocation reserves max(carried high-water, saved origins) for restored and ordinary services, preserving allocation holes across repeated fresh processes and exhaustion without wrap. Legacy absent high-water remains supported.",
+    "Live-to-historical relabelling and impossible route combinations refuse before policy factories; available immutable manifest roles and links are checked without reviving unloaded modules or dead grants.",
+    "Quarantined builders, drop/refusal retry, narrowed live grants, nonempty destination preservation and historical recapture retain prior semantics.",
+    "Independent actual kernel guest execution through a three-module extension route validates captured provenance after detach/unload; structural input checkpoints using those identities restore/recapture and eight malformed variants refuse."
+  ],
+  "findings_resolved": [
+    "R1 restored allocator previously permitted subsequent ordinary services to reuse saved namespace and accept an old RecordId; shared reservation and subprocess regressions resolve it.",
+    "R2 historical marker previously accepted an enrolled live source or live lease with cleared enrollment; classification now refuses before factories.",
+    "R3 impossible duplicate native-provider and extension route combinations previously passed historical preflight; structural validation now refuses before factories."
+  ],
+  "failure_history": {
+    "initial_checkpoint": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-INPUT-HISTORY/initial-checkpoint/failure-ledger.json",
+      "sha256": "2d91bef2e5bdfe2cf8ce580cdeb558abdb7294bf2f8f19cd86df2a4e5266ba56"
+    },
+    "implementation": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-INPUT-HISTORY/implementation2-evidence/failure-ledger.json",
+      "sha256": "03a2881805272736becb60135152d097c8256be109be526facff44be2c7660cd"
+    },
+    "review": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-INPUT-HISTORY/review-evidence/failure-ledger.json",
+      "sha256": "0360b7ad78e3ed5d259a2bc0263d814740c211e0d8b377e2db3b40d0a19f1876"
+    },
+    "repair": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-INPUT-HISTORY/repair-evidence/failure-ledger.json",
+      "sha256": "873b9a128ba8994618236912e22614e28d2a02d3b6128661ceac3b04d6459d7b"
+    },
+    "readback": {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-INPUT-HISTORY/readback-evidence/failure-ledger.json",
+      "sha256": "f436b0ffaf34b10374bc51d4d24885e69ce21e07fbc412861be67753fe8765a9"
+    },
+    "note": "Original16 ledger entries retained; UV cache corrected on third changed-hypothesis attempt. R1 two repair attempts/one unsuccessful compatibility guard; R2/R3 one each/no unsuccessful semantic repair. Distinct fixture/tooling failures and three readback fixture failures retained without reset. Requested models known; actual backends unknown."
+  },
+  "trust_premises": [
+    "Native factory fidelity, purity, bounded computation, private allocation, alias exclusion and effect-free construction/drop remain host premises.",
+    "Ordinary input Service rejects extension-provider dispatch. Input extension-route positives are structural; actual execution proves kernel route provenance, not prior input Service extension sampling.",
+    "Nonreuse covers carried checkpoint history and receiving-process allocations, not unrelated-host global identity or history absent from saved bytes.",
+    "No whole HostBundle capture/activation barrier, authority-epoch exclusion, crash guarantee or composed Lean-to-Rust refinement claimed."
+  ],
+  "usage": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-INPUT-HISTORY/implementation/usage.json",
+      "sha256": "a677953ac45487db6ba3a318b3a23f56976957a726c4b4b454ad35c21d381b37"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-INPUT-HISTORY/implementation2/usage.json",
+      "sha256": "15e571e31f3485b3fb9631d19b46ae68b869d2cfcebf22250f2a5480c70fa482"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-INPUT-HISTORY/review/usage.json",
+      "sha256": "5303ffe6e0efe44f34497df47a65895627c1c04281802b6aa38c184c0d40009e"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-INPUT-HISTORY/repair/usage.json",
+      "sha256": "cf057878823d3e85b79e6ab525f671ee424cc537ef44a44887b5959e2d8bd51d"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-INPUT-HISTORY/readback/usage.json",
+      "sha256": "59c081d5730a02bd254df6d9c49f6cd260a72d3731535da5948c7d98e62385b9"
+    }
+  ],
+  "meter_note": "All five model phases exceeded soft uncached-input thresholds; root usage unknown. Reused predecessor reviews and bound checks; no savings claim.",
+  "A5_accepted": false,
+  "aggregate_D4_accepted": false,
+  "goldens_changed": false,
+  "existing_committed_tests_changed": false,
+  "parity_families_closed": 0,
+  "residuals": [
+    "D4d optional resource-service state, policies, history, pending plans and cleanup ownership when enrolled; no new NetHack domain storage.",
+    "D4e coherent capture/hidden HostBundle and atomic authority-epoch activation with all original combined cases.",
+    "D5 real legacy save compatibility, nine independent NetHack owners and public owner-native billing continuation; D6 full fresh-process A5.",
+    "M5 populated-session extension slice, M6 all existing production-domain migration, M7 final acceptance; separate53-family behavior parity backlog remains open."
+  ]
+}

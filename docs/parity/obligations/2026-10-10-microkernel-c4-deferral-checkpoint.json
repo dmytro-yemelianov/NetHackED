@@ -1,0 +1,43 @@
+{
+  "unit": "M7-C4",
+  "status": "deferred_in_this_commit",
+  "parent": "ac8240c4e4379532fee245dac2db535872b0a28f",
+  "scope": "Review condition C4 (TUI/demo legacy-path gameplay consumers - cut over or explicitly defer) resolved by an explicit tracked deferral of both consumers. The demo cutover was attempted (reset-per-step through OwnerGameSession: the fixture-staging world re-imported before each action, the post-action world synced back) and verified to change the frozen demo output: the demo exercises full legacy resolve_combat (a +5 Vorpal Blade artifact against quest nemesis Lord Surtur, with artifact detection, weapon skill bonuses, computed defender AC, and quest-nemesis death processing with artifact drop and quest advancement), while the facade melee bump and MeleeAttack law is the accepted I5 simplified compute_hero_melee_attack - full resolve_combat parity (defender AC, weapon skills, artifacts, vorpal) remains a documented follow-up (runtime/tests/movement_actions.rs). The cutover was reverted; the demo stays on step_player_action. The TUI deferral is unchanged (its skill-enhancement modal is a meta action with no ActionAst variant or owner transport; a full cutover needs a new EnhanceSkill transport first). No source changes; docs-only commit.",
+  "focused_passed": 0,
+  "focused_tests": [],
+  "workspace_passed": 1763,
+  "checks": 12,
+  "goldens": [
+    "golden_vanilla_event_logs_are_unchanged",
+    "golden_vanilla_bestiary_combat_is_unchanged",
+    "golden_vanilla_runs_are_unchanged"
+  ],
+  "non_documentation_inputs": 591,
+  "source_digest": "db7b581fdff1482a31168303185c160eb01ab3fe582a7ea862660a5e58bb1c6b",
+  "source_digest_method": "sha256 over the sha256sum lines of every non-docs source file tracked at commit time (git ls-files --cached --others --exclude-standard, excluding docs/), sorted by path: git ls-files -z --cached --others --exclude-standard | grep -zv '^docs/' | sort -z | xargs -0 sha256sum | sha256sum",
+  "resolution": {
+    "demo": "Explicitly deferred. Blocker: the demo exercises full legacy resolve_combat (a +5 Vorpal Blade artifact against quest nemesis Lord Surtur), while the facade melee bump/MeleeAttack law is the accepted I5 simplified compute_hero_melee_attack; full resolve_combat parity (defender AC, weapon skills, artifacts, vorpal) remains a documented follow-up. A facade cutover was attempted and verified to change the frozen output; reverted. Unblocks on the full resolve_combat parity follow-up.",
+    "tui": "Explicitly deferred (unchanged). Blocker: the skill-enhancement modal is a meta action with no ActionAst variant or owner transport; a full cutover needs a new EnhanceSkill transport first. Its gameplay actions (Move/doors/Quaff/Zap/Fire/Mount/Quiver) and locale toggle already have facade routes and bit-for-bit parity evidence.",
+    "verification": "Demo binary output verified bit-for-bit identical to the pre-cutover snapshot after revert (246 lines, exit 0, diff empty). No source files changed; the only non-docs input change is MEMORY.md (acceptance entry)."
+  },
+  "measurements": {
+    "demo_before_lines": 246,
+    "demo_after_revert_lines": 246,
+    "demo_diff": "empty (bit-for-bit identical)",
+    "combat_damage_legacy_vs_facade": "18 vs 12 (divergent)",
+    "divergence_cascade": "death processing and quest state diverge, cascading to the turn counter (Turn 9 vs 8) and level layouts (Vibrating Square coordinate 9,17 vs 24,13)"
+  },
+  "limits": "No kernel limits changed; no source changes; docs-only commit",
+  "files": [
+    "docs/parity/obligations/2026-10-08-microkernel-goal.json",
+    "docs/parity/obligations/2026-10-10-microkernel-c4-deferral-checkpoint.json",
+    "docs/plans/2026-10-06-handover.md",
+    "MEMORY.md"
+  ],
+  "remaining": [
+    "Optional self-describing over-bound refusal error variant instead of Kernel(NativeRefusal) (review condition C5)",
+    "Full 53-family C parity backlog remains tracked separately",
+    "Demo cutover unblocks on the full resolve_combat parity follow-up in the facade melee law (documented I5 follow-up)",
+    "TUI cutover unblocks on a new EnhanceSkill owner transport for the meta skill-enhancement modal"
+  ]
+}

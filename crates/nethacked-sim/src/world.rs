@@ -3,8 +3,7 @@ use std::sync::Arc;
 
 use nethacked_arena::{ActorId, EntityArena, ItemId, ItemLocation};
 use nethacked_core::{
-    armor_base_ac, armor_slot, energy::SchedulerState, find_ac, nutrition::hunger_of_nutrition,
-    HungerState, SpellKind,
+    energy::SchedulerState, nutrition::hunger_of_nutrition, HungerState, SpellKind,
 };
 use nethacked_data::ruleset::{Ruleset, RulesetRef};
 use nethacked_data::{CharacterConfig, ItemKindId, MonsterSpeciesId, RoleId};
@@ -20,6 +19,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::events::GameEvent;
 
+pub(crate) use crate::billing::{bill_ledger, validate_bill_object};
+
+pub(crate) use crate::billing::validate_bill_terms;
+
 /// Stored state of a dungeon level when player travels to other floors.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StoredLevel {
@@ -28,6 +31,14 @@ pub struct StoredLevel {
     pub items: Vec<(ItemId, nethacked_arena::ItemRecord)>,
     pub unpaid_items: Vec<(ItemId, u32)>,
 }
+
+// Preserve the historical public paths while accounting belongs to its module.
+pub use crate::billing::{
+    BillCreditor, BillError, BillTerms, BillValuation, BillView, BillingState, ConsumedBillRecord,
+    WholeDisposal,
+};
+
+use crate::item_lifetime::{prepare_disposal, PreparedWholeDisposal};
 
 fn default_ruleset() -> Arc<Ruleset> {
     Ruleset::vanilla()
@@ -63,6 +74,117 @@ impl std::fmt::Display for LoadError {
 
 impl std::error::Error for LoadError {}
 
+/// Borrowed level membership shared by native loading and owner admission.
+pub(crate) struct BillingLevel<'a> {
+    pub items: &'a [(ItemId, nethacked_arena::ItemRecord)],
+    pub unpaid_items: &'a [(ItemId, u32)],
+}
+
+pub(crate) fn validate_billing_parts(
+    ruleset: &Ruleset,
+    items: &nethacked_arena::ItemStorage,
+    unpaid_items: &[(ItemId, u32)],
+    billing: &BillingState,
+    stored_levels: &[BillingLevel<'_>],
+) -> Result<(), BillError> {
+    let rs = ruleset;
+    let validate_object = |object: &nethacked_arena::ItemRecord| {
+        let def = match &object.definition {
+            Some(identity) => rs.item_for_definition(identity),
+            None => rs.item(&object.name),
+        }
+        .ok_or(BillError::InvalidDefinition)?;
+        if def.class != object.class {
+            return Err(BillError::InvalidDefinition);
+        }
+        if object.class != ItemClass::Wand || object.is_container {
+            return Err(BillError::UnsupportedBillingScope);
+        }
+        if object.quantity == 0 {
+            return Err(BillError::ZeroQuantity);
+        }
+        Ok(())
+    };
+    let mut seen = std::collections::BTreeSet::new();
+    for (id, terms) in &billing.live_terms {
+        if !seen.insert(*id) {
+            return Err(BillError::DuplicateLedger);
+        }
+        let mut owners = items.get(*id).into_iter().chain(
+            stored_levels
+                .iter()
+                .flat_map(|level| level.items)
+                .filter(|(i, _)| i == id)
+                .map(|(_, object)| object),
+        );
+        let object = owners.next().ok_or(BillError::StaleItem)?;
+        if owners.next().is_some() {
+            return Err(BillError::DuplicateLedger);
+        }
+        let mut tuples = unpaid_items
+            .iter()
+            .chain(stored_levels.iter().flat_map(|level| level.unpaid_items))
+            .filter(|(i, _)| i == id);
+        let (_, base) = tuples.next().ok_or(BillError::InvalidReceipt)?;
+        if tuples.next().is_some() {
+            return Err(BillError::DuplicateLedger);
+        }
+        // The tuple and its object must belong to the same level owner.
+        if items.contains_key(*id) {
+            if !unpaid_items.iter().any(|(i, _)| i == id) {
+                return Err(BillError::InvalidReceipt);
+            }
+        } else if !stored_levels.iter().any(|level| {
+            level.items.iter().any(|(i, _)| i == id)
+                && level.unpaid_items.iter().any(|(i, _)| i == id)
+        }) {
+            return Err(BillError::InvalidReceipt);
+        }
+        validate_object(object)?;
+        if items
+            .iter()
+            .map(|(_, object)| object)
+            .chain(
+                stored_levels
+                    .iter()
+                    .flat_map(|level| level.items.iter().map(|(_, object)| object)),
+            )
+            .any(|object| object.location == ItemLocation::InContainer(*id))
+        {
+            return Err(BillError::UnsupportedBillingScope);
+        }
+        validate_bill_terms(terms, object.quantity, *base)?;
+    }
+    for bill in &billing.consumed {
+        if !seen.insert(bill.origin)
+            || items.contains_key(bill.origin)
+            || stored_levels.iter().any(|level| {
+                level.items.iter().any(|(id, _)| *id == bill.origin)
+                    || level.unpaid_items.iter().any(|(id, _)| *id == bill.origin)
+            })
+            || unpaid_items.iter().any(|(id, _)| *id == bill.origin)
+        {
+            return Err(BillError::DuplicateLedger);
+        }
+        validate_object(&bill.object)?;
+        if bill.object.location != ItemLocation::Limbo {
+            return Err(BillError::InvalidReceipt);
+        }
+        if bill.terms.billed_quantity.is_none() && bill.terms.unit_price.is_none() {
+            if bill.terms.creditor.is_some() {
+                return Err(BillError::InvalidReceipt);
+            }
+        } else {
+            validate_bill_terms(
+                &bill.terms,
+                bill.object.quantity,
+                bill.terms.legacy_base_cost,
+            )?;
+        }
+    }
+    Ok(())
+}
+
 /// The complete, deterministic game simulation world.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SimulationWorld {
@@ -78,9 +200,18 @@ pub struct SimulationWorld {
     pub arena: EntityArena,
     pub player_id: ActorId,
     pub wielded_item: Option<ItemId>,
+    /// Actual worn armor and single-item negative-multi dressing owner.
+    #[serde(default)]
+    pub equipment: crate::actions::equipment::EquipmentState,
     pub scheduler: SchedulerState,
+    /// Modern saves always emit the owner, including explicit empty/cancelled
+    /// queues. Absent legacy scheduling migration remains a separate step.
+    #[serde(default)]
+    pub object_timers: crate::object_timers::ObjectTimerQueue,
     /// Unpaid shop merchandise as `(item, base cost)`; see [`Self::get_unpaid_cost`].
     pub unpaid_items: Vec<(ItemId, u32)>,
+    #[serde(default)]
+    pub billing: BillingState,
     pub player_gold: u32,
     pub player_nutrition: i32,
     pub player_pw: u32,
@@ -115,6 +246,9 @@ pub struct SimulationWorld {
     pub mysterious_force_count: u32,
     #[serde(default)]
     pub role_name: String,
+    /// Config identity; old saves retain omission and decode their stored identifier.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub role_id: Option<RoleId>,
     #[serde(default = "default_rng")]
     pub rng: ChaCha8Rng,
     pub seed: u64,
@@ -142,6 +276,50 @@ pub fn default_rng() -> ChaCha8Rng {
 }
 
 impl SimulationWorld {
+    /// Owned geography/vitals context for initialized corpse births. Generation
+    /// and gameplay share selection facts; only in_mklev changes rot timing.
+    pub(crate) fn item_birth_context(
+        &self,
+        branch: nethacked_types::BranchId,
+        depth: usize,
+        in_mklev: bool,
+    ) -> (
+        nethacked_data::containers::ContainerContext,
+        nethacked_data::generation::MonsterGenContext,
+    ) {
+        use nethacked_data::generation::{DungeonAlign, MonsterGenContext};
+        use nethacked_types::BranchId;
+        let hero_level = self.arena.actors.get(self.player_id).map_or(1, |p| p.level);
+        (
+            nethacked_data::containers::ContainerContext {
+                hero_level,
+                level_difficulty: depth.min(u32::MAX as usize) as u32,
+                moves: self.scheduler.turn,
+                in_mklev,
+            },
+            MonsterGenContext {
+                hero_level: hero_level.min(i32::MAX as u32) as i32,
+                level_difficulty: depth.min(i32::MAX as usize) as i32,
+                in_hell: branch == BranchId::Gehennom,
+                align: if branch == BranchId::GnomishMines {
+                    DungeonAlign::Lawful
+                } else {
+                    DungeonAlign::None
+                },
+                temperature: 0,
+            },
+        )
+    }
+
+    /// Current sim geography exposes Astral only; elemental planes can be
+    /// supplied directly to the data factory when that geography is modeled.
+    pub(crate) fn monster_spawn_context(&self) -> nethacked_data::monsters::MonsterSpawnContext {
+        nethacked_data::monsters::MonsterSpawnContext {
+            endgame_plane: (self.current_branch == nethacked_types::BranchId::AstralPlane)
+                .then_some(nethacked_types::EndgamePlane::Astral),
+        }
+    }
+
     /// Default maximum length of the sliding window for `event_log` (prevents unbounded memory growth).
     pub const DEFAULT_MAX_EVENT_LOG_LEN: usize = DEFAULT_MAX_EVENT_LOG_LEN;
 
@@ -217,9 +395,11 @@ impl SimulationWorld {
             match room.room_type {
                 RoomType::Shop => {
                     // Spawn peaceful Shopkeeper
-                    if let Some(mut sk) = ruleset
-                        .create_monster_record_by_id(MonsterSpeciesId::SHOPKEEPER, room.center())
-                    {
+                    if let Some(mut sk) = ruleset.create_monster_record_by_id(
+                        MonsterSpeciesId::SHOPKEEPER,
+                        room.center(),
+                        &mut rng,
+                    ) {
                         if let Some(sk_def) = ruleset.monster_by_id(MonsterSpeciesId::SHOPKEEPER) {
                             sk.malign = nethacked_core::calculate_malign(
                                 sk_def.maligntyp,
@@ -261,9 +441,11 @@ impl SimulationWorld {
                     }
                 }
                 RoomType::Normal if i > 0 && i != level.rooms.len() - 1 => {
-                    if let Some(mut goblin) =
-                        ruleset.create_monster_record_by_id(MonsterSpeciesId::GOBLIN, room.center())
-                    {
+                    if let Some(mut goblin) = ruleset.create_monster_record_by_id(
+                        MonsterSpeciesId::GOBLIN,
+                        room.center(),
+                        &mut rng,
+                    ) {
                         if let Some(gob_def) = ruleset.monster_by_id(MonsterSpeciesId::GOBLIN) {
                             let input = crate::peace::peace_input(
                                 gob_def,
@@ -321,7 +503,7 @@ impl SimulationWorld {
         }
 
         // Auto-wield first starting weapon if any
-        let wielded_item = starting_items.into_iter().find(|&id| {
+        let wielded_item = starting_items.iter().copied().find(|&id| {
             arena
                 .items
                 .get(id)
@@ -348,8 +530,11 @@ impl SimulationWorld {
             level,
             player_id,
             wielded_item,
-            scheduler: SchedulerState::new(12, 10),
+            equipment: crate::actions::equipment::EquipmentState::default(),
+            scheduler: SchedulerState::new(12, 0),
+            object_timers: crate::object_timers::ObjectTimerQueue::default(),
             unpaid_items,
+            billing: BillingState::default(),
             player_gold,
             player_nutrition,
             player_pw,
@@ -383,6 +568,7 @@ impl SimulationWorld {
             hero_race: config.race,
             mysterious_force_count: 0,
             role_name: format!("{:?}", config.role),
+            role_id: Some(config.role),
             rng,
             seed,
             event_log: Vec::new(),
@@ -391,6 +577,20 @@ impl SimulationWorld {
             conducts: nethacked_types::ConductTracker::default(),
             progress: crate::progress::HeroProgress::default(),
         };
+        for id in starting_items {
+            let Some(item) = sim.arena.items.get(id) else {
+                continue;
+            };
+            if let Some(armor) = sim
+                .ruleset
+                .item(&item.name)
+                .and_then(|def| def.armor.as_ref())
+            {
+                if sim.equipment.worn(armor.slot).is_none() {
+                    sim.equipment.armor.push((armor.slot, id));
+                }
+            }
+        }
         sim.init_hero_attributes();
         sim.recompute_hero_ac();
         sim
@@ -408,7 +608,10 @@ impl SimulationWorld {
 
     /// Serialize the simulation state to JSON string.
     pub fn to_save_json(&self) -> Result<String, serde_json::Error> {
-        serde_json::to_string(self)
+        let mut snapshot = self.clone();
+        snapshot.register_existing_artifacts();
+        snapshot.reconcile_object_timers();
+        serde_json::to_string(&snapshot)
     }
 
     /// Deserialize a saved simulation world, validating ruleset reference compatibility.
@@ -417,6 +620,24 @@ impl SimulationWorld {
         rs: Arc<Ruleset>,
         rref: &RulesetRef,
     ) -> Result<Self, LoadError> {
+        // Keep the legacy acceptance contract, including no post-catchup
+        // rejection. The bounded owner boundary additionally revalidates.
+        Ok(Self::prepare_native_import(json, rs, rref)?.catch_up_native_import())
+    }
+
+    /// Compatibility decoder only: preserve native serde policies and error order.
+    /// Queue validation is structural and needs no restored item tags. These
+    /// native checks precede normalization; no registry migration runs here.
+    pub(crate) fn decode_native_import(
+        json: &str,
+        rs: Arc<Ruleset>,
+        rref: &RulesetRef,
+    ) -> Result<(Self, bool, bool), LoadError> {
+        let value: serde_json::Value =
+            serde_json::from_str(json).map_err(|e| LoadError::Json(e.to_string()))?;
+        let legacy_equipment = value.get("equipment").is_none();
+        let legacy_object_timers = value.get("object_timers").is_none();
+        let legacy_billing = value.get("billing").is_none();
         let mut world: SimulationWorld =
             serde_json::from_str(json).map_err(|e| LoadError::Json(e.to_string()))?;
         if &world.ruleset_ref != rref {
@@ -426,7 +647,139 @@ impl SimulationWorld {
             });
         }
         world.ruleset = rs;
+        // Absence supplies only the empty owner, never historical receipt facts.
+        // Explicit owners (including empty ones) are retained and validated.
+        if legacy_billing {
+            world.billing = BillingState::default();
+        }
+        world
+            .validate_billing_snapshot()
+            .map_err(|error| LoadError::Json(format!("billing: {error:?}")))?;
+        if !legacy_object_timers {
+            world.validate_object_timers().map_err(LoadError::Json)?;
+        }
+        Ok((world, legacy_equipment, legacy_object_timers))
+    }
+
+    /// Normalize accepted native absence/tags and restore queue ordering once.
+    /// This is not a user/registry migration or complete owner admission.
+    pub(crate) fn prepare_native_import(
+        json: &str,
+        rs: Arc<Ruleset>,
+        rref: &RulesetRef,
+    ) -> Result<Self, LoadError> {
+        Self::normalize_native_import(Self::decode_native_import(json, rs, rref)?)
+    }
+
+    /// The approved legacy transformation; callers must first use the native
+    /// decoder and old-schema validators, without catchup or normalization.
+    pub(crate) fn normalize_native_import(
+        (mut world, legacy_equipment, legacy_object_timers): (Self, bool, bool),
+    ) -> Result<Self, LoadError> {
+        // Old saves lack these optional tags. Resolve through the owned
+        // definition's canonical identity/profile, without guessing by name.
+        let restore_tags = |item: &mut nethacked_arena::ItemRecord| {
+            if let Some(def) = world.ruleset.item(&item.name) {
+                if def.id == Some(ItemKindId::CORPSE) && item.corpse_species.is_none() {
+                    item.corpse_species = Some(nethacked_arena::CorpseSpecies::Unspecified);
+                }
+                if matches!(
+                    def.initialization,
+                    nethacked_data::item_init::ItemInitProfile::Container {
+                        container: nethacked_data::item_init::ContainerInit::IceBox
+                    }
+                ) {
+                    item.is_ice_box = true;
+                }
+            }
+        };
+        for (_, item) in world.arena.items.iter_mut() {
+            restore_tags(item);
+        }
+        for (_, stored) in &mut world.stored_levels {
+            for (_, item) in &mut stored.items {
+                restore_tags(item);
+            }
+        }
+        world.register_existing_artifacts();
+        // Before actual worn state existed, old saves represented the first
+        // directly carried armor per slot as worn. Migrate only absent owners;
+        // an explicit empty owner means the hero really is not wearing armor.
+        if legacy_equipment {
+            for id in world.arena.items_carried_by(world.player_id) {
+                let Some(item) = world.arena.items.get(id) else {
+                    continue;
+                };
+                if item.class != ItemClass::Armor {
+                    continue;
+                }
+                let slot = world
+                    .ruleset
+                    .item(&item.name)
+                    .and_then(|def| def.armor.as_ref().map(|armor| armor.slot))
+                    .or_else(|| nethacked_core::armor_slot(&item.name));
+                if let Some(slot) = slot {
+                    if world.equipment.worn(slot).is_none() {
+                        world.equipment.armor.push((slot, id));
+                    }
+                }
+            }
+        }
+        world.reconcile_equipment();
+        world.recompute_hero_ac();
+        if !legacy_object_timers {
+            world.restore_saved_object_timers();
+        } else {
+            world
+                .migrate_absent_corpse_timers()
+                .map_err(|error| LoadError::Json(format!("legacy corpse timer: {error:?}")))?;
+        }
         Ok(world)
+    }
+
+    /// Shared catchup, without broadening the public legacy load contract.
+    fn catch_up_native_import(mut self) -> Self {
+        // New absent-owner samples are already installed in source insertion
+        // order; saved-owner restoration must not reverse their ties again.
+        // C restore.c:930 catches up after object references are restored.
+        // No clock advance; off-level timers remain deferred.
+        let expired = self.run_object_timers();
+        if !expired.is_empty() {
+            self.record_events(&expired);
+        }
+        self
+    }
+
+    /// Consume hidden detached state, catch up once, then validate the result.
+    pub(crate) fn complete_native_import(self) -> Result<Self, LoadError> {
+        let world = self.catch_up_native_import();
+        world
+            .validate_billing_snapshot()
+            .map_err(|error| LoadError::Json(format!("billing: {error:?}")))?;
+        world.validate_object_timers().map_err(LoadError::Json)?;
+        Ok(world)
+    }
+
+    /// Register imported, cached and explicitly mutated records without RNG.
+    pub fn register_existing_artifacts(&mut self) {
+        let rules = &self.ruleset;
+        let history = &mut self.arena.artifact_history;
+        let mut register = |item: &mut nethacked_arena::ItemRecord| {
+            if item.artifact_id.is_none() {
+                item.artifact_id = rules.artifact_id_for_item(&item.name).map(str::to_owned);
+            }
+            if let Some(id) = &item.artifact_id {
+                history.insert(id.clone());
+            }
+        };
+        for (_, item) in self.arena.items.iter_mut() {
+            register(item);
+        }
+        for (_, stored) in &mut self.stored_levels {
+            for (_, item) in &mut stored.items {
+                register(item);
+            }
+        }
     }
 
     /// Returns the current coordinate of the player character.
@@ -441,42 +794,18 @@ impl SimulationWorld {
     /// Compute hero's current AC according to NetHack 5.0 C `find_ac(void)` (`do_wear.c:2473-2507`).
     ///
     /// Human hero has base AC 10 (`mons[u.umonnum].ac`, `do_wear.c:2475`).
-    /// Worn armor pieces are gathered from the hero's carried items: for each
-    /// [`nethacked_core::ArmorSlot`], at most one piece is counted as worn (the first carried item
-    /// matching that slot wins; additional carried items in the same slot do not stack).
-    /// Divine protection is subtracted as C `u.ublessed`.
+    /// Only explicitly worn, directly carried armor contributes. Divine
+    /// protection is subtracted as C `u.ublessed`.
     pub fn compute_hero_ac(&self) -> i32 {
-        let mut worn_slots = std::collections::HashSet::new();
-        let mut worn_armor = Vec::new();
-
-        for item_id in self.arena.items_carried_by(self.player_id) {
-            if let Some(item) = self.arena.items.get(item_id) {
-                if item.class == ItemClass::Armor {
-                    let (slot, a_ac) = if let Some(def) = self.ruleset.item(&item.name) {
-                        let slot = def
-                            .armor
-                            .as_ref()
-                            .map(|a| a.slot)
-                            .or_else(|| armor_slot(&item.name));
-                        let base_ac = def
-                            .armor
-                            .as_ref()
-                            .map(|a| a.base_ac)
-                            .unwrap_or(def.ac_bonus);
-                        (slot, base_ac)
-                    } else {
-                        (armor_slot(&item.name), armor_base_ac(&item.name))
-                    };
-                    if let Some(slot) = slot {
-                        if worn_slots.insert(slot) {
-                            worn_armor.push((a_ac, item.enchantment as i32, item.erosion));
-                        }
-                    }
-                }
-            }
-        }
-
-        find_ac(10, &worn_armor, self.divine_protection as i32)
+        crate::actions::command_frame::armor_class(
+            &self.equipment,
+            &crate::actions::command_frame::BorrowedObjects {
+                items: &self.arena.items,
+                rules: &self.ruleset,
+            },
+            self.player_id,
+            self.divine_protection,
+        )
     }
 
     /// Recomputes the hero's AC and updates `player.ac`.
@@ -518,7 +847,211 @@ impl SimulationWorld {
 
     /// Clear unpaid status after purchase.
     pub fn remove_unpaid(&mut self, id: ItemId) {
+        let _ = self.try_remove_unpaid(id);
+    }
+
+    /// Clearing a frozen or consumed obligation requires the future settlement route.
+    pub fn try_remove_unpaid(&mut self, id: ItemId) -> Result<(), BillError> {
+        if self.billing.live_terms.iter().any(|(i, _)| *i == id)
+            || self.billing.consumed.iter().any(|bill| bill.origin == id)
+        {
+            return Err(BillError::SettlementDeferred);
+        }
         self.unpaid_items.retain(|(i, _)| *i != id);
+        Ok(())
+    }
+
+    pub(crate) fn billing_settlement_deferred(&self) -> bool {
+        !self.billing.live_terms.is_empty() || !self.billing.consumed.is_empty()
+    }
+
+    fn unknown_bill_terms(base: u32) -> BillTerms {
+        crate::billing::unknown_bill_terms(base)
+    }
+
+    /// Read-only save preflight. Historical origins/creditors are not live lookups.
+    pub(crate) fn validate_billing_snapshot(&self) -> Result<(), BillError> {
+        let levels: Vec<_> = self
+            .stored_levels
+            .iter()
+            .map(|(_, level)| BillingLevel {
+                items: &level.items,
+                unpaid_items: &level.unpaid_items,
+            })
+            .collect();
+        validate_billing_parts(
+            &self.ruleset,
+            &self.arena.items,
+            &self.unpaid_items,
+            &self.billing,
+            &levels,
+        )
+    }
+
+    fn validate_bill_object(&self, id: ItemId) -> Result<&nethacked_arena::ItemRecord, BillError> {
+        validate_bill_object(
+            id,
+            &self.arena.items,
+            self.player_id,
+            &self.billing,
+            &self.ruleset,
+        )
+    }
+
+    fn bill_ledger(&self, id: ItemId) -> Result<(Option<u32>, Option<&BillTerms>), BillError> {
+        bill_ledger(
+            id,
+            &self.unpaid_items,
+            &self.billing,
+            self.stored_levels
+                .iter()
+                .flat_map(|(_, level)| level.unpaid_items.iter()),
+            self.stored_levels
+                .iter()
+                .any(|(_, level)| level.items.iter().any(|(i, _)| *i == id)),
+        )
+    }
+
+    fn validate_bill_terms(terms: &BillTerms, quantity: u32, base: u32) -> Result<(), BillError> {
+        validate_bill_terms(terms, quantity, base)
+    }
+
+    /// Admit prescribed source terms once. This does not calculate historical prices.
+    pub fn record_bill_terms(&mut self, id: ItemId, terms: BillTerms) -> Result<(), BillError> {
+        let object = self.validate_bill_object(id)?;
+        let (base, existing) = self.bill_ledger(id)?;
+        let base = base.ok_or(BillError::InvalidReceipt)?;
+        if existing.is_some() {
+            return Err(BillError::ReceiptAlreadyRecorded);
+        }
+        Self::validate_bill_terms(&terms, object.quantity, base)?;
+        self.billing.live_terms.push((id, terms));
+        Ok(())
+    }
+
+    fn prepare_whole_disposal(&self, id: ItemId) -> Result<PreparedWholeDisposal, BillError> {
+        let object = self.validate_bill_object(id)?;
+        let (base, receipt) = self.bill_ledger(id)?;
+        let prepared = prepare_disposal(id, object, base, receipt)?;
+        if self.wielded_item == Some(id)
+            || self.hero.quivered_item == Some(id)
+            || self.equipment.armor.iter().any(|(_, i)| *i == id)
+            || self
+                .equipment
+                .dressing
+                .as_ref()
+                .is_some_and(|d| d.item == id)
+            || self
+                .object_timers
+                .entries()
+                .iter()
+                .any(|timer| match timer.target {
+                    crate::object_timers::ObjectTimerTarget::Active(i) => i == id,
+                    crate::object_timers::ObjectTimerTarget::Cached { item, .. } => item == id,
+                })
+        {
+            return Err(BillError::LifecycleReferencesPresent);
+        }
+        Ok(prepared)
+    }
+
+    fn commit_whole_disposal(&mut self, prepared: PreparedWholeDisposal) -> WholeDisposal {
+        let origin = prepared.origin;
+        let result = if let Some(record) = prepared.into_consumed() {
+            self.billing.consumed.push(record);
+            WholeDisposal::RetainedBilled { origin }
+        } else {
+            WholeDisposal::Unbilled { origin }
+        };
+        self.arena.items.remove(origin);
+        self.unpaid_items.retain(|(i, _)| *i != origin);
+        self.billing.live_terms.retain(|(i, _)| *i != origin);
+        result
+    }
+
+    /// Native whole-carried wand fixture route; no lifecycle cleanup or activation.
+    pub fn dispose_whole_carried_item(&mut self, id: ItemId) -> Result<WholeDisposal, BillError> {
+        let prepared = self.prepare_whole_disposal(id)?;
+        Ok(self.commit_whole_disposal(prepared))
+    }
+
+    pub fn outstanding_bills(&self) -> Vec<BillView> {
+        let view = |origin,
+                    object: Option<nethacked_arena::ItemRecord>,
+                    terms: BillTerms,
+                    useup| {
+            let valuation = match (terms.billed_quantity, terms.unit_price) {
+                (Some(q), Some(price))
+                    if q > 0 && price > 0 && u64::from(q) * u64::from(price) <= i64::MAX as u64 =>
+                {
+                    BillValuation::Known {
+                        total: u64::from(q) * u64::from(price),
+                    }
+                }
+                _ => BillValuation::UnresolvedTerms {
+                    base: terms.legacy_base_cost,
+                    current_consumed_quantity: object.as_ref().map(|o| o.quantity),
+                },
+            };
+            BillView {
+                origin,
+                object,
+                terms,
+                outstanding: true,
+                useup,
+                valuation,
+            }
+        };
+        let mut views = Vec::new();
+        for &(id, base) in self.unpaid_items.iter().chain(
+            self.stored_levels
+                .iter()
+                .flat_map(|(_, level)| level.unpaid_items.iter()),
+        ) {
+            let mut objects = self.arena.items.get(id).into_iter().chain(
+                self.stored_levels
+                    .iter()
+                    .flat_map(|(_, level)| level.items.iter())
+                    .filter(|(i, _)| *i == id)
+                    .map(|(_, object)| object),
+            );
+            let first = objects.next();
+            let object = if objects.next().is_none() {
+                first.cloned()
+            } else {
+                None
+            };
+            let terms = self
+                .billing
+                .live_terms
+                .iter()
+                .find(|(i, _)| *i == id)
+                .map(|(_, terms)| terms.clone())
+                .unwrap_or_else(|| Self::unknown_bill_terms(base));
+            views.push(view(id, object, terms, false));
+        }
+        for bill in &self.billing.consumed {
+            views.push(view(
+                bill.origin,
+                Some(bill.object.clone()),
+                bill.terms.clone(),
+                true,
+            ));
+        }
+        views
+    }
+
+    /// Clear represented references after the rot callback removes an item.
+    /// Full shop bills/mextra and unowned C object references remain separate.
+    pub(crate) fn forget_rot_corpse_references(&mut self, id: ItemId) {
+        if self.wielded_item == Some(id) {
+            self.wielded_item = None;
+        }
+        if self.hero.quivered_item == Some(id) {
+            self.hero.quivered_item = None;
+        }
+        self.remove_unpaid(id);
+        self.remove_destroyed_item_equipment(id);
     }
 
     /// Retrieve an EconomyLedger snapshot of current unpaid store items.
@@ -558,6 +1091,17 @@ impl SimulationWorld {
                 None
             }
         })
+    }
+
+    /// Match SlotMap's restored freelist before revival inserts one actor.
+    /// Like cached-level restoration, this preserves every occupied key and
+    /// slot version while making a full-save boundary invisible to allocation.
+    /// Arena keys are not C global monster IDs or linked-list ordering.
+    pub(crate) fn normalize_revival_actor_allocator(&mut self) {
+        self.arena.actors = serde_json::from_value(
+            serde_json::to_value(&self.arena.actors).expect("actor arena serializes"),
+        )
+        .expect("serialized actor arena restores");
     }
 
     /// Return the current hunger state based on nutrition points.
@@ -702,17 +1246,172 @@ impl SimulationWorld {
         }
     }
 
-    /// Steal an item from the hero (AD_SITM).
+    /// C steal.c:409-448 selection and substitutions. Returns true when steal
+    /// asks the attacker to flee (successful transfer or empty inventory).
     pub(crate) fn steal_hero_item(
         &mut self,
         attacker: &nethacked_arena::ActorRecord,
+        attacker_id: ActorId,
         events: &mut Vec<GameEvent>,
-    ) {
-        // Simplified - just report the theft
+    ) -> bool {
+        use nethacked_core::ac::ArmorSlot;
+        let suit = self.equipment.worn(ArmorSlot::Suit);
+        let cloak = self.equipment.worn(ArmorSlot::Cloak);
+        let carried: Vec<_> = self
+            .arena
+            .items_carried_by(self.player_id)
+            .into_iter()
+            .filter(|id| {
+                !(suit.is_some() && Some(*id) == cloak)
+                    && self
+                        .arena
+                        .items
+                        .get(*id)
+                        .is_some_and(|item| item.class != ItemClass::Coin)
+            })
+            .collect();
+        let weight = |id| {
+            if self.equipment.armor.iter().any(|(_, worn)| *worn == id) {
+                5u32
+            } else {
+                1
+            }
+        };
+        let total: u32 = carried.iter().map(|id| weight(*id)).sum();
+        if total == 0 {
+            return true;
+        }
+        let mut choice = self.rng.random_range(0..total);
+        let Some(mut id) = carried.into_iter().find(|id| {
+            let w = weight(*id);
+            if choice < w {
+                true
+            } else {
+                choice -= w;
+                false
+            }
+        }) else {
+            return false;
+        };
+        // steal.c:433-448: steal the outer blocking worn item instead.
+        if Some(id) == self.equipment.worn(ArmorSlot::Gloves) && self.wielded_item.is_some() {
+            id = self.wielded_item.unwrap();
+        } else if Some(id) == suit && cloak.is_some() {
+            id = cloak.unwrap();
+        } else if Some(id) == self.equipment.worn(ArmorSlot::Shirt) {
+            if let Some(outer) = cloak.or(suit) {
+                id = outer;
+            }
+        }
+        self.interrupt_dressing(events);
+        if self.equipment.armor.iter().any(|(_, worn)| *worn == id) {
+            // Forced delayed removal of selected worn armor remains unsupported;
+            // stop_donning is real, but no transfer/flee success is fabricated.
+            say(events, "The thief cannot finish removing your worn armor.");
+            return false;
+        }
+        let name = self.arena.items.get(id).unwrap().name.clone();
+        self.arena.items.get_mut(id).unwrap().location = ItemLocation::CarriedBy(attacker_id);
+        if self.wielded_item == Some(id) {
+            self.wielded_item = None;
+        }
+        if self.hero.quivered_item == Some(id) {
+            self.hero.quivered_item = None;
+        }
+        events.push(GameEvent::ItemStolen {
+            actor: attacker_id,
+            item: id,
+        });
         say(
             events,
-            &format!("{} steals an item!", capitalize(&attacker.name)),
+            &format!("{} steals your {}!", capitalize(&attacker.name), name),
         );
+        true
+    }
+
+    /// Ordinary-terrain C rloc (teleport.c:1848-1888): prescribed x/y
+    /// draws for 50 attempts, then incremental randomized candidate fallback.
+    /// Special monster habitat/teleport-region restrictions are separate gaps.
+    pub(crate) fn teleport_theft_attacker(&mut self, id: ActorId, events: &mut Vec<GameEvent>) {
+        use nethacked_types::{COLNO, ROWNO};
+        if self.level.no_teleport {
+            return;
+        }
+        let Some(actor) = self.arena.actors.get(id).cloned() else {
+            return;
+        };
+        let goodpos = |world: &Self, coord| {
+            world.level.is_passable(coord)
+                && world.actor_at(coord).is_none_or(|occupant| occupant == id)
+        };
+        let valid = |world: &Self, coord| {
+            goodpos(world, coord)
+                && !world.elbereth_scares(&actor, world.level.get_engraving(coord))
+        };
+        let mut destination = None;
+        for _ in 0..50 {
+            let x = self.rng.random_range(1..COLNO);
+            let y = self.rng.random_range(0..ROWNO);
+            let coord = Coord::new_unchecked(x, y);
+            if valid(self, coord) {
+                destination = Some(coord);
+                break;
+            }
+        }
+        if destination.is_none() {
+            let mut candidates = Vec::new();
+            // collect_coords(CC_INCL_CENTER | CC_UNSHUFFLED | CC_SKIP_MONS):
+            // expanding square edges, y before x, centered at <40,10>.
+            let cx = COLNO / 2;
+            let cy = ROWNO / 2;
+            for radius in 0..=cx.max(cy) {
+                let lox = cx as isize - radius as isize;
+                let hix = cx + radius;
+                let loy = cy as isize - radius as isize;
+                let hiy = cy + radius;
+                for y in loy.max(0) as usize..=hiy.min(ROWNO - 1) {
+                    for x in lox.max(1) as usize..=hix.min(COLNO - 1) {
+                        if x as isize != lox && x != hix && y as isize != loy && y != hiy {
+                            continue;
+                        }
+                        let coord = Coord::new_unchecked(x, y);
+                        // CC_SKIP_MONS uses m_at: the hero remains a candidate;
+                        // goodpos rejects that tile only after the shuffle draw.
+                        if self.level.is_passable(coord)
+                            && self
+                                .actor_at(coord)
+                                .is_none_or(|occupant| occupant == self.player_id)
+                        {
+                            candidates.push(coord);
+                        }
+                    }
+                }
+            }
+            let mut backup = None;
+            for i in 0..candidates.len() {
+                let j = self.rng.random_range(0..candidates.len() - i);
+                candidates.swap(i, i + j);
+                let coord = candidates[i];
+                if valid(self, coord) {
+                    destination = Some(coord);
+                    break;
+                }
+                if goodpos(self, coord) {
+                    backup.get_or_insert(coord);
+                }
+            }
+            destination = destination.or(backup);
+        }
+        if let Some(to) = destination {
+            self.arena.actors.get_mut(id).unwrap().coord = to;
+            if to != actor.coord {
+                events.push(GameEvent::ActorMoved {
+                    actor: id,
+                    from: actor.coord,
+                    to,
+                });
+            }
+        }
     }
 
     /// Steal gold from the hero (AD_SGLD).
@@ -734,12 +1433,13 @@ impl SimulationWorld {
     pub(crate) fn seduce_hero(
         &mut self,
         attacker: &nethacked_arena::ActorRecord,
+        attacker_id: ActorId,
         events: &mut Vec<GameEvent>,
     ) {
         if self.rng.random_range(0..2u32) == 0 {
             self.steal_hero_gold(attacker, events);
         } else {
-            self.steal_hero_item(attacker, events);
+            let _ = self.steal_hero_item(attacker, attacker_id, events);
         }
         // Foocubus teleports away after
         say(events, &format!("{} vanishes!", capitalize(&attacker.name)));

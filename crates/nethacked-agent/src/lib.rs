@@ -42,7 +42,7 @@ mod tests {
 
     #[test]
     fn test_agent_session_observation() {
-        let session = AgentSession::new(42);
+        let session = AgentSession::new(42).unwrap();
         let obs = session.get_observation();
 
         assert_eq!(obs.turn, 1);
@@ -53,15 +53,15 @@ mod tests {
 
     #[test]
     fn test_agent_session_step() {
-        let mut session = AgentSession::new(42);
-        let next_obs = session.step(ActionAst::Wait);
+        let mut session = AgentSession::new(42).unwrap();
+        let next_obs = session.step(ActionAst::Wait).unwrap();
 
         assert_eq!(next_obs.turn, 2);
     }
 
     #[test]
     fn test_mcp_initialize_and_tools_list() {
-        let mut session = AgentSession::new(42);
+        let mut session = AgentSession::new(42).unwrap();
 
         let init_req = json!({
             "jsonrpc": "2.0",
@@ -92,7 +92,7 @@ mod tests {
 
     #[test]
     fn test_mcp_tool_call_observation() {
-        let mut session = AgentSession::new(42);
+        let mut session = AgentSession::new(42).unwrap();
 
         let call_req = json!({
             "jsonrpc": "2.0",

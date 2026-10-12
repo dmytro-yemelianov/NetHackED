@@ -71,12 +71,16 @@ fn blessed_genocide_spares_non_lich_actors_and_drops_items() {
     let p = sim.arena.actors.get(sim.player_id).unwrap().coord;
     let c1 = Coord::new(p.x + 2, p.y).unwrap();
     let c2 = Coord::new(p.x + 3, p.y).unwrap();
-    let lich = sim
-        .arena
-        .spawn_actor(create_monster_record(MonsterSpeciesId::MASTER_LICH, c1));
-    let dog = sim
-        .arena
-        .spawn_actor(create_monster_record(MonsterSpeciesId::LITTLE_DOG, c2));
+    let lich = sim.arena.spawn_actor(create_monster_record(
+        MonsterSpeciesId::MASTER_LICH,
+        c1,
+        &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
+    ));
+    let dog = sim.arena.spawn_actor(create_monster_record(
+        MonsterSpeciesId::LITTLE_DOG,
+        c2,
+        &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
+    ));
     let loot = sim.arena.spawn_item(create_item_record(
         ItemKindId::LONG_SWORD,
         ItemLocation::CarriedBy(lich),
@@ -103,6 +107,7 @@ fn uncursed_genocide_hits_bestiary_goblins() {
     let gob = sim.arena.spawn_actor(create_monster_record(
         MonsterSpeciesId::GOBLIN,
         Coord::new(p.x + 2, p.y).unwrap(),
+        &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
     ));
     let idx = genocide_scroll(&mut sim, Buc::Uncursed);
     sim.step_player_action(ActionAst::Read(idx));
@@ -269,7 +274,11 @@ fn melee_outcomes_vary_with_seed() {
     for seed in 0..40u64 {
         let mut sim = SimulationWorld::new_with_seed(seed);
         let east = open_east(&mut sim);
-        let mut mon = create_monster_record(MonsterSpeciesId::GOBLIN, east);
+        let mut mon = create_monster_record(
+            MonsterSpeciesId::GOBLIN,
+            east,
+            &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
+        );
         mon.hp = 1000;
         mon.max_hp = 1000;
         // C to-hit: tmp = 1 + AC 13 + lvl 1 + long sword unskilled -4 = 11, so a

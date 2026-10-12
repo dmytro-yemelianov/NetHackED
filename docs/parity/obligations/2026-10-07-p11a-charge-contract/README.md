@@ -1,0 +1,9 @@
+# Reviewed signed-charge and wand lifetime contract
+
+The [C1 contract](contract.json) defines the complete signed-charge, wrest and dust outcome. P11a-C1-API1 is its first implementation-ready prerequisite, limited to three files: a signed prescribed-draw API and unchanged positive native behavior. Nonpositive runtime activation remains required through IN1 after retirement, backfire and preflight prerequisites. This checkpoint implements nothing and closes no family.
+
+The [initial review](review-initial.json) found incomplete backfire exercise draw/state expectations, missing prerequisite enforcement and a P11b/OB07 family mapping error. One [repair](repair-summary.json) and [independent rereview](review-final.json) resolve all three. Backfire lists are draw prefixes; conditional source exercise and half-physical seams are explicit HE02/EQ03 requirements. LIFE consumes a narrow accepted billing contract; backfire consumes accepted LIFE; full integration requires accepted preflight. P11b and OB07 stay separate existing families.
+
+The [ready packet](ready-packet.md) and [run ledger](../2026-10-07-autonomous-parity-run.json) govern exact child ownership and the acyclic queue. Future child audits must establish minimal implementation allowlists and runtime evidence. All15 fixtures, all ten frontend exits, native/old-save/pack/schema/hash requirements, existing assertions and frozen goldens remain mandatory. Full legacy/selected empty behavior correction has no hidden exemption; an actual golden mismatch still needs an exact reviewed proposal and explicit user decision.
+
+[Unit evidence](unit.json) binds immutable source/API artifacts, original and final reviews, and the unchanged345 inputs. This documentation checkpoint reuses accepted same-source1,021 tests, all3 frozen goldens and all12 gates, with fresh changed documentation/parity checks. API1 implementation requires fresh independent review and full validation. All53 families remain open.

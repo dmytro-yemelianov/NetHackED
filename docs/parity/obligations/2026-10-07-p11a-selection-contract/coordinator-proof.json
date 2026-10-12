@@ -1,0 +1,14 @@
+{
+  "verdict": "PASS_CONTRACT_ONLY",
+  "source_input_count": 344,
+  "digest": "567aed72fc97273ac4209afe92decbd5175e8e576ec7b5933bdb14c871e4e707",
+  "all_reviewer_bindings_verified": 13,
+  "reused_full_tests": 1009,
+  "reused_gates": 12,
+  "reused_goldens": 3,
+  "fresh_full_execution": false,
+  "registered_child_count": 16,
+  "family_count": 53,
+  "dependency_graph_acyclic": true,
+  "implementation_accepted": false
+}

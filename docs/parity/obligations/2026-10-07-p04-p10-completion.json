@@ -1,0 +1,1954 @@
+{
+  "verdict": "BOUNDED_SEMANTIC_EXITS_VERIFIED; GOLD_POLICY/GREEN_RERUN/COMMIT_PENDING",
+  "required_feature_findings": [],
+  "scope": "Original bounded P04\u2013P10 queue; not full NetHack parity or all542 inventory rows",
+  "authority": {
+    "C_commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+    "method": "Reuse accepted source-only semantic reviews; narrow current owner/test reads; no duplicate broad C audit"
+  },
+  "graph_discovery": {
+    "project": "Users-dmytro-github-NetRust",
+    "max_limit": 25,
+    "current_owner_search": "zero current nethacked nodes; stale graph fallback to known current paths"
+  },
+  "binding": {
+    "HEAD": "b912fafe33c8cd6bff80522d5b7ca7ee1cae3d40",
+    "branch": "feat/monster-hp-d8",
+    "branch_authorization": "MEMORY authorized repair-branch exception plus current coordinator task",
+    "files": 342,
+    "digest": "64ea29d3bd5d2ce97d1d515501e07c424b5951e806cc7818d17f9690fcfffddc",
+    "digest_algorithm": "Sorted tracked+untracked selected names; SHA256 update path UTF8 then raw file bytes, no delimiter",
+    "all_live_per_file_hashes_equal_P10b_after_manifest": true,
+    "final_root_baseline_equal_names_HEAD_digest": true,
+    "root_baseline": "/tmp/netrust-p04-p10-final-gates/baseline.json",
+    "all_current_non_documentation_input_hashes": {
+      ".cargo/config.toml": "3531ccb9356f8ce822a78289f4433ebd1a741c7aba4fc614e206c1f59a26dac6",
+      ".git-blame-ignore-revs": "08f586092b1eeccd1de2ef158548cdf73e4be0df0c7bb3010c4da69b0f9ae767",
+      ".github/workflows/lean_action_ci.yml": "2fb98f4bc5279bf8206262fce6cdfcf7b254317692710c6735e37baa3a42b861",
+      ".github/workflows/pages.yml": "8b2d6c86f0b4241ba693a75b28bcc3b14518901649a9a7d331db399646293ada",
+      ".gitignore": "f7b39da04a6fe0c2b881f22d2a40f854dd6c310919159e61d0dfd9585abd57cf",
+      "AGENTS.md": "cbaec9617cc45a100da770734f39df0f565286fadc9c496d9ef34861ac893310",
+      "Cargo.lock": "b3925535a7c75e5442d185233e87e1e1ccfa8d2b86c4ce7a9700c0c5a9b0b8b4",
+      "Cargo.toml": "75552b744c032d85fd644688058abedb6d842adf5e83cf9b7a6a27d1bd12bb4a",
+      "LICENSE": "93a3ae2cb8dee482daddfaebe53bcffe5b114b603def19b4dca21621cbc5a747",
+      "Main.lean": "3c0eb019fcc8d1c21dbe08214e37b0644f7ab104fe423195ee0adc67ef1697bf",
+      "NetMechanics.lean": "f0b8436bbcdf9e1fef776e0894b49dd75bc887ca4545a441e8eb01064cf38c85",
+      "NetMechanics/AST.lean": "908117b9e8c44b446a77bbb865d0a43ef54bd5a050f6335cf338843ad23b312c",
+      "NetMechanics/Affliction.lean": "dd96f4e32d13b9aba514239a6864122bcd7cb30d9ac3d30989f605a77c56f76a",
+      "NetMechanics/ArtifactsWands.lean": "a39bdbecb192809b0fd42ff5de48ed4318d9184e5a0c6340de95ac6c89f029c8",
+      "NetMechanics/BUC.lean": "a05389d3fc1801b4db154da9dee2f5e5dad83b4b1ec40d9bc9ec5d00edc240e2",
+      "NetMechanics/Basic.lean": "a88fef4d3efa63c9f9f5c948dd5ba1de3ea09d828ce8388ee83fa3d039e734a4",
+      "NetMechanics/Bones.lean": "afd3b48a428da0cc9293639249b46afdd0638adf2d633cf47cfed08cd6cbf288",
+      "NetMechanics/Branch.lean": "ee22917f50232e58afee9db20807b6cd66fa7bd0b35ec1e9f2eb4e847ad8937b",
+      "NetMechanics/Combat.lean": "f16829cdfbedc8c18e521976e53bf232e5ae21ad3c7155ac4222ed23af9cecb8",
+      "NetMechanics/Conducts.lean": "74fb2936329b3fd01df65d6f89457ca6a4f9406bc6a042fe47204157a1ac9c2e",
+      "NetMechanics/DungeonStack.lean": "c6f33a4c311dec460503c6db3be51d94dc7a0a55ad5510912acb154b30bbc592",
+      "NetMechanics/Enchantment.lean": "e0837c51eaf0c44dd1dffa2df7941f23ec7eee407a9fb269fc8d444027244770",
+      "NetMechanics/Endgame.lean": "9b8de097fb59c80e06ba39b97c567b9a562e6c80b3210847a9d991d1dbb969cd",
+      "NetMechanics/Energy.lean": "8a9678bc9f1f112c1711ac3900875c0ccce64eefa8677bf134419b9f4d3ba3df",
+      "NetMechanics/Engraving.lean": "9bbd8fd3e7e76fc7b004721f620c26a129c309d4f37db74b10412cdc838b8beb",
+      "NetMechanics/FOV.lean": "4a8966c58cb27bcb8cdd8b853f932d389c3981e525f4a68f822e39cf0a43e473",
+      "NetMechanics/Gehennom.lean": "b7f4c0bda899c80013046edfaa1515d6a62fc048ddc004fafd2f1e702a5446d9",
+      "NetMechanics/Genocide.lean": "cc48e99b619780dcf5e8245f32efa672f95d13a8fb8582df3217efe9251f7350",
+      "NetMechanics/Grid.lean": "a00dd76d7e0c2efd611d762c172f9e7ccb25e46973f4bffbdab51e092fa164c4",
+      "NetMechanics/Identification.lean": "e9500830dc5160ff357590b6f732b07c8d76b6e991a2387f4b23d024aa62b4c9",
+      "NetMechanics/Inventory.lean": "52eaf9703d18df29a372aa6fad3aa4cb30c2a38570a5f65fa7c7d5ed02795f81",
+      "NetMechanics/InventoryInteraction.lean": "6b6ca5b02ac441efc407432aa7a0e3ffd69c7fd007ae6f677cf434c017f465ad",
+      "NetMechanics/InvocationBranches.lean": "ad737e9c9e255291e75fbaff22c0bb6673f010dee2c88786db24145afb948559",
+      "NetMechanics/Lighting.lean": "8f6bf3251895341168e084ad80798ee01b3e632b6ce43fe1241c05fab99e2db7",
+      "NetMechanics/Magic.lean": "2985c37547e00867f4c6a36d7104defb5bb6fe9fae787643072cddee2b27a5d0",
+      "NetMechanics/Mines.lean": "4c3ccad43495950803decd3128fbc4f85fcf42d5b2988a1fb8c7a3513ba20f1c",
+      "NetMechanics/MonsterAbilities.lean": "eeaba1fee8b6e4cd8c4f5854259d032cf14d9024695c0e893ecf753ee3b201ef",
+      "NetMechanics/MysteriousForce.lean": "99361e77abfce6a0c25a31d8b9026187da6cd086cbaaf0550c1d512bbd9d4b72",
+      "NetMechanics/Nutrition.lean": "b17a4fd4c5fca1e28db8740916d8d536954b055fc3284694829bdd57faa3a43a",
+      "NetMechanics/Pathfinding.lean": "e970a83da4e4baa4b2d748613fe4a63237e4ea86ba6f9d6046efa1e46db5a06f",
+      "NetMechanics/Peace.lean": "1f1420a92d51a1dc43f13ca643c3474eda22dfd6c7bdf54ce514228371bbfcab",
+      "NetMechanics/Pet.lean": "799baa1604ef9bfde936f48e344edd73007dc7d35636502837ee70b8556c8167",
+      "NetMechanics/PetCoop.lean": "8401f8d9f38f277425c005d3772bdf89882a630303aa5ad1580e4d2ea409be62",
+      "NetMechanics/Polymorph.lean": "0e3cf9a9919d1541799c57faab97de8c239f122a8d77be7187a55e3ff7923e22",
+      "NetMechanics/Quest.lean": "fc408d72bc4de0de8b07883d38677dbacc30c84d6956ddf317cf4442d6f390b1",
+      "NetMechanics/Ranged.lean": "10502107c521aa36413a2104373bcc7abde4c56841d81e2f4722cfc7bf97fdc7",
+      "NetMechanics/Raycast.lean": "f14f46dbad526abf47c9c5f9ea6ee26892059b992e5cd04d9fe5af99e02e584f",
+      "NetMechanics/Religion.lean": "7388502800709edcaef7d02b564278c5be27aa897d8ba44ac7b9a080e9ec9540",
+      "NetMechanics/Skills.lean": "f5e630432d727a37198363affb84adadce1b02df1fd6c9115cfb837df033217a",
+      "NetMechanics/Sokoban.lean": "fb8b7e9047235337e533480bef82c65eef640698056a5170cef367b4f0d1b9a7",
+      "NetMechanics/Tournament.lean": "569d28931e87f31e34925f138a316f283e6acbb3fe253ab90881b02e1a880fb9",
+      "NetMechanics/Traps.lean": "7a02bed0df690ab365caea92d2baf11f6cdd364dcfe9309b6680cb9b6cd3eb18",
+      "THIRD_PARTY_NOTICES.md": "8ad9cec1202c839ee944819bc91dc6567e13f7e128981da2c13b2cb1493c29c7",
+      "crates/nethacked-agent/Cargo.toml": "d0d7beea8129a1ae721049a5b41fe01c7d292b7a2ae4ef67f27feb1fe6838bea",
+      "crates/nethacked-agent/examples/autonomous_bot.rs": "cd3386ae79d4dc5fa6378a025371075ac938df4feecc43031ee32977b113253a",
+      "crates/nethacked-agent/src/arena.rs": "5fcd65208c2e7b4b18707c3ebe6b01136bc30266f76270473054f39efe87aae0",
+      "crates/nethacked-agent/src/ascii.rs": "98df2cfa9148a7c615173128bedcd9c81331d4417a8ed7d5612a1de0c33a39d2",
+      "crates/nethacked-agent/src/bin/benchmark.rs": "d3cf33b9d509bdd5faa6b13e4d6e0af9dd4d276b98ca5c41dc58f3e4cc950e75",
+      "crates/nethacked-agent/src/bin/bones_server.rs": "45cb52835f692487f7a399b27acf93e52a4530f392ec8ad84b01caee88a2cd57",
+      "crates/nethacked-agent/src/bin/demo.rs": "3b0a06f517a39115043ffc88d7cb39e448a0ef0c18e9843e1773d1c6536ffcdb",
+      "crates/nethacked-agent/src/bin/graphql.rs": "77823563dc69e55269905da514d267a577cda30a798886dee8f2ab2aaa14ad87",
+      "crates/nethacked-agent/src/bin/jsonrpc.rs": "c0bf9ed0220e91894046c89e700aa644514693e07387099201826178e7891583",
+      "crates/nethacked-agent/src/bin/mcp.rs": "e63a816376d9d57d2d60c4d728e304fbc2590ef174fbeef0b11d836a0c106e1c",
+      "crates/nethacked-agent/src/bones/client.rs": "9b7fa556bb2be6e93127a62afb9fd447aadb9dd07311b5d0ef7d95a8800c1112",
+      "crates/nethacked-agent/src/bones/headstone.rs": "576d8da20929f8ec4ff63783aae86ae7173e8b93547e458196c707d6ba5fb832",
+      "crates/nethacked-agent/src/bones/mod.rs": "8f44097ab5f8fe65ee951e15a872f2a604f5c3e39b37bb8b6dd94cc4fc226a48",
+      "crates/nethacked-agent/src/bones/server.rs": "07d2ce8846e553730355a0e7dc5d9896bbc448e171587509e62e8b78ffa5d300",
+      "crates/nethacked-agent/src/commands.rs": "49c8c44b02b06f91530125c3dd0cfeb6d40d778739b4c37e9770bb4d4ef9e242",
+      "crates/nethacked-agent/src/conducts.rs": "c090f653a3c29cc3ac817987f35c665a6e786b34a1a0ea9df2a165fcf01380ce",
+      "crates/nethacked-agent/src/graphql.rs": "1712842f2cc175ce54a81f4d52d366d83a1a6bac8a28dec9cb2f4851b117d1e7",
+      "crates/nethacked-agent/src/jsonrpc.rs": "330b7ca49944442a495cbb0576e0f72a8b1b62c88e5e63ce00edcfbae335ab54",
+      "crates/nethacked-agent/src/lib.rs": "c36ffa60aa886db19da45e04ddb17fa680544bb87e38d45ba7fa63d4175c8fe1",
+      "crates/nethacked-agent/src/mcp.rs": "ef460cb202ebaa2c50af77e798e8394dfa94eb2da481578dc435834b96506296",
+      "crates/nethacked-agent/src/netconfig.rs": "e1a81e88011a08ad4da2828946f93c8ae96134f54c4ed6c2175796e8146409eb",
+      "crates/nethacked-agent/src/observation.rs": "9e782599cac84392068391bf603bb7838abca266b07949a22b984cda041a9d6f",
+      "crates/nethacked-agent/src/rpc.rs": "82f73a84e18fdee68a8b493d277354f282ee62ac2d10d2deb4c2907f2f7d2f33",
+      "crates/nethacked-agent/src/session.rs": "a34beb58fa04bc59dc7d04a2f9a01d6e4a1ffd48a37f28460684c8c2bfe8f3ac",
+      "crates/nethacked-agent/src/stdio.rs": "0228c4a950ce691a6e66cfa3bc5577f9f0a3bd718bb0df281584a4f94b42a3e4",
+      "crates/nethacked-agent/tests/bones_hardening_test.rs": "56c6f9c765980fb8477e666827afa1cad900bc33f3377e8bd0e9d9807af08ab5",
+      "crates/nethacked-agent/tests/bones_server_test.rs": "466988f66615166df346f808528faacdef3512431f47b8dc4a0b3e21fa47db5d",
+      "crates/nethacked-agent/tests/equipment_actions.rs": "2d3f918862ecbcb74f20b331f62c28de3717fabcb6db0cca1053ae6827ba13ba",
+      "crates/nethacked-agent/tests/golden_determinism.rs": "304a507d2968948f3c62a41ef217bac01e310d70f4bc47f076ce6c10664fc7f0",
+      "crates/nethacked-agent/tests/graphql_http_test.rs": "e4a20642a29d2ae7e45e8508ec569fa100678ffc9ad8e1f9bceee36b77e90e4f",
+      "crates/nethacked-agent/tests/protocol_tests.rs": "7353d48d1c3f49a361b4073401a630b7435cbdb94aaed09463cc0fdbd6438e65",
+      "crates/nethacked-arena/Cargo.toml": "0eebbbf4f3d4fc14e45c52cdc622cad4185dbcc56477a5dc2c7a65c47488e7e9",
+      "crates/nethacked-arena/src/lib.rs": "98d5675d7e14901e6ca53363e0e77ffff322d537c56686562c34853edfde2af3",
+      "crates/nethacked-core/Cargo.toml": "5e54387b8f1955523ac814bac755de0650726e16e279cbebeed331ef71543f2a",
+      "crates/nethacked-core/src/ac.rs": "6fede1b8ce9c52fc2e04c8c6d1de9f76fb1f94cbb8f1db28c8db2f1c355f682d",
+      "crates/nethacked-core/src/afflictions.rs": "388b6d4a65f3bea5d76d20e2a0d3a542a8a1ae43df08c462d2d631c985a30fac",
+      "crates/nethacked-core/src/artifacts_wands.rs": "763901780013cf21221f42ecf1a966156f660024f1e864d733e1606702c29756",
+      "crates/nethacked-core/src/ast.rs": "23c02da2da18a8097ac01543971e3cf2bd3a5c93a56c0f977172717965c155e3",
+      "crates/nethacked-core/src/bones.rs": "1de318e06fcc562ae02fd77b9aab88854fc81302160a621b23e9a8f5175c00ea",
+      "crates/nethacked-core/src/branch.rs": "413dacb3bc606b31ce099b13d88512fad46b93a4147176a8d15c52b8ee9f8f09",
+      "crates/nethacked-core/src/buc.rs": "ad06e2b0cf98a722ff974aabb9c9b207d082b51588fc875331248107425230f0",
+      "crates/nethacked-core/src/combat.rs": "0040583162bdad34b562c024acb7b5d9d5306cfb4fc58b706a9c052fed2063a5",
+      "crates/nethacked-core/src/conducts.rs": "2abbd6a84832868f72168c076af8b549c6d97d12084c22e9a9c17ca4d2d047bd",
+      "crates/nethacked-core/src/corpse_timeout.rs": "6cd3f7492285c1b3aec05313ddeaa0c55eb131f1a2afac8f4dcee8fa84686e3d",
+      "crates/nethacked-core/src/dungeon_stack.rs": "d7a5e371ad3cc23452f96000e5e1ffb8e75eaa4c18c41ad72bc4ea187956dbc4",
+      "crates/nethacked-core/src/enchantment.rs": "3ca63e60eda9074164af96cb6818d4ed447188765433767d9f22bd4e254b080d",
+      "crates/nethacked-core/src/endgame.rs": "5a35629110a5906eb0c2e89737834f85a276db8039d46125b9dbafa3f6173080",
+      "crates/nethacked-core/src/energy.rs": "7991db63453f60d97c17b09fda7328950432c61337d5f5a5123f797f16209a3e",
+      "crates/nethacked-core/src/engraving.rs": "8fa6cfafcdf0caa5d28bd91944ea0fc8ef7e39f1180210ab9a6b19d3f16867bf",
+      "crates/nethacked-core/src/gehennom.rs": "697ff3dffdd60cf69960f11a11d40c142cf0bf7bce666829a2ec2e3db4344119",
+      "crates/nethacked-core/src/genocide.rs": "834ba64773a795b70763ff81cde9746477bfa7cd2637a6481aaab99dacdfde72",
+      "crates/nethacked-core/src/grid.rs": "b8840b22d50cfec13b2e4840c3e98c92dfd397998a8af283e0e1c77b5319bdd3",
+      "crates/nethacked-core/src/identification.rs": "0f134db52b0ae38e8342cce45f6cf3a8773c302d38fcc2e2212be460be9781a8",
+      "crates/nethacked-core/src/inventory.rs": "6c150c659286ee3a7d5b550b706c0bc1ab4e8523bcbf2535840ea388bc75fac7",
+      "crates/nethacked-core/src/inventory_interaction.rs": "e649749758d919f3ee3e0a6e577fcfae13564189945cbde442780fdbcdce3895",
+      "crates/nethacked-core/src/item_init.rs": "01b8927d41ae3a8b281f10440ba1b7cc8c91569b085ece4917978cc11e565328",
+      "crates/nethacked-core/src/lib.rs": "154cd2ab5c51f6aa10ae024b5eb913244cd8918d2e28b1041d5b1655be012306",
+      "crates/nethacked-core/src/lighting.rs": "bc25f5829c84d71ef46f469bc12713a51fa83f9cdceceea0ebf78a3037ab71b9",
+      "crates/nethacked-core/src/magic.rs": "99dad82e7fb62b0a4c29df78f95b01e3faaf8286f4058d85c97518cc1b18d9d2",
+      "crates/nethacked-core/src/mines.rs": "9995e2e142d91d385754da4456a980f8d154c9f32060db9897a944eafe42cb20",
+      "crates/nethacked-core/src/monster_abilities.rs": "bcbff43bf4c9405ed594ac3bce04afa1b1278a6590651e1804d741c653eb7133",
+      "crates/nethacked-core/src/nutrition.rs": "9cb84d5319c4bcda673b0155456892a739dbb374537ae90cc71c6ea84f9a0fbe",
+      "crates/nethacked-core/src/pathfinding.rs": "2dfa75284b865b7c50ce74f3d1a34ee9030bcedc689537e62c26c2c23ebd9e05",
+      "crates/nethacked-core/src/peace.rs": "49f4c9db2688ad8f29cdb050a5ad0773b276f603dd729f4c9d81ac2cd9fdbd70",
+      "crates/nethacked-core/src/pet.rs": "c7f401f03a189d90748bed9e209c718b3b2a0a1e16c377029359d9dd39f74be3",
+      "crates/nethacked-core/src/pet_coop.rs": "3f4c9b38c70c3d3dad389914caacd90b2430d3442144becbc92588d5de2a65ba",
+      "crates/nethacked-core/src/polymorph.rs": "45bdc0da5bda0372194bef51d89a052ca77d02177799e6f8bb89ca8fec50bbc8",
+      "crates/nethacked-core/src/polypile.rs": "20131139e52fece4f12570c8b5eddd3f33a42ba4a51ebb5eeff2bc6245da8328",
+      "crates/nethacked-core/src/quest.rs": "11f172b38e62844f25be6902493c78d87698c8cf9683619a8fe50bc2776a93b7",
+      "crates/nethacked-core/src/ranged.rs": "5bfb1f0a8dd6d9587429bd3c7538fab1205933673eef4edfb7f01efe802867ce",
+      "crates/nethacked-core/src/raycast.rs": "74b299e4f26be59b33f4568fcf9dd4cd99c3d5981819e078cac553b7c356f6c3",
+      "crates/nethacked-core/src/religion.rs": "fcbad448349a0d3be1539c28b330e3ba4dd2f5ca55b159f50cde996092bae591",
+      "crates/nethacked-core/src/skills.rs": "0a64bc283a8a40d4f3ed5589f4cb0d0e15141e19514b2cddd4f9619956f2df8e",
+      "crates/nethacked-core/src/sokoban.rs": "701c251c305656fa3a5f8b21e444d541d97e36be21e1bb783e994e9642ce7669",
+      "crates/nethacked-core/src/tournament.rs": "070228a300121e2ff68ac530ac40fd09707f7d259b8e1b7e7141a2a50131d1bc",
+      "crates/nethacked-core/src/traps.rs": "bb37dc038655892fa8aee3d025d73f339d5b5a9d3a8f8724b1b849ab6a47a7e5",
+      "crates/nethacked-core/tests/corpse_timeout_sampling.rs": "0fdd32e54ab3ea74700b0d3d9cb7d02dcd5f5efc18612647319c1da1c656adaf",
+      "crates/nethacked-core/tests/fixtures/abon_ordinary_v1.json": "39e5555151894e2f842d8a45eb3613f796dd81f76266f30727e737e172d69f25",
+      "crates/nethacked-core/tests/fixtures/dbon_ordinary_v1.json": "4af89ffc11518b6f53d88aeb91d5b7ce0c109cd4350ba1c8ee1b1b7cb3c2c6d7",
+      "crates/nethacked-core/tests/proptest_mechanics.rs": "a99ad2da6f6664b257eb24ecd32447d175d3275f33396a4042a22710a7c37477",
+      "crates/nethacked-core/tests/source_derived_attribute_capacity.rs": "5eff14935b11668ad0423697eb798e943618cc7bf80abfb5dd6a33f0796166b1",
+      "crates/nethacked-core/tests/source_derived_attribute_damage.rs": "60528cbbbc34bf2991e31443f26909e0724d357e174cc1da11cc84c1db5ba677",
+      "crates/nethacked-core/tests/source_derived_attribute_hit.rs": "7bd8ba6d6ac659d4bb16473e32b2d444b9fcd0f8db89156f4cb77ba63e07f99f",
+      "crates/nethacked-data/Cargo.toml": "648805a45791ace8bc49dc28efe40245fd11c821b10dcca55b683419fa6f880b",
+      "crates/nethacked-data/src/artifacts.rs": "6176d86112c84dd95918c26970c3af40a398aa74afd8633f5abc3ef66510401f",
+      "crates/nethacked-data/src/c_id.rs": "78ef90455fba39b10053795d1f1db1dd34c8ffcc4cf8f1c1a6fe7c53900ba71d",
+      "crates/nethacked-data/src/containers.rs": "099f79f043fab3964140f0819c8acc10be8f9f795784e64b330da0a21e0e5069",
+      "crates/nethacked-data/src/corpses.rs": "c52f532d03cc91f24f0da08cce46ac8da664c5dc83802d1da621ca69ca862e62",
+      "crates/nethacked-data/src/generated/artifacts.rs": "bc620f8a82109f1b965f070ed73da819f248899a7ac693052fa5b9bbe199355a",
+      "crates/nethacked-data/src/generated/items.rs": "0de0aa081ac09afda9a82f0f9f56e7173d383fead8fd09bec4836b241af68a96",
+      "crates/nethacked-data/src/generated/monsters.rs": "5055a79301ffb9e6643767bc870948ecad2a2d7a38b9cb712645937b61879a7c",
+      "crates/nethacked-data/src/generated/roles.rs": "ae447226e665878c5d5ddab3ea41f7f16fb45853fd9c0583eb635d92de02db37",
+      "crates/nethacked-data/src/generation.rs": "caf5c8837a5ef02a70ab7e9284bc049b5e2a343ee843d2661d8727cfe9369186",
+      "crates/nethacked-data/src/item_init.rs": "17abe69b4fb1271b19b384f9a2728657eb8f0828a584dc7e8a825286a9d2ac2b",
+      "crates/nethacked-data/src/items.rs": "01792d02f93b94b053cb2328832016f277a76e3c7ff0c3ccd64096a3a20c0c02",
+      "crates/nethacked-data/src/lib.rs": "c8b63e25e760926f8ecdcbeb8b870aedb2f3c09389575a6beda700833559d47c",
+      "crates/nethacked-data/src/monsters.rs": "aca2ffe28bbb761fc6cbeecdd98c75f932d6b3d96b972b0bdd8d17f68505e23f",
+      "crates/nethacked-data/src/pantheons.rs": "889bc83a4146794bab277c71b43eaecd03dfe124bf13ec8abdfa0e3f2ea13b94",
+      "crates/nethacked-data/src/roles.rs": "cbf9d0d12c7258ad3c85a0494b60c156bb9286822474a92526cacb5c7e638897",
+      "crates/nethacked-data/src/ruleset.rs": "2d4172186bd29289c6477d9a2a984551060d370c40a9dee22eb086e9a313f915",
+      "crates/nethacked-data/tests/actor_identity.rs": "8aa3637513c7afbd84d032926029398c5aebdb6361ef6e0e5471d2d88f3cff5f",
+      "crates/nethacked-data/tests/actor_sex.rs": "a464a2e09cb538bca9ee58e325889b2810dd1d56ca81a207dcd9a0baef37d5c7",
+      "crates/nethacked-data/tests/artifact_initialization.rs": "de766a0e031f866c8c54b6ccc51c93ceb0c8ccc00a9b421e5f40640f15a03b0e",
+      "crates/nethacked-data/tests/container_initialization.rs": "c5fcf244184467e1ad902ea63320345bd20e6619489305bd6cef1416369eab25",
+      "crates/nethacked-data/tests/corpse_birth.rs": "ae3079c4f6bb8390b40893d4efd14a8eeffb888c93b6e0bb06470e056077cf5d",
+      "crates/nethacked-data/tests/corpse_thaw_policy.rs": "bd6db2e44f0ef9b6ed3ea9560fcc407bad9b801c4e362439fd9649706ef85d5b",
+      "crates/nethacked-data/tests/corpse_timeout_policy.rs": "28336f66c5c198c411aa0089993f26dac427314acb0360b84ac8edc2fa55af5a",
+      "crates/nethacked-data/tests/corpse_timeout_recipes.rs": "cdab78734215d4f0c1391bab036f005c09ef7c31b7094ad86428fa60437a2f29",
+      "crates/nethacked-data/tests/equipment_delay.rs": "bfd6f1f9149dd3af43309ce423669c0aa253355beb2c0029b2595865b19fe1b3",
+      "crates/nethacked-data/tests/fixtures/README.md": "d8ac7b2ce0a74ea2e727f5717aa66b217e0a42420bd3f35a134d10a243e6cb06",
+      "crates/nethacked-data/tests/fixtures/newmonhp_ordinary_v1.json": "e2f42f88c52062c04dcf2a351010ce02caa1f3e2b8c8c49012a14a92dee37ded",
+      "crates/nethacked-data/tests/generated_tables.rs": "f5f43c69c99369c31fed4dd75afedf2155cde6e85b6d2d13d30438fab371ae49",
+      "crates/nethacked-data/tests/ice_box_initialization.rs": "ccc53e86be17ac86f891766ebb1cb87409d23ba2f2de3d7080321e7eb10e15b8",
+      "crates/nethacked-data/tests/item_initialization.rs": "012096ba0bc44f8fd2c7be9d3b38c15f6a8ec1dc8828b722ca032ee2ab70496c",
+      "crates/nethacked-data/tests/monster_hp.rs": "2967c1372e1a24e8aba90d4e5a56d6f09a5eb3abee18820d9f8b9b8e0d32750a",
+      "crates/nethacked-data/tests/original_role_identity_tests.rs": "f8047732ca129394cf28e1095cce7247da15896fc6c0f81e9dce6a28ed58da5b",
+      "crates/nethacked-data/tests/room_item_generation.rs": "31f61cc88578713f2561a29a82b8eee02a842dfa5a3648efa4c134d51033b611",
+      "crates/nethacked-data/tests/ruleset_vanilla.rs": "92e914f7703a11b0c5b2b1ecb9559fa4d17125ecf065cc6aec5e749bd497bd95",
+      "crates/nethacked-data/tests/source_derived_monster_hp.rs": "b8c3c4926fa857853b8e21be34e1efd10388377143750b8829f277b3dab17bda",
+      "crates/nethacked-data/tests/support/source_derived.rs": "dafbfbd735872a32ce730797751c9202dbb7c3eedbb2f60de015ccc35ce907d2",
+      "crates/nethacked-data/tests/worn_property.rs": "339ec30dda6146de9b663cbb2f17cbbdf43b2355b575ad873ed6a33a2c98d9a0",
+      "crates/nethacked-dungeon/Cargo.toml": "5a5a3a7893b27cd1c6cd37e57d81a81d8d6b6e0f09369d5cc8484d42151fed40",
+      "crates/nethacked-dungeon/src/endgame.rs": "8110c4df49abcf9f749358523aef3e997472e73c2fd3230b6c0b2a7446c33791",
+      "crates/nethacked-dungeon/src/fov.rs": "c3dc674d991582013cd5c39535d38c99247d830cb1721c9c78a6afe276b444ae",
+      "crates/nethacked-dungeon/src/gehennom.rs": "677241d8c6099f8aafca7724e62abe945467f2427436be503f9750c01da48251",
+      "crates/nethacked-dungeon/src/generator.rs": "94a446f01d4264ae036c921dfd171a090ccd529e6be0c5f0130cf7fbb5b9a18a",
+      "crates/nethacked-dungeon/src/level.rs": "1f33380c9956c809e798f85f5b08354f2f1c10a71d7d18840749b01e2b988c7b",
+      "crates/nethacked-dungeon/src/lib.rs": "cbe683a2e2ebf8fe631485ee5c0a7653ba61a186af4a7af8aed09b3f2c22de48",
+      "crates/nethacked-dungeon/src/mines.rs": "0a9fa54ceb087f645d93ba5aeae10b50df2a0b1b7882ee8fa21bc2789ae0af51",
+      "crates/nethacked-dungeon/src/quest.rs": "9411b512b59be3aa1e3f22c4c08f7bdd3a3b09ee8ccfaa4788395b52de127755",
+      "crates/nethacked-dungeon/src/raycast.rs": "c546f58116e5198989d1d3aea437ec5471c82eda88f1c2d90ecf599a32efdb39",
+      "crates/nethacked-dungeon/src/reach.rs": "af6b2ed78b2bf0b7caee14de05824f2eb92e227f656710a5459c083be27dc4a6",
+      "crates/nethacked-dungeon/src/room.rs": "96f73c902521f15b5c4267a9f718c7ed418cdda6b96844232abc53d4b3e59793",
+      "crates/nethacked-dungeon/src/sokoban.rs": "7b8a08a30d9410988cfc33bbca4d88f4c2240deedc165b946c9d20e9bf2a6a1d",
+      "crates/nethacked-dungeon/tests/reachability.rs": "94342a679cbf7da900ce1e4e8cd881fd6a61e55d2a6a55da3ca1976571b9e833",
+      "crates/nethacked-i18n/Cargo.toml": "423a9795f62b845e6fa44e1c4ced98e37bf62088bd1a870a7f825a6da792912a",
+      "crates/nethacked-i18n/data/monsters.uk.tsv": "c3fbed87cac8cec6785e6420b444d4797d22b29e607d8bc53d9b4dd36ca53e99",
+      "crates/nethacked-i18n/data/objects.uk.tsv": "62ca41f668e751d7b6f84ae8bc7f312cdb5b465b7b90b30694a6f997acc88ca6",
+      "crates/nethacked-i18n/src/lib.rs": "27ee379a4465fc9f31a6920c8f890d858c0b0804c4710c2a13e09e4f45fadbae",
+      "crates/nethacked-i18n/tests/coverage.rs": "9f9d3ffeb690f8109e6971eaf74449e9c40cd623df79c846c11cfa4ebca41661",
+      "crates/nethacked-pack/Cargo.toml": "ed631fbb7cb5ab565f3e1e2792397771e944ce705c1f25ee724a4ebad80024c3",
+      "crates/nethacked-pack/src/files.rs": "2d5d157b9175bcba4bae1fc1f5bd96b24c49b56205a7398a0a6db256e260846d",
+      "crates/nethacked-pack/src/format.rs": "d445cafb58c62a6b54e8943d216d99a36b24aa2a6ef42347ea26df35a5b5c5cd",
+      "crates/nethacked-pack/src/install.rs": "c5e6a9e186149703c4d28f826b6e7af9f51c32c32660f560a7b9193a8e8d2b74",
+      "crates/nethacked-pack/src/lib.rs": "0d43e7683da5dbb55d74452bd9c092fed3e04dc3ab46f71c657da19ae0eb4c21",
+      "crates/nethacked-pack/src/main.rs": "2f400c6f7965be187b19883515f3e9a6dc8583f6531865c64dc181fcdf4cea25",
+      "crates/nethacked-pack/src/merge.rs": "96dc779f275227a66e32fd459a49dcff7248f81ad325b75052ef9333de63ba5f",
+      "crates/nethacked-pack/src/nhpack.rs": "283aed0596cf0fb5a4699511e51072a0eceda141a05796fa45c07f23ad93f79c",
+      "crates/nethacked-pack/src/simulate.rs": "2a0225ceca73b5fd26a2f211dfa657383a00ca3670e264d4abd75ffbedf8dd29",
+      "crates/nethacked-pack/src/validate.rs": "5644509a0b578c6a83770fe5c0019099279d3f57cdb947503ac17cc3787a5ab4",
+      "crates/nethacked-pack/tests/cli.rs": "1c7af57dee952b92a6d947707ad81600c90c76b5778c7fc805362b267db97c67",
+      "crates/nethacked-pack/tests/corpse_thaw_policy.rs": "4ffa84c0d07e5b152f6a7c96edca3287d183bc593d304be7a2fc252f675e7634",
+      "crates/nethacked-pack/tests/corpse_timeout_policy.rs": "351a41f7f6bdfe0f3709304eab4cd58ad3c0614c891412137f9b74bfb23120ed",
+      "crates/nethacked-pack/tests/equipment_delay.rs": "0ee6ce054ad1fc6f82ff0bd2c39a5eb842821b7597a3ec4c88e0792a261d4930",
+      "crates/nethacked-pack/tests/example_pack.rs": "e9885423a0042a86683f8d771ffc1fc638267db63ea7741d4be956a8d1e0e78c",
+      "crates/nethacked-pack/tests/install.rs": "aeffd1ffe580ae063be7269a4128b5320df6f121f4cab813550044d5a9ff29db",
+      "crates/nethacked-pack/tests/pack_files.rs": "b637161469312a5b91d2945ee236572c74c631a407cd3e2e04304d963404cc47",
+      "crates/nethacked-pack/tests/pack_lib.rs": "a5e1279661904cf386d41c1df56dfd14158caa2eddd0939fde007b53900b466f",
+      "crates/nethacked-pack/tests/worn_property.rs": "c4df823966ab4bfcf245641ae9e22b0a521201f60ccef0dad20018dbb1a92e9f",
+      "crates/nethacked-py/Cargo.toml": "68eb6945e4bf0330a07f245bf81b9c7470acec4752d3b4968352a2b5eed87b73",
+      "crates/nethacked-py/src/lib.rs": "b6a6c5b557893dd86a8c9e802cd5fd6af4c40f83ccaf700597c37905304c6a01",
+      "crates/nethacked-sim/Cargo.toml": "3b05354e69be4677c06a687757087ba0effc403bc5bb4b46cee7962ad1a7dcbc",
+      "crates/nethacked-sim/src/actions/doors.rs": "396620eb0bb7b918c3955a72e084e95056ce9701f9e70e5bd1a4c555a5230578",
+      "crates/nethacked-sim/src/actions/economy.rs": "28478f5c9a6960c5d5936f81c338f6a9b1feb7306f6c42d82cad2a32003f8b41",
+      "crates/nethacked-sim/src/actions/engrave.rs": "abde0191856473b3673c1999492508dcb95163319f63192bca1c73b0ed295dd4",
+      "crates/nethacked-sim/src/actions/equipment.rs": "188da56d460196b95037d6c5d16453f0b60497ca2514902c74c1bfb4170be700",
+      "crates/nethacked-sim/src/actions/inventory.rs": "a542f717c70198988f2f4112cd858a6a8dadb9a041b224c1ba29b18bb22cab7a",
+      "crates/nethacked-sim/src/actions/items.rs": "6366cc0fedf3a4b09b17e6deff37099903cd94f0cae90b72af89c94d8e87ec77",
+      "crates/nethacked-sim/src/actions/mod.rs": "ddca34ca797937c01641551891861111067a616e37cf060d513167a5169ce93a",
+      "crates/nethacked-sim/src/actions/movement.rs": "db22a1bd302db8cf00eb13f210539af2c9e9e935fdb7aa749934f50b11f1f2c6",
+      "crates/nethacked-sim/src/actions/ranged.rs": "715ff4c1aa3fdeaedd999e9605c5f52df163c62b179d5ab970194fe67ba596ed",
+      "crates/nethacked-sim/src/actions/religion.rs": "338d38d7cdfd47d627780d4e64cc7b0979a94395f13acd32813cd32ccf56b20e",
+      "crates/nethacked-sim/src/actions/stairs.rs": "b21fd5f0c0a13522051972a90c801ed0369dad8559de4d0afa2b3f90e4dcdaaf",
+      "crates/nethacked-sim/src/ad_effects.rs": "13405e048340d53a64d218ad347846a709306a658160a0f17738233e1f56a2cc",
+      "crates/nethacked-sim/src/bones.rs": "b4137bd39d80eec444912b21a677f75f54f1ad34949c6ae489fd9a81231ef490",
+      "crates/nethacked-sim/src/combat.rs": "07febf1d2e5f006db4e32822a413c5b5a0cd2f8e50c801969b62da5b27ef8722",
+      "crates/nethacked-sim/src/corpse_revival.rs": "b2e3378f42ca18988072b1440b4a2e5dfccebf6148414c1f0cb4c73e97c99f1d",
+      "crates/nethacked-sim/src/events.rs": "3275e4531c1e179f0d30c0a219a0f8a3cc66fc9c655de766f73964f14caf8de4",
+      "crates/nethacked-sim/src/lib.rs": "b56ab70287dd9def2f4d9f5cddfcc446d3d743137671bbbd98b449199c25e75d",
+      "crates/nethacked-sim/src/monster_generation.rs": "8cb18b7085c2d4175fa954b7d9666fa989f0c802eb6f54a3575fe473bfa19e7a",
+      "crates/nethacked-sim/src/monsters.rs": "1796cf1c0cb62c8557040fbda18d3b42881c9113c1810ffa9275a91166c0057e",
+      "crates/nethacked-sim/src/object_timers.rs": "385e9d3a79af9a56e155838854c528d43c0c627c092b971c50f112d06167a717",
+      "crates/nethacked-sim/src/peace.rs": "d74c453e53335829d5951f2d15683dc5cd52957b9f85530ebab342159e8ddd1b",
+      "crates/nethacked-sim/src/progress.rs": "1953de5cdb4142bf8a5fc66d26c33d71b7330c9934e044472ffdd1eb2d18914e",
+      "crates/nethacked-sim/src/turns.rs": "68c91ca8d6cc9879ca809a134371845e957e95189fc4dd97e6b05b8c682c7607",
+      "crates/nethacked-sim/src/world.rs": "9e4cd1aedb4b455e5df5fb949dd908b2f9a9017a2fce067856a1d7d5e7caf7ad",
+      "crates/nethacked-sim/tests/actor_identity_tests.rs": "41f7c7f1531a96e47518cd15a10820f3db429fce864992572010b206eb4f4fb1",
+      "crates/nethacked-sim/tests/actor_sex_tests.rs": "921b5cd11d01b09835d12a11db0da6cfd938d5b50b921b2257bc5fa21da52780",
+      "crates/nethacked-sim/tests/affliction_timer_tests.rs": "20182a6a57182071d3f086981e8c3c100ca808731fc8116d27dae65219f28e8b",
+      "crates/nethacked-sim/tests/corpse_birth_tests.rs": "97d07d3091ef23972e1b2c749fe53ac9566779b471f9a4615ebf6732494ad8d5",
+      "crates/nethacked-sim/tests/corpse_lifecycle_tests.rs": "3ff6277baaecd39f4b0854e44473857fe6e151d69a90d1f497d7145108a405eb",
+      "crates/nethacked-sim/tests/corpse_recipe_attachment.rs": "e9ca41030ac9c9a8c820e1784e397c233085a10f7fc838e7d34166e849551c20",
+      "crates/nethacked-sim/tests/corpse_revival_tests.rs": "d6d63585636e626ee1ce0fe49f3eba3caecc8c9336ad98dad1b78ca66311013f",
+      "crates/nethacked-sim/tests/corpse_transfer_tests.rs": "076254ac417e0ef5655805fc48f9a478aab8c76fe3eb72a51d23ed437e219127",
+      "crates/nethacked-sim/tests/equipment_occupation_tests.rs": "38d5f11b5c9cece12357677eb6b9fc59758d78fdb4de811d71c6788815a45a37",
+      "crates/nethacked-sim/tests/hero_armor_ac_tests.rs": "7f4ce88fda7e9b6095b39e10627295001036f41614683850b004eea043dcafb0",
+      "crates/nethacked-sim/tests/hero_attribute_damage_tests.rs": "bf51e2221251b697e6218d6cb3435b3202252f94d4acaf601c1f73e36c35582f",
+      "crates/nethacked-sim/tests/hero_attribute_hit_tests.rs": "5e42d9a266d7363c79105b4da99de8b705b9ab9834aad2a8c8c56e0ca255a716",
+      "crates/nethacked-sim/tests/hero_capacity_tests.rs": "16e2cba91356bc919aaf4151542e3f4b0c2ea12cb2ac20417b8c9f0b31f42f45",
+      "crates/nethacked-sim/tests/hero_weapon_damage_tests.rs": "d610a3472f4f9b682f3e2fa304108fe7b7cc7c730d78b882d210eb46e24b742d",
+      "crates/nethacked-sim/tests/ice_box_tests.rs": "7488de1a7376b9dfc7065fafb31def857848c8c502742e19839dec1197a37146",
+      "crates/nethacked-sim/tests/integrity_tests.rs": "1908c5ff29395e3605444c4dea15eaf158beb0e3106ef576f9b65884b083ed2f",
+      "crates/nethacked-sim/tests/item_initialization_tests.rs": "3346b8b034253eac385478776f3dcdfbbcb3cf0fbf9db86c64657bb2c223b867",
+      "crates/nethacked-sim/tests/level_persistence_tests.rs": "346b73704828f346bcd0e8a6f6506cba673fda1a97447f070a547e5343a30996",
+      "crates/nethacked-sim/tests/monster_attack_tests.rs": "1d9a03c812fc59641877df397461f966b67aa41eab164068dbe90aa4747ea408",
+      "crates/nethacked-sim/tests/monster_creation_wand_tests.rs": "e7ea56c0a4e5c5e5494445cf89c252578ccadacde2ff3c76e7d82ee6230e6dcc",
+      "crates/nethacked-sim/tests/monster_energy_tests.rs": "b3c118f8d51743a89cd0f82d7ebdc4bab50aeaddb6f5726df3e674515783ba6c",
+      "crates/nethacked-sim/tests/monster_generation_tests.rs": "ac242a3323bcb621a79366791fc561883f8d440882eba84d55267c7a609393f6",
+      "crates/nethacked-sim/tests/monster_group_tests.rs": "bba1cf02a356f61741731e9afdb8c4d08bd8d973b629d29b2ae998dbb06ab7cc",
+      "crates/nethacked-sim/tests/monster_hp_tests.rs": "bade34bc8fa0281374dee3d5ebad92b0cfaf5c4efa537e9fd81f1e48c398fd5b",
+      "crates/nethacked-sim/tests/natural_hp_regeneration_tests.rs": "53df86196d675caf9e4431336feefcf34ccb4a748a5e64051d68faefa42ba63c",
+      "crates/nethacked-sim/tests/object_timer_tests.rs": "56beaff3baba5d5f21a0114623053ba8bd3897272ad9b95354c91c54eceb03ee",
+      "crates/nethacked-sim/tests/peacefulness_tests.rs": "737a4dadb49b510b70e7a61ba1490686764586ac37d3b6ade6eb15aa99b1239f",
+      "crates/nethacked-sim/tests/reachability_tests.rs": "d5d380542fd557723befa234cf6b79b356201f84161ffed10088048505e75ecb",
+      "crates/nethacked-sim/tests/ruleset_world_tests.rs": "8cbbf60186df84f6de4153421b6518b5c2f088594739543692508715e368eda3",
+      "crates/nethacked-sim/tests/save_load_tests.rs": "3db774e3812220f11ef9dbe879530c68d5ddbbd7153710fc996adaf741298b2a",
+      "crates/nethacked-sim/tests/saved_monster_traits_tests.rs": "59dd7ed010c5e98900d7a54dc7b9af1362fee68b7cea3021fb3f44d5193959cf",
+      "crates/nethacked-sim/tests/simulation_tests.rs": "e171901fedb5aafaa7b9890e1ca6a2478d6452eef6f8f05ea12080f385a35ef0",
+      "crates/nethacked-sim/tests/worn_property_tests.rs": "7d2eb7e43c5cf4d97ea866d199e9ba5df013537e6e7de5d1d9631d3ef41f2381",
+      "crates/nethacked-tui/Cargo.toml": "83eb78cfa37e1ba8688ec1d5cfee71b435c6db59b9ba57137a44bbb7f1d799de",
+      "crates/nethacked-tui/src/keys.rs": "aa33615df3eddc6390dac6778feb20e0769a4e50cf7b2e1ac6a10202f099101d",
+      "crates/nethacked-tui/src/main.rs": "0cc1a49be11c5580f83a133bffba91714c31066d65e2d4d07d2762300748695b",
+      "crates/nethacked-tui/src/pager.rs": "cec0d08bdd12ef36c31275ef4addd6e38fed52a826128ce0084e25a9bdfa9220",
+      "crates/nethacked-types/Cargo.toml": "bde968904457273a366e6eb9bba1e433db4df8bea19ecfed76839b376759afe9",
+      "crates/nethacked-types/src/lib.rs": "a09971c57b311192d2cd079b0c163da5d9bf5715d8bf53a42834e9ca36b228ae",
+      "crates/nethacked-wasm/Cargo.toml": "e0f10a5f9fedfa017bc9fd397eba1522c9e3b37a878ccb19a654cb2c279340be",
+      "crates/nethacked-wasm/src/lib.rs": "c365ce43811f8dc690a2cc875300aa7ce62118e666172dd2d73fae95d5c38e5f",
+      "crates/nethacked-wasm/src/packs.rs": "0e79d8b1e7d47dd4286399de117198f0ccca14699a4d7301aa0589f2f4a6fe90",
+      "crates/nethacked-wasm/src/pixel.rs": "99fa64aa7b5f696ebea0ae9dbd275b43808049c4827437e2e14e656aef0d6e2e",
+      "data/nethack-5.0/artifacts.toml": "fd6dca529e1fb474051435f613d3e63f3d602a1164fdd2bc3bd30e04b51f9b30",
+      "data/nethack-5.0/class_probs.toml": "efbd904ba53a408e0d7be116d4a5d71cc46e11e50259d0e42c16dd33c2be9624",
+      "data/nethack-5.0/monsters.toml": "72b4aa62ecb5b7c7d5611293bc7efa8d0b7058a9fb209179cf3fb8ffb14f7978",
+      "data/nethack-5.0/objects.toml": "9d974579351b8fd558aa73f9904aaf066987a33d31b6f67314a4839b97f88ae0",
+      "data/nethack-5.0/races.toml": "428fef3b4ad03ec58f3bec188e43c8580015ce6003ce457fd07adcae7f249fec",
+      "data/nethack-5.0/roles.toml": "64c16e47be38b32309e1f93bb80171cf3176f61a3890a9aecf0e06debe215975",
+      "deploy/cloudflare/legacy-redirect/.wrangler/cache/wrangler-account.json": "8f695af2eece20acf5f7ed91e7fdfafc21f356a1fec5b90f76db50e2603942ad",
+      "deploy/cloudflare/legacy-redirect/index.js": "3d72c21f90dac8de739eff3e658a9e603a44a9a6913835e27ee85f10bcb0c80c",
+      "deploy/cloudflare/legacy-redirect/wrangler.jsonc": "739e6c670999b5f318f873aaf6598582e7870ca3672263d90ee3673350a4f693",
+      "deploy/cloudflare/wrangler.jsonc": "f102ae1b24f102215076f0cb1c1a14a5948de0baad7edf95bf664c37a09b8d4f",
+      "examples/mcp_agent_client.py": "c6cb57fb03fe2e208c7791103f5df6aded98bd20db198c8fd2918d94321b3469",
+      "lake-manifest.json": "fee1bf999e1283511641f2f8841d168deb3ed100862f2559521a33273eb26dcb",
+      "lakefile.toml": "b54427cd039bc9fe40ab815333e2ea4c3c6073dee26212b7bec874709bfffd03",
+      "lean-toolchain": "54727eec5cba149c18842e6deb5c41b369d66455c93ce135d7d5347c782b2325",
+      "memory/2026-10-06.md": "1f4388d26636ebd3eaa70e7d987db6556230a7b32947fc287b26e95e1b59e11f",
+      "nat/README.md": "50ef3fc197e4288b5cfba7debc867c0815bf381ef95af6dd4372b012607fc141",
+      "nat/configs/config.yml": "2f0e90654c81a780fd1b17909b733c51eb3591288f2c2236758d80f8ab897636",
+      "nat/configs/dev_config.yml": "28de37d6a5fe8ced355d4ac25fa027d3855751ad30730204971aba01dd50ecca",
+      "nat/configs/openai_config.yml": "835bd7b93138ee40a1321e36798c3640deb92304e9ab681ec61e923dc49b93b5",
+      "nat/configs/review_config.yml": "f806d3c3a4ce63acea82def9b74ca3188f2cf8bf0f3867763b3282a33018b5b3",
+      "nat/data/sample_queries.json": "08e6a569f389177163896ee31d13321a493b20393c7d51cf970986e54356e55e",
+      "nat/pyproject.toml": "1bde0ec7251b6f4ae0228d802feab345927a9d8e0b5f157d0ba070b464fcff56",
+      "nat/src/nethacked_nat/__init__.py": "f1d81da053583e4af118beb615b6262b9eef447a79f395a86afb480ad7299bb0",
+      "nat/src/nethacked_nat/register.py": "10e8722a7c3ebce3d0d2c4bad62f747f8dfa637d7cbf754d810ab8191c9f414a",
+      "nat/src/nethacked_nat/tools.py": "2bd83839843d3702c77c0c4b64113a630d587c695e2bc1106b82ba3c54d71f4b",
+      "packs/examples/hard-mode/i18n/uk.toml": "d25a9caaf2930d4c3f71961d62f067b4590424c01f6db1b4ff2e604f96ae3ffb",
+      "packs/examples/hard-mode/items.toml": "b946a7fca43a65ebac8adad81148df075b041f72949b68aebcc74ad1447cbf4e",
+      "packs/examples/hard-mode/monsters.toml": "61a56834b28a8d2853880549a185128d06dd77f6be21d728edcd594bf93017ef",
+      "packs/examples/hard-mode/pack.toml": "b7ef816514ad00e68dc1c9798cfa423107de33c07b80f86bdd2fbd426637f55c",
+      "packs/examples/hard-mode/roles.toml": "f90adcea6e0b3395bd194e5a860ac724a849d93f35cbc2598200a229fb1a02ec",
+      "python/README.md": "467f65a68201de50d30bb998e12adf69794a62d312269ebcbb3da4d0e3372553",
+      "python/demo_rl.py": "7a38eeab4bbfcc89bf6204f21da7d5339dd2767154b1b4f0046f8c4f015b396f",
+      "python/nethacked_gym/__init__.py": "10ef68bdd8c79c9dc7acfc8b3f876d09b5e58391933a5124569b68e6586ad338",
+      "python/nethacked_gym/env.py": "3ac9a374e9df28a3372ff441226e9515427f3104a45f910fb27bc31a1a3ec642",
+      "python/pyproject.toml": "413f6a88af0a425e0042457cdea0a0ec83ff6b6eb5a6903fd25b19043560f15e",
+      "python/tests/test_rl.py": "abaf382afd69b2b333d41e451d01f9ba259334e1a6e6f2dc6d0e003271f10e50",
+      "python/train_reinforce.py": "5ad4b7db0d5d30ae3928a86645862eaea34cafdd90bb84c615fe68f13fc60876",
+      "rust-toolchain.toml": "1078039a598c0d31db3682a307b2b60a5bdad40df44796413877fb986be34db5",
+      "scripts/behaviour-coverage.py": "6a0ee7cb496056ee72fd8b125402571950af100526cf79a2e65c86b125cd7316",
+      "scripts/build-cf.sh": "78a860cb0015c437e713cc6a3d5ce470632ec6e428084547e2e400ad526d1cb9",
+      "scripts/build-web.sh": "772697d1e983f1291223c7ed7e12c5727cf4f19565ca8c710a17e4fc556f4c13",
+      "scripts/check-doc-links.sh": "e2150c92978196765c8fbf6a5d9d5384a429746438be9b9d7727853e3e5e7672",
+      "scripts/check-no-static-tables.sh": "97451258d15246deab625d22ff9926fa16e83c158694df3125d84193bd10bbd0",
+      "scripts/extract/c_tables.py": "2da726e9ecb2598dc6899e1be3d0af7634c7c961e41417ec9952e1801931e439",
+      "scripts/extract/gen_rust.py": "c95f73103f4658d815afc21b215ab5a91bd3f5fad39d802b4140f4d67c90b124",
+      "scripts/parity-summary.py": "d6426d85c7fa0bc94749f87659318bf2db070507384b8a00f30296a36ef4905b",
+      "web/benchmark_report.json": "82edc8a6fcdb07b49210f8aeecde29a7f6179ef37582ee6abc94ad7750c14321",
+      "web/css/app.css": "3f2ff530004308b8c75cf2860c6d39b5c7ad811deffb2c5ba3b9944bc448c980",
+      "web/index.html": "b4822f1b273c7b4d7e4c8f54642eaa0fccbc24460fb4f78c304b5c706d794514",
+      "web/js/game.js": "a6cd190915544a122e2f557e28d915eb516f8108c9204bf890173db42a99f16d",
+      "web/js/pack-editor.js": "38d92d5634bb42f9a23943629646994f8d52f293f176a48060da1fa1440c4ce9",
+      "web/js/pack-store.js": "f8997193514347f1762a42b6778ad127a8128b9261268586c031c8f710c56f35",
+      "web/js/packs.js": "4a2f88475f31bb7ff8aa8d72357ae8efe34a5de7c7419a2cb83cc26f699f249b",
+      "web/js/toml-lite.js": "7ee5de6bd6d6de2710ffcef610d94100bbcf52890371783c2b7d8e9e0a56d375",
+      "web/js/toml-lite.test.mjs": "93b4e9981832a7c7d16ad6e741de8ebd771da0dcbaf7147f9b441adf1499e64d",
+      "web/js/wasm.js": "6823275b117c48188033619cf7f30d68501a49de836446ef63f9509bbeb5029c",
+      "web/packs.html": "e5c3aeb9b0cd682afa6688b6edc78c133c2f5fd2dab3a8c397f76321889da96d",
+      "web/play/index.html": "9eeebef4e5b0c83e815009e5f78f1b92f70b81880ec109871cb4e4bca36d554c",
+      "web/play/play.js": "3cf11a180327b0c9fe6cfaa856020a078db27a01ddabfb5803be932b3a0fb3d0",
+      "web/policy_weights.json": "0c52cbd1513428ed7269c2db07bd9a4a27172787de900bc275396c2d7fbad69c"
+    },
+    "golden_source_sha256": "304a507d2968948f3c62a41ef217bac01e310d70f4bc47f076ce6c10664fc7f0",
+    "golden_entire_source_equals_HEAD": true
+  },
+  "matrix": [
+    {
+      "unit": "P04a",
+      "required_exit": "Stored ordinary STR/DX melee/bump to-hit, encoded boundaries, save/native RNG",
+      "status": "bounded semantic exit verified",
+      "owners": [
+        "crates/nethacked-core/src/combat.rs:70",
+        "crates/nethacked-sim/src/combat.rs:145"
+      ],
+      "source_authority": "16ff59115315917b93185d026aeefea06db9b0f4",
+      "source_anchors_from_accepted_review": [
+        "weapon.c:950-989",
+        "attrib.c:1200-1238",
+        "uhitm.c:365-378,780-784"
+      ],
+      "public_and_source_derived_test_ids": [
+        {
+          "id": "crates/nethacked-sim/tests/hero_attribute_hit_tests.rs::public_attack_and_bump_obey_literal_attribute_thresholds_and_draws",
+          "path": "crates/nethacked-sim/tests/hero_attribute_hit_tests.rs",
+          "line": 72,
+          "sha256": "5e42d9a266d7363c79105b4da99de8b705b9ab9834aad2a8c8c56e0ca255a716"
+        },
+        {
+          "id": "crates/nethacked-core/tests/source_derived_attribute_hit.rs::ordinary_abon_source_derived_boundaries",
+          "path": "crates/nethacked-core/tests/source_derived_attribute_hit.rs",
+          "line": 15,
+          "sha256": "7bd8ba6d6ac659d4bb16473e32b2d444b9fcd0f8db89156f4cb77ba63e07f99f"
+        },
+        {
+          "id": "crates/nethacked-core/tests/source_derived_attribute_hit.rs::abon_low_level_tuning_does_not_duplicate_experience_level",
+          "path": "crates/nethacked-core/tests/source_derived_attribute_hit.rs",
+          "line": 33,
+          "sha256": "7bd8ba6d6ac659d4bb16473e32b2d444b9fcd0f8db89156f4cb77ba63e07f99f"
+        }
+      ],
+      "inspected_current_evidence": "144 native public combinations use literal abon/dbon, strict miss/hit, renamed owned identities, conditional d20/damage draws, full world and continued RNG; original mutation failure/restoration remains reviewed.",
+      "independent_reviews": [
+        "/tmp/netrust-p04a-review.md"
+      ],
+      "broader_gaps": [
+        "Effective gear/temporary attributes; polymorph form formula; broader combat terms"
+      ]
+    },
+    {
+      "unit": "P04b",
+      "required_exit": "Stored ordinary STR damage before final floor, public paths/save/native",
+      "status": "bounded semantic exit verified",
+      "owners": [
+        "crates/nethacked-core/src/combat.rs:97",
+        "crates/nethacked-sim/src/combat.rs:181"
+      ],
+      "source_authority": "16ff59115315917b93185d026aeefea06db9b0f4",
+      "source_anchors_from_accepted_review": [
+        "weapon.c:991-1017",
+        "uhitm.c:1435-1508"
+      ],
+      "public_and_source_derived_test_ids": [
+        {
+          "id": "crates/nethacked-sim/tests/hero_attribute_damage_tests.rs::public_strength_damage_preserves_weapon_skill_floor_owned_target_and_rng",
+          "path": "crates/nethacked-sim/tests/hero_attribute_damage_tests.rs",
+          "line": 72,
+          "sha256": "bf51e2221251b697e6218d6cb3435b3202252f94d4acaf601c1f73e36c35582f"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/hero_attribute_damage_tests.rs::polymorphed_hero_does_not_receive_stored_strength_damage",
+          "path": "crates/nethacked-sim/tests/hero_attribute_damage_tests.rs",
+          "line": 193,
+          "sha256": "bf51e2221251b697e6218d6cb3435b3202252f94d4acaf601c1f73e36c35582f"
+        },
+        {
+          "id": "crates/nethacked-core/tests/source_derived_attribute_damage.rs::ordinary_dbon_source_derived_boundaries",
+          "path": "crates/nethacked-core/tests/source_derived_attribute_damage.rs",
+          "line": 13,
+          "sha256": "60528cbbbc34bf2991e31443f26909e0724d357e174cc1da11cc84c1db5ba677"
+        },
+        {
+          "id": "crates/nethacked-core/tests/source_derived_attribute_damage.rs::strength_combines_with_enchantment_and_skill_before_damage_floor",
+          "path": "crates/nethacked-core/tests/source_derived_attribute_damage.rs",
+          "line": 31,
+          "sha256": "60528cbbbc34bf2991e31443f26909e0724d357e174cc1da11cc84c1db5ba677"
+        }
+      ],
+      "inspected_current_evidence": "16 literal STR edges crossed into 256 public weapon/barehand/custom/renamed/direct/bump/miss/hit cases; -5 enchant and skill combine before floor; complete saves and native next word.",
+      "independent_reviews": [
+        "/tmp/netrust-p04b-review.md",
+        "/tmp/netrust-p04b-repair1.md"
+      ],
+      "broader_gaps": [
+        "Effective STR; twohand/dual scaling/rings; broader polymorph/weapon contexts"
+      ]
+    },
+    {
+      "unit": "P04c",
+      "required_exit": "Owned recursive load, STR/CON capacity, actual pickup/drop/refusal/movement plus P09 slowdown",
+      "status": "bounded semantic exit verified",
+      "owners": [
+        "crates/nethacked-sim/src/actions/inventory.rs:16",
+        "crates/nethacked-sim/src/actions/mod.rs:44",
+        "crates/nethacked-sim/src/turns.rs:56",
+        "crates/nethacked-core/src/energy.rs:92"
+      ],
+      "source_authority": "16ff59115315917b93185d026aeefea06db9b0f4",
+      "source_anchors_from_accepted_review": [
+        "hack.c:2616-2635,2730,2747,4351-4387",
+        "pickup.c:782,909,3367,3393"
+      ],
+      "public_and_source_derived_test_ids": [
+        {
+          "id": "crates/nethacked-sim/tests/hero_capacity_tests.rs::public_owned_pickup_drop_and_exact_lifting_boundary",
+          "path": "crates/nethacked-sim/tests/hero_capacity_tests.rs",
+          "line": 103,
+          "sha256": "16e2cba91356bc919aaf4151542e3f4b0c2ea12cb2ac20417b8c9f0b31f42f45"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/hero_capacity_tests.rs::container_actions_recompute_nested_bag_weights_and_save_roundtrip",
+          "path": "crates/nethacked-sim/tests/hero_capacity_tests.rs",
+          "line": 185,
+          "sha256": "16e2cba91356bc919aaf4151542e3f4b0c2ea12cb2ac20417b8c9f0b31f42f45"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/hero_capacity_tests.rs::container_removal_refusal_projects_weight_and_restores_parent",
+          "path": "crates/nethacked-sim/tests/hero_capacity_tests.rs",
+          "line": 235,
+          "sha256": "16e2cba91356bc919aaf4151542e3f4b0c2ea12cb2ac20417b8c9f0b31f42f45"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/hero_capacity_tests.rs::overloaded_impaired_move_matches_wait_without_direction_rng",
+          "path": "crates/nethacked-sim/tests/hero_capacity_tests.rs",
+          "line": 348,
+          "sha256": "16e2cba91356bc919aaf4151542e3f4b0c2ea12cb2ac20417b8c9f0b31f42f45"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/monster_energy_tests.rs::public_live_inventory_six_tiers_clock_and_actions",
+          "path": "crates/nethacked-sim/tests/monster_energy_tests.rs",
+          "line": 220,
+          "sha256": "b3c118f8d51743a89cd0f82d7ebdc4bab50aeaddb6f5726df3e674515783ba6c"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/monster_energy_tests.rs::public_burden_counts_repeat_after_inventory_and_attribute_transitions",
+          "path": "crates/nethacked-sim/tests/monster_energy_tests.rs",
+          "line": 472,
+          "sha256": "b3c118f8d51743a89cd0f82d7ebdc4bab50aeaddb6f5726df3e674515783ba6c"
+        }
+      ],
+      "inspected_current_evidence": "Source literal bag BUC totals22/28/67; full refusal-vs-Wait state/RNG with exact refusal message; live P09 six tiers and pickup/attribute/nested-container transitions close required slowdown.",
+      "independent_reviews": [
+        "/tmp/netrust-p04c-review.md",
+        "/tmp/netrust-p04c-repair1.md",
+        "/tmp/netrust-p09/review.md"
+      ],
+      "broader_gaps": [
+        "Form/mount/legs/air modifiers; low-HP stamina/exercise; coin/loadstone/partial-stack prompts"
+      ]
+    },
+    {
+      "unit": "P05",
+      "required_exit": "Released ordinary natural HP conditions once per world turn",
+      "status": "bounded semantic exit verified",
+      "owners": [
+        "crates/nethacked-sim/src/turns.rs:11",
+        "crates/nethacked-sim/src/turns.rs:183",
+        "crates/nethacked-sim/src/actions/mod.rs:177"
+      ],
+      "source_authority": "16ff59115315917b93185d026aeefea06db9b0f4",
+      "source_anchors_from_accepted_review": [
+        "allmain.c:625-679",
+        "hack.c actual-walking before spoteffects"
+      ],
+      "public_and_source_derived_test_ids": [
+        {
+          "id": "crates/nethacked-sim/tests/natural_hp_regeneration_tests.rs::public_each_world_turn_draws_once_and_save_continues_the_same_stream",
+          "path": "crates/nethacked-sim/tests/natural_hp_regeneration_tests.rs",
+          "line": 52,
+          "sha256": "53df86196d675caf9e4431336feefcf34ccb4a748a5e64051d68faefa42ba63c"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/natural_hp_regeneration_tests.rs::public_action_clock_two_actions_per_tick_and_two_ticks_per_action",
+          "path": "crates/nethacked-sim/tests/natural_hp_regeneration_tests.rs",
+          "line": 185,
+          "sha256": "53df86196d675caf9e4431336feefcf34ccb4a748a5e64051d68faefa42ba63c"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/natural_hp_regeneration_tests.rs::public_fatal_afflictions_preserve_early_return_and_do_not_regenerate",
+          "path": "crates/nethacked-sim/tests/natural_hp_regeneration_tests.rs",
+          "line": 159,
+          "sha256": "53df86196d675caf9e4431336feefcf34ccb4a748a5e64051d68faefa42ba63c"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/natural_hp_regeneration_tests.rs::public_burden_gates_actual_walking_but_not_wait_or_refused_movement",
+          "path": "crates/nethacked-sim/tests/natural_hp_regeneration_tests.rs",
+          "line": 89,
+          "sha256": "53df86196d675caf9e4431336feefcf34ccb4a748a5e64051d68faefa42ba63c"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/natural_hp_regeneration_tests.rs::public_natural_healing_precedes_hunger_and_never_resurrects_after_starvation",
+          "path": "crates/nethacked-sim/tests/natural_hp_regeneration_tests.rs",
+          "line": 288,
+          "sha256": "53df86196d675caf9e4431336feefcf34ccb4a748a5e64051d68faefa42ba63c"
+        }
+      ],
+      "inspected_current_evidence": "Literal native rn2(100) stream; strict level+CON threshold, cap and omission controls; fast0/1 and slow2 ticks; actual walking/bump/refusal, fatal-before-heal-before-hunger; complete save/events/RNG.",
+      "independent_reviews": [
+        "/tmp/netrust-p05-review.md",
+        "/tmp/netrust-p05-identity-review.md",
+        "/tmp/netrust-p09/review.md"
+      ],
+      "broader_gaps": [
+        "Pw, regeneration/Sleepy/prayer properties, polymorph, effective CON and other contexts"
+      ]
+    },
+    {
+      "unit": "P06",
+      "required_exit": "One Suit public delayed wear/remove, cancellation/cursed removal, saves",
+      "status": "bounded semantic exit verified",
+      "owners": [
+        "crates/nethacked-sim/src/actions/equipment.rs:67",
+        "crates/nethacked-sim/src/actions/equipment.rs:143",
+        "crates/nethacked-sim/src/actions/equipment.rs:157",
+        "crates/nethacked-sim/src/world.rs:493",
+        "crates/nethacked-agent/src/commands.rs"
+      ],
+      "source_authority": "16ff59115315917b93185d026aeefea06db9b0f4",
+      "source_anchors_from_accepted_review": [
+        "objects.h armor delay facts",
+        "do_wear.c:1686-1724, armor on/off callbacks",
+        "do.c:665-670",
+        "pickup.c:2573-2576"
+      ],
+      "public_and_source_derived_test_ids": [
+        {
+          "id": "crates/nethacked-sim/tests/equipment_occupation_tests.rs::released_suit_start_progress_finish_and_remove_cost_three_world_turns",
+          "path": "crates/nethacked-sim/tests/equipment_occupation_tests.rs",
+          "line": 71,
+          "sha256": "38d5f11b5c9cece12357677eb6b9fc59758d78fdb4de811d71c6788815a45a37"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/equipment_occupation_tests.rs::cursed_removal_is_zero_time_and_retry_requires_uncursing",
+          "path": "crates/nethacked-sim/tests/equipment_occupation_tests.rs",
+          "line": 122,
+          "sha256": "38d5f11b5c9cece12357677eb6b9fc59758d78fdb4de811d71c6788815a45a37"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/equipment_occupation_tests.rs::dressing_is_world_turn_owned_even_when_hero_has_two_actions_per_tick",
+          "path": "crates/nethacked-sim/tests/equipment_occupation_tests.rs",
+          "line": 152,
+          "sha256": "38d5f11b5c9cece12357677eb6b9fc59758d78fdb4de811d71c6788815a45a37"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/equipment_occupation_tests.rs::genuine_other_item_theft_interrupts_don_and_doff_asymmetrically_and_allows_retry",
+          "path": "crates/nethacked-sim/tests/equipment_occupation_tests.rs",
+          "line": 358,
+          "sha256": "38d5f11b5c9cece12357677eb6b9fc59758d78fdb4de811d71c6788815a45a37"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/equipment_occupation_tests.rs::save_load_mid_don_and_doff_preserves_callback_events_state_and_rng",
+          "path": "crates/nethacked-sim/tests/equipment_occupation_tests.rs",
+          "line": 236,
+          "sha256": "38d5f11b5c9cece12357677eb6b9fc59758d78fdb4de811d71c6788815a45a37"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/equipment_occupation_tests.rs::absent_owner_migrates_first_carried_per_slot_but_explicit_empty_does_not",
+          "path": "crates/nethacked-sim/tests/equipment_occupation_tests.rs",
+          "line": 264,
+          "sha256": "38d5f11b5c9cece12357677eb6b9fc59758d78fdb4de811d71c6788815a45a37"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/equipment_occupation_tests.rs::public_inventory_routes_cannot_remove_a_worn_or_cursed_suit",
+          "path": "crates/nethacked-sim/tests/equipment_occupation_tests.rs",
+          "line": 578,
+          "sha256": "38d5f11b5c9cece12357677eb6b9fc59758d78fdb4de811d71c6788815a45a37"
+        }
+      ],
+      "inspected_current_evidence": "Actual Wear/Remove costs three world ticks, immediate on/deferred off AC, suppressed commands during dressing, true theft interruption/retry, curse refusal, double-action tick owner, complete saves and absent-vs-explicit-empty load; reviewed transfer/theft/flee/teleport repairs closed.",
+      "independent_reviews": [
+        "/tmp/netrust-p06a-review.md",
+        "/tmp/netrust-p06b-review.md",
+        "/tmp/netrust-p06b-repair1-review.md",
+        "/tmp/netrust-p06b-repair2-review.md"
+      ],
+      "broader_gaps": [
+        "Other public slots/forms; broader worn-target disrobing; special teleport/theft contexts"
+      ]
+    },
+    {
+      "unit": "P07",
+      "required_exit": "One FIRE_RES worn source through acquisition, attacks, removal and saves",
+      "status": "bounded semantic exit verified",
+      "owners": [
+        "crates/nethacked-sim/src/actions/equipment.rs:36",
+        "crates/nethacked-sim/src/combat.rs:655",
+        "crates/nethacked-sim/src/monsters.rs:676",
+        "crates/nethacked-data/src/ruleset.rs:238"
+      ],
+      "source_authority": "16ff59115315917b93185d026aeefea06db9b0f4",
+      "source_anchors_from_accepted_review": [
+        "objects.h:513",
+        "worn.c:73",
+        "do_wear.c:909,1690,2375",
+        "uhitm.c:2561-2575",
+        "zap.c:4421-4429"
+      ],
+      "public_and_source_derived_test_ids": [
+        {
+          "id": "crates/nethacked-sim/tests/worn_property_tests.rs::public_acquisition_wear_both_hp_paths_removal_and_intrinsic_source_preservation",
+          "path": "crates/nethacked-sim/tests/worn_property_tests.rs",
+          "line": 213,
+          "sha256": "7d2eb7e43c5cf4d97ea866d199e9ba5df013537e6e7de5d1d9631d3ef41f2381"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/worn_property_tests.rs::genuine_interruption_clears_don_preserves_doff_and_intrinsic_then_retry_works",
+          "path": "crates/nethacked-sim/tests/worn_property_tests.rs",
+          "line": 250,
+          "sha256": "7d2eb7e43c5cf4d97ea866d199e9ba5df013537e6e7de5d1d9631d3ef41f2381"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/worn_property_tests.rs::owned_renamed_custom_and_explicit_clear_metadata_survive_full_midoperation_save",
+          "path": "crates/nethacked-sim/tests/worn_property_tests.rs",
+          "line": 303,
+          "sha256": "7d2eb7e43c5cf4d97ea866d199e9ba5df013537e6e7de5d1d9631d3ef41f2381"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/worn_property_tests.rs::native_public_attack_draws_preserve_c_hp_guard_order_with_and_without_worn_source",
+          "path": "crates/nethacked-sim/tests/worn_property_tests.rs",
+          "line": 414,
+          "sha256": "7d2eb7e43c5cf4d97ea866d199e9ba5df013537e6e7de5d1d9631d3ef41f2381"
+        }
+      ],
+      "inspected_current_evidence": "Public pickup/carried-only/Wear/melee-fire/breath-fire/Remove chain, fixed literal native damage consumption, actual theft/don/d off behavior, independent intrinsic remains untouched, metadata clear/custom/rename and full midsave continuation.",
+      "independent_reviews": [
+        "/tmp/netrust-p07-review.md",
+        "/tmp/netrust-p07-review-evidence.json",
+        "/tmp/netrust-p09/review.md"
+      ],
+      "broader_gaps": [
+        "Other properties/slots, burning and secondary dragon effects; preexisting MC approximations"
+      ]
+    },
+    {
+      "unit": "P08",
+      "required_exit": "Persisted timer primitive, actual corpse rot, ordinary Troll revival; nested/cache/load clock/traits",
+      "status": "bounded semantic exit verified",
+      "owners": [
+        "crates/nethacked-sim/src/object_timers.rs:44",
+        "crates/nethacked-sim/src/object_timers.rs:74",
+        "crates/nethacked-sim/src/object_timers.rs:162",
+        "crates/nethacked-sim/src/object_timers.rs:326",
+        "crates/nethacked-sim/src/object_timers.rs:544",
+        "crates/nethacked-sim/src/corpse_revival.rs:19",
+        "crates/nethacked-sim/src/corpse_revival.rs:90",
+        "crates/nethacked-sim/src/actions/stairs.rs:362",
+        "crates/nethacked-sim/src/world.rs:493"
+      ],
+      "source_authority": "16ff59115315917b93185d026aeefea06db9b0f4",
+      "source_anchors_from_accepted_review": [
+        "timeout.c:2222-2291,2467-2482,2660-2725",
+        "restore.c:755-769,891-898",
+        "mkobj.c:1389-1431,2157-2222",
+        "pickup.c:2644-2663,2758-2797",
+        "zap.c:713-1122,805-808"
+      ],
+      "public_and_source_derived_test_ids": [
+        {
+          "id": "crates/nethacked-sim/tests/corpse_lifecycle_tests.rs::public_actual_death_generic_wish_and_generated_body_rot_through_wait_and_full_save",
+          "path": "crates/nethacked-sim/tests/corpse_lifecycle_tests.rs",
+          "line": 138,
+          "sha256": "3ff6277baaecd39f4b0854e44473857fe6e151d69a90d1f497d7145108a405eb"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/corpse_lifecycle_tests.rs::absent_migration_body_samples_active_then_cache_in_exact_order_and_modern_owner_is_authoritative",
+          "path": "crates/nethacked-sim/tests/corpse_lifecycle_tests.rs",
+          "line": 354,
+          "sha256": "3ff6277baaecd39f4b0854e44473857fe6e151d69a90d1f497d7145108a405eb"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/corpse_lifecycle_tests.rs::absent_signed_overdue_active_deletes_now_cached_defers_until_remapped_arrival",
+          "path": "crates/nethacked-sim/tests/corpse_lifecycle_tests.rs",
+          "line": 568,
+          "sha256": "3ff6277baaecd39f4b0854e44473857fe6e151d69a90d1f497d7145108a405eb"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/object_timer_tests.rs::actual_cache_return_reinserts_local_ties_before_live_global_and_new_timers",
+          "path": "crates/nethacked-sim/tests/object_timer_tests.rs",
+          "line": 249,
+          "sha256": "56beaff3baba5d5f21a0114623053ba8bd3897272ad9b95354c91c54eceb03ee"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/object_timer_tests.rs::fast_and_slow_hero_actions_use_one_world_clock",
+          "path": "crates/nethacked-sim/tests/object_timer_tests.rs",
+          "line": 368,
+          "sha256": "56beaff3baba5d5f21a0114623053ba8bd3897272ad9b95354c91c54eceb03ee"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/corpse_transfer_tests.rs::enclosing_container_moves_preserve_descendant_timers_flags_rng_and_direct_ages",
+          "path": "crates/nethacked-sim/tests/corpse_transfer_tests.rs",
+          "line": 180,
+          "sha256": "076254ac417e0ef5655805fc48f9a478aab8c76fe3eb72a51d23ed437e219127"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/corpse_transfer_tests.rs::actual_initialized_cancelled_troll_freeze_midcache_save_and_public_thaw",
+          "path": "crates/nethacked-sim/tests/corpse_transfer_tests.rs",
+          "line": 549,
+          "sha256": "076254ac417e0ef5655805fc48f9a478aab8c76fe3eb72a51d23ed437e219127"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/corpse_revival_tests.rs::saved_traits_heal_restore_and_repair",
+          "path": "crates/nethacked-sim/tests/corpse_revival_tests.rs",
+          "line": 191,
+          "sha256": "d6d63585636e626ee1ce0fe49f3eba3caecc8c9336ad98dad1b78ca66311013f"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/corpse_revival_tests.rs::failure_rot_and_existing_rot_draw_only",
+          "path": "crates/nethacked-sim/tests/corpse_revival_tests.rs",
+          "line": 429,
+          "sha256": "d6d63585636e626ee1ce0fe49f3eba3caecc8c9336ad98dad1b78ca66311013f"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/corpse_revival_tests.rs::full_save_and_cache_arrival_remap_one_clock",
+          "path": "crates/nethacked-sim/tests/corpse_revival_tests.rs",
+          "line": 547,
+          "sha256": "d6d63585636e626ee1ce0fe49f3eba3caecc8c9336ad98dad1b78ca66311013f"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/corpse_revival_tests.rs::actual_death_generated_and_wish_revival",
+          "path": "crates/nethacked-sim/tests/corpse_revival_tests.rs",
+          "line": 650,
+          "sha256": "d6d63585636e626ee1ce0fe49f3eba3caecc8c9336ad98dad1b78ca66311013f"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/monster_energy_tests.rs::public_cache_departure_save_and_arrival_preserve_remaining_credit",
+          "path": "crates/nethacked-sim/tests/monster_energy_tests.rs",
+          "line": 557,
+          "sha256": "b3c118f8d51743a89cd0f82d7ebdc4bab50aeaddb6f5726df3e674515783ba6c"
+        }
+      ],
+      "inspected_current_evidence": "Consumed expiry precedes real childless deletion/references; actual death/wish/generated routes with literal deadlines/native RNG; absence-only signed migration; cached remap/load no extra clock; source-correct direct-parent nested behavior; actual ordinary Troll placement/HP/gender/saved traits, blindness cleared/fire resistance/credit retained; failed revival schedules five-d50 rot.",
+      "independent_reviews": [
+        "/tmp/netrust-p08a/repair1/review.md",
+        "/tmp/netrust-p08b0/review.md",
+        "/tmp/netrust-p08b1/review.md",
+        "/tmp/netrust-p08b1-clock-repair/review.md",
+        "/tmp/netrust-p08b15/review.md",
+        "/tmp/netrust-p08b16/review.md",
+        "/tmp/netrust-p08b17a/review.md",
+        "/tmp/netrust-p08b17a/pack-fixture-repair/review.md",
+        "/tmp/netrust-p08b17b/review.md",
+        "/tmp/netrust-p08b17/review.md",
+        "/tmp/netrust-p08b2a/repair/review.md",
+        "/tmp/netrust-p08b2/review.md",
+        "/tmp/netrust-p08c/repair/review.md",
+        "/tmp/netrust-p09/review.md"
+      ],
+      "broader_gaps": [
+        "Rider/Ice-specific execution; corpse-with-contents burial; mextra/shop/quest/special identities; global next_ident wrap"
+      ]
+    },
+    {
+      "unit": "P09",
+      "required_exit": "Exact per-actor natural movement allocation/actions/hero-speed and live burden",
+      "status": "bounded semantic exit verified",
+      "owners": [
+        "crates/nethacked-core/src/energy.rs:82",
+        "crates/nethacked-core/src/energy.rs:92",
+        "crates/nethacked-sim/src/turns.rs:11",
+        "crates/nethacked-sim/src/monsters.rs:61",
+        "crates/nethacked-arena/src/lib.rs:132"
+      ],
+      "source_authority": "16ff59115315917b93185d026aeefea06db9b0f4",
+      "source_anchors_from_accepted_review": [
+        "allmain.c:123-155,203-241,273-390",
+        "mon.c:1126-1167,1241-1256",
+        "hack.c:2616-2635,4351-4387"
+      ],
+      "public_and_source_derived_test_ids": [
+        {
+          "id": "crates/nethacked-sim/tests/monster_energy_tests.rs::public_native_speed_counts_and_unconditional_allocation_draws",
+          "path": "crates/nethacked-sim/tests/monster_energy_tests.rs",
+          "line": 132,
+          "sha256": "b3c118f8d51743a89cd0f82d7ebdc4bab50aeaddb6f5726df3e674515783ba6c"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/monster_energy_tests.rs::public_credit_thresholds_and_snapshot_pass_order",
+          "path": "crates/nethacked-sim/tests/monster_energy_tests.rs",
+          "line": 160,
+          "sha256": "b3c118f8d51743a89cd0f82d7ebdc4bab50aeaddb6f5726df3e674515783ba6c"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/monster_energy_tests.rs::public_fast_slow_hero_and_live_speed_properties",
+          "path": "crates/nethacked-sim/tests/monster_energy_tests.rs",
+          "line": 192,
+          "sha256": "b3c118f8d51743a89cd0f82d7ebdc4bab50aeaddb6f5726df3e674515783ba6c"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/monster_energy_tests.rs::public_live_inventory_six_tiers_clock_and_actions",
+          "path": "crates/nethacked-sim/tests/monster_energy_tests.rs",
+          "line": 220,
+          "sha256": "b3c118f8d51743a89cd0f82d7ebdc4bab50aeaddb6f5726df3e674515783ba6c"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/monster_energy_tests.rs::full_save_holes_credit_native_continuation_and_legacy_defaults",
+          "path": "crates/nethacked-sim/tests/monster_energy_tests.rs",
+          "line": 333,
+          "sha256": "b3c118f8d51743a89cd0f82d7ebdc4bab50aeaddb6f5726df3e674515783ba6c"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/monster_energy_tests.rs::public_cache_departure_save_and_arrival_preserve_remaining_credit",
+          "path": "crates/nethacked-sim/tests/monster_energy_tests.rs",
+          "line": 557,
+          "sha256": "b3c118f8d51743a89cd0f82d7ebdc4bab50aeaddb6f5726df3e674515783ba6c"
+        }
+      ],
+      "inspected_current_evidence": "Unconditional bound12 even0/12, literal speeds6/12/24 and credits0/11/12/23/24/36, snapshot ABAB order, hero Fast/Very_fast precedence/native words, six live load tiers and actual cache23\u219211, full save/old movement0 without RNG; P05/P06/P08 use one clock.",
+      "independent_reviews": [
+        "/tmp/netrust-p09/review.md",
+        "/tmp/netrust-p09/evidence.json"
+      ],
+      "broader_gaps": [
+        "MSLOW/MFAST/gallop, polymorph/property acquisition, C linked-head ordering; death remaining-credit/same-pass-spawn exclusions source-inspected rather than dedicated tests"
+      ]
+    },
+    {
+      "unit": "P10",
+      "required_exit": "One owned SGROUP through actual ordinary public Zap; difficulty/placement/genocide/native saves",
+      "status": "bounded semantic exit verified",
+      "owners": [
+        "crates/nethacked-sim/src/monster_generation.rs:17",
+        "crates/nethacked-sim/src/monster_generation.rs:99",
+        "crates/nethacked-sim/src/monster_generation.rs:131",
+        "crates/nethacked-sim/src/actions/items.rs:992",
+        "crates/nethacked-data/src/ruleset.rs:659"
+      ],
+      "source_authority": "16ff59115315917b93185d026aeefea06db9b0f4",
+      "source_anchors_from_accepted_review": [
+        "makemon.c:29,79-145,1202-1207,1249-1299,1429-1438",
+        "teleport.c:206-275"
+      ],
+      "public_and_source_derived_test_ids": [
+        {
+          "id": "crates/nethacked-sim/tests/monster_group_tests.rs::actual_zap_literal_gate_and_all_raw_counts_at_hero_one_through_five",
+          "path": "crates/nethacked-sim/tests/monster_group_tests.rs",
+          "line": 506,
+          "sha256": "bba1cf02a356f61741731e9afdb8c4d08bd8d973b629d29b2ae998dbb06ab7cc"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/monster_group_tests.rs::disabled_group_and_renamed_canonical_selected_species_have_source_native_identity",
+          "path": "crates/nethacked-sim/tests/monster_group_tests.rs",
+          "line": 541,
+          "sha256": "bba1cf02a356f61741731e9afdb8c4d08bd8d973b629d29b2ae998dbb06ab7cc"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/monster_group_tests.rs::group_checks_peace_even_for_peaceful_leader_consumes_second_check_and_forces_malign",
+          "path": "crates/nethacked-sim/tests/monster_group_tests.rs",
+          "line": 575,
+          "sha256": "bba1cf02a356f61741731e9afdb8c4d08bd8d973b629d29b2ae998dbb06ab7cc"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/monster_group_tests.rs::selected_species_exhaustion_wholemap_and_remaining_attempts_retain_correct_origin",
+          "path": "crates/nethacked-sim/tests/monster_group_tests.rs",
+          "line": 610,
+          "sha256": "bba1cf02a356f61741731e9afdb8c4d08bd8d973b629d29b2ae998dbb06ab7cc"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/monster_group_tests.rs::dungeon_difficulty_selects_species_separately_and_genocide_rejects_before_groups",
+          "path": "crates/nethacked-sim/tests/monster_group_tests.rs",
+          "line": 642,
+          "sha256": "bba1cf02a356f61741731e9afdb8c4d08bd8d973b629d29b2ae998dbb06ab7cc"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/monster_group_tests.rs::multiple_wand_leaders_finish_groups_before_next_hero_origin_reset",
+          "path": "crates/nethacked-sim/tests/monster_group_tests.rs",
+          "line": 682,
+          "sha256": "bba1cf02a356f61741731e9afdb8c4d08bd8d973b629d29b2ae998dbb06ab7cc"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/monster_group_tests.rs::noncanonical_live_keys_group_actor_ids_full_canonical_save_and_native_continue",
+          "path": "crates/nethacked-sim/tests/monster_group_tests.rs",
+          "line": 697,
+          "sha256": "bba1cf02a356f61741731e9afdb8c4d08bd8d973b629d29b2ae998dbb06ab7cc"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/monster_group_tests.rs::group_selected_species_real_ward_fallback_is_independent_of_original_human",
+          "path": "crates/nethacked-sim/tests/monster_group_tests.rs",
+          "line": 735,
+          "sha256": "bba1cf02a356f61741731e9afdb8c4d08bd8d973b629d29b2ae998dbb06ab7cc"
+        },
+        {
+          "id": "crates/nethacked-sim/tests/monster_group_tests.rs::owned_renamed_boulder_rejects_first_follower_candidate_without_actor_allocation",
+          "path": "crates/nethacked-sim/tests/monster_group_tests.rs",
+          "line": 754,
+          "sha256": "bba1cf02a356f61741731e9afdb8c4d08bd8d973b629d29b2ae998dbb06ab7cc"
+        }
+      ],
+      "inspected_current_evidence": "All15 hero/raw literals and gate0/1/disabled, separate depth2/depth18/fixedHP and genocide, first/second peace and forced malign, selected-species ward/boulder/exhaustion/origin, sequential leaders, remove4\u21922/live keys/new ActorIds/full canonical saves/native continuations. Child genocide/order inspected; no artificial public midaction mutation claimed.",
+      "independent_reviews": [
+        "/tmp/netrust-p10a/repair/review.md",
+        "/tmp/netrust-p10a/pack-fixture-repair/review.md",
+        "/tmp/netrust-p10a2/review.md",
+        "/tmp/netrust-p10a2/review-evidence.json",
+        "/tmp/netrust-p10b/review.md",
+        "/tmp/netrust-p10b/review-evidence.json"
+      ],
+      "broader_gaps": [
+        "Other groups, mavenge unrepresented, inventory/special creation, habitats/quests/levels, other wand contexts, exact global ID wrap"
+      ]
+    }
+  ],
+  "accepted_review_artifact_hashes": {
+    "/tmp/netrust-p04a-review.md": "396eaf15ae5fd34a3ae3d42607f72ecc4dddf8509c49aef260089204cca8d1c0",
+    "/tmp/netrust-p04b-repair1.md": "d06921997d59bbb60be353e1abe0ef891636451c32d5b6de715ca4df53f92be2",
+    "/tmp/netrust-p04b-review.md": "823d2af875e7bd1cfd60a753375a21712d7f76bf60fa258f1dade6dfcc2ff147",
+    "/tmp/netrust-p04c-repair1.md": "b0ec9a4cda0d7eb229e221834616a22675ddc19eb5ce4e63387852914a7b3949",
+    "/tmp/netrust-p04c-review.md": "a68368fdd8b5a4d4d0bc78804bf0ca4d94c28e7d274a8a93bf955eca554ce748",
+    "/tmp/netrust-p05-identity-review.md": "1b65ac07d5f7c9e1c43882cb148adc71bff64fa721fff7f619df7a212fdf763e",
+    "/tmp/netrust-p05-review.md": "66411829968f46c0a3abaa8e60dfca54da714a43f390e77aa6d1e60ef6a9f74b",
+    "/tmp/netrust-p06a-review.md": "266c3501520411ef0ef8ecfcc9cb01549fb75dfbb8f6fcb057d929e2f39bf9cf",
+    "/tmp/netrust-p06b-repair1-review.md": "453d777cbc187915faa9e78f3bbf1fc23fff87f82109741044ca72b98e81f1cc",
+    "/tmp/netrust-p06b-repair2-review.md": "c2fb37ce606b3a0af53e0d946d2a1a6b1599d307aeb4aed43f282ef686fc7b88",
+    "/tmp/netrust-p06b-review.md": "e04c9f2508c21279ae128639b3fe6a7e4179f7e171261482f9e40478161df9cd",
+    "/tmp/netrust-p07-review-evidence.json": "397deffd81ba87c64e0e40e89511481ba429e3fea45afe4ede62a43cfe0ad7d0",
+    "/tmp/netrust-p07-review.md": "a71b64aa232592fe5a907f09cbb96d9232d0d1a29f0223bf7c0a73208ba7e978",
+    "/tmp/netrust-p08a/repair1/review.md": "3e6eaadcb567f1178a6f4e41d24ffa0d7c17b044de351a8f8769bc37f73256c2",
+    "/tmp/netrust-p08b0/review.md": "4ca23f29aa7a5d34b59afe7b49a5fa2c89556e1d719690354713cd1c475caf70",
+    "/tmp/netrust-p08b1-clock-repair/review.md": "a52264ff7b05bbd589654b0f2f35565bcaf118d1189c7dec017947705f2eebb9",
+    "/tmp/netrust-p08b1/review.md": "4291457347ee48db44686c7200bf69a8f04ddf925b4d88e0077073290726bdb2",
+    "/tmp/netrust-p08b15/review.md": "8cb7bc2a908871c640d5244c2546d5fc44146aaa5ba7f8fea068a88446a30d41",
+    "/tmp/netrust-p08b16/review.md": "f58159c475734ba538ed69084850c2c0595a4f173f1edc2a2e4bc7a1355a0d57",
+    "/tmp/netrust-p08b17/review.md": "7b46ba51893b27bd1cfb02c385598a4dc5547859f6b98f0bdb613440c067ae7e",
+    "/tmp/netrust-p08b17a/pack-fixture-repair/review.md": "7445c80b5ba869974bf42d58fa726af52ba47b054085b65d4b153d5b022f56a7",
+    "/tmp/netrust-p08b17a/review.md": "cdf0fced291d3ca1f56860d0b333b9bf2a3dd3bbff32ddbb919a70ee91d37378",
+    "/tmp/netrust-p08b17b/review.md": "feb06a00e4a127745f90eee44c85165449615207d904e4a0a0b7f85b54859b0b",
+    "/tmp/netrust-p08b2/review.md": "634ccb81c65bb14ef8a86c8e88c20cde438e7d0e89b0aaf90dc971c171b51491",
+    "/tmp/netrust-p08b2a/repair/review.md": "e8735f21845b1d6766d1960a2c225b0c6a4f74e69a7b2021bfad0a863215a82a",
+    "/tmp/netrust-p08c/repair/review.md": "3d0567f79acc9e265a87b5cb07af865bf256a45fbfcfdfad54ac6ecad42fb893",
+    "/tmp/netrust-p09/evidence.json": "ce71484e4ca0da1c21cd6b1c45401bf0b330e5835b213530eaedc3309ce5b78f",
+    "/tmp/netrust-p09/review.md": "a4b0ffddc17b8d8c8669293867cbbcbbcee5533a2955b73071170414706cc3b7",
+    "/tmp/netrust-p10a/pack-fixture-repair/review.md": "b8013b32b5a81b8300209ed1a6f4cbee328e0863ccb9e98ccd16352e5130261d",
+    "/tmp/netrust-p10a/repair/review.md": "938b567381c5a4d684b4ffa7d578b193c9ce74aed8e8a7b8938cc3e569c59e04",
+    "/tmp/netrust-p10a2/review-evidence.json": "8838584d9c207f402038855225313953db6b1bedf9c056f5f9a5bef860cbfcfd",
+    "/tmp/netrust-p10a2/review.md": "50941b031b659a0d3188ef624ba74e5a3ed809e403688ebf2e0901a13510eb85",
+    "/tmp/netrust-p10b/review-evidence.json": "72b70284486bba773e22b6eefe4f10221b8641add8d0ac862aecfd3148692f37",
+    "/tmp/netrust-p10b/review.md": "ef75666a8cce600f02b2d07e5b88382862d2b75635723c0427dae4d3cb006806"
+  },
+  "dependency_reconciliation": {
+    "P04a dbon": "closed by P04b",
+    "P04c/P05 slowdown integration": "closed by P09 real live burden and one world clock",
+    "P06a public occupation": "closed by P06b and two narrow repairs",
+    "P08 timer/metadata/birth/transfers": "closed by reviewed b0/b1/clock/b15/b16/b17a/b17b/b17/b2a/b2/c; P09 movement integration",
+    "P10a role/Zap/group": "closed by P10a2 and P10b"
+  },
+  "existing_test_adjustments": [
+    {
+      "path": "crates/nethacked-agent/tests/bones_server_test.rs",
+      "classification": "setup / prescribed RNG input setup; original assertions unchanged",
+      "unit_review_attribution": "P08b15/P08b17b",
+      "description": "Mechanical absent trait payload and false norevive initialization.",
+      "changed_existing_tests": [
+        "test_networked_bones_flow_and_ghost_reincarnation"
+      ],
+      "changed_helpers": [],
+      "all_affected_existing_tests": [
+        "test_networked_bones_flow_and_ghost_reincarnation"
+      ],
+      "original_assertions": 37,
+      "all_original_assertions_retained": true,
+      "current_sha256": "466988f66615166df346f808528faacdef3512431f47b8dc4a0b3e21fa47db5d",
+      "head_diff_sha256": "43209f4408c6f0bff899a6aed0b967957bc96384f66c42c132faf6a1eed637e9"
+    },
+    {
+      "path": "crates/nethacked-data/tests/actor_identity.rs",
+      "classification": "setup / prescribed RNG input setup; original assertions unchanged",
+      "unit_review_attribution": "P08b17a",
+      "description": "Fixed owned male flag isolates HP/identity RNG.",
+      "changed_existing_tests": [
+        "owned_factories_keep_canonical_and_exact_custom_identity_and_fixed_hp"
+      ],
+      "changed_helpers": [],
+      "all_affected_existing_tests": [
+        "owned_factories_keep_canonical_and_exact_custom_identity_and_fixed_hp"
+      ],
+      "original_assertions": 19,
+      "all_original_assertions_retained": true,
+      "current_sha256": "8aa3637513c7afbd84d032926029398c5aebdb6361ef6e0e5471d2d88f3cff5f",
+      "head_diff_sha256": "80a6c2cf771c10a03fd2e2f77403aefa6d2ed9bfb564bd7ad15ab569e055883f"
+    },
+    {
+      "path": "crates/nethacked-data/tests/ice_box_initialization.rs",
+      "classification": "setup / prescribed RNG input setup; original assertions unchanged",
+      "unit_review_attribution": "P08b1/P08b17",
+      "description": "Prescribed RNG-input setup adds independent scheduling/gender segments; original selection order and assertion macros retained.",
+      "changed_existing_tests": [
+        "ice_box_count_and_direct_corpse_draws_owned_weight_and_zero_age"
+      ],
+      "changed_helpers": [],
+      "all_affected_existing_tests": [
+        "ice_box_count_and_direct_corpse_draws_owned_weight_and_zero_age"
+      ],
+      "original_assertions": 41,
+      "all_original_assertions_retained": true,
+      "current_sha256": "ccc53e86be17ac86f891766ebb1cb87409d23ba2f2de3d7080321e7eb10e15b8",
+      "head_diff_sha256": "6dd0019557c9f62538ff030c7fde12ffc6c61fb7786c9eacece403b82349479c"
+    },
+    {
+      "path": "crates/nethacked-data/tests/monster_hp.rs",
+      "classification": "setup / prescribed RNG input setup; original assertions unchanged",
+      "unit_review_attribution": "P08b17a",
+      "description": "Fixed owned male setup isolates supplied/fixed HP tests.",
+      "changed_existing_tests": [
+        "fixed_special_cases_do_not_draw_rng",
+        "old_definition_loads_fixed_and_round_trips_policy"
+      ],
+      "changed_helpers": [],
+      "all_affected_existing_tests": [
+        "fixed_special_cases_do_not_draw_rng",
+        "old_definition_loads_fixed_and_round_trips_policy"
+      ],
+      "original_assertions": 24,
+      "all_original_assertions_retained": true,
+      "current_sha256": "2967c1372e1a24e8aba90d4e5a56d6f09a5eb3abee18820d9f8b9b8e0d32750a",
+      "head_diff_sha256": "54d47a1603881551f692f5be3a9838f4ba4b3badcd65512df8a6f8123b69a156"
+    },
+    {
+      "path": "crates/nethacked-data/tests/source_derived_monster_hp.rs",
+      "classification": "setup / prescribed RNG input setup; original assertions unchanged",
+      "unit_review_attribution": "P08b17a",
+      "description": "Fixed owned male setup leaves HP prescribed-draw oracle intact.",
+      "changed_existing_tests": [
+        "public_named_factory_obeys_source_expected_state_and_draws"
+      ],
+      "changed_helpers": [],
+      "all_affected_existing_tests": [
+        "public_named_factory_obeys_source_expected_state_and_draws"
+      ],
+      "original_assertions": 13,
+      "all_original_assertions_retained": true,
+      "current_sha256": "b8c3c4926fa857853b8e21be34e1efd10388377143750b8829f277b3dab17bda",
+      "head_diff_sha256": "8dbd528618b8878db9b544223cef7ba02d0c8f048ffede28d28fe0219cc2bc2b"
+    },
+    {
+      "path": "crates/nethacked-pack/tests/pack_lib.rs",
+      "classification": "setup / prescribed RNG input setup; original assertions unchanged",
+      "unit_review_attribution": "P08b17a pack repair/P10a pack repair",
+      "description": "Authored fixed-sex setup before bundle hash/load; Lawful hero setup makes false peacefulness deterministic without weakening its true precedence control.",
+      "changed_existing_tests": [
+        "pack_added_monsters_spawn_in_ordinary_rooms_with_generation_filters",
+        "authored_owned_items_reach_public_levels_and_replay_full_saves"
+      ],
+      "changed_helpers": [],
+      "all_affected_existing_tests": [
+        "authored_owned_items_reach_public_levels_and_replay_full_saves",
+        "pack_added_monsters_spawn_in_ordinary_rooms_with_generation_filters"
+      ],
+      "original_assertions": 99,
+      "all_original_assertions_retained": true,
+      "current_sha256": "a5e1279661904cf386d41c1df56dfd14158caa2eddd0939fde007b53900b466f",
+      "head_diff_sha256": "c00bc13fa56074684912095d3a2326edaf39287e70fe0571f44e21aed8548f0a"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/actor_identity_tests.rs",
+      "classification": "setup / prescribed RNG input setup; original assertions unchanged",
+      "unit_review_attribution": "P05 identity repair/P09",
+      "description": "Synthetic zero healing threshold keeps eligibility/draws; shared monster credit12 makes real AI eligible.",
+      "changed_existing_tests": [
+        "renamed_owned_attacks_continue_identically_after_full_save_reload"
+      ],
+      "changed_helpers": [
+        "world"
+      ],
+      "all_affected_existing_tests": [
+        "explicit_missing_identity_uses_generic_attack_without_display_species_lookup",
+        "full_legacy_world_load_retains_absent_identity_and_name_lookup",
+        "pet_promotion_updates_identity_even_with_renamed_owned_definitions",
+        "renamed_owned_attacks_continue_identically_after_full_save_reload",
+        "renamed_peaceful_stationary_actor_uses_owned_ai"
+      ],
+      "original_assertions": 20,
+      "all_original_assertions_retained": true,
+      "current_sha256": "41f7c7f1531a96e47518cd15a10820f3db429fce864992572010b206eb4f4fb1",
+      "head_diff_sha256": "91be4b6f89d7a3be258ee5a41e8c34d37a5f9081138ec104ed98733f0b96334d"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/hero_armor_ac_tests.rs",
+      "classification": "setup / prescribed RNG input setup; original assertions unchanged",
+      "unit_review_attribution": "P06b/repair1/P08 metadata",
+      "description": "Explicit worn-slot setup; complete public Remove before selected-suit transfer; mechanical new record fields.",
+      "changed_existing_tests": [
+        "test_leather_armor_plus_zero_reduces_ac_to_8",
+        "test_small_shield_plus_two_with_leather_armor",
+        "test_two_helmets_do_not_stack",
+        "test_erosion_capping_in_arm_bonus",
+        "test_dropping_armor_restores_ac",
+        "test_container_transfer_updates_ac",
+        "test_firing_quivered_armor_updates_ac"
+      ],
+      "changed_helpers": [],
+      "all_affected_existing_tests": [
+        "test_container_transfer_updates_ac",
+        "test_dropping_armor_restores_ac",
+        "test_erosion_capping_in_arm_bonus",
+        "test_firing_quivered_armor_updates_ac",
+        "test_leather_armor_plus_zero_reduces_ac_to_8",
+        "test_small_shield_plus_two_with_leather_armor",
+        "test_two_helmets_do_not_stack"
+      ],
+      "original_assertions": 25,
+      "all_original_assertions_retained": true,
+      "current_sha256": "7f4ce88fda7e9b6095b39e10627295001036f41614683850b004eea043dcafb0",
+      "head_diff_sha256": "3f5c4bc9ae87dca2eb14d718b72ca44e52fc7ffa7d49da5d6b202ee62115a82c"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/hero_weapon_damage_tests.rs",
+      "classification": "setup / prescribed RNG input setup; original assertions unchanged",
+      "unit_review_attribution": "P04b",
+      "description": "Shared C-neutral STR10 setup isolates original weapon/barehand dice.",
+      "changed_existing_tests": [],
+      "changed_helpers": [
+        "open_east"
+      ],
+      "all_affected_existing_tests": [
+        "test_hero_bare_hands_damage_monk_martial_arts",
+        "test_hero_bare_hands_damage_non_monk",
+        "test_hero_dagger_damage_vs_small_and_large_monsters",
+        "test_hero_long_sword_damage_vs_small_and_large_monsters"
+      ],
+      "original_assertions": 11,
+      "all_original_assertions_retained": true,
+      "current_sha256": "d610a3472f4f9b682f3e2fa304108fe7b7cc7c730d78b882d210eb46e24b742d",
+      "head_diff_sha256": "58b14deb3f323c1e493fb2c2fb2caeadc71ef53002928435509cfbe5a7ba8845"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/ice_box_tests.rs",
+      "classification": "setup / prescribed RNG input setup; original assertions unchanged",
+      "unit_review_attribution": "P08b2a repair/P09",
+      "description": "Direct-parent corpse fixture relocation; selected corpse transfers preserve original age literals; zero weight isolates aging clock from burden.",
+      "changed_existing_tests": [
+        "nested_ice_ancestry_freezes_existing_age_and_removal_resumes_across_save",
+        "cached_level_original_handle_ancestry_ages_once_and_survives_reload"
+      ],
+      "changed_helpers": [
+        "fixtures"
+      ],
+      "all_affected_existing_tests": [
+        "ancestry_cycles_and_missing_handles_terminate_without_mutating_food_state",
+        "cached_level_original_handle_ancestry_ages_once_and_survives_reload",
+        "elapsed_age_ticks_once_per_world_turn_even_with_multiple_hero_actions",
+        "nested_ice_ancestry_freezes_existing_age_and_removal_resumes_across_save",
+        "old_save_missing_tags_restores_owned_ice_and_corpse_identity_without_age_reset"
+      ],
+      "original_assertions": 36,
+      "all_original_assertions_retained": true,
+      "current_sha256": "7488de1a7376b9dfc7065fafb31def857848c8c502742e19839dec1197a37146",
+      "head_diff_sha256": "f12f89442179b91644b828bcc4a35230a432132e4921b83a2f9184946cad98dc"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/item_initialization_tests.rs",
+      "classification": "setup / prescribed RNG input setup; original assertions unchanged",
+      "unit_review_attribution": "P08b17a",
+      "description": "Owned fixed-sex Ruleset constructor setup preserves pinned artifact stream and full-save continuation.",
+      "changed_existing_tests": [
+        "public_room_generation_artifact_hook_and_save_continuation"
+      ],
+      "changed_helpers": [],
+      "all_affected_existing_tests": [
+        "public_room_generation_artifact_hook_and_save_continuation"
+      ],
+      "original_assertions": 38,
+      "all_original_assertions_retained": true,
+      "current_sha256": "3346b8b034253eac385478776f3dcdfbbcb3cf0fbf9db86c64657bb2c223b867",
+      "head_diff_sha256": "7aee52bcb19282215b3ad8d40b25657d42f7672394570019f750b957b420b078"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/monster_attack_tests.rs",
+      "classification": "setup / prescribed RNG input setup; original assertions unchanged",
+      "unit_review_attribution": "P06b/P08b17a/P09",
+      "description": "Explicit worn cloak for MC, zero healing threshold, credit12/hero24 attack isolation, mechanical default actor/item fields.",
+      "changed_existing_tests": [
+        "red_dragon_adjacent_bites_and_claws_in_order",
+        "cold_touch_is_zeroed_by_cold_resistance",
+        "healing_persists_through_a_later_melee_hit",
+        "magic_cancellation_3_mostly_negates_elec"
+      ],
+      "changed_helpers": [
+        "reset",
+        "named_monster",
+        "quaff_healing"
+      ],
+      "all_affected_existing_tests": [
+        "adjacent_master_lich_touches_on_a_spell_turn",
+        "adjacent_medusa_gazes_then_resolves_her_melee_attacks",
+        "blinding_claw_blinds_until_the_timeout_runs_out",
+        "breath_cooldown_keeps_breath_rate_far_below_two_thirds",
+        "breath_on_a_polymorphed_hero_rehumanizes_instead_of_killing",
+        "cold_touch_is_zeroed_by_cold_resistance",
+        "elec_bite_zaps_and_shock_resistance_zeroes_it",
+        "fire_breath_burns_away_slime_even_when_resisted",
+        "healing_persists_through_a_later_melee_hit",
+        "hostile_goblin_uses_goblin_weapon_1d4",
+        "jackal_bite_is_1d2_one_attack_per_move",
+        "level_drain_touch_costs_a_level",
+        "magic_cancellation_3_mostly_negates_elec",
+        "pet_uses_mhitm_to_hit_without_plus_ten",
+        "poisonous_sting_poisons_unless_resistant",
+        "red_dragon_adjacent_bites_and_claws_in_order",
+        "red_dragon_breathes_6d6_fire_only_at_range_and_resistance_zeroes_it",
+        "sleep_bite_makes_the_hero_helpless_then_wakes",
+        "slowing_touch_removes_intrinsic_speed",
+        "unknown_species_falls_back_to_one_d6_attack"
+      ],
+      "original_assertions": 58,
+      "all_original_assertions_retained": true,
+      "current_sha256": "1d9a03c812fc59641877df397461f966b67aa41eab164068dbe90aa4747ea408",
+      "head_diff_sha256": "4811b055f86299b0305866393d77a2ffd3019fb711369d2d1c1904571a144360"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/peacefulness_tests.rs",
+      "classification": "setup / prescribed RNG input setup; original assertions unchanged",
+      "unit_review_attribution": "P09",
+      "description": "Credit12 setup enables the original actual Elbereth/hostile shopkeeper AI.",
+      "changed_existing_tests": [
+        "test_elbereth_exemptions_and_repulsion"
+      ],
+      "changed_helpers": [],
+      "all_affected_existing_tests": [
+        "test_elbereth_exemptions_and_repulsion"
+      ],
+      "original_assertions": 71,
+      "all_original_assertions_retained": true,
+      "current_sha256": "737a4dadb49b510b70e7a61ba1490686764586ac37d3b6ade6eb15aa99b1239f",
+      "head_diff_sha256": "d1cd316e9d30632085bb1a961f712306c110083bcaaa19e5847a1e77c0621c14"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "classification": "setup / prescribed RNG input setup; original assertions unchanged",
+      "unit_review_attribution": "P06b/P08 metadata/P09",
+      "description": "Mechanical absent/false/zero fields; eligible actor credit; reviewed native seed37 weapon setup retains real Expert-vs-Unskilled sensitivity.",
+      "changed_existing_tests": [
+        "test_melee_attack_action",
+        "test_zap_wand_beam_propagation_and_damage",
+        "test_wands_of_digging_and_teleportation_do_not_damage",
+        "test_pickup_and_drop_lifecycle",
+        "test_wield_weapon",
+        "test_elbereth_repels_monsters",
+        "test_nutrition_decay_and_eating",
+        "test_companion_pet_attacks_hostile",
+        "test_companion_pet_buc_reluctance",
+        "test_altar_sacrifice_and_divine_crowning",
+        "test_altar_holy_water_consecration",
+        "test_wand_of_wishing_spawns_item",
+        "test_wand_of_striking_destroys_drawbridge",
+        "test_wand_of_cold_freezes_pool",
+        "test_scroll_of_charging_and_explosion",
+        "test_wand_recharge_explosion_damage_is_d_n_k",
+        "test_artifact_combat_bonus_and_vorpal_blade",
+        "test_ukrainian_i18n_simulation_logging",
+        "test_monster_medusa_petrification_gaze",
+        "test_monster_lich_summon_and_curse",
+        "test_bones_file_generation_and_ghost_encounter",
+        "test_hero_polymorph_potion_and_damage_reversion",
+        "test_wand_of_polymorph_unique_monster_invariant",
+        "test_scroll_of_genocide_conduct_and_level_wipe",
+        "test_cursed_scroll_of_genocide_summons",
+        "test_petrification_countdown_and_lizard_cure",
+        "test_weapon_skill_combat_bonus",
+        "test_ranged_fire_arrow_hits_monster",
+        "test_steed_mounting_and_effective_movement",
+        "test_corpse_eating_and_conduct_invalidation",
+        "test_cannibalism_detection",
+        "test_pacifist_conduct_violation_on_kill"
+      ],
+      "changed_helpers": [
+        "valkyrie_first_swing_hits",
+        "make_test_actor"
+      ],
+      "all_affected_existing_tests": [
+        "test_altar_holy_water_consecration",
+        "test_altar_sacrifice_and_divine_crowning",
+        "test_artifact_combat_bonus_and_vorpal_blade",
+        "test_bones_file_generation_and_ghost_encounter",
+        "test_cannibalism_detection",
+        "test_companion_pet_attacks_hostile",
+        "test_companion_pet_buc_reluctance",
+        "test_corpse_eating_and_conduct_invalidation",
+        "test_cursed_scroll_of_genocide_summons",
+        "test_elbereth_repels_monsters",
+        "test_fresh_valkyrie_to_hit_matches_c_basic_skill",
+        "test_hero_polymorph_potion_and_damage_reversion",
+        "test_kill_quest_guardian_penalties",
+        "test_kill_quest_leader_penalties_and_guardian_anger",
+        "test_kill_quest_nemesis_bonus_conditioned_on_leader",
+        "test_kill_tame_pet_and_peaceful_monster",
+        "test_kill_temple_priest_divine_protection_and_moloch_bonus",
+        "test_melee_attack_action",
+        "test_monster_lich_summon_and_curse",
+        "test_monster_medusa_petrification_gaze",
+        "test_nutrition_decay_and_eating",
+        "test_pacifist_conduct_violation_on_kill",
+        "test_petrification_countdown_and_lizard_cure",
+        "test_pickup_and_drop_lifecycle",
+        "test_ranged_fire_arrow_hits_monster",
+        "test_scroll_of_charging_and_explosion",
+        "test_scroll_of_genocide_conduct_and_level_wipe",
+        "test_steed_mounting_and_effective_movement",
+        "test_tourist_killing_master_of_thieves_only_applies_malign",
+        "test_ukrainian_i18n_simulation_logging",
+        "test_wand_of_cold_freezes_pool",
+        "test_wand_of_polymorph_unique_monster_invariant",
+        "test_wand_of_striking_destroys_drawbridge",
+        "test_wand_of_wishing_spawns_item",
+        "test_wand_recharge_explosion_damage_is_d_n_k",
+        "test_wands_of_digging_and_teleportation_do_not_damage",
+        "test_weapon_skill_combat_bonus",
+        "test_wield_weapon",
+        "test_zap_wand_beam_propagation_and_damage"
+      ],
+      "original_assertions": 415,
+      "all_original_assertions_retained": true,
+      "current_sha256": "e171901fedb5aafaa7b9890e1ca6a2478d6452eef6f8f05ea12080f385a35ef0",
+      "head_diff_sha256": "0fa1b7940e20b4764df57b1246b687ca0729285749569e572d322eaa6d824a51"
+    }
+  ],
+  "original_assertion_proof": {
+    "method": "Lexically masked comments/string/raw-string/char literals, balanced all assert/debug_assert macros and retained byte-exact subsequence order; no execution",
+    "tracked_changed_Rust_original_macros": 1217,
+    "unretained": [],
+    "per_file": [
+      {
+        "path": "crates/nethacked-agent/src/commands.rs",
+        "original_macros": 61,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-agent/tests/bones_server_test.rs",
+        "original_macros": 37,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-arena/src/lib.rs",
+        "original_macros": 27,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-core/src/ast.rs",
+        "original_macros": 2,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-core/src/combat.rs",
+        "original_macros": 131,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-core/src/energy.rs",
+        "original_macros": 11,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-core/src/inventory.rs",
+        "original_macros": 30,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-core/src/lib.rs",
+        "original_macros": 0,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-data/src/containers.rs",
+        "original_macros": 1,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-data/src/corpses.rs",
+        "original_macros": 0,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-data/src/generated/items.rs",
+        "original_macros": 0,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-data/src/generated/monsters.rs",
+        "original_macros": 0,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-data/src/items.rs",
+        "original_macros": 0,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-data/src/monsters.rs",
+        "original_macros": 0,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-data/src/roles.rs",
+        "original_macros": 0,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-data/src/ruleset.rs",
+        "original_macros": 2,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-data/tests/actor_identity.rs",
+        "original_macros": 19,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-data/tests/ice_box_initialization.rs",
+        "original_macros": 41,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-data/tests/monster_hp.rs",
+        "original_macros": 24,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-data/tests/source_derived_monster_hp.rs",
+        "original_macros": 13,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-dungeon/src/level.rs",
+        "original_macros": 0,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-pack/src/files.rs",
+        "original_macros": 0,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-pack/src/format.rs",
+        "original_macros": 0,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-pack/src/merge.rs",
+        "original_macros": 0,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-pack/tests/pack_lib.rs",
+        "original_macros": 99,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-sim/src/actions/inventory.rs",
+        "original_macros": 0,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-sim/src/actions/items.rs",
+        "original_macros": 0,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-sim/src/actions/mod.rs",
+        "original_macros": 0,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-sim/src/actions/movement.rs",
+        "original_macros": 0,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-sim/src/actions/ranged.rs",
+        "original_macros": 0,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-sim/src/actions/religion.rs",
+        "original_macros": 0,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-sim/src/actions/stairs.rs",
+        "original_macros": 41,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-sim/src/ad_effects.rs",
+        "original_macros": 0,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-sim/src/bones.rs",
+        "original_macros": 0,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-sim/src/combat.rs",
+        "original_macros": 2,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-sim/src/events.rs",
+        "original_macros": 0,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-sim/src/lib.rs",
+        "original_macros": 0,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-sim/src/monsters.rs",
+        "original_macros": 2,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-sim/src/turns.rs",
+        "original_macros": 0,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-sim/src/world.rs",
+        "original_macros": 0,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-sim/tests/actor_identity_tests.rs",
+        "original_macros": 20,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-sim/tests/hero_armor_ac_tests.rs",
+        "original_macros": 25,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-sim/tests/hero_weapon_damage_tests.rs",
+        "original_macros": 11,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-sim/tests/ice_box_tests.rs",
+        "original_macros": 36,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-sim/tests/item_initialization_tests.rs",
+        "original_macros": 38,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-sim/tests/monster_attack_tests.rs",
+        "original_macros": 58,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-sim/tests/peacefulness_tests.rs",
+        "original_macros": 71,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "original_macros": 415,
+        "retained_exact_in_order": true
+      }
+    ]
+  },
+  "new_test_classification": {
+    "absent_HEAD_test_files": [
+      "crates/nethacked-agent/tests/equipment_actions.rs",
+      "crates/nethacked-core/tests/corpse_timeout_sampling.rs",
+      "crates/nethacked-core/tests/source_derived_attribute_capacity.rs",
+      "crates/nethacked-core/tests/source_derived_attribute_damage.rs",
+      "crates/nethacked-core/tests/source_derived_attribute_hit.rs",
+      "crates/nethacked-data/tests/actor_sex.rs",
+      "crates/nethacked-data/tests/corpse_birth.rs",
+      "crates/nethacked-data/tests/corpse_thaw_policy.rs",
+      "crates/nethacked-data/tests/corpse_timeout_policy.rs",
+      "crates/nethacked-data/tests/corpse_timeout_recipes.rs",
+      "crates/nethacked-data/tests/equipment_delay.rs",
+      "crates/nethacked-data/tests/original_role_identity_tests.rs",
+      "crates/nethacked-data/tests/worn_property.rs",
+      "crates/nethacked-pack/tests/corpse_thaw_policy.rs",
+      "crates/nethacked-pack/tests/corpse_timeout_policy.rs",
+      "crates/nethacked-pack/tests/equipment_delay.rs",
+      "crates/nethacked-pack/tests/worn_property.rs",
+      "crates/nethacked-sim/tests/actor_sex_tests.rs",
+      "crates/nethacked-sim/tests/corpse_birth_tests.rs",
+      "crates/nethacked-sim/tests/corpse_lifecycle_tests.rs",
+      "crates/nethacked-sim/tests/corpse_recipe_attachment.rs",
+      "crates/nethacked-sim/tests/corpse_revival_tests.rs",
+      "crates/nethacked-sim/tests/corpse_transfer_tests.rs",
+      "crates/nethacked-sim/tests/equipment_occupation_tests.rs",
+      "crates/nethacked-sim/tests/hero_attribute_damage_tests.rs",
+      "crates/nethacked-sim/tests/hero_attribute_hit_tests.rs",
+      "crates/nethacked-sim/tests/hero_capacity_tests.rs",
+      "crates/nethacked-sim/tests/monster_creation_wand_tests.rs",
+      "crates/nethacked-sim/tests/monster_energy_tests.rs",
+      "crates/nethacked-sim/tests/monster_generation_tests.rs",
+      "crates/nethacked-sim/tests/monster_group_tests.rs",
+      "crates/nethacked-sim/tests/natural_hp_regeneration_tests.rs",
+      "crates/nethacked-sim/tests/object_timer_tests.rs",
+      "crates/nethacked-sim/tests/saved_monster_traits_tests.rs",
+      "crates/nethacked-sim/tests/worn_property_tests.rs"
+    ],
+    "count": 35,
+    "reviewed_refinements": "P04a literal dbon extension; P08a new staging delay/order repair; P08b1 clock-zero literals; P08b2 stronger real deletion assertions in formerly neutral new timer fixtures; P08c blind restoration/complete-record checks; P09 additive movement/native-arrival expectations; P10a complete canonical JSON/key allocation controls. All belong to new unfinished-queue tests, distinct from protected HEAD-existing assertions.",
+    "historical_new_fixture_setup_repairs": [
+      {
+        "path": "crates/nethacked-pack/tests/corpse_timeout_policy.rs",
+        "function": "captured_preedit_full_bundle_hash_and_bytes_still_load_without_new_facts",
+        "original_sha256": "df3743a4114730ce6bdffbfd33f90a604da1f842c16d935d7066ea271c37218f",
+        "initial339_identical": true,
+        "added_setup": "    for role in &mut old.ruleset.roles {\n        role.original_monster = None;\n    }\n",
+        "all_original_bytes_and_assertions_retained_when_setup_removed": true
+      },
+      {
+        "path": "crates/nethacked-pack/tests/equipment_delay.rs",
+        "function": "absent_delay_preserves_pre_p06_canonical_hash_and_loads_old_bundle",
+        "original_sha256": "69cb31ba99f52c6a2f88432ceb7866f3925fefd4a3f1f637f0e4ad053fa4bee7",
+        "initial339_identical": true,
+        "added_setup": "    for role in json[\"roles\"].as_array_mut().unwrap() {\n        role.as_object_mut().unwrap().remove(\"original_monster\");\n    }\n",
+        "all_original_bytes_and_assertions_retained_when_setup_removed": true
+      },
+      {
+        "path": "crates/nethacked-pack/tests/worn_property.rs",
+        "function": "absent_property_preserves_captured_pre_p07_export_hash_and_old_bundle",
+        "original_sha256": "7deb2f57952875d5d000eb31d9c77a06be080bedf1096957964832c97d10a9e0",
+        "initial339_identical": true,
+        "added_setup": "    for role in json[\"roles\"].as_array_mut().unwrap() {\n        role.as_object_mut().unwrap().remove(\"original_monster\");\n    }\n",
+        "all_original_bytes_and_assertions_retained_when_setup_removed": true
+      },
+      {
+        "path": "crates/nethacked-pack/tests/corpse_thaw_policy.rs",
+        "function": "actual_captured_preedit_bundle_hash_and_bytes_remain_exact",
+        "original_sha256": "9847e9415409f7ff412b56a2b248959f1fdf514de0d85b62c5b701799910a156",
+        "original_matches_immutable_initial339": true,
+        "all_original_bytes_retained_when_exact_three_line_setup_removed": true,
+        "added_setup": "    for role in &mut old.ruleset.roles {\n        role.original_monster = None;\n    }\n",
+        "rationale": "Captured historical bundle predates role.mnum metadata. None is serde-omitted; explicit new vanilla metadata changes new hash while absent old metadata must reproduce exact captured bytes."
+      },
+      {
+        "path": "crates/nethacked-sim/tests/monster_creation_wand_tests.rs",
+        "only_changes": [
+          "rules() gen_flags sgroup->empty",
+          "actual_zap_count_one_two_eight_renamed_owned_values_and_native_turn_order count comment"
+        ],
+        "every_original_file_byte_restored_by_reversing_only_these_two_substitutions": true,
+        "all_14_assertions_and_native_calls_preserved": true
+      }
+    ]
+  },
+  "compatibility_and_ordering": {
+    "new_state_defaults_checked": [
+      "world equipment, object timers, RoleId; actor movement/sex/flee/cancel; item saved traits/norevive; owned delays/property/timeout/thaw/original-role"
+    ],
+    "old_load_tests": [
+      "equipment_occupation_tests::absent_owner_migrates_first_carried_per_slot_but_explicit_empty_does_not",
+      "equipment_occupation_tests::fleeing_and_restriction_owner_old_load_defaults_and_save_continuation",
+      "actor_sex_tests::legacy_full_load_preserves_unknown_fixed_variable_player_and_cached_actors",
+      "saved_monster_traits_tests::legacy_full_save_keeps_active_cached_corpse_payloads_absent_without_rng",
+      "corpse_lifecycle_tests::absent_migration_body_samples_active_then_cache_in_exact_order_and_modern_owner_is_authoritative",
+      "monster_energy_tests::full_save_holes_credit_native_continuation_and_legacy_defaults",
+      "monster_creation_wand_tests::new_and_legacy_role_identity_full_load_uses_canonical_identifier_without_load_rng"
+    ],
+    "ordering": "Vec queue/snapshot/arena iteration determines state; BTreeMap canonical serialization/index maps lookup-only; unchanged data test test_serde_json_preserve_order_is_off verifies sorted JSON keys. Test HashSets are membership/count only.",
+    "dependency_manifests_and_lock_equals_HEAD": [
+      "Cargo.lock",
+      "Cargo.toml",
+      "crates/nethacked-agent/Cargo.toml",
+      "crates/nethacked-arena/Cargo.toml",
+      "crates/nethacked-core/Cargo.toml",
+      "crates/nethacked-data/Cargo.toml",
+      "crates/nethacked-dungeon/Cargo.toml",
+      "crates/nethacked-i18n/Cargo.toml",
+      "crates/nethacked-pack/Cargo.toml",
+      "crates/nethacked-py/Cargo.toml",
+      "crates/nethacked-sim/Cargo.toml",
+      "crates/nethacked-tui/Cargo.toml",
+      "crates/nethacked-types/Cargo.toml",
+      "crates/nethacked-wasm/Cargo.toml"
+    ],
+    "new_WASM_forbidden_dependencies": false,
+    "WASM_build_exit": 0,
+    "final_static_ownership_extraction_generated_checks_exit": 0
+  },
+  "final_root_gate": {
+    "runner_session_from_coordinator": 66091,
+    "terminal": true,
+    "recorded_checks": [
+      {
+        "check": "fmt",
+        "exit": 0,
+        "seconds": 0.32,
+        "log": "/tmp/netrust-p04-p10-final-gates/fmt.log"
+      },
+      {
+        "check": "clippy",
+        "exit": 0,
+        "seconds": 22.21,
+        "log": "/tmp/netrust-p04-p10-final-gates/clippy.log"
+      },
+      {
+        "check": "workspace",
+        "exit": 101,
+        "seconds": 317.08,
+        "log": "/tmp/netrust-p04-p10-final-gates/workspace.log"
+      },
+      {
+        "check": "wasm",
+        "exit": 0,
+        "seconds": 3.73,
+        "log": "/tmp/netrust-p04-p10-final-gates/wasm.log"
+      },
+      {
+        "check": "python",
+        "exit": 0,
+        "seconds": 2.02,
+        "log": "/tmp/netrust-p04-p10-final-gates/python.log"
+      },
+      {
+        "check": "static",
+        "exit": 0,
+        "seconds": 0.1,
+        "log": "/tmp/netrust-p04-p10-final-gates/static.log"
+      },
+      {
+        "check": "extract",
+        "exit": 0,
+        "seconds": 0.19,
+        "log": "/tmp/netrust-p04-p10-final-gates/extract.log"
+      },
+      {
+        "check": "generated",
+        "exit": 0,
+        "seconds": 0.07,
+        "log": "/tmp/netrust-p04-p10-final-gates/generated.log"
+      },
+      {
+        "check": "coverage",
+        "exit": 0,
+        "seconds": 1.15,
+        "log": "/tmp/netrust-p04-p10-final-gates/coverage.log"
+      },
+      {
+        "check": "parity",
+        "exit": 0,
+        "seconds": 0.02,
+        "log": "/tmp/netrust-p04-p10-final-gates/parity.log"
+      },
+      {
+        "check": "docs",
+        "exit": 0,
+        "seconds": 0.25,
+        "log": "/tmp/netrust-p04-p10-final-gates/docs.log"
+      },
+      {
+        "check": "lean",
+        "exit": 0,
+        "seconds": 0.29,
+        "log": "/tmp/netrust-p04-p10-final-gates/lean.log"
+      }
+    ],
+    "raw_workspace_passed": 996,
+    "raw_workspace_failed": 3,
+    "raw_targets": 101,
+    "failed_tests": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "sole_failed_target": "nethacked-agent::golden_determinism",
+    "raw_log_sha256": "3fefd388a9883eff293a0f680097dffa2743ad5daefe70dc1cdb0f9769da3a07",
+    "eleven_other_gate_exits_zero": true,
+    "not_green_acceptance": true
+  },
+  "golden_proposal": {
+    "path": "/tmp/netrust-p04-p10-final-golden-proposal.json",
+    "sha256": "acc816b8720229dc8a0a5bb93e56ddb14d0edeafd8a6e60992ad86292f5d6e81",
+    "all_left_right_source_arrays_independently_equal": true,
+    "proposed_arrays_equal_P10a2": true,
+    "families": [
+      {
+        "constant": "EXPECTED_RUNS",
+        "test": "golden_vanilla_runs_are_unchanged",
+        "original": [
+          10590427399958928342,
+          16937266686257778869,
+          15901842928133995731,
+          3090803967773886248
+        ],
+        "proposed": [
+          2228682572056874257,
+          1092902970258507207,
+          13826362149808501255,
+          8647613173857399611
+        ],
+        "changed_indices": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "constant": "EXPECTED_LOGS",
+        "test": "golden_vanilla_event_logs_are_unchanged",
+        "original": [
+          6084688683205385671,
+          15616401141373472836,
+          4899398478763589659,
+          16065937482197730413,
+          2131477169023326163,
+          14544001921339539876,
+          14894273454409416984,
+          13370509600343581488,
+          9102617103894820477
+        ],
+        "proposed": [
+          4505381605404160040,
+          16404326233539671115,
+          4854647680356389716,
+          5243846113459432278,
+          5728931081618051660,
+          15473132434245572347,
+          13037250685169951399,
+          10846450416020385359,
+          5002529615800054102
+        ],
+        "changed_indices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ]
+      },
+      {
+        "constant": "EXPECTED_COMBAT",
+        "test": "golden_vanilla_bestiary_combat_is_unchanged",
+        "original": [
+          17879615147181408734,
+          5566202075069252702,
+          1012340265263046192
+        ],
+        "proposed": [
+          5186754756734083792,
+          10326893795974258077,
+          1764914419651649729
+        ],
+        "changed_indices": [
+          0,
+          1,
+          2
+        ]
+      }
+    ],
+    "authorization": "proposal only; no scope policy inferred",
+    "attribution": "Reviewed STR/DX hit/damage, burden/regeneration, actual worn-state/occupation, P06b empty-Fire zero-time correction/theft, corpse birth/sex/timer callbacks, per-actor allocation and ordinary creation change gameplay and conditional RNG. Aggregate fingerprint values do not partition causal contributions; no exact C RNG replay claimed.",
+    "LOGS_mechanism_artifact": "/tmp/netrust-p06b-golden-intent.md"
+  },
+  "pending_acceptance": [
+    "Scoped user golden decision for all3 families; no unchecked edit",
+    "After any approved golden change, full gates/allthree goldens on stable final inputs",
+    "Coordinator final records and explicit-path commit with required trailers; no broad parity promotion"
+  ],
+  "unaccounted_assertion_dependency_golden_edits": [],
+  "broader_gaps_are_not_required_feature_findings": true,
+  "reviewer_actions": {
+    "Cargo_runs": 0,
+    "C_execution": false,
+    "nested_agents": 0,
+    "project_edits": 0,
+    "commits": 0,
+    "only_writes": [
+      "/tmp/netrust-p04-p10-completion-audit.md",
+      "/tmp/netrust-p04-p10-completion-audit.json"
+    ]
+  },
+  "audit_artifact_sha256": "6804c5323210098db97e310f7dfe3877f2c2a0ad2d0de1a73292900acce157ef",
+  "review_artifact": "/tmp/netrust-p04-p10-completion-audit.md"
+}

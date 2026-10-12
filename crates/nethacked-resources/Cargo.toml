@@ -1,0 +1,20 @@
+[package]
+name = "nethacked-resources"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.88"
+license = "NGPL"
+description = "Optional bounded atomic resource service"
+
+[features]
+default = []
+persistence = []
+
+[dependencies]
+nethacked-kernel = { path = "../nethacked-kernel" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[dev-dependencies]
+nethacked-workflows = { path = "../nethacked-workflows", features = ["persistence"] }
+wat = "=1.228.0"

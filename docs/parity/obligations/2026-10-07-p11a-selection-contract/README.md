@@ -1,0 +1,9 @@
+# Reviewed selected-wand backend contract
+
+P11a-S1 is ready for implementation after an independent source/API review and one bounded repair with independent rereview. This checkpoint implements no behavior and closes no family. The [contract](contract.json) and [ready packet](ready-packet.md) define six backend files, explicit selected-wand/cancel actions, optional captured item identity, strict input bounds, compatibility and eight required fixture groups.
+
+The [initial review](review-initial.json) found three contract gaps. The [repair summary](repair-summary.json) and [final review](review-final.json) resolve stage-specific test permissions, post-direction machine continuation ownership, and separate JSON-RPC library/binary protocols. Both existing enum-test updates belong to S1-M; S1 changes only the three full optional-field initializations. No assertions or legacy action expectations change.
+
+S1-M owns machine selection/inventory adapters. S1-MC depends on S1-M/D1/P1 and owns charged continuation adapters and per-route evidence. S1-F owns the TUI and both browser integrations and consumes machine evidence for all ten surfaces. C1/P1 follow backend S1, B1 follows C1, and D1 follows C1/B1. A1 requires all these children. Exact successor contracts still require review before implementation.
+
+[Unit evidence](unit.json) binds the original and repaired drafts, reviews, durable logs and the unchanged 344 production inputs. This documentation checkpoint reuses the accepted same-source 1,009-test, three-golden, twelve-gate result; it runs fresh changed documentation/parity checks. Backend implementation requires fresh validation. The [run ledger](../2026-10-07-autonomous-parity-run.json) records current dependencies; the earlier [bootstrap contract](../2026-10-07-bootstrap-p11a/p11a-contract.json) remains historical evidence. All 53 families remain open.

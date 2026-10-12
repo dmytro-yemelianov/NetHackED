@@ -1,0 +1,74 @@
+{
+  "schema": "netrust-p11a-p1-bill-repair-summary-v2",
+  "version": 2,
+  "unit": "P11a-P1-BILL",
+  "attempt": 2,
+  "unsuccessful_attempts": 1,
+  "previous_unsuccessful_attempts": 1,
+  "status": "authored F3-only repair; fresh independent F3 delta rereview next; no self-approval",
+  "implementation_authorized": false,
+  "findings": [
+    {
+      "id": "F3",
+      "delta": "Omit serialization suffix and parse actual written comparison.json before successful exit.",
+      "target": "compatibility.SAVE1_exact_manifest.steps[id=scratch-compare].argv[2]",
+      "input_observation": "AST of supplied repair1 suffix resolves to newline (U+000A); suffix omission eliminates escaping ambiguity."
+    }
+  ],
+  "artifact_hashes": {
+    "evidence.json": {
+      "before": "803e59f6c1a3409624f85361f06780a57865d8babd471bb5def98ffbf56bb1d7",
+      "after": "e076234524f49601f1fc09c2db75efb2f5da199a994145899a7d9ee855626300",
+      "changed": true
+    },
+    "contract.md": {
+      "before": "1b04f35c7fb333740e87f0281ea380bff0b68ae016e6c3809781d251371de19c",
+      "after": "1b04f35c7fb333740e87f0281ea380bff0b68ae016e6c3809781d251371de19c",
+      "changed": false
+    },
+    "baseline.json": {
+      "before": "738e5d04a68b962d4655941c2def10a7a87bee719ab314e353b0e2cac3db042b",
+      "after": "738e5d04a68b962d4655941c2def10a7a87bee719ab314e353b0e2cac3db042b",
+      "changed": false
+    },
+    "ready-packet.md": {
+      "before": "680442a6d1c3d8348adba6dbb8a0d64da947f6e3e20d25aad98cd96896ed733e",
+      "after": "680442a6d1c3d8348adba6dbb8a0d64da947f6e3e20d25aad98cd96896ed733e",
+      "changed": false
+    },
+    "graph-discovery.json": {
+      "before": "86ddec116f5acd30328736fb4180cb7afba7b18a6cabaf23898740012ca0147d",
+      "after": "86ddec116f5acd30328736fb4180cb7afba7b18a6cabaf23898740012ca0147d",
+      "changed": false
+    },
+    "contract.json": {
+      "before": "667e6043cd1bd0a2173dd447e8cd80773a8980fe02c6cc61d0e3e3901c1a6232",
+      "after": "0bf62292df757442402698a4f19559ba1f05f0913d6507bd7655026e7a1ba5ef",
+      "changed": true
+    }
+  },
+  "preservation": {
+    "contract_semantic_diff": "exactly one command; terminal statements only",
+    "preceding_AST": "identical; fixtures, assertions, comparisons and production-output protections preserved",
+    "other_files": "byte-identical to repair1",
+    "evidence_delta": "affected contract hash and F3 repair metadata only",
+    "source345_all19_owner_and_C_bindings": "unchanged",
+    "F1_F2": "reviewer passes preserved; not reopened",
+    "scope": "all 53/543 scope and future golds frozen"
+  },
+  "verification": {
+    "JSON_AST": "valid",
+    "witness": {
+      "location": "isolated temporary directory in draft, removed; proof retained in this summary",
+      "dummy_results": {
+        "dummy": "ok"
+      },
+      "actual_written_output": "{\n  \"dummy\": \"ok\"\n}",
+      "sha256": "e7f48bfd6dbcb12d0802043cb587a742bcc43f95616985f6756d2f659450fbf7",
+      "parseable_JSON": true,
+      "roundtrip_equal": true,
+      "readback_rejects_literal_backslash_n_suffix": true
+    },
+    "full_scratch_command_generation_tests": "not executed"
+  }
+}

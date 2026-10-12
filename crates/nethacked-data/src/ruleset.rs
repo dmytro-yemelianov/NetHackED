@@ -3,16 +3,24 @@
 use std::collections::HashMap;
 use std::sync::{Arc, OnceLock};
 
-use nethacked_arena::{ActorId, ActorRecord, EntityArena, ItemId, ItemLocation, ItemRecord};
+use crate::monsters::{compute_monster_hp, monster_spawn_level, MonsterSpawnContext};
+use nethacked_arena::{
+    ActorId, ActorRecord, ActorSex, ActorSpecies, EntityArena, ItemId, ItemLocation, ItemRecord,
+};
 use nethacked_core::ac::ArmorSlot;
 use nethacked_core::quest::get_role_quest_config;
 use nethacked_types::{
-    Alignment, Attack, Buc, Coord, Intrinsics, ItemClass, MonsterAbility, SkillClass, SkillLevel,
+    Alignment, Attack, Buc, Coord, Intrinsics, ItemClass, ItemDefinition, MonsterAbility,
+    SkillClass, SkillLevel,
 };
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::items::{get_item_archetype, ItemKindId, WandDir, ITEM_CATALOG};
-use crate::monsters::{AiBehavior, MonsterSize, MonsterSound, MonsterSpeciesId, BESTIARY};
+use crate::monsters::{
+    AiBehavior, CorpseThawPolicy, CorpseTimeoutPolicy, MonsterSize, MonsterSound, MonsterSpeciesId,
+    BESTIARY,
+};
 use crate::pantheons::get_pantheon_for_role;
 use crate::roles::{
     starting_item_spe, starting_skills, CharacterConfig, RaceId, RoleId, RACES, ROLES,
@@ -27,8 +35,18 @@ pub struct MonsterDef {
     pub id: Option<MonsterSpeciesId>,
     pub name: String,
     pub glyph: char,
+    /// Source timeout policy. Legacy definitions omit it and remain ordinary;
+    /// no canonical ID or display-name fallback overrides an owned definition.
+    #[serde(default, skip_serializing_if = "CorpseTimeoutPolicy::is_ordinary")]
+    pub corpse_timeout_policy: CorpseTimeoutPolicy,
+    /// Owned ice-box thaw assignment; absent legacy fields are ordinary.
+    #[serde(default, skip_serializing_if = "CorpseThawPolicy::is_ordinary")]
+    pub corpse_thaw_policy: CorpseThawPolicy,
     pub base_hp: u32,
     pub max_hp: u32,
+    /// Sample C-style HP at spawn; absent in old definitions means fixed HP.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub sample_hp: bool,
     pub ac: i32,
     pub level: u32,
     pub speed: u32,
@@ -36,6 +54,10 @@ pub struct MonsterDef {
     pub intrinsics: Intrinsics,
     pub attacks: Vec<Attack>,
     pub size: MonsterSize,
+    #[serde(default, skip_serializing_if = "is_zero_weight")]
+    pub body_weight: u32,
+    #[serde(default, skip_serializing_if = "is_zero_weight")]
+    pub corpse_nutrition: u32,
     pub peaceful_by_default: bool,
     pub always_hostile: bool,
     pub maligntyp: i8,
@@ -61,6 +83,83 @@ pub struct MonsterDef {
 }
 
 impl MonsterDef {
+    pub fn actor_species(&self) -> ActorSpecies {
+        match self.id {
+            Some(id) => ActorSpecies::Vanilla(id.c_name().to_owned()),
+            None => ActorSpecies::Custom(self.name.to_ascii_lowercase()),
+        }
+    }
+
+    /// Construct a record with HP already determined (including bones).
+    pub fn create_record_with_hp(
+        &self,
+        coord: Coord,
+        hp: u32,
+        max_hp: u32,
+        level: u32,
+    ) -> ActorRecord {
+        ActorRecord {
+            sex: self.fixed_sex(),
+            species: Some(self.actor_species()),
+            name: self.name.clone(),
+            coord,
+            hp,
+            max_hp,
+            ac: self.ac,
+            level,
+            speed: self.speed,
+            movement: 0,
+            alignment: self.alignment,
+            intrinsics: self.intrinsics,
+            is_player: false,
+            is_unique: self.is_unique,
+            is_dead: false,
+            is_tame: self.ai_behavior == AiBehavior::CompanionPet,
+            tameness: if self.ai_behavior == AiBehavior::CompanionPet {
+                5
+            } else {
+                0
+            },
+            abilities: self.abilities.clone(),
+            is_peaceful: self.peaceful_by_default,
+            mspec_used: 0,
+            malign: 0,
+            is_fleeing: false,
+            is_cancelled: false,
+        }
+    }
+
+    /// Fixed sex from the owned C M2_* flags, with makemon's female-first precedence.
+    pub fn fixed_sex(&self) -> Option<ActorSex> {
+        if self.has_flag("female") {
+            Some(ActorSex::Female)
+        } else if self.has_flag("male") {
+            Some(ActorSex::Male)
+        } else if self.has_flag("neuter") {
+            Some(ActorSex::Neuter)
+        } else {
+            None
+        }
+    }
+
+    /// C makemon.c:1258–1279, after HP; variable-sex species consume rn2(2).
+    pub fn sample_sex(&self, rng: &mut impl Rng) -> ActorSex {
+        self.try_sample_sex(|draw| Ok::<_, std::convert::Infallible>(draw.sample(rng)))
+            .unwrap()
+    }
+
+    /// Fallible sex sampling; fixed flags request no entropy.
+    pub fn try_sample_sex<E>(
+        &self,
+        mut sample: impl FnMut(crate::monsters::MonsterDraw) -> Result<u32, E>,
+    ) -> Result<ActorSex, E> {
+        Ok(match self.fixed_sex() {
+            Some(sex) => sex,
+            None if sample(crate::monsters::MonsterDraw::Below(2))? == 0 => ActorSex::Male,
+            None => ActorSex::Female,
+        })
+    }
+
     /// Does the species carry the C monster flag `flag` (e.g. `"nasty"` for `M2_NASTY`)?
     pub fn has_flag(&self, flag: &str) -> bool {
         self.flags.iter().any(|f| f == flag)
@@ -121,8 +220,10 @@ pub struct ArmorDef {
 /// Owned definition of an item archetype.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[serde(deny_unknown_fields)]
+#[serde(from = "ItemDefWire", into = "ItemDefWire")]
 pub struct ItemDef {
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub unique: bool,
     #[serde(default)]
     pub id: Option<ItemKindId>,
     pub name: String,
@@ -137,11 +238,136 @@ pub struct ItemDef {
     pub oc_magic: bool,
     pub wand_dir: Option<WandDir>,
     pub nutrition: u32,
+    /// Owned C `oc_delay`; absent legacy metadata means zero, without static fallback.
+    /// Zero is omitted to preserve legacy canonical JSON and hashes.
+    #[serde(default, skip_serializing_if = "is_zero_weight")]
+    pub oc_delay: u32,
+    /// Owned worn source; absent metadata never falls back to catalog identity.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub worn_property: Option<crate::items::WornProperty>,
     /// Armor slot and C base AC (from `nethacked_core::ac` table); `None` for non-armor.
     pub armor: Option<ArmorDef>,
+    /// Missing metadata preserves the old fixed factory behavior and hash.
+    #[serde(
+        default,
+        skip_serializing_if = "crate::item_init::ItemInitProfile::is_fixed"
+    )]
+    pub initialization: crate::item_init::ItemInitProfile,
+    /// Owned C oc_prob; custom definitions opt into content selection explicitly.
+    #[serde(default)]
+    pub generation_weight: u32,
+    /// Serialization provenance: only omitted legacy weights use C-ID room fallback.
+    /// Direct definitions and newly authored packs keep explicit zero authoritative.
+    #[serde(skip)]
+    #[cfg_attr(feature = "schema", schemars(skip))]
+    pub generation_weight_missing: bool,
+}
+
+fn is_zero_weight(value: &u32) -> bool {
+    *value == 0
+}
+
+// Wire representation retains omitted-versus-explicit-zero weights.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+struct ItemDefWire {
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub unique: bool,
+    #[serde(default)]
+    pub id: Option<ItemKindId>,
+    pub name: String,
+    pub class: ItemClass,
+    pub weight: u32,
+    pub cost: u32,
+    pub damage_small: (u32, u32),
+    pub damage_large: (u32, u32),
+    pub ac_bonus: i32,
+    pub is_container: bool,
+    pub is_bag_of_holding: bool,
+    pub oc_magic: bool,
+    pub wand_dir: Option<WandDir>,
+    pub nutrition: u32,
+    /// Owned C `oc_delay`; absent legacy metadata means zero, without static fallback.
+    /// Zero is omitted to preserve legacy canonical JSON and hashes.
+    #[serde(default, skip_serializing_if = "is_zero_weight")]
+    pub oc_delay: u32,
+    /// Owned worn source; absent metadata never falls back to catalog identity.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub worn_property: Option<crate::items::WornProperty>,
+    /// Armor slot and C base AC (from `nethacked_core::ac` table); `None` for non-armor.
+    pub armor: Option<ArmorDef>,
+    /// Missing metadata preserves the old fixed factory behavior and hash.
+    #[serde(
+        default,
+        skip_serializing_if = "crate::item_init::ItemInitProfile::is_fixed"
+    )]
+    pub initialization: crate::item_init::ItemInitProfile,
+    /// Owned C oc_prob; custom definitions opt into content selection explicitly.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub generation_weight: Option<u32>,
+}
+
+impl From<ItemDefWire> for ItemDef {
+    fn from(w: ItemDefWire) -> Self {
+        Self {
+            unique: w.unique,
+            id: w.id,
+            name: w.name,
+            class: w.class,
+            weight: w.weight,
+            cost: w.cost,
+            damage_small: w.damage_small,
+            damage_large: w.damage_large,
+            ac_bonus: w.ac_bonus,
+            is_container: w.is_container,
+            is_bag_of_holding: w.is_bag_of_holding,
+            oc_magic: w.oc_magic,
+            wand_dir: w.wand_dir,
+            nutrition: w.nutrition,
+            oc_delay: w.oc_delay,
+            worn_property: w.worn_property,
+            armor: w.armor,
+            initialization: w.initialization,
+            generation_weight: w.generation_weight.unwrap_or_default(),
+            generation_weight_missing: w.generation_weight.is_none(),
+        }
+    }
+}
+impl From<ItemDef> for ItemDefWire {
+    fn from(d: ItemDef) -> Self {
+        Self {
+            unique: d.unique,
+            id: d.id,
+            name: d.name,
+            class: d.class,
+            weight: d.weight,
+            cost: d.cost,
+            damage_small: d.damage_small,
+            damage_large: d.damage_large,
+            ac_bonus: d.ac_bonus,
+            is_container: d.is_container,
+            is_bag_of_holding: d.is_bag_of_holding,
+            oc_magic: d.oc_magic,
+            wand_dir: d.wand_dir,
+            nutrition: d.nutrition,
+            oc_delay: d.oc_delay,
+            worn_property: d.worn_property,
+            armor: d.armor,
+            initialization: d.initialization,
+            generation_weight: (!d.generation_weight_missing || d.generation_weight != 0)
+                .then_some(d.generation_weight),
+        }
+    }
 }
 
 impl ItemDef {
+    /// Authored weights override legacy omission, including explicit zero.
+    pub fn set_generation_weight(&mut self, weight: u32) {
+        self.generation_weight = weight;
+        self.generation_weight_missing = false;
+    }
+
     /// Canonical weapon skill associated with this item archetype.
     pub fn weapon_skill(&self) -> Option<SkillClass> {
         let n = self.name.to_lowercase();
@@ -228,6 +454,10 @@ pub struct QuestDef {
 #[serde(deny_unknown_fields)]
 pub struct RoleDef {
     pub id: RoleId,
+    /// Source role.mnum for original, unpolymorphed byhero placement.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "schema", schemars(with = "Option<OriginalMonsterSchema>"))]
+    pub original_monster: Option<ActorSpecies>,
     pub name: String,
     pub base_hp: u32,
     pub ac: i32,
@@ -317,6 +547,8 @@ struct RulesetIndex {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Ruleset {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub artifacts: Vec<crate::artifacts::ArtifactDef>,
     pub manifest: PackManifest,
     pub monsters: Vec<MonsterDef>,
     pub items: Vec<ItemDef>,
@@ -330,7 +562,8 @@ pub struct Ruleset {
 
 impl PartialEq for Ruleset {
     fn eq(&self, other: &Self) -> bool {
-        self.manifest == other.manifest
+        self.artifacts == other.artifacts
+            && self.manifest == other.manifest
             && self.monsters == other.monsters
             && self.items == other.items
             && self.roles == other.roles
@@ -357,6 +590,7 @@ impl Ruleset {
         mechanics: MechanicsSection,
     ) -> Self {
         let mut rs = Self {
+            artifacts: crate::artifacts::vanilla_artifacts(),
             manifest,
             monsters,
             items,
@@ -407,6 +641,36 @@ impl Ruleset {
             .and_then(|&i| self.monsters.get(i))
     }
 
+    /// Resolve persisted identity first. An explicit missing identity never
+    /// falls back to a mutable display name. Old saves retain decorated lookup.
+    pub fn monster_for_actor(&self, actor: &ActorRecord) -> Option<&MonsterDef> {
+        match &actor.species {
+            Some(species) => self.monster_for_species(species),
+            None => self.monster(&actor.name),
+        }
+    }
+
+    /// Resolve an explicit owned species key without a display-name fallback.
+    pub fn monster_for_species(&self, species: &ActorSpecies) -> Option<&MonsterDef> {
+        match species {
+            ActorSpecies::Vanilla(key) => self.monster_by_id(MonsterSpeciesId::from_c_name(key)?),
+            ActorSpecies::Custom(key) => self
+                .index
+                .monsters_by_name
+                .get(key)
+                .and_then(|&i| self.monsters.get(i))
+                .filter(|def| def.id.is_none()),
+        }
+    }
+
+    /// Legacy absent role.mnum metadata uses only the canonical source role ID.
+    pub fn original_monster_for_role(&self, id: RoleId) -> Option<&MonsterDef> {
+        match &self.role(id)?.original_monster {
+            Some(species) => self.monster_for_species(species),
+            None => self.monster_by_id(original_role_monster(id)),
+        }
+    }
+
     /// Look up a monster by its canonical species ID.
     pub fn monster_by_id(&self, id: MonsterSpeciesId) -> Option<&MonsterDef> {
         self.index
@@ -432,6 +696,19 @@ impl Ruleset {
             .and_then(|&i| self.items.get(i))
     }
 
+    /// Resolve persisted identity only within this owned ruleset.
+    pub fn item_for_definition(&self, definition: &ItemDefinition) -> Option<&ItemDef> {
+        match definition {
+            ItemDefinition::Vanilla(symbol) => self.item_by_id(ItemKindId::from_c_name(symbol)?),
+            ItemDefinition::Custom(key) => self
+                .index
+                .items_by_name
+                .get(key)
+                .and_then(|&i| self.items.get(i))
+                .filter(|def| def.id.is_none()),
+        }
+    }
+
     /// Look up a player role by role ID.
     pub fn role(&self, id: RoleId) -> Option<&RoleDef> {
         self.index
@@ -454,32 +731,122 @@ impl Ruleset {
     }
 
     /// Spawn an ActorRecord from ruleset monster data.
-    pub fn create_monster_record(&self, name: &str, coord: Coord) -> Option<ActorRecord> {
+    pub fn create_monster_record(
+        &self,
+        name: &str,
+        coord: Coord,
+        rng: &mut impl Rng,
+    ) -> Option<ActorRecord> {
         let def = self.monster(name)?;
-        Some(ActorRecord {
-            name: def.name.clone(),
-            coord,
-            hp: def.base_hp,
-            max_hp: def.max_hp,
-            ac: def.ac,
-            level: def.level,
-            speed: def.speed,
-            alignment: def.alignment,
-            intrinsics: def.intrinsics,
-            is_player: false,
-            is_unique: def.is_unique,
-            is_dead: false,
-            is_tame: def.ai_behavior == AiBehavior::CompanionPet,
-            tameness: if def.ai_behavior == AiBehavior::CompanionPet {
-                5
-            } else {
-                0
-            },
-            abilities: def.abilities.clone(),
-            is_peaceful: def.peaceful_by_default,
-            mspec_used: 0,
-            malign: 0,
+        Some(self.create_monster_record_from_def(def, coord, MonsterSpawnContext::default(), rng))
+    }
+
+    /// Spawn using explicit plane context and this ruleset's owned definition.
+    pub fn create_monster_record_with_context(
+        &self,
+        name: &str,
+        coord: Coord,
+        context: MonsterSpawnContext,
+        rng: &mut impl Rng,
+    ) -> Option<ActorRecord> {
+        Some(self.create_monster_record_from_def(self.monster(name)?, coord, context, rng))
+    }
+
+    pub fn create_monster_record_from_def(
+        &self,
+        def: &MonsterDef,
+        coord: Coord,
+        context: MonsterSpawnContext,
+        rng: &mut impl Rng,
+    ) -> ActorRecord {
+        let mut actor = if def.sample_hp {
+            let hp = compute_monster_hp(def, context, rng);
+            let level = monster_spawn_level(def, hp);
+            def.create_record_with_hp(coord, hp, hp, level)
+        } else {
+            def.create_record_with_hp(coord, def.base_hp, def.max_hp, def.level)
+        };
+        actor.sex = Some(def.sample_sex(rng));
+        actor
+    }
+
+    /// Ordinary random-generation initialization, C makemon/newmonhp.
+    /// Explicit factories retain their original RNG contract. Fixed pack HP
+    /// retains its policy; sampled definitions use current difficulty/hero level.
+    pub fn create_random_monster_record_from_def(
+        &self,
+        def: &MonsterDef,
+        coord: Coord,
+        context: MonsterSpawnContext,
+        level_context: (u32, u32),
+        rng: &mut impl Rng,
+    ) -> ActorRecord {
+        self.try_create_random_monster_record_from_def(def, coord, context, level_context, |draw| {
+            Ok::<_, std::convert::Infallible>(draw.sample(rng))
         })
+        .unwrap()
+    }
+
+    /// Fallible ordinary initialization. Successful earlier draws remain
+    /// consumed on refusal; no partially initialized actor is returned.
+    pub fn try_create_random_monster_record_from_def<E>(
+        &self,
+        def: &MonsterDef,
+        coord: Coord,
+        context: MonsterSpawnContext,
+        level_context: (u32, u32),
+        mut sample: impl FnMut(crate::monsters::MonsterDraw) -> Result<u32, E>,
+    ) -> Result<ActorRecord, E> {
+        let _identity_draw = sample(crate::monsters::MonsterDraw::Below(2))?;
+        let mut actor = if def.sample_hp {
+            let adjusted = if def.level > 49 {
+                50
+            } else {
+                crate::monsters::ordinary_adjusted_level(
+                    def.level,
+                    level_context.0,
+                    level_context.1,
+                )
+            };
+            let hp = crate::monsters::try_compute_monster_hp_at_level(
+                def,
+                adjusted,
+                context,
+                &mut sample,
+            )?;
+            let level = crate::monsters::random_monster_spawn_level(def, hp, adjusted);
+            def.create_record_with_hp(coord, hp, hp, level)
+        } else {
+            def.create_record_with_hp(coord, def.base_hp, def.max_hp, def.level)
+        };
+        actor.sex = Some(def.try_sample_sex(&mut sample)?);
+        Ok(actor)
+    }
+
+    /// Detached ordinary revival initialization. Consume C's nonwrapping
+    /// next_ident draw before HP, even though arena keys are a different owner.
+    /// Saved-traits callers pass no forced sex and restore their payload later.
+    pub fn create_revival_record_from_def(
+        &self,
+        def: &MonsterDef,
+        coord: Coord,
+        context: MonsterSpawnContext,
+        level_context: (u32, u32),
+        forced_sex: Option<ActorSex>,
+        rng: &mut impl Rng,
+    ) -> ActorRecord {
+        let _identity_draw = rng.random_range(0..2u32);
+        let mut adjusted = def.clone();
+        adjusted.level =
+            crate::monsters::ordinary_adjusted_level(def.level, level_context.0, level_context.1);
+        let hp = compute_monster_hp(&adjusted, context, rng);
+        let mut actor = def.create_record_with_hp(coord, hp, hp, adjusted.level);
+        actor.sex = Some(
+            def.fixed_sex()
+                .or(forced_sex)
+                .unwrap_or_else(|| def.sample_sex(rng)),
+        );
+        actor
     }
 
     /// Spawn an ActorRecord by its canonical species ID.
@@ -487,9 +854,20 @@ impl Ruleset {
         &self,
         id: MonsterSpeciesId,
         coord: Coord,
+        rng: &mut impl Rng,
     ) -> Option<ActorRecord> {
         let def = self.monster_by_id(id)?;
-        self.create_monster_record(&def.name, coord)
+        Some(self.create_monster_record_from_def(def, coord, MonsterSpawnContext::default(), rng))
+    }
+
+    pub fn create_monster_record_by_id_with_context(
+        &self,
+        id: MonsterSpeciesId,
+        coord: Coord,
+        context: MonsterSpawnContext,
+        rng: &mut impl Rng,
+    ) -> Option<ActorRecord> {
+        Some(self.create_monster_record_from_def(self.monster_by_id(id)?, coord, context, rng))
     }
 
     /// Spawn an ItemRecord from ruleset item data.
@@ -511,6 +889,12 @@ impl Ruleset {
             }
         };
         Some(ItemRecord {
+            definition: Some(match def.id {
+                Some(id) => ItemDefinition::Vanilla(id.c_name().to_owned()),
+                None => ItemDefinition::Custom(def.name.to_ascii_lowercase()),
+            }),
+            saved_monster_traits: None,
+            artifact_id: self.artifact_id_for_item(&def.name).map(str::to_owned),
             name: def.name.clone(),
             class: def.class,
             weight: def.weight,
@@ -521,10 +905,24 @@ impl Ruleset {
             erosion: 0,
             proofed: false,
             location,
+            corpse_no_revive: false,
+            corpse_species: (def.id == Some(ItemKindId::CORPSE))
+                .then_some(nethacked_arena::CorpseSpecies::Unspecified),
+            is_ice_box: matches!(
+                def.initialization,
+                crate::item_init::ItemInitProfile::Container {
+                    container: crate::item_init::ContainerInit::IceBox
+                }
+            ),
             corpse_race: None,
             corpse_age: 0,
             rot_threshold: 50,
             recharged: 0,
+            quantity: 1,
+            poisoned: false,
+            locked: false,
+            trapped: false,
+            trap_known: false,
         })
     }
 
@@ -550,6 +948,11 @@ impl Ruleset {
         let race = self.race(cfg.race).expect("Race must exist in ruleset");
 
         let actor = ActorRecord {
+            sex: Some(match cfg.gender {
+                crate::roles::Gender::Male => ActorSex::Male,
+                crate::roles::Gender::Female => ActorSex::Female,
+            }),
+            species: None,
             name: cfg.name.clone(),
             coord,
             hp: role.base_hp,
@@ -557,6 +960,7 @@ impl Ruleset {
             ac: role.ac,
             level: 1,
             speed: role.speed,
+            movement: 0,
             alignment: cfg.alignment,
             intrinsics: race.intrinsics,
             is_player: true,
@@ -568,6 +972,8 @@ impl Ruleset {
             is_peaceful: false,
             mspec_used: 0,
             malign: 0,
+            is_fleeing: false,
+            is_cancelled: false,
         };
         let player_id = arena.spawn_actor(actor);
 
@@ -605,8 +1011,11 @@ fn build_vanilla_ruleset() -> Ruleset {
             id: Some(arch.id),
             name: arch.name.to_string(),
             glyph: arch.glyph,
+            corpse_timeout_policy: arch.corpse_timeout_policy,
+            corpse_thaw_policy: arch.corpse_thaw_policy,
             base_hp: arch.base_hp,
             max_hp: arch.max_hp,
+            sample_hp: true,
             ac: arch.ac,
             level: arch.level,
             speed: arch.speed,
@@ -614,6 +1023,8 @@ fn build_vanilla_ruleset() -> Ruleset {
             intrinsics: arch.intrinsics,
             attacks: arch.attacks.to_vec(),
             size: arch.size,
+            body_weight: arch.body_weight,
+            corpse_nutrition: arch.corpse_nutrition,
             peaceful_by_default: arch.peaceful_by_default,
             always_hostile: arch.always_hostile,
             maligntyp: arch.maligntyp,
@@ -640,6 +1051,7 @@ fn build_vanilla_ruleset() -> Ruleset {
                 magic_cancellation: arch.magic_cancellation,
             });
             ItemDef {
+                unique: arch.unique,
                 id: Some(arch.id),
                 name: arch.name.to_string(),
                 class: arch.class,
@@ -653,7 +1065,12 @@ fn build_vanilla_ruleset() -> Ruleset {
                 oc_magic: arch.oc_magic,
                 wand_dir: arch.wand_dir,
                 nutrition: arch.nutrition,
+                oc_delay: arch.oc_delay,
+                worn_property: arch.worn_property,
                 armor,
+                initialization: arch.initialization,
+                generation_weight: arch.prob,
+                generation_weight_missing: false,
             }
         })
         .collect();
@@ -685,6 +1102,9 @@ fn build_vanilla_ruleset() -> Ruleset {
 
             RoleDef {
                 id: role.id,
+                original_monster: Some(ActorSpecies::Vanilla(
+                    original_role_monster(role.id).c_name().to_owned(),
+                )),
                 name: role.name.to_string(),
                 base_hp: role.base_hp,
                 ac: role.ac,
@@ -830,4 +1250,30 @@ mod tests {
             );
         }
     }
+}
+
+/// Released role.c mnum, u_init.c:991; these are canonical identifiers.
+fn original_role_monster(role: RoleId) -> MonsterSpeciesId {
+    use MonsterSpeciesId as M;
+    match role {
+        RoleId::Archaeologist => M::ARCHEOLOGIST,
+        RoleId::Barbarian => M::BARBARIAN,
+        RoleId::Healer => M::HEALER,
+        RoleId::Knight => M::KNIGHT,
+        RoleId::Monk => M::MONK,
+        RoleId::Rogue => M::ROGUE,
+        RoleId::Tourist => M::TOURIST,
+        RoleId::Valkyrie => M::VALKYRIE,
+        RoleId::Wizard => M::WIZARD,
+    }
+}
+
+// ActorSpecies belongs to arena, which has no schema feature. Preserve its exact
+// externally tagged wire shape without changing that runtime owner.
+#[cfg(feature = "schema")]
+#[derive(schemars::JsonSchema)]
+#[allow(dead_code)]
+enum OriginalMonsterSchema {
+    Vanilla(String),
+    Custom(String),
 }

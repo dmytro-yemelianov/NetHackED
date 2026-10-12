@@ -15,6 +15,14 @@ pub enum WandDir {
     Ray,
 }
 
+/// Supported C `oc_oprop` worn source. Other property families are not modeled.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum WornProperty {
+    FireResistance,
+}
+
 /// Declarative specification of an item archetype (values from C `include/objects.h`).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ItemArchetype {
@@ -40,6 +48,11 @@ pub struct ItemArchetype {
     pub nutrition: u32,
     /// Generation weight within the class (C `oc_prob`); 0 for artifacts.
     pub prob: u32,
+    /// C `oc_delay`: class-specific use delay (including dressing armor).
+    #[serde(default)]
+    pub oc_delay: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub worn_property: Option<WornProperty>,
     /// C material (`objclass.h` `obj_material_types`), lowercase.
     pub material: &'static str,
     /// C `a_can` (armor `oc2`): magic cancellation 0..=3; 0 for non-armor.
@@ -48,6 +61,10 @@ pub struct ItemArchetype {
     pub armor_slot: Option<ArmorSlot>,
     /// An `artilist[]` artifact (properties of its base object, its own cost).
     pub artifact: bool,
+    pub unique: bool,
+    /// Generated supported-field profile from C class, flags and special kinds.
+    #[serde(default)]
+    pub initialization: crate::item_init::ItemInitProfile,
 }
 
 include!("generated/items.rs");
@@ -56,7 +73,7 @@ pub fn get_item_archetype(id: ItemKindId) -> &'static ItemArchetype {
     &ITEM_CATALOG[id.index()]
 }
 
-/// Look up an archetype by its catalog name (`ItemRecord::name` stores no kind id).
+/// Look up a static archetype by its catalog name.
 pub fn item_archetype_by_name(name: &str) -> Option<&'static ItemArchetype> {
     ITEM_CATALOG
         .iter()
@@ -84,6 +101,11 @@ pub fn initial_wand_charges(id: ItemKindId) -> i8 {
 pub fn create_item_record(id: ItemKindId, location: ItemLocation, buc: Buc) -> ItemRecord {
     let arch = get_item_archetype(id);
     ItemRecord {
+        definition: Some(nethacked_types::ItemDefinition::Vanilla(
+            id.c_name().to_owned(),
+        )),
+        saved_monster_traits: None,
+        artifact_id: crate::artifacts::canonical_artifact_id(id).map(str::to_owned),
         name: arch.name.to_string(),
         class: arch.class,
         weight: arch.weight,
@@ -94,9 +116,18 @@ pub fn create_item_record(id: ItemKindId, location: ItemLocation, buc: Buc) -> I
         erosion: 0,
         proofed: false,
         location,
+        corpse_no_revive: false,
+        corpse_species: (id == ItemKindId::CORPSE)
+            .then_some(nethacked_arena::CorpseSpecies::Unspecified),
+        is_ice_box: id == ItemKindId::ICE_BOX,
         corpse_race: None,
         corpse_age: 0,
         rot_threshold: 50,
         recharged: 0,
+        quantity: 1,
+        poisoned: false,
+        locked: false,
+        trapped: false,
+        trap_known: false,
     }
 }

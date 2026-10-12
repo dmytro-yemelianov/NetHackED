@@ -1,0 +1,51 @@
+[
+  {
+    "fixture": "four_source_transfer_cases_all_owned_and_legacy_identities",
+    "executed_cases": 16,
+    "expected": "q1/q3 unbilled removes entire stack, no liability; billed retains exact snapshot and frozen 40/120 total/base30; repeat stale or AlreadyConsumed; replacement stays live"
+  },
+  {
+    "fixture": "frozen_admission_repeats_precede_replacement_validation",
+    "executed_groups": 4,
+    "repeated_terms_per_group": 7,
+    "duplicate_owner_cases": 4,
+    "expected": "identical and changed price/quantity/creditor/base and invalid replacement quantity/price => ReceiptAlreadyRecorded; duplicate receipts => DuplicateLedger"
+  },
+  {
+    "fixture": "clearing_and_requested_pay_are_complete_refusals_before_forced_wait",
+    "executed_cases": 8,
+    "expected": "q1/q3 canonical/custom, enough/insufficient gold, mixed unreceipted tuple, helpless+dressing+invalid armor; typed/direct clearing and requested Pay leave complete raw/save/RNG state unchanged before and after disposal"
+  },
+  {
+    "fixture": "unknown_legacy_liability_retains_exact_base_object_and_blocks_pay",
+    "executed_cases": 8,
+    "expected": "q1/q3 canonical/custom explicit/absent identity retains exact base30 and quantity with historical quantity/price/creditor None; clearing/Pay no-op"
+  },
+  {
+    "fixture": "invalid_disposal_and_admission_are_atomic",
+    "executed_cases": 17,
+    "expected": "invalid identity/not carried/zero/duplicate/partial/missing price/base mismatch/LP64 overflow/nonwand/contents/equipment/timer preflight errors preserve complete state"
+  },
+  {
+    "fixture": "absent_billing_owner_loads_without_fabricating_receipts_active_and_cached",
+    "executed_cases": 8,
+    "expected": "q1/q3 canonical/custom, omitted vs explicit empty billing load; cached objects/tuples unchanged; UnknownLegacy active disposal and Wait+next RNG match control"
+  },
+  {
+    "fixture": "stable_active_receipts_roundtrip_and_consumption_repeat",
+    "executed_cases": 4,
+    "expected": "q1/q3 canonical/custom save admitted -> refusal -> load -> dispose -> save/load -> repeat+Pay refusal -> Wait+next RNG equality"
+  },
+  {
+    "fixture": "cached_only_receipt_blocks_pay_and_empty_owner_keeps_original_paths",
+    "cached_only_cases": 1,
+    "empty_owner_controls": 1,
+    "expected": "global cached-only receipt blocks Pay; empty owner uses original sufficient-gold Pay and both clearing APIs"
+  },
+  {
+    "fixture": "receipt_consistency_stale_admission_and_global_duplicate_preflight",
+    "executed_error_cases": 9,
+    "ordering_cases": 1,
+    "expected": "missing tuple, changed quantity/base, dangling receipt, zero price, invalid explicit identity despite canonical display, cached duplicate, cached timer, stale generation refused; live ledger and consumed insertion order stable"
+  }
+]

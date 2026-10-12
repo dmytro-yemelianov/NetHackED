@@ -1,0 +1,11 @@
+# Selected-wand backend implementation
+
+P11a-S1 adds `ZapSelectedWand` and `CancelZapSelection` to the native/backend action path and shared parser. An explicit index addresses the complete direct-carried inventory. An optional captured generational token rejects stale choices; index-only requests use the current snapshot. Validation checks index, token, wand class and owned definition before charges or effects. Ready/reconciled selection refusal and cancellation preserve charge, RNG, time and scheduler state apart from message logs. Existing helpless/dressing action replacement remains.
+
+Legacy `ZapWand` constructors, serialization, first-wand selection, East/6 defaults and index-ignore behavior remain unchanged. New requests require a bounded integer index; malformed selected/token/cancel parameters fail before stepping. Machine schema/advertisement, inventory queries and interactive prompts remain required successor work.
+
+The [independent semantic review](review-initial.json) passes the six-file implementation. A [narrow final review](review-final.json) verifies only removal of an unused test import after Clippy failed; prior semantic coverage is reused. [Unit evidence](unit.json) binds all345 final inputs and fresh1,021 tests, all3 frozen goldens and all12 gates. The original [worker handoff](handoff.json), fixture-order failures, socket-restricted test failures and accidental Cargo overlap remain preserved. A coordinator rerun passes the full agent package, and affected overlap checks were repeated sequentially. Final changed documentation checks and verified delivery commit complete acceptance.
+
+The selected create-monster fixtures prove counts1/2/8, charge2→1, first-wand preservation and draw/placement/HP/scheduler ordering with groups disabled; group behavior reuses the unchanged shared handler and accepted P10 evidence. Compatibility comparisons do not close signed-charge, wrest or backfire parity.
+
+The [reviewed contract](../2026-10-07-p11a-selection-contract/README.md) and [run ledger](../2026-10-07-autonomous-parity-run.json) retain C1/B1/D1/P1/M/MC/F/A1 successors and all ten required frontend surfaces. Direction continuation, hands/capacity/unpaid preflight and frontend integration remain incomplete. All53 families remain open.

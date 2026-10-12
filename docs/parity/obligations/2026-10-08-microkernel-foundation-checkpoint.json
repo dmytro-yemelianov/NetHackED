@@ -1,0 +1,92 @@
+{
+  "schema": 1,
+  "status": "verified_for_containing_commit",
+  "baseline_head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
+  "formal_modules": {
+    "Architecture": 6,
+    "Workflow": 18,
+    "Authority": 48
+  },
+  "runtime_implementation": false,
+  "native_goal_status": "active; M2 next; A1-A8 pending",
+  "gate_evidence": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-AUTHORITY/full-gates/accepted.json",
+    "sha256": "efa5729e6e0bfd677caf2c31bed51542304ec600b12a8d92ba9ef52859971089"
+  },
+  "full_gate_result": {
+    "head": "7d137fb984a1f259b90793bdab5e078a4f51dcd5",
+    "tests": 1044,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "digest": "2bef1795a824cf366111b5aa0e203da06e93d315a83fc07e396f2116654da38f",
+    "checks": 12
+  },
+  "source_snapshot": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-AUTHORITY/review-source/baseline.json",
+    "sha256": "42af71d61ac2b449974fbbaed44e01ddc9c8702eedffc166a56b8c04db75c7e5"
+  },
+  "reviews": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-DESIGN/review/answer.txt",
+      "sha256": "ad27b1ba232bfe396ab59db09fe3d05d7637e863903d8e152e26ee11969b55ac"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-WORKFLOW/review/answer.txt",
+      "sha256": "94b3dfd22e07d7c8ea44902b4f847bcb4ac93cf84c0aa4d06c61497f95aeeac0"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-AUTHORITY/review/answer.txt",
+      "sha256": "b16430504bae0a1b923baff959e63095947ced036077ed4fe9afb168a9fd4224"
+    }
+  ],
+  "review_scope": [
+    "First architecture model; initial design review qualified for truncated middle of design doc, code complete",
+    "First workflow protocol; no runtime/codec implementation",
+    "Authority formal contract and goal exits; final editorial goal delta recorded below"
+  ],
+  "post_review_editorial_delta": {
+    "file": "docs/plans/2026-10-08-microkernel-goal.md",
+    "reviewed_sha256": "f6966c4fdc0c34ebbd36ded17f6abeed2f3296bd51d850635ef8ab777c74e06e",
+    "final_sha256": "480c70bd0abfcff5a229e3e1612dee00b54c0af3da43c0b5ac441557f0e86d6c",
+    "only_delta": "remove the word uncommitted for containing checkpoint; goal requirements unchanged"
+  },
+  "mechanical_checks": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-AUTHORITY/checkpoint-mechanical-checks.json",
+    "sha256": "26434563c3bafde1f2a69f800d23331a14747e8bb7abbb614397935455c47996"
+  },
+  "failed_proof_history": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-AUTHORITY/proof-check-input.json",
+    "sha256": "bb3d59460e9af297149cc91da3fd4ea312ce8cf8e9df2185443d13dde6f0f2a1"
+  },
+  "usage": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-AUTHORITY/implementation/usage.json",
+      "sha256": "937e65752a969a44636f12561d796711e816d08498d8e74d6870eb1efd149fd9"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-AUTHORITY/advice/usage.json",
+      "sha256": "cb527c25ba0b8165ccb2013c433552fae6a9cc83f25a7b19510a909bb9df41c7"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-AUTHORITY/review/usage.json",
+      "sha256": "94f33c7a7610abf7f3dc8eca90a537a60f4b3a5d9f6b3de18c462073ae3e0229"
+    }
+  ],
+  "usage_status": "Thresholds exceeded; root telemetry unknown; no savings or weekly allowance claim",
+  "quarantined_draft": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-M0/interrupted-wand-draft/manifest.json",
+    "sha256": "97b1f9a163de9582cf3c36795f6004fdfa987577790805c5081066ebdd0435fa"
+  },
+  "parity_families_closed": 0,
+  "golden_constants_changed": false,
+  "existing_rust_tests_changed": false,
+  "residuals": [
+    "Trusted executable authentication/code binding/validator/atomic runtime obligations",
+    "Separate formal models lack composed refinement to Rust",
+    "S4-S7 completion and executable runtime/codec",
+    "NetHack module migration and final A1-A8 audit"
+  ]
+}

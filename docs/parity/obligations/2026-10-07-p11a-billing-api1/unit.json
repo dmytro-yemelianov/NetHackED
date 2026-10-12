@@ -1,0 +1,111 @@
+{
+  "schema": "netrust-p11a-billing-api1-v1",
+  "id": "P11a-P1-BILL-API1",
+  "parent": "P11a",
+  "cross_refs": [
+    "DG06"
+  ],
+  "state": "verified_awaiting_delivery",
+  "family_closed": false,
+  "source_conformance_scope": "Whole carried ordinary-wand disposal with frozen admitted receipts or explicit unknown legacy liability, public deterministic views and protected clearing/Pay refusal; no wand activation or settlement",
+  "baseline_head": "76b2fa266387e012d9aa21b4c90133932ea2ac33",
+  "contract": "../2026-10-07-p11a-billing-contract/contract.json",
+  "accepted_prerequisites": [
+    "P11a-P1-BILL",
+    "P11a-S1"
+  ],
+  "allowed_files": [
+    "crates/nethacked-sim/src/world.rs",
+    "crates/nethacked-sim/src/actions/economy.rs",
+    "crates/nethacked-sim/src/actions/mod.rs",
+    "crates/nethacked-sim/tests/wand_billing_tests.rs"
+  ],
+  "reviewed_source_input_count": 346,
+  "reviewed_source_input_digest": "195391958ea6e35e80482b9dbe76995a6f4801b769f534a2d8d66ada715849cc",
+  "source_manifest": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/review-baseline.json",
+  "source_before": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/baseline.json",
+  "source_after": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/source-review.tar.gz",
+  "published_hashes": {
+    "handoff.md": "362764ebe36d244c263472fd04b7eea8fbf32e4f698ecfd18485a479b456ed35",
+    "handoff.json": "e0011a0c647325252dcd38fcea00650694d8d4b3c5fd6ec1016e898f8f8860ee",
+    "review-final.md": "4c87a206d6ff1362bbf22a784fa39835f6a445391a8b8483da183e5e4448c690",
+    "review-final.json": "5ca3e1d2809ec84984c4d2d492b63afd0a868f2fc40831e7201d849b23819513",
+    "fixture-results.json": "58c0307a2e8049e902581ef81c45c314ee274d6959a46a331eddcedde35c7bc0",
+    "focused-results.json": "ac42bd4bf2679849805ab43fe64a4e66c9accfbc991b511a1a29e4f4ddabe533",
+    "body-preservation.json": "c1ba4202c6296af82ee79b77bd06453237a8b8043bc0358316ab7f0181284b29"
+  },
+  "independent_review": {
+    "record": "review-final.json",
+    "verdict": "PASS",
+    "findings": 0
+  },
+  "validation": {
+    "full_gates_status": "PASS",
+    "fresh_full_execution": true,
+    "full_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/full-gates/accepted.json",
+    "full_record_sha256": "bf6a873808c82c27d42e82e5984fb088089f926e020484ddb1a4f206108ddaa5",
+    "results_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/full-gates/results.json",
+    "results_sha256": "170b729d7fc83731b731380a052640fa064a1856d1236fd1f9c984cbacae23e2",
+    "tests": 1035,
+    "gates": 12,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "focused_counts": {
+      "billing-final-2": 9,
+      "sim-regressions": 42,
+      "arena-data": 111
+    },
+    "changed_documentation_checks": {
+      "record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/doc-gates/results.json",
+      "sha256": "d8fd25d7067f1ad915e5badfe6aea5c66db63165ee806de317ff3636f7c1a110",
+      "parity": 0,
+      "docs": 0,
+      "fresh_execution": true
+    }
+  },
+  "adjusted_existing_setups": [],
+  "old_assertions_and_helpers_unchanged": true,
+  "failure_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-initial/failed-attempt-analysis.json",
+  "repair_counters": {
+    "initial_new_fixture_canonical_serialization": {
+      "attempts": 1,
+      "unsuccessful": 0,
+      "resolved": "new helper canonicalized whole serde_json value only"
+    },
+    "new_fixture_clippy": {
+      "attempts": 1,
+      "unsuccessful": 0,
+      "resolved": "removed two needless Copy borrows"
+    },
+    "uv_preCargo_cache": {
+      "changed_hypothesis_retries": 1,
+      "resolved": "writable UV_CACHE_DIR"
+    }
+  },
+  "coverage_limits": [
+    "SAVE1 load validation of malformed/duplicate/dangling billing owners before timer catchup and ruleset mismatch precedence remains unimplemented.",
+    "SAVE1 cached live receipt stair remapping, active/cached/consumed continuation chains remain separate; no stair remap or SAVE1 broad acceptance claimed.",
+    "LIFE equipment/timer/current-operation cleanup and IN1 activation remain unimplemented; public API rejects represented references.",
+    "DG06 source receipt formation/history/account, merge/partial/nonwand and payment settlement remain deferred. Unknown legacy facts are never reconstructed.",
+    "D1 genuine mid-zap pending continuation and OB04 nonrepresented lifecycle/Lua references remain separate."
+  ],
+  "mandatory_successors": [
+    "P11a-P1-BILL-SAVE1",
+    "P11a-C1-LIFE",
+    "P11a-C1-IN1",
+    "P11a-D1",
+    "DG06-bill-history",
+    "DG06-bill-account",
+    "DG06-bill-merge-partial",
+    "DG06-bill-settlement",
+    "DG06-bill-nonwand",
+    "OB04-object-retirement"
+  ],
+  "durable_evidence": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1",
+  "delivery_record": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/delivery.json",
+  "broader_scope": "All53 families/543historical rows retained; no family closure.",
+  "acceptance_requires": "Verified coordinator commit plus delivery.json; published snapshot remains immutable after delivery"
+}

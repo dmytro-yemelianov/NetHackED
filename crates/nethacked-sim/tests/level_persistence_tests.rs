@@ -114,7 +114,11 @@ fn hero_container_contents_untouched() {
 fn monster_inventory_survives_round_trip() {
     let mut sim = SimulationWorld::new_with_seed(323);
     let room = sim.level.rooms[0].center();
-    let mut gob = create_monster_record(MonsterSpeciesId::GOBLIN, room);
+    let mut gob = create_monster_record(
+        MonsterSpeciesId::GOBLIN,
+        room,
+        &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
+    );
     gob.name = "hoarder goblin".into();
     gob.speed = 0;
     let gid = sim.arena.spawn_actor(gob);
@@ -181,7 +185,11 @@ fn unpaid_ledger_follows_items_over_seeds() {
 fn steed_travels_with_hero() {
     let mut sim = SimulationWorld::new_with_seed(325);
     let p = sim.arena.actors.get(sim.player_id).unwrap().coord;
-    let mut pony = create_monster_record(MonsterSpeciesId::DOG, p);
+    let mut pony = create_monster_record(
+        MonsterSpeciesId::DOG,
+        p,
+        &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
+    );
     pony.is_tame = true;
     let steed = sim.arena.spawn_actor(pony);
     sim.hero.mount = Some(MountState {

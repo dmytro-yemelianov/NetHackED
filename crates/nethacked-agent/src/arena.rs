@@ -758,12 +758,8 @@ pub fn run_single_game_with_ruleset<P: AgentPolicy>(
             break;
         }
 
-        // Extract observation
-        let obs = crate::AgentSession {
-            world: world.clone(),
-            last_events: Vec::new(),
-        }
-        .get_observation();
+        // Extract observation (legacy oracle path: no owner runtime installed)
+        let obs = crate::session::observe_world(&world, &[]);
 
         let action = policy.decide_action(&obs, &world);
 
@@ -884,11 +880,8 @@ pub fn run_game_with_trajectory<P: AgentPolicy>(
             break;
         }
 
-        let obs = crate::AgentSession {
-            world: world.clone(),
-            last_events: Vec::new(),
-        }
-        .get_observation();
+        // Legacy oracle path: observe without installing an owner runtime.
+        let obs = crate::session::observe_world(&world, &[]);
 
         let action = policy.decide_action(&obs, &world);
 

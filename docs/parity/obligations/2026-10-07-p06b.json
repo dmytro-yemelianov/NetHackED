@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "batch": "P06b",
+  "checked_date": "2026-10-07",
+  "checked_head": "b912faf",
+  "source_tag": "NetHack-5.0.0_Released",
+  "source_commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+  "feature": "One public delayed suit equipment path with genuine external interruption",
+  "implemented_subsets": [
+    "Public Wear/Remove suit uses owned slot/delay with immediate worn state and delayed completion/removal",
+    "One persisted equipment/dressing owner; exact absent-field legacy migration and authoritative explicit-empty state",
+    "World-tick timing and fast/normal/slow action relationships, mid-operation full save/events/RNG continuation",
+    "Cursed removal and selected suit inventory-transfer guards with source-correct costs",
+    "Real unworn-item theft cancels dressing asymmetrically, bypasses armor MC, ends multiattack/spell sequence and conditionally teleports/flees",
+    "Supported ordinary fleeing/relocation draw order and sparse fallback predicates"
+  ],
+  "tests": [
+    "crates/nethacked-agent/tests/equipment_actions.rs",
+    "crates/nethacked-sim/tests/equipment_occupation_tests.rs"
+  ],
+  "review": "PASS initial three findings closed repair1; added flee/teleport two findings closed narrow repair2, hashes/preservation/assertions verified",
+  "remaining": [
+    "Broader slot/frontends/forms/two-handed blockers",
+    "Forced worn-target theft/disrobe",
+    "Special relocation regions/habitats",
+    "Identification flags and general armor property effects"
+  ],
+  "acceptance": "Otherwise verified: 836 tests/11 other gates pass, complete314inputhash stable; three frozen golden families fail. LOG delta independent audit confirms gameplay hashing/intentional empty-Fire0 correction rather than encoding churn. Policy/final green acceptance pending",
+  "plan": "docs/plans/2026-10-07-equipment-occupation.md",
+  "final_integration": {
+    "record": "2026-10-07-p04-p10-final-acceptance.json",
+    "status": "Original bounded exit reviewed/audited and final green integration verified; prior checkpoint fields are historical",
+    "tests": 999,
+    "gates": 12,
+    "goldens": 3,
+    "input_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+    "commit": "Containing commit; see final acceptance record"
+  }
+}

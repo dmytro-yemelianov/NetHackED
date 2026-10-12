@@ -7,21 +7,26 @@
 //! `docs/parity/behaviour-coverage.md` lists which ones are handled.
 
 use nethacked_arena::ActorRecord;
-use nethacked_types::{Attack, DamageType, ItemClass};
+use nethacked_types::{Attack, DamageType};
 use rand::Rng;
 
 use crate::events::GameEvent;
 use crate::world::SimulationWorld;
 
+/// C mhitm_data carries damage and a separate attacker-done result.
+pub(crate) struct HeroAttackEffect {
+    pub damage: u32,
+    pub attacker_done: bool,
+}
+
 impl SimulationWorld {
     /// C `magic_negation()` (mhitu.c:1089) for the hero: the best `a_can` of
-    /// worn armor. Carried armor counts as worn here (see `compute_hero_ac`).
+    /// actual worn armor, including immediate donning state.
     fn hero_magic_cancellation(&self) -> u32 {
-        self.arena
-            .items_carried_by(self.player_id)
-            .into_iter()
-            .filter_map(|id| self.arena.items.get(id))
-            .filter(|it| it.class == ItemClass::Armor)
+        self.equipment
+            .armor
+            .iter()
+            .filter_map(|(_, id)| self.arena.items.get(*id))
             .filter_map(|it| self.ruleset.item(&it.name)?.armor.as_ref())
             .map(|a| a.magic_cancellation)
             .max()
@@ -43,6 +48,87 @@ impl SimulationWorld {
     /// Apply the C `mhitm_ad_*` hero branch for `attack` and return the damage
     /// the hit deals afterwards.
     pub(crate) fn hero_ad_effect(
+        &mut self,
+        attacker: &ActorRecord,
+        attacker_id: nethacked_arena::ActorId,
+        attack: &Attack,
+        dmg: u32,
+        events: &mut Vec<GameEvent>,
+    ) -> HeroAttackEffect {
+        if attack.ad == DamageType::StealItem {
+            return self.hero_theft_effect(attacker, attacker_id, dmg, events);
+        }
+        HeroAttackEffect {
+            damage: self.hero_ad_damage(attacker, attacker_id, attack, dmg, events),
+            attacker_done: false,
+        }
+    }
+
+    /// AD_SITM uses mhitm_ad_sedu's attacker/form guards, never armor MC
+    /// (released uhitm.c:4623-4692). Other AD handlers keep their own negation.
+    fn hero_theft_effect(
+        &mut self,
+        attacker: &ActorRecord,
+        attacker_id: nethacked_arena::ActorId,
+        dmg: u32,
+        events: &mut Vec<GameEvent>,
+    ) -> HeroAttackEffect {
+        let animal = self
+            .ruleset
+            .monster_for_actor(attacker)
+            .is_some_and(|def| def.has_flag("animal"));
+        let hero_seductive = self
+            .hero
+            .polymorph
+            .as_ref()
+            .and_then(|form| {
+                self.ruleset.monsters.iter().find(|def| {
+                    def.id
+                        .is_some_and(|id| usize::from(id.0) == form.monster_id)
+                })
+            })
+            .is_some_and(|def| {
+                def.attacks
+                    .iter()
+                    .any(|attack| matches!(attack.ad, DamageType::Seduce | DamageType::SeduceSex))
+            });
+        let mut done = false;
+        if animal && attacker.is_cancelled {
+            return HeroAttackEffect {
+                damage: dmg,
+                attacker_done: false,
+            };
+        } else if !animal && hero_seductive {
+            self.teleport_theft_attacker(attacker_id, events);
+            return HeroAttackEffect {
+                damage: dmg,
+                attacker_done: true,
+            };
+        } else if !animal && attacker.is_cancelled {
+            let done = self.rng.random_range(0..3u32) != 0;
+            if done {
+                self.teleport_theft_attacker(attacker_id, events);
+            }
+            return HeroAttackEffect {
+                damage: dmg,
+                attacker_done: done,
+            };
+        } else if self.steal_hero_item(attacker, attacker_id, events) {
+            if !animal {
+                self.teleport_theft_attacker(attacker_id, events);
+            }
+            if let Some(actor) = self.arena.actors.get_mut(attacker_id) {
+                actor.is_fleeing = true;
+            }
+            done = true;
+        }
+        HeroAttackEffect {
+            damage: 0,
+            attacker_done: done,
+        }
+    }
+
+    fn hero_ad_damage(
         &mut self,
         attacker: &ActorRecord,
         attacker_id: nethacked_arena::ActorId,
@@ -270,13 +356,6 @@ impl SimulationWorld {
                 }
                 dmg
             }
-            // uhitm.c:2790-2858 -> steal item, mhm->damage = 0
-            DamageType::StealItem => {
-                if !self.hero_negates(true, events) {
-                    self.steal_hero_item(attacker, events);
-                }
-                0
-            }
             // uhitm.c:2790-2858 -> steal gold
             DamageType::StealGold => {
                 if !self.hero_negates(true, events) {
@@ -288,7 +367,7 @@ impl SimulationWorld {
             DamageType::Seduce => {
                 if !self.hero_negates(true, events) {
                     // Foocubus: steal item or gold, then teleport away
-                    self.seduce_hero(attacker, events);
+                    self.seduce_hero(attacker, attacker_id, events);
                 }
                 dmg
             }
@@ -453,7 +532,7 @@ impl SimulationWorld {
             // uhitm.c:4751-4789 -> seduction (foocubus) - alternate
             DamageType::SeduceSex => {
                 if !self.hero_negates(true, events) {
-                    self.seduce_hero(attacker, events);
+                    self.seduce_hero(attacker, attacker_id, events);
                 }
                 dmg
             }
@@ -490,44 +569,19 @@ impl SimulationWorld {
 
     /// C `nh_timeout()` (timeout.c:730-750) for the hero's transient
     /// afflictions, once per turn: counters run down and announce their end.
-    pub(crate) fn tick_hero_afflictions(&mut self, events: &mut Vec<GameEvent>) {
-        let t = &mut self.hero.afflictions.transient;
-        let mut msgs: Vec<&str> = Vec::new();
-        if t.stunned > 0 {
-            t.stunned -= 1;
-            if t.stunned == 0 {
-                msgs.push("You feel a bit steadier now.");
-            }
-        }
-        if t.confused > 0 {
-            t.confused -= 1;
-            if t.confused == 0 {
-                msgs.push("You feel less confused now.");
-            }
-        }
-        let mut cleared_blind = false;
-        if t.blinded > 0 {
-            t.blinded -= 1;
-            if t.blinded == 0 {
-                cleared_blind = true;
-                msgs.push("You can see again.");
-            }
-        }
-        if t.helpless > 0 {
-            t.helpless -= 1;
-            if t.helpless == 0 {
-                // hack.c:973 fall_asleep wakeup message
-                msgs.push("You wake up.");
-            }
-        }
+    pub(crate) fn tick_hero_afflictions(
+        &mut self,
+        events: &mut Vec<GameEvent>,
+    ) -> nethacked_core::afflictions::AfflictionTickResult {
+        let (result, cleared_blind, recovery) =
+            crate::passive_afflictions::recovery(&mut self.hero.afflictions);
         if cleared_blind {
             if let Some(h) = self.arena.actors.get_mut(self.player_id) {
                 h.intrinsics.blind = false;
             }
         }
-        for m in msgs {
-            say(events, m);
-        }
+        events.extend(recovery);
+        result
     }
 
     /// C `u_maybe_impaired()` (hack.c:2420): stunned, or confused and `!rn2(5)`.

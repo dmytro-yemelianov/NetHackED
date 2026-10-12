@@ -20,6 +20,9 @@ pub struct DungeonLevel {
     pub traps: HashMap<Coord, nethacked_types::TrapRecord>,
     #[serde(default)]
     pub is_dark: bool,
+    /// C `level.flags.noteleport`; ordinary teleport restrictions are owned by the level.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub no_teleport: bool,
 }
 
 impl Default for DungeonLevel {
@@ -46,6 +49,7 @@ impl DungeonLevel {
             engravings: HashMap::new(),
             traps: HashMap::new(),
             is_dark: false,
+            no_teleport: false,
         }
     }
 

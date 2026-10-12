@@ -1,0 +1,89 @@
+{
+  "schema": 1,
+  "status": "verified_for_containing_commit",
+  "baseline_head": "d23eb91c66547b3b5f48785a926941b9ac173253",
+  "milestone": "M4-O2",
+  "scope": "Independent typed/blob owner storage, authenticated queries and opaque pure preparation, shared-budget native-to-Wasm bridge",
+  "review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-RUNTIME/review/answer.txt",
+    "sha256": "5a2b6f387ef2b889d1214d20bab73df81395cc7022874ff7cc41a114dfdcf593"
+  },
+  "readback": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-RUNTIME/readback/answer.txt",
+    "sha256": "a8068f8d73df7de41121fa1af2ed615e316bcaa17d87dfd7270332e1f039e1c6"
+  },
+  "review_inputs": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-RUNTIME/readback-source.json",
+    "sha256": "6c424eafa4ca95b9a614b64357aa170c2ef9604d917838ca7be2715c7662400f"
+  },
+  "writer_evidence": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-RUNTIME/writer-evidence/manifest.json",
+    "sha256": "0ce85989ded49fb68132f4117780938d96e97b3b38b28d744b891d2ca491fc54"
+  },
+  "root_verification": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-RUNTIME/writer-evidence/root-verification.json",
+    "sha256": "941b247df56b407fe4cc12b39d9eac4c3c42f38b42d99b2eab9299fb4e57349e"
+  },
+  "repair": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-RUNTIME/repair1/result.json",
+    "sha256": "75d562fb2a62e56b04f5a7cf98b1ae2515b9327f0489b37a8f6ab3bcf633b1b0"
+  },
+  "focused_checks": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-RUNTIME/repair1/checks.json",
+    "sha256": "160bc576a7ae419cb49f17e74a0a62be7fec04e0bbc9b85bdf3ff82c756507cb"
+  },
+  "focused_tests": 55,
+  "new_tests": 13,
+  "actual_wasm32": [
+    "nethacked-kernel",
+    "nethacked-owners"
+  ],
+  "wasm_artifacts": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-RUNTIME/writer-evidence/wasm-artifacts.json",
+    "sha256": "3ba297e71522f1e7ee78020ae64aaed0e9fd1776023ac82b420c113b05db637f"
+  },
+  "old_tests_helpers_goldens_changed": false,
+  "production_unchanged_after_review": true,
+  "usage": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-RUNTIME/implementation/usage.json",
+      "sha256": "ba8177b25eb095f3b8dc8c7dd149022ff05afcfbcef7c4d3c48ff7a088530c1b"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-RUNTIME/review/usage.json",
+      "sha256": "ca4f1a58e5ab049d140a8d6587ec7fb5a60f500b80f18e9be9423c6ad73066f2"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-RUNTIME/readback/usage.json",
+      "sha256": "55d50e7431723ff9206a64e7f85ff586e2ca40f31b99c7c17d81ebdc25de5ad4"
+    }
+  ],
+  "meter_note": "Writer125236/48424 and review86613/9211 uncached input/output exceeded allowance; readback17627/3065 within difficult-phase uncached allowance, while guard reports exceeded from total input. Root usage unknown; no overall savings claim.",
+  "parity_families_closed": 0,
+  "acceptance": "O2 only: slots/routes/queries/prepared candidates; no public apply/commit. Fresh full production review plus test-only marker repair and independent PASS readback.",
+  "native_goal_status": "active; next M4-O3",
+  "residuals": [
+    "O3 atomic publication with all-owner visibility, preflight and failure instrumentation",
+    "O4 executable live owner extensions, derived properties and service composition",
+    "Owner codecs/legacy saves and all existing NetHack migration/integration",
+    "Native adapter purity, memory-size fidelity, alias exclusion and unwind safety remain trusted",
+    "Separate 53-family behavior-parity backlog"
+  ],
+  "full_gates": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNER-RUNTIME/full-gates/accepted.json",
+    "sha256": "204b6147ad66f6659f144e50dde8bd270f51a24e4c66c3b7b5a91a8f2209b21f"
+  },
+  "gate_result": {
+    "head": "d23eb91c66547b3b5f48785a926941b9ac173253",
+    "tests": 1151,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "digest": "dc82bf44fe438ac0776c596f287d8e87045addf077b751a58b396505ef12df61",
+    "checks": 12
+  },
+  "source_input_count": 404,
+  "writer_socket_failures_resolved": "Root full workspace passed all1151 including11 prior PermissionDenied socket tests; original failed writer logs retained."
+}

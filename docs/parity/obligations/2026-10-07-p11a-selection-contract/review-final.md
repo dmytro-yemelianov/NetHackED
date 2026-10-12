@@ -1,0 +1,1 @@
+All three contract repairs resolve the prior findings. Manifest hashes match, baseline.json is byte-identical, and protected contract fields and prior evidence remain unchanged. Prior passed C, prerequisite, legacy and implementation coverage—including root’s 344-source/49-binding verification—is reused, not freshly validated. This is a repair-only contract review.

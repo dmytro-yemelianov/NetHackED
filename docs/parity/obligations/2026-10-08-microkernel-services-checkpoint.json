@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "status": "verified_for_containing_commit",
+  "baseline_head": "50e1ca84e001868242ecc58b7141c7582df4d1f0",
+  "milestone": "M2",
+  "formal_module": "NetMechanics/Services.lean",
+  "new_named_theorems": 28,
+  "scope": "Optional service protocols; not runtime/proptest/composed refinement",
+  "review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-SERVICES/review/answer.txt",
+    "sha256": "e3de07152d39c25682e6dbdffef571f642c9b928040dbaca9017005a6dec5f96"
+  },
+  "reviewed_inputs": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-SERVICES/review-packet/packet.json",
+    "sha256": "74f27da2ae8ecf9c19df4a5425b2c0b1d76fc4f605670b2740274a2f31ab1698"
+  },
+  "proofs": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-SERVICES/proof-input.json",
+    "sha256": "8b486ddd113bed2ac71ac86f9c8d571f2b85426aaf1c8106c7066b3b92156c4d"
+  },
+  "axioms": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-SERVICES/axioms-final.log",
+    "sha256": "c77032ad1038b05888b782dc39bd77316231048363a94d10bfe85121b9bc7b5e"
+  },
+  "focused_build": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-SERVICES/lake-final-focused.log",
+    "sha256": "4f64ac027ab4367aa47cdcb8f965eee2f8d818e8ce73c60e7b6390eae147cb8e"
+  },
+  "full_gates": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-SERVICES/full-gates/accepted.json",
+    "sha256": "1acc91ac442c79932b31be223b16b3924ee815d0e1bb4f9a50caa2aa299f2050"
+  },
+  "gate_result": {
+    "head": "50e1ca84e001868242ecc58b7141c7582df4d1f0",
+    "tests": 1044,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "digest": "53fd2ab421d8f0c745e6bfcc37610d5562361d1d1d0285b2a870882426a84a95",
+    "checks": 12
+  },
+  "source_snapshot": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-SERVICES/review-source/baseline.json",
+    "sha256": "a95e103cca33c0ec24b3d54303655776b810e0716f56b6aef554035506726707"
+  },
+  "usage": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-SERVICES/review/usage.json",
+    "sha256": "28dd2857cfb34fd08eee3c71d5b2067d28d0d0b915ec7f95591f9f5dc99849a8"
+  },
+  "meter_note": "Guard triggers on total96452; uncached28484/output1830. Whole-unit/root usage unknown; no budget compliance/savings claim. Next model context narrowed to generic runtime/backend only.",
+  "old_rust_tests_helpers_goldens_changed": false,
+  "native_goal_status": "active; M3 ready; allA1-A8 pending",
+  "parity_families_closed": 0,
+  "residuals": [
+    "Actual authenticated executable binding, finite ownership indexes, non-reused IDs/overflow, unique timers",
+    "Sound request/loader/residency/tie/stamp/schema validators and callback/transaction publication",
+    "Actual vanilla RNG stream, real codecs, legacy saves and composed runtime interfaces",
+    "Executable extensions and complete existing NetHack migration"
+  ]
+}

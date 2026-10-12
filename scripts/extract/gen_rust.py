@@ -125,6 +125,8 @@ def monster_entry(m, name):
         id: MonsterSpeciesId::{m['id']},
         name: {rs(name)},
         glyph: '{glyph}',
+        corpse_timeout_policy: CorpseTimeoutPolicy::{pick({"ordinary": "Ordinary", "never": "Never", "rider": "Rider"}, m["corpse_timeout_policy"], w)},
+        corpse_thaw_policy: CorpseThawPolicy::{pick({"ordinary": "Ordinary", "ice_troll": "IceTroll"}, m["corpse_thaw_policy"], w)},
         base_hp: {hp},
         max_hp: {hp},
         ac: {m['ac']},
@@ -134,6 +136,8 @@ def monster_entry(m, name):
         intrinsics: {intr},
         attacks: &[{", ".join(attacks)}],
         size: MonsterSize::{pick(SIZE, m['size'], w)},
+        body_weight: {m['weight']},
+        corpse_nutrition: {m['nutrition']},
         peaceful_by_default: {str('peaceful' in f2).lower()},
         always_hostile: {str('hostile' in f2).lower()},
         maligntyp: {max(-128, min(127, aln))},
@@ -190,6 +194,54 @@ def object_name(o):
     return prefix + o["name"]
 
 
+def initialization_profile(o, artifact):
+    """Supported mkobj.c:869 switch branches; special cases use C kind IDs.
+
+    Species/fuel/context branches are intentionally fixed. obj.h:260-267
+    defines multigen and poisonability via the negative bow..shuriken skill.
+    """
+    prefix = "crate::item_init::"
+    profile = prefix + "ItemInitProfile::"
+    kind, cls = o["id"], o["class"]
+    boolean = lambda value: str(value).lower()
+    if artifact:
+        return profile + "Fixed"
+    if cls == "weapon":
+        multi = bool(o.get("skill_is_ammo") and o.get("skill") in ("bow", "sling", "crossbow", "dart", "shuriken"))
+        return profile + f"Weapon {{ multigen: {boolean(multi)}, poisonable: {boolean(multi)} }}"
+    if cls == "armor":
+        harmful = kind in ("FUMBLE_BOOTS", "LEVITATION_BOOTS", "HELM_OF_OPPOSITE_ALIGNMENT", "GAUNTLETS_OF_FUMBLING")
+        return profile + f"Armor {{ harmful: {boolean(harmful)} }}"
+    if cls == "wand":
+        charges = {"WAN_WISHING": "Wishing", "WAN_STASIS": "Stasis"}.get(kind, "Standard")
+        return profile + f"Wand {{ charges: {prefix}WandCharges::{charges} }}"
+    if cls == "ring":
+        harmful = kind in ("RIN_TELEPORTATION", "RIN_POLYMORPH", "RIN_AGGRAVATE_MONSTER", "RIN_HUNGER")
+        return profile + f"Ring {{ charged: {boolean('charged' in o.get('flags', []))}, harmful: {boolean(harmful)} }}"
+    if cls == "amulet":
+        harmful = kind in ("AMULET_OF_STRANGULATION", "AMULET_OF_CHANGE", "AMULET_OF_RESTFUL_SLEEP")
+        return profile + f"Amulet {{ harmful: {boolean(harmful)} }}"
+    if cls in ("potion", "scroll", "spbook") and kind != "SCR_MAIL":
+        return profile + {"potion": "Potion", "scroll": "Scroll", "spbook": "Book"}[cls]
+    if cls == "gem" and kind != "LOADSTONE":
+        return profile + f"Gem {{ rock: {boolean(kind == 'ROCK')}, luckstone: {boolean(kind == 'LUCKSTONE')} }}"
+    if cls == "tool":
+        container = {"ICE_BOX": "IceBox", "CHEST": "Chest", "LARGE_BOX": "LargeBox", "SACK": "Sack", "OILSKIN_SACK": "OilskinSack", "BAG_OF_HOLDING": "HoldingBag"}.get(kind)
+        if container:
+            return profile + f"Container {{ container: {prefix}ContainerInit::{container} }}"
+        charges = {
+            "EXPENSIVE_CAMERA": "Camera", "TINNING_KIT": "Camera", "MAGIC_MARKER": "Camera",
+            "CAN_OF_GREASE": "Grease", "CRYSTAL_BALL": "CrystalBall",
+            "HORN_OF_PLENTY": "HornOrBag", "BAG_OF_TRICKS": "HornOrBag",
+            "MAGIC_FLUTE": "Instrument", "MAGIC_HARP": "Instrument", "FROST_HORN": "Instrument",
+            "FIRE_HORN": "Instrument", "DRUM_OF_EARTHQUAKE": "Instrument",
+            "BELL_OF_OPENING": "Bell", "MAGIC_LAMP": "MagicLamp",
+        }.get(kind)
+        if charges:
+            return profile + f"Tool {{ charges: {prefix}ToolCharges::{charges} }}"
+    return profile + ("Loadstone" if kind == "LOADSTONE" else "Fixed")
+
+
 def item_entry(variant, name, o, artifact=None):
     w = o["src"]
     cls = pick(CLASS, o["class"], w)
@@ -216,10 +268,14 @@ def item_entry(variant, name, o, artifact=None):
         wand_dir: {f'Some(WandDir::{wdir})' if wdir else 'None'},
         nutrition: {o['nutrition']},
         prob: {0 if artifact else o['prob']},
+        oc_delay: {o['delay']},
+        worn_property: {'Some(WornProperty::FireResistance)' if o.get('property') == 'fire_res' else 'None'},
         material: {rs(o.get('material', 'none'))},
         magic_cancellation: {o['oc2'] if armor else 0},
         armor_slot: {f"Some(ArmorSlot::{pick(SLOT, o['armor_slot'], w)})" if armor else 'None'},
         artifact: {str(artifact is not None).lower()},
+        unique: {str("unique" in flags).lower()},
+        initialization: {initialization_profile(o, artifact)},
     }},
 """
 
@@ -233,6 +289,14 @@ def render_items(objs, arts):
             + "/// The item catalog, generated from `data/nethack-5.0/{objects,artifacts}.toml`; index = id.\n"
             "pub static ITEM_CATALOG: &[ItemArchetype] = &[\n"
             + "".join(item_entry(*r) for r in rows) + "];\n")
+
+
+def render_artifacts(arts):
+    rows = []
+    for a in arts:
+        role = "Some(" + rs(a["role"]) + ")" if a.get("role") else "None"
+        rows.append(f"    ({rs('ART_' + a['id'])}, ItemKindId::ART_{a['id']}, ItemKindId::{a['base']}, {str('nogen' in a['spfx']).lower()}, {a['gen_spe']}, {a['gift_value']}, {role}, {str(a['id'] == 'GRIMTOOTH').lower()}),\n")
+    return HEADER + "pub const ARTIFACT_ROWS: &[ArtifactRow] = &[\n" + "".join(rows) + "];\n"
 
 
 def render_class_probs(tables):
@@ -272,6 +336,7 @@ HEADER = ("// GENERATED by scripts/extract/gen_rust.py from data/nethack-5.0/*.t
 
 def main():
     files = {
+        "artifacts.rs": render_artifacts(load("artifacts.toml", "artifact")),
         "monsters.rs": render_monsters(load("monsters.toml", "monster")),
         "roles.rs": render_roles(load("roles.toml", "role"), load("races.toml", "race")),
         "items.rs": render_items(load("objects.toml", "object"), load("artifacts.toml", "artifact"))

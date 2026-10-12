@@ -1,0 +1,890 @@
+{
+  "schema": 1,
+  "status": "structural_mapping_not_behavior_acceptance",
+  "source_registry": "docs/parity/obligations/2026-10-07-remaining-parity-scope.json",
+  "source_registry_sha256": "ef0c220796234250d4d8e532f66ffbd113503d8db78bc40c002368f90719a5e9",
+  "coverage": {
+    "families": 53,
+    "historical_rows": 543,
+    "fresh_row_semantic_audit": false
+  },
+  "required_architecture_contracts": [
+    "capability-authority-and-code-binding",
+    "ordered-workflows-and-outcomes",
+    "cross-owner-mutation",
+    "rng-and-external-input",
+    "timers-and-continuations",
+    "persistence-and-version-migration",
+    "attachment-lifecycle"
+  ],
+  "families": [
+    {
+      "id": "EQ01",
+      "title": "Effective attributes",
+      "source_family": "attrib.c acurr, acurrstr; worn.c property masks",
+      "selected_branches": "gear/temporary STR DEX CON and clipping",
+      "module_group": "equipment-properties",
+      "collaborating_modules": [
+        "objects",
+        "equipment",
+        "property-queries",
+        "forms",
+        "conditions"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "EQ02",
+      "title": "Wear/wield slots",
+      "source_family": "do_wear.c; wield.c; worn.c",
+      "selected_branches": "slot blockers, curses, delays, interruption, form disrobing",
+      "module_group": "equipment-properties",
+      "collaborating_modules": [
+        "objects",
+        "equipment",
+        "property-queries",
+        "forms",
+        "conditions"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "EQ03",
+      "title": "Property provenance",
+      "source_family": "prop.h; worn.c; artifact.c set_artifact_intrinsic",
+      "selected_branches": "each source/slot, stacked removal, suppression; MC guarding/protection",
+      "module_group": "equipment-properties",
+      "collaborating_modules": [
+        "objects",
+        "equipment",
+        "property-queries",
+        "forms",
+        "conditions"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "EQ04",
+      "title": "Capacity/stamina",
+      "source_family": "hack.c weight_cap, inv_weight, calc_capacity",
+      "selected_branches": "mount/form/legs/air; coins/loadstone, partial-stack prompts, low HP stamina/exercise",
+      "module_group": "equipment-properties",
+      "collaborating_modules": [
+        "objects",
+        "equipment",
+        "property-queries",
+        "forms",
+        "conditions"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "EQ05",
+      "title": "Weapon modifiers",
+      "source_family": "weapon.c; uhitm.c",
+      "selected_branches": "twohand/dual/rings, launcher/ammo/multishot eligibility",
+      "module_group": "equipment-properties",
+      "collaborating_modules": [
+        "objects",
+        "equipment",
+        "property-queries",
+        "forms",
+        "conditions"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "P11a",
+      "title": "Explicit wand selection/charge",
+      "source_family": "zap.c dozap, zappable; getobj paths",
+      "selected_branches": "selected owned item, cancellation, empty/wrest/backfire, charge and turn order; preserve create monster",
+      "module_group": "wands-rays",
+      "collaborating_modules": [
+        "objects",
+        "selection",
+        "charges",
+        "effect-workflow",
+        "spatial-queries",
+        "properties",
+        "retirement",
+        "accounting"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "P11b",
+      "title": "Beam traversal foundation",
+      "source_family": "zap.c buzz, bhit, zap_over_floor",
+      "selected_branches": "range, walls/doors, bounce/self-hit, multi-target and ordered cells; terrain branch audit",
+      "module_group": "wands-rays",
+      "collaborating_modules": [
+        "objects",
+        "selection",
+        "charges",
+        "effect-workflow",
+        "spatial-queries",
+        "properties",
+        "retirement",
+        "accounting"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "P11c",
+      "title": "Ray resistance/reflection",
+      "source_family": "zap.c zhitm, zhitu; resist; worn.c",
+      "selected_branches": "actor effective properties, MR vs resistance, reflection source, damage draw order",
+      "module_group": "wands-rays",
+      "collaborating_modules": [
+        "objects",
+        "selection",
+        "charges",
+        "effect-workflow",
+        "spatial-queries",
+        "properties",
+        "retirement",
+        "accounting"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "P11d",
+      "title": "Fire branch slice",
+      "source_family": "zap.c burn_floor_paper, destroy_items; uhitm.c fire handlers",
+      "selected_branches": "fire damage/slime cure, inventory/floor burning, armor, ice/terrain and secondary dragon effects; one context per contract",
+      "module_group": "wands-rays",
+      "collaborating_modules": [
+        "objects",
+        "selection",
+        "charges",
+        "effect-workflow",
+        "spatial-queries",
+        "properties",
+        "retirement",
+        "accounting"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "CB01",
+      "title": "Ordinary hit/damage terms",
+      "source_family": "uhitm.c find_roll_to_hit, hmon; weapon.c dmgval",
+      "selected_branches": "monster-state/luck/weapon/material/blessing/bare-hand terms",
+      "module_group": "combat",
+      "collaborating_modules": [
+        "actors",
+        "combat-workflow",
+        "properties",
+        "equipment",
+        "death-credit",
+        "retirement"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "CB02",
+      "title": "AT/AD context matrix",
+      "source_family": "monattk.h; mhitu.c, uhitm.c, mhitm.c",
+      "selected_branches": "each attack/damage pair in hero->monster, monster->hero, monster->monster; MC, resistances, fatal early returns",
+      "module_group": "combat",
+      "collaborating_modules": [
+        "actors",
+        "combat-workflow",
+        "properties",
+        "equipment",
+        "death-credit",
+        "retirement"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "CB03",
+      "title": "Passives/engulf/gaze/explosion",
+      "source_family": "mhitu.c gazemu,gulpmu,explmu,passiveum; mhitm.c passivemm,gulpmm; explode.c",
+      "selected_branches": "context transitions, visibility, reflected gaze, drowning/digestion, passive ordering",
+      "module_group": "combat",
+      "collaborating_modules": [
+        "actors",
+        "combat-workflow",
+        "properties",
+        "equipment",
+        "death-credit",
+        "retirement"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "CB04",
+      "title": "Projectile/breath/spells",
+      "source_family": "dothrow.c; mthrowu.c; mcastu.c",
+      "selected_branches": "range, hit, break/return, multishot; breath ray reuse; mage/cleric lists",
+      "module_group": "combat",
+      "collaborating_modules": [
+        "actors",
+        "combat-workflow",
+        "properties",
+        "equipment",
+        "death-credit",
+        "retirement"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "CB05",
+      "title": "Infighting/polymorph combat",
+      "source_family": "mhitm.c fightm; uhitm.c hmonas",
+      "selected_branches": "hostile pet targets and full form attacks with passive outcome propagation",
+      "module_group": "combat",
+      "collaborating_modules": [
+        "actors",
+        "combat-workflow",
+        "properties",
+        "equipment",
+        "death-credit",
+        "retirement"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "AI01",
+      "title": "Spawn contexts/groups/HP",
+      "source_family": "makemon.c rndmonst,mkclass,adj_lev,m_initgrp; allmain.c",
+      "selected_branches": "LGROUP/other groups, ongoing cadence, habitat/planes, genocide/difficulty, mavenge, special creation",
+      "module_group": "actors-ai",
+      "collaborating_modules": [
+        "actors",
+        "spawn",
+        "senses",
+        "time-policy",
+        "objects",
+        "forms",
+        "persistence"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "AI02",
+      "title": "Movement/senses/scheduling",
+      "source_family": "monmove.c m_move,distfleeck,disturb; mon.c mcalcmove",
+      "selected_branches": "sleep/wait, fleeing/memory, senses/displacement, doors/tunnel/swim/fly; MSLOW/MFAST, linked-head ordering; death credit/same-pass spawn tests",
+      "module_group": "actors-ai",
+      "collaborating_modules": [
+        "actors",
+        "spawn",
+        "senses",
+        "time-policy",
+        "objects",
+        "forms",
+        "persistence"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "AI03",
+      "title": "Monster inventory/item use",
+      "source_family": "makemon.c m_initweap,m_initinv; mon.c mpickstuff; muse.c; steal.c relobj",
+      "selected_branches": "weapon/loot kits, pickup/equip/drop; defensive/offensive/misc item decisions",
+      "module_group": "actors-ai",
+      "collaborating_modules": [
+        "actors",
+        "spawn",
+        "senses",
+        "time-policy",
+        "objects",
+        "forms",
+        "persistence"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "AI04",
+      "title": "Pet creation/taming/continuation",
+      "source_family": "dog.c makedog,tamedog,keepdogs,losedogs; dogmove.c",
+      "selected_branches": "starting pet, food taming, migration, starvation/apport, goals, abuse/untaming, grow_up/promotion",
+      "module_group": "actors-ai",
+      "collaborating_modules": [
+        "actors",
+        "spawn",
+        "senses",
+        "time-policy",
+        "objects",
+        "forms",
+        "persistence"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "AI05",
+      "title": "Special monster lifecycle",
+      "source_family": "mon.c newcham,monstone,mon_regen; worm.c; minion.c; mplayer.c",
+      "selected_branches": "regen/growth, lifesaving/vampires/stoning, worm segments, summons/minions/player monsters; global identifier wrap",
+      "module_group": "actors-ai",
+      "collaborating_modules": [
+        "actors",
+        "spawn",
+        "senses",
+        "time-policy",
+        "objects",
+        "forms",
+        "persistence"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "OB01",
+      "title": "Ownership/stacks/knowledge/naming",
+      "source_family": "invent.c merged; objnam.c; o_init.c; pickup.c",
+      "selected_branches": "split/merge, hidden known/bknown/dknown, shuffled appearances/discoveries, naming quantities/articles, container transactions",
+      "module_group": "objects-lifetime",
+      "collaborating_modules": [
+        "objects",
+        "identity",
+        "stacking",
+        "knowledge",
+        "retirement",
+        "timers",
+        "accounting",
+        "residency"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "OB02",
+      "title": "Object init/erosion/destruction",
+      "source_family": "mkobj.c mksobj; trap.c erode_obj; zap.c destroy_items",
+      "selected_branches": "unmodeled BUC/spe/payload/erosion/fuel, statues/eggs/tins/globs, quantity/weight, destruction ownership",
+      "module_group": "objects-lifetime",
+      "collaborating_modules": [
+        "objects",
+        "identity",
+        "stacking",
+        "knowledge",
+        "retirement",
+        "timers",
+        "accounting",
+        "residency"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "OB03",
+      "title": "Eating/corpse effects",
+      "source_family": "eat.c bite,cprefx,cpostfx,givit,gethungry",
+      "selected_branches": "meal occupation/interruption, all food/species nutrition/intrinsics/poison/cannibal/choke/faint/hunger sources",
+      "module_group": "consumables-tools",
+      "collaborating_modules": [
+        "objects",
+        "effect-workflow",
+        "properties",
+        "conditions",
+        "retirement",
+        "accounting"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "OB04",
+      "title": "Timers/corpse lifecycle",
+      "source_family": "timeout.c; mkobj.c; zap.c revive (released src/zap.c:884); mon.c make_corpse",
+      "selected_branches": "Rider/Ice execution, buried contents, mextra/shop/quest/special identities; hatching/fuel/figurines/globs; active/cache/icebox and id wrap",
+      "module_group": "objects-lifetime",
+      "collaborating_modules": [
+        "objects",
+        "identity",
+        "stacking",
+        "knowledge",
+        "retirement",
+        "timers",
+        "accounting",
+        "residency"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "OB05",
+      "title": "Potion effect contexts",
+      "source_family": "potion.c peffects,potionhit,potionbreathe,mixtype",
+      "selected_branches": "each potion BUC, vapor/hit/dip/dilution/alchemy and identification observation",
+      "module_group": "consumables-tools",
+      "collaborating_modules": [
+        "objects",
+        "effect-workflow",
+        "properties",
+        "conditions",
+        "retirement",
+        "accounting"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "OB06",
+      "title": "Scroll effect contexts",
+      "source_family": "read.c seffects",
+      "selected_branches": "each scroll BUC/confused/blind; consumptions, prompts, cancellation, destruction",
+      "module_group": "consumables-tools",
+      "collaborating_modules": [
+        "objects",
+        "effect-workflow",
+        "properties",
+        "conditions",
+        "retirement",
+        "accounting"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "OB07",
+      "title": "Wands beyond fire",
+      "source_family": "zap.c bhitm,bhito,zap_dig; apply.c do_break_wand",
+      "selected_branches": "each wand immediate/nondirectional/ray/self/engulf/object pile; digging/breaking; create-monster variants",
+      "module_group": "wands-rays",
+      "collaborating_modules": [
+        "objects",
+        "selection",
+        "charges",
+        "effect-workflow",
+        "spatial-queries",
+        "properties",
+        "retirement",
+        "accounting"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "OB08",
+      "title": "Equipment class effects",
+      "source_family": "do_wear.c; worn.c; ball.c",
+      "selected_branches": "all armor/rings/amulets/weapons/gems/stones, punishment ball/chain, unicorn gifts",
+      "module_group": "equipment-properties",
+      "collaborating_modules": [
+        "objects",
+        "equipment",
+        "property-queries",
+        "forms",
+        "conditions"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "OB09",
+      "title": "Tool apply/rub/write/locks",
+      "source_family": "apply.c; lock.c; write.c; dig.c",
+      "selected_branches": "every tool, fuel/wish, mirror/stethoscope/unihorn/towel/leash/saddle/tin/figurine/grease/camera/crystal-ball, marker and locks",
+      "module_group": "consumables-tools",
+      "collaborating_modules": [
+        "objects",
+        "effect-workflow",
+        "properties",
+        "conditions",
+        "retirement",
+        "accounting"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "OB10",
+      "title": "Artifacts/wishing",
+      "source_family": "artifact.c; objnam.c readobjnam; pray.c; fountain.c",
+      "selected_branches": "all artifact hit/target bonuses, Magicbane/behead/touch/blast, carried/invoked/light/speak, gifts/history; complete wish parser/restrictions",
+      "module_group": "consumables-tools",
+      "collaborating_modules": [
+        "objects",
+        "effect-workflow",
+        "properties",
+        "conditions",
+        "retirement",
+        "accounting"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "OB11",
+      "title": "Containers/polypiling",
+      "source_family": "pickup.c in_container,out_container,doloot,dotip; zap.c poly_obj",
+      "selected_branches": "BoH scatter/loss, all contents contexts, cursed cases, pile transformations",
+      "module_group": "objects-lifetime",
+      "collaborating_modules": [
+        "objects",
+        "identity",
+        "stacking",
+        "knowledge",
+        "retirement",
+        "timers",
+        "accounting",
+        "residency"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "HE01",
+      "title": "Character selection/kits",
+      "source_family": "role.c validrole/race/gend/align; u_init.c ini_inv",
+      "selected_branches": "all 13 roles, 5 races and valid gender/alignment combinations; kits/known objects/skills/pets",
+      "module_group": "hero-progression",
+      "collaborating_modules": [
+        "character",
+        "progression",
+        "properties",
+        "conditions",
+        "time-policy",
+        "effect-workflow"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "HE02",
+      "title": "XP/HP/Pw/attributes",
+      "source_family": "exper.c; attrib.c init_attr,adjattrib,adjabil,newhp",
+      "selected_branches": "XP discounts/eel, rank titles, Wis energy, recorded gains/losses, intrinsics, exercise/abuse/restoration",
+      "module_group": "hero-progression",
+      "collaborating_modules": [
+        "character",
+        "progression",
+        "properties",
+        "conditions",
+        "time-policy",
+        "effect-workflow"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "HE03",
+      "title": "Skills",
+      "source_family": "weapon.c skill tables,enhance_weapon_skill",
+      "selected_branches": "starting caps, practice, advancement, restrictions and drain",
+      "module_group": "hero-progression",
+      "collaborating_modules": [
+        "character",
+        "progression",
+        "properties",
+        "conditions",
+        "time-policy",
+        "effect-workflow"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "HE04",
+      "title": "HP/Pw regeneration/properties",
+      "source_family": "allmain.c regen_hp,regen_pw",
+      "selected_branches": "Pw, Regeneration/Sleepy/prayer, polymorph and effective CON; once per world tick",
+      "module_group": "hero-progression",
+      "collaborating_modules": [
+        "character",
+        "progression",
+        "properties",
+        "conditions",
+        "time-policy",
+        "effect-workflow"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "HE05",
+      "title": "Prayer/sacrifice",
+      "source_family": "pray.c dosacrifice,dopray,in_trouble,fix_worst_trouble",
+      "selected_branches": "trouble selection, anger/luck/alignment/time, altar conversion, gifts/crowning, corpse cases",
+      "module_group": "hero-progression",
+      "collaborating_modules": [
+        "character",
+        "progression",
+        "properties",
+        "conditions",
+        "time-policy",
+        "effect-workflow"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "HE06",
+      "title": "Spells/books",
+      "source_family": "spell.c study_book,percent_success,spelleffects; read.c",
+      "selected_branches": "all books/spells, study/memory/amnesia, failure/Pw/hunger/skill, target/prompt cancellation",
+      "module_group": "hero-progression",
+      "collaborating_modules": [
+        "character",
+        "progression",
+        "properties",
+        "conditions",
+        "time-policy",
+        "effect-workflow"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "HE07",
+      "title": "Polymorph/lycanthropy",
+      "source_family": "polyself.c; were.c",
+      "selected_branches": "form properties/HP, armor break/drop, controls, monster attacks/summon/cure and rehumanization",
+      "module_group": "hero-progression",
+      "collaborating_modules": [
+        "character",
+        "progression",
+        "properties",
+        "conditions",
+        "time-policy",
+        "effect-workflow"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "HE08",
+      "title": "Timed hero conditions",
+      "source_family": "timeout.c nh_timeout/dialogues",
+      "selected_branches": "stoning/sliming/strangle/sick/vomit/levitation/legs/hallucination/sleep; dialogue/fatal priorities",
+      "module_group": "hero-progression",
+      "collaborating_modules": [
+        "character",
+        "progression",
+        "properties",
+        "conditions",
+        "time-policy",
+        "effect-workflow"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "HE09",
+      "title": "Riding",
+      "source_family": "steed.c",
+      "selected_branches": "saddle eligibility/failure, falls/kick/skill, gallop/mount burden/landing",
+      "module_group": "hero-progression",
+      "collaborating_modules": [
+        "character",
+        "progression",
+        "properties",
+        "conditions",
+        "time-policy",
+        "effect-workflow"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "HE10",
+      "title": "Music/sitting/engraving",
+      "source_family": "music.c; sit.c; engrave.c",
+      "selected_branches": "instruments/tunes/earthquake, all seat/throne/egg/curse branches, media/tools/time, erasure/garbling/scare contexts",
+      "module_group": "hero-progression",
+      "collaborating_modules": [
+        "character",
+        "progression",
+        "properties",
+        "conditions",
+        "time-policy",
+        "effect-workflow"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "DG01",
+      "title": "Terrain/ordinary generation",
+      "source_family": "mklev.c; mkroom.c; hack.c; fountain.c; dbridge.c",
+      "selected_branches": "doors/secret corridors/rooms/vault/niche/themed terrain, bars/trees/graves/fountains/sinks/thrones/water/lava; drawbridges",
+      "module_group": "spatial-content",
+      "collaborating_modules": [
+        "topology",
+        "terrain",
+        "generation",
+        "vision",
+        "regions",
+        "content-programs",
+        "residency"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "DG02",
+      "title": "Vision/light/detection/memory",
+      "source_family": "vision.c; light.c; detect.c; display.c; rm.h",
+      "selected_branches": "lit rooms/unlimited LOS, floor/monster sources, seenv/remembered glyphs, all detection contexts",
+      "module_group": "spatial-content",
+      "collaborating_modules": [
+        "topology",
+        "terrain",
+        "generation",
+        "vision",
+        "regions",
+        "content-programs",
+        "residency"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "DG03",
+      "title": "Traps/dig/teleport/regions",
+      "source_family": "trap.c; teleport.c; dig.c; region.c; dokick.c dokick and kick_* paths",
+      "selected_branches": "all trap types/gen/effects/mintrap, escape/search, controls/no-teleport/level teleport; gas/regions; kicking doors, objects/containers, monsters and terrain; failed checks, hurt-self damage and turn cost",
+      "module_group": "spatial-content",
+      "collaborating_modules": [
+        "topology",
+        "terrain",
+        "generation",
+        "vision",
+        "regions",
+        "content-programs",
+        "residency"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "DG04",
+      "title": "Topology/map engine",
+      "source_family": "dungeon.c; dat/dungeon.lua; sp_lev.c des API; mkmap/mkmaze/extralev",
+      "selected_branches": "data conversion without runtime Lua/C, branch depth constraints, fillers/mazes/Rogue, complete level DSL semantics",
+      "module_group": "spatial-content",
+      "collaborating_modules": [
+        "topology",
+        "terrain",
+        "generation",
+        "vision",
+        "regions",
+        "content-programs",
+        "residency"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "DG05",
+      "title": "Special maps/variants",
+      "source_family": "dat/*.lua; sp_lev.c",
+      "selected_branches": "all selected 124 level definitions, all variant placements/population/prizes/flags; no synthetic replacement closure",
+      "module_group": "spatial-content",
+      "collaborating_modules": [
+        "topology",
+        "terrain",
+        "generation",
+        "vision",
+        "regions",
+        "content-programs",
+        "residency"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "DG06",
+      "title": "NPC economy/roles",
+      "source_family": "shk.c/shknam.c; priest.c; vault.c; sounds.c; rumors.c",
+      "selected_branches": "shop types/bills/theft/anger/repair/price ID, priests/temples/guards/Oracle consultations",
+      "module_group": "economy-npcs",
+      "collaborating_modules": [
+        "actors",
+        "objects",
+        "accounting",
+        "npc-workflow",
+        "presentation"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "DG07",
+      "title": "Role quests",
+      "source_family": "quest.c; questpgr.c; dat/<Role>-*.lua; quest.lua",
+      "selected_branches": "all role home/locate/goal/fillers, leader/guardian/nemesis, eligibility/expulsion/artifact-return and text",
+      "module_group": "spatial-content",
+      "collaborating_modules": [
+        "topology",
+        "terrain",
+        "generation",
+        "vision",
+        "regions",
+        "content-programs",
+        "residency"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "DG08",
+      "title": "Wizard/endgame geography",
+      "source_family": "wizard.c; covetous paths; dat planes/towers/lairs; do.c invocation",
+      "selected_branches": "Wizard stealing/resurrection/harassment, Vlad/towers/demons/Riders, Planes/bubbles/Astral, ritual proper locations",
+      "module_group": "spatial-content",
+      "collaborating_modules": [
+        "topology",
+        "terrain",
+        "generation",
+        "vision",
+        "regions",
+        "content-programs",
+        "residency"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "UI01",
+      "title": "Command contract/dispatch",
+      "source_family": "cmd.c extcmdlist and rhack",
+      "selected_branches": "85 catalog commands, aliases/count/repeat/menu/input/cancel/occupation/prompt semantics through intended frontends",
+      "module_group": "commands-presentation",
+      "collaborating_modules": [
+        "command-routing",
+        "selection",
+        "queries",
+        "presentation",
+        "external-input"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "UI02",
+      "title": "Inventory/status/look/map output",
+      "source_family": "invent.c; botl.c; pager.c; do_name.c; display.c",
+      "selected_branches": "letters/sort/select/quantity, hidden knowledge/price-ID, naming, status/enlightenment/overview/map memory/messages",
+      "module_group": "commands-presentation",
+      "collaborating_modules": [
+        "command-routing",
+        "selection",
+        "queries",
+        "presentation",
+        "external-input"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "UI03",
+      "title": "Save/death/endings/scoring",
+      "source_family": "save.c; restore.c; end.c; rip.c; topten.c; allmain.c",
+      "selected_branches": "Rust continuation/disclosure/grave/death/lifesaving/escape/ascension/conduct/score; compressed endgame remains partial",
+      "module_group": "persistence-endings",
+      "collaborating_modules": [
+        "persistence",
+        "schema-migration",
+        "residency",
+        "continuations",
+        "death-credit",
+        "presentation"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "UI04",
+      "title": "Text/calendar/conduct/options",
+      "source_family": "insight.c; rumors.c; questpgr.c; calendar.c; options.c; mail.c",
+      "selected_branches": "quest/rumor/Oracle content, moon/Friday13 external inputs, journals/achievements/conduct, gameplay options/config branches",
+      "module_group": "commands-presentation",
+      "collaborating_modules": [
+        "command-routing",
+        "selection",
+        "queries",
+        "presentation",
+        "external-input"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    },
+    {
+      "id": "UI05",
+      "title": "Bones/public persistence",
+      "source_family": "bones.c",
+      "selected_branches": "eligibility, ownership/curse/ghost uniqueness/artifact/species knowledge, local/frontend restoration, network policy separately",
+      "module_group": "persistence-endings",
+      "collaborating_modules": [
+        "persistence",
+        "schema-migration",
+        "residency",
+        "continuations",
+        "death-credit",
+        "presentation"
+      ],
+      "architecture_status": "representable_with_explicit_contracts_not_yet_domain_proved"
+    }
+  ]
+}

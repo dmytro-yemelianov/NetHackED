@@ -1,0 +1,83 @@
+{
+  "schema": 1,
+  "status": "verified_for_containing_commit",
+  "baseline_head": "bf9680cd56316422b01f7c2350dba262c048cd13",
+  "milestone": "M4a",
+  "scope": "Retained executable closure, current authority and lifecycle references; checkpoint/codec integration remains pending",
+  "new_tests": 12,
+  "review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-PINNING/review/answer.txt",
+    "sha256": "b736759225d9e3fbc0211b9f54faadb488bc9a4295ee723235e930de9d191341"
+  },
+  "review_inputs": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-PINNING/review-source.json",
+    "sha256": "f65105719eae82048213885acd8c7f012f493643ddcf9b94f44c731a541cd2de"
+  },
+  "full_gates": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-PINNING/full-gates/accepted.json",
+    "sha256": "05f42931cf12ceebdaf61fa9bb77caf5ef8349ecd95ff19626c69257407a2564"
+  },
+  "gate_result": {
+    "head": "bf9680cd56316422b01f7c2350dba262c048cd13",
+    "tests": 1085,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "digest": "2779174f27f73a5a8c6f3fe94ecda0524fb90b43cc942e0c1727c5a21e0f1da3",
+    "checks": 12
+  },
+  "focused_checks": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-PINNING/final-focused/results.json",
+    "sha256": "f539c619beb3d76460f969a7daf815e5d8db46612f6b3c763eb76af12ccf0497"
+  },
+  "wasm32_production_reuse": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-PINNING/post-repair-source-comparison.json",
+    "sha256": "d2512b5fc87a3f1c41cb01de9141e7ccf2f1c49f7a0da262cfdcea431e95a7be"
+  },
+  "writer_checks": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-PINNING/writer-evidence/README.md",
+    "sha256": "f714cd36fa449db48fb1f8067c08905c8212bf69ca3853f64521ccf10f03e746"
+  },
+  "repair_history": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-PINNING/repair-decision.json",
+    "sha256": "6416b301accc09c2c5d4cca621f65a8a7d3cdb0d14f54b642a27cf54d5b21eae"
+  },
+  "measured_fixture": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-PINNING/repair3/measurement.json",
+    "sha256": "135e4c5715d231296bf7dce5a276e7e3296946d9d5f2909d08f08d5373fa80a3"
+  },
+  "source_unchanged": true,
+  "usage": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-PINNING/implementation/usage.json",
+      "sha256": "210451066aa34a19d907757d0bfe6388a4820f13f7f7c5ac2c420a4db533005d"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-PINNING/advice/usage.json",
+      "sha256": "d07c8c763cabfb800511fa5e547ad8616bd4a1d6b986c10ee74fc6fa0db6bcec"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-PINNING/advice2/usage.json",
+      "sha256": "aa37af700585ead29665fe69481bdef349fb52003494fc292a89f0ea9174c718"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-PINNING/review/usage.json",
+      "sha256": "706003a92adca652111a91602ddf9d0d50567a3a638676f7d4049e5fb5571023"
+    }
+  ],
+  "meter_note": "Writer90160uncached/34257output and review71213uncached/5096output exceed thresholds; advice27424/894 and20270/555; rootusageunknown. No savings/compliance claim. Existing medium-first implementation default will be used for concretely specified workflow mapping, with high effort reserved for a demonstrated unresolved ownership issue; fresh semanticreview remains high.",
+  "process_deviation": "Writer appended ignored P1progress despite root-owned packet; retained, no strictprocesscomplianceclaim",
+  "old_tests_helpers_goldens_changed": false,
+  "acceptance": "M4a prerequisite verified; fullA4/A5 remain pending",
+  "native_goal_status": "active; M4b next",
+  "parity_families_closed": 0,
+  "residuals": [
+    "Authoritative workflow frames/resume tickets and transaction-operation ownership",
+    "Optional recordedinput/timers with callback failure/retry policy",
+    "Concrete codec/schema/retainedcode restoration and supportedlegacyNetHack saves",
+    "NetHackliveextension/wand/full existingdomain migration and integration audit",
+    "Trustednativecode/validators, processlocal identities, no composedRustLeanrefinement"
+  ]
+}

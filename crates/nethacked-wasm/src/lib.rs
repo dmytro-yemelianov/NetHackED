@@ -78,10 +78,10 @@ pub struct WasmGameSession {
 impl WasmGameSession {
     /// Create a new session with seed and default character.
     #[wasm_bindgen(constructor)]
-    pub fn new(seed: u64) -> Self {
-        Self {
-            session: AgentSession::new(seed),
-        }
+    pub fn new(seed: u64) -> Result<Self, JsValue> {
+        Ok(Self {
+            session: AgentSession::new(seed).map_err(|e| JsValue::from_str(&e))?,
+        })
     }
 
     /// Create a new session with a custom character configuration.
@@ -99,7 +99,8 @@ impl WasmGameSession {
         // The web UI keeps each role's natural alignment.
         config.alignment = nethacked_data::roles::get_role(config.role).default_alignment;
         Ok(Self {
-            session: AgentSession::new_with_character(seed, config),
+            session: AgentSession::new_with_character(seed, config)
+                .map_err(|e| JsValue::from_str(&e))?,
         })
     }
 
@@ -126,26 +127,27 @@ impl WasmGameSession {
                 config,
                 std::sync::Arc::clone(&pack.ruleset),
                 pack.rref.clone(),
-            ),
+            )
+            .map_err(|e| JsValue::from_str(&e))?,
         })
     }
 
     /// Id of the ruleset this session plays on (`vanilla` or a pack id).
     #[wasm_bindgen(js_name = rulesetId)]
     pub fn ruleset_id(&self) -> String {
-        self.session.world.ruleset_ref.id.clone()
+        self.session.world().ruleset_ref.id.clone()
     }
 
     /// Hash of the ruleset this session plays on.
     #[wasm_bindgen(js_name = rulesetHash)]
     pub fn ruleset_hash(&self) -> String {
-        self.session.world.ruleset_ref.hash.clone()
+        self.session.world().ruleset_ref.hash.clone()
     }
 
     /// Render 80x21 ASCII viewport with FOV shading.
     #[wasm_bindgen]
     pub fn render_ascii(&self) -> String {
-        render_ascii_map(&self.session.world)
+        render_ascii_map(self.session.world())
     }
 
     /// Return full JSON observation payload for LLM/Agent interfaces.
@@ -172,7 +174,10 @@ impl WasmGameSession {
             Err(e) => return serde_json::json!({"error": e}).to_string(),
         };
 
-        let obs = self.session.step(action);
+        let obs = match self.session.step(action) {
+            Ok(obs) => obs,
+            Err(e) => return serde_json::json!({"error": e}).to_string(),
+        };
         serde_json::to_string(&obs).unwrap_or_default()
     }
 
@@ -181,19 +186,19 @@ impl WasmGameSession {
     pub fn get_inventory_json(&self) -> String {
         let carried_ids = self
             .session
-            .world
+            .world()
             .arena
-            .items_carried_by(self.session.world.player_id);
+            .items_carried_by(self.session.world().player_id);
         let items: Vec<serde_json::Value> = carried_ids
             .into_iter()
             .enumerate()
             .filter_map(|(idx, id)| {
-                self.session.world.arena.items.get(id).map(|it| {
-                    let unpaid = self.session.world.get_unpaid_cost(id);
+                self.session.world().arena.items.get(id).map(|it| {
+                    let unpaid = self.session.world().get_unpaid_cost(id);
                     serde_json::json!({
                         "index": idx,
                         "name": it.name,
-                        "display_name": nethacked_i18n::t_item(&it.name, self.session.world.locale),
+                        "display_name": nethacked_i18n::t_item(&it.name, self.session.world().locale),
                         "class": format!("{:?}", it.class),
                         "weight": it.weight,
                         "buc": format!("{:?}", it.buc),
@@ -212,10 +217,10 @@ impl WasmGameSession {
     #[wasm_bindgen]
     pub fn get_player_hp(&self) -> u32 {
         self.session
-            .world
+            .world()
             .arena
             .actors
-            .get(self.session.world.player_id)
+            .get(self.session.world().player_id)
             .map(|p| p.hp)
             .unwrap_or(0)
     }
@@ -223,67 +228,67 @@ impl WasmGameSession {
     #[wasm_bindgen]
     pub fn get_player_max_hp(&self) -> u32 {
         self.session
-            .world
+            .world()
             .arena
             .actors
-            .get(self.session.world.player_id)
+            .get(self.session.world().player_id)
             .map(|p| p.max_hp)
             .unwrap_or(0)
     }
 
     #[wasm_bindgen]
     pub fn get_player_pw(&self) -> u32 {
-        self.session.world.player_pw
+        self.session.world().player_pw
     }
 
     #[wasm_bindgen]
     pub fn get_player_max_pw(&self) -> u32 {
-        self.session.world.player_max_pw
+        self.session.world().player_max_pw
     }
 
     #[wasm_bindgen]
     pub fn get_player_nutrition(&self) -> i32 {
-        self.session.world.player_nutrition
+        self.session.world().player_nutrition
     }
 
     #[wasm_bindgen]
     pub fn get_hunger_state(&self) -> String {
-        format!("{:?}", self.session.world.hunger_state())
+        format!("{:?}", self.session.world().hunger_state())
     }
 
     #[wasm_bindgen]
     pub fn get_player_ac(&self) -> i32 {
         self.session
-            .world
+            .world()
             .arena
             .actors
-            .get(self.session.world.player_id)
+            .get(self.session.world().player_id)
             .map(|p| p.ac)
             .unwrap_or(10)
     }
 
     #[wasm_bindgen]
     pub fn get_player_gold(&self) -> u32 {
-        self.session.world.player_gold
+        self.session.world().player_gold
     }
 
     #[wasm_bindgen]
     pub fn get_turn(&self) -> u64 {
-        self.session.world.scheduler.turn
+        self.session.world().scheduler.turn
     }
 
     #[wasm_bindgen]
     pub fn get_depth(&self) -> usize {
-        self.session.world.depth
+        self.session.world().depth
     }
 
     #[wasm_bindgen]
     pub fn get_player_name(&self) -> String {
         self.session
-            .world
+            .world()
             .arena
             .actors
-            .get(self.session.world.player_id)
+            .get(self.session.world().player_id)
             .map(|p| p.name.clone())
             .unwrap_or_default()
     }
@@ -291,41 +296,43 @@ impl WasmGameSession {
     #[wasm_bindgen]
     pub fn get_player_alignment(&self) -> String {
         self.session
-            .world
+            .world()
             .arena
             .actors
-            .get(self.session.world.player_id)
+            .get(self.session.world().player_id)
             .map(|p| format!("{:?}", p.alignment))
             .unwrap_or_default()
     }
 
     #[wasm_bindgen]
-    pub fn set_locale(&mut self, locale_str: &str) {
+    pub fn set_locale(&mut self, locale_str: &str) -> Result<(), JsValue> {
         let loc = nethacked_types::Locale::parse(locale_str);
-        self.session.world.set_locale(loc);
+        self.session
+            .set_locale(loc)
+            .map_err(|e| JsValue::from_str(&e))
     }
 
     #[wasm_bindgen]
     pub fn get_locale(&self) -> String {
-        self.session.world.get_locale().code().to_string()
+        self.session.world().get_locale().code().to_string()
     }
 
     #[wasm_bindgen]
     pub fn get_localized_hunger_state(&self) -> String {
-        let hunger_state = format!("{:?}", self.session.world.hunger_state());
-        nethacked_i18n::t_hunger_str(&hunger_state, self.session.world.locale).to_string()
+        let hunger_state = format!("{:?}", self.session.world().hunger_state());
+        nethacked_i18n::t_hunger_str(&hunger_state, self.session.world().locale).to_string()
     }
 
     #[wasm_bindgen]
     pub fn get_localized_alignment(&self) -> String {
         if let Some(p) = self
             .session
-            .world
+            .world()
             .arena
             .actors
-            .get(self.session.world.player_id)
+            .get(self.session.world().player_id)
         {
-            nethacked_i18n::t_align(p.alignment, self.session.world.locale).to_string()
+            nethacked_i18n::t_align(p.alignment, self.session.world().locale).to_string()
         } else {
             "".to_string()
         }
@@ -398,13 +405,13 @@ impl WasmGameSession {
     /// Return full 80x21 grid tile matrix, floor items, visible actors, and illumination for 2D retro canvas rendering.
     #[wasm_bindgen]
     pub fn get_canvas_render_data_json(&self) -> String {
-        let (visible, detected_monsters) = self.session.world.compute_perception();
+        let (visible, detected_monsters) = self.session.world().compute_perception();
         let player = self
             .session
-            .world
+            .world()
             .arena
             .actors
-            .get(self.session.world.player_id);
+            .get(self.session.world().player_id);
         let player_coord = player.map(|p| p.coord);
 
         let mut tiles_data = Vec::with_capacity(nethacked_types::ROWNO);
@@ -412,9 +419,9 @@ impl WasmGameSession {
             let mut row = Vec::with_capacity(nethacked_types::COLNO);
             for x in 0..nethacked_types::COLNO {
                 let c = nethacked_types::Coord::new_unchecked(x, y);
-                let tile = self.session.world.level.get_tile(c);
+                let tile = self.session.world().level.get_tile(c);
                 let is_vis = visible.contains(&c);
-                let is_dark = self.session.world.level.is_dark_at(c);
+                let is_dark = self.session.world().level.is_dark_at(c);
                 let tile_kind = match tile {
                     nethacked_types::Tile::Stone => "stone",
                     nethacked_types::Tile::Wall { horizontal } => {
@@ -487,7 +494,7 @@ impl WasmGameSession {
 
         // Collect floor items
         let mut floor_items = Vec::new();
-        for (_, item) in self.session.world.arena.items.iter() {
+        for (_, item) in self.session.world().arena.items.iter() {
             if let nethacked_arena::ItemLocation::Floor(c) = item.location {
                 if visible.contains(&c) {
                     floor_items.push(serde_json::json!({
@@ -513,8 +520,8 @@ impl WasmGameSession {
                 "max_hp": p.max_hp,
             }));
         }
-        for (id, actor) in self.session.world.arena.actors.iter() {
-            if id != self.session.world.player_id
+        for (id, actor) in self.session.world().arena.actors.iter() {
+            if id != self.session.world().player_id
                 && !actor.is_dead
                 && (detected_monsters.contains(&id) || visible.contains(&actor.coord))
             {
@@ -534,7 +541,7 @@ impl WasmGameSession {
             "tiles": tiles_data,
             "items": floor_items,
             "actors": actors,
-            "turn": self.session.world.scheduler.turn,
+            "turn": self.session.world().scheduler.turn,
         });
 
         serde_json::to_string(&payload).unwrap_or_default()
@@ -662,7 +669,7 @@ mod tests {
         let mut s = WasmGameSession::new_with_character(7, "valkyrie", "human", "T").unwrap();
         let en: serde_json::Value = serde_json::from_str(&s.get_inventory_json()).unwrap();
         assert_eq!(en[0]["display_name"], en[0]["name"]);
-        s.set_locale("uk");
+        s.set_locale("uk").unwrap();
         let uk: serde_json::Value = serde_json::from_str(&s.get_inventory_json()).unwrap();
         assert_eq!(uk[0]["name"], "long sword");
         assert_eq!(uk[0]["display_name"], "довгий меч");
@@ -688,7 +695,7 @@ mod tests {
 
     #[test]
     fn step_rejects_unknown_action_without_advancing() {
-        let mut s = WasmGameSession::new(7);
+        let mut s = WasmGameSession::new(7).unwrap();
         let turn = s.get_turn();
         let out = s.step("dance", None);
         assert!(out.contains("\"error\""));
@@ -705,7 +712,7 @@ mod tests {
 
     #[test]
     fn non_numeric_index_is_error() {
-        let mut s = WasmGameSession::new(7);
+        let mut s = WasmGameSession::new(7).unwrap();
         assert!(s.step("drop", Some("abc".into())).contains("\"error\""));
     }
 
@@ -731,7 +738,7 @@ mod tests {
 
     #[test]
     fn test_wasm_session_init_and_step() {
-        let mut wasm_sess = WasmGameSession::new(42);
+        let mut wasm_sess = WasmGameSession::new(42).unwrap();
         assert_eq!(wasm_sess.get_player_hp(), 18);
         assert_eq!(wasm_sess.get_turn(), 1);
 
@@ -757,7 +764,7 @@ mod tests {
 
     #[test]
     fn test_wasm_inventory_and_extended_actions() {
-        let mut wasm_sess = WasmGameSession::new(42);
+        let mut wasm_sess = WasmGameSession::new(42).unwrap();
         let inv_json = wasm_sess.get_inventory_json();
         assert!(inv_json.contains("name"));
         assert!(inv_json.contains("buc"));

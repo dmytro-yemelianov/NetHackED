@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "batch": "P08b1.7a",
+  "checked_date": "2026-10-07",
+  "checked_head": "b912faf",
+  "source_tag": "NetHack-5.0.0_Released",
+  "source_commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+  "feature": "Persisted actor sex and owned source-derived spawn sampling",
+  "implemented_subsets": [
+    "Optional Male/Female/Neuter actor state; old absence stays unknown and omitted without load-time RNG",
+    "Player factories retain actual configured sex",
+    "Owned fixed flag precedence or one bound-2 draw after HP in the shared random monster factory",
+    "Pure supplied-HP helpers remain RNG-free with fixed-known or variable-unknown sex",
+    "Public spawning, complete save/cache continuation and legacy active/cached/player coverage"
+  ],
+  "tests": [
+    "crates/nethacked-arena/src/lib.rs",
+    "crates/nethacked-data/tests/actor_sex.rs",
+    "crates/nethacked-sim/tests/actor_sex_tests.rs"
+  ],
+  "remaining": [
+    "Saved traits for selected ordinary Troll death and production corpse birth adapter",
+    "Unknown legacy actor sex handling in the later corpse adapter",
+    "Bones donor-sex persistence and source-specific MM/quest preselected sex contexts",
+    "Actual rot, transfers, legacy timer migration and ordinary Troll revival"
+  ],
+  "review": "Fresh independent Sol/high review PASS; subsequent pack RNG fixture setup repair independently re-reviewed PASS; no actionable defects",
+  "acceptance": "Root full rerun: 904 workspace tests pass, only three frozen golden families fail; all 11 other gates pass. All 329 non-documentation inputs unchanged throughout rerun; golden constants remain equal to HEAD. Final golden rebaseline policy pending.",
+  "plan": "docs/plans/2026-10-07-corpse-lifecycle.md",
+  "adjusted_existing_test_setup": [
+    "fixed_special_cases_do_not_draw_rng",
+    "old_definition_loads_fixed_and_round_trips_policy",
+    "public_named_factory_obeys_source_expected_state_and_draws",
+    "owned_factories_keep_canonical_and_exact_custom_identity_and_fixed_hp",
+    "public_room_generation_artifact_hook_and_save_continuation",
+    "healing_persists_through_a_later_melee_hit",
+    "public_acquisition_wear_both_hp_paths_removal_and_intrinsic_source_preservation",
+    "authored_owned_items_reach_public_levels_and_replay_full_saves"
+  ],
+  "input_digest": "f0a9e2db045bb5f8f5c3651e1c547383c0ce6664e584783110d3801bded94a2e",
+  "final_integration": {
+    "record": "2026-10-07-p04-p10-final-acceptance.json",
+    "status": "Original bounded exit reviewed/audited and final green integration verified; prior checkpoint fields are historical",
+    "tests": 999,
+    "gates": 12,
+    "goldens": 3,
+    "input_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c",
+    "commit": "Containing commit; see final acceptance record"
+  }
+}

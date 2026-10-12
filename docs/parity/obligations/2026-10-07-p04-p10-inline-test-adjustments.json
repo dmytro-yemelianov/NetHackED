@@ -1,0 +1,164 @@
+{
+  "verdict": "INLINE_EXISTING_TEST_INVENTORY_COMPLETE",
+  "scope": "Read-only commit-body addendum; changed HEAD-existing inline #[test] fixtures and fixture-helper consumers only. New source unit tests absent HEAD are additions, excluded from adjusted-existing inventory. Production behavior changes alone do not classify untouched test bodies as adjusted fixtures.",
+  "head": "b912fafe33c8cd6bff80522d5b7ca7ee1cae3d40",
+  "method": "Bounded git diff HEAD source inventory plus lexically masked comments/strings/raw-strings/chars and balanced fn scopes; compared HEAD-existing function bodies in cfg(test) modules and direct test scopes. Checked changed test fixture helpers; none changed, so no additional transitive helper-consumer tests. No semantic reaudit or execution.",
+  "changed_source_files_scanned": 34,
+  "head_existing_inline_test_functions_in_changed_source_files": 61,
+  "adjusted_existing_inline_test_count": 9,
+  "adjusted_existing_inline_file_count": 3,
+  "tests": [
+    {
+      "path": "crates/nethacked-arena/src/lib.rs",
+      "test_name": "test_spawn_and_retrieve_actor",
+      "current_line": 424,
+      "change_kind": "direct_inline_test_fixture",
+      "setup_classification": "Mechanical ActorRecord construction fields only: sex=None, movement=0, is_fleeing=false, is_cancelled=false; original fixture values and assertion macros unchanged.",
+      "changed_helper_consumers": [],
+      "prior_evidence": "/tmp/netrust-p04-p10-completion-audit.json",
+      "assertion_weakening": false,
+      "expectation_rebaseline": false
+    },
+    {
+      "path": "crates/nethacked-arena/src/lib.rs",
+      "test_name": "test_actor_record_serde_default_is_peaceful",
+      "current_line": 459,
+      "change_kind": "direct_inline_test_fixture",
+      "setup_classification": "Mechanical ActorRecord construction fields only: sex=None, movement=0, is_fleeing=false, is_cancelled=false; original fixture values and assertion macros unchanged.",
+      "changed_helper_consumers": [],
+      "prior_evidence": "/tmp/netrust-p04-p10-completion-audit.json",
+      "assertion_weakening": false,
+      "expectation_rebaseline": false
+    },
+    {
+      "path": "crates/nethacked-arena/src/lib.rs",
+      "test_name": "test_actor_record_serde_default_mspec_used",
+      "current_line": 496,
+      "change_kind": "direct_inline_test_fixture",
+      "setup_classification": "Mechanical ActorRecord construction fields only: sex=None, movement=0, is_fleeing=false, is_cancelled=false; original fixture values and assertion macros unchanged.",
+      "changed_helper_consumers": [],
+      "prior_evidence": "/tmp/netrust-p04-p10-completion-audit.json",
+      "assertion_weakening": false,
+      "expectation_rebaseline": false
+    },
+    {
+      "path": "crates/nethacked-arena/src/lib.rs",
+      "test_name": "test_actor_record_serde_default_malign",
+      "current_line": 533,
+      "change_kind": "direct_inline_test_fixture",
+      "setup_classification": "Mechanical ActorRecord construction fields only: sex=None, movement=0, is_fleeing=false, is_cancelled=false; original fixture values and assertion macros unchanged.",
+      "changed_helper_consumers": [],
+      "prior_evidence": "/tmp/netrust-p04-p10-completion-audit.json",
+      "assertion_weakening": false,
+      "expectation_rebaseline": false
+    },
+    {
+      "path": "crates/nethacked-arena/src/lib.rs",
+      "test_name": "item_record_without_recharged_deserializes_to_zero",
+      "current_line": 343,
+      "change_kind": "direct_inline_test_fixture",
+      "setup_classification": "Mechanical ItemRecord construction fields only: saved_monster_traits=None and corpse_no_revive=false; original fixture values and assertion macros unchanged.",
+      "changed_helper_consumers": [],
+      "prior_evidence": "/tmp/netrust-p04-p10-completion-audit.json",
+      "assertion_weakening": false,
+      "expectation_rebaseline": false
+    },
+    {
+      "path": "crates/nethacked-arena/src/lib.rs",
+      "test_name": "test_container_hierarchy_and_weight",
+      "current_line": 570,
+      "change_kind": "direct_inline_test_fixture",
+      "setup_classification": "Mechanical ItemRecord construction fields only: saved_monster_traits=None and corpse_no_revive=false; original fixture values and assertion macros unchanged.",
+      "changed_helper_consumers": [],
+      "prior_evidence": "/tmp/netrust-p04-p10-completion-audit.json",
+      "assertion_weakening": false,
+      "expectation_rebaseline": false
+    },
+    {
+      "path": "crates/nethacked-arena/src/lib.rs",
+      "test_name": "test_cycle_detection",
+      "current_line": 637,
+      "change_kind": "direct_inline_test_fixture",
+      "setup_classification": "Mechanical ItemRecord construction fields only: saved_monster_traits=None and corpse_no_revive=false; original fixture values and assertion macros unchanged.",
+      "changed_helper_consumers": [],
+      "prior_evidence": "/tmp/netrust-p04-p10-completion-audit.json",
+      "assertion_weakening": false,
+      "expectation_rebaseline": false
+    },
+    {
+      "path": "crates/nethacked-sim/src/combat.rs",
+      "test_name": "hero_miss_does_not_draw_the_damage_roll",
+      "current_line": 734,
+      "change_kind": "direct_inline_test_fixture",
+      "setup_classification": "Mechanical training-dummy ActorRecord fields only: sex=None, movement=0, is_fleeing=false, is_cancelled=false. Original AC/miss setup, native-RNG assertions and twenty attempts unchanged.",
+      "changed_helper_consumers": [],
+      "prior_evidence": "/tmp/netrust-p04-p10-completion-audit.json",
+      "assertion_weakening": false,
+      "expectation_rebaseline": false
+    },
+    {
+      "path": "crates/nethacked-sim/src/actions/stairs.rs",
+      "test_name": "ice_box_room_uses_actual_species_context_registry_and_draws_before_continuation",
+      "current_line": 1426,
+      "change_kind": "direct_inline_test_rng_input_setup",
+      "setup_classification": "Approved prescribed RNG-input setup adds corpse gender (2,0) and rnz(25) timeout segments (1000,0),(4,1),(2,1) before ice cancellation. Original ordered selection steps and all assertion macros retained; added input consumption models newly owned branches.",
+      "changed_helper_consumers": [],
+      "prior_evidence": [
+        "/tmp/netrust-p08b1/review.md",
+        "/tmp/netrust-p08b17a/review.md",
+        "/tmp/netrust-p04-p10-completion-audit.json"
+      ],
+      "assertion_weakening": false,
+      "expectation_rebaseline": false
+    }
+  ],
+  "changed_existing_test_fixture_helpers": [],
+  "additional_indirect_helper_consumer_tests": [],
+  "assertion_proof_reused": {
+    "artifact": "/tmp/netrust-p04-p10-completion-audit.json",
+    "all_tracked_changed_Rust_original_macros": 1217,
+    "all_unretained": [],
+    "inline_adjustment_files": [
+      {
+        "path": "crates/nethacked-arena/src/lib.rs",
+        "original_macros": 27,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-sim/src/actions/stairs.rs",
+        "original_macros": 41,
+        "retained_exact_in_order": true
+      },
+      {
+        "path": "crates/nethacked-sim/src/combat.rs",
+        "original_macros": 2,
+        "retained_exact_in_order": true
+      }
+    ]
+  },
+  "source_file_hashes": {
+    "crates/nethacked-arena/src/lib.rs": {
+      "HEAD": "4e6e03bacf90681e8d518b676ed37ff9dc3633890c43f2b76b0513c145bf4f55",
+      "current": "98d5675d7e14901e6ca53363e0e77ffff322d537c56686562c34853edfde2af3"
+    },
+    "crates/nethacked-sim/src/actions/stairs.rs": {
+      "HEAD": "14a10ad0353f1d51ae6516980332d1539b3682f89e1b7fd6361b61fa38069f48",
+      "current": "b21fd5f0c0a13522051972a90c801ed0369dad8559de4d0afa2b3f90e4dcdaaf"
+    },
+    "crates/nethacked-sim/src/combat.rs": {
+      "HEAD": "9cb1caf9618be18cb763da0cfae985224d2683b1f052a6ae433da0f1f5ca3a33",
+      "current": "07febf1d2e5f006db4e32822a413c5b5a0cd2f8e50c801969b62da5b27ef8722"
+    }
+  },
+  "unaccounted_assertion_changes": [],
+  "source_test_documentation_ledger_dependency_golden_commit_edits_performed": false,
+  "cargo_or_C_execution_performed": false,
+  "reviewed_input_binding": {
+    "HEAD": "b912fafe33c8cd6bff80522d5b7ca7ee1cae3d40",
+    "branch": "feat/monster-hp-d8",
+    "files": 342,
+    "digest": "64ea29d3bd5d2ce97d1d515501e07c424b5951e806cc7818d17f9690fcfffddc"
+  },
+  "complete_input_hash_record": "2026-10-07-p04-p10-completion.json",
+  "original_addendum_sha256": "535e9ff24d2706be815cfe55cb54d0b36f43ccca44765e7604c7955b482a5922"
+}

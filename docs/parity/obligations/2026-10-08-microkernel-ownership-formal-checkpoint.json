@@ -1,0 +1,75 @@
+{
+  "schema": 1,
+  "status": "verified_for_containing_commit",
+  "baseline_head": "7dfc68a982aa14df9ab347d8595ea8feed5bfab9",
+  "milestone": "M4-O1",
+  "scope": "Formal independent heterogeneous owner state, command preparation, gated publication and explicit authority/service correspondence",
+  "review": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNERSHIP-FORMAL/review/answer.txt",
+    "sha256": "faaf250a6508e966a7e3202b61fab50ec823d7694aacc76f3ba59b17ca400185"
+  },
+  "readback": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNERSHIP-FORMAL/readback/answer.txt",
+    "sha256": "817e2a04e8f2a860086bc22c1827cb3caf5678dc5075d4630462b12750e7917b"
+  },
+  "review_inputs": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNERSHIP-FORMAL/readback-source.json",
+    "sha256": "df59e33553629382a652d25e12f46ae81eaf227b499b8cb938ce35835757eb23"
+  },
+  "repair_history": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNERSHIP-FORMAL/repair1/result.json",
+    "sha256": "6bce1121a67b8a68a3b9ebc407e33eaac700c39586ba9463735a7119868f4090"
+  },
+  "writer_history": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNERSHIP-FORMAL/writer-evidence/history.txt",
+    "sha256": "f7a3779eb3a0b2c776a35b3e5b55acffe73a48550d902adc45d3a61a3b1c1f22"
+  },
+  "focused_build": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNERSHIP-FORMAL/repair1/lake-syntax1.log",
+    "sha256": "6e646c3c268472dc8d64ac332f02e8ed4c9243646926fe1a0d342ffda8e2b464"
+  },
+  "focused_exit": 0,
+  "ownership_named_theorems": 124,
+  "runtime_implemented": false,
+  "parity_families_closed": 0,
+  "old_tests_helpers_goldens_changed": false,
+  "usage": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNERSHIP-FORMAL/implementation/usage.json",
+      "sha256": "58e78330379af476e31eb9557974dbcce288297fded9a7b13e70d4c5d5b1e20f"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNERSHIP-FORMAL/review/usage.json",
+      "sha256": "7381f4285c20fe4a101420d33b44403520d8a5f712c7f86476f3a31788cc25dd"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNERSHIP-FORMAL/readback/usage.json",
+      "sha256": "a0c3d3e895af5fa8195aa437d77f82852b2d32569557f3e59337c9ed331f37e2"
+    }
+  ],
+  "meter_note": "Writer122935/57846, review116918/6896, readback73308/2675 uncached input/output; all exceed soft input allowance, root unknown. Narrow runtime packet reuses accepted contract/abstract interfaces. No savings claim.",
+  "residuals": [
+    "Physical ownership and alias correspondence, pure bounded native/Wasm preparation",
+    "Atomic sealed slot publication, visibility/failure instrumentation and cleanup",
+    "Live owner extensions, derived behavior, workflows/timers/input integration",
+    "Owner codecs/legacy saves, complete existing NetHack domain migration and final audit",
+    "Separate 53-family missing-behavior parity backlog"
+  ],
+  "full_gates": {
+    "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/MICROKERNEL-OWNERSHIP-FORMAL/full-gates/accepted.json",
+    "sha256": "621c76ceb546a1a66a0e3d3eae2cfed70e06ff1838821f625a18a8a98ae61df9"
+  },
+  "gate_result": {
+    "head": "7dfc68a982aa14df9ab347d8595ea8feed5bfab9",
+    "tests": 1138,
+    "goldens": [
+      "golden_vanilla_event_logs_are_unchanged",
+      "golden_vanilla_bestiary_combat_is_unchanged",
+      "golden_vanilla_runs_are_unchanged"
+    ],
+    "digest": "7f62032bd7c911a442151f6d587badcf315fd30c0da3ce48408b9967901d36be",
+    "checks": 12
+  },
+  "source_input_count": 399,
+  "native_goal_status": "active; next M4-O2"
+}

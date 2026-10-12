@@ -75,7 +75,7 @@ impl SimulationWorld {
             return events;
         }
         let quest_cfg = nethacked_core::get_role_quest_config_or_default(&self.role_name);
-        let mundisplaceable = self.ruleset.monster(&target.name).is_some_and(|a| {
+        let mundisplaceable = self.ruleset.monster_for_actor(&target).is_some_and(|a| {
             matches!(
                 a.id,
                 Some(
@@ -122,6 +122,16 @@ impl SimulationWorld {
         let Some(player) = self.arena.actors.get(self.player_id).cloned() else {
             return events;
         };
+
+        // Released C hack.c:2616-2635 blocks before movement/displacement or
+        // bump combat. P09 owns burden slowdown and precise action scheduling.
+        if self.hero_encumbrance() == nethacked_core::inventory::EncumbranceTier::Overloaded {
+            events.push(GameEvent::LogMessage {
+                text: "You collapse under your load.".into(),
+            });
+            self.scheduler.hero_act(NORMAL_SPEED);
+            return events;
+        }
 
         let move_cost = if true {
             let pc = &self.hero;

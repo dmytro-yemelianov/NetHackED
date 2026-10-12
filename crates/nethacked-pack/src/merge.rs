@@ -55,8 +55,11 @@ pub fn resolve(pack: &PackDir, base: &Ruleset) -> Result<Ruleset, PackError> {
                 id: None,
                 name: patch.name.clone(),
                 glyph: req_m_field!(glyph),
+                corpse_timeout_policy: patch.corpse_timeout_policy.unwrap_or_default(),
+                corpse_thaw_policy: patch.corpse_thaw_policy.unwrap_or_default(),
                 base_hp: req_m_field!(base_hp),
                 max_hp: req_m_field!(max_hp),
+                sample_hp: patch.sample_hp.unwrap_or(false),
                 ac: req_m_field!(ac),
                 level: req_m_field!(level),
                 speed: req_m_field!(speed),
@@ -77,6 +80,8 @@ pub fn resolve(pack: &PackDir, base: &Ruleset) -> Result<Ruleset, PackError> {
                 // Optional: a new species is never generated at random unless given a weight.
                 difficulty: patch.difficulty.unwrap_or(0),
                 frequency: patch.frequency.unwrap_or(0),
+                body_weight: patch.body_weight.unwrap_or(0),
+                corpse_nutrition: patch.corpse_nutrition.unwrap_or(0),
                 gen_flags: patch.gen_flags.clone().unwrap_or_default(),
                 flags: patch.flags.clone().unwrap_or_default(),
             };
@@ -95,6 +100,18 @@ pub fn resolve(pack: &PackDir, base: &Ruleset) -> Result<Ruleset, PackError> {
                     })
                 })?;
 
+            if patch.base_hp.is_some() || patch.max_hp.is_some() {
+                target.sample_hp = false;
+            }
+            if let Some(v) = patch.sample_hp {
+                target.sample_hp = v;
+            }
+            if let Some(v) = patch.corpse_thaw_policy {
+                target.corpse_thaw_policy = v;
+            }
+            if let Some(v) = patch.corpse_timeout_policy {
+                target.corpse_timeout_policy = v;
+            }
             if let Some(v) = patch.glyph {
                 target.glyph = v;
             }
@@ -158,6 +175,12 @@ pub fn resolve(pack: &PackDir, base: &Ruleset) -> Result<Ruleset, PackError> {
             if let Some(v) = patch.difficulty {
                 target.difficulty = v;
             }
+            if let Some(v) = patch.body_weight {
+                target.body_weight = v;
+            }
+            if let Some(v) = patch.corpse_nutrition {
+                target.corpse_nutrition = v;
+            }
             if let Some(v) = patch.frequency {
                 target.frequency = v;
             }
@@ -172,6 +195,14 @@ pub fn resolve(pack: &PackDir, base: &Ruleset) -> Result<Ruleset, PackError> {
 
     // 2. Process items
     for patch in &pack.items {
+        if patch.clear_worn_property && patch.worn_property.is_some() {
+            return Err(PackError::Resolve(Diagnostic {
+                file: "items.toml".into(),
+                entry: patch.name.clone(),
+                field: Some("worn_property".into()),
+                message: "cannot set and clear worn_property together".into(),
+            }));
+        }
         let name_lower = patch.name.to_ascii_lowercase();
         if patch.remove {
             let initial_len = items.len();
@@ -211,6 +242,7 @@ pub fn resolve(pack: &PackDir, base: &Ruleset) -> Result<Ruleset, PackError> {
             }
 
             let def = ItemDef {
+                unique: patch.unique.unwrap_or_default(),
                 id: None,
                 name: patch.name.clone(),
                 class: req_i_field!(class),
@@ -224,7 +256,14 @@ pub fn resolve(pack: &PackDir, base: &Ruleset) -> Result<Ruleset, PackError> {
                 oc_magic: req_i_field!(oc_magic),
                 wand_dir: patch.wand_dir.unwrap_or(None),
                 nutrition: req_i_field!(nutrition),
+                oc_delay: patch.oc_delay.unwrap_or_default(),
+                worn_property: (!patch.clear_worn_property)
+                    .then_some(patch.worn_property)
+                    .flatten(),
                 armor: patch.armor.clone().unwrap_or(None),
+                initialization: patch.initialization.unwrap_or_default(),
+                generation_weight: patch.generation_weight.unwrap_or_default(),
+                generation_weight_missing: false,
             };
             items.push(def);
         } else {
@@ -270,6 +309,23 @@ pub fn resolve(pack: &PackDir, base: &Ruleset) -> Result<Ruleset, PackError> {
             }
             if let Some(v) = patch.wand_dir {
                 target.wand_dir = v;
+            }
+            if let Some(v) = patch.unique {
+                target.unique = v;
+            }
+            if let Some(v) = patch.generation_weight {
+                target.set_generation_weight(v);
+            }
+            if let Some(v) = patch.initialization {
+                target.initialization = v;
+            }
+            if patch.clear_worn_property {
+                target.worn_property = None;
+            } else if let Some(v) = patch.worn_property {
+                target.worn_property = Some(v);
+            }
+            if let Some(v) = patch.oc_delay {
+                target.oc_delay = v;
             }
             if let Some(v) = patch.nutrition {
                 target.nutrition = v;

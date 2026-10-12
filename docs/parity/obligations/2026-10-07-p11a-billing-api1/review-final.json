@@ -1,0 +1,114 @@
+{
+  "verdict": "PASS",
+  "review_markdown": "PASS for the bounded P11a-P1-BILL-API1 semantic review. No material findings. Acceptance remains pending root\u2019s fresh full12/all3 validation; this review closes no runtime family.\n\nThe exact four-file diff implements whole carried ordinary-wand retirement, frozen receipt admission, explicit unknown legacy liability and deterministic outstanding views. The q1/q3 matrix covers canonical/custom definitions, renamed explicit identities and absent legacy identities. Prescribed unit price 40 yields the contract\u2019s totals 40/120 independently of current shop pricing. Consumption preserves the complete object snapshot, normalizing only its detached location to Limbo, and transfers all receipt fields unchanged. Full-generation identities distinguish retained origins from replacement objects.\n\nRepeated identical and changed admissions return ReceiptAlreadyRecorded before proposed replacement-term validation, following object and unique-ledger validation. Duplicate owners and invalid inputs fail before mutation. Typed and compatibility clearing preserve protected liabilities. Requested Pay refusal precedes player lookup, reconciliation, forced Wait and every dispatcher mutation; handle_pay has the corresponding entry guard. Empty billing state retains the original payment and clearing paths.\n\nPublic fixtures retain whole-world canonical serialization, save-byte and clone-next-RNG comparisons. They exercise refusal atomicity, lifecycle-reference rejection, repeated disposal, replacement generation protection, receipt/save/disposal chains, cached-only Pay refusal and the scoped absent-owner serde(default) regression. Source-derived error expectations cover invalid identities, missing/inconsistent receipts, duplicates, quantity/price failures, LP64 overflow, unsupported contents/classes and represented equipment/timer references.\n\nArchive and preservation checks were independent: all 346 review members match their hashes; all 342 unchanged existing inputs remain byte-identical. Reversing implementation.diff reproduces the original three production files exactly. The current four source files match the archive and body-preservation hashes. Existing tests, assertions, helpers, constructor literals and goldens are unchanged apart from the explicitly authorized production constructor initialization.\n\nWorker evidence independently parses to final 9 new tests, 42 existing sim tests and 111 arena/data tests, with exit 0; final scoped Clippy and rustfmt also report exit 0. The preserved initial run had 8 tests: 6 passed and 2 failed. Both failed byte-array comparisons decode to structurally identical complete JSON. Comparing the original eight fixtures with final source confirms only helper canonicalization, two scheduler borrow removals and formatting changes, followed by the separate ninth fixture; no assertion weakening or production repair occurred.\n\nSAVE1 malformed-save validation/cache remapping, LIFE cleanup/current_wand, runtime activation, genuine pending continuation, historical reconstruction, account mapping and settlement remain explicit successor work. API1\u2019s global receipt owner and immediate private prepared-ticket transfer preserve the required basis for that composition without claiming those successors are implemented.",
+  "findings": [],
+  "bindings": [
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-sim/src/world.rs",
+      "sha256": "8b72fa1b383c5c823ee5acb831ce838b7b44d47c81a839ade7ac682716880f03"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-sim/src/actions/economy.rs",
+      "sha256": "0c4e54ccf34a87f68bd68a60d1f37086243b50ad7ac37bf3460f60d9f0cbc377"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-sim/src/actions/mod.rs",
+      "sha256": "b113139cdfcfa25e734163106b93b21c515f9491e0f1883067b72c44a69882df"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-sim/tests/wand_billing_tests.rs",
+      "sha256": "59eaff955d2713c25564e7f0c3d58f8436338176cf1285392cdfe47b0d7a0d39"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-initial/normative-packet.json",
+      "sha256": "108170a2b2e60fa637e754a17d2dc89521f6a8ae2dd38ac4251a7eb401061b4f"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation.diff",
+      "sha256": "0a36e595fba9c28bc0676ff77e145d025aa8cf43ca31cd31998149179c2a6bb4"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-initial/handoff.md",
+      "sha256": "362764ebe36d244c263472fd04b7eea8fbf32e4f698ecfd18485a479b456ed35"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-initial/handoff.json",
+      "sha256": "e0011a0c647325252dcd38fcea00650694d8d4b3c5fd6ec1016e898f8f8860ee"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-initial/focused-results.json",
+      "sha256": "ac42bd4bf2679849805ab43fe64a4e66c9accfbc991b511a1a29e4f4ddabe533"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/implementation-initial/fixture-results.json",
+      "sha256": "58c0307a2e8049e902581ef81c45c314ee274d6959a46a331eddcedde35c7bc0"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/review-baseline.json",
+      "sha256": "048b24b218d6eed4723240950aa616131b9005781388bc6fb25af8754f597977"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL-API1/source-review.tar.gz",
+      "sha256": "11ae89a17059c5022249c6a9c2b77f44b09f56bbb3b868cd2cd9f7c7bfeabd7a"
+    }
+  ],
+  "checks": [
+    {
+      "name": "Contract and delivery boundary",
+      "assessment": "PASS",
+      "evidence": "Read normative-packet.json and both handoffs. Current HEAD reference is 76b2fa266387e012d9aa21b4c90133932ea2ac33. Reviewed API1 only; accepted upstream audits reused."
+    },
+    {
+      "name": "Archive and exact allowlist",
+      "assessment": "PASS",
+      "evidence": "Verified archive SHA256 and all 346 member hashes. Diff contains exactly the three authorized production paths and one new fixture path; current sources equal archived bytes."
+    },
+    {
+      "name": "Original body and fixture preservation",
+      "assessment": "PASS",
+      "evidence": "Reverse-applied every diff hunk in memory with context checks; originals match the hash-verified 345-member preimplementation archive. All 342 unchanged existing inputs match byte-for-byte. Production-only source.diff equals the production portion of implementation.diff."
+    },
+    {
+      "name": "Whole transfer and source valuation",
+      "assessment": "PASS",
+      "evidence": "world.rs validates whole carried owned wand identity and quantity before commit. The 16-case fixture covers q1/q3, billed/unbilled, canonical/custom and explicit/legacy identities. Fixed 40-price expectations evaluate to 40/120; receipt and complete detached object equality are asserted."
+    },
+    {
+      "name": "Frozen admission and error precedence",
+      "assessment": "PASS",
+      "evidence": "record_bill_terms checks object and unique ledger before existing receipt, then validates proposed terms only for first admission. Four fixture groups exercise seven identical/changed replacement variants and duplicate receipts with complete-state atomic comparisons."
+    },
+    {
+      "name": "Protected clearing and Pay ordering",
+      "assessment": "PASS",
+      "evidence": "world.rs:767 protects exact-generation live/consumed receipts; actions/mod.rs:23 guards requested Pay before all reconciliation/forced Wait; actions/economy.rs:114 guards direct handler entry. Eight q1/q3 refusal cases include mixed tuples, gold extremes, helplessness and invalid equipment references."
+    },
+    {
+      "name": "Legacy unknown and deterministic views",
+      "assessment": "PASS",
+      "evidence": "Missing receipts retain base cost and detached object with quantity/price/creditor None. Views follow active ledger, cached ledger, then consumed insertion order. Fixtures assert unknown valuation, protected consumption and live-versus-consumed ordering."
+    },
+    {
+      "name": "Generation, lifecycle and error boundaries",
+      "assessment": "PASS",
+      "evidence": "Retained exact origins return AlreadyConsumed; unbilled stale generations return StaleItem and cannot consume replacement objects. Fixtures cover 17 primary error cases plus nine consistency cases, including active/cached timers, equipment references, explicit identity rejection and LP64 overflow."
+    },
+    {
+      "name": "Raw state and scoped save regressions",
+      "assessment": "PASS",
+      "evidence": "atomic helper directly canonicalizes the entire serialized world, additionally comparing save bytes and clone-next RNG. Eight absent-versus-empty owner cases retain active/cached legacy state; four admitted/consumed active roundtrips compare views, Wait events, raw state and next RNG."
+    },
+    {
+      "name": "Focused evidence and failure retention",
+      "assessment": "PASS; worker executions independently parsed",
+      "evidence": "All focused counters match raw logs and paired exit metadata: initial 6/2 of 8, subsequent 8/0, final 9/0; sim 42/0; arena/data 111/0. Final Clippy and rustfmt exits are 0. Both original failed assertions decode to equal whole JSON. Original eight fixtures remain unchanged after accounting for canonical helper, two needless borrows and formatting; ninth fixture is additive. All 35 terminal-copy artifact hashes verify."
+    },
+    {
+      "name": "Successor composition and acceptance",
+      "assessment": "PASS within API1 scope; successors and acceptance pending",
+      "evidence": "No runtime activation or extra persisted owner was introduced. Prepared ticket remains private and immediately consumed. SAVE1 validation/remapping, LIFE cleanup, D1 continuation and DG06 history/account/settlement are explicitly deferred; root full12/all3 remain unexecuted here."
+    }
+  ],
+  "handoff": "Semantic PASS for the bound API1 snapshot. Root may proceed to fresh full12/all3 validation; acceptance and delivery remain pending.",
+  "usage_note": "Read-only independent review. No source edits, Cargo, compiler/C/Lua execution, agents, commits or dependency installation. Python launch attempts used uv with the required .venv but failed before Python execution because cache writes were prohibited; evidence parsing used Ruby. Complete baselines, graph contents and transcripts were not printed or replayed. Worker test execution was verified from evidence, not rerun."
+}

@@ -4,7 +4,11 @@
 
 #[macro_use]
 mod c_id;
+pub mod artifacts;
+pub mod containers;
+pub mod corpses;
 pub mod generation;
+pub mod item_init;
 pub mod items;
 pub mod monsters;
 pub mod pantheons;
@@ -41,9 +45,14 @@ mod tests {
     #[test]
     fn test_all_monsters_registered_and_spawnable() {
         for arch in BESTIARY {
-            let record = create_monster_record(arch.id, Coord::new_unchecked(10, 10));
+            let record = create_monster_record(
+                arch.id,
+                Coord::new_unchecked(10, 10),
+                &mut <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(0),
+            );
             assert_eq!(record.name, arch.name);
-            assert_eq!(record.hp, arch.base_hp);
+            assert!(record.hp >= 2, "{} must spawn with viable HP", arch.name);
+            assert_eq!(record.hp, record.max_hp);
             assert_eq!(record.ac, arch.ac);
         }
     }

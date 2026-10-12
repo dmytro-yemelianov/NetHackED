@@ -1,0 +1,66 @@
+{
+  "unit": "M7-C1",
+  "status": "accepted_in_this_commit",
+  "parent": "4043b462f79d056a73c391055522cb84a8b18702",
+  "scope": "Compact canonical geography codec resolving the M7 review condition C1: the 16 KiB transports carry the full DungeonLevel in GeographyFacts, whose natural JSON reached 15.4-17.4 KiB on fresh levels (measured over seeds 1-200), so over-bound worlds refused every geography-reading action with the state untouched. The codec encodes the tile grid as one byte per cell inside a hex string with a small branch-stairs side table; rooms, stairs, engravings, traps and flags keep their natural (already compact, coordinate-sorted) encodings. The wire is lossless and canonical: deserializing and re-serializing reproduces the exact same bytes, which the owner decode path requires. Kernel limits unchanged.",
+  "focused_passed": 9,
+  "focused_tests": [
+    "compact::tests::hex_roundtrip",
+    "compact::tests::tile_byte_roundtrip_covers_every_variant",
+    "compact::tests::decode_rejects_bad_payloads",
+    "compact::tests::solid_level_roundtrip_through_wire_struct",
+    "compact::tests::trap_and_engraving_records_roundtrip_through_serde",
+    "geography_compact::compact_geography_roundtrip_is_lossless_and_canonical_across_seeds",
+    "geography_compact::compact_geography_roundtrip_covers_every_transport_and_rich_level",
+    "geography_compact::compact_geography_fits_kernel_bound_across_seeds",
+    "geography_compact::facade_dispatches_combined_script_on_previously_over_bound_seed"
+  ],
+  "workspace_passed": 1763,
+  "checks": 12,
+  "goldens": [
+    "golden_vanilla_event_logs_are_unchanged",
+    "golden_vanilla_bestiary_combat_is_unchanged",
+    "golden_vanilla_runs_are_unchanged"
+  ],
+  "non_documentation_inputs": 591,
+  "source_digest": "c2ca4dcd8fe90dd3e3a9e2efac2dcbd5239c61eb2c575bc32effae624a2cfc64",
+  "source_digest_method": "sha256 over the sha256sum lines of every non-docs source file tracked at commit time (git ls-files --cached --others --exclude-standard, excluding docs/), sorted by path: git ls-files -z --cached --others --exclude-standard | grep -zv '^docs/' | sort -z | xargs -0 sha256sum | sha256sum",
+  "resolution": {
+    "codec": "crates/nethacked-dungeon/src/compact.rs: pub mod compact_level with serialize/deserialize for serde with; wire = JSON object with fixed 11-field order (v, w, h, tiles hex 1 byte/cell, branch_levels hex side table, rooms, stairs_up, stairs_down, engravings sorted (Coord, V) pairs, traps sorted (Coord, V) pairs, is_dark, no_teleport); tile variants 0-14 with payload nibbles (door state bits 0-1 + trapped bit 2, alignment 2 bits, branch id full nibble, wall/door/pit/drawbridge/pool flags); no new dependencies",
+    "transports": "All 7 non-traversal transports (action_time, movement_actions, inventory_actions, item_effects, services, monster_ticks, timer_ticks) carry #[serde(with = \"nethacked_dungeon::compact_level\")] on GeographyFacts.level; the Rust field type stays DungeonLevel so no call sites changed; traversal (I9, 8 MiB) deliberately unchanged",
+    "acceptance": "crates/nethacked-sim/src/owner_persistence/runtime/tests/geography_compact.rs (4 tests): lossless + canonical roundtrip across seeds 1-200 (natural-encoding level equality, whole-struct equality, byte-identical re-encode); every-transport roundtrip on a rich level (branch stairs incl. RogueLevel, locked/trapped door, secret door, pit, altars, drawbridge, pool, wall, lava, engravings, traps, vibrating_square/stored_keys); the 16 KiB bound across seeds 1-200 with a 12 KiB margin target and a pin that seeds 1/4/9 were over-bound under the natural encoding; the full 24-step combined script bit-for-bit against the legacy oracle on previously over-bound seed 4 (depth/stored-levels verified)",
+    "m7_audit": "m7_geography_payload_boundary rewritten to pin the resolved boundary: compact size <= 16384, Wait+Move dispatch Ok and the world turn advances, for seeds 1-16 (seeds 1/4/9 were 17027/17572/17041 bytes natural); m7_world doc comment updated (any seed fits; the seed only steers terrain)"
+  },
+  "measurements": {
+    "natural_geography_facts_max_bytes_seeds_1_200": 17819,
+    "natural_geography_facts_seed_1_bytes": 17027,
+    "natural_geography_facts_seed_4_bytes": 17572,
+    "natural_geography_facts_seed_9_bytes": 17041,
+    "compact_geography_facts_max_bytes_seeds_1_200": 4093,
+    "margin": "compact max is ~4x under the 16384-byte kernel payload bound; per-seed margin target 12288 bytes"
+  },
+  "limits": "16 KiB kernel payload limits unchanged; no limit raised inside this increment; traversal (I9) 8 MiB unchanged",
+  "files": [
+    "crates/nethacked-dungeon/src/compact.rs",
+    "crates/nethacked-dungeon/src/lib.rs",
+    "crates/nethacked-sim/src/owner_persistence/runtime.rs",
+    "crates/nethacked-sim/src/owner_persistence/runtime/action_time.rs",
+    "crates/nethacked-sim/src/owner_persistence/runtime/movement_actions.rs",
+    "crates/nethacked-sim/src/owner_persistence/runtime/inventory_actions.rs",
+    "crates/nethacked-sim/src/owner_persistence/runtime/item_effects.rs",
+    "crates/nethacked-sim/src/owner_persistence/runtime/services.rs",
+    "crates/nethacked-sim/src/owner_persistence/runtime/monster_ticks.rs",
+    "crates/nethacked-sim/src/owner_persistence/runtime/timer_ticks.rs",
+    "crates/nethacked-sim/src/owner_persistence/runtime/tests/geography_compact.rs",
+    "crates/nethacked-sim/src/owner_persistence/runtime/tests/m7_audit.rs",
+    "docs/parity/obligations/2026-10-08-microkernel-goal.json",
+    "docs/parity/obligations/2026-10-10-microkernel-geography-compact-checkpoint.json",
+    "docs/plans/2026-10-06-handover.md",
+    "MEMORY.md"
+  ],
+  "remaining": [
+    "TUI/demo legacy-path consumer cutover or explicit tracked deferral (review condition C4): demo cutover next; TUI explicitly deferred pending an EnhanceSkill owner transport for the meta skill-enhancement modal",
+    "Optional self-describing over-bound refusal error variant instead of Kernel(NativeRefusal) (review condition C5)",
+    "Full 53-family C parity backlog remains tracked separately"
+  ]
+}

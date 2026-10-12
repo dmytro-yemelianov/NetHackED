@@ -1,0 +1,1377 @@
+{
+  "schema": "netrust-p11a-s1-source-evidence-v1",
+  "status": "source-only draft; independent semantic review pending",
+  "baseline": {
+    "head": "6fb4aeee7441ffc0fd64e5c015697c4cdd656491",
+    "branch": "feat/monster-hp-d8",
+    "input_count": 344,
+    "input_digest": "567aed72fc97273ac4209afe92decbd5175e8e576ec7b5933bdb14c871e4e707",
+    "baseline_file": {
+      "path": "/tmp/netrust-p11a-s1-contract/baseline.json",
+      "sha256": "399c546adc12d3337c3934f2be0b101c7fb4da009f3dd32b9ff60c1f18e6d8c2"
+    },
+    "digest_algorithm": "sha256 over sorted path.encode()+rawbytes without separators",
+    "source_match": true,
+    "changed_files": [
+      {
+        "path": "crates/nethacked-agent/tests/bones_server_test.rs",
+        "sha256": "49c3625e59aebfeda83cb2e5d4d6fe6c6adebb20129a61ca1377eba0e9aa278e"
+      },
+      {
+        "path": "crates/nethacked-arena/src/lib.rs",
+        "sha256": "099cf75465706208f388a83acebdb30b15321e2ae1755fd9206cc54e6669dc9e"
+      },
+      {
+        "path": "crates/nethacked-data/src/items.rs",
+        "sha256": "ba425b5cea5b8f714899435001b42221ed4555e21fb0ac5b429ff5b280016661"
+      },
+      {
+        "path": "crates/nethacked-data/src/ruleset.rs",
+        "sha256": "fc3cad8e54a047a3ec35a6b8ecf8bcbee6ddeeeba93a21af3f4b5e115fdd0a6f"
+      },
+      {
+        "path": "crates/nethacked-sim/src/actions/items.rs",
+        "sha256": "0c4594903f69e81287a3cc326322009d5c162492569d67ce9aea14fb4ae77806"
+      },
+      {
+        "path": "crates/nethacked-sim/src/actions/religion.rs",
+        "sha256": "d9e48e3dfa9b810ef46b0de5f05895df36aeb8ddb49ceaad05916bd5fc1e93ee"
+      },
+      {
+        "path": "crates/nethacked-sim/src/bones.rs",
+        "sha256": "fcd0460517922333dad07b31718125784d210aebf66681dadb56e44f333329ce"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/hero_armor_ac_tests.rs",
+        "sha256": "c6e3aad4288f8035bf05c16148a6fb893b4602443a4a81a7bacb93581b299fc8"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/monster_attack_tests.rs",
+        "sha256": "da7edca74bde3b21a0a3b13408060e5b7dd738c8b9348b49949ba52b09bf25c8"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "sha256": "b75e30a0ddd553af063d00cb0e04540a956018da52ea9987b6128fe7fbe2dd0a"
+      },
+      {
+        "path": "crates/nethacked-types/src/lib.rs",
+        "sha256": "93c63df3e963993cde2029e5cf8e3e1daca047878cc5e87d07c4d03141d6f1c5"
+      },
+      {
+        "path": "crates/nethacked-data/tests/item_definition_identity.rs",
+        "sha256": "165f495555c373d1c7e335dbf7135fe9cd747af357d7c7c64784ebda36b319b9"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/item_definition_identity_tests.rs",
+        "sha256": "be7d1cf64de37cd5e27bdb883d61a7ca809f83d264c0572e72c7966c6f424842"
+      }
+    ]
+  },
+  "prerequisites": [
+    {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-07-ob01-wand-id1/unit.json",
+      "sha256": "06e1b5bf00934374a9635670bc6c3684732d3ab880011dbbf952ef410a33a159"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-07-ob01-wand-id1/review-final.json",
+      "sha256": "57da53a468e949aeefd99d25ef4732165a71cde8ad22f2e2d47f0be7c6e9fd06"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/OB01-WAND-ID1/delivery.json",
+      "sha256": "e0354e5cd2f17af35c17f385cf6347c69721aa42bdf53ee02027d4bc72c79304"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-07-configuration-profile/pin.json",
+      "sha256": "8cd4931d03972cef4a5a1ae8c7fa7344ac41612fb3cc29b971cf17e213ac3db9"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-07-configuration-profile/configuration-profile.json",
+      "sha256": "9771384704ac2e5473ceeac87718a569658125f529bd9205beaf947d8b93fa82"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/bootstrap/configuration-profile/delivery.json",
+      "sha256": "97cac124b18a10d3b6552a77ff13cbbd8323791ae6b9bd2d4aed243fb578aca3"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-07-bootstrap-p11a/p11a-contract.json",
+      "sha256": "515f264382ae29e878a353969715480d19b488e2f8283a68768828b56d2b212e"
+    }
+  ],
+  "accepted_identity": {
+    "accepted_commit": "6fb4aeee7441ffc0fd64e5c015697c4cdd656491",
+    "input_digest": "567aed72fc97273ac4209afe92decbd5175e8e576ec7b5933bdb14c871e4e707",
+    "full_workspace_tests": 1009,
+    "frozen_goldens": 3,
+    "gates": 12,
+    "reuse_only": true
+  },
+  "configuration": {
+    "accepted_commit": "8f4902eed5c2710e838faf172e45b047eb7520c8",
+    "profile": "released-5.0-linux-gcc-c99-header-defaults-lua548-v1",
+    "runtime_inputs": {
+      "consumed_p11_options": {
+        "autopickup": false,
+        "force_invmenu": false,
+        "menu_style": "MENU_FULL(2)",
+        "number_pad": 0,
+        "paranoia": "PARANOID_PRAY|PARANOID_SWIM|PARANOID_TRAP",
+        "pickup_burden": "MOD_ENCUMBER",
+        "playmode": "normal",
+        "verbose": true
+      },
+      "user_configuration": {
+        "default_recipe": "allopt_array_init/options.c:7405-7429 copies allopt_init, assigns NHOPT_PARSE boolean initval and invokes every optfn(do_init); src/options.c:7119-7305 initoptions_init initializes defaults; no user OPTIONS overrides; every accepted child pins consumed compound/boolean options numerically/symbolically.",
+        "file": "nethackrc.fixture",
+        "sha256": "248df4874e2fafbdf7485be1e928fb872bec7ae78613a19fd154213b7624afc2"
+      },
+      "rng": "Explicit native Rust seed plus persisted RNG state per fixture; no C exact-RNG comparison or host entropy. DEV_RANDOM source retained, comparator seed input declared."
+    },
+    "local_consumed_values": {
+      "force_invmenu": false,
+      "verbose": true,
+      "number_pad": 0,
+      "menu_style": "MENU_FULL(2)",
+      "fixinv/invlet_constant": true,
+      "sortpack": true,
+      "sortloot": "l (SORTLOOT_LOOT)",
+      "rest_on_space": false
+    },
+    "conditional": {
+      "OBSOLETE_HANDLING": "undefined: declared compiler-entry namespace undefined; sole pinned include/src occurrence is invent.c:2097, no define or undef",
+      "core_selection_functions": "dozap/zap_ok/getobj selection body has no local conditional beyond called silly_thing OBSOLETE_HANDLING; full imported declarations reused from accepted pin"
+    },
+    "conditional_rows": [
+      {
+        "context": [],
+        "families": [
+          "OB01",
+          "UI02"
+        ],
+        "file": "src/invent.c",
+        "kind": "ifdef",
+        "line": 2097,
+        "raw": "OBSOLETE_HANDLING",
+        "scope_policy": "all reachable gameplay/content retained; exact literal #if0/dormant platform/experimental arms recorded rather than ported as released defaults",
+        "valuation_basis": "selected symbol table + source-local definitions and exact lexical context; no preprocessor expansion"
+      }
+    ]
+  },
+  "pinned_c": {
+    "commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+    "worktree_head_ignored": "9c3a54d0473ec9ebdf8951f85af13ef63acf0a87",
+    "files": {
+      "src/zap.c": {
+        "sha256": "8ee02bd7aa29b026d6b5a2e0017ddf402fcfc6fc81037e35ceda2d86467547cb",
+        "git_blob": "8aefcb1ea3c64cb4bac71f7149d5795ec106786c",
+        "retrieve": [
+          "git",
+          "-C",
+          "/Users/dmytro/github/NetHack",
+          "show",
+          "16ff59115315917b93185d026aeefea06db9b0f4:src/zap.c"
+        ],
+        "snapshots": [
+          {
+            "start": 2514,
+            "end": 2522,
+            "text": "zappable(struct obj *wand)\n{\n    if (wand->spe < 0 || (wand->spe == 0 && rn2(WAND_WREST_CHANCE)))\n        return 0;\n    if (wand->spe == 0)\n        You(\"wrest one last charge from the worn-out wand.\");\n    wand->spe--;\n    return 1;\n}\n"
+          },
+          {
+            "start": 2605,
+            "end": 2697,
+            "text": "backfire(struct obj *otmp)\n{\n    int dmg;\n\n    otmp->in_use = TRUE; /* in case losehp() is fatal */\n    pline(\"%s suddenly explodes!\", The(xname(otmp)));\n    dmg = d(otmp->spe + 2, 6);\n    losehp(Maybe_Half_Phys(dmg), \"exploding wand\", KILLED_BY_AN);\n    useupall(otmp);\n}\n\n/* getobj callback for object to zap */\nstaticfn int\nzap_ok(struct obj *obj)\n{\n    if (obj && obj->oclass == WAND_CLASS)\n        return GETOBJ_SUGGEST;\n    return GETOBJ_EXCLUDE;\n}\n\n/* #zap command, 'z' (or 'y' if numbed_pad==-1) */\nint\ndozap(void)\n{\n    struct obj *obj;\n    int damage, need_dir;\n\n    if (nohands(gy.youmonst.data)) {\n        You(\"aren't able to zap anything in your current form.\");\n        return ECMD_OK;\n    }\n    if (check_capacity((char *) 0))\n        return ECMD_OK;\n    obj = getobj(\"zap\", zap_ok, GETOBJ_NOFLAGS);\n    if (!obj)\n        return ECMD_CANCEL;\n\n    check_unpaid(obj);\n\n    need_dir = objects[obj->otyp].oc_dir != NODIR;\n    if (!zappable(obj)) {\n        pline1(nothing_happens);\n    } else if (obj->cursed && !rn2(WAND_BACKFIRE_CHANCE)) {\n        backfire(obj); /* the wand blows up in your face! */\n        exercise(A_STR, FALSE);\n        /* 'obj' is gone; skip update_inventory() because\n           backfire() -> useupall() -> freeinv() did it */\n        return ECMD_TIME;\n    } else if (need_dir && !getdir((char *) 0)) {\n        if (!Blind)\n            pline(\"%s glows and fades.\", The(xname(obj)));\n        /* make him pay for knowing !NODIR */\n    } else if (need_dir && !u.dx && !u.dy && !u.dz) {\n        if ((damage = zapyourself(obj, TRUE)) != 0) {\n            char buf[BUFSZ];\n\n            Sprintf(buf, \"zapped %sself with %s\",\n                    uhim(), killer_xname(obj));\n            losehp(Maybe_Half_Phys(damage), buf, NO_KILLER_PREFIX);\n        }\n    } else {\n        /*      Are we having fun yet?\n         * weffects -> buzz(obj->otyp) -> zhitm (temple priest) ->\n         * attack -> hitum -> known_hitum -> ghod_hitsu ->\n         * buzz(AD_ELEC) -> destroy_items(AD_ELEC) ->\n         * useup -> obfree -> dealloc_obj -> free(obj)\n         */\n        gc.current_wand = obj;\n        weffects(obj);\n        obj = gc.current_wand;\n        gc.current_wand = 0;\n    }\n    if (obj && obj->spe < 0) {\n        pline(\"%s to dust.\", Tobjnam(obj, \"turn\"));\n        useupall(obj); /* calls freeinv() -> update_inventory() */\n    } else\n        update_inventory(); /* maybe used a charge */\n    return ECMD_TIME;\n}\n\n/* Lock or unlock all boxes in inventory */\nstaticfn void\nboxlock_invent(struct obj *obj)\n{\n    struct obj *otmp, *nextobj;\n    boolean boxing = FALSE;\n\n    /* (un)lock carried boxes */\n    for (otmp = gi.invent; otmp; otmp = nextobj) {\n        nextobj = otmp->nobj;\n        if (Is_box(otmp)) {\n            (void) boxlock(otmp, obj);\n            boxing = TRUE;\n"
+          }
+        ]
+      },
+      "src/invent.c": {
+        "sha256": "0b93d6ce1abb5b63ed7ea07c26a57e1016c6cef0fc2ef0e4016e6622054524b5",
+        "git_blob": "446859540299c0fd36ac5d0eff213a9478ffbab3",
+        "retrieve": [
+          "git",
+          "-C",
+          "/Users/dmytro/github/NetHack",
+          "show",
+          "16ff59115315917b93185d026aeefea06db9b0f4:src/invent.c"
+        ],
+        "snapshots": [
+          {
+            "start": 1752,
+            "end": 1819,
+            "text": "getobj(\n    const char *word,       /* usually a direct verb such as \"drop\" */\n    int (*obj_ok)(OBJ_P),   /* callback to classify an object's suitability */\n    unsigned int ctrlflags) /* some control to fine-tune the behavior */\n{\n    struct obj *otmp;\n    char ilet = 0;\n    char buf[BUFSZ], qbuf[QBUFSZ];\n    char lets[BUFSZ], altlets[BUFSZ];\n    int suggested = 0;\n    char *bp = buf, *ap = altlets;\n    boolean allowcnt = (ctrlflags & GETOBJ_ALLOWCNT),\n            forceprompt = (ctrlflags & GETOBJ_PROMPT),\n            allownone = FALSE;\n    int inaccess = 0; /* counts GETOBJ_EXCLUDE_INACCESS items to decide\n                       * between \"you don't have anything to <foo>\"\n                       * versus \"you don't have anything _else_ to <foo>\"\n                       * (also used for GETOBJ_EXCLUDE_NONINVENT) */\n    long cnt = 0L;\n    boolean cntgiven = FALSE;\n    boolean msggiven = FALSE;\n    boolean oneloop = FALSE;\n    Loot *sortedinvent, *srtinv;\n    struct _cmd_queue cq, *cmdq;\n    boolean need_more_cq = FALSE;\n\n need_more_cq:\n    if ((cmdq = cmdq_pop()) != 0) {\n        cq = *cmdq;\n        free(cmdq);\n        /* user-input means pick something interactively now, with more\n           in the command queue for after that; if not user-input, it\n           has to be a key here */\n        if (cq.typ != CMDQ_USER_INPUT) {\n            otmp = 0; /* in case of non-key or lookup failure */\n            if (cq.typ == CMDQ_KEY) {\n                int v;\n\n                if (cq.key == HANDS_SYM) {\n                    /* check whether the hands/self choice is suitable */\n                    v = (*obj_ok)((struct obj *) 0);\n                    if (v == GETOBJ_SUGGEST || v == GETOBJ_DOWNPLAY)\n                        otmp = &hands_obj;\n                } else {\n                    /* there could be more than one match if key is '#';\n                       take first one which passes the obj_ok callback */\n                    for (otmp = gi.invent; otmp; otmp = otmp->nobj)\n                        if (otmp->invlet == cq.key) {\n                            v = (*obj_ok)(otmp);\n                            if (v == GETOBJ_SUGGEST || v == GETOBJ_DOWNPLAY)\n                                break;\n                        }\n                }\n            } else if (cq.typ == CMDQ_INT) {\n                /* getting a partial stack */\n                if (!cntgiven && allowcnt) {\n                    cnt = (long) cq.intval;\n                    cntgiven = TRUE;\n                    goto need_more_cq; /* now, get CMDQ_KEY */\n                } else {\n                    cmdq_clear(CQ_CANNED);\n                    /* should maybe clear the CQ_REPEAT too? */\n                    return NULL;\n                }\n            }\n            if (!otmp) {           /* didn't find what we were looking for, */\n                cmdq_clear(CQ_CANNED); /* so discard any other queued cmnds */\n            } else if (cntgiven) {\n"
+          },
+          {
+            "start": 1831,
+            "end": 1955,
+            "text": "    /* is \"hands\"/\"self\" a valid thing to do this action on? */\n    switch ((*obj_ok)((struct obj *) 0)) {\n    case GETOBJ_SUGGEST: /* treat as likely candidate */\n        allownone = TRUE;\n        *bp++ = HANDS_SYM;\n        *bp++ = ' '; /* put a space after the '-' in the prompt */\n        break;\n    case GETOBJ_DOWNPLAY: /* acceptable but not shown as likely choice */\n    case GETOBJ_EXCLUDE_INACCESS:   /* nothing currently gives this for '-'\n                                     * but theoretically could if wearing\n                                     * gloves */\n    case GETOBJ_EXCLUDE_SELECTABLE: /* ditto, I think... */\n        allownone = TRUE;\n        *ap++ = HANDS_SYM;\n        break;\n    case GETOBJ_EXCLUDE_NONINVENT: /* player skipped some alternative that's\n                                    * not in inventory, now the hands/self\n                                    * possibility is telling us so */\n        forceprompt = FALSE;\n        inaccess++;\n        break;\n    default:\n        break;\n    }\n\n    if (!flags.invlet_constant)\n        reassign();\n\n    /* force invent to be in invlet order before collecting candidate\n       inventory letters */\n    sortedinvent = sortloot(&gi.invent, SORTLOOT_INVLET, FALSE,\n                            (boolean (*)(OBJ_P)) 0);\n\n    for (srtinv = sortedinvent; (otmp = srtinv->obj) != 0; ++srtinv) {\n        if (&bp[suggested] == &buf[sizeof buf - 1]\n            || ap == &altlets[sizeof altlets - 1]) {\n            /* we must have a huge number of noinvsym items somehow */\n            impossible(\"getobj: inventory overflow\");\n            break;\n        }\n\n        bp[suggested++] = otmp->invlet;\n        switch ((*obj_ok)(otmp)) {\n        case GETOBJ_EXCLUDE_INACCESS:\n            /* remove inaccessible things */\n            suggested--;\n            inaccess++;\n            break;\n        case GETOBJ_EXCLUDE:\n        case GETOBJ_EXCLUDE_SELECTABLE:\n            /* remove more inappropriate things, but unlike the first it won't\n               trigger an \"else\" in \"you don't have anything else to ___\" */\n            suggested--;\n            break;\n        case GETOBJ_DOWNPLAY:\n            /* acceptable but not listed as likely candidates in the prompt\n               or in the inventory subset if player responds with '?' - thus,\n               don't add it to lets with bp, but add it to altlets with ap */\n            suggested--;\n            forceprompt = TRUE;\n            *ap++ = otmp->invlet;\n            break;\n        case GETOBJ_SUGGEST:\n            break; /* adding otmp->invlet is all that's needed */\n        case GETOBJ_EXCLUDE_NONINVENT: /* not applicable for invent items */\n        default:\n            impossible(\"bad return from getobj callback\");\n        }\n    }\n    unsortloot(&sortedinvent);\n\n    bp[suggested] = '\\0';\n    /* If no objects were suggested but we added '- ' at the beginning for\n     * hands, destroy the trailing space */\n    if (suggested == 0 && bp > buf && bp[-1] == ' ')\n        *--bp = '\\0';\n    Strcpy(lets, bp); /* necessary since we destroy buf */\n    if (suggested > 5)      /* compactify string */\n        compactify(bp);\n    *ap = '\\0';\n\n    if (suggested == 0 && !forceprompt && !allownone) {\n        You(\"don't have anything %sto %s.\", inaccess ? \"else \" : \"\", word);\n        return (struct obj *) 0;\n    }\n    for (;;) {\n        cnt = 0L;\n        cntgiven = FALSE;\n        Sprintf(qbuf, \"What do you want to %s?\", word);\n        if (gi.in_doagain) {\n            ilet = readchar();\n        } else if (iflags.force_invmenu) {\n            /* don't overwrite a possible quitchars */\n            if (!oneloop)\n                ilet = (*lets || *altlets) ? '?' : '*';\n            if (!msggiven)\n                putmsghistory(qbuf, FALSE);\n            msggiven = TRUE;\n            oneloop = TRUE;\n        } else {\n            if (!buf[0])\n                Strcat(qbuf, \" [*]\");\n            else\n                Sprintf(eos(qbuf), \" [%s or ?*]\", buf);\n            ilet = yn_function(qbuf, (char *) 0, '\\0', FALSE);\n        }\n        if (digit(ilet)) {\n            long tmpcnt = 0L;\n\n            if (!allowcnt) {\n                pline(\"No count allowed with this command.\");\n                continue;\n            }\n            ilet = get_count(NULL, ilet, LARGEST_INT, &tmpcnt, GC_SAVEHIST);\n            if (tmpcnt) {\n                cnt = tmpcnt;\n                cntgiven = TRUE;\n            }\n        }\n        if (strchr(quitchars, ilet)) {\n            if (flags.verbose)\n                pline1(Never_mind);\n            return (struct obj *) 0;\n        }\n        if (ilet == HANDS_SYM) { /* '-' */\n"
+          },
+          {
+            "start": 1960,
+            "end": 2016,
+            "text": " redo_menu:\n        /* since gold is now kept in inventory, we need to do processing for\n           select-from-invent before checking whether gold has been picked */\n        if (ilet == '?' || ilet == '*') {\n            char *allowed_choices = (ilet == '?') ? lets : (char *) 0;\n            long ctmp = 0L;\n            char menuquery[QBUFSZ];\n            char *handsbuf = (char *) 0;\n\n            if (ilet == '?' && !*lets && *altlets)\n                allowed_choices = altlets;\n\n            menuquery[0] = qbuf[0] = '\\0';\n            if (iflags.force_invmenu)\n                Snprintf(menuquery, sizeof menuquery,\n                         \"What do you want to %s?\", word);\n            if (!allowed_choices || *allowed_choices == HANDS_SYM\n                || *buf == HANDS_SYM)\n                handsbuf = getobj_hands_txt(word, qbuf);\n            ilet = display_pickinv(allowed_choices, handsbuf,\n                                   menuquery, allownone, TRUE,\n                                   allowcnt ? &ctmp : (long *) 0);\n            if (!ilet) {\n                if (oneloop)\n                    return (struct obj *) 0;\n                continue;\n            }\n            if (ilet == HANDS_SYM)\n                return &hands_obj;\n            if (ilet == '\\033') {\n                if (flags.verbose)\n                    pline1(Never_mind);\n                return (struct obj *) 0;\n            }\n            if (ilet == '*' || ilet == '?')\n                goto redo_menu;\n            if (allowcnt && ctmp >= 0L) {\n                cnt = ctmp;\n                cntgiven = TRUE;\n            }\n            /* they typed a letter (not a space) at the prompt */\n        }\n        /* find the item which was picked */\n        for (otmp = gi.invent; otmp; otmp = otmp->nobj)\n            if (otmp->invlet == ilet)\n                break;\n        /* some items have restrictions */\n        if (ilet == GOLD_SYM\n            /* guard against the [hypothetical] chance of having more\n               than one invent slot of gold and picking the non-'$' one */\n            || (otmp && otmp->oclass == COIN_CLASS)) {\n            if (otmp && obj_ok(otmp) <= GETOBJ_EXCLUDE) {\n                You(\"cannot %s gold.\", word);\n                return (struct obj *) 0;\n            }\n            /*\n             * Historical note: early Nethack had a bug which was\n"
+          },
+          {
+            "start": 2047,
+            "end": 2089,
+            "text": "            }\n        }\n        disp.botl = TRUE; /* May have changed the amount of money */\n        if (otmp && !gi.in_doagain) {\n            if (cntgiven && cnt > 0L)\n                cmdq_add_int(CQ_REPEAT, cnt);\n            cmdq_add_key(CQ_REPEAT, ilet);\n        }\n        /* [we used to set otmp (by finding ilet in invent) here, but\n           that's been moved above so that otmp can be checked earlier] */\n        /* verify the chosen object */\n        if (!otmp) {\n            You(\"don't have that object.\");\n            if (gi.in_doagain)\n                return (struct obj *) 0;\n            continue;\n        } else if (cnt < 0L || otmp->quan < cnt) {\n            You(\"don't have that many!  You have only %ld.\", otmp->quan);\n            if (gi.in_doagain)\n                return (struct obj *) 0;\n            continue;\n        }\n        break;\n    }\n    if (obj_ok(otmp) == GETOBJ_EXCLUDE) {\n        silly_thing(word, otmp);\n        return (struct obj *) 0;\n    }\n split_otmp:\n    if (cntgiven) {\n        if (cnt == 0L)\n            return (struct obj *) 0;\n        if (cnt != otmp->quan) {\n            /* don't split a stack of cursed loadstones */\n            if (splittable(otmp))\n                otmp = splitobj(otmp, cnt);\n            else if (otmp->otyp == LOADSTONE && otmp->cursed)\n                /* kludge for canletgo()'s can't-drop-this message */\n                otmp->corpsenm = (int) cnt;\n        }\n    }\n    return otmp;\n}\n"
+          },
+          {
+            "start": 2094,
+            "end": 2131,
+            "text": "silly_thing(const char *word,\n            struct obj *otmp)\n{\n#ifdef OBSOLETE_HANDLING\n    /* 'P','R' vs 'W','T' handling is obsolete */\n    const char *s1, *s2, *s3;\n    int ocls = otmp->oclass, otyp = otmp->otyp;\n\n    s1 = s2 = s3 = 0;\n    /* check for attempted use of accessory commands ('P','R') on armor\n       and for corresponding armor commands ('W','T') on accessories */\n    if (ocls == ARMOR_CLASS) {\n        if (!strcmp(word, \"put on\"))\n            s1 = \"W\", s2 = \"wear\", s3 = \"\";\n        else if (!strcmp(word, \"remove\"))\n            s1 = \"T\", s2 = \"take\", s3 = \" off\";\n    } else if ((ocls == RING_CLASS || otyp == MEAT_RING)\n               || ocls == AMULET_CLASS\n               || (otyp == BLINDFOLD || otyp == TOWEL || otyp == LENSES)) {\n        if (!strcmp(word, \"wear\"))\n            s1 = \"P\", s2 = \"put\", s3 = \" on\";\n        else if (!strcmp(word, \"take off\"))\n            s1 = \"R\", s2 = \"remove\", s3 = \"\";\n    }\n    if (s1)\n        pline(\"Use the '%s' command to %s %s%s.\", s1, s2,\n              !(is_plural(otmp) || pair_of(otmp)) ? \"that\" : \"those\", s3);\n    else\n#endif\n    /* see comment about Amulet of Yendor in objtyp_is_callable(do_name.c);\n       known fakes yield the silly thing feedback */\n    if (!strcmp(word, \"call\")\n        && (otmp->otyp == AMULET_OF_YENDOR\n            || (otmp->otyp == FAKE_AMULET_OF_YENDOR && !otmp->known)))\n        pline_The(\"Amulet doesn't like being called names.\");\n    else\n        pline(silly_thing_to, word);\n}\n"
+          }
+        ]
+      },
+      "include/hack.h": {
+        "sha256": "2840a9bd41fb0c09384839fafdbd427a5d8705ad8d3eb5e2a0308cccea36813b",
+        "git_blob": "acf93509b49ecfc3e1520bc3731fbd5e5e94162c",
+        "retrieve": [
+          "git",
+          "-C",
+          "/Users/dmytro/github/NetHack",
+          "show",
+          "16ff59115315917b93185d026aeefea06db9b0f4:include/hack.h"
+        ],
+        "snapshots": [
+          {
+            "start": 512,
+            "end": 539,
+            "text": "    /* generally invalid - can't be used for this purpose. will give a \"silly\n     * thing\" message if the player tries to pick it, unless a more specific\n     * failure message is in getobj itself - e.g. \"You cannot foo gold\". */\n    GETOBJ_EXCLUDE = -3,\n    /* invalid because it is not in inventory; used when the hands/self\n     * possibility is queried and the player passed up something on the\n     * floor before getobj. */\n    GETOBJ_EXCLUDE_NONINVENT = -2,\n    /* invalid because it is an inaccessible or unwanted piece of gear, but\n     * pseudo-valid for the purposes of allowing the player to select it and\n     * getobj to return it if there is a prompt instead of getting \"silly\n     * thing\", in order for the getobj caller to present a specific failure\n     * message. Other than that, the only thing this does differently from\n     * GETOBJ_EXCLUDE is that it inserts an \"else\" in \"You don't have anything\n     * else to foo\". */\n    GETOBJ_EXCLUDE_INACCESS = -1,\n    /* invalid for purposes of not showing a prompt if nothing is valid but\n     * pseudo-valid for selecting - identical to GETOBJ_EXCLUDE_INACCESS but\n     * without the \"else\" in \"You don't have anything else to foo\". */\n    GETOBJ_EXCLUDE_SELECTABLE = 0,\n    /* valid - invlet not presented in the summary or the ? menu as a\n     * recommendation, but is selectable if the player enters it anyway.\n     * Used for objects that are actually valid but unimportantly so, such\n     * as shirts for reading. */\n    GETOBJ_DOWNPLAY = 1,\n    /* valid - will be shown in summary and ? menu */\n    GETOBJ_SUGGEST  = 2,\n};\n"
+          },
+          {
+            "start": 1409,
+            "end": 1412,
+            "text": "#define POTION_OCCUPANT_CHANCE(n) (13 + 2 * (n))\n#define WAND_BACKFIRE_CHANCE 100\n#define WAND_WREST_CHANCE 121\n#define BALL_IN_MON (u.uswallow && uball && uball->where == OBJ_FREE)\n"
+          },
+          {
+            "start": 1439,
+            "end": 1443,
+            "text": "#define GETOBJ_NOFLAGS  0x0\n#define GETOBJ_ALLOWCNT 0x1 /* is a count allowed with this command? */\n#define GETOBJ_PROMPT   0x2 /* should it force a prompt for input? (prevents\n                             * it exiting early with \"You don't have anything\n                             * to foo\" if nothing in inventory is valid) */\n"
+          },
+          {
+            "start": 1456,
+            "end": 1459,
+            "text": "#define ECMD_OK     0x00 /* cmd done successfully */\n#define ECMD_TIME   0x01 /* cmd took time, uses up a turn */\n#define ECMD_CANCEL 0x02 /* cmd canceled by user */\n#define ECMD_FAIL   0x04 /* cmd failed to finish, maybe with a yafm */\n"
+          }
+        ]
+      },
+      "src/decl.c": {
+        "sha256": "4855daf7884706b74e694aff3e8373418706793265084727bd78abe44693d96e",
+        "git_blob": "4fe4585f0af6730f5e0aeb7d93d5470fb4bda3a4",
+        "retrieve": [
+          "git",
+          "-C",
+          "/Users/dmytro/github/NetHack",
+          "show",
+          "16ff59115315917b93185d026aeefea06db9b0f4:src/decl.c"
+        ],
+        "snapshots": [
+          {
+            "start": 37,
+            "end": 51,
+            "text": "};\n\nconst struct c_common_strings c_common_strings =\n    { \"Nothing happens.\",\n      \"Nothing seems to happen.\",\n      \"That's enough tries!\",\n      \"That is a silly thing to %s.\",\n      \"shudder for a moment.\",\n      \"something\",\n      \"Something\",\n      \"You can move again.\",\n      \"Never mind.\",\n      \"vision quickly clears.\",\n      { \"the\", \"your\" },\n      { \"mon\", \"you\" }\n"
+          },
+          {
+            "start": 94,
+            "end": 97,
+            "text": "                             \"platinum\",   \"mithril\", \"plastic\",    \"glass\",\n                             \"gemstone\",   \"stone\" };\nconst char quitchars[] = \" \\r\\n\\033\";\nconst int shield_static[SHIELD_COUNT] = {\n"
+          }
+        ]
+      },
+      "include/optlist.h": {
+        "sha256": "23dafb109132dd63bbfe704b39fac8cccaaeee31a0dbd895c7ba928bd92af9b8",
+        "git_blob": "9cba2107cb3042a9a9f608b312ab69b41a65dcc5",
+        "retrieve": [
+          "git",
+          "-C",
+          "/Users/dmytro/github/NetHack",
+          "show",
+          "16ff59115315917b93185d026aeefea06db9b0f4:include/optlist.h"
+        ],
+        "snapshots": [
+          {
+            "start": 310,
+            "end": 315,
+            "text": "           On, Yes, No, No, NoAlias, &iflags.fireassist, Term_False,\n           \"fire-command tries to be helpful\")\n    NHOPTB(fixinv, Advanced, 0, opt_out, set_in_game,\n           On, Yes, No, No, NoAlias, &flags.invlet_constant, Term_False,\n           \"inventory items keep their letters\")\n    NHOPTC(font_map, Advanced, 40, opt_in, set_gameview,\n"
+          },
+          {
+            "start": 335,
+            "end": 339,
+            "text": "                Yes, Yes, Yes, No, NoAlias, \"font to use in text windows\")\n    NHOPTB(force_invmenu, Advanced, 0, opt_in, set_in_game,\n           Off, Yes, No, No, NoAlias, &iflags.force_invmenu, Term_False,\n           \"commands asking for inventory item show a menu\")\n    NHOPTC(fruit, General, PL_FSIZ, opt_in, set_in_game,\n"
+          },
+          {
+            "start": 486,
+            "end": 489,
+            "text": "                \"experimental behavior of menu inverts\")\n    NHOPTC(menustyle, Advanced, MENUTYPELEN, opt_in, set_in_game,\n                Yes, Yes, No, Yes, NoAlias,\n                \"user interface for object selection\")\n"
+          },
+          {
+            "start": 683,
+            "end": 691,
+            "text": "                \"preferred order when displaying discovered objects\")\n    NHOPTC(sortloot, Advanced, 4, opt_in, set_in_game,\n                No, Yes, No, Yes, NoAlias,\n                \"sort object selection lists by description\")\n    NHOPTB(sortpack, Advanced, 0, opt_out, set_in_game,\n           On, Yes, No, No, NoAlias, &flags.sortpack, Term_False,\n           \"group inventory items by type\")\n    NHOPTC(sortvanquished, Advanced, 0, opt_in, set_in_game,\n                Yes, Yes, No, Yes, NoAlias,\n"
+          },
+          {
+            "start": 812,
+            "end": 816,
+            "text": "                No, Yes, No, No, NoAlias, \"show more old messages at a time\")\n    NHOPTB(verbose, Advanced, 0, opt_out, set_in_game,\n           On, Yes, No, No, NoAlias, &flags.verbose, Term_False,\n           (char *)0)\n    NHOPTC(versinfo, Advanced, 80, opt_out, set_in_game,\n"
+          }
+        ]
+      },
+      "src/options.c": {
+        "sha256": "494772974500aa9b42df179b4e090def15fd0bc8148f09a9c392bbadd05dd940",
+        "git_blob": "05f4979ef29e04f9a14a551a538ba616d6a3b5c4",
+        "retrieve": [
+          "git",
+          "-C",
+          "/Users/dmytro/github/NetHack",
+          "show",
+          "16ff59115315917b93185d026aeefea06db9b0f4:src/options.c"
+        ],
+        "snapshots": [
+          {
+            "start": 7197,
+            "end": 7210,
+            "text": "    init_ov_rogue_symbols();\n    /* Set the default monster and object class symbols. */\n    init_symbols();\n    for (i = 0; i < WARNCOUNT; i++)\n        gw.warnsyms[i] = def_warnsyms[i].sym;\n\n    /* assert( sizeof flags.inv_order == sizeof def_inv_order ); */\n    (void) memcpy((genericptr_t) flags.inv_order,\n                  (genericptr_t) def_inv_order, sizeof flags.inv_order);\n    flags.pickup_types[0] = '\\0';\n    flags.pickup_burden = MOD_ENCUMBER;\n    flags.sortloot = 'l'; /* sort only loot by default */\n\n    for (i = 0; i < NUM_DISCLOSURE_OPTIONS; i++)\n"
+          },
+          {
+            "start": 7255,
+            "end": 7260,
+            "text": "        load_symset(\"MACGraphics\", PRIMARYSET);\n    switch_symbols(TRUE);\n#endif /* MAC_GRAPHICS_ENV */\n    flags.menu_style = MENU_FULL;\n\n    iflags.wc_align_message = ALIGN_TOP;\n"
+          },
+          {
+            "start": 7405,
+            "end": 7429,
+            "text": "allopt_array_init(void)\n{\n    int i;\n    static boolean options_array_inited_already = FALSE;\n\n    if (!options_array_inited_already) {\n        memcpy(allopt, allopt_init, sizeof(allopt));\n        determine_ambiguities();\n        for (i = 0; allopt[i].name; i++) {\n            if (allopt[i].addr)\n                *(allopt[i].addr) = allopt[i].initval;\n        }\n        heed_all_options();\n        /*\n         * Call each option function with an init flag and give it a chance\n         * to make any preparations that it might require.  We do this\n         * whether or not the option itself is ever specified; that's\n         * irrelevant for the init call.  Doing this allows the prep code for\n         * option settings to remain adjacent to, and in the same function as,\n         * the code that processes those options.\n         */\n        for (i = 0; i < OPTCOUNT; ++i) {\n            if (allopt[i].optfn)\n                (*allopt[i].optfn)(i, do_init, FALSE, empty_optstr,\n                                   empty_optstr);\n"
+          }
+        ]
+      }
+    }
+  },
+  "rust_source_hashes": {
+    "crates/nethacked-agent/src/arena.rs": "5fcd65208c2e7b4b18707c3ebe6b01136bc30266f76270473054f39efe87aae0",
+    "crates/nethacked-agent/src/commands.rs": "49c8c44b02b06f91530125c3dd0cfeb6d40d778739b4c37e9770bb4d4ef9e242",
+    "crates/nethacked-agent/src/conducts.rs": "c090f653a3c29cc3ac817987f35c665a6e786b34a1a0ea9df2a165fcf01380ce",
+    "crates/nethacked-agent/src/graphql.rs": "1712842f2cc175ce54a81f4d52d366d83a1a6bac8a28dec9cb2f4851b117d1e7",
+    "crates/nethacked-agent/src/jsonrpc.rs": "330b7ca49944442a495cbb0576e0f72a8b1b62c88e5e63ce00edcfbae335ab54",
+    "crates/nethacked-agent/src/mcp.rs": "ef460cb202ebaa2c50af77e798e8394dfa94eb2da481578dc435834b96506296",
+    "crates/nethacked-agent/src/observation.rs": "9e782599cac84392068391bf603bb7838abca266b07949a22b984cda041a9d6f",
+    "crates/nethacked-agent/src/session.rs": "a34beb58fa04bc59dc7d04a2f9a01d6e4a1ffd48a37f28460684c8c2bfe8f3ac",
+    "crates/nethacked-agent/tests/graphql_http_test.rs": "e4a20642a29d2ae7e45e8508ec569fa100678ffc9ad8e1f9bceee36b77e90e4f",
+    "crates/nethacked-agent/tests/protocol_tests.rs": "7353d48d1c3f49a361b4073401a630b7435cbdb94aaed09463cc0fdbd6438e65",
+    "crates/nethacked-arena/src/lib.rs": "099cf75465706208f388a83acebdb30b15321e2ae1755fd9206cc54e6669dc9e",
+    "crates/nethacked-core/src/ast.rs": "23c02da2da18a8097ac01543971e3cf2bd3a5c93a56c0f977172717965c155e3",
+    "crates/nethacked-data/src/items.rs": "ba425b5cea5b8f714899435001b42221ed4555e21fb0ac5b429ff5b280016661",
+    "crates/nethacked-data/src/ruleset.rs": "fc3cad8e54a047a3ec35a6b8ecf8bcbee6ddeeeba93a21af3f4b5e115fdd0a6f",
+    "crates/nethacked-py/src/lib.rs": "b6a6c5b557893dd86a8c9e802cd5fd6af4c40f83ccaf700597c37905304c6a01",
+    "crates/nethacked-sim/src/actions/items.rs": "0c4594903f69e81287a3cc326322009d5c162492569d67ce9aea14fb4ae77806",
+    "crates/nethacked-sim/src/actions/mod.rs": "ddca34ca797937c01641551891861111067a616e37cf060d513167a5169ce93a",
+    "crates/nethacked-sim/src/world.rs": "9e4cd1aedb4b455e5df5fb949dd908b2f9a9017a2fce067856a1d7d5e7caf7ad",
+    "crates/nethacked-tui/src/keys.rs": "aa33615df3eddc6390dac6778feb20e0769a4e50cf7b2e1ac6a10202f099101d",
+    "crates/nethacked-tui/src/main.rs": "0cc1a49be11c5580f83a133bffba91714c31066d65e2d4d07d2762300748695b",
+    "crates/nethacked-types/src/lib.rs": "93c63df3e963993cde2029e5cf8e3e1daca047878cc5e87d07c4d03141d6f1c5",
+    "crates/nethacked-wasm/src/lib.rs": "c365ce43811f8dc690a2cc875300aa7ce62118e666172dd2d73fae95d5c38e5f",
+    "python/nethacked_gym/env.py": "3ac9a374e9df28a3372ff441226e9515427f3104a45f910fb27bc31a1a3ec642",
+    "python/tests/test_rl.py": "abaf382afd69b2b333d41e451d01f9ba259334e1a6e6f2dc6d0e003271f10e50",
+    "scripts/build-web.sh": "772697d1e983f1291223c7ed7e12c5727cf4f19565ca8c710a17e4fc556f4c13",
+    "web/css/app.css": "3f2ff530004308b8c75cf2860c6d39b5c7ad811deffb2c5ba3b9944bc448c980",
+    "web/index.html": "b4822f1b273c7b4d7e4c8f54642eaa0fccbc24460fb4f78c304b5c706d794514",
+    "web/js/game.js": "a6cd190915544a122e2f557e28d915eb516f8108c9204bf890173db42a99f16d",
+    "web/play/play.js": "3cf11a180327b0c9fe6cfaa856020a078db27a01ddabfb5803be932b3a0fb3d0"
+  },
+  "discovery": {
+    "graph_first": true,
+    "project": "Users-dmytro-github-NetRust",
+    "results": "ActionAst/ActionArgs found at stale crates/netrust-* paths; bounded function query returned 0; current nethacked paths inspected as allowed fallback",
+    "packets": [
+      {
+        "kind": "existing action/args occurrences; exact source inventory, not semantic proof",
+        "rows": [
+          {
+            "path": "crates/nethacked-agent/src/commands.rs",
+            "line": 15,
+            "text": "pub struct ActionArgs {",
+            "sha256": "49c8c44b02b06f91530125c3dd0cfeb6d40d778739b4c37e9770bb4d4ef9e242",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-agent/src/commands.rs",
+            "line": 131,
+            "text": "\"zap\" => Ok(ActionAst::ZapWand {",
+            "sha256": "49c8c44b02b06f91530125c3dd0cfeb6d40d778739b4c37e9770bb4d4ef9e242",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-agent/src/commands.rs",
+            "line": 264,
+            "text": "Ok(ActionArgs {",
+            "sha256": "49c8c44b02b06f91530125c3dd0cfeb6d40d778739b4c37e9770bb4d4ef9e242",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-agent/src/commands.rs",
+            "line": 319,
+            "text": "let p = ActionArgs {",
+            "sha256": "49c8c44b02b06f91530125c3dd0cfeb6d40d778739b4c37e9770bb4d4ef9e242",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-agent/src/commands.rs",
+            "line": 334,
+            "text": "fn a() -> ActionArgs {",
+            "sha256": "49c8c44b02b06f91530125c3dd0cfeb6d40d778739b4c37e9770bb4d4ef9e242",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-agent/src/commands.rs",
+            "line": 337,
+            "text": "fn with_dir(d: &str) -> ActionArgs {",
+            "sha256": "49c8c44b02b06f91530125c3dd0cfeb6d40d778739b4c37e9770bb4d4ef9e242",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-agent/src/commands.rs",
+            "line": 338,
+            "text": "ActionArgs {",
+            "sha256": "49c8c44b02b06f91530125c3dd0cfeb6d40d778739b4c37e9770bb4d4ef9e242",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-agent/src/commands.rs",
+            "line": 343,
+            "text": "fn with_idx(i: usize) -> ActionArgs {",
+            "sha256": "49c8c44b02b06f91530125c3dd0cfeb6d40d778739b4c37e9770bb4d4ef9e242",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-agent/src/commands.rs",
+            "line": 344,
+            "text": "ActionArgs {",
+            "sha256": "49c8c44b02b06f91530125c3dd0cfeb6d40d778739b4c37e9770bb4d4ef9e242",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-agent/src/commands.rs",
+            "line": 349,
+            "text": "fn at(x: usize, y: usize) -> ActionArgs {",
+            "sha256": "49c8c44b02b06f91530125c3dd0cfeb6d40d778739b4c37e9770bb4d4ef9e242",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-agent/src/commands.rs",
+            "line": 350,
+            "text": "ActionArgs {",
+            "sha256": "49c8c44b02b06f91530125c3dd0cfeb6d40d778739b4c37e9770bb4d4ef9e242",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-agent/src/commands.rs",
+            "line": 428,
+            "text": "ActionAst::ZapWand {",
+            "sha256": "49c8c44b02b06f91530125c3dd0cfeb6d40d778739b4c37e9770bb4d4ef9e242",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-agent/src/commands.rs",
+            "line": 451,
+            "text": "&ActionArgs {",
+            "sha256": "49c8c44b02b06f91530125c3dd0cfeb6d40d778739b4c37e9770bb4d4ef9e242",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-agent/src/commands.rs",
+            "line": 462,
+            "text": "&ActionArgs {",
+            "sha256": "49c8c44b02b06f91530125c3dd0cfeb6d40d778739b4c37e9770bb4d4ef9e242",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-agent/src/commands.rs",
+            "line": 473,
+            "text": "&ActionArgs {",
+            "sha256": "49c8c44b02b06f91530125c3dd0cfeb6d40d778739b4c37e9770bb4d4ef9e242",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-agent/src/commands.rs",
+            "line": 485,
+            "text": "&ActionArgs {",
+            "sha256": "49c8c44b02b06f91530125c3dd0cfeb6d40d778739b4c37e9770bb4d4ef9e242",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-agent/src/commands.rs",
+            "line": 496,
+            "text": "&ActionArgs {",
+            "sha256": "49c8c44b02b06f91530125c3dd0cfeb6d40d778739b4c37e9770bb4d4ef9e242",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-agent/src/commands.rs",
+            "line": 513,
+            "text": "&ActionArgs {",
+            "sha256": "49c8c44b02b06f91530125c3dd0cfeb6d40d778739b4c37e9770bb4d4ef9e242",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-agent/src/commands.rs",
+            "line": 525,
+            "text": "&ActionArgs {",
+            "sha256": "49c8c44b02b06f91530125c3dd0cfeb6d40d778739b4c37e9770bb4d4ef9e242",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-agent/src/commands.rs",
+            "line": 534,
+            "text": "&ActionArgs {",
+            "sha256": "49c8c44b02b06f91530125c3dd0cfeb6d40d778739b4c37e9770bb4d4ef9e242",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          }
+        ]
+      },
+      {
+        "kind": "existing action/args occurrences; exact source inventory, not semantic proof",
+        "rows": [
+          {
+            "path": "crates/nethacked-agent/src/commands.rs",
+            "line": 546,
+            "text": "&ActionArgs {",
+            "sha256": "49c8c44b02b06f91530125c3dd0cfeb6d40d778739b4c37e9770bb4d4ef9e242",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-agent/src/commands.rs",
+            "line": 627,
+            "text": "&ActionArgs {",
+            "sha256": "49c8c44b02b06f91530125c3dd0cfeb6d40d778739b4c37e9770bb4d4ef9e242",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-agent/src/commands.rs",
+            "line": 635,
+            "text": "&ActionArgs {",
+            "sha256": "49c8c44b02b06f91530125c3dd0cfeb6d40d778739b4c37e9770bb4d4ef9e242",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-agent/src/commands.rs",
+            "line": 644,
+            "text": "&ActionArgs {",
+            "sha256": "49c8c44b02b06f91530125c3dd0cfeb6d40d778739b4c37e9770bb4d4ef9e242",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-agent/src/conducts.rs",
+            "line": 38,
+            "text": "ActionAst::ZapWand { .. } => {",
+            "sha256": "c090f653a3c29cc3ac817987f35c665a6e786b34a1a0ea9df2a165fcf01380ce",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-agent/src/graphql.rs",
+            "line": 236,
+            "text": "let args = ActionArgs {",
+            "sha256": "1712842f2cc175ce54a81f4d52d366d83a1a6bac8a28dec9cb2f4851b117d1e7",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-agent/tests/bones_server_test.rs",
+            "line": 401,
+            "text": "let action = ActionAst::ZapWand {",
+            "sha256": "49c3625e59aebfeda83cb2e5d4d6fe6c6adebb20129a61ca1377eba0e9aa278e",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-agent/tests/bones_server_test.rs",
+            "line": 446,
+            "text": "let action = ActionAst::ZapWand {",
+            "sha256": "49c3625e59aebfeda83cb2e5d4d6fe6c6adebb20129a61ca1377eba0e9aa278e",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-agent/tests/equipment_actions.rs",
+            "line": 40,
+            "text": "let args = ActionArgs {",
+            "sha256": "2d3f918862ecbcb74f20b331f62c28de3717fabcb6db0cca1053ae6827ba13ba",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-core/src/ast.rs",
+            "line": 47,
+            "text": "ZapWand {",
+            "sha256": "23c02da2da18a8097ac01543971e3cf2bd3a5c93a56c0f977172717965c155e3",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-py/src/lib.rs",
+            "line": 387,
+            "text": "22 => ActionAst::ZapWand {",
+            "sha256": "b6a6c5b557893dd86a8c9e802cd5fd6af4c40f83ccaf700597c37905304c6a01",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-sim/src/actions/mod.rs",
+            "line": 100,
+            "text": "ActionAst::ZapWand { dir, energy } => events.extend(self.handle_zap_wand(dir, energy)),",
+            "sha256": "ddca34ca797937c01641551891861111067a616e37cf060d513167a5169ce93a",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-sim/tests/integrity_tests.rs",
+            "line": 147,
+            "text": "let ev = sim.step_player_action(ActionAst::ZapWand {",
+            "sha256": "1908c5ff29395e3605444c4dea15eaf158beb0e3106ef576f9b65884b083ed2f",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-sim/tests/item_definition_identity_tests.rs",
+            "line": 94,
+            "text": "w.step_player_action(ActionAst::ZapWand {",
+            "sha256": "be7d1cf64de37cd5e27bdb883d61a7ca809f83d264c0572e72c7966c6f424842",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-sim/tests/monster_creation_wand_tests.rs",
+            "line": 112,
+            "text": "w.step_player_action(ActionAst::ZapWand {",
+            "sha256": "e7ea56c0a4e5c5e5494445cf89c252578ccadacde2ff3c76e7d82ee6230e6dcc",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-sim/tests/monster_creation_wand_tests.rs",
+            "line": 241,
+            "text": "b.step_player_action(ActionAst::ZapWand {",
+            "sha256": "e7ea56c0a4e5c5e5494445cf89c252578ccadacde2ff3c76e7d82ee6230e6dcc",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-sim/tests/monster_creation_wand_tests.rs",
+            "line": 540,
+            "text": "let events = loaded.step_player_action(ActionAst::ZapWand {",
+            "sha256": "e7ea56c0a4e5c5e5494445cf89c252578ccadacde2ff3c76e7d82ee6230e6dcc",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-sim/tests/monster_group_tests.rs",
+            "line": 112,
+            "text": "w.step_player_action(ActionAst::ZapWand {",
+            "sha256": "bba1cf02a356f61741731e9afdb8c4d08bd8d973b629d29b2ae998dbb06ab7cc",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+            "line": 223,
+            "text": "let events = sim.step_player_action(ActionAst::ZapWand {",
+            "sha256": "b75e30a0ddd553af063d00cb0e04540a956018da52ea9987b6128fe7fbe2dd0a",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+            "line": 283,
+            "text": "let events = sim.step_player_action(ActionAst::ZapWand {",
+            "sha256": "b75e30a0ddd553af063d00cb0e04540a956018da52ea9987b6128fe7fbe2dd0a",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          }
+        ]
+      },
+      {
+        "kind": "existing action/args occurrences; exact source inventory, not semantic proof",
+        "rows": [
+          {
+            "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+            "line": 1979,
+            "text": "let events = sim.step_player_action(ActionAst::ZapWand {",
+            "sha256": "b75e30a0ddd553af063d00cb0e04540a956018da52ea9987b6128fe7fbe2dd0a",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+            "line": 2031,
+            "text": "let events = sim.step_player_action(ActionAst::ZapWand {",
+            "sha256": "b75e30a0ddd553af063d00cb0e04540a956018da52ea9987b6128fe7fbe2dd0a",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+            "line": 3592,
+            "text": "sim1.step_player_action(ActionAst::ZapWand {",
+            "sha256": "b75e30a0ddd553af063d00cb0e04540a956018da52ea9987b6128fe7fbe2dd0a",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+            "line": 3662,
+            "text": "sim2.step_player_action(ActionAst::ZapWand {",
+            "sha256": "b75e30a0ddd553af063d00cb0e04540a956018da52ea9987b6128fe7fbe2dd0a",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-tui/src/main.rs",
+            "line": 898,
+            "text": "Some(ActionAst::ZapWand {",
+            "sha256": "0cc1a49be11c5580f83a133bffba91714c31066d65e2d4d07d2762300748695b",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-wasm/src/lib.rs",
+            "line": 56,
+            "text": "fn action_args_for(action: &str, arg: Option<String>, player: Option<Coord>) -> ActionArgs {",
+            "sha256": "c365ce43811f8dc690a2cc875300aa7ce62118e666172dd2d73fae95d5c38e5f",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          },
+          {
+            "path": "crates/nethacked-wasm/src/lib.rs",
+            "line": 58,
+            "text": "let mut args = ActionArgs {",
+            "sha256": "c365ce43811f8dc690a2cc875300aa7ce62118e666172dd2d73fae95d5c38e5f",
+            "rule": "existing ZapWand literals/assertions remain identical; ActionArgs new optional token initialized to None only in full literals"
+          }
+        ]
+      }
+    ],
+    "parent_inventory_packet": {
+      "rows": [
+        {
+          "key": "flow-ui:0082",
+          "path": "docs/parity/flow-ui.md",
+          "ordinal": 82,
+          "line": 100,
+          "row_sha256": "37ba0471faaeef7c19868e3efa2678135c21428fea9b351103316ea418426ac5",
+          "feature": "`z` zap",
+          "section": "A. Command table (cmd.c `extcmdlist[]`, cmd.c:1673)",
+          "c_reference": "zap.c dozap",
+          "historic_status": "PARTIAL",
+          "status_freshness": "historical_unrefreshened_by_this_plan",
+          "family": "UI01",
+          "unit_refs": [
+            "UI01",
+            "UI01-R05",
+            "P11a",
+            "P11b",
+            "P11c",
+            "CMD-0082"
+          ],
+          "action": "audit_before_gap_or_port_claim"
+        },
+        {
+          "key": "objects-dungeon:0033",
+          "path": "docs/parity/objects-dungeon.md",
+          "ordinal": 33,
+          "line": 71,
+          "row_sha256": "7bd9b027544e7b5844c278e9007b1b89b105dd05541e50c5760f2c17480a8b88",
+          "feature": "Wand of create monster",
+          "section": "Feature table",
+          "c_reference": "zap.c WAN_CREATE_MONSTER; makemon.c create_critters",
+          "historic_status": "PARTIAL",
+          "status_freshness": "historical_unrefreshened_by_this_plan",
+          "family": "OB07",
+          "unit_refs": [
+            "OB07",
+            "OB07-R01",
+            "P11a",
+            "P11b",
+            "P11c"
+          ],
+          "action": "audit_before_gap_or_port_claim"
+        },
+        {
+          "key": "objects-dungeon:0034",
+          "path": "docs/parity/objects-dungeon.md",
+          "ordinal": 34,
+          "line": 72,
+          "row_sha256": "80977ae8f2c0cba4c0e7acd73e5d3eb0a5b888c3f90bc15c976c87b0a16b1ac7",
+          "feature": "Wand selection when zapping",
+          "section": "Feature table",
+          "c_reference": "zap.c dozap getobj",
+          "historic_status": "PARTIAL",
+          "status_freshness": "historical_unrefreshened_by_this_plan",
+          "family": "OB07",
+          "unit_refs": [
+            "OB07",
+            "OB07-R01",
+            "P11a",
+            "P11b",
+            "P11c"
+          ],
+          "action": "audit_before_gap_or_port_claim"
+        },
+        {
+          "key": "objects-dungeon:0035",
+          "path": "docs/parity/objects-dungeon.md",
+          "ordinal": 35,
+          "line": 73,
+          "row_sha256": "fbb4f9d2c3c2e5568095adc3ed41d20320049e4b32400c5e27cb80f26033386c",
+          "feature": "Ray wands (buzz): path and wall bounce",
+          "section": "Feature table",
+          "c_reference": "zap.c buzz/bhit",
+          "historic_status": "PARTIAL",
+          "status_freshness": "historical_unrefreshened_by_this_plan",
+          "family": "OB07",
+          "unit_refs": [
+            "OB07",
+            "OB07-R01",
+            "P11a",
+            "P11b",
+            "P11c"
+          ],
+          "action": "audit_before_gap_or_port_claim"
+        },
+        {
+          "key": "objects-dungeon:0036",
+          "path": "docs/parity/objects-dungeon.md",
+          "ordinal": 36,
+          "line": 74,
+          "row_sha256": "62714787d101833b7c645e1638422cee95bb75079b26d46a57ace796594a9929",
+          "feature": "Ray damage, resistances and reflection vs monsters",
+          "section": "Feature table",
+          "c_reference": "zap.c zhitm",
+          "historic_status": "PARTIAL",
+          "status_freshness": "historical_unrefreshened_by_this_plan",
+          "family": "OB07",
+          "unit_refs": [
+            "OB07",
+            "OB07-R01",
+            "P11a",
+            "P11b",
+            "P11c"
+          ],
+          "action": "audit_before_gap_or_port_claim"
+        },
+        {
+          "key": "objects-dungeon:0037",
+          "path": "docs/parity/objects-dungeon.md",
+          "ordinal": 37,
+          "line": 75,
+          "row_sha256": "567a81bed42264f685558ea09eb038fe9b5147d3f9bce9e12fb29b572d4e2b89",
+          "feature": "IMMEDIATE wand effects (bhitm)",
+          "section": "Feature table",
+          "c_reference": "zap.c bhitm",
+          "historic_status": "PARTIAL",
+          "status_freshness": "historical_unrefreshened_by_this_plan",
+          "family": "OB07",
+          "unit_refs": [
+            "OB07",
+            "OB07-R01",
+            "P11a",
+            "P11b",
+            "P11c"
+          ],
+          "action": "audit_before_gap_or_port_claim"
+        },
+        {
+          "key": "objects-dungeon:0038",
+          "path": "docs/parity/objects-dungeon.md",
+          "ordinal": 38,
+          "line": 76,
+          "row_sha256": "b40754392175e456922a6d40bcb0e496f92b46863e3b7b28d44120f42de2c4c1",
+          "feature": "Wand of digging (dig through walls, dig down)",
+          "section": "Feature table",
+          "c_reference": "zap.c zap_dig",
+          "historic_status": "MISSING",
+          "status_freshness": "historical_unrefreshened_by_this_plan",
+          "family": "OB07",
+          "unit_refs": [
+            "OB07",
+            "OB07-R01",
+            "P11a",
+            "P11b",
+            "P11c"
+          ],
+          "action": "audit_before_gap_or_port_claim"
+        },
+        {
+          "key": "objects-dungeon:0040",
+          "path": "docs/parity/objects-dungeon.md",
+          "ordinal": 40,
+          "line": 78,
+          "row_sha256": "7346af731a696b09d308481544325674cdd855697a08afd3b4b6fcf32661b866",
+          "feature": "Zapping while engulfed",
+          "section": "Feature table",
+          "c_reference": "zap.c zap_over_floor / u.uswallow",
+          "historic_status": "MISSING",
+          "status_freshness": "historical_unrefreshened_by_this_plan",
+          "family": "OB07",
+          "unit_refs": [
+            "OB07",
+            "OB07-R01",
+            "P11a",
+            "P11b",
+            "P11c"
+          ],
+          "action": "audit_before_gap_or_port_claim"
+        },
+        {
+          "key": "objects-dungeon:0041",
+          "path": "docs/parity/objects-dungeon.md",
+          "ordinal": 41,
+          "line": 79,
+          "row_sha256": "bcff7f6e812083a8fde0e444d2ba6b22932d3bf2ff90a8c8dcd508f7c7b36d3c",
+          "feature": "Breaking wands (apply) / item destruction by rays",
+          "section": "Feature table",
+          "c_reference": "apply.c do_break_wand; zap.c destroy_items",
+          "historic_status": "MISSING",
+          "status_freshness": "historical_unrefreshened_by_this_plan",
+          "family": "OB07",
+          "unit_refs": [
+            "OB07",
+            "OB07-R01",
+            "P11a",
+            "P11b",
+            "P11c"
+          ],
+          "action": "audit_before_gap_or_port_claim"
+        }
+      ],
+      "row_count": 9,
+      "semantic_evidence": false
+    },
+    "repair1_bounded_fallback": {
+      "reason": "Graph discovery tools unavailable under isolated configuration; tool catalog checked. Findings supplied the known adapter paths. Only five explicitly permitted paths/ranges were read to confirm enum timing and independent JSON-RPC envelopes. No C/prerequisite/unrelated source discovery.",
+      "paths": [
+        "crates/nethacked-agent/src/commands.rs",
+        "crates/nethacked-agent/src/jsonrpc.rs",
+        "crates/nethacked-agent/src/bin/jsonrpc.rs",
+        "crates/nethacked-agent/tests/protocol_tests.rs",
+        "crates/nethacked-agent/src/mcp.rs"
+      ],
+      "evidence_pointer": "/contract_repair/adapter_reads"
+    }
+  },
+  "process": {
+    "source_only": true,
+    "compiler_preprocessor_c_lua_cargo_executed": false,
+    "repo_source_or_docs_written": false,
+    "new_processes_left_running": false,
+    "nested_agents": false,
+    "usage": "unknown; tool exposes no token accounting"
+  },
+  "contract_repair": {
+    "attempt": 1,
+    "status": "repair draft only; fresh independent re-review pending; no review PASS claim",
+    "input": "/tmp/netrust-p11a-s1-review-cli/review-initial.json#/findings only; no full report or bindings read",
+    "finding_repairs": [
+      {
+        "finding_id": "P11S1-R1",
+        "repair": "S1 owns exactly three full optional-field initializations within unchanged six-file allowance. M owns both enum input adaptations when STEP_ACTIONS changes; commands.rs is explicitly M-owned for this setup. Preserve old full p/action-only requests, loops/assertions and separate selected missing-index rejection evidence.",
+        "owners": [
+          "P11a-S1",
+          "P11a-S1-M"
+        ]
+      },
+      {
+        "finding_id": "P11S1-R2",
+        "repair": "New existing-family child P11a-S1-MC owns post-D1 charged machine adapters and exact test files, explicitly depends on accepted M/D1/P1, and supplies per-route transcripts consumed by F/A1. Existing C1/P1/B1/D1 order, backend independence, original53 and all ten mandatory surfaces remain.",
+        "owners": [
+          "P11a-D1",
+          "P11a-S1-MC",
+          "P11a-S1-F",
+          "P11a-A1"
+        ]
+      },
+      {
+        "finding_id": "P11S1-R3",
+        "repair": "Library -32602 and independent binary flat {error: message} remain separate before session.step. M explicitly owns binary inventory/selection and regressions; MC owns binary continuation with actual process stdio evidence, required alongside separate library evidence by F/A1.",
+        "owners": [
+          "P11a-S1-M",
+          "P11a-S1-MC",
+          "P11a-S1-F",
+          "P11a-A1"
+        ]
+      }
+    ],
+    "adapter_reads": [
+      {
+        "path": "crates/nethacked-agent/src/commands.rs",
+        "ranges": [
+          [
+            250,
+            335
+          ]
+        ],
+        "sha256": "49c8c44b02b06f91530125c3dd0cfeb6d40d778739b4c37e9770bb4d4ef9e242",
+        "snapshots": [
+          {
+            "line": 264,
+            "text": "    Ok(ActionArgs {"
+          },
+          {
+            "line": 319,
+            "text": "        let p = ActionArgs {"
+          },
+          {
+            "line": 327,
+            "text": "            assert!("
+          },
+          {
+            "line": 329,
+            "text": "                \"STEP_ACTIONS entry {n} rejected\""
+          }
+        ]
+      },
+      {
+        "path": "crates/nethacked-agent/src/jsonrpc.rs",
+        "ranges": [
+          [
+            1,
+            85
+          ]
+        ],
+        "sha256": "330b7ca49944442a495cbb0576e0f72a8b1b62c88e5e63ce00edcfbae335ab54",
+        "snapshots": [
+          {
+            "line": 40,
+            "text": "        \"nethacked.step\" => {"
+          },
+          {
+            "line": 45,
+            "text": "            let args = action_args_from_json(params, session.player_coord())"
+          },
+          {
+            "line": 46,
+            "text": "                .map_err(|m| (INVALID_PARAMS, m))?;"
+          },
+          {
+            "line": 47,
+            "text": "            let action = parse_action(action_str, &args).map_err(|m| (INVALID_PARAMS, m))?;"
+          },
+          {
+            "line": 48,
+            "text": "            Ok(json!(session.step(action)))"
+          }
+        ]
+      },
+      {
+        "path": "crates/nethacked-agent/src/bin/jsonrpc.rs",
+        "ranges": [
+          [
+            1,
+            100
+          ]
+        ],
+        "sha256": "c0bf9ed0220e91894046c89e700aa644514693e07387099201826178e7891583",
+        "snapshots": [
+          {
+            "line": 18,
+            "text": "    let init_obs = session.get_observation();"
+          },
+          {
+            "line": 19,
+            "text": "    writeln!(stdout, \"{}\", serde_json::to_string(&init_obs)?)?;"
+          },
+          {
+            "line": 31,
+            "text": "        let action_name = cmd.get(\"action\").and_then(|a| a.as_str()).unwrap_or(\"wait\");"
+          },
+          {
+            "line": 32,
+            "text": "        let obs = if action_name == \"get_state\" {"
+          },
+          {
+            "line": 35,
+            "text": "            let args = match action_args_from_json(&cmd, session.player_coord()) {"
+          },
+          {
+            "line": 37,
+            "text": "                Err(e) => return Some(json!({ \"error\": e }).to_string()),"
+          },
+          {
+            "line": 38,
+            "text": "            };"
+          },
+          {
+            "line": 39,
+            "text": "            match parse_action(action_name, &args) {"
+          }
+        ]
+      },
+      {
+        "path": "crates/nethacked-agent/tests/protocol_tests.rs",
+        "ranges": [
+          [
+            138,
+            197
+          ]
+        ],
+        "sha256": "7353d48d1c3f49a361b4073401a630b7435cbdb94aaed09463cc0fdbd6438e65",
+        "snapshots": [
+          {
+            "line": 142,
+            "text": "fn mcp_step_enum_matches_accepted_actions() {"
+          },
+          {
+            "line": 160,
+            "text": "    for a in [\"descend\", \"ascend\", \"eat\", \"cast\", \"kick_east\"] {"
+          },
+          {
+            "line": 161,
+            "text": "        assert!(actions.contains(&a.to_string()), \"enum missing {a}\");"
+          },
+          {
+            "line": 163,
+            "text": "    for a in &actions {"
+          },
+          {
+            "line": 165,
+            "text": "        let r = mcp(&mut fresh, json!({\"jsonrpc\":\"2.0\",\"id\":4,\"method\":\"tools/call\",\"params\":{\"name\":\"nethacked_step\",\"arguments\":{\"action\":a}}})).unwrap();"
+          },
+          {
+            "line": 166,
+            "text": "        assert!(r.get(\"result\").is_some(), \"enum action {a} rejected: {r}\");"
+          }
+        ]
+      },
+      {
+        "path": "crates/nethacked-agent/src/mcp.rs",
+        "ranges": [
+          [
+            10,
+            53
+          ]
+        ],
+        "sha256": "ef460cb202ebaa2c50af77e798e8394dfa94eb2da481578dc435834b96506296",
+        "snapshots": [
+          {
+            "line": 13,
+            "text": "pub const STEP_ACTIONS: &[&str] = &["
+          },
+          {
+            "line": 34,
+            "text": "    \"kick_west\","
+          },
+          {
+            "line": 35,
+            "text": "];"
+          }
+        ]
+      }
+    ],
+    "setup_ownership": [
+      {
+        "stage": "P11a-S1",
+        "file": "crates/nethacked-agent/src/commands.rs",
+        "target": "action_args_from_json full ActionArgs literal",
+        "edit": "new optional expected_item token context/None field only; shared new-action parsing stays in S1"
+      },
+      {
+        "stage": "P11a-S1",
+        "file": "crates/nethacked-agent/src/commands.rs",
+        "target": "tests::every_mcp_step_action_parses full p literal",
+        "edit": "expected_item:None only; retain old fields, loop and assertion"
+      },
+      {
+        "stage": "P11a-S1",
+        "file": "crates/nethacked-agent/src/graphql.rs",
+        "target": "step full ActionArgs literal",
+        "edit": "expected_item:None only"
+      },
+      {
+        "stage": "P11a-S1-M",
+        "file": "crates/nethacked-agent/src/commands.rs",
+        "target": "tests::every_mcp_step_action_parses loop argument selection",
+        "edit": "new cancel context-only/default input; selected uses existing index0 p; all old inputs/loop/assertion retained when STEP_ACTIONS changes"
+      },
+      {
+        "stage": "P11a-S1-M",
+        "file": "crates/nethacked-agent/tests/protocol_tests.rs",
+        "target": "mcp_step_enum_matches_accepted_actions loop request setup",
+        "edit": "index0 only for selected; old action-only requests and both loops/assertions retained when STEP_ACTIONS changes; separate missing-index rejection test"
+      }
+    ],
+    "successor_ownership": {
+      "P11a-S1-M": {
+        "depends": [
+          "P11a-S1"
+        ],
+        "files": [
+          "crates/nethacked-agent/src/commands.rs",
+          "crates/nethacked-agent/src/session.rs",
+          "crates/nethacked-agent/src/observation.rs",
+          "crates/nethacked-agent/src/mcp.rs",
+          "crates/nethacked-agent/src/jsonrpc.rs",
+          "crates/nethacked-agent/src/bin/jsonrpc.rs",
+          "crates/nethacked-agent/src/graphql.rs",
+          "crates/nethacked-wasm/src/lib.rs",
+          "crates/nethacked-py/src/lib.rs",
+          "crates/nethacked-agent/tests/protocol_tests.rs",
+          "crates/nethacked-agent/tests/graphql_http_test.rs",
+          "crates/nethacked-agent/tests/selected_wand_actions.rs",
+          "python/nethacked_gym/env.py",
+          "python/tests/test_rl.py"
+        ],
+        "scope": "machine APIs common selector/cancel, carried inventory index+opaque token queries and explicit numeric/string arguments, including both independent JSON-RPC library/bin routes; no charged prompt continuation claim (owned by S1-MC after D1)",
+        "setup": "When mcp.rs STEP_ACTIONS advertises the new names, S1-M adapts both enum tests in commands.rs and protocol_tests.rs in the same stage. All old-action inputs, loops and assertions remain; missing-index rejection is a separate new test."
+      },
+      "P11a-S1-MC": {
+        "id": "P11a-S1-MC",
+        "parent": "P11a",
+        "cross_refs": [
+          "UI01"
+        ],
+        "prerequisites": [
+          "P11a-S1-M",
+          "P11a-D1",
+          "P11a-P1"
+        ],
+        "ready_after": "accepted S1-M adapters and accepted D1 native prepare/AwaitDirection/continue/pending-save contract plus P1 preflight; narrow per-route adapter audit and independent review before implementation",
+        "files": [
+          "crates/nethacked-agent/src/commands.rs",
+          "crates/nethacked-agent/src/session.rs",
+          "crates/nethacked-agent/src/observation.rs",
+          "crates/nethacked-agent/src/mcp.rs",
+          "crates/nethacked-agent/src/jsonrpc.rs",
+          "crates/nethacked-agent/src/bin/jsonrpc.rs",
+          "crates/nethacked-agent/src/graphql.rs",
+          "crates/nethacked-wasm/src/lib.rs",
+          "crates/nethacked-py/src/lib.rs",
+          "crates/nethacked-agent/tests/protocol_tests.rs",
+          "crates/nethacked-agent/tests/graphql_http_test.rs",
+          "crates/nethacked-agent/tests/selected_wand_actions.rs",
+          "python/nethacked_gym/env.py",
+          "python/tests/test_rl.py"
+        ],
+        "outcome": "post-D1 charged machine continuation adapters, schemas and per-route transcripts, including the separate JSON-RPC binary; accepted evidence is mandatory for S1-F and A1 all-ten exit",
+        "interface": "Expose the reviewed D1 native prepare result, opaque pending continuation identity and continue result through each owned adapter; carry AwaitDirection/terminal boundaries and explicit direction cancellation distinctly from pre-selection CancelZapSelection. Exact transport method/field names and Python bookkeeping timing are fixed in this child audit against accepted D1, never guessed in S1. Implement adapter tests in the owned files below; do not precollect direction or replay a complete S1 selected action as continuation.",
+        "file_restrictions": {
+          "crates/nethacked-agent/src/commands.rs": "Only reviewed new prepare/continuation argument helpers and direction validation; preserve S1 complete-action defaults and all legacy parsing.",
+          "crates/nethacked-agent/src/bin/jsonrpc.rs": "Add native charged prepare/continue line-protocol routes while preserving flat parser errors and existing startup/get_state/success behavior; binary transcript must exercise the actual executable, not the library dispatcher.",
+          "crates/nethacked-wasm/src/lib.rs": "Own structured prepare/continue exports and inline adapter regression fixtures; validate emitted wasm-bindgen JS/TS declarations as external artifacts, never hand-edit tracked generated files."
+        },
+        "required_transcript": "carried index/token selection; prepare consumes signed charge/backfire before AwaitDirection; owned NoDir completes without prompt; explicit self/up/down/compass continuation and direction cancellation retain D1 charge/time cleanup; backfire/death/dust terminal exits; duplicate/stale continuation rejection; pending save/load/oldload evidence through reviewed D1 API; exact native events/RNG/charge/time boundaries, no second charge or duplicated effects",
+        "adapter_evidence": [
+          {
+            "surface": "MCP",
+            "adapter_files": [
+              "crates/nethacked-agent/src/mcp.rs"
+            ],
+            "test_files": [
+              "crates/nethacked-agent/tests/protocol_tests.rs"
+            ],
+            "required": "tools/schema and real prepare/continue tool-call transcripts; existing MCP error envelope and pre-step invalid-argument boundary; carried index/token selection; prepare consumes signed charge/backfire before AwaitDirection; owned NoDir completes without prompt; explicit self/up/down/compass continuation and direction cancellation retain D1 charge/time cleanup; backfire/death/dust terminal exits; duplicate/stale continuation rejection; pending save/load/oldload evidence through reviewed D1 API; exact native events/RNG/charge/time boundaries, no second charge or duplicated effects"
+          },
+          {
+            "surface": "JSON-RPC library",
+            "adapter_files": [
+              "crates/nethacked-agent/src/jsonrpc.rs"
+            ],
+            "test_files": [
+              "crates/nethacked-agent/tests/protocol_tests.rs"
+            ],
+            "required": "library request/response transcript with INVALID_PARAMS -32602 for malformed new arguments before session.step; carried index/token selection; prepare consumes signed charge/backfire before AwaitDirection; owned NoDir completes without prompt; explicit self/up/down/compass continuation and direction cancellation retain D1 charge/time cleanup; backfire/death/dust terminal exits; duplicate/stale continuation rejection; pending save/load/oldload evidence through reviewed D1 API; exact native events/RNG/charge/time boundaries, no second charge or duplicated effects"
+          },
+          {
+            "surface": "JSON-RPC binary",
+            "adapter_files": [
+              "crates/nethacked-agent/src/bin/jsonrpc.rs"
+            ],
+            "test_files": [
+              "crates/nethacked-agent/tests/protocol_tests.rs"
+            ],
+            "required": "process-level stdio transcript of actual jsonrpc binary, including initial observation/get_state, carried query, selection, flat {error: message} malformed argument responses before session.step, and independent prepare/continue routes; never substitute the library transcript; carried index/token selection; prepare consumes signed charge/backfire before AwaitDirection; owned NoDir completes without prompt; explicit self/up/down/compass continuation and direction cancellation retain D1 charge/time cleanup; backfire/death/dust terminal exits; duplicate/stale continuation rejection; pending save/load/oldload evidence through reviewed D1 API; exact native events/RNG/charge/time boundaries, no second charge or duplicated effects"
+          },
+          {
+            "surface": "GraphQL",
+            "adapter_files": [
+              "crates/nethacked-agent/src/graphql.rs"
+            ],
+            "test_files": [
+              "crates/nethacked-agent/tests/graphql_http_test.rs"
+            ],
+            "required": "HTTP mutation/query/schema and GraphQL Error transcript; carried index/token selection; prepare consumes signed charge/backfire before AwaitDirection; owned NoDir completes without prompt; explicit self/up/down/compass continuation and direction cancellation retain D1 charge/time cleanup; backfire/death/dust terminal exits; duplicate/stale continuation rejection; pending save/load/oldload evidence through reviewed D1 API; exact native events/RNG/charge/time boundaries, no second charge or duplicated effects"
+          },
+          {
+            "surface": "WASM",
+            "adapter_files": [
+              "crates/nethacked-wasm/src/lib.rs"
+            ],
+            "test_files": [
+              "crates/nethacked-wasm/src/lib.rs"
+            ],
+            "required": "inline structured-export regression fixtures plus actual exported JSON transcript, {error} responses and emitted wasm-bindgen declarations as external evidence; carried index/token selection; prepare consumes signed charge/backfire before AwaitDirection; owned NoDir completes without prompt; explicit self/up/down/compass continuation and direction cancellation retain D1 charge/time cleanup; backfire/death/dust terminal exits; duplicate/stale continuation rejection; pending save/load/oldload evidence through reviewed D1 API; exact native events/RNG/charge/time boundaries, no second charge or duplicated effects"
+          },
+          {
+            "surface": "AgentSession shared commands",
+            "adapter_files": [
+              "crates/nethacked-agent/src/commands.rs",
+              "crates/nethacked-agent/src/session.rs",
+              "crates/nethacked-agent/src/observation.rs"
+            ],
+            "test_files": [
+              "crates/nethacked-agent/tests/selected_wand_actions.rs"
+            ],
+            "required": "transport-free public prepare/continue and pending snapshot/save restoration transcript; carried index/token selection; prepare consumes signed charge/backfire before AwaitDirection; owned NoDir completes without prompt; explicit self/up/down/compass continuation and direction cancellation retain D1 charge/time cleanup; backfire/death/dust terminal exits; duplicate/stale continuation rejection; pending save/load/oldload evidence through reviewed D1 API; exact native events/RNG/charge/time boundaries, no second charge or duplicated effects"
+          },
+          {
+            "surface": "Python string actions",
+            "adapter_files": [
+              "crates/nethacked-py/src/lib.rs",
+              "python/nethacked_gym/env.py"
+            ],
+            "test_files": [
+              "python/tests/test_rl.py"
+            ],
+            "required": "string/structured prepare/continue/cancel transcript, ValueError before world or RL bookkeeping, reviewed reward/step_count timing without double bookkeeping; carried index/token selection; prepare consumes signed charge/backfire before AwaitDirection; owned NoDir completes without prompt; explicit self/up/down/compass continuation and direction cancellation retain D1 charge/time cleanup; backfire/death/dust terminal exits; duplicate/stale continuation rejection; pending save/load/oldload evidence through reviewed D1 API; exact native events/RNG/charge/time boundaries, no second charge or duplicated effects"
+          },
+          {
+            "surface": "Python numeric/RL action22",
+            "adapter_files": [
+              "crates/nethacked-py/src/lib.rs",
+              "python/nethacked_gym/env.py"
+            ],
+            "test_files": [
+              "python/tests/test_rl.py"
+            ],
+            "required": "explicit selected22 argument/dedicated-method prepare/continue transcript and default22 East6/Discrete26 regression; ValueError before bookkeeping; distinct selection and charged direction cancellation; carried index/token selection; prepare consumes signed charge/backfire before AwaitDirection; owned NoDir completes without prompt; explicit self/up/down/compass continuation and direction cancellation retain D1 charge/time cleanup; backfire/death/dust terminal exits; duplicate/stale continuation rejection; pending save/load/oldload evidence through reviewed D1 API; exact native events/RNG/charge/time boundaries, no second charge or duplicated effects"
+          }
+        ]
+      },
+      "P11a-S1-F": {
+        "depends": [
+          "P11a-S1-M",
+          "P11a-C1",
+          "P11a-B1",
+          "P11a-D1",
+          "P11a-P1",
+          "P11a-S1-MC"
+        ],
+        "files": [
+          "crates/nethacked-tui/src/main.rs",
+          "crates/nethacked-tui/src/keys.rs",
+          "web/js/game.js",
+          "web/play/play.js",
+          "web/index.html",
+          "web/css/app.css"
+        ],
+        "consumes": {
+          "interactive_owner": "S1-F owns TUI and both browser implementations/transcripts in its six files.",
+          "machine_owner": "S1-MC owns MCP, JSON-RPC library and binary separately, GraphQL, WASM, AgentSession shared commands and both Python routes, with explicit adapter/test files below.",
+          "exit": "Accept every frontends entry separately. Require both JSON-RPC subroute transcripts within the single declared surface, S1-M index/token/schema/selection evidence, S1-MC charged prepare/AwaitDirection/continue/cancel/save evidence and S1-F interactive/menu evidence. No representative-surface or broad parity substitution."
+        }
+      },
+      "P11a-A1": {
+        "depends": [
+          "P11a-C1",
+          "P11a-B1",
+          "P11a-D1",
+          "P11a-P1",
+          "P11a-S1-M",
+          "P11a-S1-MC",
+          "P11a-S1-F"
+        ],
+        "consumes": "aggregate all P11a branch/frontend/save review; consume accepted S1-M inventory/selection, S1-MC post-D1 per-machine adapter/transcript evidence (JSON-RPC library and actual binary separately), and S1-F interactive/menu evidence for all ten mandatory surfaces; no representative-route or broad parity shortcut; global unresolved configuration prevents false conformance acceptance"
+      }
+    },
+    "jsonrpc_subroutes": {
+      "library": {
+        "path": "crates/nethacked-agent/src/jsonrpc.rs",
+        "parameter_error": "INVALID_PARAMS -32602 inside existing JSON-RPC 2.0 response; existing notification behavior retained",
+        "boundary": "action_args_from_json/parse_action errors return before session.step"
+      },
+      "binary": {
+        "path": "crates/nethacked-agent/src/bin/jsonrpc.rs",
+        "parameter_error": "flat {error: message} line response, preserving initial observation/get_state and existing success format",
+        "boundary": "independent action_args_from_json/parse_action errors return before session.step; never assume library dispatch"
+      },
+      "ownership": "S1 supplies shared parser only. S1-M owns both subroute inventory/selection adapters and separate regression evidence. S1-MC owns both post-D1 continuation adapters and separate transcripts; S1-F/A1 must consume both."
+    },
+    "immutability": "Existing baseline, accepted identity/configuration, pinned C, prerequisite/source/hash packets and legacy semantics unchanged; original contract and review untouched; original53 family registry is coordinator-owned; all ten surfaces remain mandatory.",
+    "verification": "Artifact-only JSON, exact file ownership and acyclic dependency checks; no implementation tests/builds/Cargo/C/preprocessor/Lua/custom C evaluator or semantic PASS.",
+    "usage": "unknown; no tool-provided accounting"
+  }
+}

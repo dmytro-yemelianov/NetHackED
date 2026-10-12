@@ -1,0 +1,58 @@
+{
+  "unit": "M7",
+  "status": "accepted_in_this_commit",
+  "parent": "18ea159",
+  "scope": "Combined live-extension, retained-continuation, native compatibility and refusal evidence across the complete default cutover; unchanged goldens; final independent architecture review and obligation reconciliation",
+  "focused_passed": 4,
+  "focused_tests": [
+    "m7_combined_live_extension_matches_legacy_across_all_transports",
+    "m7_retained_continuation_across_combined_script",
+    "m7_combined_refusal_evidence",
+    "m7_geography_payload_boundary"
+  ],
+  "workspace_passed": 1754,
+  "checks": 12,
+  "goldens": [
+    "golden_vanilla_event_logs_are_unchanged",
+    "golden_vanilla_bestiary_combat_is_unchanged",
+    "golden_vanilla_runs_are_unchanged"
+  ],
+  "non_documentation_inputs": 589,
+  "source_digest": "081f9a9b972881816269effb5b99c0823fbaded1382808889326b0218f721b38",
+  "source_digest_method": "sha256 over the sha256sum lines of every non-docs source file tracked at commit time (git ls-files --cached --others --exclude-standard, excluding docs/), sorted by path: git ls-files -z --cached --others --exclude-standard | grep -zv '^docs/' | sort -z | xargs -0 sha256sum | sha256sum",
+  "review": {
+    "verdict": "ACCEPT_WITH_CONDITIONS",
+    "reviewer": "independent read-only architecture review subagent (m7-arch-review), no files modified by the reviewer",
+    "summary": "Architecture sound: facade imports once with no gameplay World reconstruction; dispatcher compile-time exhaustive over all 38 ActionAst variants with truthful soft/hard refusal semantics; every non-traversal transport enforces the 16 KiB kernel payload bound through a verified enforcement chain (kernel registration/request/reply checks down to the owners observation bound); accounting exact with distinct per-transport policies, session-witness guards and scoped publication permits; agent-facing consumers genuinely cut over with the legacy path honestly retained as oracle; three goldens bit-for-bit unchanged while the facade matches the oracle bit-for-bit across the combined script, mid-script reload continuation and refusal evidence. The geography-payload finding is correctly characterized, honestly documented and provably safe (truthful Err, state untouched, independently verified).",
+    "conditions": [
+      "C1 required: schedule the geography-payload boundary fix (compact geography facts preferred, or architecture-approved bound raise) before the facade is the unconditional default; on ~63% of fresh seeds every time-advancing and inventory action refuses truthfully",
+      "C2 required for M7 close: complete the obligation reconciliation (this checkpoint artifact, the M7 milestone entry and the committed m7_audit evidence)",
+      "C3 minor: doc-comment corrections applied in this commit (facade step contract vs the reply.error committed-prefix path; m7_audit measured ranges 15.4-17.4 KiB over seeds 1-200 and the seed-8 fixture size 15854 bytes/530 headroom)",
+      "C4 tracked: TUI (nethacked-tui/src/main.rs) and demo (nethacked-agent/src/bin/demo.rs) remain legacy-path gameplay consumers; cut over or explicitly defer as a tracked item",
+      "C5 optional: self-describing over-bound refusal error variant instead of Kernel(NativeRefusal)"
+    ]
+  },
+  "limits": "16 KiB kernel payload limits unchanged; no limit raised inside the audit",
+  "boundary_finding": "The 16 KiB transports (wait/I4, movement/I5, inventory/I6, item_effects/I7, services/I8, monster/I3, timer/I2e) carry GeographyFacts containing the full DungeonLevel. Fresh levels serialize to 15.4-17.4 KiB depending on seed (measured over seeds 1-200); 38 of 60 seeds exceed 16384 bytes, so the facade truthfully refuses Wait/Move (Err, state untouched) on most fresh worlds; the refusal blast radius covers every geography-reading transport while CancelZapSelection (I1, no geography read) and Descend/Ascend (I9, 8 MiB) still succeed. Traversal (I9) is the accepted precedent for larger limits (8 MiB). Documented as an open boundary; fix options for a future increment: (a) compact geography facts (transport redesign, preferred), or (b) architecture-approved bound raise (scoped and justified).",
+  "evidence": {
+    "combined_script": "24-step ActionAst script (Wait, Move, PickUp, Wield, Drop, OpenDoor, CloseDoor, Kick, MeleeAttack, Search, Untrap, Quaff, Read, Eat, Engrave, ZapWand, Pray, Pay, CancelZapSelection, Descend, Ascend) through one continuous OwnerGameSession on a fresh world (seed 8, 530-byte geography headroom after fixture additions), bit-for-bit vs the legacy step_player_action oracle at every step (returned events, cumulative event log, full native state including the RNG stream); traversal phase verified via depth/stored_levels",
+    "retained_continuation": "session re-imported mid-script (split_at(14)); the reloaded session matches the uninterrupted facade and the legacy oracle three-way bit-for-bit",
+    "refusal": "soft refusals (Descend without stairs, Quaff/Read/Fire on empty or invalid selections) match legacy exactly; the hard helpless-cancellation refusal returns a truthful Err with the state untouched, then Wait succeeds",
+    "payload_boundary": "seeds 1..=16: geography size <= 16384 iff Wait+Move dispatch Ok; over-bound worlds refuse both with the state untouched; both sides exercised (within >= 8, over >= 4)"
+  },
+  "files": [
+    "crates/nethacked-sim/src/owner_persistence/runtime.rs",
+    "crates/nethacked-sim/src/owner_persistence/runtime/tests/m7_audit.rs",
+    "crates/nethacked-sim/src/owner_persistence/runtime/game_session.rs",
+    "docs/parity/obligations/2026-10-08-microkernel-goal.json",
+    "docs/parity/obligations/2026-10-10-microkernel-m7-audit-checkpoint.json",
+    "docs/plans/2026-10-06-handover.md",
+    "MEMORY.md"
+  ],
+  "remaining": [
+    "Compact geography facts (transport redesign) or architecture-approved payload bound raise for the 16 KiB transports (review condition C1, required follow-up)",
+    "TUI/demo legacy-path consumer cutover or explicit tracked deferral (review condition C4)",
+    "Optional self-describing over-bound refusal error variant (review condition C5)",
+    "Full 53-family C parity backlog remains tracked separately"
+  ]
+}

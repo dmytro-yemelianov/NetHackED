@@ -1,0 +1,614 @@
+{
+  "schema": "netrust-p11a-s1-public-selection-contract-draft-v1",
+  "status": "fresh independent semantic review required before implementation",
+  "id": "P11a-S1",
+  "parent_family": "P11a",
+  "cross_refs": [
+    "UI01",
+    "OB07"
+  ],
+  "scope_counts": "all53 families remain; no family closed or removed",
+  "baseline": {
+    "head": "6fb4aeee7441ffc0fd64e5c015697c4cdd656491",
+    "branch": "feat/monster-hp-d8",
+    "input_count": 344,
+    "input_digest": "567aed72fc97273ac4209afe92decbd5175e8e576ec7b5933bdb14c871e4e707",
+    "baseline_file": {
+      "path": "/tmp/netrust-p11a-s1-contract/baseline.json",
+      "sha256": "399c546adc12d3337c3934f2be0b101c7fb4da009f3dd32b9ff60c1f18e6d8c2"
+    },
+    "digest_algorithm": "sha256 over sorted path.encode()+rawbytes without separators",
+    "source_match": true,
+    "changed_files": [
+      {
+        "path": "crates/nethacked-agent/tests/bones_server_test.rs",
+        "sha256": "49c3625e59aebfeda83cb2e5d4d6fe6c6adebb20129a61ca1377eba0e9aa278e"
+      },
+      {
+        "path": "crates/nethacked-arena/src/lib.rs",
+        "sha256": "099cf75465706208f388a83acebdb30b15321e2ae1755fd9206cc54e6669dc9e"
+      },
+      {
+        "path": "crates/nethacked-data/src/items.rs",
+        "sha256": "ba425b5cea5b8f714899435001b42221ed4555e21fb0ac5b429ff5b280016661"
+      },
+      {
+        "path": "crates/nethacked-data/src/ruleset.rs",
+        "sha256": "fc3cad8e54a047a3ec35a6b8ecf8bcbee6ddeeeba93a21af3f4b5e115fdd0a6f"
+      },
+      {
+        "path": "crates/nethacked-sim/src/actions/items.rs",
+        "sha256": "0c4594903f69e81287a3cc326322009d5c162492569d67ce9aea14fb4ae77806"
+      },
+      {
+        "path": "crates/nethacked-sim/src/actions/religion.rs",
+        "sha256": "d9e48e3dfa9b810ef46b0de5f05895df36aeb8ddb49ceaad05916bd5fc1e93ee"
+      },
+      {
+        "path": "crates/nethacked-sim/src/bones.rs",
+        "sha256": "fcd0460517922333dad07b31718125784d210aebf66681dadb56e44f333329ce"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/hero_armor_ac_tests.rs",
+        "sha256": "c6e3aad4288f8035bf05c16148a6fb893b4602443a4a81a7bacb93581b299fc8"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/monster_attack_tests.rs",
+        "sha256": "da7edca74bde3b21a0a3b13408060e5b7dd738c8b9348b49949ba52b09bf25c8"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+        "sha256": "b75e30a0ddd553af063d00cb0e04540a956018da52ea9987b6128fe7fbe2dd0a"
+      },
+      {
+        "path": "crates/nethacked-types/src/lib.rs",
+        "sha256": "93c63df3e963993cde2029e5cf8e3e1daca047878cc5e87d07c4d03141d6f1c5"
+      },
+      {
+        "path": "crates/nethacked-data/tests/item_definition_identity.rs",
+        "sha256": "165f495555c373d1c7e335dbf7135fe9cd747af357d7c7c64784ebda36b319b9"
+      },
+      {
+        "path": "crates/nethacked-sim/tests/item_definition_identity_tests.rs",
+        "sha256": "be7d1cf64de37cd5e27bdb883d61a7ca809f83d264c0572e72c7966c6f424842"
+      }
+    ]
+  },
+  "source_evidence": "evidence.json#/pinned_c",
+  "prerequisites": "evidence.json#/prerequisites; accepted ID1 interface reused, not reaudited",
+  "first_ready_outcome": "native explicit selected inventory wand + shared string parser + precharge item-selection cancellation; existing selected dispatch behavior only. Positive uncursed ordinary canonical create-monster path supplies source-conformance witness. Not all10 frontend or charge closure.",
+  "representation": {
+    "keep_exact_legacy": "ActionAst::ZapWand { dir:Direction, energy:u32 }; old serde JSON and parser zap omission/index-ignore/East/default6 behavior unchanged",
+    "new_action": "ActionAst::ZapSelectedWand { item_index:u32, expected_item:Option<SlotId>, dir:Direction, energy:u32 }",
+    "optional_field": "expected_item #[serde(default, skip_serializing_if=\"Option::is_none\")]; missing token means current snapshot index, never claims stale snapshot detection",
+    "cancel_action": "ActionAst::CancelZapSelection (unit variant), distinct from future direction-cancel choice",
+    "index_semantics": "zero-based index of complete arena.items_carried_by(player_id), before any filter; u32→usize checked, no filtering/reordering to wand subset; no default index. Frontend choice lists retain actual complete-inventory index",
+    "expected_item_semantics": "optional captured generational ItemId/SlotId token from same snapshot; equality with selected current-index ItemId required; stale/deleted/recycled/moved token refusal before identity/charge/effect. Native token uses existing serde ItemId JSON, no invented numeric conversion. Index-only requests refer to current inventory snapshot; old-index mutation without token cannot be detected.",
+    "identity_semantics": "accepted ItemRecord.definition / Ruleset.item_by_definition before charges; Some unresolved exact accepted refusal; None retains accepted legacy exact owned-name fallback"
+  },
+  "ordering": [
+    "normal existing public actor/death/helpless/dressing guards apply; helpless/dressing replaces action with Wait (not an item-selection cancellation). Isolated no-time fixtures must choose live ready coherent hero",
+    "CancelZapSelection: one LogMessage Never mind. for pinned verbose=true, no selector/identity/charge/effect or hero_act; later option-aware verbose=false variant may suppress message via UI04 child",
+    "Selected: snapshot full direct-carried vector, range→expected token→class→accepted identity validation; never find first wand",
+    "success delegates same resolved item through shared existing handle logic; no change in charge/wrest/backfire/direction pipeline in S1; legacy handler still chooses first actual carried Wand exactly as before",
+    "cancel/refusal returns no hero_act; existing step_player_action reconciles equipment/AC and records events, then process_turn_ticks(false,...); canonical gameplay state/RNG/scheduler unchanged in reconciled fixture except event log and AgentSession.last_events",
+    "selected ordinary canonical positive uncursed NoDir/create path decrements chosen charge once, first creation draw bound23 then optional bound7, existing native placement/HP/group/scheduler event ordering retained; NORMAL_SPEED cost, no beam event and energy/dir ignored as existing accepted ordinary path"
+  ],
+  "public_results": {
+    "cancel": "one GameEvent::LogMessage { text:\"Never mind.\" }; native direct public call then standard event record",
+    "range_or_token_or_missing_current_object": "one LogMessage { text:\"You don't have that object.\" }; no game time/RNG/charges/effects",
+    "nonwand": "one LogMessage { text:\"That is a silly thing to zap.\" }; same no-time boundary; API cannot bypass Wand class via owned identity",
+    "unknown_explicit_identity": "one LogMessage { text:\"You cannot zap that wand: its definition is unavailable.\" }; exact accepted ID1 refusal, no fallback",
+    "no_candidates_interactive": "C You don't have anything to zap. and ECMD_CANCEL; S1-F must produce equivalent before direction; legacy native no-wand message remains You have no wand to zap. until reviewed successor"
+  },
+  "parser": {
+    "new_names": [
+      "zap_selected",
+      "cancel_zap_selection"
+    ],
+    "zap_selected": "required index 0..=4294967295; optional expected_item token; existing compass direction optional East; fixed ZAP_ENERGY6; no new meaning for legacy zap",
+    "errors": {
+      "missing": "zap_selected requires index",
+      "bad_numeric": "'index' must be a non-negative integer (JSON invalid types/negative/fraction); >u32max: zap_selected index exceeds u32 range",
+      "bad_token": "'expected_item' must be an item token",
+      "bad_direction": "existing invalid direction '...'",
+      "cancel_args": "cancel_zap_selection takes no arguments (any nonnull selection/direction/target/text/expected_item supplied)"
+    },
+    "json_ownership": "validate new selected index before existing json_number casts u64 as usize (native64/wasm32); shared helper only new action special-case preserves unrelated legacy semantics",
+    "omission_null": "absent/null new expected_item = None; absent/null index for selected is error; cancel is explicit action, never inferred from missing index/direction",
+    "transport_errors": "JSON-RPC library crates/nethacked-agent/src/jsonrpc.rs: existing JSON-RPC 2.0 INVALID_PARAMS -32602 response for parameter/action parser errors. Independent line-protocol binary crates/nethacked-agent/src/bin/jsonrpc.rs: existing flat {error: message} response, with no JSON-RPC code/id envelope; it does not dispatch through the library. Preserve each format before session.step in S1 and successor adapters. MCP existing tool/RPC error envelope; GraphQL Error; WASM {error}; Python ValueError. Parse errors do not session.step, append events, tick RNG/time or increment RL step_count.",
+    "legacy_extra_fields": "expected_item is parsed/validated only for new zap_selected; old zap continues ignoring its old index and unknown/new extra selector properties. Cancel action validation ignores context-only player coordinate.",
+    "jsonrpc_subroutes": {
+      "library": {
+        "path": "crates/nethacked-agent/src/jsonrpc.rs",
+        "parameter_error": "INVALID_PARAMS -32602 inside existing JSON-RPC 2.0 response; existing notification behavior retained",
+        "boundary": "action_args_from_json/parse_action errors return before session.step"
+      },
+      "binary": {
+        "path": "crates/nethacked-agent/src/bin/jsonrpc.rs",
+        "parameter_error": "flat {error: message} line response, preserving initial observation/get_state and existing success format",
+        "boundary": "independent action_args_from_json/parse_action errors return before session.step; never assume library dispatch"
+      },
+      "ownership": "S1 supplies shared parser only. S1-M owns both subroute inventory/selection adapters and separate regression evidence. S1-MC owns both post-D1 continuation adapters and separate transcripts; S1-F/A1 must consume both."
+    }
+  },
+  "children": [
+    {
+      "id": "P11a-S1",
+      "parent": "P11a",
+      "prerequisites": [
+        "accepted OB01-WAND-ID1",
+        "accepted global profile",
+        "accepted P10a2/P10b ordinary public creation"
+      ],
+      "ready_after": "independent contract review",
+      "files": [
+        "crates/nethacked-core/src/ast.rs",
+        "crates/nethacked-sim/src/actions/mod.rs",
+        "crates/nethacked-sim/src/actions/items.rs",
+        "crates/nethacked-agent/src/commands.rs",
+        "crates/nethacked-sim/tests/selected_wand_tests.rs",
+        "crates/nethacked-agent/src/graphql.rs"
+      ],
+      "outcome": "backend/native/shared parser explicit selection+cancel prerequisite",
+      "file_restrictions": {
+        "crates/nethacked-agent/src/graphql.rs": "S1 only initializes new optional ActionArgs field to None in existing full literal; mutation/interface changes deferred S1-M"
+      },
+      "setup_ownership": "S1 owns only the three full ActionArgs optional-field initializations listed in allowed_existing_setup. S1 does not change STEP_ACTIONS or either enum test loop/input selection. protocol_tests.rs is outside S1; commands.rs enum input adaptation is deferred to S1-M."
+    },
+    {
+      "id": "P11a-S1-M",
+      "parent": "P11a",
+      "cross_refs": [
+        "UI01"
+      ],
+      "prerequisites": [
+        "P11a-S1"
+      ],
+      "ready_after": "narrow adapter contract audit and independent review",
+      "files": [
+        "crates/nethacked-agent/src/commands.rs",
+        "crates/nethacked-agent/src/session.rs",
+        "crates/nethacked-agent/src/observation.rs",
+        "crates/nethacked-agent/src/mcp.rs",
+        "crates/nethacked-agent/src/jsonrpc.rs",
+        "crates/nethacked-agent/src/bin/jsonrpc.rs",
+        "crates/nethacked-agent/src/graphql.rs",
+        "crates/nethacked-wasm/src/lib.rs",
+        "crates/nethacked-py/src/lib.rs",
+        "crates/nethacked-agent/tests/protocol_tests.rs",
+        "crates/nethacked-agent/tests/graphql_http_test.rs",
+        "crates/nethacked-agent/tests/selected_wand_actions.rs",
+        "python/nethacked_gym/env.py",
+        "python/tests/test_rl.py"
+      ],
+      "outcome": "machine APIs common selector/cancel, carried inventory index+opaque token queries and explicit numeric/string arguments, including both independent JSON-RPC library/bin routes; no charged prompt continuation claim (owned by S1-MC after D1)",
+      "file_restrictions": {
+        "crates/nethacked-agent/src/commands.rs": "S1-M owns every_mcp_step_action_parses input selection only when STEP_ACTIONS gains zap/zap_selected/cancel_zap_selection; retain its loop/assertion and old full p inputs including S1 expected_item:None.",
+        "crates/nethacked-agent/src/bin/jsonrpc.rs": "S1-M owns carried inventory index/token query and selected/cancel adapter wiring plus regression evidence for this independent line-protocol binary. Retain startup observation/get_state, existing success format and flat {error: message} parser failures; do not route it through the library dispatcher or convert it to JSON-RPC 2.0."
+      },
+      "setup_ownership": "When mcp.rs STEP_ACTIONS advertises the new names, S1-M adapts both enum tests in commands.rs and protocol_tests.rs in the same stage. All old-action inputs, loops and assertions remain; missing-index rejection is a separate new test."
+    },
+    {
+      "id": "P11a-S1-F",
+      "parent": "P11a",
+      "cross_refs": [
+        "UI01",
+        "UI04"
+      ],
+      "prerequisites": [
+        "P11a-S1-M",
+        "P11a-C1",
+        "P11a-B1",
+        "P11a-D1",
+        "P11a-P1",
+        "P11a-S1-MC"
+      ],
+      "ready_after": "accepted S1-MC per-machine-route continuation evidence, D1 reviewed continuation/pending-save API and local menu/options/cmdq contracts",
+      "files": [
+        "crates/nethacked-tui/src/main.rs",
+        "crates/nethacked-tui/src/keys.rs",
+        "web/js/game.js",
+        "web/play/play.js",
+        "web/index.html",
+        "web/css/app.css"
+      ],
+      "outcome": "TUI and both browser integrations implement choice→preflight/unpaid/charge/backfire→direction prompting/cancellation. The all-ten-surface exit consumes accepted S1-M selection/inventory evidence and S1-MC post-D1 machine continuation transcripts for every machine route, including separate JSON-RPC library/bin evidence; local six-file scope alone cannot satisfy it.",
+      "evidence_consumption": {
+        "interactive_owner": "S1-F owns TUI and both browser implementations/transcripts in its six files.",
+        "machine_owner": "S1-MC owns MCP, JSON-RPC library and binary separately, GraphQL, WASM, AgentSession shared commands and both Python routes, with explicit adapter/test files below.",
+        "exit": "Accept every frontends entry separately. Require both JSON-RPC subroute transcripts within the single declared surface, S1-M index/token/schema/selection evidence, S1-MC charged prepare/AwaitDirection/continue/cancel/save evidence and S1-F interactive/menu evidence. No representative-surface or broad parity substitution."
+      }
+    },
+    {
+      "id": "P11a-S1-MC",
+      "parent": "P11a",
+      "cross_refs": [
+        "UI01"
+      ],
+      "prerequisites": [
+        "P11a-S1-M",
+        "P11a-D1",
+        "P11a-P1"
+      ],
+      "ready_after": "accepted S1-M adapters and accepted D1 native prepare/AwaitDirection/continue/pending-save contract plus P1 preflight; narrow per-route adapter audit and independent review before implementation",
+      "files": [
+        "crates/nethacked-agent/src/commands.rs",
+        "crates/nethacked-agent/src/session.rs",
+        "crates/nethacked-agent/src/observation.rs",
+        "crates/nethacked-agent/src/mcp.rs",
+        "crates/nethacked-agent/src/jsonrpc.rs",
+        "crates/nethacked-agent/src/bin/jsonrpc.rs",
+        "crates/nethacked-agent/src/graphql.rs",
+        "crates/nethacked-wasm/src/lib.rs",
+        "crates/nethacked-py/src/lib.rs",
+        "crates/nethacked-agent/tests/protocol_tests.rs",
+        "crates/nethacked-agent/tests/graphql_http_test.rs",
+        "crates/nethacked-agent/tests/selected_wand_actions.rs",
+        "python/nethacked_gym/env.py",
+        "python/tests/test_rl.py"
+      ],
+      "outcome": "post-D1 charged machine continuation adapters, schemas and per-route transcripts, including the separate JSON-RPC binary; accepted evidence is mandatory for S1-F and A1 all-ten exit",
+      "interface": "Expose the reviewed D1 native prepare result, opaque pending continuation identity and continue result through each owned adapter; carry AwaitDirection/terminal boundaries and explicit direction cancellation distinctly from pre-selection CancelZapSelection. Exact transport method/field names and Python bookkeeping timing are fixed in this child audit against accepted D1, never guessed in S1. Implement adapter tests in the owned files below; do not precollect direction or replay a complete S1 selected action as continuation.",
+      "file_restrictions": {
+        "crates/nethacked-agent/src/commands.rs": "Only reviewed new prepare/continuation argument helpers and direction validation; preserve S1 complete-action defaults and all legacy parsing.",
+        "crates/nethacked-agent/src/bin/jsonrpc.rs": "Add native charged prepare/continue line-protocol routes while preserving flat parser errors and existing startup/get_state/success behavior; binary transcript must exercise the actual executable, not the library dispatcher.",
+        "crates/nethacked-wasm/src/lib.rs": "Own structured prepare/continue exports and inline adapter regression fixtures; validate emitted wasm-bindgen JS/TS declarations as external artifacts, never hand-edit tracked generated files."
+      },
+      "required_transcript": "carried index/token selection; prepare consumes signed charge/backfire before AwaitDirection; owned NoDir completes without prompt; explicit self/up/down/compass continuation and direction cancellation retain D1 charge/time cleanup; backfire/death/dust terminal exits; duplicate/stale continuation rejection; pending save/load/oldload evidence through reviewed D1 API; exact native events/RNG/charge/time boundaries, no second charge or duplicated effects",
+      "adapter_evidence": [
+        {
+          "surface": "MCP",
+          "adapter_files": [
+            "crates/nethacked-agent/src/mcp.rs"
+          ],
+          "test_files": [
+            "crates/nethacked-agent/tests/protocol_tests.rs"
+          ],
+          "required": "tools/schema and real prepare/continue tool-call transcripts; existing MCP error envelope and pre-step invalid-argument boundary; carried index/token selection; prepare consumes signed charge/backfire before AwaitDirection; owned NoDir completes without prompt; explicit self/up/down/compass continuation and direction cancellation retain D1 charge/time cleanup; backfire/death/dust terminal exits; duplicate/stale continuation rejection; pending save/load/oldload evidence through reviewed D1 API; exact native events/RNG/charge/time boundaries, no second charge or duplicated effects"
+        },
+        {
+          "surface": "JSON-RPC library",
+          "adapter_files": [
+            "crates/nethacked-agent/src/jsonrpc.rs"
+          ],
+          "test_files": [
+            "crates/nethacked-agent/tests/protocol_tests.rs"
+          ],
+          "required": "library request/response transcript with INVALID_PARAMS -32602 for malformed new arguments before session.step; carried index/token selection; prepare consumes signed charge/backfire before AwaitDirection; owned NoDir completes without prompt; explicit self/up/down/compass continuation and direction cancellation retain D1 charge/time cleanup; backfire/death/dust terminal exits; duplicate/stale continuation rejection; pending save/load/oldload evidence through reviewed D1 API; exact native events/RNG/charge/time boundaries, no second charge or duplicated effects"
+        },
+        {
+          "surface": "JSON-RPC binary",
+          "adapter_files": [
+            "crates/nethacked-agent/src/bin/jsonrpc.rs"
+          ],
+          "test_files": [
+            "crates/nethacked-agent/tests/protocol_tests.rs"
+          ],
+          "required": "process-level stdio transcript of actual jsonrpc binary, including initial observation/get_state, carried query, selection, flat {error: message} malformed argument responses before session.step, and independent prepare/continue routes; never substitute the library transcript; carried index/token selection; prepare consumes signed charge/backfire before AwaitDirection; owned NoDir completes without prompt; explicit self/up/down/compass continuation and direction cancellation retain D1 charge/time cleanup; backfire/death/dust terminal exits; duplicate/stale continuation rejection; pending save/load/oldload evidence through reviewed D1 API; exact native events/RNG/charge/time boundaries, no second charge or duplicated effects"
+        },
+        {
+          "surface": "GraphQL",
+          "adapter_files": [
+            "crates/nethacked-agent/src/graphql.rs"
+          ],
+          "test_files": [
+            "crates/nethacked-agent/tests/graphql_http_test.rs"
+          ],
+          "required": "HTTP mutation/query/schema and GraphQL Error transcript; carried index/token selection; prepare consumes signed charge/backfire before AwaitDirection; owned NoDir completes without prompt; explicit self/up/down/compass continuation and direction cancellation retain D1 charge/time cleanup; backfire/death/dust terminal exits; duplicate/stale continuation rejection; pending save/load/oldload evidence through reviewed D1 API; exact native events/RNG/charge/time boundaries, no second charge or duplicated effects"
+        },
+        {
+          "surface": "WASM",
+          "adapter_files": [
+            "crates/nethacked-wasm/src/lib.rs"
+          ],
+          "test_files": [
+            "crates/nethacked-wasm/src/lib.rs"
+          ],
+          "required": "inline structured-export regression fixtures plus actual exported JSON transcript, {error} responses and emitted wasm-bindgen declarations as external evidence; carried index/token selection; prepare consumes signed charge/backfire before AwaitDirection; owned NoDir completes without prompt; explicit self/up/down/compass continuation and direction cancellation retain D1 charge/time cleanup; backfire/death/dust terminal exits; duplicate/stale continuation rejection; pending save/load/oldload evidence through reviewed D1 API; exact native events/RNG/charge/time boundaries, no second charge or duplicated effects"
+        },
+        {
+          "surface": "AgentSession shared commands",
+          "adapter_files": [
+            "crates/nethacked-agent/src/commands.rs",
+            "crates/nethacked-agent/src/session.rs",
+            "crates/nethacked-agent/src/observation.rs"
+          ],
+          "test_files": [
+            "crates/nethacked-agent/tests/selected_wand_actions.rs"
+          ],
+          "required": "transport-free public prepare/continue and pending snapshot/save restoration transcript; carried index/token selection; prepare consumes signed charge/backfire before AwaitDirection; owned NoDir completes without prompt; explicit self/up/down/compass continuation and direction cancellation retain D1 charge/time cleanup; backfire/death/dust terminal exits; duplicate/stale continuation rejection; pending save/load/oldload evidence through reviewed D1 API; exact native events/RNG/charge/time boundaries, no second charge or duplicated effects"
+        },
+        {
+          "surface": "Python string actions",
+          "adapter_files": [
+            "crates/nethacked-py/src/lib.rs",
+            "python/nethacked_gym/env.py"
+          ],
+          "test_files": [
+            "python/tests/test_rl.py"
+          ],
+          "required": "string/structured prepare/continue/cancel transcript, ValueError before world or RL bookkeeping, reviewed reward/step_count timing without double bookkeeping; carried index/token selection; prepare consumes signed charge/backfire before AwaitDirection; owned NoDir completes without prompt; explicit self/up/down/compass continuation and direction cancellation retain D1 charge/time cleanup; backfire/death/dust terminal exits; duplicate/stale continuation rejection; pending save/load/oldload evidence through reviewed D1 API; exact native events/RNG/charge/time boundaries, no second charge or duplicated effects"
+        },
+        {
+          "surface": "Python numeric/RL action22",
+          "adapter_files": [
+            "crates/nethacked-py/src/lib.rs",
+            "python/nethacked_gym/env.py"
+          ],
+          "test_files": [
+            "python/tests/test_rl.py"
+          ],
+          "required": "explicit selected22 argument/dedicated-method prepare/continue transcript and default22 East6/Discrete26 regression; ValueError before bookkeeping; distinct selection and charged direction cancellation; carried index/token selection; prepare consumes signed charge/backfire before AwaitDirection; owned NoDir completes without prompt; explicit self/up/down/compass continuation and direction cancellation retain D1 charge/time cleanup; backfire/death/dust terminal exits; duplicate/stale continuation rejection; pending save/load/oldload evidence through reviewed D1 API; exact native events/RNG/charge/time boundaries, no second charge or duplicated effects"
+        }
+      ]
+    }
+  ],
+  "mandatory_successors": [
+    {
+      "id": "P11a-C1",
+      "depends": [
+        "P11a-S1"
+      ],
+      "interface": "signed charge pipeline zappable, negative/zero/wrest/dust and turn/RNG ordering; public selected item tests; optional prescribed-draw pure primitive plus native World RNG integration"
+    },
+    {
+      "id": "P11a-B1",
+      "depends": [
+        "P11a-C1"
+      ],
+      "interface": "cursed backfire before direction; dice/damage/half-physical/fatal/removal/STR exercise; concrete EQ03-half-physical and HE02-exercise narrow prerequisite audit if state unavailable"
+    },
+    {
+      "id": "P11a-D1",
+      "depends": [
+        "P11a-C1",
+        "P11a-B1"
+      ],
+      "interface": "owned NODIR/IMMEDIATE/RAY; direction cancellation consumes charge/time; self/up/down/engulfed direction action/schema; P11b/OB07 effects explicit successors"
+    },
+    {
+      "id": "P11a-P1",
+      "depends": [
+        "P11a-S1"
+      ],
+      "interface": "nohands/capacity/check_unpaid preflight contexts. Narrow EQ04-zap-capacity, HE07-zap-form, DG06-zap-unpaid contracts require source audit; not family closure dependencies"
+    },
+    {
+      "id": "P11a-A1",
+      "depends": [
+        "P11a-C1",
+        "P11a-B1",
+        "P11a-D1",
+        "P11a-P1",
+        "P11a-S1-M",
+        "P11a-S1-MC",
+        "P11a-S1-F"
+      ],
+      "interface": "aggregate all P11a branch/frontend/save review; consume accepted S1-M inventory/selection, S1-MC post-D1 per-machine adapter/transcript evidence (JSON-RPC library and actual binary separately), and S1-F interactive/menu evidence for all ten mandatory surfaces; no representative-route or broad parity shortcut; global unresolved configuration prevents false conformance acceptance"
+    }
+  ],
+  "closure_update": "P11a-A1 explicitly depends on accepted C1/B1/D1/P1 plus P11a-S1-M, P11a-S1-MC and P11a-S1-F. S1-MC depends on accepted S1-M/D1/P1 and owns post-D1 charged machine adapters/tests including independent binary; S1-F consumes accepted S1-MC evidence in addition to S1-M/C1/B1/D1/P1. C1/P1 depend on backend S1 only, B1 depends C1, D1 depends C1/B1; S1-M depends S1 only. No cycle or added backend interface dependency. M/MC/F are concrete existing-family P11a children, not new families; all original53 families and all ten declared surfaces remain mandatory. Exact registry mutation remains root-owned; no family closure.",
+  "allowed_existing_setup": {
+    "itemrecord_constructors": "none: accepted ID1 identity ownership already implemented; no ItemRecord layout/factory/name/pack changes authorized",
+    "ZapWand_literals": "none: keep all existing legacy action literals and golden assertions unchanged",
+    "ActionArgs_literals": "S1 only, within its exact six files: exactly three full literals add the optional expected_item field: commands.rs::action_args_from_json (264) initializes validated new-action token context/None; commands.rs::tests::every_mcp_step_action_parses (319) adds expected_item:None to the unchanged old full p; graphql.rs::step (236) adds expected_item:None only. All other literals use Default update; no unrelated setup rewrite. Enum loop/input adaptation is a separate S1-M edit, not authorized by these S1 field additions.",
+    "protocol_test": "S1-M only, when mcp.rs STEP_ACTIONS adds zap/zap_selected/cancel_zap_selection: protocol_tests.rs::mcp_step_enum_matches_accepted_actions retains both existing loops/assertions, including the existing required-name loop; include index0 only for new zap_selected. All old names keep the identical action-only/noargs request, and cancel uses action-only/noargs. Add separate new missing-index rejection assertion test in S1-M. This file is never in S1 scope. Any other adjusted existing test needs exact name/setup-only inventory and fresh review.",
+    "command_enum_test": "S1 adds expected_item:None to the existing full p only. S1-M, in commands.rs::tests::every_mcp_step_action_parses when STEP_ACTIONS changes, retains the existing loop/assertion and old full p for every old name (including advertised legacy zap); zap_selected uses that p with existing index0; only new cancel_zap_selection uses context-only/default ActionArgs retaining player context. No assertion weakening, no old-input changes and no S1 enum adaptation.",
+    "stage_inventory": [
+      {
+        "stage": "P11a-S1",
+        "file": "crates/nethacked-agent/src/commands.rs",
+        "target": "action_args_from_json full ActionArgs literal",
+        "edit": "new optional expected_item token context/None field only; shared new-action parsing stays in S1"
+      },
+      {
+        "stage": "P11a-S1",
+        "file": "crates/nethacked-agent/src/commands.rs",
+        "target": "tests::every_mcp_step_action_parses full p literal",
+        "edit": "expected_item:None only; retain old fields, loop and assertion"
+      },
+      {
+        "stage": "P11a-S1",
+        "file": "crates/nethacked-agent/src/graphql.rs",
+        "target": "step full ActionArgs literal",
+        "edit": "expected_item:None only"
+      },
+      {
+        "stage": "P11a-S1-M",
+        "file": "crates/nethacked-agent/src/commands.rs",
+        "target": "tests::every_mcp_step_action_parses loop argument selection",
+        "edit": "new cancel context-only/default input; selected uses existing index0 p; all old inputs/loop/assertion retained when STEP_ACTIONS changes"
+      },
+      {
+        "stage": "P11a-S1-M",
+        "file": "crates/nethacked-agent/tests/protocol_tests.rs",
+        "target": "mcp_step_enum_matches_accepted_actions loop request setup",
+        "edit": "index0 only for selected; old action-only requests and both loops/assertions retained when STEP_ACTIONS changes; separate missing-index rejection test"
+      }
+    ]
+  },
+  "compatibility": {
+    "native_save": "S1 adds no SimulationWorld/ItemRecord fields. Save pre/after selected action, load with same owned RulesetRef, use captured actual carried vector/token from each corresponding save. Compare canonical whole-state values, native rng bytes, charge and next-action events. Refusal differs only permitted log/event records, not blanket raw save equality",
+    "old_action": "literal old externally tagged ZapWand dir/energy JSON must decode and reencode byte-equivalent through canonical JSON; absent expected_item in new action decode + omission roundtrip fixture; cancellation serializes its own variant",
+    "old_pack_schema_hash": "no ItemDef/pack schema fields; old pack omitted metadata, old hashes and generated pack four schemas unchanged (run existing fixtures). AST/action input schemas add new actions/token fields only; do not alter pack hash identity",
+    "replay": "agent TrajectoryStep.action currently Debug String, visual browser replay only; do not claim structured action replay. New tests serialize typed ActionAst JSON transcript plus native saves for continuation. If persistent queued actions added by D1, optional fields default+omission and explicit oldload tests belong D1",
+    "bindings": "WASM wasm-bindgen generates web/pkg JS/TS from Rust; git ls-files web/pkg is empty. Build generated outputs for evidence and validate declarations, do not handedit generated JS/TS or include pack dependency. New Python APIs/method annotations tested in extension+wrapper; existing Discrete26 and ACTION_NAMES indices unchanged"
+  },
+  "fixture_matrix": [
+    {
+      "id": "S01",
+      "input": "complete inventory nonwand0, charged fire1, create2 positive2 uncursed NoDir; capture actual order, do not assume insertion order",
+      "expect": "select actual create index→only chosen charges2→1; unrelated wand unchanged; existing P10 count1/2/8 fixtures native draw/event/scheduler/save continuation; no charge RNG"
+    },
+    {
+      "id": "S02",
+      "input": "cancel with two charged wands, living ready reconciled hero",
+      "expect": "exact Never mind. log; no BeamPropagated/creation/target/terrain mutation, items/rng/hero_energy/turn/movement/timers/prayer timeout unchanged; account event_log/last_events separately"
+    },
+    {
+      "id": "S03",
+      "input": "outofrange 4294967295 and invalid native index, nonwand, container contents, floor/moved/deleted/recycled/stale token",
+      "expect": "range/token messages or silly message above; zero charge/time/RNG/effects; no silent first-wand substitution"
+    },
+    {
+      "id": "S04",
+      "input": "required index omitted/null/wrong type/fraction/negative/4294967296; token malformed; baddirection; cancel has args",
+      "expect": "exact parser error; library JSON-RPC INVALID_PARAMS -32602 and separate binary flat {error: message}, both before session.step; other declared transport envelopes unchanged; no session.step/last_events/RL count change; S1-M owns both route regressions"
+    },
+    {
+      "id": "S05",
+      "input": "canonical display rename/owned override and custom display rename, unknown explicit identities; no definition legacy record",
+      "expect": "reuse ID1 fixtures through selected action including unchanged witness targets; Some unknown refuses exact; None keeps existing fallback/partial semantics; no builtin lookup"
+    },
+    {
+      "id": "S06",
+      "input": "native save/load prechosen and after charge; repeated serialized selected/cancel actions; old legacy action literal and expected_item omission",
+      "expect": "canonical state/native rng/next public action events equal restored vs uninterrupted; no load RNG draw; old Zap bytes unchanged"
+    },
+    {
+      "id": "S07",
+      "input": "empty/negative/zero/cursed/blessed selected wands compared with old handler forced to same selected record in isolated world",
+      "expect": "S1 only preserves current behavior byte-equivalent; source-conformance requires later C1/B1/D1, never treat frozen positive-only helper as completed C zappable"
+    },
+    {
+      "id": "S08",
+      "input": "S1-M per-route inventory/selection/schema fixtures; S1-MC post-D1 machine continuation transcripts including separate library and actual binary; S1-F TUI/both-browser interactive prompt transcripts",
+      "expect": "Each of all ten declared surfaces selects actual complete-inventory index/token, distinguishes selection cancel from charged direction cancel and exposes its reviewed schema. S1-MC per-adapter evidence proves prepare→charge/backfire→AwaitDirection→continue/cancel ordering, NoDir/terminal exits, pending save/oldload and duplicate rejection without repeated charge/RNG/time/effects. Require both independent JSON-RPC subroutes and their existing error envelopes. S1-F/A1 consume all accepted route evidence, never representative parity. Default numeric22 noargs East6 and Discrete26 unchanged; explicit API can select/cancel/continue without expanding the action space."
+    }
+  ],
+  "validation": {
+    "source_only": "none executed during draft",
+    "focused": [
+      "cargo test -p nethacked-sim --test selected_wand_tests --test monster_creation_wand_tests --test item_definition_identity_tests --locked",
+      "cargo test -p nethacked-agent --locked",
+      "cargo test -p nethacked-core -p nethacked-arena -p nethacked-data --locked",
+      "cargo test -p nethacked-wasm --locked",
+      "cargo check -p nethacked-py",
+      "cargo test -p nethacked-pack --test pack_lib --test pack_files --test cli --locked",
+      "cargo test -p nethacked-agent --test golden_determinism --locked"
+    ],
+    "full_gates": "coordinator: all12 exact accepted gate commands plus3 frozen golden tests, fresh sorted344+changes source digest, semantic review before commit; scripts that emit generated Rust must run into external scratch and compare, never overwrite frozen source during audit",
+    "frozen_goldens": [
+      "EXPECTED_RUNS",
+      "EXPECTED_LOGS",
+      "EXPECTED_COMBAT"
+    ],
+    "policy": "no golden changes/commits/source edits by this worker; old assertions never weakened; no dependencies",
+    "full_gate_commands": [
+      "cargo fmt --all --check",
+      "cargo clippy --workspace --all-targets --locked -- -D warnings",
+      "cargo test --workspace --exclude nethacked-py --locked",
+      "cargo build -p nethacked-wasm --target wasm32-unknown-unknown --locked",
+      "cargo check -p nethacked-py",
+      "bash scripts/check-no-static-tables.sh",
+      "uv run --no-sync .venv/bin/python scripts/behaviour-coverage.py",
+      "uv run --no-sync .venv/bin/python scripts/parity-summary.py",
+      "bash scripts/check-doc-links.sh",
+      "lake build"
+    ],
+    "full_gate_harness": "Reuse exact command arguments from accepted OB01-WAND-ID1 full-gates harness/results; extractor/generated commands above identify owners, scratch-output invocation must be retrieved by coordinator before execution. This packet makes no executed gate claim.",
+    "two_additional_gates_pending_exact_invocation": {
+      "extract": "scripts/extract/c_tables.py via exact accepted predecessor harness arguments; root-owned retrieval, no guessed flags",
+      "generated": "scripts/extract/gen_rust.py via exact accepted predecessor harness arguments; root-owned retrieval, external scratch output and source comparison"
+    }
+  },
+  "unresolved_interfaces": [
+    "D1 native resumable accepted selection→signedcharge/backfire→AwaitDirection→direction choice/cancel→cleanup/time, including pending state schema/save/load/oldload and terminal death handling. Concrete D1 audit remains mandatory; S1-MC integrates its accepted API in every machine adapter/test after S1-M/D1/P1, and S1-F/A1 consume that evidence. Not supplied by backend S1.",
+    "S1-M/UI01 owns carried inventory snapshot complete index+opaque ItemId on MCP, JSON-RPC library and independent bin, GraphQL, WASM, AgentSession and both Python routes. Exact API names/token encoding remain its narrow audit obligation; binary evidence is separate. Reviewed existing inventory gaps remain unchanged; S1-MC later owns charged continuation, not initial inventory delivery.",
+    "UI01 Python string actions are absent; numeric/RL step(action:usize) has no argument channel and increments step_count before dispatch. S1-M needs explicit step_action(name,index,direction,expected_item) and optional keyword args on numeric22 or dedicated selected_zap method sharing reward bookkeeping; parse refusal/cancel turn semantics must be reviewed without changing default26 routing",
+    "UI01/UI04 getobj prompt invalid choice retry, no-count, query ?/*, empty candidates, hands MIME, cmdq/repeat/canned/null paths and invlet/menus option behavior. S1-F audit these exact source branches; no frontend exclusion",
+    "HE07/EQ04/DG06 narrow nohands/capacity/unpaid preflight belong P1; EQ03-halfphysical/HE02-exercise belong B1 if unavailable. Retain concrete existing family mappings"
+  ],
+  "usage": "unknown; no tool-provided per-agent token accounting",
+  "frontends": [
+    {
+      "name": "browser web/js/game.js",
+      "owner": "web/js/game.js + web/index.html/app.css",
+      "current": "legacy doAction numeric zap arg overwritten by lastDir; inventory has no zap button; keyboard z route missing",
+      "child": "S1-F",
+      "required": "carried Wand choice list maps actual inventory indices and captures token, item-cancel submits explicit cancel; backend prepare before direction prompt; owned NoDir skips direction; selected NoDir create uses selected item; S1-F interactive exit also requires accepted S1-MC machine continuation evidence for every machine route"
+    },
+    {
+      "name": "browser web/play/play.js",
+      "owner": "web/play/play.js",
+      "current": "z included DIR_CMDS; direction Escape suppresses entire action; itemPrompt handles other actions",
+      "child": "S1-F",
+      "required": "z enters item choice; ? wand subset, * fullinventory, original index token retained; backend prepare then direction; direction Escape submitted to D1 with charge/time already accounted; S1-F interactive exit also requires accepted S1-MC machine continuation evidence for every machine route"
+    },
+    {
+      "name": "TUI",
+      "owner": "crates/nethacked-tui/src/main.rs/keys.rs",
+      "current": "PromptZap direction first; Escape unwrap_or(last_dir)",
+      "child": "S1-F",
+      "required": "select from actual carried Wand choices before direction; item Escape explicit CancelZapSelection; later direction Escape D1 continuation, no lastdir replacement; native token captured; S1-F interactive exit also requires accepted S1-MC machine continuation evidence for every machine route"
+    },
+    {
+      "name": "MCP",
+      "owner": "agent/mcp.rs + commands/session/observation.rs",
+      "current": "STEP_ACTIONS lacks zap despite accepted shared parser; schema index/direction only",
+      "child": "S1-M inventory/selection then S1-MC post-D1 charged continuation; S1-F/A1 consume accepted per-route evidence",
+      "required": "advertise legacy zap, zap_selected, cancel_zap_selection; schema selected requires bounded integer index; opaque expected_item property; carried inventory query returns index/token/class; errors no session.step; explicit prepare/continue path after D1; S1-MC owns reviewed D1 prepare/AwaitDirection/continue/cancel schemas and protocol_tests.rs transcripts, not S1-M or local S1-F implementation"
+    },
+    {
+      "name": "JSON-RPC library/bin",
+      "owner": "crates/nethacked-agent/src/jsonrpc.rs (library) + crates/nethacked-agent/src/bin/jsonrpc.rs (independent binary) + shared commands/session/observation; separate route fixtures in protocol_tests.rs",
+      "current": "library nethacked.step maps shared parameter/action errors to INVALID_PARAMS -32602; independent binary line protocol maps them to flat {error: message}, emits initial observation and get_state; neither has carried inventory query",
+      "child": "S1-M inventory/selection then S1-MC post-D1 charged continuation; S1-F/A1 consume accepted per-route evidence",
+      "required": "Both subroutes need new names and bounded index/token, carried query and reviewed post-D1 prepare/continue contracts. Preserve old zap handling and each existing envelope before session.step: library INVALID_PARAMS -32602, binary flat {error: message}. S1-M owns inventory/selection adapters and separate regression evidence; S1-MC owns post-D1 continuation adapters and separate library request/response and actual binary stdio transcripts. Both are mandatory for this single declared surface.",
+      "subroutes": [
+        {
+          "name": "library",
+          "owner": "crates/nethacked-agent/src/jsonrpc.rs",
+          "parser_error": "existing JSON-RPC 2.0 INVALID_PARAMS -32602 before session.step",
+          "selection_owner": "P11a-S1-M",
+          "continuation_owner": "P11a-S1-MC",
+          "evidence": "crates/nethacked-agent/tests/protocol_tests.rs library dispatcher requests; carried index/token query, selected/cancel, malformed args and charged native continuation"
+        },
+        {
+          "name": "binary",
+          "owner": "crates/nethacked-agent/src/bin/jsonrpc.rs",
+          "parser_error": "existing flat {error: message} before session.step; no protocol conversion",
+          "selection_owner": "P11a-S1-M",
+          "continuation_owner": "P11a-S1-MC",
+          "evidence": "crates/nethacked-agent/tests/protocol_tests.rs actual binary process stdio; startup/get_state, carried index/token query, selected/cancel, malformed args and charged native continuation; library fixtures cannot substitute"
+        }
+      ]
+    },
+    {
+      "name": "GraphQL",
+      "owner": "agent/graphql.rs",
+      "current": "mutation accepts index but zap ignores; item_catalog only declarative entries",
+      "child": "S1-M inventory/selection then S1-MC post-D1 charged continuation; S1-F/A1 consume accepted per-route evidence",
+      "required": "carried snapshot query; mutation expectedItem opaque token JSON scalar or canonical JSON String decoded using shared native token helper (choose in adapter review); exact indexu32 upper bound; unchanged old nullable index/dir behavior; S1-MC owns reviewed D1 charged prepare/AwaitDirection/continue/cancel adapter and its distinct transcript as assigned in children/3/adapter_evidence; S1-F/A1 consume it"
+    },
+    {
+      "name": "WASM",
+      "owner": "wasm/lib.rs + generated wasm-bindgen web/pkg",
+      "current": "step(name,arg) only single string; zap arg direction; carried inventory has index/class but no token",
+      "child": "S1-M inventory/selection then S1-MC post-D1 charged continuation; S1-F/A1 consume accepted per-route evidence",
+      "required": "preserve step legacy; new step_action_json(request:String)->String for structured same parser including bounded index and token; get_inventory_json adds token; wasm-bindgen emitted declarations tested; no generated tracked files; S1-MC owns reviewed D1 charged prepare/AwaitDirection/continue/cancel adapter and its distinct transcript as assigned in children/3/adapter_evidence; S1-F/A1 consume it"
+    },
+    {
+      "name": "AgentSession shared commands",
+      "owner": "agent/commands.rs/session.rs/observation.rs",
+      "current": "typed step and parse_action; player context only",
+      "child": "S1 backend/shared parser then S1-M inventory/selection then S1-MC post-D1 continuation; S1-F/A1 evidence exit",
+      "required": "shared parse exact new names; native index+optional token; helper carried selection query exposes current snapshot; same transport-free GameEvent boundaries; S1-MC owns reviewed D1 charged prepare/AwaitDirection/continue/cancel adapter and its distinct transcript as assigned in children/3/adapter_evidence; S1-F/A1 consume it"
+    },
+    {
+      "name": "Python string actions",
+      "owner": "py/lib.rs + python/nethacked_gym/env.py",
+      "current": "absent; only numeric NetHackEDEnv.step",
+      "child": "S1-M inventory/selection then S1-MC post-D1 charged continuation; S1-F/A1 consume accepted per-route evidence",
+      "required": "new step_action string/structured API uses shared parser; successful actions reuse reward/obs bookkeeping; invalid params ValueError before step_count; cancel leaves world scheduler/RNG untouched; native inventory snapshot query exposed; S1-MC owns reviewed D1 charged prepare/AwaitDirection/continue/cancel adapter and its distinct transcript as assigned in children/3/adapter_evidence; S1-F/A1 consume it"
+    },
+    {
+      "name": "Python numeric/RL action22",
+      "owner": "py/lib.rs + python/nethacked_gym/env.py",
+      "current": "22 creates legacy ZapWand East6; Discrete26 fixed; step increments counter before dispatch",
+      "child": "S1-M inventory/selection then S1-MC post-D1 charged continuation; S1-F/A1 consume accepted per-route evidence",
+      "required": "default22 behavior unchanged; optional explicit selected-zap index/direction/token keyword arguments or dedicated selected_zap method reviewed as concrete adapter child (API choice unresolved); explicit cancellation route, no remapping/expanding numeric action space; validate before bookkeeping; S1-MC owns reviewed D1 charged prepare/AwaitDirection/continue/cancel adapter and its distinct transcript as assigned in children/3/adapter_evidence; S1-F/A1 consume it"
+    }
+  ]
+}

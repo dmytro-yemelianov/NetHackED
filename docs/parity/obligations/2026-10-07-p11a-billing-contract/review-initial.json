@@ -1,0 +1,163 @@
+{
+  "verdict": "NEEDS_CHANGES",
+  "review_markdown": "The contract needs three bounded repairs before registration. Its retained-debt model follows the pinned C branch, and U3 is resolved by the coordinator manifest. This verdict concerns contract readiness only; it accepts no billing implementation or family closure.",
+  "findings": [
+    {
+      "id": "F1",
+      "trigger": "Call record_bill_terms twice for the same valid full-generation unpaid item, with identical or changed terms.",
+      "evidence": "contract.json api.admission defines item/ledger validation but gives no existing-receipt result. representation.invariants permits at most one receipt, while representation.liability freezes terms at admission. Replacing the existing entry would satisfy uniqueness while changing frozen liability.",
+      "consequence": "Implementations can disagree between rejection, idempotence and replacement; a second admission can change quantity, price or creditor without an accepted reconciliation route.",
+      "repair": "Define both repeated-admission outcomes explicitly. Reject changed terms atomically; choose rejection or exact idempotence for identical terms. Specify the error/result and add complete-state/RNG/events/time comparisons. Permit no receipt replacement under this child."
+    },
+    {
+      "id": "F2",
+      "trigger": "After successful receipt admission, invoke existing remove_unpaid directly or reach it through Pay.",
+      "evidence": "world.rs:680 removes the compatibility tuple only. economy.rs:117–140 calculates current projected prices and calls remove_unpaid. The proposed API1 allowlist expressly preserves that body, yet global live_terms requires a corresponding unpaid owner and SAVE1 rejects dangling receipts.",
+      "consequence": "An existing public path can leave admitted terms without their ledger entry, omit liability from tuple-based views, or make a previously valid world fail save/load validation. Pay also lacks a defined relationship to the frozen receipt amount.",
+      "repair": "Specify and enforce a bounded policy for existing ledger-clearing paths while live receipts exist. Either refuse unsupported settlement atomically pending DG06-bill-settlement, or separately authorize a source-backed synchronized route. Enumerate any additional existing body before implementation approval; keep consumed debt untouched. Add admission→clearing/Pay→view/save/disposal coverage without expanding into a full shop audit."
+    },
+    {
+      "id": "F3",
+      "trigger": "Root prepares BILL-SAVE1’s required oldpack/schema/hash acceptance evidence.",
+      "evidence": "compatibility.pack_schema_hash assigns exact fixture IDs and scratch comparisons to SAVE1 but leaves the generation manifest for later root collection. validation.focused_future_commands supplies package tests without concrete schema-generation, canonical-hash or scratch-comparison argv.",
+      "consequence": "Mandatory compatibility exits are not reproducible from this packet, and implementations can select different fixtures or comparison procedures.",
+      "repair": "Supply the minimal SAVE1 fixture IDs, exact generation/hash/comparison argv, scratch destinations, expected unchanged outputs and failure exits. Assign the focused commands to API1 versus SAVE1. Keep production outputs and every existing assertion/setup frozen; no execution is required for this repair."
+    }
+  ],
+  "bindings": [
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/contract-initial/draft/ready-packet.md",
+      "sha256": "f5286853616eea8ed31596c987ed29b4fd1d23c8ab746dd1e7ee39189440e909"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/coordinator-review-inputs.json",
+      "sha256": "36b214047e7e48dc6320a500f9b555c425a9accdc933586ddcd85e27ae95046d"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/contract-initial/draft/contract.json",
+      "sha256": "838af79760f931ecdaa1a118396e3744fc8c34cfa51c91244e81ac0545455e80"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/contract-initial/draft/evidence.json",
+      "sha256": "e5fec4599a02d5c898ff7296f04f0a21906f82998ac12a55cb34c1eced63a473"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-P1-BILL/gate-harness.py",
+      "sha256": "a4dced7d1da1d806febff96354ebc9bd15a35e9078ebc86cae163c9ee8a8b117"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/delivery.json",
+      "sha256": "7c68531dd23e407e1e5bb8d3b63e56a62089eadb99983ce2e8e476efad39e00b"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/full-gates/accepted.json",
+      "sha256": "b9925b0ccfec6fdef3db4102997ed72a133c8ecb2d9fecc1c6b40470651697c6"
+    },
+    {
+      "path": "/Users/dmytro/.codex/parity-evidence/NetRust/2026-10-07-full-parity/units/P11a-C1-API1/full-gates/results.json",
+      "sha256": "ebb19e883ab1c0f2233a4b757de1e5968d17dda20eb11ef4979ec24bc2f632eb"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-07-configuration-profile/pin.json",
+      "sha256": "8cd4931d03972cef4a5a1ae8c7fa7344ac41612fb3cc29b971cf17e213ac3db9"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-07-configuration-profile/configuration-profile.json",
+      "sha256": "9771384704ac2e5473ceeac87718a569658125f529bd9205beaf947d8b93fa82"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-07-p11a-charge-contract/contract.json",
+      "sha256": "0ae28364d9017ca8d71b753d64d58b4f18cd21c023dca202434376725a8341dc"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-07-p11a-charge-contract/evidence.json",
+      "sha256": "74a6ffdd09f9e2ea34f6dede481542019b7d0a3cbd4cfca1b45031b6389e14ef"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/docs/parity/obligations/2026-10-07-p11a-charge-contract/review-final.json",
+      "sha256": "06157125e20ac4593f6aad7c527deb43a95036ab0ec5d90ba429cc3d2df4100d"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-sim/src/world.rs",
+      "sha256": "9e4cd1aedb4b455e5df5fb949dd908b2f9a9017a2fce067856a1d7d5e7caf7ad"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-arena/src/lib.rs",
+      "sha256": "099cf75465706208f388a83acebdb30b15321e2ae1755fd9206cc54e6669dc9e"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-sim/src/actions/stairs.rs",
+      "sha256": "b21fd5f0c0a13522051972a90c801ed0369dad8559de4d0afa2b3f90e4dcdaaf"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-sim/src/actions/economy.rs",
+      "sha256": "28478f5c9a6960c5d5936f81c338f6a9b1feb7306f6c42d82cad2a32003f8b41"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-data/src/ruleset.rs",
+      "sha256": "fc3cad8e54a047a3ec35a6b8ecf8bcbee6ddeeeba93a21af3f4b5e115fdd0a6f"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-types/src/lib.rs",
+      "sha256": "93c63df3e963993cde2029e5cf8e3e1daca047878cc5e87d07c4d03141d6f1c5"
+    },
+    {
+      "path": "/Users/dmytro/github/NetRust/crates/nethacked-sim/src/actions/items.rs",
+      "sha256": "1b2b9a4f585154c0361854fd6ab101122edee6020425cc81b1ebe52990be92ea"
+    },
+    {
+      "path": "/Users/dmytro/github/NetHack::16ff59115315917b93185d026aeefea06db9b0f4:src/shk.c",
+      "sha256": "b2b5b82934b15c1a4a3c9474a650ff5800a83f0b9634696fdf080d0458f16e1b"
+    },
+    {
+      "path": "/Users/dmytro/github/NetHack::16ff59115315917b93185d026aeefea06db9b0f4:include/mextra.h",
+      "sha256": "e78bdfa21d4fd7718f1a25ed8f1ef466c96c2bd49f2069af7d1ab346148a1229"
+    },
+    {
+      "path": "/Users/dmytro/github/NetHack::16ff59115315917b93185d026aeefea06db9b0f4:include/obj.h",
+      "sha256": "a4d1b994c5acd6fe04d411485d84491553d6df02dfbd7480181a15a7a05456e2"
+    },
+    {
+      "path": "/Users/dmytro/github/NetHack::16ff59115315917b93185d026aeefea06db9b0f4:src/invent.c",
+      "sha256": "0b93d6ce1abb5b63ed7ea07c26a57e1016c6cef0fc2ef0e4016e6622054524b5"
+    },
+    {
+      "path": "/Users/dmytro/github/NetHack::16ff59115315917b93185d026aeefea06db9b0f4:src/mkobj.c",
+      "sha256": "49c2de3bcf1125be55f11c17ffc4f614956f5288a5edfb56b2248b7fcaa3b488"
+    }
+  ],
+  "checks": [
+    {
+      "name": "Bindings and authority",
+      "assessment": "PASS",
+      "evidence": "Native HEAD matches 8f44a7a9f7a1536e2c5a21ec47596777ac705fc0. Checked consumed hashes and evidence snippet bindings. C bytes came exclusively from pinned git show. Coordinator archive verification was not repeated."
+    },
+    {
+      "name": "Retained liability and source scope",
+      "assessment": "PASS within declared scope",
+      "evidence": "shk.c:1224–1233 retains the object and leaves receipt price/bquan unchanged; 4244–4246 uses bquan for consumed liability. Literal q1/q3 totals are 40/120. Unknown historical terms remain explicit. Unequal live/billed quantities are explicitly rejected and deferred to DG06-bill-merge-partial."
+    },
+    {
+      "name": "Save/cache design",
+      "assessment": "Sound direction; F2/F3 remain",
+      "evidence": "Global live terms retain cached full handles and remap through the restored item_map; consumed origins/creditors remain historical. Validation precedes timer catchup. No StoredLevel field or existing test-constructor edits are proposed. Modern, absent and explicit-empty owners have required future coverage."
+    },
+    {
+      "name": "Allowlist and prerequisites",
+      "assessment": "PASS structurally",
+      "evidence": "Named API1/SAVE1 files and existing bodies match inspected owners. API1→SAVE1→LIFE activation introduces no stated cycle. LIFE cleanup needs separate acceptance; IN1/D1/PRE and adapter/frontend exits remain mandatory."
+    },
+    {
+      "name": "U3 and historical gates",
+      "assessment": "RESOLVED",
+      "evidence": "Durable harness SHA matches the root manifest; its parsed 12 command vectors match exactly. Prior accepted.json records 1026 tests/12 checks and the bound digest. These are historical evidence, not fresh execution."
+    },
+    {
+      "name": "Deferred scope and compatibility",
+      "assessment": "PASS with F3",
+      "evidence": "Settlement/history/account/partial/nonwand/nonrepresented-reference branches have successors under existing families. All53/543 scope, frozen assertions, exact future golden permission, dependency restrictions and deterministic ordering remain preserved."
+    }
+  ],
+  "handoff": "Return F1–F3 to the author for bounded contract repair and fresh review. Root should register children, publish and commit only after contract readiness passes.",
+  "usage_note": "Independent read-only semantic review. No edits, Cargo/builds, C/Lua execution, agents or gate-harness execution."
+}

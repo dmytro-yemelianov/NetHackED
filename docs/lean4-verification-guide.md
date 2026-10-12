@@ -6,10 +6,15 @@ This guide details the formal verification architecture of **NetMechanics** in L
 
 ## 1. Project Organization & Verified Modules
 
-The Lean 4 verification project is defined in [lakefile.toml](../lakefile.toml) and root module [NetMechanics.lean](../NetMechanics.lean). All modules compile with zero errors and zero `sorry` placeholders, and the project uses no axioms beyond Lean's standard ones. The table below lists a representative subset (17 of the 41 modules under `NetMechanics/`); the other modules cover areas such as Nutrition, Religion, Traps, Pet, Quest, Sokoban, Skills and Tournament. The Lean models are deliberately simplified abstractions of NetHack mechanics, not a faithful transcription of NetHack 5.0 (see Section 4, Known limitations).
+The Lean 4 verification project is defined in [lakefile.toml](../lakefile.toml) and root module [NetMechanics.lean](../NetMechanics.lean). All modules compile with zero errors and zero `sorry` placeholders, and the project uses no axioms beyond Lean's standard ones. The table below lists a representative subset (22 of the 46 modules under `NetMechanics/`); the other modules cover areas such as Nutrition, Religion, Traps, Pet, Quest, Sokoban, Skills and Tournament. The game-mechanics models are deliberately simplified abstractions of NetHack mechanics, not a faithful transcription of NetHack 5.0 (see Section 4, Known limitations). `Architecture` is a separate, game-independent first model; its scope and gaps are described in the [architecture design](plans/2026-10-08-microkernel-architecture.md).
 
 | Module | Source File | Key Inductive Types | Key Verified Theorems |
 | :--- | :--- | :--- | :--- |
+| **`NetMechanics.Ownership`** | [NetMechanics/Ownership.lean](../NetMechanics/Ownership.lean) | `OwnerLocal`, `Capture`, `PreparedToken`, `PublicationPhase`, `DerivedDependencies` | `no_partial_observation`<br>`open_is_whole_commit`<br>`completion_invariants`<br>`publication_authority_apply`<br>`derived_query_authority_refused`<br>`derived_query_stale_refused` |
+| **`NetMechanics.Services`** | [NetMechanics/Services.lean](../NetMechanics/Services.lean) | `Input.Ledger`, `Timer.Task`, `Lifecycle.State`, `Persistence.Codec` | `accepted_key_cannot_resample`<br>`replay_preserves_ledger`<br>`delivered_once`<br>`attachment_preserves_existing`<br>`dependent_blocks_unload`<br>`restore_refusal` |
+| **`NetMechanics.Authority`** | [NetMechanics/Authority.lean](../NetMechanics/Authority.lean) | `Caller`, `Grant`, `Plan`, `Prepared`, `Policy`, `State` | `prepare_refusal`<br>`commit_authority`<br>`successful_writes`<br>`successful_frame`<br>`successful_history`<br>`replay_refusal` |
+| **`NetMechanics.Workflow`** | [NetMechanics/Workflow.lean](../NetMechanics/Workflow.lean) | `Program`, `Frame`, `Outcome`, `Ticket`, `CheckpointCodec` | `step_appends_trace`<br>`scoped_step_preserves_unrelated_state`<br>`resume_checkpoint`<br>`old_sequence_rejected`<br>`restored_checkpoint_preserves_resume`<br>`direction_cancel_retains_charge_and_time` |
+| **`NetMechanics.Architecture`** | [NetMechanics/Architecture.lean](../NetMechanics/Architecture.lean) | `Kernel`, `Module`, `Extension`, `Scope`, `Session` | `attach_module_preserves_state`<br>`attach_extension_preserves_state`<br>`module_run_preserves_frame`<br>`module_run_preserves_kernel`<br>`extensions_preserve_invariant`<br>`coin_not_functional` |
 | **`NetMechanics.BUC`** | [NetMechanics/BUC.lean](../NetMechanics/BUC.lean) | `BUC`, `WaterType`, `BUCKnowledge` | `buc_not_blessed_and_cursed`<br>`dip_holy_idempotent`<br>`dip_plain_always_uncursed`<br>`uncurse_never_cursed` |
 | **`NetMechanics.Inventory`** | [NetMechanics/Inventory.lean](../NetMechanics/Inventory.lean) | `Item`, `ItemKind`, `BagCheckKind`, `BagCheckItem`, `EncumbranceTier` | `item_weight_ge_zero`<br>`contents_weight_ge_tail`<br>`unencumbered_when_le_cap`<br>`encumbrance_tier_rank`<br>`weight_cap_le_1000`<br>`weight_cap_pos`<br>`depth_zero_boh_explodes`<br>`cancellation_wand_explodes`<br>`boh_cannot_contain_boh` |
 | **`NetMechanics.Energy`** | [NetMechanics/Energy.lean](../NetMechanics/Energy.lean) | `SchedulerState`, `StepAction` | `turn_strictly_increases`<br>`hero_act_reduces_energy`<br>`scheduler_progress` (Progress Theorem) |
@@ -51,7 +56,7 @@ Unlike unit tests that sample specific inputs, Lean 4 proofs are verified by the
 
 ## 3. The Lean 4 to Rust Verification Bridge
 
-The Rust engine is an independent, hand-written implementation. **Nothing machine-links the Lean models to the Rust code**: there is no extraction, translation, or proof that the Rust functions satisfy the Lean theorems. Instead, many Lean theorems are mirrored by hand as Rust property-based tests (`proptest`), so that the Rust code is at least checked against the same stated properties on randomized inputs. `crates/nethacked-core/tests/proptest_mechanics.rs` currently holds 106 such `prop_` tests; they cover a selection of the Lean theorems, not all 306. A proptest passing is evidence, not proof, that Rust agrees with the Lean property.
+The Rust engine is an independent, hand-written implementation. **Nothing machine-links the Lean models to the Rust code**: there is no extraction, translation, or proof that the Rust functions satisfy the Lean theorems. Instead, many Lean theorems are mirrored by hand as Rust property-based tests (`proptest`), so that the Rust code is at least checked against the same stated properties on randomized inputs. `crates/nethacked-core/tests/proptest_mechanics.rs` currently holds 106 such `prop_` tests; they cover a selection of the Lean theorems, not all 330. A proptest passing is evidence, not proof, that Rust agrees with the Lean property. The 24 architecture/workflow theorems have no Rust implementation or property-test bridge yet.
 
 ```
     [Lean 4 Formal Specification]               [Rust Implementation]
@@ -79,6 +84,11 @@ Rows marked "(no proptest yet)" have no corresponding proptest at present.
 
 | Lean 4 Theorem | Mathematical Property | Synthesized Rust Proptest |
 | :--- | :--- | :--- |
+| Autonomous owners, gated publication and authenticated derived queries | Heterogeneous local state, declared command proposals, unobservable intermediate swaps, complete transaction projection and query-owner/dependency validation | Independent owner storage and command preparation (O2) exist; O3 atomic publication and O4 integration remain pending. Physical alias exclusion and no-failure publication still require implementation evidence. [Proof map](ownership-proof-map.md). |
+| Optional input, timers, attachment/unload and restore services | Recorded choices, pinned admission, dependency/reference guards and validated restore under explicit policy/codec obligations | Generic input/timer/lifecycle runtime exists; real owner codecs and a formal Rust/proptest bridge remain pending. [Service contracts](plans/2026-10-08-service-contracts.md). |
+| Architecture attachment, frame/kernel preservation, safe extension composition and optional determinism | Abstract architecture contracts with explicit adapter/safety assumptions | Generic kernel/workflow runtime exists; no formal Rust/proptest bridge or completed NetHack migration. |
+| Workflow ordering, owned continuation tickets and checkpoint restore | Resume preserves the committed prefix under the declared codec law; old tickets and replacement pipelines fail | Generic kernel/workflow runtime exists; no formal Rust/proptest bridge or completed NetHack migration. |
+| Capability grants and cross-owner prepare/commit | Authority, stamps, atomic refusal, declared writes, history and replay under explicit runtime/validator obligations | Centralized resource prototype and independent owner preparation exist; autonomous atomic publication and formal Rust/proptest bridge remain pending. [Contract](plans/2026-10-08-authority-transaction-contract.md). |
 | `buc_not_blessed_and_cursed` | $\neg (\text{isBlessed}(b) \land \text{isCursed}(b))$ | (no proptest yet) Intended: for any generated `Buc`, exactly one variant query is true. |
 | `dip_holy_idempotent` | $\text{dip}(H, \text{dip}(H, b)) = \text{dip}(H, b)$ | `assert_eq!(dip_water(Holy, dip_water(Holy, b)), dip_water(Holy, b))` for all `b: Buc`. |
 | `contents_weight_ge_tail` | $W(x :: xs) \ge W(xs)$ | (no proptest yet) Intended: prepending any random `Item` to a `Vec<Item>` never decreases total weight. |
@@ -119,7 +129,7 @@ Rows marked "(no proptest yet)" have no corresponding proptest at present.
 
 * `HasLOS` (`NetMechanics/FOV.lean`) is connectivity through transparent cells (king-move links, Chebyshev distance 1), not NetHack's straight-line `clear_path` (`vision.c`); it is not a faithful line-of-sight model.
 * `pathfinding_converges_within` assumes an admissible-gradient oracle; it does not prove that the real grid's BFS distance map always offers a strictly closer passable neighbour.
-* About 90 of the 306 theorems are one-line proofs (`rfl`, `simp`, `decide`); many state definitional facts rather than deep invariants.
+* Many of the 530 named theorems have short proofs (`rfl`, `simp`, `decide`); many state definitional facts rather than deep invariants.
 * The models are simplified and are not NetHack 5.0 itself; see `docs/formal-mechanics-spec.md` for known divergences.
 * There is no machine-checked link between Lean and Rust (see Section 3).
 

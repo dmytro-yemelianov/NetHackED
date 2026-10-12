@@ -1,0 +1,447 @@
+{
+  "schema": "netrust-bootstrap-independent-review-v1",
+  "status": "NEEDS_REPAIR",
+  "review_kind": "fresh independent semantic read-only, bounded nine-row contract review",
+  "reviewer": "gpt-6.1-sol/high",
+  "worker_drafts_preserved": true,
+  "baseline": {
+    "head": "2700ec46ec699481f6e8972fef1d866f172c3fbb",
+    "branch": "feat/monster-hp-d8",
+    "input_count": 342,
+    "input_digest": "a3135b6d4348eaf56c89bc2f0d11f642993f5fc6c94ea2a749097286a213981c"
+  },
+  "reviewed_artifact_sha256": {
+    "baseline.json": "7aea5236000fc5530cf891cde9c9533859ff27593d56f19b8c26df60b8a2deb4",
+    "configuration.md": "c10e19a3e7f6b28458d017e7111081bfde8954fe0286b8e35483a700efe531f4",
+    "configuration.json": "47b1d6e916b51f54810958a1eaed283975e452dce73d0f589e91f36c2a54f547",
+    "p11a-contract.md": "9ccd3df3e8825dcdb6939461e5ee19986785570b05c29ef12c9e7bd507463aab",
+    "p11a-contract.json": "f928c0fa326bc95f2c99871b77b173d9e3fae23b61c8d607f6c60c4dbe5842a8",
+    "ready-packet.md": "4b28ca0b53122152c45612252fb1e5f8a1794cc751298c4e4c19ea9f8fbb49d7"
+  },
+  "findings": [
+    {
+      "id": "R1",
+      "priority": "required",
+      "target": "configuration.md canonical source baseline; configuration.json canonical_profile",
+      "finding": "UNIX/TTY is stated as the canonical profile although transitive and build-defined conditions are unresolved. TTY_GRAPHICS is conditional on !NOTTYGRAPHICS, not an unconditional default valuation.",
+      "proof": [
+        "include/config.h:18 raw #define UNIX",
+        "include/config.h:40 includes config1.h",
+        "include/config.h:54-56 #if !defined(NOTTYGRAPHICS)"
+      ],
+      "repair": "Label UNIX and USE_ISAAC64 as observed raw header definitions, TTY_GRAPHICS as a conditional raw definition, and any desired profile as proposed/unresolved. Pin no enabled/disabled feature or exclusion without complete reviewed valuations. Preserve all gameplay, optional profile questions and frontend scope; no invented exclusions."
+    },
+    {
+      "id": "R2",
+      "priority": "required",
+      "target": "configuration mandatory_successors and P11a remaining config references",
+      "finding": "UI09 is not an existing family in the immutable 53-family registry; new child IDs need mapped parents. Bootstrap children also need explicit run/config parent and family reconciliation.",
+      "proof": [
+        "scope registry UI04 Text/calendar/conduct/options at line734",
+        "scope registry UI05 Bones/public persistence at line751",
+        "registry has no UI09 family"
+      ],
+      "repair": "Use UI04-CONFIG-INPUTS with parent_family UI04 (or preserve UI09-CONFIG-INPUTS as an explicitly mapped child of UI04). Register BOOTSTRAP-C-CONDITIONALS and BOOTSTRAP-C-BRANCH-MANIFEST under the run configuration-bootstrap parent, with a family mapping for each discovered gameplay/content branch. Map bones persistence to UI05, debug command routes to UI01 and content to applicable existing families. Do not add an unmapped 54th family."
+    },
+    {
+      "id": "R3",
+      "priority": "required",
+      "target": "preceding_child prerequisites/exit; first_child prerequisites; ready-packet.md acceptance wording",
+      "finding": "The identity child exit permits acceptance after local review/full gates without expressly carrying the global-profile acceptance hold. The launch contract requires the global configuration record before the first source-conformance acceptance, not merely before aggregate closure.",
+      "proof": [
+        "docs/plans/2026-10-07-autonomous-parity-run.md: Before the first source-conformance acceptance, pin a global configuration record",
+        "configuration.json unresolved macro/options/environment/content entries"
+      ],
+      "repair": "After exact local contract repairs and review, OB01-WAND-ID1 can become ready for bounded engineering implementation. Its source-conformance acceptance, and any subsequent first source-conformance acceptance, remains on hold until complete reviewed global configuration valuations, supported option/calendar/environment contracts and branch manifest are pinned. Local tests/full gates cannot discharge that hold. Record readiness and acceptance separately without relaxing the launch contract."
+    },
+    {
+      "id": "R4",
+      "priority": "required",
+      "target": "preceding_child representation/bindings/allowed_files/fixtures",
+      "finding": "The persisted ItemRecord identity is dropped by the separate BonesItem payload; current allowed files omit the payload owner. Active/cached full saves alone do not prove all reachable persistence paths.",
+      "proof": [
+        "crates/nethacked-types/src/lib.rs:863 BonesItem has artifact_id and display name, no definition identity",
+        "crates/nethacked-sim/src/bones.rs:42 save_bones copies only artifact_id/name/class/weight/BUC/enchantment",
+        "crates/nethacked-sim/src/bones.rs:97 load creates a fresh ItemRecord from BonesItem",
+        "crates/nethacked-sim/src/world.rs:104 bones_storage persists BonesData"
+      ],
+      "repair": "Include crates/nethacked-types/src/lib.rs and an exact sim public identity test file in allowed files. Prefer defining shared ItemDefinition in types and re-exporting from arena, so BonesItem can own serde-default/skip-None Option<ItemDefinition> without a types-to-arena dependency cycle. Save/load bones must clone the explicit definition without display fallback; legacy absent bones identity remains absent. Add renamed canonical/custom bones JSON/local restoration and existing remote bones integration regressions, old-bones omission/roundtrip and native continuation. Keep old artifact identity and curse RNG/turn behavior unchanged. If deferred instead, register UI05-BONES-ITEM-ID1 with consumed interface and explicitly remove all-path identity persistence claims; it remains mandatory before aggregate closure."
+    },
+    {
+      "id": "R5",
+      "priority": "required",
+      "target": "preceding_child public_consumer/fixtures and first_child identity semantics",
+      "finding": "Fails safely for an explicit unresolved canonical/custom key has no exact public state/event/turn contract. Merely making ordinary_creation false lets the existing display-fragment/generic beam code run, violating no display fallback.",
+      "proof": [
+        "sim/actions/items.rs:987 ordinary_creation identity/name guard precedes generic effect path",
+        "sim/actions/items.rs:1034+ legacy fragment/beam effects remain reachable",
+        "data/ruleset.rs:676/684 owned item and item_by_id lookups return Option"
+      ],
+      "repair": "Specify explicit unresolved identity behavior before dispatch. For new explicit unresolved keys, require a deterministic refusal before charge/effect/scheduler/RNG work (with exact message/event), and prove no display-based canonical or generic effect occurs against a target witness. Cover unknown canonical symbol, valid canonical symbol absent from supplied ruleset and absent custom key; never fall back to display name or static table. Missing optional legacy identity alone retains the existing exact owned-name path. If another failure cost is chosen, pin literal expected charge/turn/draw/event values and justify it; no implicit fallback."
+    },
+    {
+      "id": "R6",
+      "priority": "required metadata correction",
+      "target": "preceding_child literal_update_policy and p11a-contract.md twelve literal files",
+      "finding": "The bounded rg result has twelve matching files, but includes return-type signatures rather than twelve ItemRecord constructor files. Actual constructor sites occur in nine files. The compile-setup scope is present, but its evidence description is inaccurate.",
+      "proof": [
+        "data/item_init.rs:89 is a function return type",
+        "data/tests/item_initialization.rs:6 and artifact_initialization.rs:6 are return types",
+        "review.json constructor_inventory lists actual literal sites"
+      ],
+      "repair": "Distinguish twelve textual matches from nine constructor files. Keep initializer/test helper paths where tests are useful, and produce exact adjusted existing test-name/setup inventories during implementation. Preserve all assertion text and values; no broad fixture relocation or expectation changes."
+    }
+  ],
+  "statuses": {
+    "configuration": "partial local audit; global configuration bootstrap unresolved; no accepted source-conformance configuration",
+    "OB01-WAND-ID1": "contract_review / needs exact repairs R3-R6; implementable engineering prerequisite after repaired local review; source-conformance acceptance hold until reviewed global pin",
+    "P11a-S1": "not ready; depends on explicit consumed OB01-WAND-ID1 prerequisite acceptance and repaired selection contract; full source-conformance hold applies",
+    "P11a_family": "open; all C1/B1/D1/P1/A1 successors mandatory",
+    "global_goal": "all seven streams/53 families/543 rows remain in scope; no closure from this review"
+  },
+  "verified": {
+    "production_input_hashes": {
+      "count": 342,
+      "mismatches": []
+    },
+    "rust_anchor_hashes": {
+      "crates/nethacked-core/src/ast.rs": "23c02da2da18a8097ac01543971e3cf2bd3a5c93a56c0f977172717965c155e3",
+      "crates/nethacked-arena/src/lib.rs": "98d5675d7e14901e6ca53363e0e77ffff322d537c56686562c34853edfde2af3",
+      "crates/nethacked-data/src/ruleset.rs": "2d4172186bd29289c6477d9a2a984551060d370c40a9dee22eb086e9a313f915",
+      "crates/nethacked-data/src/items.rs": "01792d02f93b94b053cb2328832016f277a76e3c7ff0c3ccd64096a3a20c0c02",
+      "crates/nethacked-data/src/c_id.rs": "78ef90455fba39b10053795d1f1db1dd34c8ffcc4cf8f1c1a6fe7c53900ba71d",
+      "crates/nethacked-data/src/item_init.rs": "17abe69b4fb1271b19b384f9a2728657eb8f0828a584dc7e8a825286a9d2ac2b",
+      "crates/nethacked-sim/src/actions/items.rs": "6366cc0fedf3a4b09b17e6deff37099903cd94f0cae90b72af89c94d8e87ec77",
+      "crates/nethacked-sim/src/actions/mod.rs": "ddca34ca797937c01641551891861111067a616e37cf060d513167a5169ce93a",
+      "crates/nethacked-sim/src/world.rs": "9e4cd1aedb4b455e5df5fb949dd908b2f9a9017a2fce067856a1d7d5e7caf7ad",
+      "crates/nethacked-agent/src/commands.rs": "49c8c44b02b06f91530125c3dd0cfeb6d40d778739b4c37e9770bb4d4ef9e242",
+      "crates/nethacked-agent/src/mcp.rs": "ef460cb202ebaa2c50af77e798e8394dfa94eb2da481578dc435834b96506296",
+      "crates/nethacked-agent/src/jsonrpc.rs": "330b7ca49944442a495cbb0576e0f72a8b1b62c88e5e63ce00edcfbae335ab54",
+      "crates/nethacked-agent/src/graphql.rs": "1712842f2cc175ce54a81f4d52d366d83a1a6bac8a28dec9cb2f4851b117d1e7",
+      "crates/nethacked-wasm/src/lib.rs": "c365ce43811f8dc690a2cc875300aa7ce62118e666172dd2d73fae95d5c38e5f",
+      "crates/nethacked-tui/src/main.rs": "0cc1a49be11c5580f83a133bffba91714c31066d65e2d4d07d2762300748695b",
+      "crates/nethacked-py/src/lib.rs": "b6a6c5b557893dd86a8c9e802cd5fd6af4c40f83ccaf700597c37905304c6a01",
+      "web/js/game.js": "a6cd190915544a122e2f557e28d915eb516f8108c9204bf890173db42a99f16d",
+      "web/play/play.js": "3cf11a180327b0c9fe6cfaa856020a078db27a01ddabfb5803be932b3a0fb3d0",
+      "crates/nethacked-sim/tests/monster_creation_wand_tests.rs": "e7ea56c0a4e5c5e5494445cf89c252578ccadacde2ff3c76e7d82ee6230e6dcc"
+    },
+    "rust_anchor_mismatches": [],
+    "c_source_commit": "16ff59115315917b93185d026aeefea06db9b0f4",
+    "c_source_tree": "ba5925b4e59b9c88c31fa74cbd21446d06dcdb84",
+    "c_anchor_identity_checks": {
+      "include/config.h": {
+        "sha256": "cc39455c748d1d73640606d98e847b55cb09d82338edc95f4fbc8acecedc9385",
+        "git_blob": "e266ad09208e3b497aa2e08c64dcb8cd9de0da91"
+      },
+      "include/config1.h": {
+        "sha256": "b9e97cefc8fcfe4f36a1145ebfb655099f2afd2591227fa5f93b3f4dc0071042",
+        "git_blob": "190c47f97a0c6d4bb8adc8c60ff5d4bbb796934c"
+      },
+      "include/global.h": {
+        "sha256": "97bcc4fdd9c1f880dacaf1fffe0043f78874f9fc7e9d84f57aa1a1d4be811e88",
+        "git_blob": "d5e3981c8f4cb3e983062748e172287ae32df437"
+      },
+      "include/hack.h": {
+        "sha256": "2840a9bd41fb0c09384839fafdbd427a5d8705ad8d3eb5e2a0308cccea36813b",
+        "git_blob": "acf93509b49ecfc3e1520bc3731fbd5e5e94162c"
+      },
+      "include/obj.h": {
+        "sha256": "a4d1b994c5acd6fe04d411485d84491553d6df02dfbd7480181a15a7a05456e2",
+        "git_blob": "8d95bb0072b11c04a130871da4f3347c96b09af2"
+      },
+      "src/zap.c": {
+        "sha256": "8ee02bd7aa29b026d6b5a2e0017ddf402fcfc6fc81037e35ceda2d86467547cb",
+        "git_blob": "8aefcb1ea3c64cb4bac71f7149d5795ec106786c"
+      },
+      "src/invent.c": {
+        "sha256": "0b93d6ce1abb5b63ed7ea07c26a57e1016c6cef0fc2ef0e4016e6622054524b5",
+        "git_blob": "446859540299c0fd36ac5d0eff213a9478ffbab3"
+      },
+      "src/calendar.c": {
+        "sha256": "10ad3481a740259064cb28998d11832f3fb54630a7af9df5fc969dadeaa5d517",
+        "git_blob": "deea28daf8c8bd872daf5a393394456a91f42928"
+      },
+      "src/allmain.c": {
+        "sha256": "6ce44a662ad3d180b9dcbf7660a1899b8d1356c8ef83e7787b21b39c6b2a35e4",
+        "git_blob": "280beb39a8c2540a3328833bc915ceb63d156fa9"
+      },
+      "src/options.c": {
+        "sha256": "494772974500aa9b42df179b4e090def15fd0bc8148f09a9c392bbadd05dd940",
+        "git_blob": "05f4979ef29e04f9a14a551a538ba616d6a3b5c4"
+      }
+    },
+    "c_anchor_mismatches": [],
+    "reused_prerequisite_hashes": {
+      "docs/parity/obligations/2026-10-07-p10a2.json": "8df69d2e40d8bef6bd815bafb29fe657c452286c275db42d905a398115c57d0e",
+      "docs/parity/obligations/2026-10-07-p10b.json": "82fed84382fb86b11ee5c3f7d1d28d450092a80b31a691c28f41cafd506c32f0",
+      "docs/parity/obligations/2026-10-07-p04-p10-final-acceptance.json": "11150ff22af01783ed34fe34c0b20f13d08610a4a81574028f6442e38523ff61"
+    },
+    "reused_prerequisite_mismatches": [],
+    "P04_P10_accepted_containing_commit": "2f97135ec4c5620ad132bfe0971bf3aff60ff7bf",
+    "inventory_rows": {
+      "count": 9,
+      "exact_immutable_registry_matches": 9,
+      "historic_status_not_promoted": true
+    },
+    "calendar_source_arithmetic": {
+      "proposed": "2000-01-02 12:00:00 UTC",
+      "tm_year": 100,
+      "tm_yday": 1,
+      "tm_wday": 0,
+      "goldn": 6,
+      "epact": 24,
+      "adjusted_epact": 25,
+      "phase": 7,
+      "friday13": false,
+      "night": false,
+      "midnight": false,
+      "runtime_support_claimed": false
+    }
+  },
+  "source_proof": [
+    {
+      "anchor": "zap.c:2514-2522",
+      "fact": "negative short-circuit no RNG; zero rn2(121); successful spe-- before effect"
+    },
+    {
+      "anchor": "zap.c:2605-2614,2627-2697",
+      "fact": "nohands/capacity before selection; getobj cancellation before unpaid/charge; success cursed rn2(100) before direction; backfire sets in_use then post-spe+2 d6, Maybe_Half_Phys losehp/useupall, strength exercise and TIME; failed/cancel/surviving negative cleanup dust; current_wand lifetime guard"
+    },
+    {
+      "anchor": "hack.h:1236-1237,1410-1411,1456-1458",
+      "fact": "half physical rounds (damage+1)/2; chance100/121; OK0 TIME1 CANCEL2 literal local definitions"
+    },
+    {
+      "anchor": "zap.c:2569-2573",
+      "fact": "ordinary create count rn2(23)?1:rn1(7,2); selected canonical object effect, not display fragment"
+    },
+    {
+      "anchor": "obj.h:45",
+      "fact": "persistent otyp independent of object display name"
+    },
+    {
+      "anchor": "calendar.c:190-230; allmain.c:57-69",
+      "fact": "moon phase uses tm_year/yday arithmetic; calendar side effects at moveloop preamble (including resume), not every turn"
+    }
+  ],
+  "constructor_inventory": [
+    {
+      "path": "crates/nethacked-agent/tests/bones_server_test.rs",
+      "line": 45,
+      "function": "test_networked_bones_flow_and_ghost_reincarnation"
+    },
+    {
+      "path": "crates/nethacked-arena/src/lib.rs",
+      "line": 345,
+      "function": "item_record_without_recharged_deserializes_to_zero"
+    },
+    {
+      "path": "crates/nethacked-arena/src/lib.rs",
+      "line": 572,
+      "function": "test_container_hierarchy_and_weight"
+    },
+    {
+      "path": "crates/nethacked-arena/src/lib.rs",
+      "line": 599,
+      "function": "test_container_hierarchy_and_weight"
+    },
+    {
+      "path": "crates/nethacked-arena/src/lib.rs",
+      "line": 639,
+      "function": "test_cycle_detection"
+    },
+    {
+      "path": "crates/nethacked-arena/src/lib.rs",
+      "line": 665,
+      "function": "test_cycle_detection"
+    },
+    {
+      "path": "crates/nethacked-data/src/items.rs",
+      "line": 103,
+      "function": "create_item_record"
+    },
+    {
+      "path": "crates/nethacked-data/src/ruleset.rs",
+      "line": 849,
+      "function": "create_item_record"
+    },
+    {
+      "path": "crates/nethacked-sim/src/actions/religion.rs",
+      "line": 166,
+      "function": "handle_sacrifice"
+    },
+    {
+      "path": "crates/nethacked-sim/src/bones.rs",
+      "line": 97,
+      "function": "check_and_load_bones"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/hero_armor_ac_tests.rs",
+      "line": 139,
+      "function": "test_small_shield_plus_two_with_leather_armor"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/hero_armor_ac_tests.rs",
+      "line": 189,
+      "function": "test_two_helmets_do_not_stack"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/hero_armor_ac_tests.rs",
+      "line": 221,
+      "function": "test_two_helmets_do_not_stack"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/monster_attack_tests.rs",
+      "line": 316,
+      "function": "quaff_healing"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 305,
+      "function": "test_pickup_and_drop_lifecycle"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 356,
+      "function": "test_wield_weapon"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 1072,
+      "function": "test_nutrition_decay_and_eating"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 1782,
+      "function": "test_altar_sacrifice_and_divine_crowning"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 1841,
+      "function": "test_altar_holy_water_consecration"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 1878,
+      "function": "test_wand_of_wishing_spawns_item"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 1945,
+      "function": "test_wand_of_striking_destroys_drawbridge"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 1996,
+      "function": "test_wand_of_cold_freezes_pool"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 2037,
+      "function": "test_scroll_of_charging_and_explosion"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 2064,
+      "function": "test_scroll_of_charging_and_explosion"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 2109,
+      "function": "test_scroll_of_charging_and_explosion"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 2158,
+      "function": "test_wand_recharge_explosion_damage_is_d_n_k"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 2237,
+      "function": "test_artifact_combat_bonus_and_vorpal_blade"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 2312,
+      "function": "test_ukrainian_i18n_simulation_logging"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 2436,
+      "function": "test_monster_lich_summon_and_curse"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 2498,
+      "function": "test_bones_file_generation_and_ghost_encounter"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 3429,
+      "function": "test_hero_polymorph_potion_and_damage_reversion"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 3548,
+      "function": "test_wand_of_polymorph_unique_monster_invariant"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 3617,
+      "function": "test_wand_of_polymorph_unique_monster_invariant"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 3689,
+      "function": "test_scroll_of_genocide_conduct_and_level_wipe"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 3745,
+      "function": "test_cursed_scroll_of_genocide_summons"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 3821,
+      "function": "test_petrification_countdown_and_lizard_cure"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 3904,
+      "function": "test_weapon_skill_combat_bonus"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 4020,
+      "function": "test_ranged_fire_arrow_hits_monster"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 4221,
+      "function": "test_corpse_eating_and_conduct_invalidation"
+    },
+    {
+      "path": "crates/nethacked-sim/tests/simulation_tests.rs",
+      "line": 4274,
+      "function": "test_cannibalism_detection"
+    }
+  ],
+  "constructor_file_count": 9,
+  "fixture_assessment": {
+    "accepted_P10_reuse": "valid exact final-input binding; public legacy Zap independent count/perimeter/placement/owned HP and group draw oracles and complete native save continuation are source-based, no production sampler used as expectation",
+    "ID1_positive_fixture": "adequate bounded direction after exact missing-identity, bones and failure-cost repairs; retain literal positive2->1 and independent bound23 creation oracle with owned override/rename proof",
+    "charge_pipeline_fixture": "adequate future branch boundaries; dice faces are one-based expected faces, raw rn2 values must be distinguished in scripted implementation; positive2 backfire3d6 raw9/half5, zero-wrest backfire1d6; no fixture is evidence until run",
+    "assertions": "existing assertions remain frozen; any intentional mismatch needs exact independent finding/user policy as applicable; no future golden edits authorized"
+  },
+  "discovery": {
+    "graph_first": true,
+    "project": "Users-dmytro-github-NetRust",
+    "limit": 25,
+    "graph_result": "stale netrust-* paths; bounded known current nethacked-* fallback source reads",
+    "no_full_C_or_543row_reaudit": true
+  },
+  "validation_run": "Read-only source/hash/arithmetic inspection only; no Cargo/preprocessor/compiler/C/Lua execution; no implementation or gates claimed",
+  "repository_mutations": "none by reviewer; root-owned autonomous run ledger remains only dirty tracked path",
+  "durable_review_delivery": "root should copy review.md/json and exact repaired artifacts to existing durable bootstrap directory, with hashes; only baseline and source snapshot were durable at review time",
+  "token_usage": "unknown"
+}

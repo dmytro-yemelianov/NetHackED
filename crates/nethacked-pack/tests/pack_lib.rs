@@ -100,6 +100,7 @@ abilities = []
         .monster("dire jackal")
         .expect("dire jackal exists");
     assert_eq!(dire.id, None);
+    assert!(!dire.sample_hp);
     assert_eq!(dire.level, 2);
     assert_eq!(dire.speed, 14);
     assert_eq!(dire.ac, 5);
@@ -142,6 +143,148 @@ abilities = []
             assert_eq!(diag.field, Some("level".into()));
         }
         other => panic!("expected Resolve error, got {other:?}"),
+    }
+}
+
+#[test]
+fn pack_added_monsters_spawn_in_ordinary_rooms_with_generation_filters() {
+    use nethacked_data::roles::CharacterConfig;
+    use nethacked_sim::SimulationWorld;
+    use nethacked_types::BranchId;
+
+    for peaceful in [false, true] {
+        let dir = temp_pack_dir(&format!("ordinary-room-custom-{peaceful}"));
+        write_vanilla_manifest(&dir, "ordinary-room-custom");
+        // Isolate the custom candidates using authored patches, leaving every
+        // vanilla definition available for world initialization and items.
+        let mut monsters = String::new();
+        for def in &Ruleset::vanilla().monsters {
+            monsters.push_str(&format!(
+                "[[monster]]\nname = {:?}\nfrequency = 0\n",
+                def.name
+            ));
+        }
+        for (name, frequency, difficulty, flags) in [
+            ("dire jackal", 7, 2, "[]"),
+            ("silent jackal", 0, 2, "[]"),
+            ("forbidden jackal", 7, 2, "[\"nogen\"]"),
+            ("overpowered jackal", 7, 99, "[]"),
+        ] {
+            monsters.push_str(&format!(
+                r#"
+[[monster]]
+name = "{name}"
+new = true
+glyph = "d"
+base_hp = 17
+max_hp = 17
+ac = -3
+level = 2
+speed = 19
+alignment = "Neutral"
+intrinsics = {{ fire_resistance = true }}
+attacks = [{{ at = "Bite", ad = "Phys", n = 2, d = 4 }}]
+size = "Medium"
+peaceful_by_default = {peaceful}
+always_hostile = false
+maligntyp = 0
+msound = "Other"
+is_human = false
+is_unique = false
+mindless = false
+ai_behavior = "MeleeHunter"
+abilities = []
+frequency = {frequency}
+difficulty = {difficulty}
+gen_flags = {flags}
+"#
+            ));
+        }
+        fs::write(dir.join("monsters.toml"), monsters).unwrap();
+        let (pack, report) = build(&dir).unwrap();
+        assert!(report.is_ok(), "{report:?}");
+        let path = dir.join("custom.nhpack");
+        write_nhpack(&pack, &path).unwrap();
+        let (rules, reference) = load_nhpack(&path).unwrap();
+        let def = rules.monster("dire jackal").unwrap();
+        assert_eq!(def.id, None);
+        assert_eq!(def.frequency, 7);
+        assert!(!def.sample_hp);
+
+        for exclusion in ["none", "species", "class"] {
+            let mut spawned = 0;
+            for seed in 0..8 {
+                let mut world = SimulationWorld::new_with_character_and_ruleset(
+                    seed,
+                    CharacterConfig::default(),
+                    rules.clone(),
+                    reference.clone(),
+                );
+                // Discard the starting floor's population before requesting a
+                // real new floor through the same generator used by stairs.
+                let old_ids: Vec<_> = world
+                    .arena
+                    .actors
+                    .iter()
+                    .filter_map(|(id, _)| (id != world.player_id).then_some(id))
+                    .collect();
+                for id in old_ids {
+                    world.arena.actors.remove(id);
+                }
+                match exclusion {
+                    "species" => {
+                        world
+                            .genocide_registry
+                            .genocided_species
+                            .insert("dire jackal".into());
+                    }
+                    "class" => {
+                        world.genocide_registry.genocided_classes.insert('d');
+                    }
+                    _ => {}
+                }
+                world.arena.actors[world.player_id].alignment = nethacked_types::Alignment::Lawful;
+                world.unpack_or_generate_level(BranchId::DungeonsOfDoom, 4);
+                assert!(world.level.rooms.len() > 2);
+                let actors: Vec<_> = world
+                    .arena
+                    .actors
+                    .iter()
+                    .filter(|(id, _)| *id != world.player_id)
+                    .map(|(_, actor)| actor)
+                    .collect();
+                if exclusion != "none" {
+                    assert!(actors.is_empty(), "{exclusion}, seed {seed}: {actors:?}");
+                    continue;
+                }
+                for actor in actors {
+                    spawned += 1;
+                    assert_eq!(actor.name, "dire jackal");
+                    assert_eq!((actor.hp, actor.max_hp), (17, 17));
+                    assert_eq!((actor.level, actor.ac, actor.speed), (2, -3, 19));
+                    assert!(actor.intrinsics.fire_resistance);
+                    assert_eq!(actor.is_peaceful, peaceful);
+                    assert_eq!(
+                        actor.malign,
+                        nethacked_core::calculate_malign(
+                            0,
+                            world.arena.actors.get(world.player_id).unwrap().alignment,
+                            peaceful,
+                            false,
+                            peaceful,
+                            false,
+                        )
+                    );
+                    assert!(world.level.is_passable(actor.coord));
+                }
+            }
+            if exclusion == "none" {
+                assert!(
+                    spawned > 0,
+                    "custom species must spawn, peaceful={peaceful}"
+                );
+            }
+        }
     }
 }
 
@@ -437,4 +580,400 @@ proptest! {
             prop_assert!(["level", "ac", "speed"].contains(&entry.field.as_str()));
         }
     }
+}
+
+#[test]
+fn hp_override_policy_is_fixed_unless_explicitly_sampled() {
+    let vanilla = Ruleset::vanilla();
+    let dir = temp_pack_dir("hp-policy");
+    write_vanilla_manifest(&dir, "hp-policy");
+    for sampled in [false, true] {
+        let extra = if sampled { "sample_hp = true\n" } else { "" };
+        fs::write(
+            dir.join("monsters.toml"),
+            format!("[[monster]]\nname = \"jackal\"\nbase_hp = 11\nmax_hp = 17\n{extra}"),
+        )
+        .unwrap();
+        let (built, report) = build(&dir).unwrap();
+        assert!(report.is_ok());
+        let def = built.ruleset.monster("jackal").unwrap();
+        assert_eq!((def.base_hp, def.max_hp, def.sample_hp), (11, 17, sampled));
+        assert!(vanilla.monster("jackal").unwrap().sample_hp);
+    }
+}
+
+#[test]
+fn old_fixed_hp_pack_loads_without_changing_its_hash() {
+    let mut rules = (*Ruleset::vanilla()).clone();
+    for def in &mut rules.monsters {
+        def.sample_hp = false;
+    }
+    let bundle = nethacked_pack::NhPack {
+        format: nethacked_pack::PACK_FORMAT_VERSION,
+        manifest: rules.manifest.clone(),
+        hash: ruleset_hash(&rules),
+        ruleset: rules,
+    };
+    let bytes = nethacked_pack::nhpack_to_bytes(&bundle);
+    // False is omitted, preserving the pre-sampling canonical representation.
+    assert!(!std::str::from_utf8(&bytes).unwrap().contains("sample_hp"));
+    let (loaded, reference, _) = nethacked_pack::load_nhpack_bytes(&bytes).unwrap();
+    assert_eq!(reference.hash, bundle.hash);
+    assert!(loaded.monsters.iter().all(|def| !def.sample_hp));
+}
+
+#[test]
+fn old_item_profiles_load_fixed_without_changing_hash() {
+    use nethacked_data::item_init::ItemInitProfile;
+    let mut rules = (*Ruleset::vanilla()).clone();
+    for item in &mut rules.items {
+        item.initialization = ItemInitProfile::Fixed;
+        item.generation_weight = 0;
+        item.generation_weight_missing = true;
+    }
+    let bundle = nethacked_pack::NhPack {
+        format: nethacked_pack::PACK_FORMAT_VERSION,
+        manifest: rules.manifest.clone(),
+        hash: ruleset_hash(&rules),
+        ruleset: rules,
+    };
+    let bytes = nethacked_pack::nhpack_to_bytes(&bundle);
+    assert!(!std::str::from_utf8(&bytes)
+        .unwrap()
+        .contains("initialization"));
+    let (loaded, reference, _) = nethacked_pack::load_nhpack_bytes(&bytes).unwrap();
+    assert_eq!(reference.hash, bundle.hash);
+    assert!(loaded.items.iter().all(|i| i.initialization.is_fixed()));
+    assert!(loaded.items.iter().all(|i| i.generation_weight == 0));
+    assert!(!std::str::from_utf8(&bytes)
+        .unwrap()
+        .contains("generation_weight"));
+}
+
+#[test]
+fn item_profiles_are_explicit_custom_opt_in_and_class_validated() {
+    use nethacked_data::item_init::ItemInitProfile;
+    let dir = temp_pack_dir("item-profile");
+    write_vanilla_manifest(&dir, "item-profile");
+    let custom = r#"
+[[item]]
+name = "custom camera"
+new = true
+class = "Tool"
+weight = 17
+cost = 30
+damage_small = [0, 0]
+damage_large = [0, 0]
+ac_bonus = 0
+is_container = false
+is_bag_of_holding = false
+oc_magic = false
+nutrition = 0
+"#;
+    fs::write(dir.join("items.toml"), custom).unwrap();
+    let (fixed, report) = build(&dir).unwrap();
+    assert!(report.is_ok());
+    assert_eq!(
+        fixed.ruleset.item("custom camera").unwrap().initialization,
+        ItemInitProfile::Fixed
+    );
+    let item = fixed
+        .ruleset
+        .create_random_item_supported_fields_by_name(
+            "custom camera",
+            serde_json::from_str("\"Limbo\"").unwrap(),
+            1,
+            |_| panic!("custom fixed draw"),
+        )
+        .unwrap();
+    assert_eq!((item.weight, item.enchantment), (17, 0));
+    fs::write(
+        dir.join("items.toml"),
+        format!("{custom}initialization = {{ kind = \"tool\", charges = \"camera\" }}\n"),
+    )
+    .unwrap();
+    let (sampled, report) = build(&dir).unwrap();
+    assert!(report.is_ok());
+    let item = sampled
+        .ruleset
+        .create_random_item_supported_fields_by_name(
+            "custom camera",
+            serde_json::from_str("\"Limbo\"").unwrap(),
+            1,
+            |n| {
+                assert_eq!(n, 70);
+                69
+            },
+        )
+        .unwrap();
+    assert_eq!((item.weight, item.enchantment), (17, 99));
+    fs::write(
+        dir.join("items.toml"),
+        format!("{custom}initialization = {{ kind = \"wand\", charges = \"standard\" }}\n"),
+    )
+    .unwrap();
+    assert!(build(&dir).is_err());
+}
+
+#[test]
+fn container_profiles_validate_flags_and_generation_weight() {
+    use nethacked_data::item_init::{ContainerInit, ItemInitProfile};
+    use nethacked_data::ItemKindId;
+    let mut rules = (*Ruleset::vanilla()).clone();
+    assert!(nethacked_pack::validate(&rules).errors.is_empty());
+    let index = rules
+        .items
+        .iter()
+        .position(|d| d.id == Some(ItemKindId::SACK))
+        .unwrap();
+    rules.items[index].is_container = false;
+    assert!(nethacked_pack::validate(&rules)
+        .errors
+        .iter()
+        .any(|d| d.message.contains("coherent container")));
+    rules.items[index].is_container = true;
+    rules.items[index].initialization = ItemInitProfile::Container {
+        container: ContainerInit::HoldingBag,
+    };
+    assert!(nethacked_pack::validate(&rules)
+        .errors
+        .iter()
+        .any(|d| d.message.contains("coherent container")));
+    rules.items[index].is_bag_of_holding = true;
+    rules.items[index].generation_weight = 10001;
+    assert!(nethacked_pack::validate(&rules)
+        .errors
+        .iter()
+        .any(|d| d.message.contains("generation_weight")));
+}
+
+#[test]
+fn old_corpse_body_facts_load_defaults_and_preserve_canonical_hash() {
+    let mut rules = (*Ruleset::vanilla()).clone();
+    for def in &mut rules.monsters {
+        def.body_weight = 0;
+        def.corpse_nutrition = 0;
+    }
+    let bundle = nethacked_pack::NhPack {
+        format: nethacked_pack::PACK_FORMAT_VERSION,
+        manifest: rules.manifest.clone(),
+        hash: ruleset_hash(&rules),
+        ruleset: rules,
+    };
+    let bytes = nethacked_pack::nhpack_to_bytes(&bundle);
+    let json = std::str::from_utf8(&bytes).unwrap();
+    assert!(!json.contains("body_weight") && !json.contains("corpse_nutrition"));
+    let (loaded, reference, _) = nethacked_pack::load_nhpack_bytes(&bytes).unwrap();
+    assert_eq!(reference.hash, bundle.hash);
+    assert!(loaded
+        .monsters
+        .iter()
+        .all(|m| m.body_weight == 0 && m.corpse_nutrition == 0));
+    let mut changed = (*loaded).clone();
+    changed.monsters[0].body_weight = 19;
+    assert_ne!(ruleset_hash(&changed), reference.hash);
+    changed.monsters[0].body_weight = 0;
+    changed.monsters[0].corpse_nutrition = 20;
+    assert_ne!(ruleset_hash(&changed), reference.hash);
+}
+
+#[test]
+fn artifact_metadata_rejects_invalid_identity_and_duplicate_at_pack_boundary() {
+    let mut rs = (*Ruleset::vanilla()).clone();
+    assert!(validate(&rs).errors.is_empty());
+    rs.artifacts[0].id = "ART_FAKED".into();
+    assert!(validate(&rs)
+        .errors
+        .iter()
+        .any(|d| d.field.as_deref() == Some("artifacts")));
+    let mut rs = (*Ruleset::vanilla()).clone();
+    rs.artifacts.push(rs.artifacts[0].clone());
+    assert!(validate(&rs)
+        .errors
+        .iter()
+        .any(|d| d.field.as_deref() == Some("artifacts")));
+    let mut rs = (*Ruleset::vanilla()).clone();
+    rs.artifacts[0].base = rs.artifacts[0].item;
+    assert!(validate(&rs)
+        .errors
+        .iter()
+        .any(|d| d.field.as_deref() == Some("artifacts")));
+}
+
+#[test]
+fn old_compiled_ruleset_preserves_canonical_hash_when_new_metadata_is_absent() {
+    let mut value = serde_json::to_value(&*Ruleset::vanilla()).unwrap();
+    value.as_object_mut().unwrap().remove("artifacts");
+    for item in value["items"].as_array_mut().unwrap() {
+        item.as_object_mut().unwrap().remove("unique");
+    }
+    let old_json = serde_json::to_vec(&value).unwrap();
+    let rs: Ruleset = serde_json::from_slice(&old_json).unwrap();
+    assert_eq!(
+        serde_json::to_vec(&serde_json::to_value(&rs).unwrap()).unwrap(),
+        old_json
+    );
+}
+
+#[test]
+fn old_compiled_artifact_metadata_defaults_load_with_verified_hash() {
+    let mut value = serde_json::to_value(&*Ruleset::vanilla()).unwrap();
+    value.as_object_mut().unwrap().remove("artifacts");
+    for item in value["items"].as_array_mut().unwrap() {
+        item.as_object_mut().unwrap().remove("unique");
+    }
+    let old: Ruleset = serde_json::from_value(value.clone()).unwrap();
+    let hash = ruleset_hash(&old);
+    let packed =
+        serde_json::json!({"format":1,"manifest":value["manifest"],"ruleset":value,"hash":hash});
+    let (loaded, reference, _) =
+        nethacked_pack::load_nhpack_bytes(&serde_json::to_vec(&packed).unwrap()).unwrap();
+    assert_eq!(reference.hash, hash);
+    assert!(loaded.artifacts.is_empty());
+    assert_eq!(
+        loaded.artifact_id_for_item("Excalibur"),
+        Some("ART_EXCALIBUR")
+    );
+}
+
+#[test]
+fn authored_owned_items_reach_public_levels_and_replay_full_saves() {
+    use nethacked_data::item_init::{ItemInitProfile, ToolCharges};
+    use nethacked_data::roles::CharacterConfig;
+    use nethacked_sim::SimulationWorld;
+    use nethacked_types::{BranchId, ItemClass};
+    let dir = temp_pack_dir("owned-room-items");
+    write_vanilla_manifest(&dir, "owned-room-items");
+    let mut items = String::new();
+    for d in &Ruleset::vanilla().items {
+        items.push_str(&format!(
+            "[[item]]\nname = {:?}\ngeneration_weight = 0\n",
+            d.name
+        ));
+    }
+    for (name, weight) in [("owned camera", 17), ("disabled camera", 0)] {
+        items.push_str(&format!(
+            r#"
+[[item]]
+name = "{name}"
+new = true
+class = "Tool"
+weight = 19
+cost = 73
+damage_small = [2, 7]
+damage_large = [3, 8]
+ac_bonus = 0
+is_container = false
+is_bag_of_holding = false
+oc_magic = false
+nutrition = 0
+generation_weight = {weight}
+initialization = {{ kind = "tool", charges = "camera" }}
+"#
+        ));
+    }
+    fs::write(dir.join("items.toml"), items).unwrap();
+    // Keep the pinned custom-item stream independent of variable monster sex.
+    // Author these owned flags into the bundle so its hash/reference and full
+    // save continuation still describe exactly the loaded ruleset.
+    let mut monsters = String::new();
+    for def in &Ruleset::vanilla().monsters {
+        if def.fixed_sex().is_none() {
+            let mut flags = def.flags.clone();
+            flags.push("male".into());
+            monsters.push_str(&format!(
+                "[[monster]]\nname = {:?}\nflags = {:?}\n",
+                def.name, flags
+            ));
+        }
+    }
+    fs::write(dir.join("monsters.toml"), monsters).unwrap();
+
+    let (pack, report) = build(&dir).unwrap();
+    assert!(report.is_ok(), "{report:?}");
+    let path = dir.join("custom.nhpack");
+    write_nhpack(&pack, &path).unwrap();
+    let (rules, reference) = load_nhpack(&path).unwrap();
+    assert_eq!(rules.item("owned camera").unwrap().id, None);
+    assert_eq!(
+        rules.item("owned camera").unwrap().initialization,
+        ItemInitProfile::Tool {
+            charges: ToolCharges::Camera
+        }
+    );
+    assert!(
+        !rules
+            .item("disabled camera")
+            .unwrap()
+            .generation_weight_missing
+    );
+    assert_eq!(ruleset_hash(&rules), pack.hash);
+    let mut world = SimulationWorld::new_with_character_and_ruleset(
+        6,
+        CharacterConfig::default(),
+        rules.clone(),
+        reference.clone(),
+    );
+    // The public generator appends arena records; isolate the requested floor
+    // from the already initialized starting floor without consuming randomness.
+    let old_floor: Vec<_> = world
+        .arena
+        .items
+        .iter()
+        .filter_map(|(id, i)| {
+            serde_json::to_value(&i.location)
+                .unwrap()
+                .get("Floor")
+                .is_some()
+                .then_some(id)
+        })
+        .collect();
+    for id in old_floor {
+        world.arena.items.remove(id);
+    }
+    let save = world.to_save_json().unwrap();
+    let mut loaded = SimulationWorld::from_save_json(&save, rules, &reference).unwrap();
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&save).unwrap(),
+        serde_json::from_str::<serde_json::Value>(&loaded.to_save_json().unwrap()).unwrap()
+    );
+    world.unpack_or_generate_level(BranchId::DungeonsOfDoom, 4);
+    loaded.unpack_or_generate_level(BranchId::DungeonsOfDoom, 4);
+    let floor: Vec<_> = world
+        .arena
+        .items
+        .iter()
+        .filter_map(|(_, i)| {
+            serde_json::to_value(&i.location)
+                .unwrap()
+                .get("Floor")
+                .is_some()
+                .then_some(i)
+        })
+        .collect();
+    assert!(
+        !floor.is_empty(),
+        "pinned seed must select a positive custom item"
+    );
+    for item in floor {
+        assert_eq!(item.name, "owned camera");
+        assert_eq!((item.class, item.weight), (ItemClass::Tool, 19));
+        let def = world.ruleset.item(&item.name).unwrap();
+        assert_eq!(
+            (def.cost, def.damage_small, def.damage_large),
+            (73, (2, 7), (3, 8))
+        );
+        assert!((30..=99).contains(&item.enchantment));
+    }
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&world.to_save_json().unwrap()).unwrap(),
+        serde_json::from_str::<serde_json::Value>(&loaded.to_save_json().unwrap()).unwrap()
+    );
+    world.unpack_or_generate_level(BranchId::DungeonsOfDoom, 5);
+    loaded.unpack_or_generate_level(BranchId::DungeonsOfDoom, 5);
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&world.to_save_json().unwrap()).unwrap(),
+        serde_json::from_str::<serde_json::Value>(&loaded.to_save_json().unwrap()).unwrap()
+    );
+    fs::remove_dir_all(dir).unwrap();
 }
