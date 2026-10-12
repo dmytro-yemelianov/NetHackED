@@ -984,7 +984,7 @@ fn native_refusal_all_staging_bounds_and_counter_exhaustion_preserve_slots() {
         h.run(1, move |v| {
             assert!(matches!(
                 target.prepare("prepare", &[1], vec![], v),
-                Err(Error::Limit)
+                Err(Error::OverBound)
             ));
             Ok(vec![])
         });
@@ -1004,7 +1004,7 @@ fn native_refusal_all_staging_bounds_and_counter_exhaustion_preserve_slots() {
         ));
         assert!(matches!(
             target.prepare("prepare", &vec![0; 16_385], vec![], v),
-            Err(Error::Limit)
+            Err(Error::OverBound)
         ));
         Ok(vec![])
     });
@@ -1108,7 +1108,10 @@ fn observation_closure_bounds_and_transitive_dependency_revocation_are_checked()
     let inv = inventory(&mut h);
     h.refresh();
     h.run(0, move |v| {
-        assert!(matches!(inv.query("query", &[], &[], v), Err(Error::Limit)));
+        assert!(matches!(
+            inv.query("query", &[], &[], v),
+            Err(Error::OverBound)
+        ));
         Ok(vec![])
     });
 }

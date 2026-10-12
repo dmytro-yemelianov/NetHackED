@@ -21,6 +21,9 @@ pub enum Error {
     Cycle,
     /// Enrolled session is capturing, activating or executing another root call.
     Busy,
+    /// A payload, observation, reply or event exceeded its configured bound.
+    /// Self-describing over-bound refusal, distinct from structural `Limit`.
+    OverBound,
 }
 
 impl Error {
@@ -505,5 +508,41 @@ impl CallerView<'_> {
     /// detached snapshots carry neither this provenance nor execution bridges.
     pub fn callback_origin(&self) -> Option<&CallbackProvenance> {
         self.callback_origin.as_ref()
+    }
+}
+
+#[cfg(test)]
+mod over_bound_tests {
+    use super::Error;
+
+    #[test]
+    fn over_bound_has_a_distinct_stable_abi_code() {
+        let code = Error::OverBound.abi_code();
+        assert!(code < 0, "refusal codes are negative");
+        // Distinct from every pre-existing variant; appending after Busy keeps
+        // all earlier discriminants (and therefore ABI codes) unchanged.
+        for e in [
+            Error::InvalidManifest,
+            Error::InvalidModule,
+            Error::InvalidHandle,
+            Error::MissingDependency,
+            Error::Duplicate,
+            Error::Signature,
+            Error::InvalidSlot,
+            Error::MissingGrant,
+            Error::Revoked,
+            Error::Authority,
+            Error::Buffer,
+            Error::Limit,
+            Error::Trap,
+            Error::NativeRefusal,
+            Error::Referenced,
+            Error::Cycle,
+            Error::Busy,
+        ] {
+            assert_ne!(e.abi_code(), code, "{e:?} shares OverBound's ABI code");
+        }
+        // Appended last: OverBound is the most negative code.
+        assert_eq!(code, Error::Busy.abi_code() - 1);
     }
 }

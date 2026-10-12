@@ -198,6 +198,7 @@ fn refusal_matrix_preserves_slots_prefix_pending_and_retryable_tickets() {
                 m.host.0.publication.borrow_mut().epoch = u64::MAX;
                 Error::Limit
             }
+            "history" | "reply" | "events" | "retention" => Error::OverBound,
             _ => Error::Limit,
         };
         let before = snapshot(&m, &s, &d, &i);

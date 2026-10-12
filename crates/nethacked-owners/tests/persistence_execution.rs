@@ -1061,7 +1061,7 @@ fn independent_authority_exact_old_artifacts_codec_policy_and_narrow_bounds() {
             small,
             PublicationLimits::default()
         ),
-        Err(Error::Limit)
+        Err(Error::OverBound)
     ));
     let small = Limits {
         payload_bytes: 3,
@@ -1074,7 +1074,7 @@ fn independent_authority_exact_old_artifacts_codec_policy_and_narrow_bounds() {
             small,
             PublicationLimits::default()
         ),
-        Err(Error::Limit)
+        Err(Error::OverBound)
     ));
     assert!(ExecutionCheckpoint::from_bytes(&f.owners.to_bytes(LIMIT).unwrap(), 16).is_err());
     for denied in [true, false] {

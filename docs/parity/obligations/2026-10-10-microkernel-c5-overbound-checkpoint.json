@@ -1,0 +1,70 @@
+{
+  "unit": "M7-C5",
+  "status": "accepted_in_this_commit",
+  "parent": "5e567797c5d0ef4084cdd69deb5df2ef9e52111e",
+  "scope": "Self-describing over-bound refusal error variant resolving the M7 review condition C5: an over-bound payload refusal now surfaces as OwnerBridgeError::Kernel(kernel::Error::OverBound) (display \"kernel: OverBound\") instead of the opaque Kernel(NativeRefusal). New owners::Error::OverBound variant returned by the owners bound() helper for over-limit sizes, and a new kernel::Error::OverBound variant appended after Busy so every pre-existing abi_code() is unchanged. The sim encode/decode/decode_owner codec helpers and the wand_ports bound() return OverBound for over-limit payloads; structural count/overflow limits (owner slots, counters, publication revision/epoch, domain count limits) keep Error::Limit. Every native-port refusal mapping maps OverBound through: runtime.rs native_refusal plus the seven transport-local native_refusal/native_refusal_step pairs (action_time, movement_actions, monster_ticks, inventory_actions, item_effects, services, traversal). Kernel limits unchanged; goldens frozen.",
+  "focused_passed": 4,
+  "focused_tests": [
+    "over_bound_tests::bound_refuses_over_limit_with_self_describing_over_bound",
+    "model::over_bound_tests::over_bound_has_a_distinct_stable_abi_code",
+    "owner_persistence::runtime::tests::native_refusal_maps_over_bound_to_self_describing_kernel_variant",
+    "owner_persistence::runtime::tests::geography_compact::over_bound_payload_refuses_with_self_describing_over_bound_variant"
+  ],
+  "workspace_passed": 1767,
+  "checks": 12,
+  "goldens": [
+    "golden_vanilla_event_logs_are_unchanged",
+    "golden_vanilla_bestiary_combat_is_unchanged",
+    "golden_vanilla_runs_are_unchanged"
+  ],
+  "non_documentation_inputs": 591,
+  "source_digest": "5f0bc62a8d2791b624b12873c9c6595bd270e160130e395e8c4550bd1819c08e",
+  "source_digest_method": "sha256 over the sha256sum lines of every non-docs source file tracked at commit time (git ls-files --cached --others --exclude-standard, excluding docs/), sorted by path: git ls-files -z --cached --others --exclude-standard | grep -zv '^docs/' | sort -z | xargs -0 sha256sum | sha256sum",
+  "resolution": {
+    "owners_variant": "crates/nethacked-owners/src/lib.rs: pub enum Error gains OverBound (appended after Quarantined); the bound() size helper returns Err(Error::OverBound) for over-limit sizes; unit test over_bound_tests::bound_refuses_over_limit_with_self_describing_over_bound pins bound(16384,16384)=Ok, bound(16385/17000,16384)=Err(OverBound), bound(0,0)=Ok, bound(1,0)=Err(OverBound)",
+    "kernel_variant": "crates/nethacked-kernel/src/model.rs: pub enum Error gains OverBound as a unit variant appended after Busy (keeps Copy; abi_code() = -(self as i32 + 1) unchanged for all 17 pre-existing variants); unit test model::over_bound_tests::over_bound_has_a_distinct_stable_abi_code pins a distinct stable ABI code (Busy.abi_code() - 1)",
+    "sim_codecs": "crates/nethacked-sim/src/owner_persistence/runtime.rs: encode (counter map_err + bytes.len() check), decode (bytes.len() check) and decode_owner (bytes.len() check) return owners::Error::OverBound; wand_ports.rs local bound() returns owners::Error::OverBound; wand_workflows.rs treats OverBound like Limit for the descriptor.overflow path",
+    "refusal_mappings": "runtime.rs native_refusal maps owners::Error::OverBound to kernel::Error::OverBound (all other owners errors stay NativeRefusal); the seven transport-local native_refusal/native_refusal_step pairs (action_time.rs, movement_actions.rs, monster_ticks.rs, inventory_actions.rs, item_effects.rs, services.rs, traversal.rs) changed from impl Debug catch-alls to owners::Error matches with the same OverBound mapping; deliberate unregistered-endpoint refuse ports stay NativeRefusal",
+    "kept_as_limit": "Structural count/overflow limits keep Error::Limit: owners lib.rs slot/counter/publication-validation sites, persistence.rs checked_add/try_from sites, publication.rs configure_publication validation and revision overflow, sim regeneration_ticks container-nesting, phase_support events count, wand_commands/domains count/overflow/text limits, default_commands count limits, wand_gameplay facts, dressing_ticks count, wand_extensions kernel::Error::Limit path, wand_ports/domains try_from overflow",
+    "fixtures": "crates/nethacked-owners/src/fixtures.rs: staging-bound modes (events/event_bytes/reply_bytes/payload_bytes) and the observation_bytes case now refuse Err(Error::OverBound); counter-exhaustion assertions (next_candidate/next_owner = u64::MAX) stay Limit; fixtures/publication_tests/failures.rs refusal matrix maps history/reply/events/retention kinds to OverBound (they go through bound()), epoch stays Limit (revision overflow)",
+    "integration_tests": "crates/nethacked-owners/tests/persistence.rs: Checkpoint::from_bytes with a one-byte-short limit now expects Err(Error::OverBound) (bound() on checkpoint bytes); tests/persistence_repair.inc: Restore::new with origins over limits.owners now expects Err(Error::OverBound) (bound() on origins count); tests/persistence_execution.rs: OwnerIdentityReservation::new with candidates:2 and payload_bytes:3 narrow limits now expects Err(Error::OverBound) (bound() on candidates count and owner payload bytes)",
+    "end_to_end": "crates/nethacked-sim/src/owner_persistence/runtime/tests/geography_compact.rs: over_bound_payload_refuses_with_self_describing_over_bound_variant inserts a 20000-char engraving (compact geography facts exceed the 16384-byte reply bound), pins encode/decode refusing Err(owners::Error::OverBound) at the 16 KiB limit, then drives the facade: OwnerGameSession::new succeeds (4 MiB payload bound carries the natural state) and session.step(ActionAst::Wait) refuses with OwnerBridgeError::Kernel(kernel::Error::OverBound), display \"kernel: OverBound\""
+  },
+  "measurements": {
+    "over_bound_engraving_chars": 20000,
+    "compact_facts_over_bound_bytes": "compact GeographyFacts with the engraving exceed 16384 (fresh-level compact max is 4093 without it)",
+    "facade_error_before": "OwnerBridgeError::Kernel(kernel::Error::NativeRefusal)",
+    "facade_error_after": "OwnerBridgeError::Kernel(kernel::Error::OverBound) (display \"kernel: OverBound\")",
+    "kernel_abi_codes_unchanged": "OverBound appended after Busy; all 17 pre-existing kernel::Error abi_code() values unchanged"
+  },
+  "limits": "No kernel limits changed; no bound raised or lowered; the 16 KiB reply bound and 4 MiB payload bound are unchanged - only the refusal variant is self-describing",
+  "files": [
+    "crates/nethacked-owners/src/lib.rs",
+    "crates/nethacked-owners/src/fixtures.rs",
+    "crates/nethacked-owners/src/fixtures/publication_tests/failures.rs",
+    "crates/nethacked-owners/tests/persistence.rs",
+    "crates/nethacked-owners/tests/persistence_repair.inc",
+    "crates/nethacked-owners/tests/persistence_execution.rs",
+    "crates/nethacked-kernel/src/model.rs",
+    "crates/nethacked-sim/src/owner_persistence/runtime.rs",
+    "crates/nethacked-sim/src/owner_persistence/runtime/action_time.rs",
+    "crates/nethacked-sim/src/owner_persistence/runtime/movement_actions.rs",
+    "crates/nethacked-sim/src/owner_persistence/runtime/monster_ticks.rs",
+    "crates/nethacked-sim/src/owner_persistence/runtime/inventory_actions.rs",
+    "crates/nethacked-sim/src/owner_persistence/runtime/item_effects.rs",
+    "crates/nethacked-sim/src/owner_persistence/runtime/services.rs",
+    "crates/nethacked-sim/src/owner_persistence/runtime/traversal.rs",
+    "crates/nethacked-sim/src/owner_persistence/runtime/wand_ports.rs",
+    "crates/nethacked-sim/src/owner_persistence/runtime/wand_workflows.rs",
+    "crates/nethacked-sim/src/owner_persistence/runtime/tests/geography_compact.rs",
+    "docs/parity/obligations/2026-10-08-microkernel-goal.json",
+    "docs/parity/obligations/2026-10-10-microkernel-c5-overbound-checkpoint.json",
+    "docs/plans/2026-10-06-handover.md",
+    "MEMORY.md"
+  ],
+  "remaining": [
+    "Full 53-family C parity backlog remains tracked separately",
+    "Demo cutover unblocks on the full resolve_combat parity follow-up in the facade melee law (documented I5 follow-up)",
+    "TUI cutover unblocks on a new EnhanceSkill owner transport for the meta skill-enhancement modal"
+  ]
+}

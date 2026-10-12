@@ -193,7 +193,7 @@ fn completion(
         },
         limits.wire_bytes,
     ) {
-        if error != owners::Error::Limit {
+        if !matches!(error, owners::Error::Limit | owners::Error::OverBound) {
             return Err(error);
         }
         descriptor.overflow = true;

@@ -335,7 +335,7 @@ pub(crate) struct WireObservation {
 
 fn bound(n: usize, max: usize) -> owners::Result<()> {
     if n > max {
-        Err(owners::Error::Limit)
+        Err(owners::Error::OverBound)
     } else {
         Ok(())
     }

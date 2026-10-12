@@ -302,6 +302,50 @@ fn compact_geography_fits_kernel_bound_across_seeds() {
 }
 
 #[test]
+fn over_bound_payload_refuses_with_self_describing_over_bound_variant() {
+    // Review condition C5: an over-bound payload must refuse with the
+    // self-describing `OverBound` variant, not the opaque `NativeRefusal`.
+    // A 20 KiB engraving pushes the compact geography facts past the 16 KiB
+    // reply bound, so the Wait transport's geography read refuses.
+    let mut w = m7_audit::m7_world(4);
+    w.level.engravings.insert(
+        Coord::new_unchecked(2, 3),
+        Engraving::new("x".repeat(20_000), EngravingMedium::Burned),
+    );
+    let geo = action_time::GeographyFacts {
+        level: w.level.clone(),
+        branch: w.current_branch,
+        depth: w.depth,
+    };
+    let compact = serde_json::to_vec(&geo).unwrap();
+    assert!(
+        compact.len() > m7_audit::KERNEL_PAYLOAD,
+        "the engraving must push the compact facts over the 16 KiB bound (got {})",
+        compact.len()
+    );
+    // The owner codec helpers refuse over-bound payloads with the
+    // self-describing variant on both encode and decode.
+    assert!(matches!(
+        encode(&geo, m7_audit::KERNEL_PAYLOAD),
+        Err(owners::Error::OverBound)
+    ));
+    assert!(matches!(
+        decode::<action_time::GeographyFacts>(&compact, m7_audit::KERNEL_PAYLOAD),
+        Err(owners::Error::OverBound)
+    ));
+    // Session import succeeds (the 4 MiB payload bound carries the natural
+    // state), but the facade's Wait dispatch refuses the over-bound
+    // geography read with the self-describing kernel variant.
+    let mut session = OwnerGameSession::new(w).unwrap();
+    let err = session.step(crate::ActionAst::Wait).unwrap_err();
+    assert!(
+        matches!(err, OwnerBridgeError::Kernel(kernel::Error::OverBound)),
+        "expected Kernel(OverBound), got {err}"
+    );
+    assert_eq!(err.to_string(), "kernel: OverBound");
+}
+
+#[test]
 fn facade_dispatches_combined_script_on_previously_over_bound_seed() {
     // Seed 4's fresh level serialized to 17572 bytes under the natural
     // encoding — over the 16 KiB kernel bound — so every geography-reading

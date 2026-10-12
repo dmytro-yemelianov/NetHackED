@@ -26,6 +26,9 @@ pub enum Error {
     Unsupported,
     Referenced,
     Quarantined,
+    /// A payload, observation, reply or event exceeded its configured bound.
+    /// Self-describing over-bound refusal, distinct from structural `Limit`.
+    OverBound,
 }
 pub type Result<T> = std::result::Result<T, Error>;
 impl From<nethacked_kernel::Error> for Error {
@@ -721,7 +724,7 @@ impl Host {
 }
 fn bound(size: usize, limit: usize) -> Result<()> {
     if size > limit {
-        Err(Error::Limit)
+        Err(Error::OverBound)
     } else {
         Ok(())
     }
@@ -1595,3 +1598,17 @@ pub use recorded::RecordedDeclaration;
     feature = "workflows"
 ))]
 mod capture_retirement_tests;
+
+#[cfg(test)]
+mod over_bound_tests {
+    use super::*;
+
+    #[test]
+    fn bound_refuses_over_limit_with_self_describing_over_bound() {
+        assert_eq!(bound(16_384, 16_384), Ok(()));
+        assert_eq!(bound(16_385, 16_384), Err(Error::OverBound));
+        assert_eq!(bound(17_000, 16_384), Err(Error::OverBound));
+        assert_eq!(bound(0, 0), Ok(()));
+        assert_eq!(bound(1, 0), Err(Error::OverBound));
+    }
+}

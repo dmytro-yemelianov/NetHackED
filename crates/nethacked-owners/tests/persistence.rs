@@ -849,7 +849,7 @@ fn local_bytes_bounds_corruption_and_live_edge_loss_refuse() {
     let bytes = cp.to_bytes(WIRE_LIMIT).unwrap();
     assert!(matches!(
         Checkpoint::from_bytes(&bytes, bytes.len() - 1),
-        Err(Error::Limit)
+        Err(Error::OverBound)
     ));
     assert!(matches!(
         Checkpoint::from_bytes(&bytes[..bytes.len() - 1], WIRE_LIMIT),

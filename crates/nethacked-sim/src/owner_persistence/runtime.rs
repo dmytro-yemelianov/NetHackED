@@ -630,12 +630,12 @@ pub(super) fn encode<T: Serialize>(value: &T, limit: usize) -> owners::Result<Ve
         count: 0,
         limit: limit.min(PAYLOAD),
     };
-    serde_json::to_writer(&mut counter, value).map_err(|_| owners::Error::Limit)?;
+    serde_json::to_writer(&mut counter, value).map_err(|_| owners::Error::OverBound)?;
     let bytes =
         serde_json::to_vec(&serde_json::to_value(value).map_err(|_| owners::Error::Schema)?)
             .map_err(|_| owners::Error::Schema)?;
     if bytes.len() > counter.limit {
-        return Err(owners::Error::Limit);
+        return Err(owners::Error::OverBound);
     }
     Ok(bytes)
 }
@@ -644,7 +644,7 @@ pub(super) fn decode<T: DeserializeOwned + Serialize>(
     limit: usize,
 ) -> owners::Result<T> {
     if bytes.len() > limit.min(PAYLOAD) {
-        return Err(owners::Error::Limit);
+        return Err(owners::Error::OverBound);
     }
     let state: T = serde_json::from_slice(bytes).map_err(|_| owners::Error::Schema)?;
     if encode(&state, limit)? != bytes {
@@ -682,7 +682,7 @@ fn decode_owner<T: DeserializeOwned + Serialize>(
         return decode(bytes, limit);
     }
     if bytes.len() > limit.min(PAYLOAD) {
-        return Err(owners::Error::Limit);
+        return Err(owners::Error::OverBound);
     }
     let state: T = serde_json::from_slice(bytes).map_err(|_| owners::Error::Schema)?;
     if encode_owner(&state, limit, name, config)? != bytes {
@@ -1313,8 +1313,11 @@ fn native_ports(handles: Rc<Routes>, config: OwnerBridgeConfig) -> BTreeMap<Stri
     ]
     .into()
 }
-fn native_refusal(_: owners::Error) -> kernel::Error {
-    kernel::Error::NativeRefusal
+fn native_refusal(e: owners::Error) -> kernel::Error {
+    match e {
+        owners::Error::OverBound => kernel::Error::OverBound,
+        _ => kernel::Error::NativeRefusal,
+    }
 }
 
 fn bridge_stamps(b: &session::HostBundle) -> owners::Result<Vec<owners::Stamp>> {
@@ -3172,6 +3175,32 @@ mod tests {
                 ]
             })
             .unwrap()
+    }
+    #[test]
+    fn native_refusal_maps_over_bound_to_self_describing_kernel_variant() {
+        // Over-bound payload/observation/reply refusals surface as the
+        // self-describing kernel OverBound variant; every other owner refusal
+        // stays the generic NativeRefusal.
+        assert_eq!(
+            native_refusal(owners::Error::OverBound),
+            kernel::Error::OverBound
+        );
+        assert_eq!(
+            native_refusal(owners::Error::Limit),
+            kernel::Error::NativeRefusal
+        );
+        assert_eq!(
+            native_refusal(owners::Error::Stale),
+            kernel::Error::NativeRefusal
+        );
+        assert_eq!(
+            native_refusal(owners::Error::Authority),
+            kernel::Error::NativeRefusal
+        );
+        assert_eq!(
+            native_refusal(owners::Error::Schema),
+            kernel::Error::NativeRefusal
+        );
     }
     #[test]
     fn owner_runtime_independent_allocations_source_disposal_and_billing_only_revision() {

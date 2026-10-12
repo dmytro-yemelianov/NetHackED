@@ -47,12 +47,18 @@ pub const WRITES: [&str; 7] = [
 
 pub const POLICY: [u8; 32] = [74; 32];
 
-fn native_refusal(_: impl std::fmt::Debug) -> kernel::Error {
-    kernel::Error::NativeRefusal
+fn native_refusal(e: owners::Error) -> kernel::Error {
+    match e {
+        owners::Error::OverBound => kernel::Error::OverBound,
+        _ => kernel::Error::NativeRefusal,
+    }
 }
 
-fn native_refusal_step(_: &str, _: impl std::fmt::Debug) -> kernel::Error {
-    kernel::Error::NativeRefusal
+fn native_refusal_step(_: &str, e: owners::Error) -> kernel::Error {
+    match e {
+        owners::Error::OverBound => kernel::Error::OverBound,
+        _ => kernel::Error::NativeRefusal,
+    }
 }
 
 #[cfg(test)]

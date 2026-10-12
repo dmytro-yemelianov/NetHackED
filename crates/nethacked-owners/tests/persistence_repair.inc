@@ -329,6 +329,6 @@ fn repair_bounded_namespace_admission_with_sparse_maximum() {
             PublicationLimits::default(),
             &bindings(&fresh)
         ),
-        Err(Error::Limit)
+        Err(Error::OverBound)
     ));
 }
